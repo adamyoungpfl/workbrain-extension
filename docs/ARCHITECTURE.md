@@ -6,16 +6,17 @@
 src/
   panel/                      React app rendered in the side panel
     main.tsx                  mount
-    App.tsx                   surface router: 'home' | 'flow' | 'sheet'
+    App.tsx                   surface router: 'home' | 'flow' — no 'sheet' surface built yet
     surfaces/
       Home.tsx                derived entirely from core/freshness + core/storage
+      FileActions.tsx         download/import Context.md, DOM-only, wraps core/files/{generate,parse,restore}
       Flow.tsx                the generic step runner — one component for all five flows
       sheets/Capture.tsx  sheets/Briefing.tsx  sheets/Audit.tsx  sheets/Report.tsx
     components/               Button Pill Field ReadOnlyBlock FileRow Banner Meter Toast Sheet
     cues/
       engine.ts               chain runner: play → wait for `until` → hand off
-      verbs.ts                sweep | ring | ringViolet | focus | bob | point
-      Pointer.tsx             cross-surface pointer overlay
+      verbs.ts                sweep | ring | ringViolet | focus | bob
+      Pointer.tsx             cross-surface pointer overlay — also where `point` lives
   background/
     service-worker.ts         message router only. No state in memory — it will be killed.
   content/
@@ -26,7 +27,8 @@ src/
     files/      generate.ts   parse.ts        <- must round-trip. See CONTRACTS.
     freshness/  clocks.ts     nextMove.ts
     audit/      parsers/{chatgpt,claude,gemini}.ts  normalize.ts  signals.ts
-    report/     metrics.ts    render.ts
+    report/     scoring.ts     <- R1-11's wb:report.scores write only. metrics.ts, render.ts
+                                   (the full report engine) are out of scope for Release 1.
     packs/      fetch.ts (takes an injected fetcher)  verify.ts  merge.ts
     storage/    keys.ts       migrations.ts  client.ts   <- the ONLY module that touches chrome.storage
     briefing/   build.ts
@@ -82,8 +84,15 @@ Established by `core/flow/runner.ts` (R1-06), which is the only code that writes
 - `Answers.answeredAt` is keyed by plain question id for top-level answers, but by
   `` `${blockId}#${recordIndex}#${fieldKey}` `` for repeatable fields — a plain field key would
   collide across records (e.g. every `entities` record has an `entity_name`). Anything reading
-  `answeredAt` for freshness (R1-12+) needs to know about this compound form for repeatable-sourced
-  content.
+  `answeredAt` for freshness (R1-12, see `core/freshness/nextMove.ts`) needs to know about this
+  compound form for repeatable-sourced content.
+- `Answers.reflectedAt` (R1-07) follows the exact same convention as `answeredAt` — plain
+  question id at top level, the same compound form inside a repeatable — and is written only by
+  `applyReflect`, never by `applyAnswer` or `applySkip`. A text question with `interpret` set is
+  "answered but not yet reflected" when its key is present in `values`/the record but absent from
+  `reflectedAt`; `findPosition` routes that state to the reflect screen instead of treating it as
+  done. `core/freshness/nextMove.ts`'s `mostRecentAnsweredAt` reads both maps together for a
+  file's "N days old" badge.
 - **Which question is "current" is never stored.** It's recomputed from this data on every render
   by walking the flow's modules for the first unanswered, non-`skipIf`'d node — see
   `findPosition` in `core/flow/runner.ts`, and "Nothing derived is stored" below.

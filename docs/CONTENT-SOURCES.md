@@ -10,11 +10,11 @@ Sibling repo: `../modelcitizen/`
 |---|---|---|---|
 | R1-05 ✅ | The 12 modules | `src/lib/contextInterviewFlow.ts` | Done. 133 of 134 strings ported verbatim. |
 | R1-05 ✅ | File outline | `src/lib/contextInterviewFlow.ts` → `CONTEXT_FILE_OUTLINE` (~line 1245) | Done — `contextOutline` in `flow.ts`. |
-| **R1-09** | `Context.md` generation | `src/lib/contextInterviewFlow.ts` → `generateContextFile()` (~line 1429) | Walks `CONTEXT_FILE_OUTLINE` and emits markdown. **Port the emitter, then write the parser** — the parser is new work because the web app never needed to read the file back. |
-| **R1-09** | The System Grounding Rule paragraph | same file | Fixed text, always appended. Must be byte-identical. |
-| **R1-11** | Baseline demo prompt | `src/components/WorkBrainContextInterview.tsx` → `BASELINE_PROMPT` (~line 397) | Currently `"Draft a status update for my manager."` |
-| **R1-11** | Grading rubric prompt | same file, ~line 429–443 | Five criteria, ends with "top areas of opportunity". Adam specified point 5 explicitly — do not re-derive the rubric. |
-| **R1-11** | Per-service attach tips | same file | One line per AI service saying where its attach control is. |
+| R1-09 ✅ | `Context.md` generation | `src/lib/contextInterviewFlow.ts` → `generateContextFile()` (~line 1429) | Done. Literal always-emitted text ported verbatim to `src/core/files/source.ts`; the emitter itself is a reimplementation against this repo's schema in `src/core/files/generate.ts` (see that file's header comment for why a byte-copy of the function body wasn't possible). The parser — new work, the web app never read the file back — is `src/core/files/parse.ts`; round-trip tested in `src/core/files/roundtrip.test.ts`. |
+| R1-09 ✅ | The System Grounding Rule paragraph | same file | Done. Byte-identical in `src/core/files/source.ts`'s `SYSTEM_GROUNDING_RULE`, asserted in `generate.test.ts` against an independently hand-typed copy of the source. |
+| R1-11 ✅ | Baseline demo prompt | `src/components/WorkBrainContextInterview.tsx` → `BASELINE_PROMPT` (~line 397) | Done. Ported verbatim to `src/core/flow/proofSource.ts`'s `BASELINE_PROMPT`. |
+| R1-11 ✅ | Grading rubric prompt | same file, ~line 429–443 | Done. Ported verbatim to `evaluationPrompt()` in `src/core/flow/proofSource.ts`. Five criteria, ends with "top areas of opportunity"; Adam specified point 5 explicitly, not re-derived. |
+| R1-11 ✅ | Per-service attach tips | same file | Done. Ported to `PROOF_SERVICES` in `src/core/flow/proofSource.ts` (one line per AI service saying where its attach control is), consumed via `attachHintFor()` in `src/core/flow/proofAdapter.ts`. |
 | R1-12 | Freshness sentences | — | New work. See `src/panel/strings.ts`. |
 
 ## How to port
