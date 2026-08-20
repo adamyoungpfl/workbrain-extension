@@ -1,0 +1,54 @@
+/* V1.1 VB-01. Colour and the one-time entrance for the node-graph mark.
+   Every value here is a token — see design/tokens.json's `color.brand` group
+   and the note in BrandMark.tsx on why this component is multi-colour when
+   every other icon in the panel is a currentColor stroke. */
+
+.brand-mark {
+  display: block;
+}
+
+/* The gradient stops. Classes rather than `stop-color="var(--…)"`
+   presentation attributes: a class is unambiguously CSS, and keeps the
+   geometry in BrandMark.tsx free of anything but numbers. */
+.brand-mark-node-1-from { stop-color: var(--brand-node-1-from); }
+.brand-mark-node-1-to   { stop-color: var(--brand-node-1-to); }
+.brand-mark-node-2-from { stop-color: var(--brand-node-2-from); }
+.brand-mark-node-2-to   { stop-color: var(--brand-node-2-to); }
+.brand-mark-node-3-from { stop-color: var(--brand-node-3-from); }
+.brand-mark-node-3-to   { stop-color: var(--brand-node-3-to); }
+.brand-mark-node-4-from { stop-color: var(--brand-node-4-from); }
+.brand-mark-node-4-to   { stop-color: var(--brand-node-4-to); }
+.brand-mark-node-5-from { stop-color: var(--brand-node-5-from); }
+.brand-mark-node-5-to   { stop-color: var(--brand-node-5-to); }
+
+.brand-mark-edges line {
+  stroke: var(--brand-edge);
+}
+
+/* One entrance, on mount, and then it is a still picture forever. Not a loop,
+   not a hover state, no requestAnimationFrame anywhere — see BrandMark.tsx.
+   `both` holds the end frame so nothing can leave the mark part-faded. */
+@keyframes brand-mark-in {
+  from {
+    opacity: 0;
+    transform: scale(0.92);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.brand-mark {
+  animation: brand-mark-in var(--slow) var(--ease) both;
+  transform-origin: center;
+}
+
+/* The still version carries the whole meaning already — the mark is a picture,
+   not an instruction, so there is nothing the motion was saying that has to be
+   said another way (docs/GUARDRAILS.md). */
+@media (prefers-reduced-motion: reduce) {
+  .brand-mark {
+    animation: none;
+  }
+}

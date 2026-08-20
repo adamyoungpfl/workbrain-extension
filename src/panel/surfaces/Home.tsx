@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Banner, Button, FileRow } from '../components';
+import { Banner, BrandMark, Button, FileRow } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { computeNextMove, mostRecentAnsweredAt } from '../../core/freshness/nextMove';
 import { daysSince } from '../../core/freshness/clocks';
@@ -86,13 +86,30 @@ export function Home({ onStart, onAnswerDue, onOpenProof }: HomeProps) {
 
   return (
     <div className="home">
+      {/* V1.1 VB-01 — the welcome state. Still just the `start` branch of the
+          same derived next move, not a surface and not a stored "have I
+          welcomed them" flag: someone who clears their answers is genuinely
+          starting over and correctly gets this screen again. Everything below
+          it on Home (the file row, the "bring your file" hint, Import, the
+          privacy note) is unchanged and still renders — this replaces the
+          bare "You have not started yet." card, not the page. */}
       {nextMove.kind === 'start' && (
-        <div className="home-start">
-          <h2 className="home-start-title">{S.emptyNoFile}</h2>
+        <section className="home-welcome" aria-labelledby="home-welcome-headline">
+          <BrandMark />
+          {/* Real, selectable text — not an image of a word, and not the mark
+              doing double duty as the name. `appName` is the same string the
+              extension is called everywhere else. */}
+          <p className="home-welcome-wordmark">{S.appName}</p>
+          <p className="home-welcome-byline">{S.brandByline}</p>
+          <h2 id="home-welcome-headline" className="home-welcome-headline">
+            {S.welcomeHeadline}
+          </h2>
+          <p className="home-welcome-sub">{S.welcomeSub}</p>
           <Button type="button" variant="primary" onClick={onStart}>
             {S.emptyNoFileAction}
           </Button>
-        </div>
+          <p className="home-welcome-time">{S.welcomeTime}</p>
+        </section>
       )}
 
       {nextMove.kind === 'due' && (

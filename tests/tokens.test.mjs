@@ -26,6 +26,19 @@ describe('design tokens', () => {
     const props = [...css.matchAll(/^\s*--([\w-]+):/gm)].map((m) => m[1]);
     expect(props.length).toBeGreaterThan(0);
 
+    // Colours are flat, except for namespaced groups (a key holding no
+    // `value` of its own) which flatten to `<group>-<key>` — see
+    // scripts/tokens.mjs. `color.brand.*` is the first and only one.
+    const colorProps = new Set();
+    for (const [key, entry] of Object.entries(tokens.color)) {
+      if (key.startsWith('$')) continue;
+      if (entry && typeof entry === 'object' && !('value' in entry)) {
+        for (const sub of Object.keys(entry)) if (!sub.startsWith('$')) colorProps.add(`${key}-${sub}`);
+        continue;
+      }
+      colorProps.add(key);
+    }
+
     for (const prop of props) {
       const traces =
         (prop.startsWith('font-') && prop.slice(5) in tokens.font) ||
@@ -33,7 +46,7 @@ describe('design tokens', () => {
         (prop.startsWith('e-') && prop.slice(2) in tokens.elevation) ||
         (prop === 'target-min' && 'min' in tokens.target) ||
         prop in tokens.motion ||
-        prop in tokens.color;
+        colorProps.has(prop);
       expect(traces, `--${prop} does not trace to any entry in design/tokens.json`).toBe(true);
     }
   });

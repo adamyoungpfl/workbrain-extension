@@ -153,8 +153,24 @@ export const S = {
    * duration). */
   agoLabel: (n: number, unit: 'day' | 'month' | 'year') => `${n} ${unit}${n === 1 ? '' : 's'}`,
 
+  // ---------------------------------------------------------------- welcome
+  // V1.1 VB-01. The first thing a person ever sees. Approved verbatim in
+  // docs/V1.1-COPY-DRAFT.md — do not reword any of these four lines.
+  //
+  // `emptyNoFile` ("You have not started yet.") used to head this screen and
+  // is gone: it described a lack, opened with the person's failure to have
+  // done something, and told them nothing about what the thing is. The
+  // headline below does the same job forwards.
+  brandByline: 'by Model Citizen',
+  welcomeHeadline: 'Teach AI who you are, once.',
+  welcomeSub: 'Answer some questions. Get a file. Hand it to whatever AI you already use.',
+  /** Structural estimate, not measured — flagged as such in the copy draft.
+   * Also the promise that nothing is lost by stopping, which is true: every
+   * answer is written to `wb:answers` as it is given, and the flow re-derives
+   * where to resume (core/flow/runner.ts's findPosition). */
+  welcomeTime: 'About fifteen minutes. You can stop anywhere and pick up where you left off.',
+
   // ---------------------------------------------------------------- empty states
-  emptyNoFile: 'You have not started yet.',
   emptyNoFileAction: 'Start with a few questions',
   emptyNewDevice: 'New here? If you already made a file, bring it with you.',
   emptyNoSkills: 'No skills yet.',

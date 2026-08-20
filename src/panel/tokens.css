@@ -25,6 +25,17 @@
   --danger-tint: #FDECEA;
   --overlay: rgba(21,24,29,.42);
   --toast-check: #6EE7A8;
+  --brand-node-1-from: #2F5FE6;
+  --brand-node-1-to: #53A9DC;
+  --brand-node-2-from: #14B8C4;
+  --brand-node-2-to: #3CBCD0;
+  --brand-node-3-from: #6366F1;
+  --brand-node-3-to: #6C6FF2;
+  --brand-node-4-from: #3D74E5;
+  --brand-node-4-to: #48C4D2;
+  --brand-node-5-from: #4968BA;
+  --brand-node-5-to: #5E87EB;
+  --brand-edge: #5B7FD8;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   --r-sm: 6px;

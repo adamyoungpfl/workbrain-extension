@@ -24,3 +24,6 @@ export type { ToastProps } from './Toast';
 
 export { Sheet } from './Sheet';
 export type { SheetProps } from './Sheet';
+
+export { BrandMark } from './BrandMark';
+export type { BrandMarkProps } from './BrandMark';

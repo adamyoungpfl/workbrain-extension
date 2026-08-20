@@ -9,7 +9,24 @@ const lines = [
   '/* GENERATED from design/tokens.json by scripts/tokens.mjs — do not edit. */',
   ':root {',
 ];
-for (const [k, v] of Object.entries(t.color)) lines.push(`  --${k}: ${v.value};`);
+/**
+ * Colours are flat by default — one key, one meaning, one custom property.
+ * A key whose object carries no `value` is a namespaced *group* instead and
+ * flattens to `--<group>-<key>` (added at V1.1 VB-01 for `color.brand.*`, the
+ * decorative mark palette, so those eleven values stay visibly separate from
+ * the semantic colours rather than crowding into the same flat list).
+ */
+for (const [k, v] of Object.entries(t.color)) {
+  if (k.startsWith('$')) continue;
+  if (v && typeof v === 'object' && !('value' in v)) {
+    for (const [gk, gv] of Object.entries(v)) {
+      if (gk.startsWith('$')) continue;
+      lines.push(`  --${k}-${gk}: ${gv.value};`);
+    }
+    continue;
+  }
+  lines.push(`  --${k}: ${v.value};`);
+}
 for (const [k, v] of Object.entries(t.font))  lines.push(`  --font-${k}: ${v.value};`);
 for (const [k, v] of Object.entries(t.radius)) lines.push(`  --r-${k}: ${v};`);
 for (const [k, v] of Object.entries(t.elevation)) lines.push(`  --e-${k}: ${v.value};`);

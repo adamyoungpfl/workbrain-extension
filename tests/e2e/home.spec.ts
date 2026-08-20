@@ -184,7 +184,8 @@ test.describe('Home surface (R1-12)', () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
-    await expect(page.getByText('You have not started yet.')).toBeVisible();
+    // V1.1 VB-01 replaced the old "You have not started yet." card with the
+    // welcome lockup — covered in full by the welcome test below.
     await expect(page.getByRole('button', { name: 'Start with a few questions', exact: true })).toBeVisible();
     await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'I already have a file', exact: true })).toBeVisible();
@@ -192,6 +193,141 @@ test.describe('Home surface (R1-12)', () => {
     // No due/current banner, no "Prove it works" offer — there is nothing to
     // measure or prove yet.
     await expect(page.getByRole('button', { name: 'Prove it works', exact: true })).toHaveCount(0);
+
+    await context.close();
+  });
+
+  // ────────────────────────────────────────────────────────── V1.1 VB-01
+  test('with empty storage the welcome state renders the mark, the wordmark and the CTA, and the CTA really starts the interview', async () => {
+    const { context, sw, id } = await launchExtension();
+    // Explicit rather than assumed: this is the "nothing has ever been
+    // answered" case, which is the only one that shows this screen.
+    const before = await sw.evaluate(() => chrome.storage.local.get('wb:answers'));
+    expect(before['wb:answers']).toBeUndefined();
+
+    const page = await openPanel(context, id);
+    const welcome = page.locator('.home-welcome');
+    await expect(welcome).toBeVisible();
+
+    // --- the mark: really drawn, really sized, and really the node graph ---
+    const mark = welcome.locator('svg.brand-mark');
+    await expect(mark).toBeVisible();
+    await expect(mark.locator('circle')).toHaveCount(12);
+    await expect(mark.locator('line')).toHaveCount(30);
+    const markBox = await mark.boundingBox();
+    expect(markBox?.width).toBeGreaterThan(48);
+    // Decorative — the wordmark beside it is what gets read out.
+    await expect(mark).toHaveAttribute('aria-hidden', 'true');
+    // Its colours resolve to the real brand tokens, not to nothing. A
+    // mistyped custom property name would render the stops black in silence.
+    const edgeStroke = await mark.locator('line').first().evaluate((el) => getComputedStyle(el).stroke);
+    expect(edgeStroke).toBe('rgb(91, 127, 216)'); // --brand-edge
+    const stopColor = await mark
+      .locator('.brand-mark-node-1-from')
+      .evaluate((el) => getComputedStyle(el).stopColor);
+    expect(stopColor).toBe('rgb(47, 95, 230)'); // --brand-node-1-from
+
+    // --- the wordmark: real text, in the one violet ---
+    const wordmark = welcome.getByText('Workbrain', { exact: true });
+    await expect(wordmark).toBeVisible();
+    await expect(welcome.getByText('by Model Citizen', { exact: true })).toBeVisible();
+    const wordmarkStyle = await wordmark.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { color: s.color, size: s.fontSize, tag: el.tagName };
+    });
+    expect(wordmarkStyle.color).toBe('rgb(106, 63, 209)'); // --violet, not a second violet
+    expect(wordmarkStyle.size).toBe('26px'); // type.wordmark, not type.display's 32px
+    expect(wordmarkStyle.tag).toBe('P'); // text, not an image and not an SVG <text>
+
+    // --- the approved copy, verbatim ---
+    await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toBeVisible();
+    await expect(
+      page.getByText('Answer some questions. Get a file. Hand it to whatever AI you already use.'),
+    ).toBeVisible();
+    await expect(
+      page.getByText('About fifteen minutes. You can stop anywhere and pick up where you left off.'),
+    ).toBeVisible();
+    // The two existing lines the redesign keeps.
+    await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
+    await expect(
+      page.getByText('Everything here lives in your browser. No account, nothing sent anywhere.'),
+    ).toBeVisible();
+    // And the line it replaced is gone.
+    await expect(page.getByText('You have not started yet.')).toHaveCount(0);
+
+    // --- one entrance, then nothing. No loop, no rAF, no ticking. ---
+    const animation = await mark.evaluate((el) => {
+      const s = getComputedStyle(el);
+      return { name: s.animationName, count: s.animationIterationCount, fill: s.animationFillMode };
+    });
+    expect(animation.name).toBe('brand-mark-in');
+    expect(animation.count).toBe('1');
+    expect(animation.fill).toBe('both');
+    // Settled: after the entrance the mark is fully opaque and back to its
+    // own size, and stays that way — sampled twice, half a second apart, which
+    // is what a rotation or a pulse would fail. (Computed `transform` reads as
+    // the identity matrix rather than "none" while an animation with
+    // `fill-mode: both` is holding its end frame; identity is the point, not
+    // the spelling.)
+    const identity = 'matrix(1, 0, 0, 1, 0, 0)';
+    await expect(mark).toHaveCSS('opacity', '1');
+    const first = await mark.evaluate((el) => getComputedStyle(el).transform);
+    await page.waitForTimeout(500);
+    const second = await mark.evaluate((el) => getComputedStyle(el).transform);
+    expect([first, second]).toEqual([identity, identity]);
+
+    // --- keyboard-only: the CTA is reachable and really starts the flow ---
+    const cta = page.getByRole('button', { name: 'Start with a few questions', exact: true });
+    await cta.focus();
+    await expect(cta).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.flow')).toBeVisible();
+    // Question one, not a resume — nothing has been answered.
+    await expect(page.locator('.home-welcome')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('the welcome mark is still fully drawn under prefers-reduced-motion, with its entrance removed', async () => {
+    const { context, id } = await launchExtension();
+    const page = await context.newPage();
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.setViewportSize({ width: 400, height: 700 });
+    await page.goto(`chrome-extension://${id}/panel.html`);
+    await page.waitForSelector('.home');
+
+    const mark = page.locator('svg.brand-mark');
+    await expect(mark).toBeVisible();
+    // The still version carries everything the motion did: the whole mark,
+    // at full opacity, immediately.
+    await expect(mark.locator('circle')).toHaveCount(12);
+    await expect(mark).toHaveCSS('animation-name', 'none');
+    await expect(mark).toHaveCSS('opacity', '1');
+    await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toBeVisible();
+
+    await context.close();
+  });
+
+  test('the welcome state is gone the moment a single answer exists', async () => {
+    const { context, sw, id } = await launchExtension();
+    // One real answer to the very first question is enough for `computeNextMove`
+    // to stop returning 'start' — proving this screen is derived from
+    // `wb:answers` and not from a "seen the welcome" flag anywhere.
+    await sw.evaluate(() =>
+      chrome.storage.local.set({
+        'wb:answers': {
+          values: { orientation_ready: null },
+          repeatables: {},
+          answeredAt: { orientation_ready: new Date().toISOString() },
+          reflectedAt: {},
+        },
+      }),
+    );
+
+    const page = await openPanel(context, id);
+    await expect(page.locator('.home-welcome')).toHaveCount(0);
+    await expect(page.getByText('Teach AI who you are, once.')).toHaveCount(0);
+    await expect(page.locator('svg.brand-mark')).toHaveCount(0);
 
     await context.close();
   });

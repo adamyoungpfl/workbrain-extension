@@ -28,21 +28,76 @@
   gap: 9px;
 }
 
-.home-start {
+/* V1.1 VB-01 — the welcome state, replacing the old `.home-start` card.
+   Centred, because this is the one screen in the product with a single thing
+   to do and no list to scan; every other screen stays left-aligned.
+
+   Font sizes are literals that mirror design/tokens.json's type scale, which
+   is how every other stylesheet here does it (the generator emits colour,
+   font family, radius, elevation and motion as custom properties, not type).
+   The wordmark is the new `type.wordmark` entry — 26px/1.1/680/-0.022em —
+   added for exactly this one use, since `type.display`'s own token comment
+   rules it out of the panel. */
+.home-welcome {
   border: 1px solid var(--divider);
   border-radius: var(--r-md);
-  padding: 20px 18px;
+  padding: 28px 18px 22px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 14px;
+  align-items: center;
+  text-align: center;
+  gap: 6px;
 }
 
-.home-start-title {
+.home-welcome-wordmark {
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 680;
+  letter-spacing: -0.022em;
+  /* The panel's one violet (--violet, 6.47:1). The marketing site's wordmark
+     uses a lighter, different violet; importing it would put two violets in a
+     system whose whole point is that a colour means one thing. */
+  color: var(--violet);
+  margin: 10px 0 0;
+}
+
+.home-welcome-byline {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+.home-welcome-headline {
   font-size: 17px;
+  line-height: 1.4;
   font-weight: 650;
   color: var(--ink);
+  margin: 14px 0 0;
+}
+
+.home-welcome-sub {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-2);
   margin: 0;
+  /* Keeps the three short sentences from stretching edge to edge at 400px. */
+  max-width: 30ch;
+}
+
+/* The CTA is the only control on the card, so it takes the full width rather
+   than sitting as a small centred pill. */
+.home-welcome .btn {
+  align-self: stretch;
+  margin-top: 12px;
+}
+
+.home-welcome-time {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin: 8px 0 0;
+  max-width: 32ch;
 }
 
 .home-hint {
