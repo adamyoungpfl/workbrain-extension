@@ -180,6 +180,147 @@
   }
 }
 
+/* ── VB-08: "give me an example" ──────────────────────────────────────────
+   Sits under the text field it writes into. `.btn-secondary` gives it the
+   bordered treatment the spec calls for — a solid fill would compete with
+   Next, which is this screen's one primary (docs/design-system.html §04).
+   `.btn-sm` keeps it visually subordinate to the footer's buttons while
+   `.btn` still holds the 44px floor, so the hit target is untouched. */
+.flow-idea-row {
+  display: flex;
+  align-items: center;
+  margin-top: 12px;
+}
+.flow-idea {
+  flex: 0 0 auto;
+}
+/* The rays scale to 1.25 about the bulb's top, which puts the tip of the
+   upright ray — plus its round cap — just past the top of the 24-unit box.
+   The glyph's own box is 17px inside a 44px button, so there is room to spare
+   on screen; this only stops the SVG clipping its own burst. */
+.flow-idea svg {
+  overflow: visible;
+}
+
+/* The announcement of what just landed in the field. Standard sr-only, same
+   values as the field labels above. */
+.flow-idea-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}
+
+/* VB-08's press cue — "pop + rays". The bulb swells and settles while a flash
+   fires off its top: "here is another one". The frame values are the product
+   owner's, chosen from an interactive prototype (docs/V1.1-REFINEMENT.md) —
+   not re-derived here.
+
+   Deliberately faster than VB-04's 200ms rephrase spin. §06 calls the 120ms
+   band "below perception — the UI feels solid, not sluggish", which is what a
+   control someone flicks through ten examples with needs, and the two buttons
+   must not feel like the same weight of action.
+
+   `transform-box: view-box` is what makes the origins below mean what they
+   say. Left to default, each group's transform would resolve against its own
+   bounding box, so the rays would spread about the middle of their own ring
+   instead of flying off the bulb. Pinned to the view box, `12px 12px` is the
+   drawn bulb's own centre and `12px 4.8px` is the top of its glass, in the
+   24-unit drawing's coordinates, whatever pixel size it renders at. */
+.flow-idea .idea-glass,
+.flow-idea .idea-rays {
+  transform-box: view-box;
+}
+.flow-idea .idea-glass {
+  transform-origin: 12px 12px;
+}
+/* Invisible at rest, in every state, including reduced motion: an outline
+   bulb that is permanently lit says "this is on", which is not what this
+   button does. The rays are the press and nothing else. */
+.flow-idea .idea-rays {
+  transform-origin: 12px 4.8px;
+  opacity: 0;
+}
+
+@keyframes idea-glass-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.22);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Out and gone by the end, so the rays leave nothing behind — they start
+   small and dim, flash at their brightest just past the middle, and fade as
+   they carry on outward. */
+@keyframes idea-rays-burst {
+  0% {
+    opacity: 0;
+    transform: scale(0.55);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.25);
+  }
+}
+
+/* No fill mode on purpose: both keyframe sets end exactly where the still
+   glyph sits, so the cue leaves nothing behind and the class can stay on the
+   button between presses. Flow.tsx's restartIdeaCue is what makes a press
+   during a press start over rather than be ignored.
+
+   The rays run 160ms to the bulb's 120ms — the decided pair, so the flash is
+   still travelling outward as the bulb settles. It is written as a multiple of
+   --fast rather than as a fourth magic number, because the system has three
+   durations and this is not a bid for a fourth: it is one cue whose two halves
+   are deliberately offset. */
+.flow-idea.is-popping .idea-glass {
+  animation: idea-glass-pop var(--fast) var(--ease);
+}
+.flow-idea.is-popping .idea-rays {
+  animation: idea-rays-burst calc(var(--fast) * 4 / 3) var(--ease);
+}
+
+/* Reduced motion is not "no feedback" (docs/design-system.html §06): a control
+   that does nothing visible when pressed reads as broken. Nothing scales and
+   no rays fire — the press instead lands as an instant accent fill. The
+   keyframes hold one value from end to end, so there is no fade in and no fade
+   out, just on and then off; `backwards` puts the accent up on the very first
+   style pass rather than a frame later. --slow is the hold, long enough to be
+   seen and short enough not to look like a new resting state.
+   The substantive feedback in both forms is the example text appearing in the
+   field, so nothing here is carried by colour alone. */
+@media (prefers-reduced-motion: reduce) {
+  .flow-idea.is-popping .idea-glass,
+  .flow-idea.is-popping .idea-rays {
+    animation: none;
+  }
+  .flow-idea.is-popping {
+    animation: idea-confirm var(--slow) var(--ease) backwards;
+  }
+  @keyframes idea-confirm {
+    from,
+    to {
+      background: var(--primary-tint);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+  }
+}
+
 .flow-error {
   font-size: 13px;
   color: var(--danger);

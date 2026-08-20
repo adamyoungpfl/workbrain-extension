@@ -28,6 +28,7 @@ import {
   PROOF_SERVICE_KEY,
 } from '../../core/flow/proofAdapter';
 import { hintStaysVisible } from '../../core/flow/deepDive';
+import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
 import type { AnswerValue, FileOutlineNode, FlowContext, Module, Option, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
@@ -123,6 +124,70 @@ export const REPHRASE_ICON = (
 );
 
 /**
+ * V1.1 VB-08's glyph — an outline light bulb, drawn to the same convention as
+ * REPHRASE_ICON above and Home.tsx's PERSON_ICON (stroke-based, `currentColor`,
+ * `aria-hidden` because the button around it carries a visible label as well
+ * as the accessible name).
+ *
+ * Two groups, because "pop + rays" (VB-08, decided from a prototype) moves
+ * them against each other:
+ *
+ *  - `.idea-glass` — the bulb outline and the two base lines. This is the
+ *    whole glyph at rest. The outline is one closed path: an arc the long way
+ *    over the top (large-arc, sweep) from the left shoulder to the right one,
+ *    then down the short neck and back. Its circle is centred at (12, 9.6)
+ *    with r 4.8, which is where the shoulder endpoints' y of 14 comes from,
+ *    so the arc closes exactly rather than being nudged by eye.
+ *  - `.idea-rays` — five short strokes fanned about the bulb's top at 32.5°
+ *    apart (-155° to -25°), each running from 3.6 to 5.4 units out from it.
+ *    The fan stays above the shoulders, and the gap is as wide as it is
+ *    because a round cap adds a unit at each end: drawn any closer, the burst
+ *    welds itself to the glass at the size this actually renders — checked on
+ *    screen, not on paper. They are
+ *    `opacity: 0` at rest (Flow.css) and exist ONLY during a press: a bulb
+ *    that is permanently lit says "this is on", which is not what this button
+ *    does. Naming them as their own group is what lets the rest state and the
+ *    burst be the same drawing.
+ *
+ * Group names are prefixed rather than the bare `.glass`/`.rays` the spec
+ * sketches, matching VB-04's identical departure (`.rephrase-ring`, not
+ * `.ring`) — a two-letter class in a shared stylesheet is a collision waiting
+ * to happen.
+ *
+ * Exported for its unit test: the path data is drawn, not derived, and a test
+ * that it is still character-for-character the drawn one is the only thing
+ * that catches a digit lost in a refactor.
+ */
+export const IDEA_ICON = (
+  <svg
+    width="17"
+    height="17"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    {/* the bulb itself — everything that is visible at rest */}
+    <g className="idea-glass">
+      <path d="M10.1 14A4.8 4.8 0 1 1 13.9 14v1.1h-3.8z" />
+      <path d="M10.2 17h3.6" />
+      <path d="M10.9 19.1h2.2" />
+    </g>
+    {/* the flash — invisible until the button is pressed */}
+    <g className="idea-rays">
+      <path d="M8.7 3.3L7.1 2.5" />
+      <path d="M9.9 1.9L8.9 0.4" />
+      <path d="M12 1.2V-0.6" />
+      <path d="M14.1 1.9L15.1 0.4" />
+      <path d="M15.3 3.3L16.9 2.5" />
+    </g>
+  </svg>
+);
+
+/**
  * The class Flow.css hangs VB-04's press cue on. It sits on the *button*, not
  * on the glyph, because the reduced-motion equivalent is a fill on the button
  * itself — one class then drives both forms of the same cue, and there is no
@@ -130,24 +195,45 @@ export const REPHRASE_ICON = (
  */
 export const REPHRASE_CUE_CLASS = 'is-rephrasing';
 
+/** VB-08's equivalent, on the same reasoning. */
+export const IDEA_CUE_CLASS = 'is-popping';
+
 /**
- * Plays VB-04's press cue, from the start, however recently it last played.
+ * Plays a press cue, from the start, however recently it last played.
  *
- * Rephrase is a control people press repeatedly — that is its whole purpose —
- * so the interesting case is the press that lands mid-flight. Simply leaving
- * the class on does nothing at all the second time: the animation is already
- * running and the browser has no reason to restart it. Removing it and adding
- * it back in the same task does nothing either, because style changes are
- * batched and the browser only ever sees the end state, which is unchanged.
- * Reading a layout property in between forces the removal to be committed
- * first, so the re-add is genuinely a new animation. That is the whole trick,
- * and it is why the fourth press feels the same as the first rather than
- * queueing behind three others.
+ * Both of this screen's icon-buttons are controls people press repeatedly —
+ * that is the whole purpose of each — so the interesting case is the press
+ * that lands mid-flight. Simply leaving the class on does nothing at all the
+ * second time: the animation is already running and the browser has no reason
+ * to restart it. Removing it and adding it back in the same task does nothing
+ * either, because style changes are batched and the browser only ever sees the
+ * end state, which is unchanged. Reading a layout property in between forces
+ * the removal to be committed first, so the re-add is genuinely a new
+ * animation. That is the whole trick, and it is why the fourth press feels the
+ * same as the first rather than queueing behind three others.
  */
+function restartCue(element: HTMLElement, cueClass: string): void {
+  element.classList.remove(cueClass);
+  void element.offsetWidth;
+  element.classList.add(cueClass);
+}
+
+/** VB-04's rephrase press cue — see `restartCue`. */
 export function restartRephraseCue(button: HTMLElement): void {
-  button.classList.remove(REPHRASE_CUE_CLASS);
-  void button.offsetWidth;
-  button.classList.add(REPHRASE_CUE_CLASS);
+  restartCue(button, REPHRASE_CUE_CLASS);
+}
+
+/**
+ * VB-08's "give me an example" press cue — see `restartCue`.
+ *
+ * This one is pressed harder than rephrase: ten ideas on the two reference
+ * questions, and flicking through them is how a person reads them. The cue is
+ * 120ms rather than rephrase's 200ms for exactly that reason
+ * (docs/design-system.html §06's "below perception" band), which also means a
+ * burst of presses arrives well inside one another's playback.
+ */
+export function restartIdeaCue(button: HTMLElement): void {
+  restartCue(button, IDEA_CUE_CLASS);
 }
 
 function positionKey(position: Position): string {
@@ -518,6 +604,16 @@ function StepView({
     return typeof existing === 'string' ? existing : '';
   });
   const [rephraseIndex, setRephraseIndex] = useState(0);
+  // V1.1 VB-08: how many times "give me an example" has been pressed on this
+  // question. A count, not an index — core/flow/ideas.ts owns the wrap, so
+  // nothing here has to know how many ideas the question carries. Reset by the
+  // per-position remount like every other draft above, so each question starts
+  // its own list at the top.
+  const [ideaPresses, setIdeaPresses] = useState(0);
+  // The last example dropped into the field, for the live region beside the
+  // button. Someone who cannot see the field fill in gets told what landed in
+  // it — the same information, at the same moment, without focus moving.
+  const [spokenIdea, setSpokenIdea] = useState('');
   const [customOpen, setCustomOpen] = useState(false);
   const [customText, setCustomText] = useState('');
   const [customOptions, setCustomOptions] = useState<Option[]>([]);
@@ -881,6 +977,38 @@ function StepView({
     restartRephraseCue(button);
   }
 
+  // V1.1 VB-08. The written starter answers this question carries, if any —
+  // 22 of them do, and nothing rendered a single one before now. Which
+  // questions qualify is core/flow/ideas.ts's decision, not a condition
+  // spelled out here (see `ideasFor` on why `gen` fields are excluded).
+  const ideas = ideasFor(step);
+
+  /**
+   * Drops the next example into the field the person is already typing in.
+   *
+   * It lands in `draftText` — the same buffer typing writes to, committed by
+   * the same `handleNext` — so it is an ordinary editable value from the
+   * instant it appears: no placeholder, nothing read-only, and once Next is
+   * pressed there is nothing about it that says it was not typed. That is the
+   * point. The example is something to react to and edit, not an answer.
+   *
+   * It replaces the draft rather than appending, which is what "give me
+   * another one" has to mean for a control that cycles — appending would build
+   * a wall of unrelated examples on the second press.
+   *
+   * As with rephrase above, the button element comes from the event and the
+   * cue class goes straight to the DOM: a React state round-trip cannot
+   * express "this again, from the start".
+   */
+  function dropIdea(button: HTMLButtonElement) {
+    const idea = ideaAt(ideas, ideaPresses);
+    if (idea === null) return;
+    setDraftText(idea);
+    setSpokenIdea(idea);
+    setIdeaPresses((n) => n + 1);
+    restartIdeaCue(button);
+  }
+
   const pillOptions: PillOption[] =
     step.kind === 'yesno'
       ? [
@@ -939,17 +1067,49 @@ function StepView({
       <QuestionHelp step={step} />
 
       {step.kind === 'text' && (
-        <div className="flow-field-sr-label">
-          <Field
-            id={`flow-${step.id}`}
-            label={questionText}
-            as={step.multiline ? 'textarea' : 'input'}
-            value={draftText}
-            onChange={setDraftText}
-            placeholder={step.ph}
-            error={pendingError ?? undefined}
-          />
-        </div>
+        <>
+          <div className="flow-field-sr-label">
+            <Field
+              id={`flow-${step.id}`}
+              label={questionText}
+              as={step.multiline ? 'textarea' : 'input'}
+              value={draftText}
+              onChange={setDraftText}
+              placeholder={step.ph}
+              error={pendingError ?? undefined}
+            />
+          </div>
+          {/* V1.1 VB-08. Under the field, not beside the question: this
+              control writes into the box, so it belongs with the box, and
+              the sibling app puts it in the same place. Rendered only where
+              the question actually carries examples — 22 of 49 steps do.
+
+              Secondary, not primary: a solid fill in this system means "the
+              one thing this screen wants" (docs/design-system.html §04, one
+              per screen) and Next holds that slot on every question. A filled
+              bulb would argue with it. Bordered keeps the control obvious
+              without claiming to be the point of the screen. */}
+          {ideas.length > 0 && (
+            <div className="flow-idea-row">
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="flow-idea"
+                onClick={(e) => dropIdea(e.currentTarget)}
+              >
+                {IDEA_ICON}
+                {S.giveExample}
+              </Button>
+              {/* What just landed in the field, for anyone who cannot see it
+                  do so. Polite and out of the way: nothing takes focus, so a
+                  keyboard user can keep pressing to hear the next one. */}
+              <span className="flow-idea-live" role="status">
+                {spokenIdea}
+              </span>
+            </div>
+          )}
+        </>
       )}
 
       {step.kind === 'gen' && (

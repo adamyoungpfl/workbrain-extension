@@ -51,6 +51,19 @@ export const S = {
   next: 'Next',
   skip: 'Skip',
   rephrase: 'Ask me that a different way',
+  /**
+   * V1.1 VB-08. The label on the button that drops a written starter answer
+   * into a text question's field (see core/flow/ideas.ts — static content,
+   * no AI, cycling on repeat presses).
+   *
+   * Kept in the same register as `rephrase` above: both are things the person
+   * says *to* the panel, not names for a feature. "Example" is a word they
+   * brought with them — unlike "idea", which is what the ported source calls
+   * this data internally and would have the button describing the code.
+   * Present tense, active, four words, and a verb someone stuck at a blank box
+   * would actually say out loud.
+   */
+  giveExample: 'Give me an example',
   addYourOwn: '+ add your own',
   addYourOwnPrompt: 'What should it say?',
   addYourOwnConfirm: 'Add',
