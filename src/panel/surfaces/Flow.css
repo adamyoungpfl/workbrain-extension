@@ -55,10 +55,32 @@
   flex: 1;
 }
 
+/* VB-04: the question and its rephrase icon-button share one row. The heading
+   keeps its own bottom margin so the spacing below is unchanged from when the
+   <h2> sat here alone. `min-width: 0` lets a long question wrap instead of
+   forcing the row wider than the 400px panel. */
+.flow-q-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+.flow-q-row .flow-q {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/* Icon-only, so the 44x44 floor (docs/GUARDRAILS.md) has to come from the box
+   itself rather than from padding around a word: `.btn` already sets
+   min-height, this adds the matching min-width. The negative top margin pulls
+   the tall target up so the 17px glyph optically centres on the question's
+   first line, without pushing the heading down — the hit area is untouched,
+   it just starts level with the row's top edge instead of below it. Colour
+   comes from `.btn-quiet` (--ink-2); nothing here is distinguished by colour. */
 .flow-rephrase {
-  align-self: flex-start;
-  padding-left: 0;
-  margin-top: 14px;
+  flex: 0 0 auto;
+  min-width: var(--target-min);
+  padding: 0;
+  margin-top: -8px;
 }
 
 .flow-error {

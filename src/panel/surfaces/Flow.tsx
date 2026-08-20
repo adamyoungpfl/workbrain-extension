@@ -60,6 +60,39 @@ export interface FlowProps {
 
 const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
 
+/**
+ * V1.1 VB-04's rephrase glyph — the "ring and mark": a circular refresh arc
+ * enclosing a small question mark. Same inline-SVG convention as Home.tsx's
+ * PERSON_ICON (stroke-based, `currentColor`, `aria-hidden` because the
+ * button around it carries the real accessible name, S.rephrase).
+ *
+ * The earlier sketch — a question mark whose dot curls into an arrowhead —
+ * was drawn and rejected: at 17px the arrowhead disappears and it reads as a
+ * plain question mark, i.e. "help" rather than "rephrase". The ring carries
+ * the "again" meaning at this size; the mark carries "question". Stroke
+ * width is 2 here rather than PERSON_ICON's 1.8 because this glyph has four
+ * marks inside the same 17px box instead of two, and 1.8 lets the arc's tail
+ * fade out on a 1x display.
+ */
+const REPHRASE_ICON = (
+  <svg
+    width="17"
+    height="17"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1" />
+    <path d="M20.9 3.6v4.6h-4.6" />
+    <path d="M9.6 9.7a2.5 2.5 0 1 1 2.7 2.8v1.4" />
+    <circle cx="12.3" cy="16.9" r="1.05" fill="currentColor" stroke="none" />
+  </svg>
+);
+
 function positionKey(position: Position): string {
   if (position.kind === 'done') return 'done';
   if (position.kind === 'add-another') return `add-another:${position.block.id}:${position.recordIndex}`;
@@ -682,7 +715,25 @@ function StepView({
     >
       {errorBanner}
       <p className="flow-eyebrow">{eyebrow}</p>
-      <h2 className="flow-q">{questionText}</h2>
+      {/* VB-04: the rephrase control sits beside the question, as a sibling of
+          the heading rather than inside it — putting a button inside <h2>
+          would fold its label into the heading's accessible name and change
+          what a screen reader announces when it lands on the question. */}
+      <div className="flow-q-row">
+        <h2 className="flow-q">{questionText}</h2>
+        {hasRephrasings && (
+          <Button
+            type="button"
+            variant="quiet"
+            className="flow-rephrase"
+            aria-label={S.rephrase}
+            title={S.rephrase}
+            onClick={cycleRephrase}
+          >
+            {REPHRASE_ICON}
+          </Button>
+        )}
+      </div>
       {step.hint && <p className="flow-hint">{step.hint}</p>}
 
       {step.kind === 'text' && (
@@ -785,12 +836,6 @@ function StepView({
             </div>
           )}
         </>
-      )}
-
-      {hasRephrasings && (
-        <Button type="button" variant="quiet" size="sm" className="flow-rephrase" onClick={cycleRephrase}>
-          {S.rephrase}
-        </Button>
       )}
 
       <footer className="flow-foot">
