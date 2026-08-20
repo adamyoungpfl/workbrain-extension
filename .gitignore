@@ -4,3 +4,4 @@ dist.zip
 .playwright/
 test-results/
 *.local
+.handoff-source.zip
