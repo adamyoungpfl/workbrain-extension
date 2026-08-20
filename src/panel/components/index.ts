@@ -25,5 +25,8 @@ export type { ToastProps } from './Toast';
 export { Sheet } from './Sheet';
 export type { SheetProps } from './Sheet';
 
+export { DeepDive } from './DeepDive';
+export type { DeepDiveProps } from './DeepDive';
+
 export { BrandMark } from './BrandMark';
 export type { BrandMarkProps } from './BrandMark';

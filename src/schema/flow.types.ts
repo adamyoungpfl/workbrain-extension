@@ -60,6 +60,17 @@ export type CueEvent =
   | 'choice' | 'type' | 'copy' | 'paste' | 'download'
   | 'attach' | 'next' | 'reflect' | 'none';
 
+/**
+ * One "deeper dive" pair: the follow-up question a person would actually ask
+ * out loud, and its answer. V1.1 VB-03. The wording lives in
+ * `src/core/flow/deepDive.ts`, keyed by question id — see that file's header
+ * for why it isn't in `src/panel/strings.ts`.
+ */
+export interface DeepDiveEntry {
+  q: string;
+  a: string;
+}
+
 export interface Step {
   id: string;
   /** module number for the progress rail; 0 = pre-flight */
@@ -71,6 +82,16 @@ export interface Step {
   /** shorter wording for a 400px panel — never edit `q` to make it fit, add this instead */
   panelQ?: Phrase;
   hint?: string;
+  /**
+   * V1.1 VB-03: follow-up questions the person can open under this one, each
+   * revealing its answer inline. Where a step has these, they REPLACE the
+   * always-visible `hint` — except for the three `voice_*` questions, whose
+   * hint is a set of worked examples that must stay visible to keep the
+   * question answerable (see core/flow/deepDive.ts's HINT_STAYS_VISIBLE).
+   * Attached by the adapter from a separate id-keyed map, never authored on
+   * the ported source questions themselves.
+   */
+  deepDive?: DeepDiveEntry[];
   kind: QuestionKind;
   /** where the answer is stored */
   key?: string;

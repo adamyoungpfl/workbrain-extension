@@ -2,6 +2,7 @@ import {
   CONTEXT_INTERVIEW_MODULES,
   CONTEXT_FILE_OUTLINE,
 } from './source';
+import { DEEP_DIVE } from './deepDive';
 import type {
   Question as SrcQuestion,
   Module as SrcModule,
@@ -17,6 +18,7 @@ import type {
   Option,
   FileOutlineNode,
   QuestionKind,
+  DeepDiveEntry,
 } from '../../schema/flow.types';
 
 /**
@@ -83,11 +85,20 @@ function sectionFor(questionId: string, indexByQuestionId: Map<string, number>):
   return index;
 }
 
+/** Everything the per-question transform needs to look up by id. Grouped
+ * rather than passed as loose parameters — VB-03 added the second lookup,
+ * and a third would otherwise mean editing four signatures again. */
+interface Lookups {
+  indexByQuestionId: Map<string, number>;
+  /** V1.1 VB-03 — per-question follow-up copy, see ./deepDive.ts. */
+  deepDive: Record<string, DeepDiveEntry[]>;
+}
+
 function adaptQuestion(
   question: SrcQuestion,
   moduleNumber: number,
   eyebrow: string,
-  indexByQuestionId: Map<string, number>,
+  { indexByQuestionId, deepDive }: Lookups,
 ): Step {
   const step: Step = {
     id: question.id,
@@ -99,6 +110,10 @@ function adaptQuestion(
   };
   if (question.type !== 'intro') step.key = question.id;
   if (question.hint !== undefined) step.hint = question.hint;
+  // Attached here, not authored on the source question — source.ts is a
+  // verbatim snapshot of the ported interview and stays that way.
+  const dive = deepDive[question.id];
+  if (dive) step.deepDive = dive;
   if (question.options) step.options = question.options.map(adaptOption);
   if (question.placeholder !== undefined) step.ph = question.placeholder;
   if (question.multiline !== undefined) step.multiline = question.multiline;
@@ -121,19 +136,19 @@ function adaptRepeatable(
   block: SrcRepeatableBlock,
   moduleNumber: number,
   eyebrow: string,
-  indexByQuestionId: Map<string, number>,
+  lookups: Lookups,
 ): RepeatableBlock {
   const result: RepeatableBlock = {
     id: block.id,
     addAnotherPrompt: block.addAnotherPrompt,
-    fields: block.questions.map((sub) => adaptQuestion(sub, moduleNumber, eyebrow, indexByQuestionId)),
+    fields: block.questions.map((sub) => adaptQuestion(sub, moduleNumber, eyebrow, lookups)),
   };
   if (block.seedFrom) result.seedFrom = block.seedFrom;
   if (block.skipIf) result.skipIf = block.skipIf;
   return result;
 }
 
-function adaptModule(module: SrcModule, indexByQuestionId: Map<string, number>): Module {
+function adaptModule(module: SrcModule, lookups: Lookups): Module {
   const eyebrow = `MODULE ${module.number} · ${module.title.toUpperCase()}`;
   return {
     id: module.id,
@@ -144,8 +159,8 @@ function adaptModule(module: SrcModule, indexByQuestionId: Map<string, number>):
     estimatedMinutes: module.estimatedMinutes,
     nodes: module.nodes.map((node) =>
       node.kind === 'repeatable'
-        ? adaptRepeatable(node, module.number, eyebrow, indexByQuestionId)
-        : adaptQuestion(node, module.number, eyebrow, indexByQuestionId),
+        ? adaptRepeatable(node, module.number, eyebrow, lookups)
+        : adaptQuestion(node, module.number, eyebrow, lookups),
     ),
   };
 }
@@ -153,10 +168,11 @@ function adaptModule(module: SrcModule, indexByQuestionId: Map<string, number>):
 export function adaptContextFlow(
   sourceModules: SrcModule[] = CONTEXT_INTERVIEW_MODULES,
   sourceOutline: SrcFileOutlineNode[] = CONTEXT_FILE_OUTLINE,
+  deepDive: Record<string, DeepDiveEntry[]> = DEEP_DIVE,
 ): { modules: Module[]; outline: FileOutlineNode[] } {
   const { indexByQuestionId } = flattenOutline(sourceOutline);
   return {
-    modules: sourceModules.map((m) => adaptModule(m, indexByQuestionId)),
+    modules: sourceModules.map((m) => adaptModule(m, { indexByQuestionId, deepDive })),
     outline: sourceOutline.map(adaptOutlineNode),
   };
 }

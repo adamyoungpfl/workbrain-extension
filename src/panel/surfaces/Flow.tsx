@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
-import { Button, Field, PillGroup, ReadOnlyBlock } from '../components';
+import { Button, DeepDive, Field, PillGroup, ReadOnlyBlock } from '../components';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import {
@@ -25,6 +25,7 @@ import {
   PROOF_GRADE_TEXT_KEY,
   PROOF_SERVICE_KEY,
 } from '../../core/flow/proofAdapter';
+import { hintStaysVisible } from '../../core/flow/deepDive';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
 import type { AnswerValue, FlowContext, Module, Option, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
@@ -102,6 +103,36 @@ function positionKey(position: Position): string {
 
 function resolvePhrase(phrase: Step['q'], ctx: FlowContext): string {
   return typeof phrase === 'function' ? phrase(ctx) : phrase;
+}
+
+/**
+ * V1.1 VB-03. A question's deep-dive replaces its always-visible hint — the
+ * hint paragraph is what the disclosure is made of, so rendering both would
+ * print the same guidance twice.
+ *
+ * The exception is the three `voice_*` questions, whose hint is a set of
+ * worked examples rather than an explanation: those samples are what make the
+ * question answerable at a glance, so they stay inline *and* the question gets
+ * a deep-dive that says something the hint doesn't. Which questions those are
+ * is data, not a condition — see core/flow/deepDive.ts's HINT_STAYS_VISIBLE.
+ */
+function showsHint(step: Step): boolean {
+  if (!step.hint) return false;
+  return !step.deepDive?.length || hintStaysVisible(step.id);
+}
+
+/** The question block's hint and deep-dive, rendered identically wherever a
+ * question is asked — including the reflect screen's "Say it again" re-ask,
+ * which is the same question and deserves the same help. */
+function QuestionHelp({ step }: { step: Step }) {
+  return (
+    <>
+      {showsHint(step) && <p className="flow-hint">{step.hint}</p>}
+      {step.deepDive && step.deepDive.length > 0 && (
+        <DeepDive idPrefix={`flow-${step.id}`} entries={step.deepDive} />
+      )}
+    </>
+  );
 }
 
 function errorFor(step: Step): string {
@@ -621,7 +652,7 @@ function StepView({
           {errorBanner}
           <p className="flow-eyebrow">{eyebrow}</p>
           <h2 className="flow-q">{questionText}</h2>
-          {step.hint && <p className="flow-hint">{step.hint}</p>}
+          <QuestionHelp step={step} />
           <div className="flow-field-sr-label">
             <Field
               id={`flow-${step.id}`}
@@ -734,7 +765,7 @@ function StepView({
           </Button>
         )}
       </div>
-      {step.hint && <p className="flow-hint">{step.hint}</p>}
+      <QuestionHelp step={step} />
 
       {step.kind === 'text' && (
         <div className="flow-field-sr-label">

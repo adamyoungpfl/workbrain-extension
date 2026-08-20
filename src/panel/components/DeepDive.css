@@ -1,0 +1,90 @@
+/* V1.1 VB-03 — the deeper-dive disclosure. Chip styling is inherited from
+   Pill.css's `.pill`; everything here is the quieting-down and the
+   open/closed treatment. */
+
+.deepdive {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 2px 0 18px;
+}
+
+/* Closed items pack side by side; an open one claims a whole row so its
+   answer renders directly beneath its own chip and never reads as belonging
+   to a neighbour. */
+.deepdive-item {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+  max-width: 100%;
+}
+.deepdive-item.is-open {
+  flex-basis: 100%;
+}
+
+.deepdive-chip {
+  font-size: 13px;
+  padding: 9px 14px;
+  color: var(--ink-2);
+  text-align: left;
+  max-width: 100%;
+}
+
+/* Open state carries three signals, not one: fill, weight, and the chevron
+   below — docs/GUARDRAILS.md, "nothing distinguished by colour alone". */
+.deepdive-chip[aria-expanded='true'] {
+  background: var(--primary-tint);
+  border-color: var(--primary);
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.deepdive-mark {
+  flex: none;
+  color: var(--ink-3);
+  transition: transform var(--fast) var(--ease);
+}
+.deepdive-mark.is-open {
+  transform: rotate(90deg);
+  color: var(--primary);
+}
+
+/* The turn is the signal, not the turning: with motion off the chevron is
+   simply already pointing down. */
+@media (prefers-reduced-motion: reduce) {
+  .deepdive-mark {
+    transition: none;
+  }
+}
+
+.deepdive-answer {
+  font-size: 14px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  margin: 0;
+  padding-left: 12px;
+  border-left: 2px solid var(--border);
+  animation: wb-deepdive-in var(--fast) var(--ease);
+}
+.deepdive-answer[hidden] {
+  display: none;
+}
+
+@keyframes wb-deepdive-in {
+  from {
+    opacity: 0;
+    transform: translateY(-2px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* The still version carries the same meaning — the answer is simply there. */
+@media (prefers-reduced-motion: reduce) {
+  .deepdive-answer {
+    animation: none;
+  }
+}

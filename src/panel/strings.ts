@@ -19,6 +19,9 @@
  *
  * DO NOT put a user-facing string in a component. `npm run audit` fails the build if you do.
  * Interview question wording does NOT live here — it is ported verbatim, see core/flow/source.ts.
+ * Nor do the per-question "deeper dive" follow-ups (V1.1 VB-03) — they are content keyed to
+ * individual question ids, not interface chrome, and live in core/flow/deepDive.ts. That file
+ * carries its own reading-level test, since `npm run audit` only measures this one.
  */
 
 export const S = {
