@@ -1,0 +1,93 @@
+/* Cue verbs — docs/design-system.html §06 (motion) is the binding source
+   for these keyframes/durations/colours; ported here rather than copied
+   from docs/prototype-v1-sidepanel.html, which CLAUDE.md forbids copying
+   code from. rgba() literals mirror --primary (42,79,203) and --violet
+   (106,63,209) at reduced alpha — the same pattern Banner.css already uses
+   for its border colours, not a new one. */
+
+.cue-sweep {
+  position: relative;
+  overflow: hidden;
+}
+.cue-sweep::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background: linear-gradient(105deg, transparent 22%, rgba(42, 79, 203, 0.16) 50%, transparent 78%);
+  animation: wb-sweep 1.25s var(--ease) infinite;
+  animation-delay: var(--cue-stagger, 0s);
+}
+@keyframes wb-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  55%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+.cue-ring {
+  animation: wb-ring 1.7s ease-in-out infinite;
+}
+@keyframes wb-ring {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(42, 79, 203, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(42, 79, 203, 0.22);
+  }
+}
+
+.cue-ring-v {
+  animation: wb-ring-v 1.7s ease-in-out infinite;
+}
+@keyframes wb-ring-v {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(106, 63, 209, 0);
+  }
+  50% {
+    box-shadow: 0 0 0 5px rgba(106, 63, 209, 0.2);
+  }
+}
+
+.cue-bob {
+  animation: wb-bob 1.4s ease-in-out infinite;
+}
+@keyframes wb-bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-3px);
+  }
+}
+
+/* The real browser's own reduced-motion switch — belt-and-braces alongside
+   the inline styles verbs.ts sets directly (see that file's top comment for
+   why both exist). Values match design-system.html §06 exactly, plus a
+   `.cue-bob` still-mark this codebase's own accessibility floor requires
+   and the design doc's literal CSS doesn't provide — see verbs.ts's `bob`. */
+@media (prefers-reduced-motion: reduce) {
+  .cue-sweep::after {
+    animation: none;
+    opacity: 0.5;
+  }
+  .cue-ring {
+    animation: none;
+    box-shadow: 0 0 0 4px rgba(42, 79, 203, 0.2);
+  }
+  .cue-ring-v {
+    animation: none;
+    box-shadow: 0 0 0 4px rgba(106, 63, 209, 0.18);
+  }
+  .cue-bob {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--primary-tint);
+  }
+}

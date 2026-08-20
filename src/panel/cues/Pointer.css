@@ -1,0 +1,78 @@
+/* The `point` verb's overlay — behaviour ported from
+   docs/prototype-v1-sidepanel.html as a *reference*, not its code (CLAUDE.md
+   forbids that): recoloured onto this system's own tokens (--primary in
+   place of the prototype's violet "earned" accent) rather than reusing its
+   literal values. */
+
+.cue-pointer-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 40;
+}
+.cue-pointer-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.cue-pointer-path {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 1.6;
+  stroke-dasharray: 5 5;
+  stroke-linecap: round;
+  filter: drop-shadow(0 0 6px rgba(42, 79, 203, 0.35));
+  animation: wb-pointer-dash 22s linear infinite;
+}
+@keyframes wb-pointer-dash {
+  to {
+    stroke-dashoffset: -400;
+  }
+}
+/* The ring's animation only ever varies its radius/opacity, which are SVG
+   presentation attributes set directly in Pointer.tsx (r="10") — so turning
+   the animation off leaves the ring exactly where those attributes put it:
+   a plain, static, fully visible circle. Nothing extra needed here for the
+   "still visibly marks its target" requirement, unlike the class-based
+   verbs in verbs.css. */
+.cue-pointer-ring {
+  fill: none;
+  stroke: var(--primary);
+  stroke-width: 1.6;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: wb-pointer-ring 1.7s ease-out infinite;
+}
+@keyframes wb-pointer-ring {
+  0% {
+    r: 10;
+    opacity: 0.9;
+  }
+  70%,
+  100% {
+    r: 30;
+    opacity: 0;
+  }
+}
+.cue-pointer-label {
+  position: absolute;
+  transform: translate(-50%, -140%);
+  white-space: nowrap;
+  background: var(--ink);
+  color: var(--ink-inv);
+  border-radius: var(--r-sm);
+  padding: 5px 10px;
+  font-size: 12px;
+  box-shadow: var(--e-3);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cue-pointer-path {
+    animation: none;
+  }
+  .cue-pointer-ring {
+    animation: none;
+  }
+}
