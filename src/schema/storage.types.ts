@@ -5,7 +5,10 @@ export interface Meta { schemaVersion: number; installedAt: string; }
 export interface Answers {
   values: Record<string, import('./flow.types').AnswerValue>;
   repeatables: Record<string, Record<string, import('./flow.types').AnswerValue>[]>;
-  /** ISO date per question id — this is what freshness clocks read */
+  /** ISO date per question id for top-level answers; for a repeatable field,
+   * keyed `${blockId}#${recordIndex}#${fieldKey}` instead, since a plain
+   * field key would collide across records. This is what freshness clocks
+   * read. See docs/ARCHITECTURE.md, "wb:answers, precisely". */
   answeredAt: Record<string, string>;
 }
 

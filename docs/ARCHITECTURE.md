@@ -69,6 +69,25 @@ data by month four and starts telling people untrue things about their own file.
 | `wb:packs` | `{ url, revision, cachedAt, skills }[]` | Last good copy kept |
 | `wb:report` | Baseline metrics + score history | Small, derived once, then appended |
 
+### `wb:answers`, precisely
+
+Established by `core/flow/runner.ts` (R1-06), which is the only code that writes this key:
+
+- A value of `null` means **explicitly skipped** — distinct from the key being absent, which means
+  never reached. Position-finding depends on this distinction (a skipped question must not be
+  re-asked on every render) — see `findPosition`.
+- Repeatable records live in `Answers.repeatables[blockId]`, an array of `Record<fieldKey,
+  AnswerValue>`. A record can exist at an index before every field in it is answered — the array
+  is extended field-by-field, not pre-allocated.
+- `Answers.answeredAt` is keyed by plain question id for top-level answers, but by
+  `` `${blockId}#${recordIndex}#${fieldKey}` `` for repeatable fields — a plain field key would
+  collide across records (e.g. every `entities` record has an `entity_name`). Anything reading
+  `answeredAt` for freshness (R1-12+) needs to know about this compound form for repeatable-sourced
+  content.
+- **Which question is "current" is never stored.** It's recomputed from this data on every render
+  by walking the flow's modules for the first unanswered, non-`skipIf`'d node — see
+  `findPosition` in `core/flow/runner.ts`, and "Nothing derived is stored" below.
+
 `chrome.storage.sync` — **preferences only**. It caps near 100 KB total with an 8 KB per-item limit,
 so it cannot hold a context file. Never put answers here.
 

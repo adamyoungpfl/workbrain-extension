@@ -52,8 +52,18 @@ panel document as an ordinary page instead — `chrome-extension://<id>/panel.ht
 the same code with the same APIs. Set the viewport to 400px wide so layout assertions are real.
 Reserve true panel-opening for a manual smoke checklist.
 
+**Test hooks in the DOM.** `Flow.tsx` (R1-06) renders `data-position="step" | "add-another"` and
+`data-step-id="<id>"` on its root `<form>` — not user-facing, purely so a spec can tell apart two
+things that render identically (a real `yesno` question and an "add another?" prompt both show as
+two pills, Yes/No) without guessing from text content, and can drive a full pass generically
+instead of hardcoding question wording (`tests/e2e/flow.spec.ts` does this — it imports
+`contextModules` directly rather than hardcoding order/count). Extend this pattern rather than
+inventing a new one per surface — e.g. a future Reflect-step spec should get its own
+`data-position="reflect"`, not a fresh ad hoc hook.
+
 Integration must cover:
-- A full pass through the Context interview to a generated file, keyboard only.
+- A full pass through the Context interview to a generated file, keyboard only. (R1-06 covers the
+  keyboard-only pass itself; "to a generated file" completes once R1-09/R1-10 exist.)
 - Import of a file previously exported, producing the same answers.
 - A site whose composer selector is missing: the posture silently falls back to manual and
   **no error is shown**. Assert the absence of an error, explicitly.
