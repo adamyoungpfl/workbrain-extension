@@ -38,7 +38,15 @@ export const S = {
   stepOf: (n: number, total: number) => `Step ${n} of ${total}`,
 
   // ---------------------------------------------------------------- flow runner
-  questionOf: (n: number, total: number, module: string) => `Question ${n} of ${total} · ${module}`,
+  /**
+   * V1.1 VB-02. Never rendered on screen — this is the `aria-valuetext` of the
+   * flow's progress bar and nothing else (see components/FlowProgress.tsx).
+   * The bar replaced a printed "Question 12 of 38 · About Me" breadcrumb: the
+   * count invited arithmetic instead of an answer. Taking a number off the
+   * screen is a design decision; taking it away from a screen reader would be
+   * a bug, so it lives on here.
+   */
+  questionOfSr: (n: number, total: number) => `Question ${n} of ${total}`,
   back: 'Back',
   next: 'Next',
   skip: 'Skip',

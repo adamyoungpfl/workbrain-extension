@@ -1,0 +1,42 @@
+/* V1.1 VB-02 — the module title and its bar, where the "Question N of Total"
+   breadcrumb used to sit. Deliberately quiet: this is orientation, not the
+   thing on the screen worth reading first. */
+
+.flowprogress {
+  margin: 0 0 10px;
+}
+
+/* Same treatment the old `.flow-eyebrow` carried, so nothing else on the
+   screen shifts: 12px, uppercase, --ink-3 (4.7:1 on --canvas). */
+.flowprogress-title {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 7px;
+}
+
+.flowprogress-track {
+  height: 3px;
+  border-radius: var(--r-pill);
+  background: var(--sunken);
+  overflow: hidden;
+}
+
+/* --ink-3 on --sunken is 4.1:1, comfortably past the 3:1 floor for a
+   non-text graphic — the bar has to be readable at 3px tall, and a tint
+   would leave "how far along" as a guess. Neutral on purpose: see
+   FlowProgress.tsx on why none of the semantic colours are spent here. */
+.flowprogress-fill {
+  display: block;
+  height: 100%;
+  border-radius: var(--r-pill);
+  background: var(--ink-3);
+}
+
+/* No transition, deliberately. `Flow` remounts `StepView` per position (see
+   its `key={positionKey(position)}`), so this element is new on every
+   question and mounts already at the right width — an animation here would
+   be code that can never run, and `prefers-reduced-motion` would have
+   nothing to honour. */

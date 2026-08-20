@@ -19,6 +19,9 @@ export type { BannerProps, BannerVariant } from './Banner';
 export { Meter } from './Meter';
 export type { MeterProps, MeterStepData } from './Meter';
 
+export { FlowProgress } from './FlowProgress';
+export type { FlowProgressProps } from './FlowProgress';
+
 export { Toast } from './Toast';
 export type { ToastProps } from './Toast';
 

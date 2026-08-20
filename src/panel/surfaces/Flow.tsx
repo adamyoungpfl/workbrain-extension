@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
-import { Button, DeepDive, Field, PillGroup, ReadOnlyBlock } from '../components';
+import { Button, DeepDive, Field, FlowProgress, PillGroup, ReadOnlyBlock } from '../components';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import {
@@ -512,7 +512,17 @@ function StepView({
     }
   }
 
-  const eyebrow = S.questionOf(topLevelIndex(modules, pos), total, moduleFor(modules, pos)?.title ?? '');
+  // V1.1 VB-02: what used to be a "Question 12 of 38 · About Me" string is now
+  // the module's title over a bar. Same two numbers, same single derivation —
+  // only the rendering changed. Built once here and reused by every branch
+  // below, exactly as the string it replaced was.
+  const progress = (
+    <FlowProgress
+      title={moduleFor(modules, pos)?.title ?? ''}
+      current={topLevelIndex(modules, pos)}
+      total={total}
+    />
+  );
 
   if (pos.kind === 'add-another') {
     const options: PillOption[] = [
@@ -529,7 +539,7 @@ function StepView({
         }}
       >
         {errorBanner}
-        <p className="flow-eyebrow">{eyebrow}</p>
+        {progress}
         <h2 className="flow-q">{pos.block.addAnotherPrompt}</h2>
         <PillGroup
           legend={pos.block.addAnotherPrompt}
@@ -604,7 +614,7 @@ function StepView({
       return (
         <div className="flow" data-position="reflect" data-step-id={step.id}>
           {errorBanner}
-          <p className="flow-eyebrow">{eyebrow}</p>
+          {progress}
           <h2 className="flow-q">{S.reflectTighten}</h2>
           <ReadOnlyBlock tag={S.reflectPromptTag}>{builtPrompt}</ReadOnlyBlock>
           <form
@@ -650,7 +660,7 @@ function StepView({
           }}
         >
           {errorBanner}
-          <p className="flow-eyebrow">{eyebrow}</p>
+          {progress}
           <h2 className="flow-q">{questionText}</h2>
           <QuestionHelp step={step} />
           <div className="flow-field-sr-label">
@@ -683,7 +693,7 @@ function StepView({
     return (
       <div className="flow" data-position="reflect" data-step-id={step.id}>
         {errorBanner}
-        <p className="flow-eyebrow">{eyebrow}</p>
+        {progress}
         <h2 className="flow-q">{S.reflectHeading}</h2>
         <p className="flow-hint">{S.reflectSub}</p>
         <ReadOnlyBlock tag={step.interpret?.reflectPrefix ?? ''}>{raw}</ReadOnlyBlock>
@@ -745,7 +755,7 @@ function StepView({
       }}
     >
       {errorBanner}
-      <p className="flow-eyebrow">{eyebrow}</p>
+      {progress}
       {/* VB-04: the rephrase control sits beside the question, as a sibling of
           the heading rather than inside it — putting a button inside <h2>
           would fold its label into the heading's accessible name and change

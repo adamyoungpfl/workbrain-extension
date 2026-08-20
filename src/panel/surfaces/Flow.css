@@ -5,14 +5,9 @@
   gap: 4px;
 }
 
-.flow-eyebrow {
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  margin: 0 0 10px;
-}
+/* V1.1 VB-02 removed `.flow-eyebrow` — the "Question N of Total · Module"
+   breadcrumb it styled is now components/FlowProgress.tsx, which carries the
+   same 12px uppercase treatment for the module title. */
 
 .flow-q {
   font-size: 22px;
