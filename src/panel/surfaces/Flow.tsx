@@ -84,8 +84,20 @@ const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, re
  * width is 2 here rather than PERSON_ICON's 1.8 because this glyph has four
  * marks inside the same 17px box instead of two, and 1.8 lets the arc's tail
  * fade out on a 1x display.
+ *
+ * The two groups are the animation, not the drawing: the shape is identical
+ * to the static version this replaced — same four marks, same path data, same
+ * stroke — but "spin and swap" (VB-04, decided from a prototype) moves the
+ * ring and the mark against each other, so they have to be separately
+ * addressable. Presentation attributes stay on the <svg> root and inherit
+ * straight through the groups, so grouping changes nothing about how it
+ * renders. Everything the groups then do lives in Flow.css.
+ *
+ * Exported for its unit test — the path data is a transcription, and a test
+ * that it is still character-for-character the drawn one is the only thing
+ * that catches a digit lost in a refactor.
  */
-const REPHRASE_ICON = (
+export const REPHRASE_ICON = (
   <svg
     width="17"
     height="17"
@@ -97,12 +109,46 @@ const REPHRASE_ICON = (
     strokeLinejoin="round"
     aria-hidden="true"
   >
-    <path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1" />
-    <path d="M20.9 3.6v4.6h-4.6" />
-    <path d="M9.6 9.7a2.5 2.5 0 1 1 2.7 2.8v1.4" />
-    <circle cx="12.3" cy="16.9" r="1.05" fill="currentColor" stroke="none" />
+    {/* the arc and its arrowhead — the half that says "again" */}
+    <g className="rephrase-ring">
+      <path d="M20.5 12a8.5 8.5 0 1 1-2.6-6.1" />
+      <path d="M20.9 3.6v4.6h-4.6" />
+    </g>
+    {/* the question mark and its dot — the half that says "different words" */}
+    <g className="rephrase-mark">
+      <path d="M9.6 9.7a2.5 2.5 0 1 1 2.7 2.8v1.4" />
+      <circle cx="12.3" cy="16.9" r="1.05" fill="currentColor" stroke="none" />
+    </g>
   </svg>
 );
+
+/**
+ * The class Flow.css hangs VB-04's press cue on. It sits on the *button*, not
+ * on the glyph, because the reduced-motion equivalent is a fill on the button
+ * itself — one class then drives both forms of the same cue, and there is no
+ * state in which one is applied and the other is not.
+ */
+export const REPHRASE_CUE_CLASS = 'is-rephrasing';
+
+/**
+ * Plays VB-04's press cue, from the start, however recently it last played.
+ *
+ * Rephrase is a control people press repeatedly — that is its whole purpose —
+ * so the interesting case is the press that lands mid-flight. Simply leaving
+ * the class on does nothing at all the second time: the animation is already
+ * running and the browser has no reason to restart it. Removing it and adding
+ * it back in the same task does nothing either, because style changes are
+ * batched and the browser only ever sees the end state, which is unchanged.
+ * Reading a layout property in between forces the removal to be committed
+ * first, so the re-add is genuinely a new animation. That is the whole trick,
+ * and it is why the fourth press feels the same as the first rather than
+ * queueing behind three others.
+ */
+export function restartRephraseCue(button: HTMLElement): void {
+  button.classList.remove(REPHRASE_CUE_CLASS);
+  void button.offsetWidth;
+  button.classList.add(REPHRASE_CUE_CLASS);
+}
 
 function positionKey(position: Position): string {
   if (position.kind === 'done') return 'done';
@@ -821,8 +867,18 @@ function StepView({
   // to answer, and hiding the question behind a timer would make it harder.
   const beats = step.kind === 'intro' && step.beats?.length ? step.beats : null;
 
-  function cycleRephrase() {
+  /**
+   * The wording changes and the glyph plays its cue. The button element comes
+   * from the event rather than a ref: it is the element the cue belongs to,
+   * it is already in hand, and the class is applied straight to the DOM
+   * because a React state round-trip cannot express "this again, from the
+   * start" — the same value re-rendered is, to React, no change at all.
+   * Safe here because nothing else ever rewrites this button's className:
+   * `variant`, `className` and the rest are constants at this call site.
+   */
+  function cycleRephrase(button: HTMLButtonElement) {
     setRephraseIndex((i) => (i + 1) % (rephrasings.length + 1));
+    restartRephraseCue(button);
   }
 
   const pillOptions: PillOption[] =
@@ -873,7 +929,7 @@ function StepView({
               className="flow-rephrase"
               aria-label={S.rephrase}
               title={S.rephrase}
-              onClick={cycleRephrase}
+              onClick={(e) => cycleRephrase(e.currentTarget)}
             >
               {REPHRASE_ICON}
             </Button>

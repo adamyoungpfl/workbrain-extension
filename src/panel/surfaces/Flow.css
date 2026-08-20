@@ -91,6 +91,95 @@
   margin-top: -8px;
 }
 
+/* VB-04's press cue — "spin and swap". The ring turns once ("again") while the
+   question mark dips out and comes back ("different words"), which together
+   say what the button did: same question, other wording. Both halves run for
+   --base (200ms), the system's default for anything that moves, on --ease,
+   its only curve. The frame values are the product owner's, chosen from an
+   interactive prototype (docs/V1.1-REFINEMENT.md) — not re-derived here.
+
+   `transform-box: view-box` is what makes the origins below mean what they
+   say. Left to default, each group's transform would resolve against its own
+   bounding box, so the ring would swing around the arc's middle rather than
+   turning about the circle's centre, and the mark would shrink towards its
+   own corner. Pinned to the view box, `12px 12px` is the ring's centre and
+   `12px 13px` is the mark's, in the 24-unit drawing's own coordinates,
+   whatever pixel size the glyph is rendered at. */
+.flow-rephrase .rephrase-ring,
+.flow-rephrase .rephrase-mark {
+  transform-box: view-box;
+}
+.flow-rephrase .rephrase-ring {
+  transform-origin: 12px 12px;
+}
+.flow-rephrase .rephrase-mark {
+  transform-origin: 12px 13px;
+}
+
+@keyframes rephrase-ring-spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Out at 45% and back. The opacity dip is what keeps the shrink from reading
+   as "smaller"; together they read as the mark being swapped for another one. */
+@keyframes rephrase-mark-swap {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  45% {
+    transform: scale(0.62);
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* No fill mode on purpose: both keyframe sets end exactly where the still
+   glyph sits, so the cue leaves nothing behind and the class can stay on the
+   button between presses. Flow.tsx's restartRephraseCue is what makes a press
+   during a press start over rather than be ignored. */
+.flow-rephrase.is-rephrasing .rephrase-ring {
+  animation: rephrase-ring-spin var(--base) var(--ease);
+}
+.flow-rephrase.is-rephrasing .rephrase-mark {
+  animation: rephrase-mark-swap var(--base) var(--ease);
+}
+
+/* Reduced motion is not "no feedback" (docs/design-system.html §06): a control
+   that does nothing visible when pressed reads as broken. Nothing moves — no
+   rotation, no scale — and the press instead lands as an instant accent fill
+   on the button. The keyframes hold one value from end to end, so there is no
+   fade in and no fade out, just on and then off; `backwards` puts the accent
+   up on the very first style pass rather than a frame later. --slow is the
+   hold, long enough to be seen and short enough not to look like a new
+   resting state; the spec fixes the change as instant, not its length.
+   The wording change beside it is the substantive feedback in both forms, so
+   nothing here is carried by colour alone. */
+@media (prefers-reduced-motion: reduce) {
+  .flow-rephrase.is-rephrasing .rephrase-ring,
+  .flow-rephrase.is-rephrasing .rephrase-mark {
+    animation: none;
+  }
+  .flow-rephrase.is-rephrasing {
+    animation: rephrase-confirm var(--slow) var(--ease) backwards;
+  }
+  @keyframes rephrase-confirm {
+    from,
+    to {
+      background: var(--primary-tint);
+      color: var(--primary);
+    }
+  }
+}
+
 .flow-error {
   font-size: 13px;
   color: var(--danger);
