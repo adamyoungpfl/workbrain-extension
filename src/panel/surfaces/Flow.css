@@ -93,33 +93,6 @@
   min-height: 240px;
 }
 
-/* R1-10 download/import */
-.flow-done-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 10px;
-  margin-top: 20px;
-  width: 100%;
-  max-width: 280px;
-}
-
-/* Standard visually-hidden trick, same technique as .flow-field-sr-label
-   above — kept out of the tab order too (tabIndex/aria-hidden on the
-   element itself) since the visible Button is the only accessible way to
-   reach it; see FlowDone.tsx. */
-.flow-file-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-  padding: 0;
-  margin: -1px;
-}
-
 /* R1-11 proof loop */
 .flow-scores {
   display: grid;

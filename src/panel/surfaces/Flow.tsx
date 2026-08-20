@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useLayoutEffect, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { Button, Field, PillGroup, ReadOnlyBlock } from '../components';
 import type { PillOption } from '../components';
@@ -33,11 +33,29 @@ import './Flow.css';
 
 export interface FlowProps {
   modules: Module[];
-  /** What to show once every step in `modules` is answered. Each flow owns
-   * its own — the Context flow's is Context.md generate/download/import
-   * (R1-09/R1-10, see App.tsx), and that machinery has no meaning for the
-   * proof loop (R1-11) or any future flow, so `Flow` no longer hardcodes it. */
-  renderDone: (answers: Answers, persist: (next: Answers) => Promise<boolean>) => ReactNode;
+  /** What to show once every step in `modules` is answered, for a flow that
+   * ends with its own screen (the proof loop's recommendations recap, R1-11).
+   * Ignored when `onDone` is given — see `onDone`. */
+  renderDone?: (answers: Answers, persist: (next: Answers) => Promise<boolean>) => ReactNode;
+  /**
+   * R1-12: for a flow whose "done" state has no screen of its own — the
+   * Context flow specifically — hand off to Home instead, which is now the
+   * one place both a fresh open *and* a just-finished interview land (see
+   * docs/ARCHITECTURE.md and App.tsx). Fires once, as soon as `findPosition`
+   * resolves to `done`, via `useLayoutEffect` so the switch happens before
+   * paint rather than flashing a "done" screen for one frame first. Does
+   * NOT fire while the most recent save is still failed — see the
+   * `saveError` branch below, which keeps the person on a screen that shows
+   * the failure instead of silently carrying them past it (docs/GUARDRAILS.md's
+   * degradation table: a storage failure must never lose an answer quietly).
+   */
+  onDone?: (() => void) | undefined;
+  /** R1-12: deep-links into a specific position instead of the derived
+   * "first thing left to do" — e.g. Home's next-move card sending the
+   * person straight back to an already-answered `role_durability` field.
+   * Exactly the same mechanism `goBack` already uses to view a prior
+   * position (`viewing`, below) — this is just its initial value. */
+  initialPosition?: Position | undefined;
 }
 
 const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
@@ -85,12 +103,21 @@ function scoreSubStep(key: string): Step {
  * everything specific to the question on screen lives in `StepView`, mounted
  * fresh per position via `key` — see its own comment for why.
  */
-export function Flow({ modules, renderDone }: FlowProps) {
+export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [declinedBlocks, setDeclinedBlocks] = useState<ReadonlySet<string>>(new Set());
   const [history, setHistory] = useState<Position[]>([]);
-  const [viewing, setViewing] = useState<Position | null>(null);
+  const [viewing, setViewing] = useState<Position | null>(initialPosition ?? null);
   const [saveError, setSaveError] = useState(false);
+  // R1-12: whether the most recent `persist` is still in flight. `onDone`
+  // hands off to Home, which loads `wb:answers` fresh from storage on its
+  // own mount rather than being handed this component's in-memory state —
+  // redirecting the instant `position` turns 'done' (i.e. as soon as
+  // `setAnswersState` runs, synchronously, well before the `chrome.storage`
+  // write it's paired with actually resolves) would let Home read stale
+  // data and silently miss the very last answer. Gating the redirect on this
+  // closes that race without Home needing to know or care that it exists.
+  const [savePending, setSavePending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -112,8 +139,10 @@ export function Flow({ modules, renderDone }: FlowProps) {
 
   async function persist(next: Answers): Promise<boolean> {
     setAnswersState(next);
+    setSavePending(true);
     const result = await setLocal('wb:answers', next);
     setSaveError(!result.ok);
+    setSavePending(false);
     return result.ok;
   }
 
@@ -146,6 +175,15 @@ export function Flow({ modules, renderDone }: FlowProps) {
   }
 
   if (position.kind === 'done') {
+    // Never hand off while the last write is still in flight — see
+    // `savePending`'s own comment on the race that closes.
+    if (savePending) return null;
+    // The common path: hand off to Home immediately, before paint — see
+    // `onDone`'s own doc comment on why this is a layout effect and why it
+    // never fires while `saveError` is set.
+    if (onDone && !saveError) {
+      return <DoneRedirect onDone={onDone} />;
+    }
     return (
       <div className="flow flow-done">
         {saveError && (
@@ -153,7 +191,13 @@ export function Flow({ modules, renderDone }: FlowProps) {
             {S.errSaveFailed}
           </div>
         )}
-        {renderDone(ans, persist)}
+        {renderDone
+          ? renderDone(ans, persist)
+          : onDone && (
+              <Button type="button" variant="primary" onClick={onDone}>
+                {S.backToFiles}
+              </Button>
+            )}
       </div>
     );
   }
@@ -172,6 +216,17 @@ export function Flow({ modules, renderDone }: FlowProps) {
       onAddAnotherDecision={(blockId, wantsMore) => handleAddAnotherDecision(position, blockId, wantsMore)}
     />
   );
+}
+
+/** Fires `onDone` once, before paint, and renders nothing — see `onDone`'s
+ * doc comment on `FlowProps`. A separate component (rather than an effect
+ * inline in `Flow`) because a hook can't be called conditionally, and this
+ * path is only reached for a subset of renders (`position.kind === 'done'`). */
+function DoneRedirect({ onDone }: { onDone: () => void }) {
+  useLayoutEffect(() => {
+    onDone();
+  }, [onDone]);
+  return null;
 }
 
 /**

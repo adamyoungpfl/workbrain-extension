@@ -25,11 +25,16 @@ async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker;
   return { context, sw, id };
 }
 
+/** R1-12: Download/Import (`FileActions`) now live on Home, not on the
+ * Context flow's own "done" screen — Home replaced that screen entirely as
+ * the place a finished interview lands (see App.tsx / Flow.tsx's `onDone`).
+ * They're always visible there, not gated behind reaching "done" — see
+ * FileActions.tsx's own header comment on why. */
 async function openPanel(context: BrowserContext, id: string): Promise<Page> {
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
-  await page.waitForSelector('.flow');
+  await page.waitForSelector('.home');
   return page;
 }
 
@@ -145,7 +150,7 @@ test.describe('Download and import (R1-10)', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await expect(page.locator('.flow-done')).toBeVisible();
+    await expect(page.locator('.home')).toBeVisible();
 
     // --- export -----------------------------------------------------
     const downloadButton = page.getByRole('button', { name: 'Download your file', exact: true });
@@ -171,14 +176,14 @@ test.describe('Download and import (R1-10)', () => {
     const clearedCheck = await sw.evaluate(() => chrome.storage.local.get('wb:answers'));
     expect(clearedCheck['wb:answers']).toBeUndefined();
 
-    // --- import (still the same mounted done screen — see this file's
-    // header comment on why no reload happens between clear and import).
-    // The visible Button calls the hidden <input type=file>'s own .click()
-    // (FlowDone.tsx) — in a real, headed browser that opens the OS's native
-    // file chooser, which Playwright must intercept via the 'filechooser'
-    // event rather than driving `setInputFiles` on the input directly, or
-    // the still-open native dialog leaves the page never receiving a
-    // 'change' event at all. ---
+    // --- import (still the same mounted Home — no reload happens between
+    // clear and import). The visible Button calls the hidden
+    // <input type=file>'s own .click() (FileActions.tsx) — in a real,
+    // headed browser that opens the OS's native file chooser, which
+    // Playwright must intercept via the 'filechooser' event rather than
+    // driving `setInputFiles` on the input directly, or the still-open
+    // native dialog leaves the page never receiving a 'change' event at
+    // all. ---
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
       page.getByRole('button', { name: 'I already have a file', exact: true }).click(),
@@ -219,10 +224,10 @@ test.describe('Download and import (R1-10)', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await expect(page.locator('.flow-done')).toBeVisible();
+    await expect(page.locator('.home')).toBeVisible();
 
     await page.getByRole('button', { name: 'I already have a file', exact: true }).click();
-    await page.locator('.flow-file-input').setInputFiles({
+    await page.locator('.file-actions-input').setInputFiles({
       name: 'notes.txt',
       mimeType: 'text/plain',
       buffer: Buffer.from('just some notes, not a Context.md'),
@@ -242,10 +247,10 @@ test.describe('Download and import (R1-10)', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await expect(page.locator('.flow-done')).toBeVisible();
+    await expect(page.locator('.home')).toBeVisible();
 
     await page.getByRole('button', { name: 'I already have a file', exact: true }).click();
-    await page.locator('.flow-file-input').setInputFiles({
+    await page.locator('.file-actions-input').setInputFiles({
       name: 'Context.md',
       mimeType: 'text/markdown',
       buffer: Buffer.from('# Context.md\n\nSomeone hand-edited this and deleted the grounding rule.\n'),

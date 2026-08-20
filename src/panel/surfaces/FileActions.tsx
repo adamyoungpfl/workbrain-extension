@@ -6,15 +6,14 @@ import { parseContextFile } from '../../core/files/parse';
 import { buildImportedAnswers } from '../../core/files/restore';
 import type { Answers } from '../../schema/storage.types';
 import { S } from '../strings';
+import './FileActions.css';
 
-export interface FlowDoneProps {
+export interface FileActionsProps {
   answers: Answers;
-  /** Flow's own `persist` — same function StepView commits answers through,
-   * so a failed write here degrades exactly the way a failed write
-   * anywhere else in the panel does (docs/GUARDRAILS.md's degradation
-   * table: keep the in-memory state, tell them plainly, offer the
-   * download — Flow already renders `errSaveFailed` off the same
-   * `saveError` state this sets). Returns whether the write actually
+  /** Home's own `persist` (setLocal 'wb:answers'), so a failed write here
+   * degrades exactly the way a failed write anywhere else in the panel does
+   * (docs/GUARDRAILS.md's degradation table: keep the in-memory state, tell
+   * them plainly, offer the download). Returns whether the write actually
    * succeeded, so the toast here only ever confirms a real save. */
   onImport: (next: Answers) => Promise<boolean>;
 }
@@ -26,18 +25,25 @@ function todayLong(): string {
 }
 
 /**
- * R1-10: download the built Context.md, and bring a previously downloaded
- * one back in. Both are DOM-only (Blob/URL/anchor, FileReader/<input
- * type=file>) — the string-in/string-out half (generate/parse) is core/,
- * already built at R1-09. Lives on Flow's `done` branch because Home
- * doesn't exist until R1-12 and this is the only real surface today — see
- * docs/RELEASE-1.md's R1-10 plan. Scoped to the Context flow specifically
- * (not generic across whatever `modules` Flow was given): `generateContextFile`/
- * `parseContextFile`/`buildImportedAnswers` all default to the real
- * `contextModules`, matching their own established pattern, since a
- * Context.md is the only file format R1-09 built a generator/parser for.
+ * R1-10's download/import, R1-12's backup story hosted on Home: download the
+ * built Context.md, and bring a previously downloaded one back in. Both are
+ * DOM-only (Blob/URL/anchor, FileReader/<input type=file>) — the
+ * string-in/string-out half (generate/parse) is core/, already built at
+ * R1-09.
+ *
+ * Originally lived on the Context flow's own `done` screen (see git history
+ * — this file was `FlowDone.tsx`) because Home didn't exist until R1-12.
+ * Moved here, and made always-visible rather than gated behind finishing
+ * the interview, because the backup story this is (R1-10's own accept line:
+ * "treat a failure here as a release blocker") shouldn't require finishing
+ * every question first — a half-finished file is still worth a copy.
+ * Scoped to the Context flow specifically (not generic across whatever
+ * `modules` a `Flow` might render): `generateContextFile`/`parseContextFile`/
+ * `buildImportedAnswers` all default to the real `contextModules`, matching
+ * their own established pattern, since a Context.md is the only file format
+ * R1-09 built a generator/parser for.
  */
-export function FlowDone({ answers, onImport }: FlowDoneProps) {
+export function FileActions({ answers, onImport }: FileActionsProps) {
   const [downloaded, setDownloaded] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -93,7 +99,7 @@ export function FlowDone({ answers, onImport }: FlowDoneProps) {
       const restored = buildImportedAnswers(parsed.answers, new Date().toISOString());
       const answerCount = Object.keys(restored.answeredAt).length;
       void onImport(restored).then((ok) => {
-        if (!ok) return; // Flow's own saveError banner already covers this — nothing more to say here.
+        if (!ok) return; // Home's own saveError handling already covers this — nothing more to say here.
         setImportError(null);
         setToastMessage(S.toastImported(answerCount));
       });
@@ -102,9 +108,9 @@ export function FlowDone({ answers, onImport }: FlowDoneProps) {
   }
 
   return (
-    <div className="flow-done-actions">
+    <div className="file-actions">
       {importError && (
-        <div role="alert" className="flow-error">
+        <div role="alert" className="file-actions-error">
           {importError}
         </div>
       )}
@@ -118,7 +124,7 @@ export function FlowDone({ answers, onImport }: FlowDoneProps) {
         ref={fileInputRef}
         type="file"
         accept=".md,text/markdown"
-        className="flow-file-input"
+        className="file-actions-input"
         tabIndex={-1}
         aria-hidden="true"
         aria-label={S.importPick}

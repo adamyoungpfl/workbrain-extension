@@ -26,22 +26,27 @@ async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker;
   return { context, sw, id };
 }
 
+/** R1-12: the Context flow's own "done" screen no longer exists — Home
+ * replaced it (see App.tsx / Flow.tsx's `onDone`), and the proof loop's own
+ * entry point ("Prove it works") moved there with it. See flow.spec.ts's
+ * header comment on the same routing change. */
 async function openPanel(context: BrowserContext, id: string): Promise<Page> {
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
-  await page.waitForSelector('.flow');
+  await page.waitForSelector('.home');
   return page;
 }
 
 /**
  * A minimal "the Context interview is already done" fixture, so this spec
- * can reach the proof loop's own entry point (the "Prove it works" button
- * on the Context flow's done screen) without re-walking all ~40 Context
- * questions itself — download-import.spec.ts's own `buildDoneAnswers` does
- * the same thing for the same reason, and is duplicated rather than
- * imported, matching this repo's established "each spec file stays
- * self-contained" convention (see reflect.spec.ts's own header comment).
+ * can reach the proof loop's own entry point (Home's "Prove it works"
+ * button, shown once there's any real progress — see Home.tsx) without
+ * re-walking all ~40 Context questions itself — download-import.spec.ts's
+ * own `buildDoneAnswers` does the same thing for the same reason, and is
+ * duplicated rather than imported, matching this repo's established "each
+ * spec file stays self-contained" convention (see reflect.spec.ts's own
+ * header comment).
  */
 function buildDoneAnswers(modules: Module[]): Answers {
   const now = new Date().toISOString();
@@ -126,10 +131,11 @@ test.describe('The proof loop (R1-11)', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await expect(page.locator('.flow-done')).toBeVisible();
+    await expect(page.locator('.home')).toBeVisible();
 
-    // --- entry point: the Context flow's done screen offers the proof loop,
-    // reached keyboard-only (CLAUDE.md's definition of done) ---
+    // --- entry point: Home offers the proof loop once there's any real
+    // progress to prove (Home.tsx), reached keyboard-only (CLAUDE.md's
+    // definition of done) ---
     await page.getByRole('button', { name: 'Prove it works', exact: true }).focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_service');

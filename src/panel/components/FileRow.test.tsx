@@ -43,4 +43,18 @@ describe('FileRow', () => {
     click(btn);
     expect(onClick).not.toHaveBeenCalled();
   });
+
+  it('renders as a real external link, not a button, when given an href', () => {
+    const { container } = mount(
+      <FileRow name="Talk to a person" subtitle="Coaching, or help for your team" href="https://www.model-citizen.org/contact" />,
+    );
+    expect(container.querySelector('button')).toBeNull();
+    const link = container.querySelector('a')!;
+    expect(link).not.toBeNull();
+    expect(link.getAttribute('href')).toBe('https://www.model-citizen.org/contact');
+    expect(link.getAttribute('target')).toBe('_blank');
+    expect(link.getAttribute('rel')).toBe('noopener noreferrer');
+    expect(link.textContent).toContain('Talk to a person');
+    expect(link.className).toContain('filerow');
+  });
 });

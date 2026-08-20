@@ -21,12 +21,18 @@ async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
   return { context, page };
 }
 
+/** R1-12: Home is the surface a fresh open lands on — see flow.spec.ts's
+ * own header comment on this same change, kept duplicated here per this
+ * repo's established "each spec file stays self-contained" convention. */
 async function openPanel(context: BrowserContext): Promise<Page> {
   const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
   const id = new URL(sw.url()).host;
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
+  await page.waitForSelector('.home');
+  await page.getByRole('button', { name: /Context\.md/ }).focus();
+  await page.keyboard.press('Enter');
   await page.waitForSelector('.flow');
   return page;
 }

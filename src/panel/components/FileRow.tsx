@@ -20,6 +20,17 @@ export interface FileRowProps {
   icon?: ReactNode;
   /** the tinted icon swatch used for e.g. "Talk to a person" */
   iconTone?: 'default' | 'primary' | undefined;
+  /**
+   * Renders as a real `<a href>` instead of a `<button>` — for a genuine
+   * external link (Home's "Talk to a person" row, R1-12), so right-click /
+   * open-in-new-tab / the browser's own status-bar URL preview all behave
+   * like a real link rather than a JS handler pretending to be one. Opens in
+   * a new tab (`target="_blank" rel="noopener noreferrer"`) since navigating
+   * the side panel document itself away from the extension would strand it.
+   * Mutually exclusive with `onClick`/`locked`, which only make sense for
+   * the button form.
+   */
+  href?: string | undefined;
 }
 
 /** The OS made physical: a row of files, each a single tap away. */
@@ -31,14 +42,11 @@ export function FileRow({
   onClick,
   icon = FILE_ICON,
   iconTone = 'default',
+  href,
 }: FileRowProps) {
-  return (
-    <button
-      type="button"
-      className={['filerow', locked ? 'locked' : ''].filter(Boolean).join(' ')}
-      disabled={locked}
-      onClick={onClick}
-    >
+  const classes = ['filerow', locked ? 'locked' : ''].filter(Boolean).join(' ');
+  const content = (
+    <>
       <span className={['ic', iconTone === 'primary' ? 'ic-primary' : ''].filter(Boolean).join(' ')}>
         {icon}
       </span>
@@ -49,6 +57,20 @@ export function FileRow({
       {badge && (
         <span className={['badge', badge.tone ?? ''].filter(Boolean).join(' ')}>{badge.label}</span>
       )}
+    </>
+  );
+
+  if (href) {
+    return (
+      <a className={classes} href={href} target="_blank" rel="noopener noreferrer">
+        {content}
+      </a>
+    );
+  }
+
+  return (
+    <button type="button" className={classes} disabled={locked} onClick={onClick}>
+      {content}
     </button>
   );
 }

@@ -45,8 +45,6 @@ export const S = {
   addYourOwnConfirm: 'Add',
   yes: 'Yes',
   no: 'No',
-  // Provisional — the real end state is the file itself (R1-09) and the proof loop (R1-11).
-  flowDone: "That's every question, for now.",
 
   // ---------------------------------------------------------------- reflect
   reflectHeading: "Here's what I've got.",
@@ -128,18 +126,32 @@ export const S = {
   updatedToday: 'Updated today',
   daysOld: (n: number) => (n === 1 ? '1 day old' : `${n} days old`),
   sectionsOf: (done: number, total: number) => `${done} of ${total} sections`,
+  // R1-12: the Context flow's own "done" screen hands off to Home instead of
+  // showing its own end state — see App.tsx/Flow.tsx. This is what a save
+  // failure right on the last question falls back to, and what the proof
+  // loop's own finished screen offers as its only way onward.
+  backToFiles: 'Back to your files',
 
   // ---------------------------------------------------------------- freshness
   // Always says WHY, in the person's own words. Never "your data is stale".
   driftHeading: (n: number) =>
     n === 1 ? 'One part of your file is out of date' : `${wordFor(n)} parts of your file are out of date`,
-  driftBecauseRole: (role: string, said: string, ago: string) =>
-    `You said your ${role} role was good for ${said}. That was ${ago} ago.`,
+  // Fixed at R1-12: the earlier copy claimed a stated duration ("good for
+  // about a year") that no ported question ever actually collects — see
+  // core/flow/source.ts's role_durability, a bare current/historical pick.
+  // This says only what's true: that the answer was "current", and how long
+  // ago it was given.
+  driftBecauseRole: (role: string, ago: string) => `You said your ${role} role was current. That was ${ago} ago.`,
   driftBecauseInitiative: (name: string) =>
     `You gave "${name}" success criteria back when you set it up.`,
   driftAction: (n: number) => `Answer ${wordFor(n)} question${n === 1 ? '' : 's'}`,
   allCurrentHeading: 'Your file is current',
   allCurrentSub: 'Nothing to do. Come back when something changes at work.',
+  /** core/freshness's elapsed-time shape, in words — digits, matching the
+   * precedent `daysOld` already sets for a measured span rather than a
+   * small count (that rule is for things like "Two questions", not a
+   * duration). */
+  agoLabel: (n: number, unit: 'day' | 'month' | 'year') => `${n} ${unit}${n === 1 ? '' : 's'}`,
 
   // ---------------------------------------------------------------- empty states
   emptyNoFile: 'You have not started yet.',

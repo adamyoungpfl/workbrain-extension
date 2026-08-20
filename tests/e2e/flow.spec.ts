@@ -21,12 +21,22 @@ async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
   return { context, page };
 }
 
+/**
+ * R1-12: Home is now the surface a fresh open lands on, empty-storage or
+ * not (docs/ARCHITECTURE.md's router, "defaulting to Home" — see App.tsx).
+ * Entering (or resuming — same handler, see Home.tsx's `onStart`) the
+ * interview is one keyboard press on the "Context.md" file row away, so
+ * this file's own "keyboard-only pass" claim covers the entry point too.
+ */
 async function openPanel(context: BrowserContext): Promise<Page> {
   const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
   const id = new URL(sw.url()).host;
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
+  await page.waitForSelector('.home');
+  await page.getByRole('button', { name: /Context\.md/ }).focus();
+  await page.keyboard.press('Enter');
   await page.waitForSelector('.flow');
   return page;
 }
@@ -91,15 +101,25 @@ test.describe('Context interview — flow runner (R1-06)', () => {
     // one extra "Keep it as-is" loop turn for each of the six interpret-
     // bearing questions this walk passes through (R1-07) — comfortably under
     // 100 regardless of exact wording or field counts.
+    // R1-12: the Context flow's own "done" screen no longer exists — once
+    // every question is answered, `Flow` hands off to Home on its own (see
+    // Flow.tsx's `onDone`). There's a brief real gap between the last
+    // answer and Home actually mounting (`onDone` only fires once the
+    // triggering `chrome.storage` write has genuinely resolved — see
+    // `savePending`'s own comment on why), during which neither `.flow`
+    // nor `.home` is in the DOM yet, so each turn waits for whichever
+    // shows up next rather than assuming `.flow` is always still there.
     while (guard++ < 100) {
-      if (await page.locator('.flow-done').count()) break;
+      await page.waitForSelector('.flow, .home');
+      if (await page.locator('.home').count()) break;
       const stepId = await page.locator('.flow').getAttribute('data-step-id');
       if (stepId) visited.add(stepId);
       await answerCurrentQuestion(page);
     }
 
-    await expect(page.locator('.flow-done')).toBeVisible();
-    await expect(page.locator('.flow-done')).toHaveText(/every question/i);
+    await expect(page.locator('.home')).toBeVisible();
+    // The file this interview just finished, freshly reflected on Home.
+    await expect(page.getByText('Context.md')).toBeVisible();
 
     // Confirm the open-ended repeatables (entities, initiatives) and the
     // seeded one (roles) were actually walked, not just skipped past.

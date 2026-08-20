@@ -1,0 +1,32 @@
+/* R1-10 download/import, hosted on Home as of R1-12 — see FileActions.tsx's
+   header comment. Extracted from Flow.css's earlier ".flow-done-actions" /
+   ".flow-file-input" rules, renamed to match. */
+.file-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+  margin: 4px 0 20px;
+  width: 100%;
+}
+
+.file-actions-error {
+  font-size: 13px;
+  color: var(--danger);
+  margin-bottom: 10px;
+}
+
+/* Standard visually-hidden trick — kept out of the tab order too
+   (tabIndex/aria-hidden on the element itself) since the visible Button is
+   the only accessible way to reach it; see FileActions.tsx. */
+.file-actions-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}
