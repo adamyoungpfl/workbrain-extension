@@ -1,0 +1,1169 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workbrain — Project Specification</title>
+<style>
+
+:root{
+  /* ---- canvas ---- */
+  --canvas:#FFFFFF; --surface:#F6F7F9; --sunken:#EDEFF3; --overlay:rgba(21,24,29,.42);
+  /* ---- ink ---- */
+  --ink:#15181D; --ink-2:#525A67; --ink-3:#6B7484; --ink-inv:#FFFFFF;
+  /* ---- lines ---- */
+  --divider:#E2E5EA; --border:#D4D8E0; --border-i:#8A92A0;
+  /* ---- semantic hues: each names who owns the next move ---- */
+  --primary:#2A4FCB;  --primary-hover:#1F3FA8; --primary-tint:#EAEEFB;
+  --violet:#6A3FD1;   --violet-tint:#F2EDFD;
+  --amber:#8A5300;    --amber-tint:#FFF4E2;   --amber-line:#E8A33D;
+  --green:#0B6E4F;    --green-tint:#E7F5EF;
+  --danger:#B4231E;   --danger-tint:#FDECEA;
+  /* ---- type ---- */
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  /* ---- shape ---- */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* ---- elevation: only for things that float ---- */
+  --e-1:0 1px 2px rgba(21,24,29,.06);
+  --e-2:0 4px 12px rgba(21,24,29,.08),0 1px 3px rgba(21,24,29,.06);
+  --e-3:0 16px 40px rgba(21,24,29,.14),0 2px 8px rgba(21,24,29,.08);
+  /* ---- motion ---- */
+  --fast:120ms; --base:200ms; --slow:320ms; --ease:cubic-bezier(.2,0,0,1);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--canvas);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+a{color:var(--primary)}
+
+/* ---------- page furniture ---------- */
+.masthead{border-bottom:1px solid var(--divider);background:var(--canvas);position:sticky;top:0;z-index:40}
+.masthead .wrap{display:flex;align-items:center;gap:16px;height:60px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.01em}
+.logo svg{display:block}
+.masthead nav{margin-left:auto;display:flex;gap:22px;font-size:13.5px}
+.masthead nav a{color:var(--ink-2);text-decoration:none}
+.masthead nav a:hover{color:var(--primary)}
+
+.hero{padding:76px 0 56px;border-bottom:1px solid var(--divider)}
+.eyebrow{font-size:12px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--primary);margin:0 0 16px}
+h1{font-size:52px;line-height:1.08;letter-spacing:-.025em;font-weight:680;margin:0 0 20px;max-width:16ch}
+.lede{font-size:19px;line-height:1.6;color:var(--ink-2);max-width:62ch;margin:0}
+
+section{padding:64px 0;border-bottom:1px solid var(--divider);scroll-margin-top:76px}
+h2{font-size:30px;line-height:1.2;letter-spacing:-.02em;font-weight:660;margin:0 0 10px}
+h2 .n{font-family:var(--mono);font-size:14px;color:var(--primary);font-weight:600;margin-right:12px;letter-spacing:0}
+h3{font-size:18px;font-weight:650;letter-spacing:-.01em;margin:38px 0 10px}
+h4{font-size:14px;font-weight:650;margin:24px 0 8px}
+p{margin:0 0 14px;max-width:70ch;color:var(--ink-2)}
+p.tight{margin-bottom:6px}
+.sec-lede{font-size:17px;color:var(--ink-2);max-width:66ch;margin:0 0 8px}
+code{font-family:var(--mono);font-size:.88em;background:var(--sunken);padding:2px 6px;border-radius:5px;color:var(--ink)}
+
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+
+.panelcard{border:1px solid var(--divider);border-radius:var(--r-lg);padding:22px;background:var(--canvas)}
+.panelcard.sunk{background:var(--surface);border-color:transparent}
+
+table{width:100%;border-collapse:collapse;font-size:14px;margin:14px 0 6px}
+th{text-align:left;font-weight:650;color:var(--ink);border-bottom:1.5px solid var(--border);padding:9px 12px 9px 0;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase}
+td{border-bottom:1px solid var(--divider);padding:11px 12px 11px 0;color:var(--ink-2);vertical-align:top}
+td strong{color:var(--ink);font-weight:600}
+td:last-child,th:last-child{padding-right:0}
+
+.note{border-left:3px solid var(--primary);background:var(--primary-tint);padding:14px 18px;border-radius:0 var(--r-md) var(--r-md) 0;margin:20px 0}
+.note p{color:var(--ink);margin:0}
+.note b{font-weight:650}
+.note.amber{border-color:var(--amber-line);background:var(--amber-tint)}
+
+/* ---------- swatches ---------- */
+.swatch{border:1px solid var(--divider);border-radius:var(--r-md);overflow:hidden}
+.swatch .chip{height:76px}
+.swatch .meta{padding:11px 13px;font-size:12.5px}
+.swatch .meta b{display:block;color:var(--ink);font-weight:600;font-size:13px}
+.swatch .meta span{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.ratio{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:2px 6px;border-radius:4px;background:var(--green-tint);color:var(--green);margin-top:6px}
+
+/* ---------- component specimens ---------- */
+.spec{border:1px solid var(--divider);border-radius:var(--r-lg);overflow:hidden;margin:16px 0}
+.spec .stage{padding:26px;background:var(--surface);display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.spec .stage.col{flex-direction:column;align-items:stretch;gap:10px}
+.spec .cap{padding:11px 16px;border-top:1px solid var(--divider);font-size:12.5px;color:var(--ink-3);background:var(--canvas)}
+
+/* ---------- the actual components ---------- */
+.btn{
+  font-family:inherit;font-size:14px;font-weight:600;line-height:1;padding:12px 18px;border-radius:var(--r-md);
+  border:1px solid transparent;cursor:pointer;transition:background var(--fast) var(--ease),border-color var(--fast) var(--ease);
+  min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.btn-primary{background:var(--primary);color:var(--ink-inv)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-secondary{background:var(--canvas);color:var(--ink);border-color:var(--border-i)}
+.btn-secondary:hover{background:var(--surface)}
+.btn-quiet{background:transparent;color:var(--ink-2)}
+.btn-quiet:hover{background:var(--surface);color:var(--ink)}
+.btn-ai{background:var(--violet-tint);color:var(--violet);border-color:transparent}
+.btn-ai:hover{background:#E8E0FC}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn-sm{padding:8px 12px;min-height:36px;font-size:13px}
+
+.pill{
+  font-family:inherit;font-size:14px;padding:10px 16px;border-radius:var(--r-pill);min-height:44px;
+  border:1px solid var(--border-i);background:var(--canvas);color:var(--ink);cursor:pointer;
+  transition:all var(--fast) var(--ease);display:inline-flex;align-items:center;gap:7px;
+}
+.pill:hover{border-color:var(--primary);background:var(--primary-tint)}
+.pill[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--ink-inv);font-weight:600}
+.pill[aria-pressed="true"]::before{content:"✓";font-size:12px}
+.pill:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.pill.suggested{box-shadow:0 0 0 3px var(--primary-tint)}
+
+.field{
+  width:100%;font-family:inherit;font-size:15px;line-height:1.55;padding:13px 15px;border-radius:var(--r-md);
+  border:1px solid var(--border-i);background:var(--canvas);color:var(--ink);transition:all var(--fast) var(--ease);
+}
+.field:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-tint)}
+.field::placeholder{color:var(--ink-3)}
+textarea.field{min-height:96px;resize:vertical}
+.field-label{display:block;font-size:14px;font-weight:600;margin-bottom:7px;color:var(--ink)}
+.field-help{font-size:13px;color:var(--ink-3);margin-top:7px}
+.field-err{border-color:var(--danger)}
+.field-errmsg{font-size:13px;color:var(--danger);margin-top:7px;display:flex;gap:6px;align-items:flex-start}
+
+.readonly{
+  border:1px solid var(--divider);border-left:3px solid var(--violet);background:var(--violet-tint);
+  border-radius:0 var(--r-md) var(--r-md) 0;padding:14px 46px 14px 16px;position:relative;
+  font-size:14.5px;line-height:1.62;color:var(--ink);white-space:pre-wrap;
+}
+.readonly .copy{
+  position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:var(--r-sm);
+  background:var(--canvas);border:1px solid var(--border);color:var(--violet);cursor:pointer;
+  display:grid;place-items:center;
+}
+.readonly .tag{
+  font-size:11px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--violet);
+  display:block;margin-bottom:6px;
+}
+
+.filerow{
+  display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--divider);
+  border-radius:var(--r-md);background:var(--canvas);cursor:pointer;transition:all var(--fast) var(--ease);
+  width:100%;text-align:left;font-family:inherit;
+}
+.filerow:hover{border-color:var(--border-i);box-shadow:var(--e-1)}
+.filerow .ic{width:34px;height:34px;border-radius:var(--r-sm);background:var(--sunken);display:grid;place-items:center;color:var(--ink-2);flex:0 0 auto}
+.filerow .nm{font-size:15px;font-weight:600;color:var(--ink);display:block}
+.filerow .sb{font-size:13px;color:var(--ink-3);display:block;margin-top:2px}
+.filerow.locked{opacity:.55;cursor:default;background:var(--surface);border-style:dashed}
+.badge{
+  margin-left:auto;font-size:12px;font-weight:650;padding:5px 10px;border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--ink-2);white-space:nowrap;
+}
+.badge.fresh{background:var(--green-tint);color:var(--green)}
+.badge.due{background:var(--amber-tint);color:var(--amber)}
+.badge.next{background:var(--primary-tint);color:var(--primary)}
+
+.banner{
+  border-radius:var(--r-md);padding:16px 18px;display:flex;gap:14px;align-items:flex-start;
+  background:var(--amber-tint);border:1px solid rgba(232,163,61,.45);
+}
+.banner .bi{flex:0 0 auto;color:var(--amber);margin-top:1px}
+.banner h5{margin:0 0 4px;font-size:15px;font-weight:650;color:var(--ink)}
+.banner p{margin:0;font-size:13.5px;color:var(--ink-2)}
+.banner.info{background:var(--primary-tint);border-color:rgba(42,79,203,.28)}
+.banner.info .bi{color:var(--primary)}
+.banner.good{background:var(--green-tint);border-color:rgba(11,110,79,.28)}
+.banner.good .bi{color:var(--green)}
+
+.meter{border:1px solid var(--divider);border-radius:var(--r-lg);padding:20px}
+.meter .top{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.meter .val{font-size:38px;font-weight:680;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.meter .lab{font-size:13px;color:var(--ink-3);font-weight:500}
+.meter .step{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:600}
+.track{display:flex;gap:5px;margin-bottom:9px}
+.track i{flex:1;height:7px;border-radius:4px;background:var(--sunken);overflow:hidden;position:relative}
+.track i.on{background:var(--primary)}
+.track i.part::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--p,50%);background:var(--primary)}
+.tracklabels{display:flex;gap:5px;font-size:12px;color:var(--ink-3)}
+.tracklabels span{flex:1;text-align:center}
+.tracklabels span.on{color:var(--primary);font-weight:600}
+
+.toast{
+  background:var(--ink);color:var(--ink-inv);border-radius:var(--r-md);padding:13px 17px;font-size:14px;
+  box-shadow:var(--e-3);display:inline-flex;align-items:center;gap:10px;
+}
+.toast .tk{color:#6EE7A8}
+
+/* ---------- cue layer, light ---------- */
+.cue-demo{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+@keyframes wb-sweep{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
+@keyframes wb-ring{0%,100%{box-shadow:0 0 0 0 rgba(42,79,203,0)}50%{box-shadow:0 0 0 5px rgba(42,79,203,.22)}}
+@keyframes wb-ring-v{0%,100%{box-shadow:0 0 0 0 rgba(106,63,209,0)}50%{box-shadow:0 0 0 5px rgba(106,63,209,.20)}}
+@keyframes wb-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.cue-sweep{position:relative;overflow:hidden}
+.cue-sweep::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(105deg,transparent 22%,rgba(42,79,203,.16) 50%,transparent 78%);
+  animation:wb-sweep 1.25s var(--ease) infinite;
+}
+.cue-ring{animation:wb-ring 1.7s ease-in-out infinite}
+.cue-ring-v{animation:wb-ring-v 1.7s ease-in-out infinite}
+.cue-bob{animation:wb-bob 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){
+  .cue-sweep::after{animation:none;opacity:.5}
+  .cue-ring{animation:none;box-shadow:0 0 0 4px rgba(42,79,203,.2)}
+  .cue-ring-v{animation:none;box-shadow:0 0 0 4px rgba(106,63,209,.18)}
+  .cue-bob{animation:none}
+  *{transition-duration:.01ms!important}
+}
+
+/* ---------- panel mock ---------- */
+.panelmock{
+  width:400px;flex:0 0 400px;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;
+  background:var(--canvas);box-shadow:var(--e-2);
+}
+.panelmock .ph{padding:14px 18px;border-bottom:1px solid var(--divider);display:flex;align-items:center;gap:10px}
+.panelmock .ph b{font-size:15px;font-weight:650;letter-spacing:-.01em}
+.panelmock .ph .sp{margin-left:auto;display:flex;gap:4px}
+.panelmock .pb{padding:20px 18px}
+.panelmock .pf{padding:14px 18px;border-top:1px solid var(--divider);display:flex;gap:10px;align-items:center;background:var(--surface)}
+.panelmock .pf .save{margin-left:auto;font-size:11.5px;color:var(--ink-3);text-align:right;line-height:1.35}
+.qhead{font-size:22px;line-height:1.25;letter-spacing:-.018em;font-weight:660;margin:0 0 8px;color:var(--ink)}
+.qsub{font-size:14px;color:var(--ink-2);margin:0 0 18px}
+.steplab{font-size:12px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+.iconbtn{width:36px;height:36px;border-radius:var(--r-sm);border:1px solid transparent;background:transparent;color:var(--ink-3);display:grid;place-items:center;cursor:pointer}
+.iconbtn:hover{background:var(--surface);color:var(--ink)}
+
+/* ---------- do / don't ---------- */
+.dd{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin:18px 0}
+.dd .box{border:1px solid var(--divider);border-radius:var(--r-md);overflow:hidden}
+.dd .hd{padding:10px 14px;font-size:13px;font-weight:650;display:flex;gap:8px;align-items:center}
+.dd .do .hd{background:var(--green-tint);color:var(--green)}
+.dd .dont .hd{background:var(--danger-tint);color:var(--danger)}
+.dd .bd{padding:16px;font-size:14px;color:var(--ink-2)}
+.dd .bd p{margin:0 0 10px}.dd .bd p:last-child{margin:0}
+
+.copytable td:first-child{width:46%}
+.before{color:var(--danger)}
+.after{color:var(--green)}
+
+footer{padding:48px 0 80px;color:var(--ink-3);font-size:13.5px}
+@media (max-width:820px){
+  h1{font-size:38px}.wrap{padding:0 20px}
+  .panelmock{width:100%;flex:1 1 auto}
+}
+
+/* ---- spec-only additions ---- */
+.cover{padding:96px 0 64px;border-bottom:1px solid var(--divider)}
+.cover h1{font-size:60px;max-width:14ch}
+.cover .meta{margin-top:34px;font-family:var(--mono);font-size:12.5px;color:var(--ink-3);line-height:1.9}
+.toc{padding:44px 0;border-bottom:1px solid var(--divider);background:var(--surface)}
+.toc ol{list-style:none;margin:0;padding:0;columns:2;column-gap:56px}
+.toc li{break-inside:avoid;margin:0 0 3px}
+.toc a{display:flex;gap:14px;padding:8px 10px;border-radius:var(--r-sm);text-decoration:none;color:var(--ink);font-size:14.5px;align-items:baseline}
+.toc a:hover{background:var(--canvas)}
+.toc a i{font-family:var(--mono);font-size:12px;color:var(--primary);font-style:normal;flex:0 0 22px}
+.toc a span{color:var(--ink-3);font-size:12.5px;margin-left:auto;text-align:right}
+
+.kv{display:grid;grid-template-columns:180px 1fr;gap:2px 20px;font-size:14.5px;margin:18px 0}
+.kv dt{font-weight:650;color:var(--ink);padding:9px 0;border-top:1px solid var(--divider)}
+.kv dd{margin:0;padding:9px 0;color:var(--ink-2);border-top:1px solid var(--divider)}
+
+.phase{display:flex;gap:0;margin:26px 0 8px;flex-wrap:wrap}
+.phase .p{flex:1;min-width:150px;padding:16px 18px;border:1px solid var(--divider);border-right:0;background:var(--canvas)}
+.phase .p:first-child{border-radius:var(--r-md) 0 0 var(--r-md)}
+.phase .p:last-child{border-right:1px solid var(--divider);border-radius:0 var(--r-md) var(--r-md) 0}
+.phase .p b{display:block;font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:var(--primary);margin-bottom:6px}
+.phase .p h5{margin:0 0 5px;font-size:15px;font-weight:650}
+.phase .p p{margin:0;font-size:13px;color:var(--ink-3)}
+
+.price{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));margin:22px 0}
+.price .c{border:1px solid var(--divider);border-radius:var(--r-lg);padding:20px;display:flex;flex-direction:column;gap:8px}
+.price .c.lead{border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-tint)}
+.price .c .t{font-size:12px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.price .c .n{font-size:20px;font-weight:660;letter-spacing:-.015em}
+.price .c .amt{font-size:28px;font-weight:680;letter-spacing:-.025em;color:var(--primary)}
+.price .c .amt small{font-size:13px;font-weight:500;color:var(--ink-3);letter-spacing:0}
+.price .c p{font-size:13.5px;margin:0;flex:1}
+.price .c ul{margin:0;padding-left:18px;font-size:13.5px;color:var(--ink-2)}
+.price .c ul li{margin-bottom:5px}
+
+.risk td:first-child{width:34%}
+.chk{list-style:none;padding:0;margin:14px 0}
+.chk li{padding:9px 0 9px 30px;position:relative;border-bottom:1px solid var(--divider);font-size:14.5px;color:var(--ink-2)}
+.chk li::before{content:"";position:absolute;left:6px;top:15px;width:9px;height:9px;border-radius:2px;border:1.5px solid var(--border-i)}
+.chk li b{color:var(--ink);font-weight:600}
+@media print{.masthead{position:static}section{break-inside:auto}}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="#2A4FCB"/>
+        <path d="M7.5 15.5V8.5M16.5 15.5V8.5" stroke="#fff" stroke-width="1.7" stroke-linecap="round" opacity=".55"/>
+        <circle cx="12" cy="12" r="2.6" fill="#fff"/>
+      </svg>
+      Workbrain
+    </span>
+    <nav>
+      <a href="#s01">Product</a><a href="#s05">Lifecycle</a><a href="#s08">Company</a>
+      <a href="#s10">Money</a><a href="#s13">Audit</a><a href="#s14">Report</a><a href="#s16">Build</a>
+    </nav>
+  </div>
+</header>
+
+<div class="cover">
+  <div class="wrap">
+    <p class="eyebrow">Model Citizen · Project specification · v1.0</p>
+    <h1>Workbrain</h1>
+    <p class="lede">A personal AI operating system that lives in a browser side panel, holds nothing on a server,
+      and travels with the person across tools, jobs and years. This document specifies the product, the interaction
+      model, the design language, the company tier, the services attached to it, and an honest assessment of how
+      — and whether — to charge for any of it. Two late additions carry more weight than their length suggests:
+      an audit that reads the person's own chat history to seed their file, and a report that measures, honestly,
+      whether any of this made them better.</p>
+    <div class="meta">
+      Companion documents · Design system · Side panel prototype v2<br>
+      Audience · Design, build, and anyone deciding what to fund<br>
+      August 2026
+    </div>
+  </div>
+</div>
+
+<div class="toc">
+  <div class="wrap">
+    <ol>
+      <li><a href="#s01"><i>01</i>The product in one page<span>what it is</span></a></li>
+      <li><a href="#s02"><i>02</i>Who it is for<span>the binding constraint</span></a></li>
+      <li><a href="#s03"><i>03</i>The OS model<span>three files, four steps</span></a></li>
+      <li><a href="#s04"><i>04</i>Surfaces<span>panel, site, library</span></a></li>
+      <li><a href="#s05"><i>05</i>The lifecycle<span>day one to month six</span></a></li>
+      <li><a href="#s06"><i>06</i>Interaction specification<span>the guided step</span></a></li>
+      <li><a href="#s07"><i>07</i>Portability<span>it travels with them</span></a></li>
+      <li><a href="#s08"><i>08</i>Workbrain Connected<span>the company tier</span></a></li>
+      <li><a href="#s09"><i>09</i>Coaching and TIM<span>the services</span></a></li>
+      <li><a href="#s10"><i>10</i>Monetization<span>what the market does</span></a></li>
+      <li><a href="#s11"><i>11</i>Trust and permissions<span>compliance</span></a></li>
+      <li><a href="#s12"><i>12</i>Reliability<span>what breaks, and when</span></a></li>
+      <li><a href="#s13"><i>13</i>The history audit<span>starting from evidence</span></a></li>
+      <li><a href="#s14"><i>14</i>The improvement report<span>what can be claimed</span></a></li>
+      <li><a href="#s15"><i>15</i>Instrumentation<span>without an account</span></a></li>
+      <li><a href="#s16"><i>16</i>Build sequence<span>what ships when</span></a></li>
+      <li><a href="#s17"><i>17</i>Risks<span>and open questions</span></a></li>
+    </ol>
+  </div>
+</div>
+
+<section id="s01">
+ <div class="wrap">
+  <h2><span class="n">01</span>The product in one page</h2>
+
+  <p class="sec-lede">Most people using AI at work are re-explaining themselves every single time they open a chat.
+    Workbrain interviews them once, produces a file that says who they are and how they work, and then keeps that
+    file alive as their world changes. The file is theirs. It goes wherever they go.</p>
+
+  <dl class="kv">
+    <dt>What it is</dt><dd>A Chrome side panel that builds and maintains three plain-text files describing a person's working context, their repeatable methods, and what they want automated.</dd>
+    <dt>Where it runs</dt><dd>Entirely in the browser. No account, no server, no AI calls of our own. The person's own AI does every piece of generative work, through copy-and-paste or an optional assisted hand-off.</dd>
+    <dt>Why a panel</dt><dd>Every step of the flow involves going somewhere else to paste something. A panel stays open across tab switches; a popup closes the moment it loses focus and a website loses the person entirely.</dd>
+    <dt>The four steps</dt><dd><b>Name</b> who you are · <b>Repeat</b> what you do often · <b>Act</b> on real systems · <b>Share</b> with your team. Internally these are gates 1–4; the person never sees the word gate.</dd>
+    <dt>The hook</dt><dd>It travels. Change tools, change teams, change jobs — the file comes along, and the parts your employer owns detach cleanly from the parts you own.</dd>
+    <dt>The company angle</dt><dd>A team publishes a skill pack. New hires subscribe with one link and inherit the team's methods on day one instead of month three. Nothing personal ever flows upward.</dd>
+    <dt>The business</dt><dd>The product is free and stays free. It qualifies and educates people for two human services: AI Coaching for individuals, and TIM — Technology Implementation Management — for teams.</dd>
+  </dl>
+
+  <div class="note">
+    <p><b>The one-sentence version.</b> Workbrain turns the thing you keep re-explaining to AI into a file you own,
+      keeps that file honest as your job changes, and hands your team a way to pass working knowledge to the next
+      person without a wiki nobody reads.</p>
+  </div>
+ </div>
+</section>
+
+<section id="s02">
+ <div class="wrap">
+  <h2><span class="n">02</span>Who it is for, and the one constraint that binds everything</h2>
+
+  <p class="sec-lede">The design constraint is not "make it simple." It is: <strong>a competent adult who does not
+    think of themselves as technical must be able to finish this alone, on their first try, without asking anyone
+    for help.</strong> Every decision in this document is downstream of that sentence.</p>
+
+  <h3>Three people to design for</h3>
+  <table>
+    <tr><th>Who</th><th>What they arrive with</th><th>What loses them</th></tr>
+    <tr><td><strong>The capable non-technical professional</strong><br><span style="font-size:13px;color:var(--ink-3)">the median user</span></td>
+      <td>Uses ChatGPT most days, gets mediocre results, suspects they are doing it wrong, has never installed an extension.</td>
+      <td>A blank text box. A settings screen. Anything that implies they should already know something.</td></tr>
+    <tr><td><strong>The skeptical operator</strong></td>
+      <td>Has been burned by tools that phoned home. Will read the permissions prompt. Will ask where the data goes.</td>
+      <td>Any permission they cannot see a reason for. Any claim about privacy that the interface then contradicts.</td></tr>
+    <tr><td><strong>The team lead with a hiring problem</strong></td>
+      <td>Onboards people constantly, watches the same knowledge get re-learned every time, has no budget line for software.</td>
+      <td>Anything requiring IT approval, a procurement cycle, or a login their team will not adopt.</td></tr>
+  </table>
+
+  <h3>What "low barrier to entry" actually means here</h3>
+  <p>It is not a value; it is a list of things the product is not allowed to do. Each of these is a real decision
+    that costs capability, and each is worth the cost.</p>
+  <ul class="chk">
+    <li><b>No account, ever, for individuals.</b> No email, no password, no verification step. The install is the sign-up.</li>
+    <li><b>No permission prompt at install beyond storage and the side panel.</b> Host access to AI sites is requested later, in context, only when the person clicks something that needs it — and declining leaves the product fully functional.</li>
+    <li><b>First real value inside ten minutes.</b> The proof moment — see the same question answered better with your file attached — must be reachable in one sitting.</li>
+    <li><b>Nothing is required.</b> Every question can be skipped. A file built from four answers is a valid file.</li>
+    <li><b>No settings screen at launch.</b> Two toggles live in the header. Everything else is a default we chose.</li>
+    <li><b>No blank boxes where a list would do.</b> Choice pills wherever a reasonable answer set exists.</li>
+    <li><b>No jargon in the interface.</b> The words in this document are for us. See the design system, section 08.</li>
+    <li><b>Nothing destructive.</b> Which means nothing needs confirming, which means no modal dialogs at all.</li>
+  </ul>
+
+  <div class="note amber">
+    <p><b>The tension worth naming.</b> Every one of those constraints makes the product weaker as software and
+      stronger as an adopted habit. A login would enable sync, recovery and analytics. We are choosing to lose all
+      three. Section 13 is honest about what that costs.</p>
+  </div>
+ </div>
+</section>
+
+<section id="s03">
+ <div class="wrap">
+  <h2><span class="n">03</span>The OS model</h2>
+  <p class="sec-lede">Three files and a home screen. Everything the product does is either building one of the files,
+    keeping one of them honest, or proving they work.</p>
+
+  <table>
+    <tr><th>File</th><th>The person sees</th><th>Holds</th><th>Owned by</th><th>Built by</th></tr>
+    <tr><td><code>Context.md</code></td><td>Who you are</td>
+      <td>Scope, roles and their durability, responsibilities, the people and systems worth knowing by name, how you think, how you write, what AI should never do unasked.</td>
+      <td>The person, always</td><td>Context Interview</td></tr>
+    <tr><td><code>Skills.md</code></td><td>How you work</td>
+      <td>Repeatable methods, written as instructions an AI can follow the same way every time. Yours, plus any your team publishes.</td>
+      <td>Split — personal and team blocks are separately marked</td><td>Skills Interview + library</td></tr>
+    <tr><td><code>Actions.md</code></td><td>What should happen automatically</td>
+      <td>What should touch a real system, where that system is, what it would take, and what is honestly out of reach alone.</td>
+      <td>Mostly the employer</td><td>Actions Interview</td></tr>
+  </table>
+
+  <h3>The home screen is derived, not stored</h3>
+  <p>There is no state machine tracking where someone is. The home screen computes everything it shows from the
+    answers already in storage: how complete each file is, how old, how many parts are past due, what the single
+    next move should be. Change one durability answer and the next move changes with it, immediately, with no
+    migration and nothing to keep in sync.</p>
+  <p>This matters more than it sounds. A stored progress state is the thing that goes wrong in month four — it
+    drifts out of agreement with the actual data, and the product starts telling people things that are not true
+    about their own file. Derivation cannot drift.</p>
+
+  <h3>Freshness comes free from the interview</h3>
+  <p>The interview already asks how durable each role is and gives initiatives success criteria. Those are clocks,
+    and until now they were only prose. The specification is that they drive the product:</p>
+  <table>
+    <tr><th>Answer given</th><th>Becomes</th><th>Surfaces as</th></tr>
+    <tr><td>Role durability: "a year or so"</td><td>Review due at ~9 months, flagged at ~5</td><td>"You said your team-lead role was good for about a year. That was five months ago."</td></tr>
+    <tr><td>Role durability: "this quarter"</td><td>Review due at 10 weeks</td><td>Same sentence, shorter clock</td></tr>
+    <tr><td>Initiative with success criteria</td><td>Expires when criteria are met or the date passes</td><td>"Your signup funnel initiative — where did it land?"</td></tr>
+    <tr><td>Any section untouched for 6 months</td><td>Soft flag, no nagging</td><td>Included in the next drift check, never its own alert</td></tr>
+  </table>
+  <p><strong>Nothing is inferred and nothing is observed.</strong> Every freshness signal traces back to a sentence
+    the person typed. This is both the honest implementation and the one we can defend to a skeptical user in a
+    single sentence.</p>
+ </div>
+</section>
+
+<section id="s04">
+ <div class="wrap">
+  <h2><span class="n">04</span>Surfaces</h2>
+
+  <table>
+    <tr><th>Surface</th><th>Job</th><th>Notes</th></tr>
+    <tr><td><strong>Side panel</strong><br><span style="font-size:13px;color:var(--ink-3)">the product</span></td>
+      <td>Home screen, all four interviews, drift checks, capture, the briefing.</td>
+      <td>Global panel, not per-tab, so it survives moving between the AI tab and everything else. Opens from the toolbar icon. Chrome's own guidance is that the panel must match the extension's identity and be relevant to what the person is doing — both hold here.</td></tr>
+    <tr><td><strong>The website</strong></td>
+      <td>What it is, why it is free, the skills library, install. The existing Context Builder continues to live alongside it.</td>
+      <td>The library page is the only part of the site the product links out to during normal use.</td></tr>
+    <tr><td><strong>Skills library</strong><br><span style="font-size:13px;color:var(--ink-3)">public page</span></td>
+      <td>Browse skills, add one to your Workbrain. Also where a team's public pack can be listed.</td>
+      <td>Content only. Installing composes the skill against the person's own file <em>in their browser</em>. The site never receives it.</td></tr>
+    <tr><td><strong>Team pack</strong><br><span style="font-size:13px;color:var(--ink-3)">a URL</span></td>
+      <td>A versioned JSON file a company publishes and its people subscribe to.</td>
+      <td>See section 08. No accounts, no backend of ours.</td></tr>
+  </table>
+
+  <h3>What is deliberately absent</h3>
+  <p>No dashboard beyond the home screen. No notifications outside the panel. No email. No mobile app — the product
+    is where the person's AI is, and that is a desktop browser. No new-tab override: hijacking the new tab page for
+    an occasional tool costs more retention than it earns.</p>
+ </div>
+</section>
+
+<section id="s05">
+ <div class="wrap">
+  <h2><span class="n">05</span>The lifecycle</h2>
+  <p class="sec-lede">The question that decides whether this is a product or a demo: what is happening at week six
+    and month six? Most tools of this shape die quietly at week three, when the initial file has gone stale and
+    there is no reason to open the panel.</p>
+
+  <table>
+    <tr><th>When</th><th>What the person does</th><th>What the product does</th><th>What could kill it</th></tr>
+    <tr><td><strong>Day 0</strong><br>install</td>
+      <td>Installs, opens the panel, answers the first question inside 60 seconds.</td>
+      <td>Pre-flight is two yes/no questions, not a tour. No permission prompt beyond storage.</td>
+      <td>A scary permission dialog. A wall of text. Asking for an email.</td></tr>
+    <tr><td><strong>Day 0 + 10 min</strong><br>first value</td>
+      <td>Finishes enough of the interview to generate a file, then runs the proof: same question, with and without.</td>
+      <td>Generates the file, walks the four proof steps, logs the first score.</td>
+      <td>The interview being too long before anything is produced. This is why the file generates from partial answers.</td></tr>
+    <tr><td><strong>Week 1</strong></td>
+      <td>Uses the file two or three times. Notices something missing.</td>
+      <td><b>Capture.</b> One button on home: paste the thing you just had to re-explain, confirm where it goes.</td>
+      <td>Having to re-run an interview to add one line. Capture is the fix.</td></tr>
+    <tr><td><strong>Week 6</strong><br>the real test</td>
+      <td>Has half-forgotten the tool. Opens the panel because something changed at work.</td>
+      <td><b>Drift check.</b> Home leads with what is out of date and why, in their own words, and offers two questions — not a re-interview.</td>
+      <td>Opening to a screen that looks the same as week one. Nothing to do, so nothing happens, so they never come back.</td></tr>
+    <tr><td><strong>Month 3</strong></td>
+      <td>Role changes, or they take on a project.</td>
+      <td>Durability clocks fire. Capture handles the small stuff. The skills library has new entries since last visit.</td>
+      <td>Silence. This is where a monthly reason to open the panel earns its keep.</td></tr>
+    <tr><td><strong>Month 6</strong></td>
+      <td>The file is substantially different from the one they built. They have four or five skills.</td>
+      <td><b>Re-score.</b> Run the same proof against the same rubric. The number moves, and the movement is the story.</td>
+      <td>No evidence it is still working. The score is the evidence.</td></tr>
+    <tr><td><strong>Job change</strong></td>
+      <td>Leaves, or joins somewhere new.</td>
+      <td><b>Take it with you.</b> One action separates personal from employer-owned, and produces a clean file.</td>
+      <td>Losing everything, or worse — walking out with material that belonged to the last employer.</td></tr>
+  </table>
+
+  <div class="note">
+    <p><b>The retention mechanic, stated plainly.</b> There are exactly three legitimate reasons to open this panel
+      after the first week: something changed and I want to record it, something has gone stale and Workbrain told
+      me, or there is a new skill worth taking. Everything else is a notification we have not earned. If those three
+      are not enough, the honest conclusion is that this is a tool people use twice a year — which is still a real
+      product, but a different one, and it should not be dressed up as a daily habit.</p>
+  </div>
+ </div>
+</section>
+
+<section id="s06">
+ <div class="wrap">
+  <h2><span class="n">06</span>Interaction specification</h2>
+
+  <h3>The guided step</h3>
+  <p class="sec-lede">One screen shape carries the whole product. Everything else is a variation of it.</p>
+  <table>
+    <tr><th>Region</th><th>Contents</th><th>Rule</th></tr>
+    <tr><td>Step label</td><td>"Question 4 of 40 · About you"</td><td>Always says where they are and how much is left. Never a percentage alone.</td></tr>
+    <tr><td>The question</td><td>One sentence, 22px, no more than two lines</td><td>If it needs a second sentence, that sentence is the helper text, not the question.</td></tr>
+    <tr><td>Helper</td><td>Why we are asking, or what a good answer looks like</td><td>Optional. Never instructions on how to use the interface.</td></tr>
+    <tr><td>Input</td><td>Pills, or one field</td><td>Pills wherever a set of answers exists, always ending in "+ add your own."</td></tr>
+    <tr><td>Escape</td><td>"Ask me that a different way"</td><td>The single most valuable affordance for a non-technical user, because it converts "I don't understand" into a second attempt rather than an exit.</td></tr>
+    <tr><td>Footer</td><td>Back · Next · Skip · "Saved on this device"</td><td>Fixed position. Skip never disabled. The privacy line is permanent, not a one-time notice.</td></tr>
+  </table>
+
+  <h3>The reflect step</h3>
+  <p>Open-text answers do not commit directly. They are played back verbatim with three choices: keep it, have your
+    own AI tighten it, or say it again. This exists because the fear of writing something wrong is the single
+    biggest source of abandonment in an interview flow — and seeing your own words quoted back, unchanged, is the
+    fastest way to dissolve it.</p>
+
+  <h3>The cue system</h3>
+  <p>Guidance is declared as data on each step, not written per screen. A step says what to play and what event
+    ends it:</p>
+  <div class="readonly" style="margin:16px 0"><span class="tag">Step definition</span>cues: [
+  { play: ['sweep:choices'],            until: 'choice', say: 'Pick the AI you use most.' },
+  { play: ['ring:prompt','sweep:copy'], until: 'copy',   say: 'Copy this, and ask it in a fresh chat.' },
+  { play: ['focus:paste','point:page.composer|Ask it here'], until: 'paste' },
+  { play: ['ring:next'],                until: 'next' }
+]</div>
+  <p>Each link plays until its event fires, then hands off. Adding guidance to a new step is one line of data.
+    The four cue verbs and their reduced-motion equivalents are specified in the design system, section 06.</p>
+  <p><strong>The invariant:</strong> a cue means exactly one instruction and stops the moment it is followed.
+    Nothing loops for decoration. A person who ignores every cue still completes the flow — cues accelerate, they
+    never gate.</p>
+
+  <h3>The assisted hand-off, and its three postures</h3>
+  <p>The most repeated interaction in the product is copy → switch tab → paste → run → copy → switch back → paste.
+    A content script can shorten it. How far it should is a permissions decision, not a design one, so the product
+    ships all three and lets the person choose:</p>
+  <table>
+    <tr><th>Posture</th><th>What happens</th><th>Host permission</th><th>Default</th></tr>
+    <tr><td><strong>Manual</strong></td><td>Copy and paste. The panel stays visible, which is already the win over a website.</td><td>None</td><td>On install</td></tr>
+    <tr><td><strong>Fill only</strong></td><td>Workbrain types the prompt into the message box. The person presses send.</td><td>Write access to the four AI origins</td><td>Offered after the first manual round trip</td></tr>
+    <tr><td><strong>Fill and bring back</strong></td><td>Also reads the reply and puts it in the panel.</td><td>Read access to model output</td><td>Never default. Explicit opt-in, per site.</td></tr>
+  </table>
+  <p>The panel states the cost of the selected posture in plain words, permanently, under the composer — not once
+    in a dialog. "No host permissions · the panel never reads or writes this page" is a sentence a skeptical user
+    can verify by watching.</p>
+ </div>
+</section>
+
+<section id="s07">
+ <div class="wrap">
+  <h2><span class="n">07</span>Portability — the part that makes it worth starting</h2>
+  <p class="sec-lede">The pitch is that this travels with you. That is only true if we build the leaving as
+    carefully as the joining.</p>
+
+  <h3>Three layers of ownership, made real</h3>
+  <table>
+    <tr><th>Layer</th><th>Example</th><th>On a job change</th></tr>
+    <tr><td><strong>Personal</strong></td><td>How you think, how you write, what you never want to see, your durable roles</td><td>Comes with you, untouched</td></tr>
+    <tr><td><strong>Team</strong></td><td>Your team's status-update method, its review rubric, its escalation rules</td><td>Detaches. Marked in the file, removed on request, never silently retained.</td></tr>
+    <tr><td><strong>Employer</strong></td><td>Named systems, named colleagues, initiative detail, anything in Actions.md</td><td>Detaches, and the person is told plainly which parts and why.</td></tr>
+  </table>
+  <p>The file itself carries the markings — a block written by a team pack is labelled as such in the markdown, so
+    the separation is visible in the artifact and not just in our database (of which there is none).</p>
+
+  <h3>"Take it with you"</h3>
+  <p>One action on the home screen, offered by name when a role answer changes and always available:</p>
+  <ol style="color:var(--ink-2);font-size:15px;max-width:70ch">
+    <li>Shows what will be kept and what will be removed, as two short lists in plain words.</li>
+    <li>Produces a single download — a clean personal file, plus the full original if they want it.</li>
+    <li>Offers to reset the panel for the new job, or to keep going as-is.</li>
+  </ol>
+  <p><strong>This is also the backup story.</strong> There is no cloud copy, so the download is the safety net.
+    The product should nudge a download after any substantial change — not as an error state, as a habit:
+    <em>"Your file changed a lot this month. Worth keeping a copy somewhere."</em></p>
+
+  <h3>New device</h3>
+  <p>Import the file back in. The panel reads its own markdown and rebuilds the answers. This means the export
+    format must be round-trippable, which is a real constraint on how the file is generated and should be
+    treated as a hard requirement from the first release, not retrofitted.</p>
+  <p>Chrome's own sync is not the answer here: <code>chrome.storage.sync</code> caps at roughly 100 KB total and
+    8 KB per item, which comfortably holds preferences and a pack subscription but not a person's context file.
+    Preferences sync; the file travels as a file.</p>
+ </div>
+</section>
+
+<section id="s08">
+ <div class="wrap">
+  <h2><span class="n">08</span>Workbrain Connected — the company tier</h2>
+  <p class="sec-lede">The claim is that skills and actions become company property that shortens the hiring ramp and
+    spreads good practice across teams. That needs a distribution mechanism, and it needs one that does not break
+    the promise the individual product is built on.</p>
+
+  <h3>Skill packs</h3>
+  <p>A company publishes a pack: a versioned file at an HTTPS URL containing skills, each with declared slots.
+    A person subscribes by pasting one link, or clicking one the company sent. The panel checks for a new version
+    on a slow schedule and tells the person when the pack has changed — it never updates silently.</p>
+
+  <div class="note">
+    <p><b>The data flows one way only.</b> Packs come down. Nothing goes up — not usage, not answers, not the fact
+      that a given person subscribed. An employer using Workbrain gets their methods distributed; they do not get
+      visibility into any individual's file. This constraint is what makes the tool adoptable by employees at all,
+      and it should be stated in the company-facing material as prominently as in the consumer-facing material.</p>
+  </div>
+
+  <h3>What it buys the company</h3>
+  <table>
+    <tr><th>Problem</th><th>What the pack does</th></tr>
+    <tr><td><strong>Hiring ramp</strong></td><td>A new hire installs, pastes the team link, and on day one their AI already knows how this team writes a status update, runs a review, and escalates. The knowledge that normally takes a quarter to absorb arrives as a file.</td></tr>
+    <tr><td><strong>Tribal knowledge walking out</strong></td><td>When someone good leaves, the method stays in the pack. This is the argument that gets a budget line, and it is the same argument that made the original Work Brain thesis land.</td></tr>
+    <tr><td><strong>Best practice not spreading</strong></td><td>A person can nominate one of their own skills to the pack. An owner reviews and republishes. Good practice moves sideways without a wiki nobody reads.</td></tr>
+    <tr><td><strong>Inconsistent output</strong></td><td>Ten people using the same rubric produce comparable work. The rubric lives in one file, versioned.</td></tr>
+  </table>
+
+  <h3>Deployment, in order of friction</h3>
+  <div class="phase">
+    <div class="p"><b>Zero setup</b><h5>Paste a link</h5><p>Works for any team, any company, no IT involvement. This is the default and should stay the default.</p></div>
+    <div class="p"><b>Light IT</b><h5>Managed config</h5><p>An admin pushes the pack URL through Chrome policy, so the panel arrives pre-subscribed with nothing for the employee to do.</p></div>
+    <div class="p"><b>Full IT</b><h5>Force-install</h5><p>Chrome's <code>ExtensionInstallForcelist</code> deploys the extension itself to managed browsers. Supported on AD, Azure AD, MDM or Chrome Enterprise Core, and works with a self-hosted build.</p></div>
+  </div>
+  <p>All three paths land in the same product. There is no separate enterprise build to maintain, and no
+    admin console — the pack file <em>is</em> the admin surface, which is a feature, because it can be
+    edited by the person who actually knows the method rather than routed through a tool.</p>
+
+  <h3>What this deliberately does not do</h3>
+  <p>No seats to manage, no directory integration, no usage reporting, no per-employee dashboard. Every one of
+    those is a real enterprise expectation and every one requires a backend, an account system, and a security
+    posture to match. That is a different company. If demand proves it out, section 15 notes what it would take.</p>
+ </div>
+</section>
+
+<section id="s09">
+ <div class="wrap">
+  <h2><span class="n">09</span>Coaching and TIM</h2>
+  <p class="sec-lede">Two human services sit behind the free product. They are not upsells bolted onto a funnel —
+    they exist because two specific things genuinely cannot be solved by software, and the product knows exactly
+    when it has hit them.</p>
+
+  <table>
+    <tr><th></th><th>AI Coaching</th><th>TIM · Technology Implementation Management</th></tr>
+    <tr><td><strong>For</strong></td><td>A person who cannot get through the builder alone, or who gets through it and does not know what to do next.</td><td>A team that needs the whole thing to land — enablement, packs, and advice on what to automate and in what order.</td></tr>
+    <tr><td><strong>Solves</strong></td><td>The blank-page problem. Most people cannot describe how they work; they need someone to ask better questions than a form can.</td><td>The systems problem. Gate 3 needs credentials, somewhere to run, and someone accountable when it breaks.</td></tr>
+    <tr><td><strong>Shape</strong></td><td>Weekly, ongoing, starts wherever they got stuck.</td><td>Ongoing advisory plus implementation oversight for a team.</td></tr>
+    <tr><td><strong>Indicative</strong></td><td>$1,000 / month</td><td>$2,500 / month</td></tr>
+  </table>
+
+  <h3>Where each one surfaces</h3>
+  <p>The rule is that help appears at the moment of real friction, quoting evidence, and never before the person
+    has received something free.</p>
+  <table>
+    <tr><th>Trigger</th><th>Offer</th><th>Why it is honest</th></tr>
+    <tr><td>Skipped three open-text questions in a row, or abandoned mid-interview twice</td><td>Coaching</td><td>This is exactly the person the builder cannot serve. Saying nothing serves them worse.</td></tr>
+    <tr><td>Their own AI's grading names a gap they cannot close alone</td><td>Coaching</td><td>The evidence is in their words, from their tool. We are reading it back, not asserting it.</td></tr>
+    <tr><td>Finishing the Actions interview at "not sure where the data lives"</td><td>TIM</td><td>The product has just told them plainly that this is where solo stops. Offering help there is the opposite of a bait.</td></tr>
+    <tr><td>Someone wants to publish a pack for their team</td><td>TIM</td><td>Pack authorship is a curation job. Most teams will do it badly alone and then blame the tool.</td></tr>
+    <tr><td>Home screen, always</td><td>Both, one quiet row</td><td>Available without being pushed.</td></tr>
+  </table>
+
+  <h3>The briefing is the handoff</h3>
+  <p>Instead of an email capture, the person copies a briefing the panel assembles: where they are, what is stale,
+    what their own AI said they should fix, and where they think they are stuck. They paste it into an email or an
+    intake form. The lead arrives pre-qualified and unusually well-informed, and nothing was transmitted to produce
+    it. This inverts the usual trade — the privacy constraint is the reason the lead is good.</p>
+  <div class="note">
+    <p><b>The honest cost.</b> With no identity there is no retargeting and no way to re-reach someone who drifts.
+      Volume will be lower than a gated email list would produce. The bet is that a smaller number of people who
+      arrive holding a written account of their own problem converts better than a larger number of addresses.</p>
+  </div>
+ </div>
+</section>
+
+<section id="s10">
+ <div class="wrap">
+  <h2><span class="n">10</span>Monetization</h2>
+  <p class="sec-lede">The question was whether products like this are commonly monetized, and how. The short answer:
+    yes, by four mechanisms, none of which fit this product's individual tier — and one of which fits its company
+    tier and services almost perfectly.</p>
+
+  <h3>What the market actually does</h3>
+  <p>Google shut down Chrome Web Store Payments on 1 February 2021, so there is no in-store purchase flow to lean
+    on. Everything is handled by the developer, typically through Stripe directly or a wrapper such as ExtensionPay,
+    which exists specifically as the replacement and is not tied to a Google account. Publishing costs a one-time
+    $5 developer registration covering up to 20 extensions.</p>
+  <table>
+    <tr><th>Model</th><th>How it works</th><th>Fit here</th></tr>
+    <tr><td><strong>One-time license key</strong></td><td>Pay once, get a key, key is validated by an API call. No account needed. Appeals to subscription fatigue.</td><td><span style="color:var(--amber)">Partial.</span> Works technically and philosophically. But a key check is a server call, which punctures "nothing leaves the browser" unless carefully framed.</td></tr>
+    <tr><td><strong>Freemium subscription</strong></td><td>Core free, advanced paid, monthly.</td><td><span style="color:var(--danger)">Poor.</span> Recurring price needs recurring cost or recurring value. There is no API bill here, and the individual value is front-loaded.</td></tr>
+    <tr><td><strong>Usage credits</strong></td><td>Buy credits, spend on AI calls. Common for AI extensions.</td><td><span style="color:var(--danger)">Not applicable.</span> The person's own AI does all the work. There is nothing to meter.</td></tr>
+    <tr><td><strong>Team / seat licensing</strong></td><td>Per-seat or per-org, sold to a buyer rather than a user.</td><td><span style="color:var(--green)">Strong.</span> The company tier has ongoing deliverables — pack curation, updates, enablement — that justify a recurring price.</td></tr>
+  </table>
+
+  <div class="note amber">
+    <p><b>A word on benchmarks.</b> There is no credible public data on extension conversion rates or average
+      revenue in 2026. An older crawl found roughly 4.7% of extensions had any payment support and one-off prices
+      clustered near $0.99, and neither figure means anything now. Any plan built on an assumed conversion rate is
+      built on nothing. The only numbers worth planning against are ones this product measures itself.</p>
+  </div>
+
+  <h3>The closest analogue</h3>
+  <p>Obsidian is the reference model for a local-first, no-account tool: the app is free with no sign-up, and money
+    comes from adjacent paid services — Sync at $4–5 per user per month, Publish at $8–10 per site per month — plus
+    a $50 per user per year commercial licence that the FAQ openly says is <em>not required</em>, and a $25 one-time
+    supporter licence. The instructive part is not the prices. It is that the free tier is genuinely unlimited and
+    the paid things are all <em>additional</em>, never removals.</p>
+
+  <h3>The recommendation</h3>
+  <div class="price">
+    <div class="c">
+      <span class="t">Individuals</span><span class="n">Free, permanently</span>
+      <span class="amt">$0</span>
+      <p>The whole builder, all three files, the library, the audit, the report. No account, no limits, no expiry.</p>
+      <ul><li>It is the trust story</li><li>It is the distribution engine</li><li>It is what makes the civic and after-school work possible</li></ul>
+    </div>
+    <div class="c lead">
+      <span class="t">Companies</span><span class="n">Workbrain Connected</span>
+      <span class="amt">$8–12 <small>/ person / month, annual</small></span>
+      <p>Pack authoring and curation, versioned hosting, update management, deployment help, and a named person to call.</p>
+      <ul><li>Recurring value, so a recurring price is defensible</li><li>Bought by a manager, not an employee</li><li>Anchors against the cost of one slow onboarding</li></ul>
+    </div>
+    <div class="c">
+      <span class="t">Services</span><span class="n">Coaching · TIM</span>
+      <span class="amt">$1k–2.5k <small>/ month</small></span>
+      <p>Where the actual margin is. The product's job is to qualify and educate; the human's job is the part software cannot do.</p>
+      <ul><li>No infrastructure</li><li>Highest value per hour</li><li>Already priced and already offered</li></ul>
+    </div>
+    <div class="c">
+      <span class="t">Optional</span><span class="n">Supporter licence</span>
+      <span class="amt">$25 <small>one time</small></span>
+      <p>An honest ask, not a gate. Buys nothing functional — early access to new skills, a name in the credits.</p>
+      <ul><li>Low revenue, high signal</li><li>Tells you who your advocates are</li><li>Zero risk to the free promise</li></ul>
+    </div>
+  </div>
+
+  <h3>What not to do</h3>
+  <ul class="chk">
+    <li><b>Do not gate the payoff.</b> The Module 12 redesign already removed friction before the proof moment. Putting a price there would undo the product's own best decision.</li>
+    <li><b>Do not run ads and do not sell data.</b> Beyond the ethics, either one ends the product — the entire proposition is that nothing leaves the browser.</li>
+    <li><b>Do not charge individuals a subscription.</b> There is no recurring cost to cover and the value is front-loaded. It would read as rent.</li>
+    <li><b>Do not build seat management before someone asks twice.</b> Pack subscription with no accounts covers the first wave of companies. Accounts are a different company.</li>
+  </ul>
+  <p><strong>The sequencing that matters:</strong> services first, because they exist today and need no build; packs second, once three teams have asked; anything else only if the numbers in section 15 say so.</p>
+ </div>
+</section>
+
+<section id="s11">
+ <div class="wrap">
+  <h2><span class="n">11</span>Trust, permissions and compliance</h2>
+
+  <h3>Permissions, in three tiers</h3>
+  <p>The install prompt is the highest-friction moment in the entire product. Everything possible is moved out of it
+    and requested later, in context, using optional permissions.</p>
+  <table>
+    <tr><th>Tier</th><th>What it grants</th><th>Requested</th><th>Product still works without it</th></tr>
+    <tr><td><strong>0 · Base</strong></td><td><code>storage</code>, <code>sidePanel</code></td><td>At install</td><td>—</td></tr>
+    <tr><td><strong>1 · Write</strong></td><td>Type into the message box on four named AI origins</td><td>When the person clicks "put it in Claude for me"</td><td>Yes — falls back to copy and paste</td></tr>
+    <tr><td><strong>2 · Read your own input</strong></td><td>See what the person types into the composer, never the reply</td><td>Only if they turn on ongoing measurement</td><td>Yes — measurement runs from exports instead</td></tr>
+    <tr><td><strong>3 · Read model output</strong></td><td>Read the AI's reply back into the panel</td><td>Explicit, per site, never default</td><td>Yes</td></tr>
+  </table>
+  <p>Tier 2 deserves emphasis because it is routinely conflated with tier 3 and should not be. Reading what a person
+    types is a materially smaller claim than reading what an AI says back, and — as section 14 shows — it is
+    sufficient for every measurement the product wants to make.</p>
+
+  <h3>Chrome Web Store, as of now</h3>
+  <p>The 2026 policy update, in force since 1 August, tightened two things that bear directly on this product:
+    any data an extension collects must be <em>strictly necessary</em> to its single declared purpose, and all
+    collection must be prominently disclosed regardless of how closely it relates to that purpose. Changes to data
+    handling after install must be disclosed too.</p>
+  <ul class="chk">
+    <li><b>Single purpose statement:</b> "Builds and maintains a personal context file for use with AI assistants." Every permission traces to it.</li>
+    <li><b>Data collection:</b> none. Not minimal — none. That is the cleanest possible position under this policy and it should be defended hard against every future feature request.</li>
+    <li><b>Disclosure:</b> permanent, in-panel, in plain words. Not a one-time dialog. The line under the composer changes with the selected posture and is always visible.</li>
+    <li><b>Host permissions:</b> four named origins, optional, requested in context. Never <code>&lt;all_urls&gt;</code>, which raises review scrutiny and frightens exactly the user we are designing for.</li>
+    <li><b>Privacy policy:</b> required and published, and it will be short, because there is very little to describe.</li>
+  </ul>
+
+  <h3>Third-party terms</h3>
+  <p>Automated submission on someone else's AI service is the one area where the product could plausibly conflict
+    with another company's terms of use. Fill-only — where the person still presses send — is a materially different
+    act from submitting on their behalf. This is the practical argument for fill-only as the default, alongside the
+    trust argument, and it warrants an actual legal read before tier 3 ships.</p>
+ </div>
+</section>
+
+<section id="s12">
+ <div class="wrap">
+  <h2><span class="n">12</span>Reliability — what breaks, and what happens when it does</h2>
+  <p class="sec-lede">A product that must still work in six months has to be designed around its own decay.
+    These are the specific failure modes, in the order they will actually occur.</p>
+
+  <table class="risk">
+    <tr><th>Failure</th><th>When</th><th>Design response</th></tr>
+    <tr><td><strong>An AI site redesigns its message box</strong></td><td>Guaranteed. Repeatedly.</td>
+      <td>Capability probe on load. If the composer cannot be found, the panel silently returns to copy-and-paste and says nothing. It never shows an error the person cannot act on, and it never tries and fails visibly. Selectors live in one versioned map, updatable without a full release.</td></tr>
+    <tr><td><strong>Service worker is killed</strong></td><td>Constantly, by design</td><td>No meaningful state in memory. Everything that must survive is written to storage on change, not on interval.</td></tr>
+    <tr><td><strong>Storage limits</strong></td><td>Heavy users, year one</td><td><code>storage.local</code> is the home for files; request <code>unlimitedStorage</code> only if a real file approaches the cap. <code>storage.sync</code> holds preferences and the pack subscription only — it caps near 100 KB with an 8 KB per-item limit and cannot hold a context file.</td></tr>
+    <tr><td><strong>Saved data schema changes</strong></td><td>Every meaningful release</td><td>Versioned key, forward-only migrations, and an automatic file export written before any migration runs. If a migration fails, the person still has their file.</td></tr>
+    <tr><td><strong>The person clears browsing data</strong></td><td>Eventually, to someone</td><td>The download is the backup, and the product builds the habit early — a gentle prompt to keep a copy after any substantial change. Re-import rebuilds the answers, which is why round-trippable export is a hard requirement.</td></tr>
+    <tr><td><strong>Browser or platform policy change</strong></td><td>Annually</td><td>No dependence on anything exotic. Side panel, storage, optional host permissions — the boring, well-supported surface.</td></tr>
+    <tr><td><strong>The person forgets the product exists</strong></td><td>Week three</td><td>The most likely failure of all, and the only one that is a design problem rather than an engineering one. Section 05 is the answer; if it does not work, nothing else here matters.</td></tr>
+  </table>
+
+  <div class="note">
+    <p><b>The governing principle:</b> every enhancement degrades to the manual path, silently. Fill-only failing
+      means copy-and-paste. Pack fetch failing means the last good pack. Export parse failing means the interview
+      still runs. There is no state in which the product is broken — only states in which it is doing less.</p>
+  </div>
+ </div>
+</section>
+
+<section id="s13">
+ <div class="wrap">
+  <h2><span class="n">13</span>The history audit — starting from evidence instead of a blank page</h2>
+  <p class="sec-lede">Every person arriving at this product has already written the answers, hundreds of times,
+    in their own chat history. The audit reads that history — theirs, on their machine, at their invitation — and
+    turns it into the first draft of their file.</p>
+
+  <h3>The mechanism: their export, not our scraper</h3>
+  <p>Every major AI platform ships a data export. The person requests it, receives it, and drags the file into the
+    panel. This is worth stating plainly because the alternative is so much worse: scraping the history out of the
+    page would need broad read permissions, would break every time a site redesigns, would sit awkwardly against
+    other companies' terms, and would frighten precisely the user we are trying to reach. The export path needs
+    <em>no additional permission at all</em>.</p>
+
+  <table>
+    <tr><th>Platform</th><th>How they get it</th><th>What arrives</th></tr>
+    <tr><td><strong>ChatGPT</strong></td><td>Settings → Data controls → Export data</td>
+      <td>A zip by email — link expires in 24 hours — containing <code>conversations.json</code> plus a readable
+        <code>chat.html</code>. Each conversation carries a title, create and update timestamps, and a
+        <code>mapping</code> tree of messages by role. Usually a few megabytes even for heavy users.</td></tr>
+    <tr><td><strong>Claude</strong></td><td>Settings → account-level export</td><td>Structured conversation data with metadata. Processing time varies.</td></tr>
+    <tr><td><strong>Gemini</strong></td><td>takeout.google.com → deselect all → Gemini Apps</td><td>HTML or JSON through Google Takeout.</td></tr>
+    <tr><td><strong>Copilot</strong></td><td>Microsoft privacy dashboard</td><td>Less well documented; treat as a later parser, not a launch one.</td></tr>
+  </table>
+
+  <div class="note">
+    <p><b>One structural gift in the ChatGPT format.</b> Messages are stored as a tree, not a list, because edits
+      and regenerations create branches. Every branch point is a moment the person was not satisfied with what they
+      got. That is a correction signal we get for free, without interpreting a single word.</p>
+  </div>
+
+  <h3>What the audit looks for, all of it locally and none of it with AI</h3>
+  <table>
+    <tr><th>Signal</th><th>How it is found</th><th>Becomes</th></tr>
+    <tr><td><strong>Repeated explanations</strong></td>
+      <td>Normalised 5–8 word shingles across the opening message of every conversation; keep any that recur in three or more separate conversations.</td>
+      <td>Candidate lines for <em>what you keep re-explaining</em> and for boundaries and preferences.</td></tr>
+    <tr><td><strong>Corrections</strong></td>
+      <td>User turns opening with corrective markers — "no,", "actually", "I meant", "not quite", "too long", "shorter", "I said" — plus every edit/regeneration branch.</td>
+      <td>The highest-value candidates of all. Each correction is a preference that was missing from context.</td></tr>
+    <tr><td><strong>Names worth knowing</strong></td>
+      <td>Capitalised token sequences appearing mid-sentence three or more times, minus a stoplist.</td>
+      <td>Pre-fills the people, teams and systems block — the section people otherwise skip.</td></tr>
+    <tr><td><strong>Topics you keep returning to</strong></td>
+      <td>Similarity clustering over conversation titles and opening messages, grouped by day.</td>
+      <td>Candidate initiatives, and a count: "you came back to this on six separate days."</td></tr>
+    <tr><td><strong>Setup tax</strong></td>
+      <td>In each opening message, the characters of context typed before the first actual request.</td>
+      <td>The baseline number that section 14 measures against.</td></tr>
+    <tr><td><strong>Vocabulary</strong></td>
+      <td>Terms frequent in their history and rare in general use.</td>
+      <td>Jargon the file should teach their AI.</td></tr>
+  </table>
+
+  <h3>What the person actually experiences</h3>
+  <ol style="color:var(--ink-2);font-size:15px;max-width:72ch">
+    <li>Home offers it once: <em>"Already used AI a lot? I can read your own chat history and give you a head start."</em></li>
+    <li>Three steps to get the export, written as three steps, with the exact menu names.</li>
+    <li>They pick the file. A progress line, then a single screen: <em>"I found 11 things you explain over and over."</em></li>
+    <li>Each one is a tick box, quoted in their own words, with a count: <em>"'I write for operators, not engineers' — you said this in 23 chats."</em></li>
+    <li>They untick what is wrong. Everything ticked pre-fills the interview, which now starts two-thirds answered.</li>
+  </ol>
+  <p>This is the single largest accessibility win available to the product. The blank box is where non-technical
+    users stop, and the audit replaces the blank box with a list of things they already said. It converts the
+    hardest question in the product — <em>how do you work?</em> — into the easiest one: <em>is this true?</em></p>
+
+  <h3>Rules that are not negotiable</h3>
+  <ul class="chk">
+    <li><b>Parsed in memory, never stored.</b> The raw export never touches <code>storage</code>. Only the candidates the person ticks are saved, in their edited form.</li>
+    <li><b>Never transmitted.</b> Not to us, not to their AI, not anywhere. If an optional step uses their AI to tidy the candidates, it sends the extracted lines only — visible in full, in the panel, before they copy it.</li>
+    <li><b>Their history contains other people.</b> Pasted emails, client details, colleagues' names. This is the strongest argument for the two rules above, and it should be said out loud in the interface, not buried in a policy.</li>
+    <li><b>Discardable in one action.</b> A visible "forget this file" that clears everything derived, at any point.</li>
+    <li><b>Optional, always.</b> The interview works perfectly without it and must never imply otherwise.</li>
+  </ul>
+
+  <h3>Engineering constraints</h3>
+  <p>Parse in a worker so a large export never freezes the panel. Stream rather than <code>JSON.parse</code> the
+    whole file where the format allows. Write one parser per platform behind a common interface, version them, and
+    fail soft — an unreadable file produces <em>"I couldn't read that one. Here's how to get a fresh export,"</em>
+    never an error code. Assume every format changes without notice; none of them owe us stability.</p>
+ </div>
+</section>
+
+<section id="s14">
+ <div class="wrap">
+  <h2><span class="n">14</span>The improvement report — what can honestly be claimed</h2>
+  <p class="sec-lede">The goal is a sentence a person can say out loud: <em>here is how I am better, and here is why
+    it would have been worth paying for.</em> That sentence is reachable, but only if we are disciplined about
+    which parts of it are measured and which are inferred.</p>
+
+  <div class="note">
+    <p><b>Why this product can do something most cannot.</b> Almost no tool can measure its own <em>before</em>,
+      because the before happened prior to install. Here the chat export contains months of it. That is a genuine
+      structural advantage, and it is the whole reason this feature is worth building.</p>
+  </div>
+
+  <h3>Two kinds of evidence, and they are not equal</h3>
+  <table>
+    <tr><th></th><th>The proof loop</th><th>The history trend</th></tr>
+    <tr><td><strong>What it is</strong></td><td>Same prompt, same day, once without the file and once with. Graded by their own AI against a fixed rubric.</td><td>Behaviour before installing versus behaviour after, from the export and from ongoing use.</td></tr>
+    <tr><td><strong>Design</strong></td><td>A within-subject controlled comparison. Same person, same question, same model, minutes apart.</td><td>Observational. Uncontrolled.</td></tr>
+    <tr><td><strong>Supports</strong></td><td>A causal claim: <em>attaching this file changed the answer.</em></td><td>A descriptive claim: <em>this is what changed.</em></td></tr>
+    <tr><td><strong>Weakness</strong></td><td>One question, one moment. Says nothing about a month of work.</td><td>Cannot separate the file from everything else that changed.</td></tr>
+  </table>
+  <p>Both belong in the report, labelled as what they are. The product's credibility rests on never letting the
+    second one wear the first one's clothes.</p>
+
+  <h3>The metrics</h3>
+  <table>
+    <tr><th>Metric</th><th>Definition</th><th>Source</th><th>How solid</th></tr>
+    <tr><td><strong>Setup tax</strong></td>
+      <td>Median characters of context typed before the actual request, per new conversation.</td>
+      <td>Export for the baseline; what they type for the ongoing figure.</td>
+      <td><span style="color:var(--green)">Strong.</span> Deterministic, same measure on both sides, no interpretation.</td></tr>
+    <tr><td><strong>Correction rate</strong></td>
+      <td>Corrective turns plus edit/regeneration branches, per conversation.</td>
+      <td>Export, and composer text going forward.</td>
+      <td><span style="color:var(--green)">Strong.</span> The marker list is crude but applied identically before and after.</td></tr>
+    <tr><td><strong>Things you no longer say</strong></td>
+      <td>Of the repeated explanations the audit found, how many appeared in the last 30 days.</td>
+      <td>Both.</td>
+      <td><span style="color:var(--green)">Strongest.</span> Named, specific, and countable. Ideally zero.</td></tr>
+    <tr><td><strong>Re-asks per topic</strong></td>
+      <td>Distinct days on which the same topic was raised again.</td>
+      <td>Export.</td>
+      <td><span style="color:var(--amber)">Moderate.</span> Clustering is fuzzy; report as a range, not a figure.</td></tr>
+    <tr><td><strong>Turns to done</strong></td>
+      <td>Median exchanges per conversation.</td>
+      <td>Export.</td>
+      <td><span style="color:var(--amber)">Weak proxy.</span> A conversation can end because it worked or because they gave up. Show it, caveat it.</td></tr>
+    <tr><td><strong>Rubric score</strong></td>
+      <td>Their own AI's grade, with and without, five criteria.</td>
+      <td>The proof loop.</td>
+      <td><span style="color:var(--green)">Strong on design, soft on instrument.</span> Controlled comparison, subjective grader.</td></tr>
+  </table>
+
+  <p><strong>On the ratio.</strong> Context characters as a share of total prompt is expressible, but it moves for
+    the wrong reasons — a short question makes the ratio look terrible with the same amount of setup. The absolute
+    setup tax is the better number, and it converts directly into the unit that persuades: typing that number of
+    characters at a normal pace, times the number of conversations, is minutes per week.</p>
+
+  <h3>The measurement needs the cheap permission, not the scary one</h3>
+  <p>Every metric above except turns-to-done can be computed from what the person <em>types</em>. None require
+    reading what the AI says back. This is a fortunate alignment: the most valuable feature in this section runs at
+    permission tier 2, and the tier that frightens people is not needed for it. Say so, in the interface, at the
+    moment consent is asked.</p>
+
+  <h3>The report</h3>
+  <p>A single screen and a single downloadable file, offered at month one, three and six — and always available.
+    Its structure:</p>
+  <div class="readonly" style="margin:16px 0"><span class="tag">Workbrain report · shape</span>Before Workbrain, across 7 months and 214 conversations
+  · you typed about 310 characters of background before asking anything
+  · you corrected the answer 1.8 times per conversation
+  · 11 explanations came up again and again
+
+Since then, across 6 weeks and 58 conversations
+  · 40 characters of background — 270 fewer, every time
+  · 0.4 corrections per conversation
+  · 9 of those 11 explanations: not typed once
+
+Roughly 25 minutes a week you are not spending re-explaining yourself.
+At the hourly figure you entered, that is about $—— a month.
+
+Measured directly, on the same day, same question:
+  without your file 2.4 / 5 · with your file 4.6 / 5, graded by your own AI
+
+What this is not: a controlled study. Your work changed, the models changed,
+and you have probably got better at this yourself. This is what changed —
+not proof of what caused it.</div>
+
+  <h3>Rules for the report</h3>
+  <ul class="chk">
+    <li><b>The person supplies the hourly number, or it is omitted.</b> Never assume a rate, never pick one for them, never show a dollar figure they did not author. An invented ROI number destroys the credibility of every real number beside it.</li>
+    <li><b>No composite index.</b> No Workbrain Score out of 100. A made-up aggregate is the fastest way to look like every other dashboard and the fastest way to be disbelieved.</li>
+    <li><b>Confounds are printed on the report, not in a footnote.</b> Saying it first is what makes the rest believable — and anyone who would be persuaded by this number is someone who will think of the objection themselves.</li>
+    <li><b>Zero and negative results are shown.</b> If nothing improved, the report says so and offers the drift check. A measurement tool that can only report success is a marketing asset, not a measurement tool.</li>
+    <li><b>Free, like everything else.</b> This is the artifact that makes someone buy coaching or expense a pack. Charging for it would be charging for the sales pitch.</li>
+  </ul>
+
+  <h3>Who the report is for</h3>
+  <table>
+    <tr><th>Reader</th><th>What convinces them</th></tr>
+    <tr><td><strong>The person</strong></td><td>Minutes a week, and the named things they no longer type. Concrete, personal, theirs.</td></tr>
+    <tr><td><strong>Whoever they are asking to pay</strong></td><td>The same figures plus the controlled comparison — and the fact that the confounds are stated. This is the document that gets coaching expensed.</td></tr>
+    <tr><td><strong>A company</strong></td><td>Ramp time and consistency, assembled only from reports individuals chose to share. Nothing aggregates automatically, because nothing flows upward. A manager can ask; the product will never tell.</td></tr>
+  </table>
+  <p>The report also solves a problem from section 05: it gives month three and month six a reason to exist. Running
+    it again is a ritual with a result, which is precisely what a maintenance product needs and rarely has.</p>
+ </div>
+</section>
+
+<section id="s15">
+ <div class="wrap">
+  <h2><span class="n">15</span>Instrumentation without an account</h2>
+  <p class="sec-lede">Having refused analytics, we should be clear-eyed about what we can and cannot see, and
+    resist the temptation to quietly reintroduce it.</p>
+  <table>
+    <tr><th>What we can see</th><th>What we cannot</th></tr>
+    <tr><td>Chrome Web Store installs, uninstalls and weekly active users</td><td>Where in the interview people abandon</td></tr>
+    <tr><td>Store ratings and written reviews</td><td>Which questions confuse people</td></tr>
+    <tr><td>Requests for team packs, and pack fetch volume by URL</td><td>Whether anyone completed anything</td></tr>
+    <tr><td>Briefings that arrive as emails or intake submissions</td><td>How many were generated and not sent</td></tr>
+    <tr><td>Whatever people tell us in coaching sessions</td><td>Anything about the silent majority</td></tr>
+  </table>
+  <p>The store's weekly-actives figure is the honest north star, and briefings received is the honest conversion
+    metric. Everything else has to come from talking to people — which for a product whose paid tier is human
+    services is not the handicap it would be elsewhere.</p>
+  <p><strong>The one legitimate exception</strong> is a local diagnostic the person can read and choose to send:
+    the panel already computes everything about its own use for the report. A "send this with my briefing" tick
+    box turns that into research, with consent, at the moment they were already sharing. That is the only
+    telemetry that should ever exist here.</p>
+ </div>
+</section>
+
+<section id="s16">
+ <div class="wrap">
+  <h2><span class="n">16</span>Build sequence</h2>
+  <p class="sec-lede">Ordered so that each release is independently useful, and so the riskiest assumption gets
+    tested first.</p>
+
+  <div class="phase">
+    <div class="p"><b>Release 1</b><h5>Parity, well made</h5><p>Side panel, the Context interview panel-native, the file, the proof loop, manual hand-off only. No host permissions at all.</p></div>
+    <div class="p"><b>Release 2</b><h5>The reason to return</h5><p>Home surface, freshness from durability answers, drift check, capture, take-it-with-you export and re-import.</p></div>
+    <div class="p"><b>Release 3</b><h5>Evidence</h5><p>History audit with the ChatGPT parser, interview pre-fill, and the first improvement report.</p></div>
+    <div class="p"><b>Release 4</b><h5>Reach</h5><p>Fill-only hand-off as an optional permission. Skills interview, library page, team packs.</p></div>
+    <div class="p"><b>Later</b><h5>Only if earned</h5><p>Actions interview, further parsers, tier-3 read-back, managed deployment, anything with a seat in it.</p></div>
+  </div>
+
+  <h3>What each release is testing</h3>
+  <table>
+    <tr><th>Release</th><th>The question it answers</th><th>Kill signal</th></tr>
+    <tr><td>1</td><td>Will people finish an interview in a panel, and does the proof land?</td><td>They install and never reach the proof.</td></tr>
+    <tr><td>2</td><td>Does anyone come back at week six?</td><td>Weekly actives collapse after week two and the drift check does not move them.</td></tr>
+    <tr><td>3</td><td>Does starting from their own history remove the blank-page problem — and can we show real improvement?</td><td>The audit finds nothing people recognise, or the numbers do not move.</td></tr>
+    <tr><td>4</td><td>Will a team actually publish a pack, and will their people subscribe?</td><td>Managers like the idea and never author one. This is the likeliest failure in the whole plan.</td></tr>
+  </table>
+
+  <h3>Release 1 checklist</h3>
+  <ul class="chk">
+    <li><b>Manifest:</b> single purpose statement, <code>storage</code> and <code>sidePanel</code> only, published privacy policy, no host permissions.</li>
+    <li><b>Round-trippable export</b> from day one. Retrofitting this later is expensive and it is the entire backup story.</li>
+    <li><b>Versioned storage schema</b> with a migration path and a pre-migration file export.</li>
+    <li><b>Every string checked</b> against the plain-language rules and a grade-7 target.</li>
+    <li><b>Full keyboard pass and a screen reader pass</b> before submission, not after.</li>
+    <li><b>Reduced-motion equivalents</b> for every cue, verified visually.</li>
+  </ul>
+ </div>
+</section>
+
+<section id="s17">
+ <div class="wrap">
+  <h2><span class="n">17</span>Risks and open questions</h2>
+
+  <table class="risk">
+    <tr><th>Risk</th><th>Assessment</th></tr>
+    <tr><td><strong>Nobody comes back</strong></td><td>The central risk. Three legitimate return reasons are specified; if none of them pulls people back, the honest conclusion is that this is a twice-a-year tool and should be sold as one rather than dressed as a habit.</td></tr>
+    <tr><td><strong>No team ever authors a pack</strong></td><td>Likely. Curation is work, and the person who knows the method is rarely the person with time. This is precisely what TIM exists to sell, so the failure mode has a business answer — but do not build pack infrastructure before a team has actually asked twice.</td></tr>
+    <tr><td><strong>The audit finds nothing recognisable</strong></td><td>Possible for light users. Mitigation: it is optional, it is offered once, and the interview is complete without it. It should never be the only path in.</td></tr>
+    <tr><td><strong>The numbers do not move</strong></td><td>Then say so. A report that can only show improvement is worthless, and this product's whole position is that it tells the truth about itself.</td></tr>
+    <tr><td><strong>Store review friction</strong></td><td>Manageable at tier 0 and tier 1. Tier 3 will attract real scrutiny under the 2026 limited-use rules, which is another reason to ship it last, if at all.</td></tr>
+    <tr><td><strong>No retargeting, ever</strong></td><td>Accepted, deliberately. Section 15 is the full accounting.</td></tr>
+    <tr><td><strong>Someone builds this with an account and outruns us</strong></td><td>They will, and they will win on capability. The counter-position is the one thing they cannot copy without abandoning their model: nothing you write here goes anywhere. Do not compete on features that require giving that up.</td></tr>
+  </table>
+
+  <h3>Still genuinely open</h3>
+  <ul class="chk">
+    <li><b>Does the drift check fire on a schedule, or only when the panel is opened?</b> A scheduled nudge needs a notification surface the product does not currently have, and notifications are the fastest route to an uninstall.</li>
+    <li><b>What happens on a second machine</b> before re-import becomes a habit — is a "you look new here, do you have a file?" prompt helpful, or unsettling?</li>
+    <li><b>How much of a pack can a person edit</b> before it stops being the team's method?</li>
+    <li><b>Does the Actions interview have a useful ending</b> for someone who answers "not sure" twice, other than an offer of help?</li>
+    <li><b>Is the improvement report shareable as a link,</b> which would require hosting, or only as a file — and does a file get used?</li>
+    <li><b>Where does the civic and after-school work attach?</b> The free tier makes it possible; the specification does not yet describe it.</li>
+  </ul>
+ </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p>Workbrain project specification · Model Citizen · August 2026. Companion to the design system and the
+      side panel prototype. Contrast values and platform facts in this document are measured or sourced, not
+      estimated; where no reliable figure exists, the document says so rather than inventing one.</p>
+    <p style="margin-top:16px;font-size:12.5px">Sources ·
+      <a href="https://groups.google.com/a/chromium.org/g/chromium-extensions/c/XLeZ6iKiuVI">Chrome Web Store Payments deprecation</a> ·
+      <a href="https://extensionpay.com/articles/extensionpay-is-the-chrome-web-store-payments-replacement">ExtensionPay as replacement</a> ·
+      <a href="https://developer.chrome.com/blog/cws-policy-updates-2026">Chrome Web Store 2026 policy updates</a> ·
+      <a href="https://chromeenterprise.google/policies/extension-install-forcelist/">ExtensionInstallForcelist</a> ·
+      <a href="https://developer.chrome.com/blog/extension-side-panel-launch">Side Panel API guidance</a> ·
+      <a href="https://obsidian.md/pricing">Obsidian pricing</a> ·
+      <a href="https://www.extensionradar.com/blog/chrome-web-store-developer-fee-2026">CWS developer fee</a> ·
+      <a href="https://dodopayments.com/blogs/monetize-chrome-extension">Extension monetization models</a> ·
+      <a href="https://konabayev.com/blog/extension-monetization-statistics-2026/">On the absence of benchmarks</a> ·
+      <a href="https://takeoutday.org/guides/export-chatgpt-conversations">ChatGPT export structure</a> ·
+      <a href="https://hundredtabs.com/blog/export-ai-chats">Platform export paths</a>
+    </p>
+  </div>
+</footer>
+
+</body>
+</html>

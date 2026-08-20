@@ -1,0 +1,860 @@
+[
+ {
+  "id": "conv-0",
+  "title": "Weekly status update",
+  "create_time": 1750000000,
+  "update_time": 1750000600,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n0-0"
+    ]
+   },
+   "n0-0": {
+    "id": "n0-0",
+    "parent": "root",
+    "children": [
+     "n0-1"
+    ],
+    "message": {
+     "id": "n0-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750000000,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "I write for operators, not engineers. They have ten minutes and a phone. Keep it under 150 words. Draft a status update for my manager."
+      ]
+     }
+    }
+   },
+   "n0-1": {
+    "id": "n0-1",
+    "parent": "n0-0",
+    "children": [
+     "n0-2"
+    ],
+    "message": {
+     "id": "n0-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750000060,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Sure \u2014 here is a draft."
+      ]
+     }
+    }
+   },
+   "n0-2": {
+    "id": "n0-2",
+    "parent": "n0-1",
+    "children": [
+     "n0-3"
+    ],
+    "message": {
+     "id": "n0-2",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750000120,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "No, that's too formal. Try again."
+      ]
+     }
+    }
+   },
+   "n0-3": {
+    "id": "n0-3",
+    "parent": "n0-2",
+    "children": [],
+    "message": {
+     "id": "n0-3",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750000180,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Revised draft."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n0-3"
+ },
+ {
+  "id": "conv-1",
+  "title": "Client email",
+  "create_time": 1750172800,
+  "update_time": 1750173400,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n1-0"
+    ]
+   },
+   "n1-0": {
+    "id": "n1-0",
+    "parent": "root",
+    "children": [
+     "n1-1"
+    ],
+    "message": {
+     "id": "n1-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750172800,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "I write for operators, not engineers. Write a short email to the client about the delay."
+      ]
+     }
+    }
+   },
+   "n1-1": {
+    "id": "n1-1",
+    "parent": "n1-0",
+    "children": [],
+    "message": {
+     "id": "n1-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750172860,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Draft email."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n1-1"
+ },
+ {
+  "id": "conv-2",
+  "title": "Weekly status update",
+  "create_time": 1750259200,
+  "update_time": 1750259800,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n2-0"
+    ]
+   },
+   "n2-0": {
+    "id": "n2-0",
+    "parent": "root",
+    "children": [
+     "n2-1"
+    ],
+    "message": {
+     "id": "n2-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750259200,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "I write for operators, not engineers. Keep it under 150 words. Draft a status update for my manager."
+      ]
+     }
+    }
+   },
+   "n2-1": {
+    "id": "n2-1",
+    "parent": "n2-0",
+    "children": [
+     "n2-2"
+    ],
+    "message": {
+     "id": "n2-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750259260,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Draft."
+      ]
+     }
+    }
+   },
+   "n2-2": {
+    "id": "n2-2",
+    "parent": "n2-1",
+    "children": [
+     "n2-3"
+    ],
+    "message": {
+     "id": "n2-2",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750259320,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Actually make it shorter."
+      ]
+     }
+    }
+   },
+   "n2-3": {
+    "id": "n2-3",
+    "parent": "n2-2",
+    "children": [],
+    "message": {
+     "id": "n2-3",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750259380,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Shorter draft."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n2-3"
+ },
+ {
+  "id": "conv-3",
+  "title": "Roadmap summary",
+  "create_time": 1750432000,
+  "update_time": 1750432600,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n3-0"
+    ]
+   },
+   "n3-0": {
+    "id": "n3-0",
+    "parent": "root",
+    "children": [
+     "n3-1"
+    ],
+    "message": {
+     "id": "n3-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750432000,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Summarise this roadmap for the leadership review."
+      ]
+     }
+    }
+   },
+   "n3-1": {
+    "id": "n3-1",
+    "parent": "n3-0",
+    "children": [],
+    "message": {
+     "id": "n3-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750432060,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Summary."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n3-1"
+ },
+ {
+  "id": "conv-4",
+  "title": "Weekly status update",
+  "create_time": 1750604800,
+  "update_time": 1750605400,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n4-0"
+    ]
+   },
+   "n4-0": {
+    "id": "n4-0",
+    "parent": "root",
+    "children": [
+     "n4-1"
+    ],
+    "message": {
+     "id": "n4-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750604800,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Keep it under 150 words. Draft a status update for my manager."
+      ]
+     }
+    }
+   },
+   "n4-1": {
+    "id": "n4-1",
+    "parent": "n4-0",
+    "children": [],
+    "message": {
+     "id": "n4-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750604860,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Draft."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n4-1"
+ },
+ {
+  "id": "conv-5",
+  "title": "Hiring debrief",
+  "create_time": 1750777600,
+  "update_time": 1750778200,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n5-0"
+    ]
+   },
+   "n5-0": {
+    "id": "n5-0",
+    "parent": "root",
+    "children": [
+     "n5-1"
+    ],
+    "message": {
+     "id": "n5-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750777600,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "I write for operators, not engineers. Write up an interview debrief for the candidate we saw today."
+      ]
+     }
+    }
+   },
+   "n5-1": {
+    "id": "n5-1",
+    "parent": "n5-0",
+    "children": [
+     "n5-2"
+    ],
+    "message": {
+     "id": "n5-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750777660,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Debrief."
+      ]
+     }
+    }
+   },
+   "n5-2": {
+    "id": "n5-2",
+    "parent": "n5-1",
+    "children": [
+     "n5-3"
+    ],
+    "message": {
+     "id": "n5-2",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750777720,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "I meant the second candidate."
+      ]
+     }
+    }
+   },
+   "n5-3": {
+    "id": "n5-3",
+    "parent": "n5-2",
+    "children": [],
+    "message": {
+     "id": "n5-3",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750777780,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Revised."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n5-3"
+ },
+ {
+  "id": "conv-6",
+  "title": "Roadmap summary",
+  "create_time": 1750950400,
+  "update_time": 1750951000,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n6-0"
+    ]
+   },
+   "n6-0": {
+    "id": "n6-0",
+    "parent": "root",
+    "children": [
+     "n6-1",
+     "n6-1b"
+    ],
+    "message": {
+     "id": "n6-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1750950400,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Summarise this roadmap for the leadership review again with the new dates."
+      ]
+     }
+    }
+   },
+   "n6-1": {
+    "id": "n6-1",
+    "parent": "n6-0",
+    "children": [],
+    "message": {
+     "id": "n6-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750950460,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Summary."
+      ]
+     }
+    }
+   },
+   "n6-1b": {
+    "id": "n6-1b",
+    "parent": "n6-0",
+    "children": [],
+    "message": {
+     "id": "n6-1b",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1750950455,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Summary. (earlier attempt)"
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n6-1"
+ },
+ {
+  "id": "conv-7",
+  "title": "Vendor note",
+  "create_time": 1751036800,
+  "update_time": 1751037400,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n7-0"
+    ]
+   },
+   "n7-0": {
+    "id": "n7-0",
+    "parent": "root",
+    "children": [
+     "n7-1"
+    ],
+    "message": {
+     "id": "n7-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1751036800,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Draft a note to the vendor about the invoice."
+      ]
+     }
+    }
+   },
+   "n7-1": {
+    "id": "n7-1",
+    "parent": "n7-0",
+    "children": [],
+    "message": {
+     "id": "n7-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1751036860,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Note."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n7-1"
+ },
+ {
+  "id": "conv-8",
+  "title": "Weekly status update",
+  "create_time": 1751296000,
+  "update_time": 1751296600,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n8-0"
+    ]
+   },
+   "n8-0": {
+    "id": "n8-0",
+    "parent": "root",
+    "children": [
+     "n8-1"
+    ],
+    "message": {
+     "id": "n8-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1751296000,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "I write for operators, not engineers. Draft a status update for my manager."
+      ]
+     }
+    }
+   },
+   "n8-1": {
+    "id": "n8-1",
+    "parent": "n8-0",
+    "children": [],
+    "message": {
+     "id": "n8-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1751296060,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Draft."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n8-1"
+ },
+ {
+  "id": "conv-9",
+  "title": "Team offsite agenda",
+  "create_time": 1751555200,
+  "update_time": 1751555800,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n9-0"
+    ]
+   },
+   "n9-0": {
+    "id": "n9-0",
+    "parent": "root",
+    "children": [
+     "n9-1"
+    ],
+    "message": {
+     "id": "n9-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1751555200,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Build an agenda for our team offsite next month."
+      ]
+     }
+    }
+   },
+   "n9-1": {
+    "id": "n9-1",
+    "parent": "n9-0",
+    "children": [
+     "n9-2"
+    ],
+    "message": {
+     "id": "n9-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1751555260,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Agenda."
+      ]
+     }
+    }
+   },
+   "n9-2": {
+    "id": "n9-2",
+    "parent": "n9-1",
+    "children": [
+     "n9-3"
+    ],
+    "message": {
+     "id": "n9-2",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1751555320,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Don't include icebreakers."
+      ]
+     }
+    }
+   },
+   "n9-3": {
+    "id": "n9-3",
+    "parent": "n9-2",
+    "children": [],
+    "message": {
+     "id": "n9-3",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1751555380,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Updated."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n9-3"
+ },
+ {
+  "id": "conv-10",
+  "title": "Roadmap summary",
+  "create_time": 1751814400,
+  "update_time": 1751815000,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n10-0"
+    ]
+   },
+   "n10-0": {
+    "id": "n10-0",
+    "parent": "root",
+    "children": [
+     "n10-1",
+     "n10-1b"
+    ],
+    "message": {
+     "id": "n10-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1751814400,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Summarise this roadmap for the leadership review one more time."
+      ]
+     }
+    }
+   },
+   "n10-1": {
+    "id": "n10-1",
+    "parent": "n10-0",
+    "children": [],
+    "message": {
+     "id": "n10-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1751814460,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Summary."
+      ]
+     }
+    }
+   },
+   "n10-1b": {
+    "id": "n10-1b",
+    "parent": "n10-0",
+    "children": [],
+    "message": {
+     "id": "n10-1b",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1751814455,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Summary. (earlier attempt)"
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n10-1"
+ },
+ {
+  "id": "conv-11",
+  "title": "Performance note",
+  "create_time": 1752073600,
+  "update_time": 1752074200,
+  "mapping": {
+   "root": {
+    "id": "root",
+    "message": null,
+    "parent": null,
+    "children": [
+     "n11-0"
+    ]
+   },
+   "n11-0": {
+    "id": "n11-0",
+    "parent": "root",
+    "children": [
+     "n11-1"
+    ],
+    "message": {
+     "id": "n11-0",
+     "author": {
+      "role": "user"
+     },
+     "create_time": 1752073600,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Help me write a performance note for someone on my team."
+      ]
+     }
+    }
+   },
+   "n11-1": {
+    "id": "n11-1",
+    "parent": "n11-0",
+    "children": [],
+    "message": {
+     "id": "n11-1",
+     "author": {
+      "role": "assistant"
+     },
+     "create_time": 1752073660,
+     "content": {
+      "content_type": "text",
+      "parts": [
+       "Note."
+      ]
+     }
+    }
+   }
+  },
+  "current_node": "n11-1"
+ }
+]

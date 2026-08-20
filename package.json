@@ -1,0 +1,37 @@
+{
+  "name": "workbrain-extension",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "npm run tokens && tsc --noEmit && vite build",
+    "zip": "npm run build && cd dist && zip -r ../dist.zip .",
+    "tokens": "node scripts/tokens.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "e2e": "playwright test",
+    "a11y": "playwright test --project=a11y",
+    "check": "npm run typecheck && npm run test && npm run build && npm run e2e && npm run a11y"
+  },
+  "dependencies": {
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@crxjs/vite-plugin": "^2.0.0",
+    "@playwright/test": "^1.47.0",
+    "@axe-core/playwright": "^4.10.0",
+    "@types/chrome": "^0.0.270",
+    "@types/react": "^18.3.0",
+    "@types/react-dom": "^18.3.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "ajv": "^8.17.1",
+    "jsdom": "^25.0.0",
+    "typescript": "^5.6.0",
+    "vite": "^5.4.0",
+    "vitest": "^2.1.0"
+  },
+  "//": "Every runtime dependency needs a line in docs/DEPENDENCIES.md. There are two, and there is no good reason for a third."
+}

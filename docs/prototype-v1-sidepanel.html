@@ -1,0 +1,1327 @@
+<!doctype html>
+<html lang="en" data-mode="manual">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workbrain — Side Panel Prototype</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#0c0f16; --surface:#141824; --surface-2:#1b2030; --surface-3:#222839;
+  --ink:#eef0f7; --muted:#98a0b4; --faint:#6a7288;
+  --mark:#e0a452; --mark-dim:rgba(224,164,82,.16); --mark-line:rgba(224,164,82,.42);
+  --earned:#9b87f0; --earned-dim:rgba(155,135,240,.14); --earned-line:rgba(155,135,240,.45);
+  --rule:#262c3c; --rule-soft:#1c2130;
+  --ok:#5fd39a;
+  --mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
+  --disp:"Space Grotesk",ui-sans-serif,system-ui,sans-serif;
+  --sans:"IBM Plex Sans",ui-sans-serif,system-ui,sans-serif;
+  --panel-w:400px;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{
+  margin:0;background:#05070c;color:var(--ink);font-family:var(--sans);font-size:14px;
+  -webkit-font-smoothing:antialiased;display:flex;flex-direction:column;overflow:hidden;
+}
+
+/* ============ prototype control bar (not part of the product) ============ */
+.protobar{
+  flex:0 0 auto;display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  padding:10px 18px;background:#0a0d14;border-bottom:1px solid #1a1f2c;
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--faint);
+}
+.protobar .brandmark{display:flex;align-items:center;gap:9px;color:var(--ink);letter-spacing:.02em;text-transform:none;font-size:12.5px}
+.protobar .brandmark b{font-family:var(--disp);font-weight:700;font-size:14px}
+.protobar .brandmark span{color:var(--faint);font-family:var(--sans);font-size:11px;text-transform:none;letter-spacing:0}
+.pgroup{display:flex;align-items:center;gap:7px}
+.pgroup>label{color:var(--faint)}
+.seg{display:flex;border:1px solid var(--rule);border-radius:7px;overflow:hidden;background:var(--surface)}
+.seg button{
+  font:inherit;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;
+  background:transparent;border:0;color:var(--muted);padding:5px 10px;cursor:pointer;transition:.15s;
+}
+.seg button+button{border-left:1px solid var(--rule)}
+.seg button:hover{color:var(--ink);background:var(--surface-2)}
+.seg button[aria-pressed="true"]{background:var(--mark-dim);color:var(--mark)}
+.toggle{display:inline-flex;align-items:center;gap:6px;cursor:pointer;user-select:none;color:var(--muted)}
+.toggle input{accent-color:var(--mark);width:13px;height:13px;cursor:pointer}
+.protobar .spacer{flex:1}
+.ghostbtn{
+  font:inherit;font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;font-family:var(--mono);
+  background:transparent;border:1px solid var(--rule);border-radius:7px;color:var(--muted);
+  padding:5px 11px;cursor:pointer;transition:.15s;
+}
+.ghostbtn:hover{border-color:var(--mark-line);color:var(--mark)}
+
+/* ============ chrome window shell ============ */
+.stage{flex:1;min-height:0;display:flex;align-items:stretch;justify-content:center;padding:20px 22px 22px;background:
+  radial-gradient(1200px 600px at 50% -10%, rgba(155,135,240,.07), transparent 60%),
+  radial-gradient(900px 500px at 90% 110%, rgba(224,164,82,.05), transparent 60%), #05070c;}
+.win{
+  flex:1;max-width:1560px;display:flex;flex-direction:column;border-radius:12px;overflow:hidden;
+  background:var(--bg);border:1px solid #1e2432;box-shadow:0 30px 80px rgba(0,0,0,.6),0 0 0 1px rgba(255,255,255,.02) inset;
+}
+.tabstrip{display:flex;align-items:flex-end;gap:6px;padding:8px 10px 0;background:#0a0d14;border-bottom:1px solid #171c28}
+.lights{display:flex;gap:6px;padding:0 8px 9px 4px}
+.lights i{width:10px;height:10px;border-radius:50%;display:block}
+.lights i:nth-child(1){background:#ff5f57}.lights i:nth-child(2){background:#febc2e}.lights i:nth-child(3){background:#28c840}
+.tab{
+  display:flex;align-items:center;gap:8px;padding:7px 14px;border-radius:8px 8px 0 0;font-size:12px;color:var(--faint);
+  background:transparent;max-width:210px;white-space:nowrap;overflow:hidden;
+}
+.tab.active{background:var(--bg);color:var(--ink)}
+.tab .favi{width:13px;height:13px;border-radius:3px;flex:0 0 auto;display:grid;place-items:center;font-size:8px;font-family:var(--mono);font-weight:700}
+.omnibox{display:flex;align-items:center;gap:10px;padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--rule-soft)}
+.omnibox .navbtns{display:flex;gap:9px;color:var(--faint);font-size:13px}
+.omnibox .url{
+  flex:1;background:var(--surface);border:1px solid var(--rule);border-radius:999px;padding:5px 13px;
+  font-family:var(--mono);font-size:11.5px;color:var(--muted);
+}
+.omnibox .exticon{
+  width:26px;height:26px;border-radius:7px;display:grid;place-items:center;flex:0 0 auto;cursor:pointer;
+  border:1px solid var(--rule);background:var(--surface);transition:.18s;
+}
+.omnibox .exticon.lit{border-color:var(--mark-line);box-shadow:0 0 0 3px var(--mark-dim)}
+.viewport{flex:1;min-height:0;display:flex;position:relative}
+
+/* ============ mocked AI page ============ */
+.page{flex:1;min-width:0;position:relative;overflow:hidden;background:#0f1219;display:flex;flex-direction:column}
+.page-head{padding:12px 20px;border-bottom:1px solid var(--rule-soft);display:flex;align-items:center;gap:10px;color:var(--muted);font-size:12.5px}
+.page-body{flex:1;overflow:auto;padding:26px 8%;display:flex;flex-direction:column;gap:16px}
+.page-empty{margin:auto;text-align:center;color:var(--faint);max-width:340px}
+.page-empty h3{font-family:var(--disp);font-size:20px;color:var(--muted);margin:0 0 8px;font-weight:600}
+.page-empty p{font-size:12.5px;line-height:1.6;margin:0}
+.bubble{max-width:78%;padding:12px 15px;border-radius:12px;font-size:13.5px;line-height:1.62;white-space:pre-wrap}
+.bubble.user{align-self:flex-end;background:var(--surface-2);border:1px solid var(--rule)}
+.bubble.ai{align-self:flex-start;background:transparent;border:1px solid var(--rule-soft);color:var(--muted)}
+.bubble.ai b{color:var(--ink);font-weight:600}
+.page-composer{padding:14px 8% 22px;border-top:1px solid var(--rule-soft)}
+.composer{
+  position:relative;border:1px solid var(--rule);border-radius:14px;background:var(--surface);
+  padding:12px 14px;min-height:60px;display:flex;align-items:flex-start;gap:10px;transition:.25s;
+}
+.composer .ctext{flex:1;font-size:13.5px;color:var(--ink);line-height:1.55;min-height:20px;white-space:pre-wrap}
+.composer .ctext:empty::before{content:attr(data-ph);color:var(--faint)}
+.composer .attach,.composer .send{
+  width:28px;height:28px;border-radius:8px;display:grid;place-items:center;flex:0 0 auto;
+  border:1px solid var(--rule);color:var(--muted);background:var(--surface-2);position:relative;transition:.2s;
+}
+.composer .send{background:var(--mark-dim);border-color:var(--mark-line);color:var(--mark)}
+.page-note{margin-top:9px;font-family:var(--mono);font-size:10.5px;color:var(--faint);letter-spacing:.04em;text-align:center}
+.attached-chip{
+  display:inline-flex;align-items:center;gap:7px;margin-bottom:9px;padding:5px 10px;border-radius:8px;
+  background:var(--earned-dim);border:1px solid var(--earned-line);color:var(--earned);
+  font-family:var(--mono);font-size:11px;
+}
+
+/* ============ the side panel ============ */
+.panel{
+  flex:0 0 var(--panel-w);width:var(--panel-w);border-left:1px solid var(--rule);
+  background:var(--bg);display:flex;flex-direction:column;position:relative;overflow:hidden;
+}
+.panel::before{content:"";position:absolute;inset:0 auto 0 0;width:1px;background:linear-gradient(180deg,transparent,var(--mark-line),transparent);opacity:.35}
+.p-head{padding:12px 16px 10px;border-bottom:1px solid var(--rule-soft);flex:0 0 auto}
+.p-brand{display:flex;align-items:center;gap:9px;margin-bottom:11px}
+.p-brand .logo{width:22px;height:22px;flex:0 0 auto}
+.p-brand h1{font-family:var(--disp);font-size:14.5px;font-weight:700;margin:0;letter-spacing:-.01em}
+.p-brand h1 em{font-style:normal;color:var(--earned)}
+.p-brand .sub{font-size:10.5px;color:var(--faint);margin-left:1px}
+.p-brand .spacer{flex:1}
+.iconbtn{
+  width:26px;height:26px;border-radius:7px;border:1px solid transparent;background:transparent;color:var(--faint);
+  display:grid;place-items:center;cursor:pointer;transition:.16s;padding:0;
+}
+.iconbtn:hover{color:var(--ink);background:var(--surface-2)}
+.iconbtn[aria-pressed="true"]{color:var(--mark);border-color:var(--mark-line);background:var(--mark-dim)}
+
+.rail{display:flex;align-items:center;gap:0;margin:0 0 7px}
+.rail .node{width:6px;height:6px;border-radius:50%;background:var(--rule);flex:0 0 auto;transition:.3s}
+.rail .node.done{background:var(--mark)}
+.rail .node.now{background:var(--mark);box-shadow:0 0 0 3px var(--mark-dim);width:8px;height:8px}
+.rail .seg-line{flex:1;height:1px;background:var(--rule);transition:.3s}
+.rail .seg-line.done{background:var(--mark-line)}
+.p-meta{display:flex;justify-content:space-between;gap:10px;font-family:var(--mono);font-size:9.5px;letter-spacing:.07em;text-transform:uppercase;color:var(--faint)}
+.p-meta .right{color:var(--mark);opacity:.75}
+
+/* file tree as a drawer */
+.tree-toggle{
+  width:100%;display:flex;align-items:center;gap:8px;padding:8px 16px;background:var(--surface);
+  border:0;border-bottom:1px solid var(--rule-soft);color:var(--muted);cursor:pointer;
+  font-family:var(--mono);font-size:11px;text-align:left;transition:.16s;flex:0 0 auto;
+}
+.tree-toggle:hover{background:var(--surface-2);color:var(--ink)}
+.tree-toggle .caret{transition:transform .25s;display:inline-block;color:var(--faint)}
+.tree-toggle[aria-expanded="true"] .caret{transform:rotate(90deg)}
+.tree-toggle .fname{color:var(--ink)}
+.tree-toggle .count{margin-left:auto;color:var(--mark);font-size:10px}
+.tree-wrap{overflow:hidden;max-height:0;transition:max-height .34s cubic-bezier(.4,0,.2,1);flex:0 0 auto;background:#0a0d14;border-bottom:1px solid var(--rule-soft)}
+.tree-wrap.open{max-height:340px;overflow-y:auto}
+.tree{list-style:none;margin:0;padding:8px 12px 12px;font-family:var(--mono);font-size:11px}
+.tree li{padding:3px 6px;border-radius:5px;color:var(--faint);display:flex;align-items:center;gap:6px;transition:.18s}
+.tree li.reached{color:var(--muted);cursor:pointer}
+.tree li.reached:hover{background:var(--surface-2);color:var(--ink)}
+.tree li.answered{color:var(--mark)}
+.tree li.active{color:var(--mark);background:var(--mark-dim)}
+.tree li .tw{opacity:.5;font-size:9px}
+.tree li.active .cursor{width:6px;height:11px;background:var(--mark);display:inline-block;animation:blink 1.05s steps(1) infinite}
+.tree li.sub{padding-left:24px;font-size:10.5px}
+@keyframes blink{0%,50%{opacity:1}50.01%,100%{opacity:0}}
+
+/* panel body */
+.p-body{flex:1;min-height:0;overflow-y:auto;padding:18px 16px 8px;position:relative}
+.p-body::-webkit-scrollbar{width:8px}
+.p-body::-webkit-scrollbar-thumb{background:var(--rule);border-radius:8px}
+.step{animation:stepIn .34s cubic-bezier(.22,1,.36,1) both}
+.step.leaving{animation:stepOut .18s ease-in forwards}
+@keyframes stepIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes stepOut{to{opacity:0;transform:translateY(-6px)}}
+.eyebrow{font-family:var(--mono);font-size:9.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--earned);margin:0 0 8px}
+.qtext{font-family:var(--disp);font-size:19px;line-height:1.28;font-weight:600;letter-spacing:-.01em;margin:0 0 8px;text-wrap:balance}
+.qtext.sm{font-size:16.5px}
+.hint{font-size:12px;color:var(--muted);line-height:1.55;margin:0 0 14px}
+.microlink{
+  background:none;border:0;padding:0;font:inherit;font-size:11.5px;color:var(--faint);cursor:pointer;
+  border-bottom:1px dashed var(--rule);margin-bottom:13px;display:inline-block;transition:.16s;
+}
+.microlink:hover{color:var(--mark);border-color:var(--mark-line)}
+
+/* chips */
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px;position:relative}
+.chip{
+  font-family:var(--mono);font-size:11.5px;padding:7px 13px;border-radius:999px;cursor:pointer;
+  background:var(--surface);border:1px solid var(--rule);color:var(--muted);transition:.18s;position:relative;
+}
+.chip:hover{border-color:var(--mark-line);color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--mark-dim);border-color:var(--mark);color:var(--mark)}
+.chip.add{border-style:dashed;color:var(--faint)}
+
+/* fields */
+.field{
+  width:100%;background:var(--surface);border:1px solid var(--rule);border-radius:10px;color:var(--ink);
+  font-family:var(--sans);font-size:13px;line-height:1.6;padding:11px 13px;resize:vertical;transition:.2s;
+}
+.field:focus{outline:none;border-color:var(--mark-line);box-shadow:0 0 0 3px var(--mark-dim)}
+.field::placeholder{color:var(--faint)}
+textarea.field{min-height:92px}
+
+/* purple = view only */
+.readblock{
+  position:relative;border:1px solid var(--earned-line);background:var(--earned-dim);border-radius:11px;
+  padding:12px 40px 12px 13px;font-family:var(--mono);font-size:11.5px;line-height:1.6;color:#d9d1ff;margin:0 0 12px;
+  transition:.25s;
+}
+.readblock.clamp{max-height:104px;overflow:hidden}
+.readblock.clamp::after{content:"";position:absolute;inset:auto 0 0 0;height:44px;background:linear-gradient(180deg,transparent,#171528)}
+.copybtn{
+  position:absolute;top:8px;right:8px;width:26px;height:26px;border-radius:7px;cursor:pointer;
+  background:rgba(155,135,240,.16);border:1px solid var(--earned-line);color:var(--earned);
+  display:grid;place-items:center;transition:.18s;
+}
+.copybtn:hover{background:rgba(155,135,240,.3)}
+.copybtn.copied{background:rgba(95,211,154,.18);border-color:var(--ok);color:var(--ok)}
+.expandlink{font-family:var(--mono);font-size:10.5px;color:var(--earned);background:none;border:0;cursor:pointer;padding:0;margin:-6px 0 14px}
+
+/* buttons */
+.btnrow{display:flex;align-items:center;gap:8px;margin-top:4px}
+.btn{
+  font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  padding:9px 15px;border-radius:9px;cursor:pointer;border:1px solid var(--rule);
+  background:var(--surface);color:var(--muted);transition:.18s;
+}
+.btn:hover{color:var(--ink);border-color:var(--faint)}
+.btn.primary{background:var(--mark);border-color:var(--mark);color:#1a1206;font-weight:600}
+.btn.primary:hover{filter:brightness(1.08)}
+.btn.primary:disabled{opacity:.35;cursor:not-allowed;filter:none}
+.btn.quiet{border-color:transparent;background:transparent;color:var(--faint);padding-left:6px;padding-right:6px}
+.btn.quiet:hover{color:var(--mark)}
+.btn.violet{background:var(--earned-dim);border-color:var(--earned-line);color:var(--earned)}
+.btn.violet:hover{background:rgba(155,135,240,.26)}
+
+.p-foot{
+  flex:0 0 auto;border-top:1px solid var(--rule-soft);padding:11px 16px;display:flex;align-items:center;gap:8px;
+  background:linear-gradient(180deg,transparent,rgba(0,0,0,.25));
+}
+.p-foot .save{margin-left:auto;font-family:var(--mono);font-size:9.5px;color:var(--faint);letter-spacing:.04em;text-align:right;line-height:1.4}
+
+/* cards */
+.cards{display:grid;gap:9px;margin:4px 0 8px}
+.card{
+  border:1px solid var(--rule);background:var(--surface);border-radius:11px;padding:12px 13px;cursor:pointer;transition:.2s;
+}
+.card:hover{border-color:var(--mark-line);transform:translateY(-1px)}
+.card h4{margin:0 0 4px;font-family:var(--disp);font-size:13.5px;font-weight:600}
+.card p{margin:0;font-size:11.5px;color:var(--muted);line-height:1.5}
+.card.paid{border-color:var(--earned-line);background:linear-gradient(180deg,var(--earned-dim),transparent)}
+.card.paid h4{color:var(--earned)}
+.card .price{float:right;font-family:var(--mono);font-size:10.5px;color:var(--faint)}
+
+/* =======================================================================
+   CUE LAYER — every animation here maps to one instruction and stops the
+   instant that instruction has been followed. Applied by data-cue-* attrs
+   so a step can request motion declaratively without touching CSS.
+   ======================================================================= */
+
+/* shimmer:<target> — "pick one of these" chase across an unpicked row */
+[data-cue~="shimmer"]{position:relative;overflow:hidden}
+[data-cue~="shimmer"]::after{
+  content:"";position:absolute;inset:0;pointer-events:none;border-radius:inherit;
+  background:linear-gradient(105deg,transparent 20%,rgba(224,164,82,.30) 48%,transparent 76%);
+  transform:translateX(-130%);animation:chase 1.15s cubic-bezier(.5,0,.5,1) infinite;
+  animation-delay:var(--chase-delay,0s);
+}
+@keyframes chase{0%{transform:translateX(-130%)}55%,100%{transform:translateX(130%)}}
+
+/* pulse:<target> — "this is the suggested pick" */
+[data-cue~="pulse"]{animation:recpulse 1.9s ease-in-out infinite}
+@keyframes recpulse{
+  0%,100%{box-shadow:0 0 0 0 rgba(224,164,82,0)}
+  50%{box-shadow:0 0 0 4px rgba(224,164,82,.20)}
+}
+
+/* glow:<target> — "the next thing to do is right here" (view-only, purple) */
+[data-cue~="glow"]{animation:guideglow 1.65s ease-in-out infinite;border-color:var(--earned)!important}
+@keyframes guideglow{
+  0%,100%{box-shadow:0 0 0 0 rgba(155,135,240,0),0 0 14px 0 rgba(155,135,240,.10)}
+  50%{box-shadow:0 0 0 4px rgba(155,135,240,.22),0 0 26px 2px rgba(155,135,240,.20)}
+}
+
+/* glowgold:<target> — same instruction on an actionable (gold) element */
+[data-cue~="glowgold"]{animation:goldglow 1.55s ease-in-out infinite}
+@keyframes goldglow{
+  0%,100%{box-shadow:0 0 0 0 rgba(224,164,82,0)}
+  50%{box-shadow:0 0 0 5px rgba(224,164,82,.22)}
+}
+
+/* focus:<target> — caret waiting for you */
+[data-cue~="focus"]{border-color:var(--mark-line)!important;box-shadow:0 0 0 3px var(--mark-dim)}
+[data-cue~="focus"]::placeholder{color:var(--mark);opacity:.55}
+
+/* nudge:<target> — small directional bob toward what you should hit next */
+[data-cue~="nudge"]{animation:nudge 1.25s ease-in-out infinite}
+@keyframes nudge{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+
+/* stopped cues freeze cleanly rather than snapping */
+[data-cue-done]{animation:none!important}
+[data-cue-done]::after{animation:none!important;opacity:0}
+
+/* ---- cross-surface pointer: panel -> element on the page ---- */
+.pointer-layer{position:absolute;inset:0;pointer-events:none;z-index:40}
+.pointer-layer svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+.pointer-path{
+  fill:none;stroke:var(--earned);stroke-width:1.6;stroke-dasharray:5 5;stroke-linecap:round;
+  filter:drop-shadow(0 0 6px rgba(155,135,240,.55));animation:dash 22s linear infinite;
+}
+@keyframes dash{to{stroke-dashoffset:-400}}
+.pointer-ring{fill:none;stroke:var(--earned);stroke-width:1.6;transform-box:fill-box;transform-origin:center;animation:ringpop 1.7s ease-out infinite}
+@keyframes ringpop{0%{r:10;opacity:.9}70%,100%{r:30;opacity:0}}
+.pointer-label{
+  position:absolute;transform:translate(-50%,-140%);white-space:nowrap;
+  background:#171528;border:1px solid var(--earned-line);color:#d9d1ff;border-radius:8px;
+  padding:5px 10px;font-family:var(--mono);font-size:10.5px;box-shadow:0 8px 24px rgba(0,0,0,.5);
+  animation:labelin .3s ease-out both;
+}
+@keyframes labelin{from{opacity:0;transform:translate(-50%,-120%)}to{opacity:1;transform:translate(-50%,-140%)}}
+.page-target-lit{
+  box-shadow:0 0 0 2px var(--earned),0 0 24px 4px rgba(155,135,240,.35)!important;
+  border-color:var(--earned)!important;
+}
+
+/* ---- narrator caption ---- */
+.narrator{
+  position:absolute;left:12px;right:12px;bottom:64px;z-index:30;
+  background:rgba(23,21,40,.94);border:1px solid var(--earned-line);border-radius:10px;
+  padding:9px 12px;font-size:11.5px;line-height:1.5;color:#d9d1ff;
+  box-shadow:0 10px 30px rgba(0,0,0,.5);animation:narrin .28s ease-out both;
+  display:flex;gap:9px;align-items:flex-start;
+}
+.narrator .wave{display:flex;gap:2px;align-items:center;height:14px;margin-top:2px;flex:0 0 auto}
+.narrator .wave i{width:2px;background:var(--earned);border-radius:2px;animation:wv .9s ease-in-out infinite}
+.narrator .wave i:nth-child(1){height:5px;animation-delay:0s}
+.narrator .wave i:nth-child(2){height:11px;animation-delay:.12s}
+.narrator .wave i:nth-child(3){height:7px;animation-delay:.24s}
+.narrator .wave i:nth-child(4){height:13px;animation-delay:.36s}
+@keyframes narrin{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes wv{0%,100%{transform:scaleY(.45)}50%{transform:scaleY(1)}}
+
+/* ---- per-choice sketch illustrations ---- */
+.sketch{
+  border:1px solid var(--rule);background:linear-gradient(180deg,var(--surface),transparent);
+  border-radius:11px;padding:14px 12px 12px;margin:0 0 14px;display:flex;gap:12px;align-items:center;
+  animation:stepIn .38s cubic-bezier(.22,1,.36,1) both;
+}
+.sketch svg{flex:0 0 auto}
+.sketch .cap{font-size:11.5px;color:var(--muted);line-height:1.5}
+.sketch .cap b{color:var(--ink);font-weight:600;display:block;font-family:var(--disp);font-size:12.5px;margin-bottom:2px}
+.dr{stroke:var(--mark);fill:none;stroke-width:1.5;stroke-linecap:round;stroke-linejoin:round}
+.dr.v{stroke:var(--earned)}
+.dr.f{fill:var(--mark-dim);stroke:var(--mark)}
+.draw{stroke-dasharray:var(--len,120);stroke-dashoffset:var(--len,120);animation:draw .85s cubic-bezier(.4,0,.2,1) forwards}
+.draw.d1{animation-delay:.08s}.draw.d2{animation-delay:.24s}.draw.d3{animation-delay:.42s}.draw.d4{animation-delay:.6s}
+@keyframes draw{to{stroke-dashoffset:0}}
+.fadein{opacity:0;animation:fi .5s ease-out forwards}
+.fadein.d2{animation-delay:.42s}.fadein.d3{animation-delay:.62s}.fadein.d4{animation-delay:.82s}
+@keyframes fi{to{opacity:1}}
+.orbit{transform-box:fill-box;transform-origin:center;animation:orb 3.4s linear infinite}
+@keyframes orb{to{transform:rotate(360deg)}}
+.bob{transform-box:fill-box;transform-origin:center;animation:bobb 2.1s ease-in-out infinite}
+@keyframes bobb{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.flowline{stroke-dasharray:4 4;animation:dash2 1.4s linear infinite}
+@keyframes dash2{to{stroke-dashoffset:-16}}
+
+/* ---- cue inspector ---- */
+.inspector{
+  position:absolute;left:16px;top:16px;width:392px;z-index:60;
+  background:rgba(8,11,18,.93);backdrop-filter:blur(6px);border:1px solid var(--rule);border-radius:11px;box-shadow:0 20px 60px rgba(0,0,0,.65);
+  font-family:var(--mono);font-size:11px;overflow:hidden;animation:stepIn .3s ease-out both;
+}
+.inspector.folded pre,.inspector.folded footer{display:none}
+.inspector header{
+  padding:8px 12px;cursor:pointer;border-bottom:1px solid var(--rule);display:flex;align-items:center;gap:8px;
+  color:var(--faint);font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;background:var(--surface);
+}
+.inspector header b{color:var(--mark);font-weight:600}
+.inspector header .x{margin-left:auto;cursor:pointer;color:var(--faint);font-size:13px;background:none;border:0}
+.inspector pre{margin:0;padding:12px;overflow:auto;max-height:290px;line-height:1.65;color:var(--muted);white-space:pre}
+.inspector .k{color:var(--earned)}
+.inspector .s{color:var(--mark)}
+.inspector .c{color:#4d5568;font-style:italic}
+.inspector .on{color:var(--ok)}
+.inspector footer{padding:8px 12px;border-top:1px solid var(--rule);color:var(--faint);font-size:10px;line-height:1.5;background:var(--surface)}
+
+/* reduced motion: cues become static states, never disappear */
+@media (prefers-reduced-motion:reduce){
+  *{animation-duration:.001s!important;animation-iteration-count:1!important;transition-duration:.05s!important}
+}
+html[data-motion="reduced"] [data-cue~="shimmer"]::after{animation:none;transform:none;opacity:.35}
+html[data-motion="reduced"] [data-cue~="glow"]{animation:none;box-shadow:0 0 0 3px rgba(155,135,240,.28)}
+html[data-motion="reduced"] [data-cue~="glowgold"]{animation:none;box-shadow:0 0 0 3px rgba(224,164,82,.28)}
+html[data-motion="reduced"] [data-cue~="pulse"]{animation:none;box-shadow:0 0 0 3px rgba(224,164,82,.18)}
+html[data-motion="reduced"] [data-cue~="nudge"]{animation:none}
+html[data-motion="reduced"] .draw{animation:none;stroke-dashoffset:0}
+html[data-motion="reduced"] .fadein{animation:none;opacity:1}
+html[data-motion="reduced"] .orbit,html[data-motion="reduced"] .bob,html[data-motion="reduced"] .pointer-path,html[data-motion="reduced"] .pointer-ring,html[data-motion="reduced"] .flowline{animation:none}
+html[data-motion="reduced"] .tree li.active .cursor{animation:none}
+</style>
+</head>
+<body>
+
+<div class="protobar">
+  <div class="brandmark">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none"><path d="M12 2.6 20.5 7.4v9.2L12 21.4 3.5 16.6V7.4z" stroke="#9b87f0" stroke-width="1.3"/><path d="M12 2.6v18.8M3.5 7.4l17 9.2M20.5 7.4l-17 9.2" stroke="#9b87f0" stroke-width=".7" opacity=".5"/><circle cx="12" cy="12" r="2.4" fill="#e0a452"/></svg>
+    <b>Workbrain</b><span>side panel · design prototype</span>
+  </div>
+  <div class="spacer"></div>
+
+  <div class="pgroup">
+    <label>Automation</label>
+    <div class="seg" id="modeSeg">
+      <button data-mode="manual" aria-pressed="true">Manual</button>
+      <button data-mode="fill" aria-pressed="false">Fill only</button>
+      <button data-mode="auto" aria-pressed="false">Fill &amp; submit</button>
+    </div>
+  </div>
+
+  <div class="pgroup">
+    <label class="toggle"><input type="checkbox" id="tglNarrator"> Narrator</label>
+    <label class="toggle"><input type="checkbox" id="tglMotion"> Reduced motion</label>
+    <label class="toggle"><input type="checkbox" id="tglInspector" checked> Cue inspector</label>
+  </div>
+
+  <button class="ghostbtn" id="btnRestart">Restart</button>
+</div>
+
+<div class="stage">
+ <div class="win">
+
+  <div class="tabstrip">
+    <div class="lights"><i></i><i></i><i></i></div>
+    <div class="tab active"><span class="favi" id="tabFavi" style="background:#d97757;color:#fff">C</span><span id="tabTitle">Claude</span></div>
+    <div class="tab"><span class="favi" style="background:#1b2030;color:#98a0b4">M</span>Model Citizen</div>
+    <div class="tab"><span class="favi" style="background:#1b2030;color:#98a0b4">+</span></div>
+  </div>
+
+  <div class="omnibox">
+    <div class="navbtns"><span>←</span><span>→</span><span>⟳</span></div>
+    <div class="url" id="omniUrl">claude.ai/new</div>
+    <div class="exticon lit" title="Workbrain">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 2.6 20.5 7.4v9.2L12 21.4 3.5 16.6V7.4z" stroke="#9b87f0" stroke-width="1.4"/><circle cx="12" cy="12" r="2.6" fill="#e0a452"/></svg>
+    </div>
+  </div>
+
+  <div class="viewport" id="viewport">
+
+    <!-- ============ mocked AI page ============ -->
+    <div class="page">
+      <div class="page-head"><span id="pageName">Claude</span><span style="color:var(--faint);font-size:11px">· new chat</span></div>
+      <div class="page-body" id="pageBody">
+        <div class="page-empty">
+          <h3>How can I help you today?</h3>
+          <p>This tab is a stand-in for whichever AI the visitor uses. The panel on the right never leaves.</p>
+        </div>
+      </div>
+      <div class="page-composer">
+        <div id="attachedWrap"></div>
+        <div class="composer" id="composer">
+          <div class="attach" id="pgAttach" title="Attach"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M21.4 11.05 12.25 20.2a5.5 5.5 0 0 1-7.78-7.78l9.2-9.19a3.67 3.67 0 1 1 5.18 5.19l-9.2 9.19a1.83 1.83 0 0 1-2.59-2.6l8.5-8.49"/></svg></div>
+          <div class="ctext" id="composerText" data-ph="Message…"></div>
+          <div class="send" id="pgSend" title="Send"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        </div>
+        <div class="page-note" id="pageNote">mock surface · stands in for chatgpt.com / claude.ai / gemini.google.com / copilot.microsoft.com</div>
+      </div>
+    </div>
+
+    <!-- ============ side panel ============ -->
+    <aside class="panel" id="panel">
+      <div class="p-head">
+        <div class="p-brand">
+          <svg class="logo" viewBox="0 0 24 24" fill="none"><path d="M12 2.6 20.5 7.4v9.2L12 21.4 3.5 16.6V7.4z" stroke="#9b87f0" stroke-width="1.3"/><path d="M12 2.6v18.8M3.5 7.4l17 9.2M20.5 7.4l-17 9.2" stroke="#9b87f0" stroke-width=".7" opacity=".5"/><circle cx="12" cy="12" r="2.4" fill="#e0a452"/></svg>
+          <div>
+            <h1>Context <em>Interview</em></h1>
+            <div class="sub">by Model Citizen</div>
+          </div>
+          <div class="spacer"></div>
+          <button class="iconbtn" id="btnNarrator" aria-pressed="false" title="Read questions aloud">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/><path d="M18.5 5.5a9 9 0 0 1 0 13"/></svg>
+          </button>
+          <button class="iconbtn" id="btnMic" aria-pressed="false" title="Speak answers">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><rect x="9" y="2.5" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
+          </button>
+        </div>
+        <div class="rail" id="rail"></div>
+        <div class="p-meta"><span id="metaLeft">MODULE 1 OF 12</span><span class="right" id="metaRight">~11 MIN LEFT</span></div>
+      </div>
+
+      <button class="tree-toggle" id="treeToggle" aria-expanded="false">
+        <span class="caret">▸</span><span class="fname" id="treeName">Context.md</span>
+        <span class="count" id="treeCount">0 / 10 sections</span>
+      </button>
+      <div class="tree-wrap" id="treeWrap"><ul class="tree" id="tree"></ul></div>
+
+      <div class="p-body" id="pBody"></div>
+
+      <div class="p-foot" id="pFoot"></div>
+    </aside>
+
+    <div class="pointer-layer" id="pointerLayer"></div>
+    <div id="inspectorHost"></div>
+  </div>
+
+ </div>
+</div>
+
+<script>
+/* =====================================================================
+   Workbrain side-panel prototype
+   ---------------------------------------------------------------------
+   The point of this file is the CUE SYSTEM. Every step declares its
+   guidance as data — a chain of { play: [cues], until: <event> } — and
+   the engine below turns that into motion, narration and cross-surface
+   pointers. Adding guidance to a new step is one line of data, never CSS.
+   ===================================================================== */
+
+const $  = (s,r=document)=>r.querySelector(s);
+const $$ = (s,r=document)=>Array.from(r.querySelectorAll(s));
+
+const SERVICES = {
+  claude:  {name:'Claude',   url:'claude.ai/new',                 color:'#d97757', letter:'C',
+            attach:'the paperclip at the left of the message box'},
+  chatgpt: {name:'ChatGPT',  url:'chatgpt.com',                   color:'#10a37f', letter:'G',
+            attach:'the + button at the left of the message box'},
+  gemini:  {name:'Gemini',   url:'gemini.google.com/app',         color:'#4285f4', letter:'G',
+            attach:'the + at the bottom-left, then "Upload files"'},
+  copilot: {name:'Copilot',  url:'copilot.microsoft.com',         color:'#0a6cff', letter:'M',
+            attach:'the paperclip beside the prompt box'},
+  other:   {name:'your AI',  url:'about:blank', chip:'Something else', color:'#5a6273', letter:'?',
+            attach:'wherever it lets you attach a file'}
+};
+
+const DEMO_PROMPT = "Draft a status update for my manager.";
+
+/* ---------------------------------------------------------------------
+   SKETCHES — small animated illustrations selected by what the user picked.
+   Keyed by cue string "sketch:<id>" and resolved against current answers.
+   --------------------------------------------------------------------- */
+const SKETCH = {
+  'scope:work': () => ({title:'Work mode', cap:'Roles, decision rights and the people you answer to lead the file.', svg:`
+    <svg width="62" height="56" viewBox="0 0 62 56" fill="none">
+      <rect class="dr f draw d1" style="--len:150" x="8" y="20" width="46" height="28" rx="3"/>
+      <path class="dr draw d2" style="--len:44" d="M24 20v-5a3 3 0 0 1 3-3h8a3 3 0 0 1 3 3v5"/>
+      <path class="dr v draw d3 flowline" style="--len:40" d="M31 28v6M31 34h-9v5M31 34h9v5"/>
+      <circle class="dr v fadein d3" cx="22" cy="42" r="3"/><circle class="dr v fadein d4" cx="40" cy="42" r="3"/>
+      <circle class="dr fadein d2 bob" cx="31" cy="27" r="3.2" fill="#e0a452" stroke="none"/>
+    </svg>`}),
+  'scope:personal': () => ({title:'Personal mode', cap:'Voice, values and how you like to be talked to lead the file.', svg:`
+    <svg width="62" height="56" viewBox="0 0 62 56" fill="none">
+      <path class="dr draw d1" style="--len:110" d="M12 28 31 13l19 15"/>
+      <path class="dr f draw d2" style="--len:120" d="M17 27v20h28V27"/>
+      <path class="dr v draw d3" style="--len:34" d="M26 47V36h10v11"/>
+      <circle class="dr v fadein d4 bob" cx="31" cy="23" r="2.6" fill="#9b87f0" stroke="none"/>
+    </svg>`}),
+  'scope:both': () => ({title:'Both', cap:'Two overlapping contexts — the file marks which parts belong to which.', svg:`
+    <svg width="62" height="56" viewBox="0 0 62 56" fill="none">
+      <circle class="dr f draw d1" style="--len:110" cx="25" cy="30" r="15"/>
+      <circle class="dr v draw d2" style="--len:110" cx="39" cy="30" r="15"/>
+      <path class="dr fadein d3" d="M32 18.5a15 15 0 0 0 0 23" stroke="#e0a452" opacity=".8"/>
+      <circle class="orbit fadein d4" cx="32" cy="30" r="2.4" fill="#e0a452"/>
+    </svg>`}),
+  'voice:on': () => ({title:'Narrator on', cap:'Each guided hand-off gets a spoken line. Toggle it any time from the header.', svg:`
+    <svg width="62" height="56" viewBox="0 0 62 56" fill="none">
+      <path class="dr f draw d1" style="--len:70" d="M25 22 18 27h-6v8h6l7 5z"/>
+      <path class="dr v draw d2 flowline" style="--len:26" d="M31 25a7 7 0 0 1 0 10"/>
+      <path class="dr v draw d3 flowline" style="--len:36" d="M36 20a13 13 0 0 1 0 20"/>
+      <path class="dr v draw d4 flowline" style="--len:46" d="M41 15a19 19 0 0 1 0 30"/>
+    </svg>`}),
+  'roles': (a) => {
+    const n = Math.max(1,(a.roles||[]).length);
+    const cards = Array.from({length:Math.min(n,4)},(_,i)=>
+      `<rect class="dr ${i?'':'f'} fadein d${Math.min(i+1,4)}" x="${12+i*4}" y="${14+i*7}" width="34" height="12" rx="2.5"/>`).join('');
+    return {title:`${n} role${n>1?'s':''} to describe`, cap:'Each one becomes its own titled block in the file — mandate, standing, durability.', svg:`
+    <svg width="62" height="56" viewBox="0 0 62 56" fill="none">${cards}
+      <path class="dr v draw d4 flowline" style="--len:20" d="M50 20v18"/>
+      <circle class="dr v fadein d4 bob" cx="50" cy="42" r="3"/>
+    </svg>`};
+  },
+  'attach': (a) => {
+    const s = SERVICES[a.service||'claude'];
+    return {title:`Attaching in ${s.name}`, cap:`Look for ${s.attach}. The panel points at it for you.`, svg:`
+    <svg width="62" height="56" viewBox="0 0 62 56" fill="none">
+      <rect class="dr draw d1" style="--len:150" x="8" y="30" width="46" height="16" rx="8"/>
+      <circle class="fadein d2" cx="17" cy="38" r="6" fill="${s.color}" opacity=".22"/>
+      <path class="dr draw d2" style="--len:26" d="M19.5 35.5 16 39a2.4 2.4 0 0 0 3.4 3.4l4-4a4 4 0 0 0-5.6-5.6l-4 4"/>
+      <path class="dr v draw d3 flowline" style="--len:30" d="M31 26V12"/>
+      <path class="dr v fadein d4" d="M27.5 22.5 31 26l3.5-3.5"/>
+      <rect class="dr v fadein d4" x="22" y="2" width="18" height="10" rx="2"/>
+    </svg>`};
+  },
+  'grade': () => ({title:'Side by side', cap:'Your own AI grades the two answers against a 5-point rubric. Nothing is parsed here.', svg:`
+    <svg width="62" height="56" viewBox="0 0 62 56" fill="none">
+      <rect class="dr draw d1" style="--len:90" x="8" y="14" width="20" height="28" rx="2.5"/>
+      <rect class="dr v f draw d2" style="--len:90" x="34" y="14" width="20" height="28" rx="2.5"/>
+      <path class="dr fadein d3" d="M12 22h12M12 27h9M12 32h11" opacity=".6"/>
+      <path class="dr v fadein d4" d="M38 22h12M38 27h12M38 32h12M38 37h8"/>
+      <path class="dr fadein d4" d="M44 46l3 3 6-7" stroke="#5fd39a"/>
+    </svg>`}),
+  'done': () => ({title:'Context.md is real now', cap:'You just watched it change an answer. That is the whole proof.', svg:`
+    <svg width="62" height="56" viewBox="0 0 62 56" fill="none">
+      <path class="dr f draw d1" style="--len:130" d="M18 10h18l10 10v26H18z"/>
+      <path class="dr draw d2" style="--len:30" d="M36 10v10h10"/>
+      <path class="dr v draw d3" style="--len:34" d="M24 30h16M24 36h11"/>
+      <circle class="dr fadein d4 bob" cx="44" cy="40" r="7" stroke="#5fd39a"/>
+      <path class="dr fadein d4" d="M41 40.5l2.2 2.3 4.3-5" stroke="#5fd39a"/>
+    </svg>`})
+};
+
+/* ---------------------------------------------------------------------
+   THE FLOW. Ten representative steps out of the real 12 modules.
+   Note the `cues` field on each: a chain of instructions. Each link plays
+   until its `until` event fires, then hands off to the next link.
+   --------------------------------------------------------------------- */
+const FLOW = [
+{
+  id:'preflight-voice', module:0, section:-1, eyebrow:'BEFORE WE START · 1 OF 2',
+  q:'Want me to read the questions out loud?',
+  hint:'Uses your browser’s own voice. Off by default, and you can flip it any time from the header.',
+  kind:'chips', key:'narrator', options:[{v:'yes',l:'Yes, read them'},{v:'no',l:'No thanks'}],
+  cues:[
+    {play:['shimmer:chips'], until:'choice', say:'Two quick settings before we start. Want me to read the questions out loud?'},
+    {play:['glowgold:next'],  until:'next',   say:'Good. Next when you’re ready.'}
+  ],
+  sketchOn:{narrator:{yes:'voice:on'}}
+},
+{
+  id:'preflight-mic', module:0, section:-1, eyebrow:'BEFORE WE START · 2 OF 2',
+  q:'Want to speak your answers instead of typing?',
+  hint:'Long answers are where this earns its keep. Also togglable later.',
+  kind:'chips', key:'mic', options:[{v:'yes',l:'Yes, let me talk'},{v:'no',l:'I’ll type'}],
+  cues:[
+    {play:['shimmer:chips'], until:'choice', say:'And would you rather speak your answers than type them?'},
+    {play:['glowgold:next'],  until:'next'}
+  ]
+},
+{
+  id:'m1-scope', module:1, section:0, eyebrow:'MODULE 1 · ORIENTATION',
+  q:'Are we building this for your work, your personal life, or both?',
+  hint:'This decides what the rest of the interview bothers asking about.',
+  kind:'chips', key:'scope',
+  options:[{v:'work',l:'Work'},{v:'personal',l:'Personal'},{v:'both',l:'Both',rec:true}],
+  cues:[
+    {play:['shimmer:chips','pulse:chip[data-v=both]'], until:'choice', say:'Are we building this for work, personal life, or both?'},
+    {play:['glowgold:next'], until:'next'}
+  ],
+  sketchOn:{scope:{work:'scope:work',personal:'scope:personal',both:'scope:both'}}
+},
+{
+  id:'m1-reexplain', module:1, section:0, eyebrow:'MODULE 1 · ORIENTATION',
+  q:'What do you find yourself re-explaining to AI every single time?',
+  hint:'However it comes out. We’ll tidy it on the next screen.',
+  kind:'text', key:'reexplain', ph:'Say it the way you’d say it out loud…',
+  prefill:'that im not writing for engineers, im writing for operators who have 10 minutes and a phone. and stop giving me five options when i asked for a recommendation',
+  cues:[
+    {play:['focus:field'], until:'type', say:'What do you keep re-explaining to AI every single time?'},
+    {play:['glowgold:next'], until:'next', say:'That’s enough to work with.'}
+  ]
+},
+{
+  id:'m1-reflect', module:1, section:0, eyebrow:'REFLECT', kind:'reflect', key:'reexplain',
+  q:'Here’s what I’ve got.',
+  hint:'Nothing has been sent anywhere. Keep it as-is, or have your own AI tighten it.',
+  cues:[
+    {play:['glow:readblock'], until:'reflect', say:'This is exactly what you said. Keep it, or let your AI tighten it.'}
+  ]
+},
+{
+  id:'m2-roles', module:2, section:1, eyebrow:'MODULE 2 · ABOUT ME',
+  q:'Which roles do you play that AI should know about?',
+  hint:'Each one gets its own block in the file. Pick as many as fit.',
+  kind:'multi', key:'roles',
+  options:[{v:'ic',l:'Individual contributor'},{v:'lead',l:'Team lead'},{v:'owner',l:'Business owner'},
+           {v:'consult',l:'Consultant'},{v:'parent',l:'Parent'},{v:'volunteer',l:'Volunteer / board'}],
+  cues:[
+    {play:['shimmer:chips'], until:'choice', say:'Which roles do you play that your AI should know about?'},
+    {play:['glowgold:next'], until:'next'}
+  ],
+  sketchOn:{roles:'*roles'}
+},
+{
+  id:'demo-1', module:12, section:9, eyebrow:'MODULE 12 · STEP 1 OF 4', kind:'demo1',
+  q:'Let’s prove it works.',
+  hint:'First a baseline: the same question, with nothing loaded.',
+  cues:[
+    {play:['shimmer:chips'], until:'choice', say:'We’re setting a baseline. Pick the AI you use most.'},
+    {play:['glow:readblock','shimmer:copy'], until:'copy', say:'Copy this prompt, and ask it in a fresh chat.'},
+    {play:['focus:paste','point:page.composer|Ask it here, then bring the answer back'], until:'paste', say:'Paste what it says back into the box below.'},
+    {play:['glowgold:next'], until:'next'}
+  ],
+  sketchOn:{}
+},
+{
+  id:'demo-2', module:12, section:9, eyebrow:'MODULE 12 · STEP 2 OF 4', kind:'demo2',
+  q:'Now the same question, with your file attached.',
+  hint:'Same chat is fine. Attach the file first.',
+  cues:[
+    {play:['glowgold:download','nudge:download'], until:'download', say:'Grab your Context file — it’s built from everything you just told me.'},
+    {play:['point:page.attach|Attach it here','glow:readblock'], until:'attach', say:'Attach it in the chat, then ask the exact same question.'},
+    {play:['shimmer:copy'], until:'copy'},
+    {play:['focus:paste'], until:'paste', say:'Paste the second answer in.'},
+    {play:['glowgold:next'], until:'next'}
+  ],
+  sketchOn:{'*':'attach'}
+},
+{
+  id:'demo-3', module:12, section:9, eyebrow:'MODULE 12 · STEP 3 OF 4', kind:'demo3',
+  q:'Have it grade its own two answers.',
+  hint:'Both answers plus a 5-point rubric, built into one prompt.',
+  cues:[
+    {play:['glow:readblock','shimmer:copy'], until:'copy', say:'This prompt has both answers in it. Copy it and run it.'},
+    {play:['focus:paste'], until:'paste', say:'Paste the grade back.'},
+    {play:['glowgold:next'], until:'next'}
+  ],
+  sketchOn:{'*':'grade'}
+},
+{
+  id:'demo-4', module:12, section:9, eyebrow:'MODULE 12 · STEP 4 OF 4', kind:'demo4',
+  q:'That difference is your context working.',
+  hint:'Shown exactly as your AI wrote it — the panel never reads or scores it.',
+  cues:[
+    {play:[], until:'none', say:'That difference is your context, working. Here’s where people usually go next.'}
+  ],
+  sketchOn:{'*':'done'}
+}
+];
+
+const TREE = ['About This Context','About Me','My World','Initiatives','How I Think',
+              'How I Communicate','Audience Profiles','Vocabulary & Knowledge','Context Boundaries','Reference Examples'];
+
+/* ---------------------------------------------------------------------
+   STATE
+   --------------------------------------------------------------------- */
+const S = {
+  i:0, fold:false, answers:{}, mode:'manual', narrator:false, mic:false, inspector:true,
+  cue:0, flags:{}, reached:new Set([0]), leaving:false
+};
+
+/* =====================================================================
+   CUE ENGINE
+   ===================================================================== */
+const TARGETS = {
+  next:'#btnNext', field:'#mainField', readblock:'#readblock', copy:'#copyBtn',
+  paste:'#pasteField', download:'#btnDownload', handoff:'#btnHandoff',
+  'page.composer':'#composer', 'page.attach':'#pgAttach', 'page.send':'#pgSend'
+};
+function resolve(t){
+  if(t==='chips') return $$('#chipRow .chip').filter(c=>c.getAttribute('aria-pressed')!=='true');
+  const m = t.match(/^chip\[data-v=([\w-]+)\]$/);
+  if(m) return $$(`#chipRow .chip[data-v="${m[1]}"]`);
+  const el = $(TARGETS[t] || t);
+  return el ? [el] : [];
+}
+function clearCues(){
+  $$('[data-cue]').forEach(el=>{el.removeAttribute('data-cue');el.style.removeProperty('--chase-delay')});
+  $$('.page-target-lit').forEach(el=>el.classList.remove('page-target-lit'));
+  $('#pointerLayer').innerHTML='';
+  const n=$('#narratorBox'); if(n) n.remove();
+}
+function applyOne(spec){
+  const idx = spec.indexOf(':');
+  const verb = idx<0?spec:spec.slice(0,idx), rest = idx<0?'':spec.slice(idx+1);
+  if(verb==='point'){ const [t,label]=rest.split('|'); drawPointer(t,label); return; }
+  resolve(rest).forEach((el,i)=>{
+    el.setAttribute('data-cue', ((el.getAttribute('data-cue')||'')+' '+verb).trim());
+    if(verb==='shimmer') el.style.setProperty('--chase-delay', (i*0.15)+'s');
+    if(verb==='focus' && el.focus) setTimeout(()=>el.focus({preventScroll:true}),60);
+  });
+}
+function playCues(){
+  clearCues();
+  const st = FLOW[S.i], link = (st.cues||[])[S.cue];
+  if(!link) return;
+  link.play.forEach(applyOne);
+  if(S.narrator && link.say) speak(link.say);
+  paintInspector();
+}
+/* an event arrives — if it satisfies the current link, hand off to the next */
+function fire(evt){
+  const st = FLOW[S.i], link = (st.cues||[])[S.cue];
+  if(link && link.until===evt){ S.cue++; playCues(); }
+  else paintInspector();
+}
+function speak(line){
+  const host = $('#panel');
+  const box = document.createElement('div');
+  box.className='narrator'; box.id='narratorBox';
+  box.innerHTML = `<span class="wave"><i></i><i></i><i></i><i></i></span><span>${line}</span>`;
+  host.appendChild(box);
+  clearTimeout(speak._t);
+  speak._t = setTimeout(()=>box.remove(), 5200);
+}
+function drawPointer(targetKey,label){
+  const tgt = resolve(targetKey)[0]; if(!tgt) return;
+  const layer = $('#pointerLayer'), vp = $('#viewport').getBoundingClientRect(), tr = tgt.getBoundingClientRect();
+  const anchorEl = $('#pasteField') || $('#readblock') || $('#pBody');
+  const ar = anchorEl.getBoundingClientRect();
+  const x1 = ar.left - vp.left - 4, y1 = ar.top - vp.top + Math.min(ar.height/2, 40);
+  const x2 = tr.right - vp.left + 10, y2 = tr.top - vp.top + tr.height/2;
+  const cx = (x1+x2)/2;
+  layer.innerHTML = `<svg><path class="pointer-path" d="M${x1} ${y1} C ${cx} ${y1}, ${cx} ${y2}, ${x2} ${y2}"/>
+    <circle class="pointer-ring" cx="${tr.left-vp.left+tr.width/2}" cy="${y2}" r="10"/></svg>`;
+  if(label){
+    const lab = document.createElement('div');
+    lab.className='pointer-label'; lab.style.left = (tr.left-vp.left+tr.width/2)+'px'; lab.style.top = (tr.top-vp.top)+'px';
+    lab.textContent = label; layer.appendChild(lab);
+  }
+  tgt.classList.add('page-target-lit');
+}
+
+/* =====================================================================
+   FAKE AI RESPONSES (the page is a mock; nothing is called)
+   ===================================================================== */
+const REPLY = {
+  baseline:`Subject: Weekly Status Update
+
+**Overview**
+This week the team made steady progress across several workstreams. Below is a summary of key accomplishments, ongoing items, and next steps.
+
+**Accomplishments**
+• Completed the initial phase of the project
+• Held alignment meetings with key stakeholders
+• Began drafting documentation
+
+**Next Steps**
+• Continue execution against the roadmap
+• Follow up with stakeholders as needed
+
+Please let me know if you'd like any additional detail on any of the above.`,
+  context:`**Recommendation: hold the launch one week.**
+
+Two things drove it. The signup flow still drops 30% at the verify step, and the fix lands Thursday at the earliest. Shipping on Tuesday means launching into a known leak.
+
+What I need from you: sign-off on the new date by Friday so support can re-book the training.
+
+Everything else is on track — nothing else needs your attention this week.`,
+  grade:`**1. Specificity — Baseline 2/5, With context 5/5.**
+The baseline update never names a project, a number, or a decision. The second opens with a recommendation and the evidence behind it.
+
+**2. Audience fit — 1/5 vs 5/5.**
+Baseline is written for no one. The second assumes a manager with ten minutes who needs to decide something.
+
+**3. Actionability — 2/5 vs 5/5.**
+"Follow up as needed" versus "sign-off on the new date by Friday."
+
+**4. Voice — 2/5 vs 4/5.**
+The second drops the throat-clearing and the option-list habit you flagged.
+
+**5. Length discipline — 2/5 vs 5/5.**
+
+**Top areas of opportunity**
+• Add your escalation threshold — when should AI flag a risk vs just note it?
+• Name the two or three people whose sign-off actually matters.
+• Give it one real example of a status update you were happy with.`
+};
+
+/* =====================================================================
+   MOCK PAGE BEHAVIOUR
+   ===================================================================== */
+let pageAwaiting = null;   // what the page will "reply" with when sent
+function svc(){ return SERVICES[S.answers.service || 'claude']; }
+function paintPage(){
+  const s = svc();
+  $('#tabTitle').textContent = s.name; $('#pageName').textContent = s.name;
+  $('#omniUrl').textContent = s.url;
+  const f = $('#tabFavi'); f.textContent = s.letter; f.style.background = s.color; f.style.color='#fff';
+}
+function typeInto(text, cb){
+  const box = $('#composerText'); box.textContent='';
+  let i=0; const chunk = Math.max(2, Math.round(text.length/26));
+  clearInterval(typeInto._t);
+  typeInto._t = setInterval(()=>{
+    i+=chunk; box.textContent = text.slice(0,i);
+    if(i>=text.length){ clearInterval(typeInto._t); box.textContent=text; cb&&cb(); }
+  }, 34);
+}
+function pageReply(text, done){
+  const body = $('#pageBody'); const empty = body.querySelector('.page-empty'); if(empty) empty.remove();
+  const u = document.createElement('div'); u.className='bubble user'; u.textContent = $('#composerText').textContent;
+  body.appendChild(u); $('#composerText').textContent='';
+  const a = document.createElement('div'); a.className='bubble ai'; a.innerHTML='<span style="opacity:.5">▍</span>';
+  body.appendChild(a); body.scrollTop = body.scrollHeight;
+  let i=0; const chunk = Math.max(3, Math.round(text.length/40));
+  const t = setInterval(()=>{
+    i+=chunk; a.innerHTML = fmt(text.slice(0,i)) + '<span style="opacity:.5">▍</span>';
+    body.scrollTop = body.scrollHeight;
+    if(i>=text.length){ clearInterval(t); a.innerHTML = fmt(text); done&&done(); }
+  }, 26);
+}
+function fmt(t){ return t.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/\*\*(.+?)\*\*/g,'<b>$1</b>'); }
+function attachFile(){
+  $('#attachedWrap').innerHTML = `<div class="attached-chip">
+    <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 2h9l5 5v15H6z"/><path d="M15 2v5h5"/></svg>
+    Context.md · 4.2 KB</div>`;
+}
+$('#pgAttach').addEventListener('click', ()=>{ attachFile(); fire('attach'); });
+$('#pgSend').addEventListener('click', ()=>{
+  if(!$('#composerText').textContent.trim() || !pageAwaiting) return;
+  const {text, then} = pageAwaiting; pageAwaiting = null;
+  $('#pgSend').removeAttribute('data-cue');
+  pageReply(text, then);
+});
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+function st(){ return FLOW[S.i]; }
+function sketchFor(s){
+  const cfg = s.sketchOn; if(!cfg) return null;
+  for(const k in cfg){
+    if(k==='*'){ const f=SKETCH[cfg[k]]; return f?f(S.answers):null; }
+    const v = S.answers[k];
+    if(v==null || (Array.isArray(v) && !v.length)) continue;
+    const spec = cfg[k];
+    if(typeof spec==='string'){ const f=SKETCH[spec.replace(/^\*/,'')]; return f?f(S.answers):null; }
+    const f = SKETCH[spec[v]]; if(f) return f(S.answers);
+  }
+  return null;
+}
+function sketchHTML(s){
+  const k = sketchFor(s); if(!k) return '';
+  return `<div class="sketch">${k.svg}<div class="cap"><b>${k.title}</b>${k.cap}</div></div>`;
+}
+function chipsHTML(opts, sel, multi){
+  return `<div class="chips" id="chipRow">` + opts.map(o=>{
+    const on = multi ? (sel||[]).includes(o.v) : sel===o.v;
+    return `<button class="chip" data-v="${o.v}" aria-pressed="${on}">${o.l}</button>`;
+  }).join('') + (multi?`<button class="chip add" data-add="1">+ add your own</button>`:'') + `</div>`;
+}
+function blockHTML(text,{clamp=false,id='readblock'}={}){
+  return `<div class="readblock${clamp?' clamp':''}" id="${id}">${fmt(text)}
+    <button class="copybtn" id="copyBtn" title="Copy">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+    </button></div>`;
+}
+function handoffHTML(label){
+  if(S.mode==='manual') return '';
+  const s = svc();
+  const txt = S.mode==='fill' ? `Put it in ${s.name} →` : `Ask ${s.name} for me →`;
+  const note = S.mode==='fill'
+    ? `Fills the message box in the ${s.name} tab. You still hit send.`
+    : `Fills, sends, and brings the answer back. Reads ${s.name}’s reply.`;
+  return `<button class="btn violet" id="btnHandoff" style="width:100%;margin-bottom:8px">${label||txt}</button>
+          <div style="font-family:var(--mono);font-size:9.5px;color:var(--faint);line-height:1.5;margin:-4px 0 14px">${note}</div>`;
+}
+function pasteHTML(ph,val){
+  return `<textarea class="field" id="pasteField" placeholder="${ph}">${val||''}</textarea>`;
+}
+
+function bodyHTML(s){
+  const A = S.answers;
+  let h = `<div class="step" id="stepEl"><p class="eyebrow">${s.eyebrow}</p><h2 class="qtext${s.kind.startsWith('demo')?'':''}">${s.q}</h2>`;
+  if(s.hint) h += `<p class="hint">${s.hint}</p>`;
+
+  if(s.kind==='chips'){
+    h += `<button class="microlink" data-rephrase="1">↺ Ask me that differently</button>`;
+    h += chipsHTML(s.options, A[s.key], false) + sketchHTML(s);
+  }
+  else if(s.kind==='multi'){
+    h += chipsHTML(s.options, A[s.key], true) + sketchHTML(s);
+  }
+  else if(s.kind==='text'){
+    h += `<textarea class="field" id="mainField" placeholder="${s.ph||''}">${A[s.key]||''}</textarea>
+          <button class="microlink" id="btnSample" style="margin-top:10px">✎ drop in a sample answer</button>`;
+  }
+  else if(s.kind==='reflect'){
+    h += blockHTML(A[s.key]||'') + `
+      <div style="display:grid;gap:7px;margin-top:2px">
+        <button class="btn primary" data-reflect="keep">Keep it as-is</button>
+        <button class="btn violet" data-reflect="tighten">Tighten it with my AI</button>
+        <button class="btn quiet" data-reflect="back" style="justify-self:start">← say it again</button>
+      </div>`;
+  }
+  else if(s.kind==='demo1'){
+    h += `<p class="hint" style="margin-bottom:8px">Which AI do you use most?</p>`;
+    h += chipsHTML(Object.entries(SERVICES).map(([v,o])=>({v,l:o.chip||o.name})), A.service, false);
+    if(A.service){
+      h += `<p class="hint" style="margin:12px 0 8px">Ask this in a fresh chat, with nothing loaded:</p>`;
+      h += blockHTML(DEMO_PROMPT) + handoffHTML() + pasteHTML('Paste its answer here (Output 1)…', A.out1);
+    }
+  }
+  else if(s.kind==='demo2'){
+    h += `<div class="btnrow" style="margin-bottom:12px">
+            <button class="btn primary" id="btnDownload">↓ Context.md</button>
+            <button class="btn" id="btnCopyFile">copy instead</button>
+          </div>` + sketchHTML(s);
+    h += blockHTML(DEMO_PROMPT) + handoffHTML(S.mode==='fill'?`Attach & fill in ${svc().name} →`:`Attach & ask ${svc().name} →`)
+       + pasteHTML('Paste the second answer here (Output 2)…', A.out2);
+  }
+  else if(s.kind==='demo3'){
+    h += sketchHTML(s) + blockHTML(gradePrompt(), {clamp:!S.flags.expand});
+    h += `<button class="expandlink" id="btnExpand">${S.flags.expand?'▴ collapse':'▾ see the whole prompt'}</button>`;
+    h += handoffHTML() + pasteHTML('Paste the grade here (Output 3)…', A.out3);
+  }
+  else if(s.kind==='demo4'){
+    h += sketchHTML(s);
+    h += `<div class="readblock" id="readblock" style="padding-right:13px;max-height:190px;overflow:auto">${fmt(A.out3||REPLY.grade)}</div>`;
+    h += `<p class="eyebrow" style="margin:16px 0 8px;color:var(--faint)">WHERE PEOPLE GO NEXT</p>
+      <div class="cards">
+        <div class="card"><h4>Fix the weak spots</h4><p>Jump back to the two sections it called out. Your answers are still there.</p></div>
+        <div class="card"><h4>Build your Skills file</h4><p>Gate 2 — turn the things you repeat into instructions AI can run.</p></div>
+        <div class="card"><h4>Send it to someone</h4><p>The whole thing runs in their browser too. Nothing to sign up for.</p></div>
+        <div class="card paid"><h4>Talk to a human<span class="price">$1,000/mo</span></h4><p>AI Coaching — weekly, ongoing, starts where you just got stuck.</p></div>
+        <div class="card paid"><h4>Fractional CTO<span class="price">$2,500/mo</span></h4><p>When the next gate means touching real systems.</p></div>
+      </div>`;
+  }
+  return h + `</div>`;
+}
+function gradePrompt(){
+  return `Below are two answers to the same question. The second was written with a context file attached.
+
+Grade them against these five criteria, 1–5 each: specificity, audience fit, actionability, voice match, length discipline. Then list my top areas of opportunity — what is missing from the context file that would have made answer two better.
+
+--- ANSWER ONE (no context) ---
+${(S.answers.out1||'(paste your first answer above)').slice(0,240)}…
+
+--- ANSWER TWO (with Context.md) ---
+${(S.answers.out2||'(paste your second answer above)').slice(0,240)}…`;
+}
+function footHTML(s){
+  const canNext = nextEnabled(s);
+  const last = S.i===FLOW.length-1;
+  return `<button class="btn" id="btnBack" ${S.i===0?'disabled style="opacity:.35"':''}>← back</button>
+    <button class="btn primary" id="btnNext" ${canNext?'':'disabled'}>${last?'done':'next →'}</button>
+    ${s.kind==='reflect'?'':'<button class="btn quiet" id="btnSkip">skip</button>'}
+    <span class="save">saved on this device<br>nothing leaves the browser</span>`;
+}
+function nextEnabled(s){
+  const A=S.answers;
+  if(s.kind==='chips')  return A[s.key]!=null;
+  if(s.kind==='multi')  return (A[s.key]||[]).length>0;
+  if(s.kind==='text')   return !!(A[s.key]||'').trim();
+  if(s.kind==='reflect')return false;
+  if(s.kind==='demo1')  return !!A.out1;
+  if(s.kind==='demo2')  return !!A.out2;
+  if(s.kind==='demo3')  return !!A.out3;
+  return true;
+}
+
+/* =====================================================================
+   CHROME: rail, tree, meta
+   ===================================================================== */
+function paintChrome(){
+  const s = st();
+  const rail = $('#rail'); rail.innerHTML='';
+  for(let m=1;m<=12;m++){
+    const n=document.createElement('span');
+    n.className='node'+(m<s.module?' done':m===s.module?' now':'');
+    rail.appendChild(n);
+    if(m<12){ const l=document.createElement('span'); l.className='seg-line'+(m<s.module?' done':''); rail.appendChild(l); }
+  }
+  $('#metaLeft').textContent = s.module===0 ? 'PRE-FLIGHT'
+    : s.module===12 ? `MODULE 12 OF 12 · REVIEW & DEMO` : `MODULE ${s.module} OF 12`;
+  $('#metaRight').textContent = s.module===12 ? 'LAST STRETCH' : s.module===0 ? '~12 MIN TOTAL' : `~${13-s.module} MIN LEFT`;
+
+  const tree = $('#tree'); tree.innerHTML='';
+  const cur = s.section;
+  TREE.forEach((t,i)=>{
+    const li=document.createElement('li');
+    const done = cur>=0 && i<cur, active = i===cur;
+    li.className = (done?'answered reached ':'') + (active?'active ':'') + (i<=Math.max(cur,0)?'reached':'');
+    li.innerHTML = `<span class="tw">▸</span>${i+1}. ${t}${active?'<span class="cursor"></span>':''}`;
+    tree.appendChild(li);
+    if(active && i===1 && (S.answers.roles||[]).length){
+      S.answers.roles.forEach((r,ri)=>{
+        const sub=document.createElement('li'); sub.className='sub answered';
+        sub.innerHTML=`<span class="tw">▸</span>2.${ri+1} ${r}`; tree.appendChild(sub);
+      });
+    }
+  });
+  const answered = Math.max(0, cur<0?0:(s.module===12?10:cur));
+  $('#treeCount').textContent = `${answered} / 10 sections`;
+  $('#treeName').textContent = S.answers.name ? `${S.answers.name} — Context.md` : 'Context.md';
+  paintPage();
+}
+
+/* =====================================================================
+   RENDER + WIRE
+   ===================================================================== */
+function render(){
+  const s = st();
+  $('#pBody').innerHTML = bodyHTML(s);
+  $('#pFoot').innerHTML = footHTML(s);
+  paintChrome(); paintModeNote(); wire(); S.cue = 0; S.flags.pasted=false;
+  requestAnimationFrame(()=>playCues());
+}
+function refresh(){                    // re-render without restarting the cue chain
+  const s = st(), cue = S.cue, exp = S.flags.expand;
+  $('#pBody').innerHTML = bodyHTML(s); $('#pFoot').innerHTML = footHTML(s);
+  paintChrome(); paintModeNote(); wire(); S.cue = cue; S.flags.expand = exp;
+  requestAnimationFrame(()=>playCues());
+}
+function go(n){
+  const el = $('#stepEl');
+  const move=()=>{ S.i = Math.max(0, Math.min(FLOW.length-1, n)); S.flags={}; pageAwaiting=null; render(); };
+  if(el){ el.classList.add('leaving'); setTimeout(move,150); } else move();
+}
+function setAns(k,v){ S.answers[k]=v; }
+
+function wire(){
+  const s = st(), A = S.answers;
+
+  $$('#chipRow .chip').forEach(c=>c.addEventListener('click',()=>{
+    if(c.dataset.add){
+      const v = prompt('Add your own:'); if(!v) return;
+      s.options.push({v:v.toLowerCase().replace(/\W+/g,'-'),l:v});
+      A[s.key]=[...(A[s.key]||[]), v]; refresh(); fire('choice'); return;
+    }
+    const v = c.dataset.v;
+    if(s.kind==='multi'){
+      const lbl = s.options.find(o=>o.v===v).l;
+      const cur = A[s.key]||[];
+      A[s.key] = cur.includes(lbl) ? cur.filter(x=>x!==lbl) : [...cur, lbl];
+    } else if(s.kind==='demo1'){ A.service = v; }
+    else { A[s.key] = v; }
+    refresh(); fire('choice');
+  }));
+
+  const mf = $('#mainField');
+  if(mf) mf.addEventListener('input', ()=>{
+    A[s.key]=mf.value; $('#btnNext').disabled = !nextEnabled(s);
+    if(mf.value.trim().length>3) fire('type');
+  });
+  const sample = $('#btnSample');
+  if(sample) sample.addEventListener('click', ()=>{ A[s.key]=s.prefill; refresh(); fire('type'); });
+
+  const rp = $('[data-rephrase]');
+  if(rp) rp.addEventListener('click', ()=>{
+    $('.qtext').textContent = 'Put differently: what should AI assume about your situation before it answers?';
+  });
+
+  $$('[data-reflect]').forEach(b=>b.addEventListener('click',()=>{
+    const k = b.dataset.reflect;
+    if(k==='back'){ go(S.i-1); return; }
+    if(k==='tighten'){
+      A[s.key] = 'I write for operators, not engineers — people with ten minutes and a phone. When I ask for a recommendation, give me one, not five options.';
+      fire('reflect'); refresh(); setTimeout(()=>go(S.i+1), 900); return;
+    }
+    fire('reflect'); go(S.i+1);
+  }));
+
+  const cb = $('#copyBtn');
+  if(cb) cb.addEventListener('click', ()=>{
+    const txt = s.kind==='demo3' ? gradePrompt() : DEMO_PROMPT;
+    navigator.clipboard && navigator.clipboard.writeText(txt).catch(()=>{});
+    cb.classList.add('copied'); setTimeout(()=>cb.classList.remove('copied'),1400);
+    fire('copy');
+  });
+
+  const ex = $('#btnExpand');
+  if(ex) ex.addEventListener('click', ()=>{ S.flags.expand=!S.flags.expand; refresh(); });
+
+  const dl = $('#btnDownload');
+  if(dl) dl.addEventListener('click', ()=>{ downloadFile(); fire('download'); });
+  const cf = $('#btnCopyFile');
+  if(cf) cf.addEventListener('click', ()=>{ navigator.clipboard && navigator.clipboard.writeText(contextFile()).catch(()=>{}); fire('download'); });
+
+  const ho = $('#btnHandoff');
+  if(ho) ho.addEventListener('click', ()=>runHandoff(s));
+
+  const pf = $('#pasteField');
+  if(pf) pf.addEventListener('input', ()=>{
+    const key = s.kind==='demo1'?'out1':s.kind==='demo2'?'out2':'out3';
+    A[key]=pf.value; $('#btnNext').disabled = !nextEnabled(s);
+    if(pf.value.trim().length>10 && !S.flags.pasted){ S.flags.pasted=true; fire('paste'); }
+  });
+
+  const bn=$('#btnNext'), bb=$('#btnBack'), bs=$('#btnSkip');
+  if(bn) bn.addEventListener('click', ()=>{ fire('next'); go(S.i+1); });
+  if(bb) bb.addEventListener('click', ()=>go(S.i-1));
+  if(bs) bs.addEventListener('click', ()=>go(S.i+1));
+
+  $$('.card').forEach(c=>c.addEventListener('click',()=>{
+    c.style.borderColor='var(--mark)'; setTimeout(()=>c.style.borderColor='',600);
+  }));
+}
+
+/* ---- the three automation postures, side by side ---- */
+function runHandoff(s){
+  const A=S.answers, isTwo = s.kind==='demo2';
+  const prompt = s.kind==='demo3' ? gradePrompt() : DEMO_PROMPT;
+  const replyText = s.kind==='demo3' ? REPLY.grade : isTwo ? REPLY.context : REPLY.baseline;
+  const key = s.kind==='demo1'?'out1':isTwo?'out2':'out3';
+  const ho = $('#btnHandoff'); if(ho){ ho.disabled=true; ho.textContent='working…'; }
+
+  if(isTwo){ attachFile(); fire('attach'); }
+
+  typeInto(prompt, ()=>{
+    fire('copy');
+    if(S.mode==='fill'){
+      if(ho){ ho.disabled=false; ho.textContent='filled — hit send in the tab →'; setNote(`Waiting for ${svc().name} to answer. The panel is watching that tab.`); }
+      pageAwaiting = {text:replyText, then:()=>{
+        if(ho){ ho.textContent=`bring the answer back ↓`; setNote('Reads only the reply to the message it just sent.');
+                ho.onclick=()=>{ A[key]=replyText; refresh(); fire('paste'); }; }
+        speakIf('Your answer is ready — bring it back into the panel.');
+      }};
+      applyOne('glowgold:page.send');
+      applyOne('point:page.send|Send it — the panel is watching for the reply');
+    } else {                                  // 'auto' — fill, submit, read back
+      pageAwaiting = null;
+      pageReply(replyText, ()=>{
+        A[key] = replyText; refresh(); fire('paste');
+        speakIf('Asked and answered — I brought it back for you.');
+      });
+    }
+  });
+}
+function speakIf(l){ if(S.narrator) speak(l); }
+function setNote(t){ const n=$('#btnHandoff')?.nextElementSibling; if(n) n.textContent=t; }
+
+/* the manifest cost of whichever posture is selected — the real trade-off */
+const MODE_NOTE = {
+  manual:'manifest: no host permissions · the panel never reads or writes this page',
+  fill:  'manifest: host_permissions for 4 AI origins · content script WRITES to the message box, reads nothing',
+  auto:  'manifest: host_permissions for 4 AI origins · content script writes, submits, and READS the model\u2019s reply'
+};
+function paintModeNote(){ $('#pageNote').textContent = MODE_NOTE[S.mode]; }
+
+/* =====================================================================
+   THE FILE
+   ===================================================================== */
+function contextFile(){
+  const A=S.answers;
+  const roles=(A.roles||[]).map((r,i)=>`### ${i+1}. ${r}\n- **Mandate:** _(asked in the full flow)_\n`).join('\n');
+  return `# Context.md
+_Built in the browser. Nothing here was sent anywhere._
+
+## 1. About This Context
+**Scope:** ${A.scope||'—'}
+
+**What I keep re-explaining:**
+${A.reexplain||'—'}
+
+## 2. About Me
+${roles||'—'}
+
+## 3–10.
+_(the remaining sections come from the full 12-module interview)_
+
+---
+**System Grounding Rule.** Use this file as standing context. Where it conflicts with a general default, this file wins. If something here is missing or stale, say so rather than guessing.
+`;}
+function downloadFile(){
+  const b=new Blob([contextFile()],{type:'text/markdown'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(b); a.download='Context.md'; a.click();
+  setTimeout(()=>URL.revokeObjectURL(a.href),2000);
+}
+
+/* =====================================================================
+   CUE INSPECTOR — the whole point: guidance is data you can read
+   ===================================================================== */
+function esc(t){return t.replace(/&/g,'&amp;').replace(/</g,'&lt;')}
+function paintInspector(){
+  const host=$('#inspectorHost');
+  if(!S.inspector){ host.innerHTML=''; return; }
+  const s=st(), cues=s.cues||[];
+  const body = cues.map((l,i)=>{
+    const on=i===S.cue, done=i<S.cue;
+    const play=l.play.length? l.play.map(p=>`<span class="s">'${esc(p)}'</span>`).join(', ') : '';
+    const say = l.say?`,\n      <span class="k">say</span>: <span class="s">'${esc(l.say.length>44?l.say.slice(0,44)+'…':l.say)}'</span>`:'';
+    const mark = on?'<span class="on">▸</span>':done?'<span class="c">✓</span>':' ';
+    return `  ${mark} { <span class="k">play</span>: [${play}],\n      <span class="k">until</span>: <span class="s">'${l.until}'</span>${say} }${i<cues.length-1?',':''}`;
+  }).join('\n');
+  const sk = s.sketchOn && Object.keys(s.sketchOn).length
+    ? `\n  <span class="k">sketchOn</span>: <span class="s">${esc(JSON.stringify(s.sketchOn)).replace(/(.{54}).+/,'$1…')}</span>,` : '';
+  host.innerHTML = `<div class="inspector">
+    <header>step <b>${s.id}</b> · cue ${Math.min(S.cue+1,cues.length||1)} of ${cues.length||0}
+      <button class="x" id="inspX">×</button></header>
+    <pre>{
+  <span class="k">id</span>: <span class="s">'${s.id}'</span>,${sk}
+  <span class="k">cues</span>: [
+${body}
+  ]
+}</pre>
+    <footer>Each link plays until its <b>until</b> event fires, then hands off. Adding guidance to a step is one line here — no CSS, no component changes.</footer>
+  </div>`;
+  const insp=$('.inspector');
+  if(S.fold) insp.classList.add('folded');
+  insp.querySelector('header').addEventListener('click',e=>{
+    if(e.target.id==='inspX') return;
+    S.fold=!S.fold; insp.classList.toggle('folded', S.fold);
+  });
+  $('#inspX').addEventListener('click',()=>{ S.inspector=false; $('#tglInspector').checked=false; paintInspector(); });
+}
+
+/* =====================================================================
+   CONTROLS
+   ===================================================================== */
+$('#modeSeg').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  S.mode=b.dataset.mode;
+  $$('#modeSeg button').forEach(x=>x.setAttribute('aria-pressed', x===b));
+  document.documentElement.dataset.mode=S.mode;
+  pageAwaiting=null; refresh();
+});
+$('#tglNarrator').addEventListener('change', e=>{ S.narrator=e.target.checked; $('#btnNarrator').setAttribute('aria-pressed',S.narrator); if(S.narrator) playCues(); });
+$('#btnNarrator').addEventListener('click', ()=>{ S.narrator=!S.narrator; $('#tglNarrator').checked=S.narrator; $('#btnNarrator').setAttribute('aria-pressed',S.narrator); if(S.narrator) playCues(); });
+$('#btnMic').addEventListener('click', ()=>{ S.mic=!S.mic; $('#btnMic').setAttribute('aria-pressed',S.mic); });
+$('#tglMotion').addEventListener('change', e=>{ document.documentElement.dataset.motion = e.target.checked?'reduced':''; });
+$('#tglInspector').addEventListener('change', e=>{ S.inspector=e.target.checked; paintInspector(); });
+$('#btnRestart').addEventListener('click', ()=>{
+  S.i=0; S.answers={}; S.flags={}; pageAwaiting=null;
+  $('#pageBody').innerHTML='<div class="page-empty"><h3>How can I help you today?</h3><p>This tab is a stand-in for whichever AI the visitor uses. The panel on the right never leaves.</p></div>';
+  $('#attachedWrap').innerHTML=''; $('#composerText').textContent='';
+  render();
+});
+$('#treeToggle').addEventListener('click', ()=>{
+  const t=$('#treeToggle'), w=$('#treeWrap'), open=t.getAttribute('aria-expanded')==='true';
+  t.setAttribute('aria-expanded', !open); w.classList.toggle('open', !open);
+});
+window.addEventListener('resize', ()=>{ if(S.cue!=null) playCues(); });
+document.addEventListener('keydown', e=>{
+  if(e.key==='ArrowRight' && !/TEXTAREA|INPUT/.test(e.target.tagName)) { const b=$('#btnNext'); if(b&&!b.disabled) b.click(); }
+  if(e.key==='ArrowLeft'  && !/TEXTAREA|INPUT/.test(e.target.tagName)) { const b=$('#btnBack'); if(b&&!b.disabled) b.click(); }
+});
+
+render();
+</script>
+</body>
+</html>

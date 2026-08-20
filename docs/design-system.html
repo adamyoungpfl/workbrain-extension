@@ -1,0 +1,791 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workbrain — Design System</title>
+<style>
+:root{
+  /* ---- canvas ---- */
+  --canvas:#FFFFFF; --surface:#F6F7F9; --sunken:#EDEFF3; --overlay:rgba(21,24,29,.42);
+  /* ---- ink ---- */
+  --ink:#15181D; --ink-2:#525A67; --ink-3:#6B7484; --ink-inv:#FFFFFF;
+  /* ---- lines ---- */
+  --divider:#E2E5EA; --border:#D4D8E0; --border-i:#8A92A0;
+  /* ---- semantic hues: each names who owns the next move ---- */
+  --primary:#2A4FCB;  --primary-hover:#1F3FA8; --primary-tint:#EAEEFB;
+  --violet:#6A3FD1;   --violet-tint:#F2EDFD;
+  --amber:#8A5300;    --amber-tint:#FFF4E2;   --amber-line:#E8A33D;
+  --green:#0B6E4F;    --green-tint:#E7F5EF;
+  --danger:#B4231E;   --danger-tint:#FDECEA;
+  /* ---- type ---- */
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,"Helvetica Neue",Arial,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  /* ---- shape ---- */
+  --r-sm:6px; --r-md:10px; --r-lg:14px; --r-pill:999px;
+  /* ---- elevation: only for things that float ---- */
+  --e-1:0 1px 2px rgba(21,24,29,.06);
+  --e-2:0 4px 12px rgba(21,24,29,.08),0 1px 3px rgba(21,24,29,.06);
+  --e-3:0 16px 40px rgba(21,24,29,.14),0 2px 8px rgba(21,24,29,.08);
+  /* ---- motion ---- */
+  --fast:120ms; --base:200ms; --slow:320ms; --ease:cubic-bezier(.2,0,0,1);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background:var(--canvas);color:var(--ink);font-family:var(--sans);
+  font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;
+}
+.wrap{max-width:1120px;margin:0 auto;padding:0 32px}
+a{color:var(--primary)}
+
+/* ---------- page furniture ---------- */
+.masthead{border-bottom:1px solid var(--divider);background:var(--canvas);position:sticky;top:0;z-index:40}
+.masthead .wrap{display:flex;align-items:center;gap:16px;height:60px}
+.logo{display:flex;align-items:center;gap:10px;font-weight:650;letter-spacing:-.01em}
+.logo svg{display:block}
+.masthead nav{margin-left:auto;display:flex;gap:22px;font-size:13.5px}
+.masthead nav a{color:var(--ink-2);text-decoration:none}
+.masthead nav a:hover{color:var(--primary)}
+
+.hero{padding:76px 0 56px;border-bottom:1px solid var(--divider)}
+.eyebrow{font-size:12px;font-weight:650;letter-spacing:.09em;text-transform:uppercase;color:var(--primary);margin:0 0 16px}
+h1{font-size:52px;line-height:1.08;letter-spacing:-.025em;font-weight:680;margin:0 0 20px;max-width:16ch}
+.lede{font-size:19px;line-height:1.6;color:var(--ink-2);max-width:62ch;margin:0}
+
+section{padding:64px 0;border-bottom:1px solid var(--divider);scroll-margin-top:76px}
+h2{font-size:30px;line-height:1.2;letter-spacing:-.02em;font-weight:660;margin:0 0 10px}
+h2 .n{font-family:var(--mono);font-size:14px;color:var(--primary);font-weight:600;margin-right:12px;letter-spacing:0}
+h3{font-size:18px;font-weight:650;letter-spacing:-.01em;margin:38px 0 10px}
+h4{font-size:14px;font-weight:650;margin:24px 0 8px}
+p{margin:0 0 14px;max-width:70ch;color:var(--ink-2)}
+p.tight{margin-bottom:6px}
+.sec-lede{font-size:17px;color:var(--ink-2);max-width:66ch;margin:0 0 8px}
+code{font-family:var(--mono);font-size:.88em;background:var(--sunken);padding:2px 6px;border-radius:5px;color:var(--ink)}
+
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.g3{grid-template-columns:repeat(auto-fit,minmax(230px,1fr))}
+.g4{grid-template-columns:repeat(auto-fit,minmax(180px,1fr))}
+
+.panelcard{border:1px solid var(--divider);border-radius:var(--r-lg);padding:22px;background:var(--canvas)}
+.panelcard.sunk{background:var(--surface);border-color:transparent}
+
+table{width:100%;border-collapse:collapse;font-size:14px;margin:14px 0 6px}
+th{text-align:left;font-weight:650;color:var(--ink);border-bottom:1.5px solid var(--border);padding:9px 12px 9px 0;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase}
+td{border-bottom:1px solid var(--divider);padding:11px 12px 11px 0;color:var(--ink-2);vertical-align:top}
+td strong{color:var(--ink);font-weight:600}
+td:last-child,th:last-child{padding-right:0}
+
+.note{border-left:3px solid var(--primary);background:var(--primary-tint);padding:14px 18px;border-radius:0 var(--r-md) var(--r-md) 0;margin:20px 0}
+.note p{color:var(--ink);margin:0}
+.note b{font-weight:650}
+.note.amber{border-color:var(--amber-line);background:var(--amber-tint)}
+
+/* ---------- swatches ---------- */
+.swatch{border:1px solid var(--divider);border-radius:var(--r-md);overflow:hidden}
+.swatch .chip{height:76px}
+.swatch .meta{padding:11px 13px;font-size:12.5px}
+.swatch .meta b{display:block;color:var(--ink);font-weight:600;font-size:13px}
+.swatch .meta span{font-family:var(--mono);font-size:11px;color:var(--ink-3)}
+.ratio{display:inline-block;font-family:var(--mono);font-size:10.5px;padding:2px 6px;border-radius:4px;background:var(--green-tint);color:var(--green);margin-top:6px}
+
+/* ---------- component specimens ---------- */
+.spec{border:1px solid var(--divider);border-radius:var(--r-lg);overflow:hidden;margin:16px 0}
+.spec .stage{padding:26px;background:var(--surface);display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.spec .stage.col{flex-direction:column;align-items:stretch;gap:10px}
+.spec .cap{padding:11px 16px;border-top:1px solid var(--divider);font-size:12.5px;color:var(--ink-3);background:var(--canvas)}
+
+/* ---------- the actual components ---------- */
+.btn{
+  font-family:inherit;font-size:14px;font-weight:600;line-height:1;padding:12px 18px;border-radius:var(--r-md);
+  border:1px solid transparent;cursor:pointer;transition:background var(--fast) var(--ease),border-color var(--fast) var(--ease);
+  min-height:44px;display:inline-flex;align-items:center;justify-content:center;gap:8px;
+}
+.btn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.btn-primary{background:var(--primary);color:var(--ink-inv)}
+.btn-primary:hover{background:var(--primary-hover)}
+.btn-secondary{background:var(--canvas);color:var(--ink);border-color:var(--border-i)}
+.btn-secondary:hover{background:var(--surface)}
+.btn-quiet{background:transparent;color:var(--ink-2)}
+.btn-quiet:hover{background:var(--surface);color:var(--ink)}
+.btn-ai{background:var(--violet-tint);color:var(--violet);border-color:transparent}
+.btn-ai:hover{background:#E8E0FC}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn-sm{padding:8px 12px;min-height:36px;font-size:13px}
+
+.pill{
+  font-family:inherit;font-size:14px;padding:10px 16px;border-radius:var(--r-pill);min-height:44px;
+  border:1px solid var(--border-i);background:var(--canvas);color:var(--ink);cursor:pointer;
+  transition:all var(--fast) var(--ease);display:inline-flex;align-items:center;gap:7px;
+}
+.pill:hover{border-color:var(--primary);background:var(--primary-tint)}
+.pill[aria-pressed="true"]{background:var(--primary);border-color:var(--primary);color:var(--ink-inv);font-weight:600}
+.pill[aria-pressed="true"]::before{content:"✓";font-size:12px}
+.pill:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.pill.suggested{box-shadow:0 0 0 3px var(--primary-tint)}
+
+.field{
+  width:100%;font-family:inherit;font-size:15px;line-height:1.55;padding:13px 15px;border-radius:var(--r-md);
+  border:1px solid var(--border-i);background:var(--canvas);color:var(--ink);transition:all var(--fast) var(--ease);
+}
+.field:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px var(--primary-tint)}
+.field::placeholder{color:var(--ink-3)}
+textarea.field{min-height:96px;resize:vertical}
+.field-label{display:block;font-size:14px;font-weight:600;margin-bottom:7px;color:var(--ink)}
+.field-help{font-size:13px;color:var(--ink-3);margin-top:7px}
+.field-err{border-color:var(--danger)}
+.field-errmsg{font-size:13px;color:var(--danger);margin-top:7px;display:flex;gap:6px;align-items:flex-start}
+
+.readonly{
+  border:1px solid var(--divider);border-left:3px solid var(--violet);background:var(--violet-tint);
+  border-radius:0 var(--r-md) var(--r-md) 0;padding:14px 46px 14px 16px;position:relative;
+  font-size:14.5px;line-height:1.62;color:var(--ink);white-space:pre-wrap;
+}
+.readonly .copy{
+  position:absolute;top:10px;right:10px;width:36px;height:36px;border-radius:var(--r-sm);
+  background:var(--canvas);border:1px solid var(--border);color:var(--violet);cursor:pointer;
+  display:grid;place-items:center;
+}
+.readonly .tag{
+  font-size:11px;font-weight:650;letter-spacing:.07em;text-transform:uppercase;color:var(--violet);
+  display:block;margin-bottom:6px;
+}
+
+.filerow{
+  display:flex;align-items:center;gap:14px;padding:16px;border:1px solid var(--divider);
+  border-radius:var(--r-md);background:var(--canvas);cursor:pointer;transition:all var(--fast) var(--ease);
+  width:100%;text-align:left;font-family:inherit;
+}
+.filerow:hover{border-color:var(--border-i);box-shadow:var(--e-1)}
+.filerow .ic{width:34px;height:34px;border-radius:var(--r-sm);background:var(--sunken);display:grid;place-items:center;color:var(--ink-2);flex:0 0 auto}
+.filerow .nm{font-size:15px;font-weight:600;color:var(--ink);display:block}
+.filerow .sb{font-size:13px;color:var(--ink-3);display:block;margin-top:2px}
+.filerow.locked{opacity:.55;cursor:default;background:var(--surface);border-style:dashed}
+.badge{
+  margin-left:auto;font-size:12px;font-weight:650;padding:5px 10px;border-radius:var(--r-pill);
+  background:var(--sunken);color:var(--ink-2);white-space:nowrap;
+}
+.badge.fresh{background:var(--green-tint);color:var(--green)}
+.badge.due{background:var(--amber-tint);color:var(--amber)}
+.badge.next{background:var(--primary-tint);color:var(--primary)}
+
+.banner{
+  border-radius:var(--r-md);padding:16px 18px;display:flex;gap:14px;align-items:flex-start;
+  background:var(--amber-tint);border:1px solid rgba(232,163,61,.45);
+}
+.banner .bi{flex:0 0 auto;color:var(--amber);margin-top:1px}
+.banner h5{margin:0 0 4px;font-size:15px;font-weight:650;color:var(--ink)}
+.banner p{margin:0;font-size:13.5px;color:var(--ink-2)}
+.banner.info{background:var(--primary-tint);border-color:rgba(42,79,203,.28)}
+.banner.info .bi{color:var(--primary)}
+.banner.good{background:var(--green-tint);border-color:rgba(11,110,79,.28)}
+.banner.good .bi{color:var(--green)}
+
+.meter{border:1px solid var(--divider);border-radius:var(--r-lg);padding:20px}
+.meter .top{display:flex;align-items:baseline;gap:10px;margin-bottom:14px}
+.meter .val{font-size:38px;font-weight:680;letter-spacing:-.03em;line-height:1;color:var(--ink)}
+.meter .lab{font-size:13px;color:var(--ink-3);font-weight:500}
+.meter .step{margin-left:auto;font-size:13px;color:var(--ink-2);font-weight:600}
+.track{display:flex;gap:5px;margin-bottom:9px}
+.track i{flex:1;height:7px;border-radius:4px;background:var(--sunken);overflow:hidden;position:relative}
+.track i.on{background:var(--primary)}
+.track i.part::after{content:"";position:absolute;inset:0 auto 0 0;width:var(--p,50%);background:var(--primary)}
+.tracklabels{display:flex;gap:5px;font-size:12px;color:var(--ink-3)}
+.tracklabels span{flex:1;text-align:center}
+.tracklabels span.on{color:var(--primary);font-weight:600}
+
+.toast{
+  background:var(--ink);color:var(--ink-inv);border-radius:var(--r-md);padding:13px 17px;font-size:14px;
+  box-shadow:var(--e-3);display:inline-flex;align-items:center;gap:10px;
+}
+.toast .tk{color:#6EE7A8}
+
+/* ---------- cue layer, light ---------- */
+.cue-demo{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+@keyframes wb-sweep{0%{transform:translateX(-120%)}55%,100%{transform:translateX(120%)}}
+@keyframes wb-ring{0%,100%{box-shadow:0 0 0 0 rgba(42,79,203,0)}50%{box-shadow:0 0 0 5px rgba(42,79,203,.22)}}
+@keyframes wb-ring-v{0%,100%{box-shadow:0 0 0 0 rgba(106,63,209,0)}50%{box-shadow:0 0 0 5px rgba(106,63,209,.20)}}
+@keyframes wb-bob{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+.cue-sweep{position:relative;overflow:hidden}
+.cue-sweep::after{
+  content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;
+  background:linear-gradient(105deg,transparent 22%,rgba(42,79,203,.16) 50%,transparent 78%);
+  animation:wb-sweep 1.25s var(--ease) infinite;
+}
+.cue-ring{animation:wb-ring 1.7s ease-in-out infinite}
+.cue-ring-v{animation:wb-ring-v 1.7s ease-in-out infinite}
+.cue-bob{animation:wb-bob 1.4s ease-in-out infinite}
+@media (prefers-reduced-motion:reduce){
+  .cue-sweep::after{animation:none;opacity:.5}
+  .cue-ring{animation:none;box-shadow:0 0 0 4px rgba(42,79,203,.2)}
+  .cue-ring-v{animation:none;box-shadow:0 0 0 4px rgba(106,63,209,.18)}
+  .cue-bob{animation:none}
+  *{transition-duration:.01ms!important}
+}
+
+/* ---------- panel mock ---------- */
+.panelmock{
+  width:400px;flex:0 0 400px;border:1px solid var(--border);border-radius:var(--r-lg);overflow:hidden;
+  background:var(--canvas);box-shadow:var(--e-2);
+}
+.panelmock .ph{padding:14px 18px;border-bottom:1px solid var(--divider);display:flex;align-items:center;gap:10px}
+.panelmock .ph b{font-size:15px;font-weight:650;letter-spacing:-.01em}
+.panelmock .ph .sp{margin-left:auto;display:flex;gap:4px}
+.panelmock .pb{padding:20px 18px}
+.panelmock .pf{padding:14px 18px;border-top:1px solid var(--divider);display:flex;gap:10px;align-items:center;background:var(--surface)}
+.panelmock .pf .save{margin-left:auto;font-size:11.5px;color:var(--ink-3);text-align:right;line-height:1.35}
+.qhead{font-size:22px;line-height:1.25;letter-spacing:-.018em;font-weight:660;margin:0 0 8px;color:var(--ink)}
+.qsub{font-size:14px;color:var(--ink-2);margin:0 0 18px}
+.steplab{font-size:12px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin:0 0 10px}
+.iconbtn{width:36px;height:36px;border-radius:var(--r-sm);border:1px solid transparent;background:transparent;color:var(--ink-3);display:grid;place-items:center;cursor:pointer}
+.iconbtn:hover{background:var(--surface);color:var(--ink)}
+
+/* ---------- do / don't ---------- */
+.dd{display:grid;gap:16px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin:18px 0}
+.dd .box{border:1px solid var(--divider);border-radius:var(--r-md);overflow:hidden}
+.dd .hd{padding:10px 14px;font-size:13px;font-weight:650;display:flex;gap:8px;align-items:center}
+.dd .do .hd{background:var(--green-tint);color:var(--green)}
+.dd .dont .hd{background:var(--danger-tint);color:var(--danger)}
+.dd .bd{padding:16px;font-size:14px;color:var(--ink-2)}
+.dd .bd p{margin:0 0 10px}.dd .bd p:last-child{margin:0}
+
+.copytable td:first-child{width:46%}
+.before{color:var(--danger)}
+.after{color:var(--green)}
+
+footer{padding:48px 0 80px;color:var(--ink-3);font-size:13.5px}
+@media (max-width:820px){
+  h1{font-size:38px}.wrap{padding:0 20px}
+  .panelmock{width:100%;flex:1 1 auto}
+}
+</style>
+</head>
+<body>
+
+<header class="masthead">
+  <div class="wrap">
+    <span class="logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="#2A4FCB"/>
+        <path d="M7.5 15.5V8.5M12 15.5V8.5M16.5 15.5V8.5" stroke="#fff" stroke-width="1.7" stroke-linecap="round" opacity=".55"/>
+        <circle cx="12" cy="12" r="2.6" fill="#fff"/>
+      </svg>
+      Workbrain
+    </span>
+    <nav>
+      <a href="#found">Foundations</a><a href="#color">Color</a><a href="#type">Type</a>
+      <a href="#comp">Components</a><a href="#patterns">Patterns</a><a href="#motion">Motion</a>
+      <a href="#a11y">Accessibility</a><a href="#words">Words</a>
+    </nav>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="wrap">
+    <p class="eyebrow">Workbrain · Model Citizen</p>
+    <h1>The design system</h1>
+    <p class="lede">A light-first system built to feel immediately familiar to anyone who has used a modern
+      business application — and to stay legible to someone who does not think of themselves as technical.
+      Every value here is checked against WCAG 2.1 AA, and every rule exists because breaking it costs
+      comprehension, not because it looks nicer.</p>
+  </div>
+</div>
+
+<section id="found">
+ <div class="wrap">
+  <h2><span class="n">01</span>Foundations</h2>
+  <p class="sec-lede">Five rules. If a screen breaks one of them, the screen is wrong — not the rule.</p>
+
+  <div class="grid g2" style="margin-top:26px">
+    <div class="panelcard">
+      <h4 style="margin-top:0;color:var(--primary)">1 · One decision per screen</h4>
+      <p style="margin:0">Never two primary buttons. Never a question inside a question. The person should be able
+        to say out loud what this screen is asking before they act.</p>
+    </div>
+    <div class="panelcard">
+      <h4 style="margin-top:0;color:var(--primary)">2 · The file is always visible</h4>
+      <p style="margin:0">Nothing accumulates in hidden state. If an answer changed the file, the file shows it
+        immediately. Trust comes from watching the thing get built.</p>
+    </div>
+    <div class="panelcard">
+      <h4 style="margin-top:0;color:var(--primary)">3 · Color names who owns the next move</h4>
+      <p style="margin:0">Blue: Workbrain is asking. Amber: time is asking. Violet: this belongs to your AI.
+        Green: done. Grey: your turn to type. No decorative color anywhere.</p>
+    </div>
+    <div class="panelcard">
+      <h4 style="margin-top:0;color:var(--primary)">4 · Motion is instruction</h4>
+      <p style="margin:0">An animation says do this next, and stops the instant it is done. Nothing loops
+        for atmosphere. Every cue has a still-image equivalent for reduced motion.</p>
+    </div>
+    <div class="panelcard">
+      <h4 style="margin-top:0;color:var(--primary)">5 · Never a dead end</h4>
+      <p style="margin:0">Every screen has a way forward that does not require understanding the screen.
+        Skip is always available. Nothing is ever unrecoverable, so nothing needs a confirmation dialog.</p>
+    </div>
+    <div class="panelcard sunk">
+      <h4 style="margin-top:0">The audience assumption</h4>
+      <p style="margin:0">Design for a competent adult who has never installed a browser extension, is slightly
+        worried they will break something, and will not read anything longer than two lines. That person is the
+        median user, not the edge case.</p>
+    </div>
+  </div>
+ </div>
+</section>
+
+<section id="color">
+ <div class="wrap">
+  <h2><span class="n">02</span>Color</h2>
+  <p class="sec-lede">Two neutrals do almost all the work. Four hues carry meaning, and only meaning.
+    Every foreground/background pair below is measured, not eyeballed.</p>
+
+  <h3>Canvas &amp; ink</h3>
+  <div class="grid g4">
+    <div class="swatch"><div class="chip" style="background:#FFFFFF;border-bottom:1px solid var(--divider)"></div>
+      <div class="meta"><b>Canvas</b><span>#FFFFFF</span><br><span style="color:var(--ink-3)">cards, panel, page</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#F6F7F9"></div>
+      <div class="meta"><b>Surface</b><span>#F6F7F9</span><br><span style="color:var(--ink-3)">app chrome, footers</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#EDEFF3"></div>
+      <div class="meta"><b>Sunken</b><span>#EDEFF3</span><br><span style="color:var(--ink-3)">wells, icon tiles</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#15181D"></div>
+      <div class="meta"><b>Ink</b><span>#15181D</span><span class="ratio">17.8 : 1 AAA</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#525A67"></div>
+      <div class="meta"><b>Ink 2</b><span>#525A67</span><span class="ratio">6.96 : 1 AA</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#6B7484"></div>
+      <div class="meta"><b>Ink 3</b><span>#6B7484</span><span class="ratio">4.71 : 1 AA</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#8A92A0"></div>
+      <div class="meta"><b>Border</b><span>#8A92A0</span><span class="ratio">3.13 : 1 · 1.4.11</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#E2E5EA"></div>
+      <div class="meta"><b>Divider</b><span>#E2E5EA</span><br><span style="color:var(--ink-3)">decorative only</span></div></div>
+  </div>
+  <div class="note">
+    <p><b>Two border tokens, and they are not interchangeable.</b> <code>--border-i</code> (#8A92A0) draws the edge
+      of anything you can interact with — inputs, choice pills, secondary buttons — because WCAG 1.4.11 requires
+      3:1 for the boundary of a control. <code>--divider</code> (#E2E5EA) separates content and is exempt.
+      Using the light one on an input is a real failure, not a preference.</p>
+  </div>
+
+  <h3>The four meanings</h3>
+  <table>
+    <tr><th>Hue</th><th>Means</th><th>Used for</th><th>Text on white</th><th>Text on its tint</th></tr>
+    <tr><td><strong style="color:#2A4FCB">Blue #2A4FCB</strong></td><td>Workbrain is asking you to act</td>
+        <td>Primary button, selected choice, focus ring, progress</td><td>6.82 : 1</td><td>5.89 : 1</td></tr>
+    <tr><td><strong style="color:#8A5300">Amber #8A5300</strong></td><td>Time is asking you to act</td>
+        <td>Drift and staleness, past-due sections, gentle warnings</td><td>6.33 : 1</td><td>5.81 : 1</td></tr>
+    <tr><td><strong style="color:#6A3FD1">Violet #6A3FD1</strong></td><td>This belongs to your AI</td>
+        <td>Prompts to copy, generated output, anything read-only</td><td>6.47 : 1</td><td>5.64 : 1</td></tr>
+    <tr><td><strong style="color:#0B6E4F">Green #0B6E4F</strong></td><td>Done, current, healthy</td>
+        <td>Fresh badges, confirmations, score improvements</td><td>6.25 : 1</td><td>5.57 : 1</td></tr>
+    <tr><td><strong style="color:#B4231E">Red #B4231E</strong></td><td>Something failed and you can fix it</td>
+        <td>Field errors only. Never for warnings, never for emphasis.</td><td>6.56 : 1</td><td>—</td></tr>
+  </table>
+  <p>Blue and violet sit far enough apart in hue to be told apart, and are never the only difference between two
+    things — the violet container also carries a left rule, an uppercase label, and read-only affordances.
+    Nothing in this system is distinguished by color alone.</p>
+
+  <div class="grid g4" style="margin-top:22px">
+    <div class="swatch"><div class="chip" style="background:#2A4FCB"></div><div class="meta"><b>Primary</b><span>#2A4FCB</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#EAEEFB"></div><div class="meta"><b>Primary tint</b><span>#EAEEFB</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#8A5300"></div><div class="meta"><b>Amber</b><span>#8A5300</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#FFF4E2"></div><div class="meta"><b>Amber tint</b><span>#FFF4E2</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#6A3FD1"></div><div class="meta"><b>Violet</b><span>#6A3FD1</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#F2EDFD"></div><div class="meta"><b>Violet tint</b><span>#F2EDFD</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#0B6E4F"></div><div class="meta"><b>Green</b><span>#0B6E4F</span></div></div>
+    <div class="swatch"><div class="chip" style="background:#E7F5EF"></div><div class="meta"><b>Green tint</b><span>#E7F5EF</span></div></div>
+  </div>
+
+  <div class="note amber">
+    <p><b>Dark mode is a preference, not the identity.</b> It ships, it inverts the neutrals, and it keeps the same
+      four meanings at their dark-surface equivalents. It is not where design decisions get made, and no screen is
+      ever designed dark-first — that is how contrast bugs get shipped to the majority of users.</p>
+  </div>
+ </div>
+</section>
+
+<section id="type">
+ <div class="wrap">
+  <h2><span class="n">03</span>Type &amp; space</h2>
+  <p class="sec-lede">The system font stack. Not a brand typeface — the font a person's own operating system
+    already renders best, which is why Apple, Microsoft and Salesforce all use theirs.</p>
+
+  <table>
+    <tr><th>Role</th><th>Size / line</th><th>Weight</th><th>Used for</th></tr>
+    <tr><td><span style="font-size:32px;font-weight:680;letter-spacing:-.02em">Display</span></td><td>32 / 1.2 · −0.02em</td><td>680</td><td>Page titles on the site. Never in the panel.</td></tr>
+    <tr><td><span style="font-size:22px;font-weight:660;letter-spacing:-.018em">Question</span></td><td>22 / 1.25 · −0.018em</td><td>660</td><td>The one question on a panel screen.</td></tr>
+    <tr><td><span style="font-size:17px;font-weight:650">Section</span></td><td>17 / 1.4</td><td>650</td><td>Card titles, file names.</td></tr>
+    <tr><td><span style="font-size:15px">Body</span></td><td>15 / 1.6</td><td>400</td><td>Everything a person reads. Never below 14.</td></tr>
+    <tr><td><span style="font-size:13px;color:var(--ink-3)">Support</span></td><td>13 / 1.5</td><td>400</td><td>Helper text, timestamps, metadata.</td></tr>
+    <tr><td><span style="font-size:12px;font-weight:650;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)">Label</span></td><td>12 / 1.4 · +0.08em caps</td><td>650</td><td>Step labels, badges, table headers. Two or three words maximum.</td></tr>
+    <tr><td><span style="font-family:var(--mono);font-size:13px">Mono</span></td><td>13 / 1.6</td><td>400</td><td>File names, prompt text, anything the person will copy verbatim.</td></tr>
+  </table>
+
+  <h3>Spacing</h3>
+  <p>A 4px base, used in multiples of 4 and 8. Component padding comes from a fixed set so that two cards built by
+    two people line up: <code>8</code> · <code>12</code> · <code>16</code> · <code>20</code> · <code>24</code> ·
+    <code>32</code> · <code>48</code> · <code>64</code>.</p>
+  <p><strong>Density is comfortable, never compact.</strong> A 400px panel is tempting to cram. Resist it — a screen
+    that fits one more field is a screen that reads as a form, and forms are where non-technical users stop.</p>
+
+  <h3>Shape &amp; elevation</h3>
+  <table>
+    <tr><th>Token</th><th>Value</th><th>Applies to</th></tr>
+    <tr><td><code>--r-sm</code></td><td>6px</td><td>Icon buttons, badges, small tiles</td></tr>
+    <tr><td><code>--r-md</code></td><td>10px</td><td>Buttons, inputs, file rows, banners</td></tr>
+    <tr><td><code>--r-lg</code></td><td>14px</td><td>Cards, the panel itself, sheets</td></tr>
+    <tr><td><code>--r-pill</code></td><td>999px</td><td>Choice pills and badges only</td></tr>
+    <tr><td><code>--e-1</code></td><td>1px 2px / 6%</td><td>Hover lift on an interactive row</td></tr>
+    <tr><td><code>--e-2</code></td><td>4px 12px / 8%</td><td>The panel against the page</td></tr>
+    <tr><td><code>--e-3</code></td><td>16px 40px / 14%</td><td>Sheets and toasts — things that float above everything</td></tr>
+  </table>
+  <p>Flat surfaces carry a 1px border, not a shadow. Shadow means <em>this is on top of something</em>, and is
+    reserved for exactly that. Three levels, no more.</p>
+ </div>
+</section>
+
+<section id="comp">
+ <div class="wrap">
+  <h2><span class="n">04</span>Components</h2>
+  <p class="sec-lede">Nine components carry the entire product. Each is documented with its variants, its states,
+    and what it is not allowed to do.</p>
+
+  <h3>Button</h3>
+  <div class="spec">
+    <div class="stage">
+      <button class="btn btn-primary">Start the interview</button>
+      <button class="btn btn-secondary">Download the file</button>
+      <button class="btn btn-ai">Put it in Claude →</button>
+      <button class="btn btn-quiet">Skip</button>
+      <button class="btn btn-primary" disabled>Next</button>
+      <button class="btn btn-secondary btn-sm">Small</button>
+    </div>
+    <div class="cap">Primary · Secondary · AI action · Quiet · Disabled · Small. Minimum height 44px in every variant.</div>
+  </div>
+  <table>
+    <tr><th>Variant</th><th>Use when</th><th>Rule</th></tr>
+    <tr><td><strong>Primary</strong></td><td>The one thing this screen wants</td><td>Exactly one per screen. If you need two, the screen is asking two questions.</td></tr>
+    <tr><td><strong>Secondary</strong></td><td>A real alternative, equally valid</td><td>Bordered, never filled. Two maximum.</td></tr>
+    <tr><td><strong>AI action</strong></td><td>The action hands off to the person's own AI</td><td>Violet. Always paired with one line saying exactly what it will do.</td></tr>
+    <tr><td><strong>Quiet</strong></td><td>Skip, cancel, not now</td><td>Never disabled, never hidden. Escape hatches must always be available.</td></tr>
+  </table>
+  <p><strong>States:</strong> default → hover (background shift, no movement) → focus-visible (2px blue ring, 2px offset)
+    → active (no transform) → disabled (40% opacity, never removed from the DOM) → loading (label changes to a verb in
+    progress, e.g. <em>working…</em> — no spinner-only states, a spinner alone tells a nervous user nothing).</p>
+
+  <h3>Choice pill</h3>
+  <div class="spec">
+    <div class="stage">
+      <button class="pill" aria-pressed="false">Work</button>
+      <button class="pill" aria-pressed="false">Personal</button>
+      <button class="pill" aria-pressed="true">Both</button>
+      <button class="pill suggested" aria-pressed="false">Suggested</button>
+      <button class="pill" aria-pressed="false" style="border-style:dashed;color:var(--ink-3)">+ add your own</button>
+    </div>
+    <div class="cap">Selection is carried by fill, weight and a checkmark — three signals, so color is never the only one.</div>
+  </div>
+  <p>Pills replace text entry wherever a reasonable set of answers exists. This is the single highest-leverage
+    decision for low-confidence users: recognition beats recall, and a blank box is where people quit.
+    Every pill row ends with <em>+ add your own</em>, so the list never becomes a cage.</p>
+  <p><strong>Behaviour:</strong> single-select rows commit on click and advance nothing — the person still presses Next,
+    because auto-advance removes their sense of control. Multi-select rows toggle. Arrow keys move between pills,
+    Space selects, and the group is a <code>role="group"</code> with an accessible name from the question.</p>
+
+  <h3>Field</h3>
+  <div class="spec">
+    <div class="stage col">
+      <div>
+        <label class="field-label" for="d1">What do you keep re-explaining?</label>
+        <textarea class="field" id="d1" placeholder="Say it the way you'd say it out loud…"></textarea>
+        <div class="field-help">However it comes out. We'll tidy it on the next screen.</div>
+      </div>
+      <div>
+        <label class="field-label" for="d2">Your name</label>
+        <input class="field field-err" id="d2" value="" aria-invalid="true" aria-describedby="d2e">
+        <div class="field-errmsg" id="d2e">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="flex:0 0 auto;margin-top:1px"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5M12 16h.01"/></svg>
+          Add a name so the file has something to call you. First name is plenty.</div>
+      </div>
+    </div>
+    <div class="cap">Grey border means your turn to type. Errors say what to do, never what went wrong.</div>
+  </div>
+
+  <h3>Read-only block</h3>
+  <div class="spec">
+    <div class="stage col">
+      <div class="readonly"><span class="tag">Ask your AI this</span>Draft a status update for my manager.
+        <button class="copy" aria-label="Copy to clipboard">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg>
+        </button>
+      </div>
+    </div>
+    <div class="cap">Violet left rule + label + copy affordance. Never editable, never styled like a field.</div>
+  </div>
+  <p>This is the component that carries the product's trust story: anything Workbrain generates for the person's AI,
+    and anything their AI generated back, appears here — visibly not-a-form, visibly theirs to copy, visibly untouched.
+    The panel never parses, scores or stores what is inside it.</p>
+
+  <h3>File row</h3>
+  <div class="spec">
+    <div class="stage col">
+      <button class="filerow">
+        <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2.5h8l4 4v15H6z"/><path d="M14 2.5v4h4"/></svg></span>
+        <span><span class="nm">Context.md</span><span class="sb">Updated today · 10 of 10 sections</span></span>
+        <span class="badge fresh">Current</span>
+      </button>
+      <button class="filerow">
+        <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2.5h8l4 4v15H6z"/><path d="M14 2.5v4h4"/></svg></span>
+        <span><span class="nm">Skills.md</span><span class="sb">4 skills · 2 from your team</span></span>
+        <span class="badge due">3 to review</span>
+      </button>
+      <button class="filerow locked" disabled>
+        <span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="4.5" y="10.5" width="15" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg></span>
+        <span><span class="nm">Actions.md</span><span class="sb">Finish Skills.md first</span></span>
+        <span class="badge">Later</span>
+      </button>
+    </div>
+    <div class="cap">The OS made physical. A locked row explains what unlocks it, in the row, without a tooltip.</div>
+  </div>
+
+  <h3>Progress meter</h3>
+  <div class="spec">
+    <div class="stage col">
+      <div class="meter" style="background:var(--canvas)">
+        <div class="top"><span class="val">60%</span><span class="lab">of your AI use, set up</span><span class="step">Step 1 of 4</span></div>
+        <div class="track"><i class="on"></i><i class="part" style="--p:35%"></i><i></i><i></i></div>
+        <div class="tracklabels"><span class="on">Name</span><span>Repeat</span><span>Act</span><span>Share</span></div>
+      </div>
+    </div>
+    <div class="cap">"% AI-utilized" is jargon. "of your AI use, set up" is the same number in words people use.</div>
+  </div>
+
+  <h3>Banner</h3>
+  <div class="spec">
+    <div class="stage col">
+      <div class="banner"><span class="bi"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 7.8v4.6l3 1.8"/></svg></span>
+        <div><h5>Three parts of your file are out of date</h5>
+          <p>You said your team-lead role was good for about a year, and that was five months ago. Two questions brings it current.</p></div></div>
+      <div class="banner good"><span class="bi"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12.5l5 5 11-11"/></svg></span>
+        <div><h5>Your file is current</h5><p>Nothing to do. Come back when something changes at work.</p></div></div>
+    </div>
+    <div class="cap">A banner always says why it appeared, in the person's own words, and what fixes it.</div>
+  </div>
+
+  <h3>Toast</h3>
+  <div class="spec">
+    <div class="stage">
+      <span class="toast"><span class="tk">✓</span> Added to Context.md · updated today</span>
+    </div>
+    <div class="cap">Confirmation only, four seconds, never carries an action, never blocks. pointer-events: none.</div>
+  </div>
+
+  <h3>Sheet</h3>
+  <p>A sheet slides up from the bottom of the panel for a short, self-contained task — capture something, copy a
+    briefing. It is the only overlay in the system. There are no modal dialogs, because there is nothing in this
+    product destructive enough to need confirming, and a modal that teaches is a modal that gets dismissed unread.</p>
+ </div>
+</section>
+
+<section id="patterns">
+ <div class="wrap">
+  <h2><span class="n">05</span>Patterns</h2>
+  <p class="sec-lede">The two screens that carry the product, drawn at true panel width.</p>
+
+  <div style="display:flex;gap:32px;flex-wrap:wrap;margin-top:26px;align-items:flex-start">
+
+    <div class="panelmock">
+      <div class="ph">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="#2A4FCB"/><circle cx="12" cy="12" r="2.6" fill="#fff"/><path d="M7.5 15.5V8.5M16.5 15.5V8.5" stroke="#fff" stroke-width="1.7" stroke-linecap="round" opacity=".55"/></svg>
+        <b>Workbrain</b>
+        <span class="sp">
+          <button class="iconbtn" aria-label="Read aloud"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><path d="M11 5 6 9H3v6h3l5 4z"/><path d="M15.5 8.5a5 5 0 0 1 0 7"/></svg></button>
+          <button class="iconbtn" aria-label="Settings"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.2 7.5l1.7 1M18.1 15.5l1.7 1M4.2 16.5l1.7-1M18.1 8.5l1.7-1"/></svg></button>
+        </span>
+      </div>
+      <div class="pb">
+        <p class="steplab">Question 4 of 40 · About you</p>
+        <h3 class="qhead" style="margin-top:0">Are we setting this up for work, home, or both?</h3>
+        <p class="qsub">This decides what the rest of the questions bother asking about.</p>
+        <div style="display:flex;flex-wrap:wrap;gap:9px;margin-bottom:20px">
+          <button class="pill cue-sweep" aria-pressed="false">Work</button>
+          <button class="pill cue-sweep" aria-pressed="false" style="animation-delay:.15s">Home</button>
+          <button class="pill cue-sweep suggested" aria-pressed="false" style="animation-delay:.3s">Both</button>
+        </div>
+        <button class="btn btn-quiet btn-sm" style="padding-left:0">Ask me that a different way</button>
+      </div>
+      <div class="pf">
+        <button class="btn btn-secondary btn-sm">Back</button>
+        <button class="btn btn-primary btn-sm" disabled>Next</button>
+        <span class="save">Saved on this device<br>Nothing leaves your browser</span>
+      </div>
+    </div>
+
+    <div class="panelmock">
+      <div class="ph">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2.5" y="2.5" width="19" height="19" rx="5.5" fill="#2A4FCB"/><circle cx="12" cy="12" r="2.6" fill="#fff"/><path d="M7.5 15.5V8.5M16.5 15.5V8.5" stroke="#fff" stroke-width="1.7" stroke-linecap="round" opacity=".55"/></svg>
+        <b>Workbrain</b>
+        <span class="sp"><button class="iconbtn" aria-label="Settings"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M12 3v2M12 19v2M4.2 7.5l1.7 1M18.1 15.5l1.7 1M4.2 16.5l1.7-1M18.1 8.5l1.7-1"/></svg></button></span>
+      </div>
+      <div class="pb">
+        <div class="meter" style="margin-bottom:20px">
+          <div class="top"><span class="val">60%</span><span class="lab">set up</span><span class="step">Step 1 of 4</span></div>
+          <div class="track"><i class="on"></i><i class="part" style="--p:30%"></i><i></i><i></i></div>
+          <div class="tracklabels"><span class="on">Name</span><span>Repeat</span><span>Act</span><span>Share</span></div>
+        </div>
+
+        <div class="banner" style="margin-bottom:20px">
+          <span class="bi"><svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><circle cx="12" cy="12" r="9"/><path d="M12 7.8v4.6l3 1.8"/></svg></span>
+          <div><h5>Three parts are out of date</h5>
+            <p style="margin-bottom:11px">You said your team-lead role was good for about a year. That was five months ago.</p>
+            <button class="btn btn-primary btn-sm cue-ring">Answer 2 questions</button></div>
+        </div>
+
+        <p class="steplab">Your files</p>
+        <div style="display:flex;flex-direction:column;gap:9px;margin-bottom:22px">
+          <button class="filerow"><span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2.5h8l4 4v15H6z"/><path d="M14 2.5v4h4"/></svg></span>
+            <span><span class="nm">Context.md</span><span class="sb">Who you are · 42 days old</span></span><span class="badge due">3 due</span></button>
+          <button class="filerow"><span class="ic"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M6 2.5h8l4 4v15H6z"/><path d="M14 2.5v4h4"/></svg></span>
+            <span><span class="nm">Skills.md</span><span class="sb">How you work · 2 borrowed</span></span><span class="badge next">Next</span></button>
+        </div>
+
+        <p class="steplab">If you want a hand</p>
+        <div class="filerow" style="cursor:pointer">
+          <span class="ic" style="background:var(--primary-tint);color:var(--primary)"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8z"/><path d="M4.5 20a7.5 7.5 0 0 1 15 0"/></svg></span>
+          <span><span class="nm">Talk to a person</span><span class="sb">Coaching, or help for your team</span></span>
+        </div>
+      </div>
+      <div class="pf"><span class="save" style="margin-left:0;text-align:left">Everything here lives in your browser.<br>No account. Nothing sent anywhere.</span></div>
+    </div>
+
+  </div>
+
+  <div class="note" style="margin-top:34px">
+    <p><b>Note what is missing from the home screen.</b> No navigation bar, no tabs, no settings page, no search.
+      A person opens the panel and sees a number, a reason, and one button. Every additional entry point is a
+      decision the median user has to make before they can start, and each one measurably reduces the number who do.</p>
+  </div>
+ </div>
+</section>
+
+<section id="motion">
+ <div class="wrap">
+  <h2><span class="n">06</span>Motion</h2>
+  <p class="sec-lede">Four cues, each meaning exactly one instruction, each stopping the moment it is followed.
+    This is the system's one genuinely distinctive idea, and it survives the move to light mode unchanged.</p>
+
+  <div class="spec">
+    <div class="stage" style="gap:28px">
+      <div style="text-align:center"><button class="pill cue-sweep" aria-pressed="false">Choose one</button>
+        <div style="font-size:12px;color:var(--ink-3);margin-top:10px">Sweep — pick from this row</div></div>
+      <div style="text-align:center"><button class="btn btn-primary cue-ring">Next</button>
+        <div style="font-size:12px;color:var(--ink-3);margin-top:10px">Ring — press this</div></div>
+      <div style="text-align:center"><span class="readonly cue-ring-v" style="display:inline-block;padding:12px 44px 12px 14px;font-size:13px">Copy this prompt
+        <button class="copy" aria-label="Copy"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></svg></button></span>
+        <div style="font-size:12px;color:var(--ink-3);margin-top:10px">Violet ring — this is your AI's</div></div>
+      <div style="text-align:center"><button class="btn btn-secondary cue-bob">Download</button>
+        <div style="font-size:12px;color:var(--ink-3);margin-top:10px">Bob — take this with you</div></div>
+    </div>
+    <div class="cap">Each cue is declared in data on the step, not written in CSS per screen.</div>
+  </div>
+
+  <table>
+    <tr><th>Duration</th><th>Use</th></tr>
+    <tr><td><code>120ms</code></td><td>Hover, focus, color change. Below perception — the UI feels solid, not sluggish.</td></tr>
+    <tr><td><code>200ms</code></td><td>Screen transitions, content entering. The default for anything that moves.</td></tr>
+    <tr><td><code>320ms</code></td><td>Sheets, drawers, anything covering something else.</td></tr>
+    <tr><td><code>cubic-bezier(.2,0,0,1)</code></td><td>The only easing curve. Fast out, settled in.</td></tr>
+  </table>
+
+  <p><strong>Reduced motion is not "animations off."</strong> Every cue has a still equivalent that carries the same
+    instruction — the sweep becomes a steady tint, the ring becomes a fixed halo, the bob stops but the button keeps
+    its emphasis. Turning off motion must never remove guidance, because the people most likely to enable it are
+    often the people who most need the guidance.</p>
+ </div>
+</section>
+
+<section id="a11y">
+ <div class="wrap">
+  <h2><span class="n">07</span>Accessibility</h2>
+  <p class="sec-lede">WCAG 2.1 AA is the floor, and it is not a compliance exercise here — the same decisions that
+    satisfy it are the decisions that make the product usable by someone who is nervous about technology.</p>
+
+  <table>
+    <tr><th>Criterion</th><th>How this system meets it</th></tr>
+    <tr><td><strong>1.4.3 Contrast (AA)</strong></td><td>All text ≥ 4.5:1; measured values published in section 02. No text on a hue below 4.5 anywhere in the product.</td></tr>
+    <tr><td><strong>1.4.11 Non-text contrast</strong></td><td>Every interactive boundary uses <code>--border-i</code> at 3.13:1. Focus rings at 5.6:1.</td></tr>
+    <tr><td><strong>1.4.1 Use of color</strong></td><td>Selection = fill + weight + checkmark. Staleness = color + badge text + a sentence. Nothing is color-only.</td></tr>
+    <tr><td><strong>1.4.4 Resize text</strong></td><td>Panel layout holds at 200% zoom; type scale in rem; no fixed-height text containers.</td></tr>
+    <tr><td><strong>2.1.1 Keyboard</strong></td><td>Complete flow keyboard-only: Tab between regions, arrows within pill groups, Space to select, Enter for primary.</td></tr>
+    <tr><td><strong>2.4.7 Focus visible</strong></td><td>2px blue ring, 2px offset, on every focusable element. Never suppressed.</td></tr>
+    <tr><td><strong>2.5.5 Target size</strong></td><td>44 × 44 minimum for every control, including icon buttons and pills.</td></tr>
+    <tr><td><strong>2.2.1 Timing</strong></td><td>Nothing expires. Toasts auto-dismiss but never carry the only copy of anything.</td></tr>
+    <tr><td><strong>2.3.3 Animation from interactions</strong></td><td><code>prefers-reduced-motion</code> respected on every cue, with instruction preserved.</td></tr>
+    <tr><td><strong>3.3.1 / 3.3.3 Errors</strong></td><td>Errors describe the fix, are tied with <code>aria-describedby</code>, and never use color alone.</td></tr>
+    <tr><td><strong>4.1.3 Status messages</strong></td><td>Toasts and freshness changes announce via <code>aria-live="polite"</code>; nothing steals focus.</td></tr>
+  </table>
+
+  <h3>Beyond the standard</h3>
+  <div class="grid g2">
+    <div class="panelcard sunk"><h4 style="margin-top:0">Read aloud is a feature, not a novelty</h4>
+      <p style="margin:0">The narrator is the accessibility story for people who read slowly, read in a second
+        language, or are tired. It reads questions and hand-off instructions — never the person's own answers back
+        at them in a room where someone might hear.</p></div>
+    <div class="panelcard sunk"><h4 style="margin-top:0">Speak your answers</h4>
+      <p style="margin:0">Dictation removes the blank-box problem entirely for people who type slowly. It is offered
+        before question one and stays togglable, and it never becomes the only way to answer anything.</p></div>
+    <div class="panelcard sunk"><h4 style="margin-top:0">No timed anything</h4>
+      <p style="margin:0">No session expiry, no auto-advance, no "you've been idle." The interview can take three
+        weeks of two-minute sittings and lose nothing.</p></div>
+    <div class="panelcard sunk"><h4 style="margin-top:0">One reading level</h4>
+      <p style="margin:0">Target grade 7. Measured, not assumed — every string in the product gets checked before
+        it ships, the same way every color does.</p></div>
+  </div>
+ </div>
+</section>
+
+<section id="words">
+ <div class="wrap">
+  <h2><span class="n">08</span>Words</h2>
+  <p class="sec-lede">The interface is mostly words, so the words are part of the design system. These are binding,
+    not stylistic.</p>
+
+  <h3>The rules</h3>
+  <table>
+    <tr><th>Rule</th><th>Why</th></tr>
+    <tr><td>Second person, present tense, active voice</td><td>"Pick the AI you use most," not "An AI should be selected."</td></tr>
+    <tr><td>No product nouns the person did not bring</td><td>They know "file," "notes," "list." They do not know "context object," "artifact," "schema," "instance."</td></tr>
+    <tr><td>Numbers as words where small</td><td>"Two questions" reads as easy. "2 questions" reads as a form.</td></tr>
+    <tr><td>Sentences under 20 words, one idea each</td><td>The panel is 400px wide. Long sentences become walls.</td></tr>
+    <tr><td>Buttons are verbs the person would say</td><td>"Answer 2 questions," not "Continue." "Take my file," not "Export."</td></tr>
+    <tr><td>Never apologise, never blame</td><td>"That didn't save — try again" beats both "Oops!" and "Invalid input."</td></tr>
+    <tr><td>Say what happens next, every time</td><td>Especially before anything touches another tab.</td></tr>
+  </table>
+
+  <h3>Before and after</h3>
+  <table class="copytable">
+    <tr><th>Don't</th><th>Do</th></tr>
+    <tr><td class="before">Your context artifact has been generated.</td><td class="after">Your file is ready.</td></tr>
+    <tr><td class="before">60% AI-utilized · Gate 1 of 4 complete</td><td class="after">60% set up · Step 1 of 4</td></tr>
+    <tr><td class="before">3 sections have exceeded their durability threshold.</td><td class="after">Three parts are out of date. You said your team-lead role was good for about a year — that was five months ago.</td></tr>
+    <tr><td class="before">Enable content script permissions for chatgpt.com?</td><td class="after">Let Workbrain type into ChatGPT for you? It fills the box. You still press send.</td></tr>
+    <tr><td class="before">Invalid input. Field is required.</td><td class="after">Add a name so the file has something to call you. First name is plenty.</td></tr>
+    <tr><td class="before">Sync your Work Brain across devices.</td><td class="after">Take your file with you. It's a download — put it anywhere.</td></tr>
+    <tr><td class="before">Configure your team's skill repository endpoint.</td><td class="after">Paste the link your team sent you.</td></tr>
+  </table>
+
+  <div class="note">
+    <p><b>The naming decision.</b> "Gate," "utilization," "repeatable block," "skill file" are internal words.
+      They belong in this document and in sales conversations. In the panel, the four steps are
+      <b>Name · Repeat · Act · Share</b>, the files are <b>who you are</b>, <b>how you work</b> and
+      <b>what should happen automatically</b>, and nothing is ever called a gate.</p>
+  </div>
+ </div>
+</section>
+
+<footer>
+  <div class="wrap">
+    <p style="margin:0">Workbrain design system · Model Citizen · Companion to the project specification.
+      Every contrast ratio in section 02 is computed, not estimated.</p>
+  </div>
+</footer>
+
+</body>
+</html>

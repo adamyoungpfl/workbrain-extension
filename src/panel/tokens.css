@@ -1,0 +1,39 @@
+/* GENERATED from design/tokens.json by scripts/tokens.mjs — do not edit. */
+:root {
+  --canvas: #FFFFFF;
+  --surface: #F6F7F9;
+  --sunken: #EDEFF3;
+  --ink: #15181D;
+  --ink-2: #525A67;
+  --ink-3: #6B7484;
+  --ink-inv: #FFFFFF;
+  --divider: #E2E5EA;
+  --border: #D4D8E0;
+  --border-i: #8A92A0;
+  --primary: #2A4FCB;
+  --primary-hover: #1F3FA8;
+  --primary-tint: #EAEEFB;
+  --violet: #6A3FD1;
+  --violet-tint: #F2EDFD;
+  --amber: #8A5300;
+  --amber-tint: #FFF4E2;
+  --amber-line: #E8A33D;
+  --green: #0B6E4F;
+  --green-tint: #E7F5EF;
+  --danger: #B4231E;
+  --danger-tint: #FDECEA;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
+  --r-sm: 6px;
+  --r-md: 10px;
+  --r-lg: 14px;
+  --r-pill: 999px;
+  --e-1: 0 1px 2px rgba(21,24,29,.06);
+  --e-2: 0 4px 12px rgba(21,24,29,.08), 0 1px 3px rgba(21,24,29,.06);
+  --e-3: 0 16px 40px rgba(21,24,29,.14), 0 2px 8px rgba(21,24,29,.08);
+  --fast: 120ms;
+  --base: 200ms;
+  --slow: 320ms;
+  --ease: cubic-bezier(.2,0,0,1);
+  --target-min: 44px;
+}
