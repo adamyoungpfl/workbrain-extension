@@ -1,0 +1,163 @@
+import { StrictMode, useState } from 'react';
+import { createRoot } from 'react-dom/client';
+import '../../../src/panel/tokens.css';
+import {
+  Button,
+  PillGroup,
+  Field,
+  ReadOnlyBlock,
+  FileRow,
+  Banner,
+  Meter,
+  Toast,
+  Sheet,
+} from '../../../src/panel/components';
+
+/**
+ * Not shipped in the panel bundle. Mounts every R1-03 component in its
+ * varied states so npm run a11y has something real to scan — Home/Flow
+ * don't exist to compose them until R1-06/R1-12. See tests/e2e/a11y.spec.ts.
+ */
+function Harness() {
+  const [singlePill, setSinglePill] = useState<string[]>(['both']);
+  const [multiPill, setMultiPill] = useState<string[]>(['drafting']);
+  const [notes, setNotes] = useState('');
+  const [sheetOpen, setSheetOpen] = useState(false);
+
+  return (
+    <main style={{ maxWidth: 400, margin: '0 auto', padding: 24 }}>
+      <h1>Component harness</h1>
+      <section aria-label="Button">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>Button</p>
+        <Button variant="primary">Start the interview</Button>
+        <Button variant="secondary">Download the file</Button>
+        <Button variant="ai">Put it in Claude</Button>
+        <Button variant="quiet">Skip</Button>
+        <Button variant="primary" disabled>
+          Next
+        </Button>
+        <Button variant="secondary" size="sm">
+          Small
+        </Button>
+      </section>
+
+      <section aria-label="Pill">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>Pill</p>
+        <PillGroup
+          legend="Work, home, or both?"
+          mode="single"
+          options={[
+            { value: 'work', label: 'Work' },
+            { value: 'home', label: 'Home' },
+            { value: 'both', label: 'Both', suggested: true },
+          ]}
+          value={singlePill}
+          onChange={setSinglePill}
+          onAddOwn={() => {}}
+        />
+        <PillGroup
+          legend="What do you use AI for?"
+          mode="multi"
+          options={[
+            { value: 'drafting', label: 'Drafting' },
+            { value: 'code', label: 'Code' },
+          ]}
+          value={multiPill}
+          onChange={setMultiPill}
+        />
+      </section>
+
+      <section aria-label="Field">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>Field</p>
+        <Field
+          id="notes"
+          label="What do you keep re-explaining?"
+          as="textarea"
+          value={notes}
+          onChange={setNotes}
+          help="However it comes out. We'll tidy it on the next screen."
+        />
+        <Field
+          id="name"
+          label="Your name"
+          value=""
+          onChange={() => {}}
+          error="Add a name so the file has something to call you. First name is plenty."
+        />
+      </section>
+
+      <section aria-label="ReadOnlyBlock">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>ReadOnlyBlock</p>
+        <ReadOnlyBlock tag="Ask your AI this">Draft a status update for my manager.</ReadOnlyBlock>
+      </section>
+
+      <section aria-label="FileRow">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>FileRow</p>
+        <FileRow
+          name="Context.md"
+          subtitle="Updated today · 10 of 10 sections"
+          badge={{ label: 'Current', tone: 'fresh' }}
+        />
+        <FileRow
+          name="Skills.md"
+          subtitle="4 skills · 2 from your team"
+          badge={{ label: '3 to review', tone: 'due' }}
+        />
+        <FileRow name="Actions.md" subtitle="Finish Skills.md first" locked />
+      </section>
+
+      <section aria-label="Banner">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>Banner</p>
+        <Banner headingLevel={2} title="Three parts of your file are out of date">
+          Two questions brings it current.
+        </Banner>
+        <Banner headingLevel={2} variant="good" title="Your file is current">
+          Nothing to do. Come back when something changes at work.
+        </Banner>
+        <Banner headingLevel={2} variant="info" title="A quick note">
+          This is the info variant.
+        </Banner>
+      </section>
+
+      <section aria-label="Meter">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>Meter</p>
+        <Meter
+          value={60}
+          label="of your AI use, set up"
+          step="Step 1 of 4"
+          steps={[
+            { label: 'Name', state: 'done' },
+            { label: 'Repeat', state: 'current', percent: 35 },
+            { label: 'Act', state: 'upcoming' },
+            { label: 'Share', state: 'upcoming' },
+          ]}
+        />
+      </section>
+
+      <section aria-label="Toast">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>Toast</p>
+        <Toast message="Added to Context.md · updated today" />
+      </section>
+
+      <section aria-label="Sheet">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>Sheet</p>
+        <Button variant="secondary" onClick={() => setSheetOpen(true)}>
+          Open sheet
+        </Button>
+        <Sheet open={sheetOpen} onClose={() => setSheetOpen(false)} title="Capture a thought">
+          <Field id="capture" label="What happened?" as="textarea" value="" onChange={() => {}} />
+          <Button onClick={() => setSheetOpen(false)}>Save</Button>
+        </Sheet>
+      </section>
+    </main>
+  );
+}
+
+const root = document.getElementById('root');
+if (root) {
+  createRoot(root).render(
+    <StrictMode>
+      <Harness />
+    </StrictMode>,
+  );
+}

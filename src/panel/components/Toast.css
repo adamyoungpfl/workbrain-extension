@@ -1,0 +1,15 @@
+.toast {
+  background: var(--ink);
+  color: var(--ink-inv);
+  border-radius: var(--r-md);
+  padding: 13px 17px;
+  font-size: 14px;
+  box-shadow: var(--e-3);
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  pointer-events: none;
+}
+.toast .tk {
+  color: var(--toast-check);
+}

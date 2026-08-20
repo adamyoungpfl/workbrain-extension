@@ -1,0 +1,65 @@
+.btn {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1;
+  padding: 12px 18px;
+  border-radius: var(--r-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background var(--fast) var(--ease),
+    border-color var(--fast) var(--ease);
+  min-height: var(--target-min);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.btn:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.btn-primary {
+  background: var(--primary);
+  color: var(--ink-inv);
+}
+.btn-primary:hover {
+  background: var(--primary-hover);
+}
+.btn-secondary {
+  background: var(--canvas);
+  color: var(--ink);
+  border-color: var(--border-i);
+}
+.btn-secondary:hover {
+  background: var(--surface);
+}
+.btn-quiet {
+  background: transparent;
+  color: var(--ink-2);
+}
+.btn-quiet:hover {
+  background: var(--surface);
+  color: var(--ink);
+}
+.btn-ai {
+  background: var(--violet-tint);
+  color: var(--violet);
+  border-color: transparent;
+}
+.btn-ai:hover {
+  background: var(--violet-hover);
+}
+.btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.btn-sm {
+  /* docs/design-system.html's own CSS sets 36px here, contradicting its own
+     caption ("Minimum height 44px in every variant") and the accessibility
+     floor in docs/GUARDRAILS.md. The floor wins. */
+  padding: 8px 12px;
+  min-height: var(--target-min);
+  font-size: 13px;
+}

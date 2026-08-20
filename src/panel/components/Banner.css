@@ -1,0 +1,44 @@
+.banner {
+  border-radius: var(--r-md);
+  padding: 16px 18px;
+  display: flex;
+  gap: 14px;
+  align-items: flex-start;
+  background: var(--amber-tint);
+  /* amber-line at reduced alpha — same pattern as the --e-1/e-2/e-3 elevation
+     tokens, which already embed rgba() derived from a named token's RGB. */
+  border: 1px solid rgba(232, 163, 61, 0.45);
+}
+.banner .bi {
+  flex: 0 0 auto;
+  color: var(--amber);
+  margin-top: 1px;
+}
+.banner h5 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.banner p {
+  margin: 0;
+  font-size: 13.5px;
+  color: var(--ink-2);
+}
+.banner p:not(:last-child) {
+  margin-bottom: 11px;
+}
+.banner.info {
+  background: var(--primary-tint);
+  border-color: rgba(42, 79, 203, 0.28);
+}
+.banner.info .bi {
+  color: var(--primary);
+}
+.banner.good {
+  background: var(--green-tint);
+  border-color: rgba(11, 110, 79, 0.28);
+}
+.banner.good .bi {
+  color: var(--green);
+}

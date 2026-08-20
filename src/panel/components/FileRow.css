@@ -1,0 +1,77 @@
+.filerow {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  background: var(--canvas);
+  cursor: pointer;
+  transition: all var(--fast) var(--ease);
+  width: 100%;
+  min-height: var(--target-min);
+  text-align: left;
+  font-family: inherit;
+}
+.filerow:hover {
+  border-color: var(--border-i);
+  box-shadow: var(--e-1);
+}
+.filerow:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.filerow .ic {
+  width: 34px;
+  height: 34px;
+  border-radius: var(--r-sm);
+  background: var(--sunken);
+  display: grid;
+  place-items: center;
+  color: var(--ink-2);
+  flex: 0 0 auto;
+}
+.filerow .ic-primary {
+  background: var(--primary-tint);
+  color: var(--primary);
+}
+.filerow .nm {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--ink);
+  display: block;
+}
+.filerow .sb {
+  font-size: 13px;
+  color: var(--ink-3);
+  display: block;
+  margin-top: 2px;
+}
+.filerow.locked {
+  opacity: 0.55;
+  cursor: default;
+  background: var(--surface);
+  border-style: dashed;
+}
+.badge {
+  margin-left: auto;
+  font-size: 12px;
+  font-weight: 650;
+  padding: 5px 10px;
+  border-radius: var(--r-pill);
+  background: var(--sunken);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+.badge.fresh {
+  background: var(--green-tint);
+  color: var(--green);
+}
+.badge.due {
+  background: var(--amber-tint);
+  color: var(--amber);
+}
+.badge.next {
+  background: var(--primary-tint);
+  color: var(--primary);
+}

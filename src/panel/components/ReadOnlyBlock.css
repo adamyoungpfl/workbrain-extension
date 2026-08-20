@@ -1,0 +1,45 @@
+.readonly {
+  border: 1px solid var(--divider);
+  border-left: 3px solid var(--violet);
+  background: var(--violet-tint);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  padding: 14px 54px 14px 16px;
+  position: relative;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--ink);
+  white-space: pre-wrap;
+}
+.readonly .tag {
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--violet);
+  display: block;
+  margin-bottom: 6px;
+}
+.readonly .copy {
+  /* docs/design-system.html shows 36x36; the accessibility floor in
+     docs/GUARDRAILS.md ("every control >= 44x44, including icon buttons")
+     is the hard constraint, so this deviates from the spec's literal figure. */
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: var(--target-min);
+  height: var(--target-min);
+  border-radius: var(--r-sm);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  color: var(--violet);
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+.readonly .copy:hover {
+  background: var(--violet-tint);
+}
+.readonly .copy:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

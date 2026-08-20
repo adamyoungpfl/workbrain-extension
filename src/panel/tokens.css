@@ -15,6 +15,7 @@
   --primary-tint: #EAEEFB;
   --violet: #6A3FD1;
   --violet-tint: #F2EDFD;
+  --violet-hover: #E8E0FC;
   --amber: #8A5300;
   --amber-tint: #FFF4E2;
   --amber-line: #E8A33D;
@@ -22,6 +23,8 @@
   --green-tint: #E7F5EF;
   --danger: #B4231E;
   --danger-tint: #FDECEA;
+  --overlay: rgba(21,24,29,.42);
+  --toast-check: #6EE7A8;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   --r-sm: 6px;
