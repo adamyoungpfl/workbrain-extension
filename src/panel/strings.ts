@@ -57,6 +57,109 @@ export const S = {
   yes: 'Yes',
   no: 'No',
 
+  /**
+   * V1.1 VB-05 / VB-06 — the module transition screens, keyed by module id
+   * (core/flow/source.ts's own ids). One per module except the first: module
+   * one already opens with `orientation_ready` and closes with
+   * `architecture_orientation`'s beats, so a transition there would be a
+   * third welcome in a row.
+   *
+   * Approved verbatim in docs/V1.1-COPY-DRAFT.md. Do not reword a line.
+   *
+   * `beats` play one at a time, at reading pace — `__double underscores__`
+   * mark a light underline emphasis (see core/flow/beats.ts, and the same
+   * convention on the ported `architecture_orientation`). `preview` is the
+   * example beat: what this module's answers actually do downstream, shown
+   * as a real preview rather than decoration. Module four's is two lines
+   * because its approved copy is a genuine before/after.
+   *
+   * Module eleven carries three beats, not two: the copy draft's own
+   * Module 11 pair, plus VB-06's decided "failure to launch" line, which
+   * that section places "on the Module 11 transition … as the third beat".
+   * Its preview line is approved separately, so both ship — dropping either
+   * would drop approved copy.
+   */
+  moduleIntros: {
+    'about-me': {
+      beats: [
+        'Now the basics: __who you are__ and what you actually do.',
+        "Not your job title — the version you'd say out loud to someone at a party.",
+      ],
+      preview: ['This is what AI reads first, before anything else you tell it.'],
+    },
+    responsibilities: {
+      beats: [
+        "Next: what's __yours__ — and just as usefully, what isn't.",
+        'This is the part that stops AI writing as if every call is yours to make.',
+      ],
+      preview: [
+        'Two people with the same title can own completely different things. This is where you say which one you are.',
+      ],
+    },
+    'my-world': {
+      beats: [
+        'Now the __names__ — the people, teams, and tools you mention constantly.',
+        'Name them once here, and you stop explaining who they are every single time.',
+      ],
+      preview: [
+        'Without this, you write: "Can you draft a note to Priya — she\'s my manager, she owns budget approvals, and she likes a heads-up before surprises."',
+        'With it, you write: "Draft a note to Priya."',
+      ],
+    },
+    initiatives: {
+      beats: [
+        "This one's the __longest__ section, and the one that pays off most.",
+        'These are the named projects AI can actually help you move, not just describe.',
+      ],
+      preview: [
+        'Worth the extra few minutes: this is the difference between AI writing about your work and AI helping with it.',
+      ],
+    },
+    'how-i-think': {
+      beats: [
+        'The questions get __faster__ from here. Mostly taps, not typing.',
+        'This part is about how you decide things — how fast, how certain, how much you want to be asked.',
+      ],
+      preview: ['Five quick picks. Under two minutes.'],
+    },
+    'how-i-communicate': {
+      beats: [
+        'Now your __voice__ — how things should sound when AI writes them for you.',
+        "A few of these show you two versions side by side. Pick the one you'd actually send.",
+      ],
+      preview: ["This is the section people notice most in the results. It's why AI output stops sounding generic."],
+    },
+    'audience-profiles': {
+      beats: [
+        "You don't write to __everyone__ the same way.",
+        'Your manager and your team get different versions of the same update. This is where you say so.',
+      ],
+      preview: ['Two questions.'],
+    },
+    'vocabulary-knowledge': {
+      beats: [
+        'Every workplace has its own __shorthand__.',
+        'The acronyms, tool names, and project codenames that would lose an outsider completely.',
+      ],
+      preview: ['Teach it these once and you stop spelling them out mid-sentence forever.'],
+    },
+    'context-boundaries': {
+      beats: [
+        "The __rules__ AI doesn't get to talk itself out of.",
+        'What would make you send a draft back, and what it should never do without asking you first.',
+      ],
+      preview: ["These stay on by default. You can turn any of them off, but most people don't."],
+    },
+    'reference-examples': {
+      beats: [
+        'Last one. Paste something you __wrote__.',
+        "One paragraph teaches AI more about your voice than every answer you've given so far.",
+        "Most people who stop, stop here — with the useful part already answered and the proof still ahead. Five more minutes and you'll see it work.",
+      ],
+      preview: ["Then you're done — and you get to see the whole thing actually work."],
+    },
+  } as const satisfies Record<string, { beats: readonly string[]; preview: readonly string[] }>,
+
   // ---------------------------------------------------------------- reflect
   reflectHeading: "Here's what I've got.",
   reflectSub: 'Nothing has been sent anywhere. Keep it, or let your own AI tighten it.',

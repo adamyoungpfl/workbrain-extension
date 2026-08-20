@@ -16,6 +16,8 @@ Sibling repo: `../modelcitizen/`
 | R1-11 ✅ | Grading rubric prompt | same file, ~line 429–443 | Done. Ported verbatim to `evaluationPrompt()` in `src/core/flow/proofSource.ts`. Five criteria, ends with "top areas of opportunity"; Adam specified point 5 explicitly, not re-derived. |
 | R1-11 ✅ | Per-service attach tips | same file | Done. Ported to `PROOF_SERVICES` in `src/core/flow/proofSource.ts` (one line per AI service saying where its attach control is), consumed via `attachHintFor()` in `src/core/flow/proofAdapter.ts`. |
 | R1-12 | Freshness sentences | — | New work. See `src/panel/strings.ts`. |
+| VB-05 ✅ | The `beats` reveal mechanic | `src/components/WorkBrainContextInterview.tsx` → `renderEmphasized` / `beatHoldMs` (~lines 497–515) and `.wbci-beat` / `.wbci-emphasis` in `src/app/globals.css` (~5378–5381) | Done. Behaviour, not copy: the `__word__` split-on-a-capturing-group parse, 200wpm + a flat 2s hold, the 400ms fade, and bold-plus-underline emphasis are all ported unchanged to `src/core/flow/beats.ts` + `src/panel/components/Beats.{tsx,css}`, so the two implementations read at the same pace. Two deliberate differences: the parse returns data rather than React nodes (`core/` may not touch the DOM), and reduced motion renders every beat at once rather than only disabling the transition. The beats *content* was already ported at R1-05 (`ARCHITECTURE_ORIENTATION_BEATS` in `source.ts`); nothing rendered it until now. |
+| VB-05 | Module transition copy | — | New work, approved in `docs/V1.1-COPY-DRAFT.md`. Ten transitions in `src/panel/strings.ts`'s `moduleIntros`. |
 
 ## How to port
 

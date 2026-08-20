@@ -1,0 +1,85 @@
+/* V1.1 VB-05 — the timed `beats` read. See Beats.tsx for the behaviour and
+   core/flow/beats.ts for the numbers. */
+
+.beats {
+  /* Must match BEAT_FADE_MS in core/flow/beats.ts — the swap to the next
+     beat is scheduled for exactly this long after the fade-out starts, so a
+     longer transition here would cut itself off mid-fade. Not a token: the
+     motion scale (--fast/--base/--slow) is for interface response, and this
+     is a reading pace. */
+  --beat-fade: 400ms;
+
+  font-size: 19px;
+  line-height: 1.4;
+  /* Reserves roughly the tallest beat, so the actions below it do not walk
+     up and down the panel as beats swap. */
+  min-height: 5.6em;
+  margin: 0 0 14px;
+}
+
+.beat {
+  margin: 0;
+  font: inherit;
+  font-weight: 580;
+  letter-spacing: -0.012em;
+  color: var(--ink);
+  text-wrap: pretty;
+  opacity: 1;
+  transition: opacity var(--beat-fade) var(--ease);
+  animation: wb-beat-in var(--beat-fade) var(--ease);
+}
+
+.beat.is-out {
+  opacity: 0;
+}
+
+@keyframes wb-beat-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Emphasis is weight plus an underline; the colour is the third signal, never
+   the only one (docs/GUARDRAILS.md, "nothing distinguished by colour alone").
+   The text itself stays --ink, so contrast is unchanged. */
+.beat-em {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-color: var(--primary);
+  text-decoration-thickness: 2px;
+  text-underline-offset: 3px;
+}
+
+/* Reduced motion: every beat at once, in order, in normal flow. The still
+   version carries the same words — that is the requirement, not just the
+   absence of movement. */
+.beats.is-still {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .beat {
+    transition: none;
+    animation: none;
+  }
+}
+
+/* The plain-text equivalent, for assistive tech, while the visible sequence
+   is still playing. Same sr-only pattern as Flow.css's field labels. */
+.beats-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}

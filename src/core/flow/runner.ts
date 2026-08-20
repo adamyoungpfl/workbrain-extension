@@ -15,6 +15,10 @@ export type Position =
   | { kind: 'step'; step: Step; location: StepLocation }
   | { kind: 'reflect'; step: Step; location: StepLocation }
   | { kind: 'add-another'; block: RepeatableBlock; recordIndex: number }
+  /** V1.1 VB-05: the transition screen shown once, immediately before a
+   * module nobody has touched yet. Derived like every other position — see
+   * `findPosition` — never a stored flag. */
+  | { kind: 'module-intro'; module: Module }
   | { kind: 'done' };
 
 /** A step's storage key. Most kinds key by their own id; `intro` has no `key`
@@ -80,41 +84,105 @@ function nextFieldAction(
   return undefined;
 }
 
+/** The first thing left to do inside ONE module, or undefined when that
+ * module is finished (or entirely skipped). Lifted out of `findPosition`
+ * unchanged at V1.1 VB-05 so the module transition can be decided per
+ * module, at the moment a module is about to hand back a position. */
+function findInModule(
+  module: Module,
+  ctx: FlowContext,
+  answers: Answers,
+  declinedBlocks: ReadonlySet<string>,
+): Position | undefined {
+  for (const node of module.nodes) {
+    if ('fields' in node) {
+      if (node.skipIf?.(ctx)) continue;
+      const records = answers.repeatables[node.id] ?? [];
+
+      if (records.length === 0) {
+        if (node.seedFrom) continue; // nothing seeded yet — nothing to ask here
+        const result = nextFieldAction(node.fields, {}, node.id, 0, answers);
+        if (!result) continue; // a repeatable with no fields shouldn't happen, but don't hang on it
+        return positionFor(result.action, result.step, { in: 'repeatable', blockId: node.id, recordIndex: 0 });
+      }
+
+      const lastIndex = records.length - 1;
+      const result = nextFieldAction(node.fields, records[lastIndex]!, node.id, lastIndex, answers);
+      if (result) {
+        return positionFor(result.action, result.step, { in: 'repeatable', blockId: node.id, recordIndex: lastIndex });
+      }
+      if (node.seedFrom) continue; // every seeded record is complete — move on
+      if (declinedBlocks.has(node.id)) continue; // said "no more" this session — move on
+      return { kind: 'add-another', block: node, recordIndex: records.length };
+    }
+
+    if (node.skipIf?.(ctx)) continue;
+    const key = storageKeyFor(node);
+    const action = actionFor(node, ctx.answers, key, answers);
+    if (action) return positionFor(action, node, { in: 'top' });
+  }
+  return undefined;
+}
+
+/**
+ * V1.1 VB-05: has anybody put anything into this module at all? A single
+ * recorded value anywhere in it — including an explicit skip, which is
+ * `null` rather than absent (see `applySkip`) — is enough.
+ *
+ * This is the whole of the module-transition rule. Nothing marks a
+ * transition as seen, because nothing needs to: the act of answering the
+ * first question inside a module is itself the record that the person is
+ * past its opening (docs/ARCHITECTURE.md, "nothing derived is stored").
+ * That is also exactly what makes a close/reopen resume correctly for free.
+ *
+ * A repeatable counts as touched only when it holds a record with at least
+ * one field in it — `applyAddAnother` appends a literally empty `{}`, and
+ * a seeded block's records are created by answering its seed question,
+ * which is itself an answer in the same module.
+ */
+function moduleHasAnyAnswer(module: Module, answers: Answers): boolean {
+  for (const node of module.nodes) {
+    if ('fields' in node) {
+      const records = answers.repeatables[node.id] ?? [];
+      if (records.some((record) => Object.keys(record).length > 0)) return true;
+      continue;
+    }
+    if (storageKeyFor(node) in answers.values) return true;
+  }
+  return false;
+}
+
+const NO_MODULE_IDS: ReadonlySet<string> = new Set<string>();
+
+/**
+ * @param seenIntros V1.1 VB-05 — module ids whose transition screen the
+ * person has already continued past *in this session*. Ephemeral session
+ * state owned by the panel, exactly like `declinedBlocks`: a transition
+ * writes nothing to `wb:answers` (there is no question on it to answer), so
+ * this is what stops it reappearing between "continue" and the first answer
+ * given inside the module. Nothing is persisted — a genuine close/reopen
+ * mid-module resumes past the transition because the module already holds
+ * an answer, not because anything was written down.
+ */
 export function findPosition(
   modules: Module[],
   answers: Answers,
   declinedBlocks: ReadonlySet<string>,
+  seenIntros: ReadonlySet<string> = NO_MODULE_IDS,
 ): Position {
   const ctx: FlowContext = { answers: answers.values, repeatables: answers.repeatables };
 
-  for (const module of modules) {
-    for (const node of module.nodes) {
-      if ('fields' in node) {
-        if (node.skipIf?.(ctx)) continue;
-        const records = answers.repeatables[node.id] ?? [];
-
-        if (records.length === 0) {
-          if (node.seedFrom) continue; // nothing seeded yet — nothing to ask here
-          const result = nextFieldAction(node.fields, {}, node.id, 0, answers);
-          if (!result) continue; // a repeatable with no fields shouldn't happen, but don't hang on it
-          return positionFor(result.action, result.step, { in: 'repeatable', blockId: node.id, recordIndex: 0 });
-        }
-
-        const lastIndex = records.length - 1;
-        const result = nextFieldAction(node.fields, records[lastIndex]!, node.id, lastIndex, answers);
-        if (result) {
-          return positionFor(result.action, result.step, { in: 'repeatable', blockId: node.id, recordIndex: lastIndex });
-        }
-        if (node.seedFrom) continue; // every seeded record is complete — move on
-        if (declinedBlocks.has(node.id)) continue; // said "no more" this session — move on
-        return { kind: 'add-another', block: node, recordIndex: records.length };
-      }
-
-      if (node.skipIf?.(ctx)) continue;
-      const key = storageKeyFor(node);
-      const action = actionFor(node, ctx.answers, key, answers);
-      if (action) return positionFor(action, node, { in: 'top' });
+  for (let i = 0; i < modules.length; i++) {
+    const module = modules[i]!;
+    const found = findInModule(module, ctx, answers, declinedBlocks);
+    if (!found) continue;
+    // Never before the first module (VB-05): module 1 already opens with
+    // `orientation_ready` and closes with `architecture_orientation`'s
+    // beats, so a transition there would be a third welcome in a row.
+    if (i > 0 && !seenIntros.has(module.id) && !moduleHasAnyAnswer(module, answers)) {
+      return { kind: 'module-intro', module };
     }
+    return found;
   }
   return { kind: 'done' };
 }
@@ -131,6 +199,17 @@ export function questionCount(modules: Module[]): number {
  * counted, since its length isn't fixed. */
 export function topLevelIndex(modules: Module[], position: Position): number {
   if (position.kind === 'done') return questionCount(modules);
+  // A module transition sits between two questions, so it borrows the index
+  // of the one it is about to introduce — the bar reads the same on the
+  // transition as on the first question behind it, rather than jumping back.
+  if (position.kind === 'module-intro') {
+    let before = 0;
+    for (const module of modules) {
+      if (module.id === position.module.id) break;
+      before += module.nodes.length;
+    }
+    return Math.min(before + 1, questionCount(modules));
+  }
   const targetId = position.kind === 'add-another' ? position.block.id : positionNodeId(position);
   let n = 0;
   for (const module of modules) {
@@ -149,6 +228,7 @@ function positionNodeId(position: Extract<Position, { kind: 'step' | 'reflect' }
 /** The module containing a position — for the "Question N of Total · Module title" eyebrow. */
 export function moduleFor(modules: Module[], position: Position): Module | undefined {
   if (position.kind === 'done') return undefined;
+  if (position.kind === 'module-intro') return position.module;
   const targetId = position.kind === 'add-another' ? position.block.id : positionNodeId(position);
   return modules.find((m) => m.nodes.some((node) => node.id === targetId));
 }

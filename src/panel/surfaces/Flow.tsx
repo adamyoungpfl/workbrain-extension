@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
-import { Button, DeepDive, Field, FlowProgress, PillGroup, ReadOnlyBlock } from '../components';
+import { Beats, Button, DeepDive, Field, FlowProgress, PillGroup, ReadOnlyBlock } from '../components';
+import { ModuleIntro } from './ModuleIntro';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import {
@@ -96,6 +97,7 @@ const REPHRASE_ICON = (
 
 function positionKey(position: Position): string {
   if (position.kind === 'done') return 'done';
+  if (position.kind === 'module-intro') return `module-intro:${position.module.id}`;
   if (position.kind === 'add-another') return `add-another:${position.block.id}:${position.recordIndex}`;
   const { step, location } = position;
   return location.in === 'top' ? `top:${step.id}` : `rep:${location.blockId}:${location.recordIndex}:${step.id}`;
@@ -170,6 +172,13 @@ function scoreSubStep(key: string): Step {
 export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [declinedBlocks, setDeclinedBlocks] = useState<ReadonlySet<string>>(new Set());
+  // V1.1 VB-05: module ids whose transition screen has been continued past
+  // this session. Ephemeral, exactly like `declinedBlocks` above — a
+  // transition has no answer to record, so this is only what keeps it from
+  // reappearing in the gap between "continue" and the first answer inside
+  // the module. A real close/reopen resumes past it on the derivation alone
+  // (core/flow/runner.ts's `moduleHasAnyAnswer`), with nothing persisted.
+  const [seenIntros, setSeenIntros] = useState<ReadonlySet<string>>(new Set());
   const [history, setHistory] = useState<Position[]>([]);
   const [viewing, setViewing] = useState<Position | null>(initialPosition ?? null);
   const [saveError, setSaveError] = useState(false);
@@ -199,7 +208,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps
   const ans = answers;
 
   const total = questionCount(modules);
-  const position = viewing ?? findPosition(modules, ans, declinedBlocks);
+  const position = viewing ?? findPosition(modules, ans, declinedBlocks, seenIntros);
 
   async function persist(next: Answers): Promise<boolean> {
     setAnswersState(next);
@@ -219,6 +228,17 @@ export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps
 
   function handleCommit(from: Position, next: Answers) {
     void persist(next);
+    setHistory((h) => [...h, from]);
+    setViewing(null);
+  }
+
+  /** V1.1 VB-05's "continue". Writes nothing to `wb:answers` — there is no
+   * question on a transition screen to answer — so this is the same
+   * ephemeral advance `handleAddAnotherDecision`'s "no more" branch makes:
+   * remember the decision for this session, push the screen onto Back's
+   * history, and let `findPosition` derive what comes next. */
+  function continuePastModuleIntro(from: Extract<Position, { kind: 'module-intro' }>) {
+    setSeenIntros((s) => new Set(s).add(from.module.id));
     setHistory((h) => [...h, from]);
     setViewing(null);
   }
@@ -263,6 +283,21 @@ export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps
               </Button>
             )}
       </div>
+    );
+  }
+
+  if (position.kind === 'module-intro') {
+    return (
+      <ModuleIntro
+        key={positionKey(position)}
+        module={position.module}
+        current={topLevelIndex(modules, position)}
+        total={total}
+        canGoBack={history.length > 0}
+        saveError={saveError}
+        onBack={goBack}
+        onContinue={() => continuePastModuleIntro(position)}
+      />
     );
   }
 
@@ -319,7 +354,10 @@ function DemoBody({ answers }: { answers: Answers }) {
 
 interface StepViewProps {
   modules: Module[];
-  pos: Exclude<Position, { kind: 'done' }>;
+  /** Every position that is a question of some shape. `done` hands off to
+   * Home, and `module-intro` is its own screen (see `ModuleIntro`) — neither
+   * has a step to render. */
+  pos: Exclude<Position, { kind: 'done' } | { kind: 'module-intro' }>;
   answers: Answers;
   total: number;
   canGoBack: boolean;
@@ -727,6 +765,9 @@ function StepView({
   const displayOptions =
     rephraseIndex === 0 ? step.options : (step.optionRephrasings?.[rephraseIndex - 1] ?? step.options);
   const showSkip = step.kind !== 'intro' && step.kind !== 'demo';
+  // Only an intro reveals itself as beats — every other kind has something
+  // to answer, and hiding the question behind a timer would make it harder.
+  const beats = step.kind === 'intro' && step.beats?.length ? step.beats : null;
 
   function cycleRephrase() {
     setRephraseIndex((i) => (i + 1) % (rephrasings.length + 1));
@@ -756,25 +797,37 @@ function StepView({
     >
       {errorBanner}
       {progress}
-      {/* VB-04: the rephrase control sits beside the question, as a sibling of
-          the heading rather than inside it — putting a button inside <h2>
-          would fold its label into the heading's accessible name and change
-          what a screen reader announces when it lands on the question. */}
-      <div className="flow-q-row">
-        <h2 className="flow-q">{questionText}</h2>
-        {hasRephrasings && (
-          <Button
-            type="button"
-            variant="quiet"
-            className="flow-rephrase"
-            aria-label={S.rephrase}
-            title={S.rephrase}
-            onClick={cycleRephrase}
-          >
-            {REPHRASE_ICON}
-          </Button>
-        )}
-      </div>
+      {/* V1.1 VB-05: an intro that authored `beats` is read one beat at a
+          time instead of printed as one paragraph — the behaviour
+          `Step.beats` has always specified and nothing rendered until now
+          (see components/Beats.tsx). It replaces the heading rather than
+          sitting under it: the beats ARE the screen's text, and a heading
+          made of three consecutive sentences is not a heading. Everything
+          else — the plain question, the rephrase control — is unchanged for
+          every other step, including an intro with no beats. */}
+      {beats ? (
+        <Beats beats={beats} />
+      ) : (
+        /* VB-04: the rephrase control sits beside the question, as a sibling of
+           the heading rather than inside it — putting a button inside <h2>
+           would fold its label into the heading's accessible name and change
+           what a screen reader announces when it lands on the question. */
+        <div className="flow-q-row">
+          <h2 className="flow-q">{questionText}</h2>
+          {hasRephrasings && (
+            <Button
+              type="button"
+              variant="quiet"
+              className="flow-rephrase"
+              aria-label={S.rephrase}
+              title={S.rephrase}
+              onClick={cycleRephrase}
+            >
+              {REPHRASE_ICON}
+            </Button>
+          )}
+        </div>
+      )}
       <QuestionHelp step={step} />
 
       {step.kind === 'text' && (

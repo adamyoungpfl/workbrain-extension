@@ -1,0 +1,30 @@
+/* V1.1 VB-05 — the module transition screen. Layout only: the beats bring
+   their own type treatment (components/Beats.css), and the frame around the
+   whole screen is Flow.css's `.flow`. */
+
+.modintro .beats {
+  margin-top: 6px;
+}
+
+/* ReadOnlyBlock's visual language — the violet left rule and tint that mean
+   "this is content, not a form" everywhere else in the panel — without its
+   copy control, which this block has no use for (see ModuleIntro.tsx).
+   Deliberately not a second look; if ReadOnlyBlock's treatment changes, this
+   should change with it. */
+.modintro-preview {
+  border: 1px solid var(--divider);
+  border-left: 3px solid var(--violet);
+  background: var(--violet-tint);
+  border-radius: 0 var(--r-md) var(--r-md) 0;
+  padding: 14px 16px;
+  font-size: 14.5px;
+  line-height: 1.62;
+  color: var(--ink);
+}
+
+.modintro-preview-line {
+  margin: 0;
+}
+.modintro-preview-line + .modintro-preview-line {
+  margin-top: 10px;
+}

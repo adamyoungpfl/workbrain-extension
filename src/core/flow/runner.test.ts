@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { Answers } from '../../schema/storage.types';
-import type { Module, RepeatableBlock, Step } from '../../schema/flow.types';
+import type { AnswerValue, Module, RepeatableBlock, Step } from '../../schema/flow.types';
+import { contextModules } from './flow';
 import {
   findPosition,
   applyAnswer,
@@ -524,5 +525,225 @@ describe('applyReflect', () => {
     expect(existingValue(answers, reflectStep, { in: 'top' })).toBe(raw); // what the reflect screen plays back
     answers = applyReflect(answers, reflectStep, { in: 'top' }, raw); // Keep commits exactly that
     expect(answers.values.q_reflect).toBe(raw);
+  });
+});
+
+// -----------------------------------------------------------------------
+// V1.1 VB-05 — module transition screens. A derived position, like every
+// other one: no flag is written when a transition is passed, so the only
+// thing that can make it stop appearing is an answer inside the module it
+// introduces (plus, within one session, the panel's ephemeral `seenIntros`
+// — see findPosition's own doc comment on why that exists and what it is
+// deliberately NOT).
+// -----------------------------------------------------------------------
+
+function mod(id: string, n: number, nodes: (Step | RepeatableBlock)[]): Module {
+  return { id, n, title: id, purpose: 'p', required: true, estimatedMinutes: [1, 1], nodes };
+}
+const step = (id: string, kind: Step['kind'] = 'text'): Step => ({
+  id,
+  module: 1,
+  section: 0,
+  eyebrow: 'E',
+  q: `${id}?`,
+  kind,
+  ...(kind === 'intro' ? {} : { key: id }),
+});
+
+const m1a = step('m1_a');
+const m1b = step('m1_b');
+const m2a = step('m2_a');
+const m2b = step('m2_b');
+const m3a = step('m3_a');
+const threeModules: Module[] = [mod('one', 1, [m1a, m1b]), mod('two', 2, [m2a, m2b]), mod('three', 3, [m3a])];
+
+describe('findPosition — module transitions (VB-05)', () => {
+  it('never shows one before the first module, however empty it is', () => {
+    expect(findPosition(threeModules, makeAnswers(), NONE)).toEqual({
+      kind: 'step',
+      step: m1a,
+      location: { in: 'top' },
+    });
+  });
+
+  it('shows one before a module nobody has touched, instead of its first question', () => {
+    const answers = makeAnswers({ values: { m1_a: 'x', m1_b: 'y' } });
+    expect(findPosition(threeModules, answers, NONE)).toEqual({ kind: 'module-intro', module: threeModules[1] });
+  });
+
+  it('does not show one once that module holds any answer at all', () => {
+    const answers = makeAnswers({ values: { m1_a: 'x', m1_b: 'y', m2_a: 'z' } });
+    expect(findPosition(threeModules, answers, NONE)).toEqual({
+      kind: 'step',
+      step: m2b,
+      location: { in: 'top' },
+    });
+  });
+
+  it('counts an explicit skip as touching the module — a skipped answer is still an answer', () => {
+    const answers = makeAnswers({ values: { m1_a: 'x', m1_b: 'y' } });
+    const skipped = applySkip(answers, m2a, { in: 'top' });
+    expect(findPosition(threeModules, skipped, NONE)).toEqual({
+      kind: 'step',
+      step: m2b,
+      location: { in: 'top' },
+    });
+  });
+
+  it('survives a close and reopen: the same answers derive the same position, with no session state at all', () => {
+    // "Reopening" is exactly this — findPosition called again with only
+    // what wb:answers holds, no `seenIntros`, no declined blocks.
+    const midModule = makeAnswers({ values: { m1_a: 'x', m1_b: 'y', m2_a: 'z' } });
+    expect(findPosition(threeModules, midModule, NONE)).toEqual(findPosition(threeModules, midModule, NONE, new Set()));
+    expect(findPosition(threeModules, midModule, NONE).kind).toBe('step');
+
+    // ...and a person who closed the panel ON the transition, having
+    // answered nothing in the new module, gets the transition back rather
+    // than being dropped into a module with no introduction.
+    const atTransition = makeAnswers({ values: { m1_a: 'x', m1_b: 'y' } });
+    expect(findPosition(threeModules, atTransition, NONE)).toEqual({ kind: 'module-intro', module: threeModules[1] });
+  });
+
+  it('`seenIntros` suppresses only the module it names, and only for that call', () => {
+    const answers = makeAnswers({ values: { m1_a: 'x', m1_b: 'y' } });
+    expect(findPosition(threeModules, answers, NONE, new Set(['two']))).toEqual({
+      kind: 'step',
+      step: m2a,
+      location: { in: 'top' },
+    });
+    // Module three is untouched too, so continuing past two's transition
+    // does not continue past three's.
+    const throughTwo = makeAnswers({ values: { m1_a: 'x', m1_b: 'y', m2_a: 'a', m2_b: 'b' } });
+    expect(findPosition(threeModules, throughTwo, NONE, new Set(['two']))).toEqual({
+      kind: 'module-intro',
+      module: threeModules[2],
+    });
+  });
+
+  it('every module after the first gets exactly one transition across a whole walk', () => {
+    const seen: string[] = [];
+    let answers = makeAnswers();
+    const seenIntros = new Set<string>();
+    for (let guard = 0; guard < 50; guard++) {
+      const pos = findPosition(threeModules, answers, NONE, seenIntros);
+      if (pos.kind === 'done') break;
+      if (pos.kind === 'module-intro') {
+        seen.push(pos.module.id);
+        seenIntros.add(pos.module.id); // the panel's "continue" — writes nothing
+        continue;
+      }
+      if (pos.kind !== 'step') throw new Error(`unexpected ${pos.kind}`);
+      answers = applyAnswer(answers, pos.step, pos.location, 'an answer');
+    }
+    expect(seen).toEqual(['two', 'three']);
+  });
+
+  it('a module whose every node is skipped never introduces itself — there is nothing to introduce', () => {
+    const skippable = step('m2_skippable');
+    skippable.skipIf = () => true;
+    const withSkipped: Module[] = [mod('one', 1, [m1a]), mod('two', 2, [skippable]), mod('three', 3, [m3a])];
+    const answers = makeAnswers({ values: { m1_a: 'x' } });
+    expect(findPosition(withSkipped, answers, NONE)).toEqual({ kind: 'module-intro', module: withSkipped[2] });
+  });
+
+  it('a repeatable record with any field in it counts as touching the module', () => {
+    const repeatableModules: Module[] = [mod('one', 1, [m1a]), mod('two', 2, [notesBlock])];
+    const untouched = makeAnswers({ values: { m1_a: 'x' } });
+    expect(findPosition(repeatableModules, untouched, NONE)).toEqual({
+      kind: 'module-intro',
+      module: repeatableModules[1],
+    });
+
+    const started = makeAnswers({ values: { m1_a: 'x' }, repeatables: { notes: [{ note_name: 'a' }] } });
+    expect(findPosition(repeatableModules, started, NONE)).toEqual({
+      kind: 'step',
+      step: noteDetailField,
+      location: { in: 'repeatable', blockId: 'notes', recordIndex: 0 },
+    });
+  });
+
+  it('an empty record — applyAddAnother own {} — does not count as an answer on its own', () => {
+    const repeatableModules: Module[] = [mod('one', 1, [m1a]), mod('two', 2, [notesBlock])];
+    const answers = makeAnswers({ values: { m1_a: 'x' }, repeatables: { notes: [{}] } });
+    expect(findPosition(repeatableModules, answers, NONE)).toEqual({
+      kind: 'module-intro',
+      module: repeatableModules[1],
+    });
+  });
+
+  it('does not fire for a single-module flow — the proof loop shape', () => {
+    const oneModule: Module[] = [mod('only', 1, [m1a])];
+    expect(findPosition(oneModule, makeAnswers(), NONE).kind).toBe('step');
+  });
+});
+
+describe('topLevelIndex / moduleFor — module transitions (VB-05)', () => {
+  it('a transition borrows the index of the question it introduces', () => {
+    const pos = findPosition(threeModules, makeAnswers({ values: { m1_a: 'x', m1_b: 'y' } }), NONE);
+    expect(topLevelIndex(threeModules, pos)).toBe(3); // m2_a is the 3rd node overall
+  });
+
+  it('names its own module, so the progress bar can title the screen', () => {
+    const pos = findPosition(threeModules, makeAnswers({ values: { m1_a: 'x', m1_b: 'y' } }), NONE);
+    expect(moduleFor(threeModules, pos)).toBe(threeModules[1]);
+  });
+});
+
+describe('the real Context flow — module transitions (VB-05)', () => {
+  it('introduces every module except the first, exactly once, in order', () => {
+    const seen: string[] = [];
+    const seenIntros = new Set<string>();
+    let answers = makeAnswers();
+    const declined = new Set<string>();
+
+    for (let guard = 0; guard < 400; guard++) {
+      const pos = findPosition(contextModules, answers, declined, seenIntros);
+      if (pos.kind === 'done') break;
+      if (pos.kind === 'module-intro') {
+        seen.push(pos.module.id);
+        seenIntros.add(pos.module.id);
+        continue;
+      }
+      if (pos.kind === 'add-another') {
+        declined.add(pos.block.id);
+        continue;
+      }
+      if (pos.kind === 'reflect') {
+        answers = applyReflect(answers, pos.step, pos.location, 'kept');
+        continue;
+      }
+      const value: AnswerValue =
+        pos.step.kind === 'multi'
+          ? [pos.step.options?.[0]?.v ?? 'x']
+          : pos.step.kind === 'chips'
+            ? (pos.step.options?.[0]?.v ?? 'x')
+            : pos.step.kind === 'yesno'
+              ? 'no'
+              : 'an answer';
+      answers = applyAnswer(answers, pos.step, pos.location, value);
+      if (pos.location.in === 'top' && Array.isArray(value)) {
+        const seedTarget = findSeedTarget(contextModules, pos.step.id);
+        if (seedTarget) answers = reconcileSeededRepeatable(answers, seedTarget, pos.step, value);
+      }
+    }
+
+    expect(seen).toEqual(contextModules.slice(1).map((m) => m.id));
+    expect(seen).toHaveLength(10);
+  });
+
+  it('resuming mid-module never replays a transition already passed, with nothing but wb:answers', () => {
+    // Answer exactly one question in each module, then re-derive from
+    // scratch — the panel restart. Only the module the person is actually
+    // in matters: every earlier one holds an answer, so no earlier
+    // transition can come back.
+    let answers = makeAnswers();
+    for (const module of contextModules) {
+      const first = module.nodes.find((node) => !('fields' in node));
+      if (first && !('fields' in first)) {
+        answers = applyAnswer(answers, first, { in: 'top' }, 'an answer');
+      }
+    }
+    const resumed = findPosition(contextModules, answers, new Set());
+    expect(resumed.kind).not.toBe('module-intro');
   });
 });

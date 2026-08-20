@@ -33,3 +33,6 @@ export type { DeepDiveProps } from './DeepDive';
 
 export { BrandMark } from './BrandMark';
 export type { BrandMarkProps } from './BrandMark';
+
+export { Beats } from './Beats';
+export type { BeatsProps } from './Beats';

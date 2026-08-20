@@ -59,6 +59,13 @@ async function openPanel(context: BrowserContext): Promise<Page> {
  * this generic walk always chooses "Keep it as-is" there, since exercising
  * Tighten/Say-it-again byte-identically is reflect.spec.ts's own job, not
  * this full-flow smoke pass's.
+ *
+ * V1.1 VB-05 added a tenth-and-then-some kind of screen to walk past: a
+ * module transition, `data-position="module-intro"`, before each of modules
+ * two to eleven. There is nothing on it to answer — Next alone advances it,
+ * exactly like an intro — so it needs no branch of its own here; the caller
+ * counts them (module-intro.spec.ts is where the screen's own behaviour is
+ * tested).
  */
 async function answerCurrentQuestion(page: Page): Promise<void> {
   const form = page.locator('.flow');
@@ -94,13 +101,15 @@ test.describe('Context interview — flow runner (R1-06)', () => {
     const { context, page } = await launchPanel();
 
     const visited = new Set<string>();
+    const transitions: string[] = [];
     let guard = 0;
     // Generous cap: 38 top-level slots plus every repeatable field/add-another
     // this walk actually visits (entities: gate+4 fields+add-another=6;
     // initiatives: gate+6 fields+add-another=8; roles: 4 seeded fields), plus
     // one extra "Keep it as-is" loop turn for each of the six interpret-
-    // bearing questions this walk passes through (R1-07) — comfortably under
-    // 100 regardless of exact wording or field counts.
+    // bearing questions this walk passes through (R1-07), plus V1.1 VB-05's
+    // ten module transitions — comfortably under 130 regardless of exact
+    // wording or field counts.
     // R1-12: the Context flow's own "done" screen no longer exists — once
     // every question is answered, `Flow` hands off to Home on its own (see
     // Flow.tsx's `onDone`). There's a brief real gap between the last
@@ -109,11 +118,14 @@ test.describe('Context interview — flow runner (R1-06)', () => {
     // `savePending`'s own comment on why), during which neither `.flow`
     // nor `.home` is in the DOM yet, so each turn waits for whichever
     // shows up next rather than assuming `.flow` is always still there.
-    while (guard++ < 100) {
+    while (guard++ < 130) {
       await page.waitForSelector('.flow, .home');
       if (await page.locator('.home').count()) break;
       const stepId = await page.locator('.flow').getAttribute('data-step-id');
       if (stepId) visited.add(stepId);
+      if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
+        transitions.push((await page.locator('.flow').getAttribute('data-module-id')) ?? '');
+      }
       await answerCurrentQuestion(page);
     }
 
@@ -132,6 +144,10 @@ test.describe('Context interview — flow runner (R1-06)', () => {
     // Every base top-level id should appear somewhere (repeatable blocks
     // themselves aren't a visitable step id, so this is necessarily a subset).
     expect(visited.size).toBeGreaterThanOrEqual(TOTAL_TOP_LEVEL);
+
+    // V1.1 VB-05: every module except the first introduced itself, exactly
+    // once, in flow order — the accept criterion, walked rather than derived.
+    expect(transitions).toEqual(contextModules.slice(1).map((m) => m.id));
 
     await context.close();
   });

@@ -52,8 +52,11 @@ panel document as an ordinary page instead — `chrome-extension://<id>/panel.ht
 the same code with the same APIs. Set the viewport to 400px wide so layout assertions are real.
 Reserve true panel-opening for a manual smoke checklist.
 
-**Test hooks in the DOM.** `Flow.tsx` renders `data-position="step" | "add-another" | "reflect"`
-(the last added at R1-07) and `data-step-id="<id>"` on its root — not user-facing, purely so a
+**Test hooks in the DOM.** `Flow.tsx` renders
+`data-position="step" | "add-another" | "reflect" | "module-intro"`
+(`reflect` added at R1-07, `module-intro` at V1.1 VB-05 — that one carries
+`data-module-id="<id>"` instead of a step id, since a module transition introduces a module rather
+than asking a question) and `data-step-id="<id>"` on its root — not user-facing, purely so a
 spec can tell apart two things that render identically (a real `yesno` question and an "add
 another?" prompt both show as two pills, Yes/No) without guessing from text content, and can
 drive a full pass generically instead of hardcoding question wording (`tests/e2e/flow.spec.ts`
