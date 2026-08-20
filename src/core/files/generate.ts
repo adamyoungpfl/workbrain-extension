@@ -55,20 +55,27 @@ function formatAnswerValue(step: Step, value: AnswerValue | undefined): string |
   return step.kind === 'chips' ? optionLabelFor(step, value) : value.trim();
 }
 
+/**
+ * What one repeatable record is called, both in the file and — since V1.1
+ * VB-07 — in the panel's file tree. Lifted out of `renderRepeatableRecord`
+ * unchanged so the tree cannot drift from the heading the file actually
+ * prints: a seeded block (roles) titles a record by its seed value, an
+ * open-ended one (entities, initiatives) by its first sub-question's answer.
+ */
+export function repeatableRecordTitle(block: RepeatableBlock, record: Record<string, AnswerValue>): string {
+  if (block.seedFrom) {
+    const seedVal = record[block.seedFrom.seedField];
+    return typeof seedVal === 'string' && seedVal ? seedVal : 'Untitled';
+  }
+  const firstField = block.fields[0];
+  return (firstField && formatAnswerValue(firstField, record[firstField.id])) || 'Untitled';
+}
+
 /** One repeatable record (a role, an entity, an initiative) as its own
  * mini Q&A block. Mirrors the source's `renderRepeatableRecord`. */
 function renderRepeatableRecord(block: RepeatableBlock, record: Record<string, AnswerValue>, ctx: FlowContext): string {
-  let title: string;
-  let bodyFields: Step[];
-  if (block.seedFrom) {
-    const seedVal = record[block.seedFrom.seedField];
-    title = typeof seedVal === 'string' && seedVal ? seedVal : 'Untitled';
-    bodyFields = block.fields;
-  } else {
-    const [firstField, ...rest] = block.fields;
-    title = (firstField && formatAnswerValue(firstField, record[firstField.id])) || 'Untitled';
-    bodyFields = rest;
-  }
+  const title = repeatableRecordTitle(block, record);
+  const bodyFields: Step[] = block.seedFrom ? block.fields : block.fields.slice(1);
   const lines = bodyFields
     .filter((f) => f.kind !== 'yesno' && f.kind !== 'intro')
     .map((f) => {
@@ -115,11 +122,86 @@ function renderFileSection(
   return `${'#'.repeat(depth + 1)} ${node.label}\n\n${body}`;
 }
 
+/** One top-level section of the generated file, kept whole. `id`/`label` are
+ * its `FileOutlineNode`'s own, so a caller can line a section up against the
+ * outline row that produced it without re-deriving anything. */
+export interface ContextFileSection {
+  id: string;
+  label: string;
+  /** The section's rendered markdown, heading included. Never empty — a
+   * section with nothing answered is dropped, not returned blank. */
+  text: string;
+}
+
 /**
- * Turns `answers` into the real Context.md — mirrors the source's
- * `generateContextFile`. `modules`/`outline` default to the real ported
- * flow (`contextModules`/`contextOutline`) and are only ever overridden in
- * tests, matching core/flow/adapter.ts's `adaptContextFlow` pattern.
+ * The generated file, in pieces and whole.
+ *
+ * V1.1 VB-07b needs per-section output so the panel's live preview can render
+ * (and animate) each section as its own node instead of re-rendering one
+ * opaque string. `text` is the joined file, and it is the *only* thing
+ * `generateContextFile` returns — the two can never drift, because there is
+ * one assembly and both callers read it. That matters: R1-10's download/import
+ * round-trip is asserted byte-for-byte, and its accept line treats a failure
+ * there as a release blocker.
+ */
+export interface ContextFileParts {
+  /** Title + the generated-on line, always emitted. */
+  header: string;
+  /** Only the sections with something in them — `renderFileSection` returns
+   * '' for a section with an empty body, which is what makes sections appear
+   * in the preview exactly as they are answered, with no reveal machinery. */
+  sections: ContextFileSection[];
+  /** The grounding-rule heading and paragraph, always emitted. */
+  footer: string;
+  /** Byte-identical to `generateContextFile` for the same arguments. */
+  text: string;
+}
+
+/**
+ * Turns `answers` into the real Context.md, section by section and joined —
+ * mirrors the source's `generateContextFile`. `modules`/`outline` default to
+ * the real ported flow (`contextModules`/`contextOutline`) and are only ever
+ * overridden in tests, matching core/flow/adapter.ts's `adaptContextFlow`
+ * pattern.
+ */
+export function generateContextFileParts(
+  answers: Pick<Answers, 'values' | 'repeatables'>,
+  generatedOn: string,
+  modules = contextModules,
+  outline: FileOutlineNode[] = contextOutline,
+): ContextFileParts {
+  const lookups = buildFlowLookups(modules);
+  const ctx: FlowContext = { answers: answers.values, repeatables: answers.repeatables };
+  const sections: ContextFileSection[] = [];
+  for (const node of outline) {
+    const text = renderFileSection(node, ctx, 1, lookups);
+    if (text) sections.push({ id: node.id, label: node.label, text });
+  }
+
+  const header = `${FILE_TITLE}
+
+${fileIntroLine(generatedOn)}`;
+  const footer = `${GROUNDING_RULE_HEADING}
+
+${SYSTEM_GROUNDING_RULE}
+`;
+  return {
+    header,
+    sections,
+    footer,
+    text: `${header}
+
+${sections.map((section) => section.text).join('\n\n')}
+
+${footer}`,
+  };
+}
+
+/**
+ * The downloaded file. Unchanged in behaviour and output — it is now one
+ * field of `generateContextFileParts`, so the panel's live preview and the
+ * download are literally the same bytes rather than two implementations that
+ * agree today.
  */
 export function generateContextFile(
   answers: Pick<Answers, 'values' | 'repeatables'>,
@@ -127,17 +209,15 @@ export function generateContextFile(
   modules = contextModules,
   outline: FileOutlineNode[] = contextOutline,
 ): string {
-  const lookups = buildFlowLookups(modules);
-  const ctx: FlowContext = { answers: answers.values, repeatables: answers.repeatables };
-  const sections = outline.map((node) => renderFileSection(node, ctx, 1, lookups)).filter(Boolean);
-  return `${FILE_TITLE}
+  return generateContextFileParts(answers, generatedOn, modules, outline).text;
+}
 
-${fileIntroLine(generatedOn)}
-
-${sections.join('\n\n')}
-
-${GROUNDING_RULE_HEADING}
-
-${SYSTEM_GROUNDING_RULE}
-`;
+/**
+ * The `generatedOn` stamp both the download and the live preview use, so the
+ * two agree byte-for-byte rather than by coincidence of formatting. Pure —
+ * `Date` is not the DOM, and the clock is injectable for tests, the same
+ * shape core/freshness/clocks.ts already uses.
+ */
+export function contextFileDate(now: Date = new Date()): string {
+  return now.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 }

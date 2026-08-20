@@ -1,7 +1,13 @@
 import { describe, it, expect } from 'vitest';
 import type { Answers } from '../../schema/storage.types';
 import type { FileOutlineNode, Module, RepeatableBlock, Step } from '../../schema/flow.types';
-import { generateContextFile, SKIPPED_ANSWER_MARKER } from './generate';
+import {
+  contextFileDate,
+  generateContextFile,
+  generateContextFileParts,
+  repeatableRecordTitle,
+  SKIPPED_ANSWER_MARKER,
+} from './generate';
 import { SYSTEM_GROUNDING_RULE } from './source';
 
 function makeAnswers(overrides: Partial<Answers> = {}): Answers {
@@ -284,5 +290,118 @@ describe('generateContextFile — real ported content', () => {
     const file = generateContextFile(answers, '2026-08-20');
     expect(file).toContain('**Employee**');
     expect(file).toContain('- **Who or what is this role for?:** My employer');
+  });
+});
+
+// ---------------------------------------------------------------------
+// V1.1 VB-07b — the section-level render behind the panel's live preview.
+//
+// The accept line is byte-identity: "the previewed text is byte-identical
+// to what Download produces for the same answers (assert it, don't eyeball
+// it)". R1-10's round-trip treats a drift here as a release blocker, so
+// this is asserted across a spread of answer shapes, not one happy case.
+// ---------------------------------------------------------------------
+
+/** Every structurally distinct answer shape this generator can be handed,
+ * so byte-identity is checked against variety rather than one fixture. */
+const BYTE_IDENTITY_CASES: { name: string; answers: Answers }[] = [
+  { name: 'nothing answered at all', answers: makeAnswers() },
+  { name: 'one section answered', answers: makeAnswers({ values: { scope: 'work' } }) },
+  { name: 'an explicit skip', answers: makeAnswers({ values: { scope: 'work', bio: null } }) },
+  { name: 'a multi-select and a nested child section', answers: makeAnswers({ values: { audiences: ['mgr', 'team'] } }) },
+  {
+    name: 'both repeatable shapes plus a ctx-dependent prompt',
+    answers: makeAnswers({
+      values: { scope: 'work', stop_thing: 'meetings', role_names: ['a'], bio: 'A person.' },
+      repeatables: {
+        roles: [{ role_name: 'Lead', role_for: 'The team', role_mandate: 'Ship it.' }],
+        entities: [{ entity_name: 'Priya', entity_type: 'Manager', entity_gate: 'yes' }],
+      },
+    }),
+  },
+];
+
+describe('generateContextFileParts — the preview and the download are the same bytes', () => {
+  for (const { name, answers } of BYTE_IDENTITY_CASES) {
+    it(`joins back to exactly what generateContextFile returns: ${name}`, () => {
+      const parts = generateContextFileParts(answers, '2026-08-20', modules, outline);
+      expect(parts.text).toBe(generateContextFile(answers, '2026-08-20', modules, outline));
+    });
+
+    it(`header + sections + footer reassemble byte-for-byte: ${name}`, () => {
+      const parts = generateContextFileParts(answers, '2026-08-20', modules, outline);
+      const rebuilt = `${parts.header}\n\n${parts.sections.map((s) => s.text).join('\n\n')}\n\n${parts.footer}`;
+      expect(rebuilt).toBe(generateContextFile(answers, '2026-08-20', modules, outline));
+    });
+
+    it(`does the same against the real ported flow: ${name}`, () => {
+      const parts = generateContextFileParts(answers, '2026-08-20');
+      expect(parts.text).toBe(generateContextFile(answers, '2026-08-20'));
+    });
+  }
+
+  it('returns one entry per section that has something in it, and none for the rest', () => {
+    const parts = generateContextFileParts(makeAnswers({ values: { scope: 'work' } }), '2026-08-20', modules, outline);
+    expect(parts.sections.map((s) => s.id)).toEqual(['sec1']);
+    expect(parts.sections[0]?.label).toBe('1. About This Context');
+  });
+
+  it('a section appears the moment its first question is answered — no reveal machinery', () => {
+    const before = generateContextFileParts(makeAnswers({ values: { scope: 'work' } }), '2026-08-20', modules, outline);
+    const after = generateContextFileParts(makeAnswers({ values: { scope: 'work', bio: 'A person.' } }), '2026-08-20', modules, outline);
+    expect(before.sections.map((s) => s.id)).toEqual(['sec1']);
+    expect(after.sections.map((s) => s.id)).toEqual(['sec1', 'sec2']);
+  });
+
+  it('never returns an empty section body', () => {
+    for (const { answers } of BYTE_IDENTITY_CASES) {
+      const parts = generateContextFileParts(answers, '2026-08-20', modules, outline);
+      for (const section of parts.sections) expect(section.text.trim()).not.toBe('');
+    }
+  });
+
+  it('the header and footer are always emitted, whatever the answers', () => {
+    for (const { answers } of BYTE_IDENTITY_CASES) {
+      const parts = generateContextFileParts(answers, '2026-08-20', modules, outline);
+      expect(parts.header.startsWith('# Context.md')).toBe(true);
+      expect(parts.footer).toContain(SYSTEM_GROUNDING_RULE);
+    }
+  });
+});
+
+describe('repeatableRecordTitle — one title, used by the file and the tree alike', () => {
+  it('titles a seeded record by its seed value', () => {
+    expect(repeatableRecordTitle(rolesBlock, { role_name: 'Lead', role_for: 'The team' })).toBe('Lead');
+  });
+
+  it("titles an open-ended record by its first sub-question's answer", () => {
+    expect(repeatableRecordTitle(entitiesBlock, { entity_name: 'Priya', entity_type: 'Manager' })).toBe('Priya');
+  });
+
+  it('falls back rather than rendering a blank row', () => {
+    expect(repeatableRecordTitle(rolesBlock, {})).toBe('Untitled');
+    expect(repeatableRecordTitle(entitiesBlock, {})).toBe('Untitled');
+  });
+
+  it('is exactly the heading the generated file prints for that record', () => {
+    const answers = makeAnswers({
+      values: { role_names: ['a'] },
+      repeatables: { roles: [{ role_name: 'Lead', role_for: 'The team' }] },
+    });
+    const file = generateContextFile(answers, '2026-08-20', modules, outline);
+    expect(file).toContain(`**${repeatableRecordTitle(rolesBlock, { role_name: 'Lead', role_for: 'The team' })}**`);
+  });
+});
+
+describe('contextFileDate', () => {
+  it('is the long-form date the downloaded file has always carried', () => {
+    expect(contextFileDate(new Date('2026-08-20T12:00:00Z'))).toBe('August 20, 2026');
+  });
+
+  it('is one function, so the preview and the download can never format differently', () => {
+    const now = new Date('2026-01-02T12:00:00Z');
+    expect(generateContextFileParts(makeAnswers(), contextFileDate(now), modules, outline).text).toBe(
+      generateContextFile(makeAnswers(), contextFileDate(now), modules, outline),
+    );
   });
 });

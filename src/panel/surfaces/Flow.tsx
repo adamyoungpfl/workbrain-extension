@@ -2,6 +2,7 @@ import { useEffect, useLayoutEffect, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
 import { Beats, Button, DeepDive, Field, FlowProgress, PillGroup, ReadOnlyBlock } from '../components';
 import { ModuleIntro } from './ModuleIntro';
+import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import {
@@ -28,7 +29,7 @@ import {
 } from '../../core/flow/proofAdapter';
 import { hintStaysVisible } from '../../core/flow/deepDive';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
-import type { AnswerValue, FlowContext, Module, Option, Step } from '../../schema/flow.types';
+import type { AnswerValue, FileOutlineNode, FlowContext, Module, Option, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import { S } from '../strings';
 import './Flow.css';
@@ -58,6 +59,14 @@ export interface FlowProps {
    * Exactly the same mechanism `goBack` already uses to view a prior
    * position (`viewing`, below) — this is just its initial value. */
   initialPosition?: Position | undefined;
+  /**
+   * V1.1 VB-07: the file this flow is writing, as a section tree. Given, the
+   * flow docks a drawer under the question showing the outline filling in and
+   * the real text assembling (see FileDrawer.tsx). Omitted, there is no
+   * drawer at all — which is how the proof loop renders, since it writes no
+   * file and there is nothing for a tree to show.
+   */
+  outline?: FileOutlineNode[] | undefined;
 }
 
 const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
@@ -169,7 +178,7 @@ function scoreSubStep(key: string): Step {
  * everything specific to the question on screen lives in `StepView`, mounted
  * fresh per position via `key` — see its own comment for why.
  */
-export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps) {
+export function Flow({ modules, renderDone, onDone, initialPosition, outline }: FlowProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [declinedBlocks, setDeclinedBlocks] = useState<ReadonlySet<string>>(new Set());
   // V1.1 VB-05: module ids whose transition screen has been continued past
@@ -191,6 +200,11 @@ export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps
   // data and silently miss the very last answer. Gating the redirect on this
   // closes that race without Home needing to know or care that it exists.
   const [savePending, setSavePending] = useState(false);
+  // V1.1 VB-07. Ephemeral, like `history` and `declinedBlocks` above and for
+  // the same reason: it is a fact about this glance at the panel, not about
+  // the person's file. Collapsed to a peek by default — the question stays
+  // the primary object on a 400px panel.
+  const [drawerOpen, setDrawerOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -258,6 +272,44 @@ export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps
     setViewing(null);
   }
 
+  /**
+   * V1.1 VB-07: the question, with the file it is writing docked underneath.
+   *
+   * The drawer is mounted OUTSIDE the per-position remount on purpose.
+   * `StepView` is keyed by `positionKey` so each question is a fresh mount
+   * (see its own comment); a tree remounted alongside it would look like a
+   * first mount on every question, and its rows would never type themselves in
+   * — the whole terminal effect would silently do nothing. Keeping it here, as
+   * a sibling of whatever screen is showing, means it lives for the length of
+   * the interview and sees every transition.
+   *
+   * `.flowshell` reserves the drawer's height beneath the screen, so the
+   * drawer never covers the question: it is docked, not an overlay.
+   */
+  function withDrawer(screen: ReactNode): ReactNode {
+    if (!outline) return screen;
+    return (
+      <div className={drawerOpen ? 'flowshell is-drawer-open' : 'flowshell'}>
+        {screen}
+        <FileDrawer
+          outline={outline}
+          modules={modules}
+          answers={ans}
+          position={position}
+          open={drawerOpen}
+          onToggle={() => setDrawerOpen((isOpen) => !isOpen)}
+          onNavigate={(next) => {
+            // Exactly what `goBack` does in reverse: remember where we were so
+            // Back returns there, then view the requested position. No new
+            // mechanism — `viewing` has done this since R1-12.
+            setHistory((h) => [...h, position]);
+            setViewing(next);
+          }}
+        />
+      </div>
+    );
+  }
+
   if (position.kind === 'done') {
     // Never hand off while the last write is still in flight — see
     // `savePending`'s own comment on the race that closes.
@@ -287,7 +339,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps
   }
 
   if (position.kind === 'module-intro') {
-    return (
+    return withDrawer(
       <ModuleIntro
         key={positionKey(position)}
         module={position.module}
@@ -297,11 +349,11 @@ export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps
         saveError={saveError}
         onBack={goBack}
         onContinue={() => continuePastModuleIntro(position)}
-      />
+      />,
     );
   }
 
-  return (
+  return withDrawer(
     <StepView
       key={positionKey(position)}
       modules={modules}
@@ -313,7 +365,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition }: FlowProps
       onBack={goBack}
       onCommit={(next) => handleCommit(position, next)}
       onAddAnotherDecision={(blockId, wantsMore) => handleAddAnotherDecision(position, blockId, wantsMore)}
-    />
+    />,
   );
 }
 

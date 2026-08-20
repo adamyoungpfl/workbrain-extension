@@ -36,3 +36,6 @@ export type { BrandMarkProps } from './BrandMark';
 
 export { Beats } from './Beats';
 export type { BeatsProps } from './Beats';
+
+export { FileTree } from './FileTree';
+export type { FileTreeProps } from './FileTree';

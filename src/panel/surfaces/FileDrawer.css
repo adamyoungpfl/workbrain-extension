@@ -1,0 +1,150 @@
+/* V1.1 VB-07 / VB-07b — the docked file drawer.
+
+   The one genuinely re-authored part of the port. The sibling app puts this
+   tree in a 360px right-hand grid column and stacks it BELOW the question
+   under 900px wide, which in a 400px panel means it scrolls off screen while
+   you answer. Here it is docked to the bottom instead: always at least partly
+   visible, collapsed to a peek by default, expanding on demand.
+
+   It is not an overlay. Flow.css's `.flowshell` reserves exactly this height
+   underneath the question, so the drawer never covers the thing it is
+   describing — the question and its buttons stay on screen and reachable with
+   the drawer open (docs/GUARDRAILS.md: no modals; the design system's Sheet is
+   the only overlay in the system and this is not one). */
+
+.filedrawer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  background: var(--canvas);
+  /* --border-i, not --divider: this edge sits directly above an interactive
+     control and WCAG 1.4.11 wants 3:1 on it (docs/GUARDRAILS.md). */
+  border-top: 1px solid var(--border-i);
+}
+
+.filedrawer-head {
+  margin: 0;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.filedrawer-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-height: var(--target-min);
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0 16px;
+  margin: 0;
+  text-align: left;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.filedrawer-toggle:hover {
+  background: var(--sunken);
+}
+.filedrawer-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.filedrawer-chevron {
+  flex: none;
+  transition: transform var(--fast) var(--ease);
+}
+.filedrawer-chevron.is-open {
+  transform: rotate(90deg);
+}
+
+.filedrawer-title {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-2);
+}
+
+.filedrawer-count {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}
+
+/* The peek: about three rows of tree, scrolled so the section being written
+   sits in the middle of them (see FileDrawer.tsx's scroll effect). Everything
+   below stays mounted and merely scrolls — which is what lets the tree's
+   typewriter keep its per-row memory instead of remounting rows in and out of
+   a window. */
+.filedrawer-body {
+  position: relative;
+  max-height: 132px;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 0 14px 10px;
+  transition: max-height var(--base) var(--ease);
+}
+.filedrawer.is-open .filedrawer-body {
+  max-height: 46vh;
+}
+
+.filepreview {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--divider);
+}
+
+.filepreview-note {
+  margin: 0 0 10px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.filepreview-section {
+  margin: 0 0 12px;
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--ink);
+  /* Wraps rather than scrolling sideways — nothing in a 400px panel may make
+     the page scroll horizontally. */
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* A section that appears while you are watching fades up from just below.
+   One that was already there when the drawer mounted does not — see
+   FileDrawer.tsx's FilePreview. */
+.filepreview-section.is-new {
+  animation: filepreviewIn var(--slow) var(--ease) both;
+}
+
+@keyframes filepreviewIn {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .filedrawer-body,
+  .filedrawer-chevron {
+    transition: none;
+  }
+  /* The section still arrives — it simply arrives finished. The state change
+     is what carries the meaning, not the movement. */
+  .filepreview-section.is-new {
+    animation: none;
+  }
+}

@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { Flow } from './surfaces/Flow';
 import { Home } from './surfaces/Home';
 import { Button } from './components';
-import { contextModules, buildProofModules } from '../core/flow/flow';
+import { contextModules, contextOutline, buildProofModules } from '../core/flow/flow';
 import { serviceStepOptions } from '../core/flow/proofAdapter';
 import type { Position } from '../core/flow/runner';
 import { ROLES_BLOCK_ID, ROLE_DURABILITY_KEY } from '../core/freshness/nextMove';
@@ -103,5 +103,8 @@ export default function App() {
     );
   }
 
-  return <Flow modules={contextModules} initialPosition={jumpTo} onDone={goHome} />;
+  // V1.1 VB-07: only the Context flow passes an `outline`, because it is the
+  // only flow that writes a file. The proof loop above deliberately does not —
+  // there is nothing for a file tree to show there.
+  return <Flow modules={contextModules} outline={contextOutline} initialPosition={jumpTo} onDone={goHome} />;
 }

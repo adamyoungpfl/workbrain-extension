@@ -5,6 +5,19 @@
   gap: 4px;
 }
 
+/* V1.1 VB-07. Wraps the question and the file drawer docked beneath it, and
+   reserves exactly the drawer's own height as bottom padding — which is what
+   makes the drawer a dock rather than an overlay: the question and every one
+   of its controls stay on screen and reachable with the drawer open. The two
+   values below mirror FileDrawer.css's collapsed and expanded body heights
+   plus its 44px header. */
+.flowshell {
+  padding-bottom: 190px;
+}
+.flowshell.is-drawer-open {
+  padding-bottom: calc(46vh + 60px);
+}
+
 /* V1.1 VB-02 removed `.flow-eyebrow` — the "Question N of Total · Module"
    breadcrumb it styled is now components/FlowProgress.tsx, which carries the
    same 12px uppercase treatment for the module title. */

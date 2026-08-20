@@ -160,6 +160,35 @@ export const S = {
     },
   } as const satisfies Record<string, { beats: readonly string[]; preview: readonly string[] }>,
 
+  /**
+   * V1.1 VB-07 / VB-07b — the file drawer docked under the interview: the
+   * outline tree, and the real Context.md text assembling beneath it.
+   *
+   * `filePreviewNote` is ported verbatim from the sibling Context Builder's
+   * own preview (quoted in docs/V1.1-REFINEMENT.md's VB-07b). Do not reword it.
+   *
+   * Everything else here is new panel chrome that docs/V1.1-COPY-DRAFT.md
+   * does not cover — it approves the drawer's *behaviour* ("collapsed to a
+   * peek by default") but writes no labels for it. Written to the same rules
+   * as the rest of this file, deliberately plain: the drawer is a thing you
+   * glance at, so its own words must not compete with the question.
+   *
+   * The three state words are not decoration. The tree marks a section's
+   * state with a glyph and a colour, and docs/GUARDRAILS.md forbids colour
+   * alone; these are the same distinction said out loud, carried to a screen
+   * reader on every row.
+   */
+  fileTreeHeading: 'Your file so far',
+  fileTreeRoot: (name: string) => (name ? `${name} — Context.md` : 'Context.md'),
+  fileTreeStateCurrent: 'Writing now',
+  fileTreeStateReached: 'Written',
+  fileTreeStateUntouched: 'Not yet',
+  fileTreeGoTo: (label: string) => `Go to ${label}`,
+  fileTreeExpand: (label: string) => `Show what is inside ${label}`,
+  fileTreeCollapse: (label: string) => `Hide what is inside ${label}`,
+  filePreviewNote:
+    "This is your file assembling as you answer — each section appears the moment you reach it. It's plain text, copy it any time.",
+
   // ---------------------------------------------------------------- reflect
   reflectHeading: "Here's what I've got.",
   reflectSub: 'Nothing has been sent anywhere. Keep it, or let your own AI tighten it.',

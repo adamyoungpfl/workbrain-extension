@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Button, Toast } from '../components';
-import { generateContextFile } from '../../core/files/generate';
+import { contextFileDate, generateContextFile } from '../../core/files/generate';
 import { parseContextFile } from '../../core/files/parse';
 import { buildImportedAnswers } from '../../core/files/restore';
 import type { Answers } from '../../schema/storage.types';
@@ -19,10 +19,6 @@ export interface FileActionsProps {
 }
 
 const FILE_NAME = 'Context.md';
-
-function todayLong(): string {
-  return new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
-}
 
 /**
  * R1-10's download/import, R1-12's backup story hosted on Home: download the
@@ -50,7 +46,10 @@ export function FileActions({ answers, onImport }: FileActionsProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   function handleDownload() {
-    const markdown = generateContextFile(answers, todayLong());
+    // V1.1 VB-07b moved the date stamp into core/files/generate.ts so the
+    // drawer's live preview and this download produce the same bytes by
+    // construction, not by two copies of the same `toLocaleDateString` call.
+    const markdown = generateContextFile(answers, contextFileDate());
     const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
