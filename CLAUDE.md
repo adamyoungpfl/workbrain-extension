@@ -20,6 +20,7 @@ touches it, and do not read the big HTML files end to end — go to the section 
 | `docs/workbrain-spec.html` | product questions. §02 constraint, §05 lifecycle, §13–14 audit and report |
 | `docs/design-system.html` | UI work. §04 components, §05 patterns, §06 motion, §07 a11y, §08 copy |
 | `docs/STORE.md` | manifest or listing work |
+| `docs/CONTENT-SOURCES.md` | **any task needing copy or logic that may already exist in ../modelcitizen** |
 | `docs/prototype-v2-os.html` | behaviour reference only — do not copy its code, it is a mock |
 
 ## What this is
@@ -63,7 +64,8 @@ npm run test         # vitest run  (unit, core/ only, fast)
 npm run test:watch
 npm run e2e          # playwright, loads dist/ as an unpacked extension
 npm run a11y         # axe-core pass over panel surfaces
-npm run check        # typecheck + test + e2e + a11y  — this is the gate before you say "done"
+npm run audit        # guardrail checks — deps, core purity, permissions, copy location, reading level
+npm run check        # typecheck + audit + test + build + e2e + a11y — the gate before you say "done"
 ```
 
 Load unpacked: `chrome://extensions` → Developer mode → Load unpacked → select `dist/`.
@@ -96,6 +98,15 @@ The source file's types are close to `src/schema/flow.types.ts` but not identica
 `QuestionOption.key/label`, `interpret: {via}`, `skipIf`). Write an explicit adapter with a test,
 rather than reshaping the source by hand.
 
+## Copy lives in one file
+
+Every user-facing string in the panel goes in `src/panel/strings.ts`. Never inline one in a
+component — `npm run audit` warns on it. Interview question wording is the exception: it is
+ported verbatim and lives in `src/core/flow/source.ts`.
+
+Before writing any new string, check `docs/CONTENT-SOURCES.md` — a surprising amount of this
+product's copy already exists in the sibling Next.js app and must be ported, not rewritten.
+
 ## Copy rules
 
 The interface is mostly words and the words are specified, not improvised.
@@ -118,3 +129,4 @@ The four steps are **Name · Repeat · Act · Share** in the interface. "Gate" i
 - [ ] Any new string passes the copy rules
 - [ ] No new permission in `manifest.config.ts` without an entry in `docs/GUARDRAILS.md`
 - [ ] No new runtime dependency without a line in `docs/DEPENDENCIES.md` justifying it
+- [ ] `npm run audit` clean — no new warnings, no strings left in components
