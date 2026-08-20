@@ -20,6 +20,7 @@ import type { Position } from '../../core/flow/runner';
 import type { AnswerValue, FlowContext, Module, Option, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import { S } from '../strings';
+import { FlowDone } from './FlowDone';
 import './Flow.css';
 
 export interface FlowProps {
@@ -78,10 +79,11 @@ export function Flow({ modules }: FlowProps) {
   const total = questionCount(modules);
   const position = viewing ?? findPosition(modules, ans, declinedBlocks);
 
-  async function persist(next: Answers) {
+  async function persist(next: Answers): Promise<boolean> {
     setAnswersState(next);
     const result = await setLocal('wb:answers', next);
     setSaveError(!result.ok);
+    return result.ok;
   }
 
   function goBack() {
@@ -121,6 +123,7 @@ export function Flow({ modules }: FlowProps) {
           </div>
         )}
         <p className="flow-q">{S.flowDone}</p>
+        <FlowDone answers={ans} onImport={persist} />
       </div>
     );
   }
