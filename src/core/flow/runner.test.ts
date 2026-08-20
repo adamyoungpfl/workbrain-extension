@@ -5,6 +5,7 @@ import {
   findPosition,
   applyAnswer,
   applySkip,
+  applyReflect,
   applyAddAnother,
   reconcileSeededRepeatable,
   findSeedTarget,
@@ -15,7 +16,7 @@ import {
 } from './runner';
 
 function makeAnswers(overrides: Partial<Answers> = {}): Answers {
-  return { values: {}, repeatables: {}, answeredAt: {}, ...overrides };
+  return { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {}, ...overrides };
 }
 
 const introStep: Step = { id: 'intro1', module: 1, section: 0, eyebrow: 'E', q: 'Hi', kind: 'intro' };
@@ -318,5 +319,210 @@ describe('moduleFor', () => {
 
   it('is undefined once done', () => {
     expect(moduleFor(modules, { kind: 'done' })).toBeUndefined();
+  });
+});
+
+// -----------------------------------------------------------------------
+// R1-07 — the reflect step. `stop_explaining`, `self_description`,
+// `role_mandate`, `responsibilities_list`, `initiative_description` and
+// `terms_depend_on` are the six real questions this exercises (confirmed via
+// `grep interpret src/core/flow/source.ts`); `role_mandate` and
+// `initiative_description` in particular live inside a repeatable (`roles`,
+// `initiatives_records`), which is why the compound-key coverage below is
+// exercising a real shape, not a hypothetical one.
+// -----------------------------------------------------------------------
+
+const reflectStep: Step = {
+  id: 'q_reflect',
+  module: 1,
+  section: 0,
+  eyebrow: 'E',
+  q: 'Reflect?',
+  kind: 'text',
+  key: 'q_reflect',
+  interpret: {
+    via: 'ai-assist',
+    reflectPrefix: 'I heard:',
+    buildPrompt: (raw) => `Tighten this: "${raw}"`,
+  },
+};
+
+const reflectModules: Module[] = [
+  { id: 'm-reflect', n: 1, title: 'Reflect', purpose: 'p', required: true, estimatedMinutes: [1, 1], nodes: [reflectStep] },
+];
+
+const noteNameField: Step = { id: 'note_name', module: 1, section: 0, eyebrow: 'E', q: 'Name?', kind: 'text', key: 'note_name' };
+const noteDetailField: Step = {
+  id: 'note_detail',
+  module: 1,
+  section: 0,
+  eyebrow: 'E',
+  q: 'Detail?',
+  kind: 'text',
+  key: 'note_detail',
+  interpret: {
+    via: 'ai-assist',
+    reflectPrefix: 'Summary:',
+    buildPrompt: (raw) => `Summarize: "${raw}"`,
+  },
+};
+const notesBlock: RepeatableBlock = {
+  id: 'notes',
+  addAnotherPrompt: 'Another note?',
+  fields: [noteNameField, noteDetailField],
+};
+const notesModules: Module[] = [
+  { id: 'm-notes', n: 1, title: 'Notes', purpose: 'p', required: true, estimatedMinutes: [1, 1], nodes: [notesBlock] },
+];
+
+describe('findPosition — reflect (R1-07)', () => {
+  it('an unanswered interpret-bearing text step is still a plain step position', () => {
+    expect(findPosition(reflectModules, makeAnswers(), NONE)).toEqual({
+      kind: 'step',
+      step: reflectStep,
+      location: { in: 'top' },
+    });
+  });
+
+  it('a text step without interpret never routes to reflect, even once answered', () => {
+    const answers = makeAnswers({ values: { intro1: null, q_text: 'hello' } });
+    expect(findPosition(modules, answers, NONE)).toEqual({ kind: 'step', step: chipsStep, location: { in: 'top' } });
+  });
+
+  it('answered but not yet reflected is a reflect position, not done — the whole point of R1-07', () => {
+    const answers = makeAnswers({ values: { q_reflect: 'hello world' } });
+    expect(findPosition(reflectModules, answers, NONE)).toEqual({
+      kind: 'reflect',
+      step: reflectStep,
+      location: { in: 'top' },
+    });
+  });
+
+  it('once reflectedAt has the key, the question counts as fully done', () => {
+    const answers = makeAnswers({
+      values: { q_reflect: 'hello world' },
+      reflectedAt: { q_reflect: '2020-01-01T00:00:00.000Z' },
+    });
+    expect(findPosition(reflectModules, answers, NONE)).toEqual({ kind: 'done' });
+  });
+
+  it('an explicitly skipped (null) interpret text step never routes to reflect — nothing typed to play back', () => {
+    const answers = makeAnswers({ values: { q_reflect: null } });
+    expect(findPosition(reflectModules, answers, NONE)).toEqual({ kind: 'done' });
+  });
+
+  it('a repeatable field with interpret set uses the blockId#recordIndex#key compound convention, matching answeredAt', () => {
+    const answers = makeAnswers({ repeatables: { notes: [{ note_name: 'a', note_detail: 'raw detail text' }] } });
+    expect(findPosition(notesModules, answers, NONE)).toEqual({
+      kind: 'reflect',
+      step: noteDetailField,
+      location: { in: 'repeatable', blockId: 'notes', recordIndex: 0 },
+    });
+  });
+
+  it('reflecting the repeatable field via its compound key lets the record complete and offers add-another', () => {
+    const answers = makeAnswers({
+      repeatables: { notes: [{ note_name: 'a', note_detail: 'raw detail text' }] },
+      reflectedAt: { 'notes#0#note_detail': '2020-01-01T00:00:00.000Z' },
+    });
+    expect(findPosition(notesModules, answers, NONE)).toEqual({ kind: 'add-another', block: notesBlock, recordIndex: 1 });
+  });
+
+  it('a plain (non-compound) reflectedAt entry does not satisfy a repeatable field\'s compound key — no accidental cross-record match', () => {
+    const answers = makeAnswers({
+      repeatables: { notes: [{ note_name: 'a', note_detail: 'raw' }] },
+      reflectedAt: { note_detail: '2020-01-01T00:00:00.000Z' }, // wrong key shape — not "notes#0#note_detail"
+    });
+    expect(findPosition(notesModules, answers, NONE)).toEqual({
+      kind: 'reflect',
+      step: noteDetailField,
+      location: { in: 'repeatable', blockId: 'notes', recordIndex: 0 },
+    });
+  });
+
+  it('only the current (last) record\'s unreflected field is surfaced — an earlier, already-reflected record is left alone', () => {
+    const answers = makeAnswers({
+      repeatables: {
+        notes: [
+          { note_name: 'first', note_detail: 'first detail' },
+          { note_name: 'second', note_detail: 'second detail' },
+        ],
+      },
+      reflectedAt: { 'notes#0#note_detail': '2020-01-01T00:00:00.000Z' }, // record 0 reflected; record 1 is not
+    });
+    expect(findPosition(notesModules, answers, NONE)).toEqual({
+      kind: 'reflect',
+      step: noteDetailField,
+      location: { in: 'repeatable', blockId: 'notes', recordIndex: 1 },
+    });
+  });
+
+  it('end-to-end: answer -> reflect -> Keep advances past the question', () => {
+    let answers = makeAnswers();
+    expect(findPosition(reflectModules, answers, NONE).kind).toBe('step');
+
+    answers = applyAnswer(answers, reflectStep, { in: 'top' }, 'my raw answer');
+    expect(findPosition(reflectModules, answers, NONE)).toEqual({
+      kind: 'reflect',
+      step: reflectStep,
+      location: { in: 'top' },
+    });
+
+    answers = applyReflect(answers, reflectStep, { in: 'top' }, 'my raw answer'); // Keep commits the raw text as-is
+    expect(findPosition(reflectModules, answers, NONE)).toEqual({ kind: 'done' });
+  });
+
+  it('end-to-end: "Say it again" (a plain re-answer) does not stamp reflectedAt, so it returns to reflect with the new draft', () => {
+    let answers = makeAnswers();
+    answers = applyAnswer(answers, reflectStep, { in: 'top' }, 'first draft');
+    expect(findPosition(reflectModules, answers, NONE).kind).toBe('reflect');
+
+    answers = applyAnswer(answers, reflectStep, { in: 'top' }, 'second draft'); // redo, not applyReflect
+    expect(findPosition(reflectModules, answers, NONE)).toEqual({
+      kind: 'reflect',
+      step: reflectStep,
+      location: { in: 'top' },
+    });
+    expect(existingValue(answers, reflectStep, { in: 'top' })).toBe('second draft');
+    expect(answers.reflectedAt.q_reflect).toBeUndefined();
+  });
+});
+
+describe('applyReflect', () => {
+  it('writes the final value into values and stamps reflectedAt for a top-level field, leaving answeredAt untouched', () => {
+    const answers = makeAnswers({
+      values: { q_reflect: 'raw' },
+      answeredAt: { q_reflect: '2020-01-01T00:00:00.000Z' },
+    });
+    const result = applyReflect(answers, reflectStep, { in: 'top' }, 'tightened text');
+    expect(result.values.q_reflect).toBe('tightened text');
+    expect(typeof result.reflectedAt.q_reflect).toBe('string');
+    expect(result.answeredAt.q_reflect).toBe('2020-01-01T00:00:00.000Z'); // untouched
+  });
+
+  it('writes into the right repeatable record and stamps the compound reflectedAt key, without disturbing other records', () => {
+    const answers = makeAnswers({
+      repeatables: {
+        notes: [
+          { note_name: 'a', note_detail: 'raw' },
+          { note_name: 'b', note_detail: 'raw2' },
+        ],
+      },
+    });
+    const result = applyReflect(answers, noteDetailField, { in: 'repeatable', blockId: 'notes', recordIndex: 1 }, 'tightened2');
+    expect(result.repeatables.notes).toEqual([
+      { note_name: 'a', note_detail: 'raw' },
+      { note_name: 'b', note_detail: 'tightened2' },
+    ]);
+    expect(Object.keys(result.reflectedAt)).toEqual(['notes#1#note_detail']);
+  });
+
+  it('Keep round-trips the raw text byte-identically — same string, untrimmed, whitespace and all', () => {
+    const raw = '  two  spaces, trailing punctuation, and a newline\n';
+    let answers = makeAnswers();
+    answers = applyAnswer(answers, reflectStep, { in: 'top' }, raw);
+    expect(existingValue(answers, reflectStep, { in: 'top' })).toBe(raw); // what the reflect screen plays back
+    answers = applyReflect(answers, reflectStep, { in: 'top' }, raw); // Keep commits exactly that
+    expect(answers.values.q_reflect).toBe(raw);
   });
 });

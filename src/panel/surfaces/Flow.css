@@ -92,3 +92,16 @@
   text-align: center;
   min-height: 240px;
 }
+
+/* R1-07 reflect step */
+.flow .readonly {
+  margin: 4px 0 18px;
+}
+.flow-reflect-actions {
+  display: grid;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.flow-reflect-actions .btn {
+  width: 100%;
+}

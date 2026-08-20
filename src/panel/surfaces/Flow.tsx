@@ -1,12 +1,13 @@
 import { useEffect, useState } from 'react';
 import type { KeyboardEvent } from 'react';
-import { Button, Field, PillGroup } from '../components';
+import { Button, Field, PillGroup, ReadOnlyBlock } from '../components';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import {
   findPosition,
   applyAnswer,
   applySkip,
+  applyReflect,
   applyAddAnother,
   reconcileSeededRepeatable,
   findSeedTarget,
@@ -25,7 +26,7 @@ export interface FlowProps {
   modules: Module[];
 }
 
-const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {} };
+const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
 
 function positionKey(position: Position): string {
   if (position.kind === 'done') return 'done';
@@ -174,12 +175,14 @@ function StepView({
   onAddAnotherDecision,
 }: StepViewProps) {
   const [draftValues, setDraftValues] = useState<string[]>(() => {
-    if (pos.kind !== 'step' || pos.step.kind === 'text') return [];
+    if (pos.kind === 'add-another' || pos.step.kind === 'text') return [];
     const existing = existingValue(answers, pos.step, pos.location);
     return Array.isArray(existing) ? existing : typeof existing === 'string' ? [existing] : [];
   });
+  // Doubles as the reflect screen's "Say it again" draft — pre-filled with
+  // the already-typed raw text so redoing edits it instead of starting over.
   const [draftText, setDraftText] = useState(() => {
-    if (pos.kind !== 'step' || pos.step.kind !== 'text') return '';
+    if (pos.kind === 'add-another' || pos.step.kind !== 'text') return '';
     const existing = existingValue(answers, pos.step, pos.location);
     return typeof existing === 'string' ? existing : '';
   });
@@ -188,6 +191,12 @@ function StepView({
   const [customText, setCustomText] = useState('');
   const [customOptions, setCustomOptions] = useState<Option[]>([]);
   const [pendingError, setPendingError] = useState<string | null>(null);
+  // Reflect-only sub-screens — never persisted, never part of Position (see
+  // core/flow/runner.ts's comment on why position is always derived, never
+  // stored): 'view' plays the raw answer back, 'tighten' shows the AI prompt
+  // and takes the pasted result, 'edit' is "Say it again"'s plain text field.
+  const [reflectMode, setReflectMode] = useState<'view' | 'tighten' | 'edit'>('view');
+  const [tightenedDraft, setTightenedDraft] = useState('');
 
   const ctx: FlowContext = { answers: answers.values, repeatables: answers.repeatables };
   const saveNote = (
@@ -311,6 +320,158 @@ function StepView({
           {saveNote}
         </footer>
       </form>
+    );
+  }
+
+  if (pos.kind === 'reflect') {
+    const { step, location } = pos;
+    // Read fresh from `answers`, not `draftText` — `draftText` is the redo
+    // field's own editable buffer, and diverges from the committed answer
+    // the moment "Say it again" is opened and abandoned via Back without
+    // resubmitting. The reflect/tighten screens must always play back what
+    // is actually stored, byte-identical, regardless of that buffer's state.
+    const existing = existingValue(answers, step, location);
+    const raw = typeof existing === 'string' ? existing : '';
+    const builtPrompt = step.interpret?.buildPrompt?.(raw, ctx) ?? raw;
+
+    function backToView() {
+      setReflectMode('view');
+      setPendingError(null);
+    }
+
+    function commitKeep() {
+      onCommit(applyReflect(answers, step, location, raw));
+    }
+
+    function commitTightened() {
+      const text = tightenedDraft.trim();
+      if (!text) {
+        setPendingError(S.reflectNeedPaste);
+        return;
+      }
+      onCommit(applyReflect(answers, step, location, tightenedDraft));
+    }
+
+    function submitRedo() {
+      const isEmpty = draftText.trim() === '';
+      const required = step.required !== false;
+      if (required && isEmpty) {
+        setPendingError(errorFor(step));
+        return;
+      }
+      backToView();
+      // applyAnswer, not applyReflect — a retyped answer is unreflected
+      // again by design, so it comes back through this same screen.
+      onCommit(applyAnswer(answers, step, location, isEmpty ? null : draftText));
+    }
+
+    if (reflectMode === 'tighten') {
+      return (
+        <div className="flow" data-position="reflect" data-step-id={step.id}>
+          {errorBanner}
+          <p className="flow-eyebrow">{eyebrow}</p>
+          <h2 className="flow-q">{S.reflectTighten}</h2>
+          <ReadOnlyBlock tag={S.reflectPromptTag}>{builtPrompt}</ReadOnlyBlock>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              commitTightened();
+            }}
+          >
+            <div className="flow-field-sr-label">
+              <Field
+                id={`flow-${step.id}-tighten`}
+                label={S.reflectPasteLabel}
+                as="textarea"
+                value={tightenedDraft}
+                onChange={setTightenedDraft}
+                error={pendingError ?? undefined}
+              />
+            </div>
+            <footer className="flow-foot">
+              <Button type="button" variant="secondary" onClick={backToView}>
+                {S.back}
+              </Button>
+              <Button type="submit" variant="primary">
+                {S.reflectUseThis}
+              </Button>
+              {saveNote}
+            </footer>
+          </form>
+        </div>
+      );
+    }
+
+    if (reflectMode === 'edit') {
+      const questionText = resolvePhrase(step.q, ctx);
+      return (
+        <form
+          className="flow"
+          data-position="reflect"
+          data-step-id={step.id}
+          onSubmit={(e) => {
+            e.preventDefault();
+            submitRedo();
+          }}
+        >
+          {errorBanner}
+          <p className="flow-eyebrow">{eyebrow}</p>
+          <h2 className="flow-q">{questionText}</h2>
+          {step.hint && <p className="flow-hint">{step.hint}</p>}
+          <div className="flow-field-sr-label">
+            <Field
+              id={`flow-${step.id}`}
+              label={questionText}
+              as={step.multiline ? 'textarea' : 'input'}
+              value={draftText}
+              onChange={setDraftText}
+              placeholder={step.ph}
+              error={pendingError ?? undefined}
+            />
+          </div>
+          <footer className="flow-foot">
+            <Button type="button" variant="secondary" onClick={backToView}>
+              {S.back}
+            </Button>
+            <Button type="submit" variant="primary">
+              {S.next}
+            </Button>
+            <Button type="button" variant="quiet" onClick={() => onCommit(applySkip(answers, step, location))}>
+              {S.skip}
+            </Button>
+            {saveNote}
+          </footer>
+        </form>
+      );
+    }
+
+    return (
+      <div className="flow" data-position="reflect" data-step-id={step.id}>
+        {errorBanner}
+        <p className="flow-eyebrow">{eyebrow}</p>
+        <h2 className="flow-q">{S.reflectHeading}</h2>
+        <p className="flow-hint">{S.reflectSub}</p>
+        <ReadOnlyBlock tag={step.interpret?.reflectPrefix ?? ''}>{raw}</ReadOnlyBlock>
+        <div className="flow-reflect-actions">
+          <Button type="button" variant="primary" onClick={commitKeep}>
+            {S.reflectKeep}
+          </Button>
+          <Button type="button" variant="ai" onClick={() => setReflectMode('tighten')}>
+            {S.reflectTighten}
+          </Button>
+          <Button type="button" variant="quiet" onClick={() => setReflectMode('edit')}>
+            {S.reflectRedo}
+          </Button>
+        </div>
+        <footer className="flow-foot">
+          {canGoBack && (
+            <Button type="button" variant="secondary" onClick={onBack}>
+              {S.back}
+            </Button>
+          )}
+          {saveNote}
+        </footer>
+      </div>
     );
   }
 

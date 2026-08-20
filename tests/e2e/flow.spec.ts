@@ -43,10 +43,21 @@ async function openPanel(context: BrowserContext): Promise<Page> {
  * identically (two pills, Yes/No) but is marked `data-position="add-another"`
  * specifically so this can choose "No" there instead, via one ArrowRight —
  * bounding every open-ended repeatable to exactly one record.
+ *
+ * A text answer for one of the six interpret-bearing questions (R1-07) lands
+ * on the reflect screen — `data-position="reflect"` — instead of continuing;
+ * this generic walk always chooses "Keep it as-is" there, since exercising
+ * Tighten/Say-it-again byte-identically is reflect.spec.ts's own job, not
+ * this full-flow smoke pass's.
  */
 async function answerCurrentQuestion(page: Page): Promise<void> {
   const form = page.locator('.flow');
   const position = await form.getAttribute('data-position');
+
+  if (position === 'reflect') {
+    await page.getByRole('button', { name: 'Keep it as-is', exact: true }).click();
+    return;
+  }
 
   const textarea = page.locator('.flow textarea');
   const textInput = page.locator('.flow input.field');
@@ -76,9 +87,11 @@ test.describe('Context interview — flow runner (R1-06)', () => {
     let guard = 0;
     // Generous cap: 38 top-level slots plus every repeatable field/add-another
     // this walk actually visits (entities: gate+4 fields+add-another=6;
-    // initiatives: gate+6 fields+add-another=8; roles: 4 seeded fields) —
-    // comfortably under 80 regardless of exact wording or field counts.
-    while (guard++ < 80) {
+    // initiatives: gate+6 fields+add-another=8; roles: 4 seeded fields), plus
+    // one extra "Keep it as-is" loop turn for each of the six interpret-
+    // bearing questions this walk passes through (R1-07) — comfortably under
+    // 100 regardless of exact wording or field counts.
+    while (guard++ < 100) {
       if (await page.locator('.flow-done').count()) break;
       const stepId = await page.locator('.flow').getAttribute('data-step-id');
       if (stepId) visited.add(stepId);

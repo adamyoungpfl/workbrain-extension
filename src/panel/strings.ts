@@ -54,6 +54,10 @@ export const S = {
   reflectKeep: 'Keep it as-is',
   reflectTighten: 'Tighten it with my AI',
   reflectRedo: 'Say it again',
+  reflectPromptTag: 'Ask your AI this',
+  reflectPasteLabel: 'Paste what it says here',
+  reflectNeedPaste: 'Paste what your AI said, or go back and keep your own words.',
+  reflectUseThis: 'Use this instead',
 
   // ---------------------------------------------------------------- the proof
   // The prompts themselves are ported — see docs/CONTENT-SOURCES.md, R1-11.

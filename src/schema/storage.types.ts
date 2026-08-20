@@ -10,6 +10,14 @@ export interface Answers {
    * field key would collide across records. This is what freshness clocks
    * read. See docs/ARCHITECTURE.md, "wb:answers, precisely". */
   answeredAt: Record<string, string>;
+  /** R1-07 reflect step. Same key convention as `answeredAt` (plain key at
+   * top level, `${blockId}#${recordIndex}#${fieldKey}` inside a repeatable).
+   * A text question with `interpret` set is answered-but-not-yet-reflected
+   * when its key is in `values`/the record but not in here — that state is
+   * what resumes into the reflect screen on a fresh mount instead of being
+   * treated as done. Set once the person picks Keep or Tighten; never set
+   * by Skip, since there is nothing typed to play back. */
+  reflectedAt: Record<string, string>;
 }
 
 export interface Skill {

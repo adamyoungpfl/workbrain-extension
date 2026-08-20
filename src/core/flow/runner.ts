@@ -13,6 +13,7 @@ export type StepLocation = { in: 'top' } | { in: 'repeatable'; blockId: string; 
 
 export type Position =
   | { kind: 'step'; step: Step; location: StepLocation }
+  | { kind: 'reflect'; step: Step; location: StepLocation }
   | { kind: 'add-another'; block: RepeatableBlock; recordIndex: number }
   | { kind: 'done' };
 
@@ -23,8 +24,55 @@ function storageKeyFor(step: Step): string {
   return step.key ?? step.id;
 }
 
-function firstMissingField(fields: Step[], record: Record<string, AnswerValue>): Step | undefined {
-  return fields.find((f) => !(storageKeyFor(f) in record));
+/** `answeredAt`/`reflectedAt`'s shared key convention: plain at top level,
+ * compound inside a repeatable (a plain field key would collide across
+ * records). Only `applyAnswer`, `applyReflect` and `findPosition` need this. */
+function compoundKey(blockId: string, recordIndex: number, key: string): string {
+  return `${blockId}#${recordIndex}#${key}`;
+}
+
+/** What's left to do for one field, given the record it lives in (top-level
+ * `ctx.answers`, or one repeatable record). `undefined` means fully done —
+ * answered, and reflected if it needs to be. A text field with `interpret`
+ * set that has a typed (non-null) value but no `reflectedAt` entry yet is
+ * "reflect", not "done": R1-07's whole point is that such an answer resumes
+ * into the reflect screen on a fresh mount rather than being skipped past.
+ * An explicitly skipped field (`null`, via applySkip) never needs reflecting
+ * — there is nothing typed to play back. */
+function actionFor(
+  step: Step,
+  record: Record<string, AnswerValue>,
+  reflectKey: string,
+  answers: Answers,
+): 'step' | 'reflect' | undefined {
+  const key = storageKeyFor(step);
+  if (!(key in record)) return 'step';
+  const value = record[key];
+  if (step.kind === 'text' && step.interpret && typeof value === 'string' && !(reflectKey in answers.reflectedAt)) {
+    return 'reflect';
+  }
+  return undefined;
+}
+
+function positionFor(action: 'step' | 'reflect', step: Step, location: StepLocation): Position {
+  return action === 'reflect' ? { kind: 'reflect', step, location } : { kind: 'step', step, location };
+}
+
+/** The first field in a repeatable's current record still needing action —
+ * either unanswered, or answered-but-unreflected. Mirrors `actionFor` but
+ * walks a whole record's fields, computing each one's compound reflect key. */
+function nextFieldAction(
+  fields: Step[],
+  record: Record<string, AnswerValue>,
+  blockId: string,
+  recordIndex: number,
+  answers: Answers,
+): { action: 'step' | 'reflect'; step: Step } | undefined {
+  for (const f of fields) {
+    const action = actionFor(f, record, compoundKey(blockId, recordIndex, storageKeyFor(f)), answers);
+    if (action) return { action, step: f };
+  }
+  return undefined;
 }
 
 export function findPosition(
@@ -42,15 +90,15 @@ export function findPosition(
 
         if (records.length === 0) {
           if (node.seedFrom) continue; // nothing seeded yet — nothing to ask here
-          const first = firstMissingField(node.fields, {});
-          if (!first) continue; // a repeatable with no fields shouldn't happen, but don't hang on it
-          return { kind: 'step', step: first, location: { in: 'repeatable', blockId: node.id, recordIndex: 0 } };
+          const result = nextFieldAction(node.fields, {}, node.id, 0, answers);
+          if (!result) continue; // a repeatable with no fields shouldn't happen, but don't hang on it
+          return positionFor(result.action, result.step, { in: 'repeatable', blockId: node.id, recordIndex: 0 });
         }
 
         const lastIndex = records.length - 1;
-        const missing = firstMissingField(node.fields, records[lastIndex]!);
-        if (missing) {
-          return { kind: 'step', step: missing, location: { in: 'repeatable', blockId: node.id, recordIndex: lastIndex } };
+        const result = nextFieldAction(node.fields, records[lastIndex]!, node.id, lastIndex, answers);
+        if (result) {
+          return positionFor(result.action, result.step, { in: 'repeatable', blockId: node.id, recordIndex: lastIndex });
         }
         if (node.seedFrom) continue; // every seeded record is complete — move on
         if (declinedBlocks.has(node.id)) continue; // said "no more" this session — move on
@@ -58,7 +106,9 @@ export function findPosition(
       }
 
       if (node.skipIf?.(ctx)) continue;
-      if (!(storageKeyFor(node) in ctx.answers)) return { kind: 'step', step: node, location: { in: 'top' } };
+      const key = storageKeyFor(node);
+      const action = actionFor(node, ctx.answers, key, answers);
+      if (action) return positionFor(action, node, { in: 'top' });
     }
   }
   return { kind: 'done' };
@@ -87,7 +137,7 @@ export function topLevelIndex(modules: Module[], position: Position): number {
   return n;
 }
 
-function positionNodeId(position: Extract<Position, { kind: 'step' }>): string {
+function positionNodeId(position: Extract<Position, { kind: 'step' | 'reflect' }>): string {
   return position.location.in === 'top' ? position.step.id : position.location.blockId;
 }
 
@@ -128,7 +178,7 @@ export function applyAnswer(answers: Answers, step: Step, location: StepLocation
   return {
     ...answers,
     repeatables: { ...answers.repeatables, [blockId]: nextRecords },
-    answeredAt: { ...answers.answeredAt, [`${blockId}#${recordIndex}#${key}`]: at },
+    answeredAt: { ...answers.answeredAt, [compoundKey(blockId, recordIndex, key)]: at },
   };
 }
 
@@ -136,6 +186,34 @@ export function applyAnswer(answers: Answers, step: Step, location: StepLocation
  * `null` is already a valid AnswerValue; nothing new needed to represent it. */
 export function applySkip(answers: Answers, step: Step, location: StepLocation): Answers {
   return applyAnswer(answers, step, location, null);
+}
+
+/** R1-07: commits the reflect step's final choice — the raw text unchanged
+ * (Keep) or the person's pasted, AI-tightened result (Tighten) — and stamps
+ * `reflectedAt` so `findPosition` stops routing this question back through
+ * the reflect screen. Deliberately separate from `applyAnswer`: a plain
+ * re-answer (e.g. "Say it again") must NOT stamp `reflectedAt`, or the
+ * retyped text would skip the reflect screen it's meant to go through. */
+export function applyReflect(answers: Answers, step: Step, location: StepLocation, finalValue: string): Answers {
+  const key = storageKeyFor(step);
+  const at = new Date().toISOString();
+
+  if (location.in === 'top') {
+    return {
+      ...answers,
+      values: { ...answers.values, [key]: finalValue },
+      reflectedAt: { ...answers.reflectedAt, [key]: at },
+    };
+  }
+
+  const { blockId, recordIndex } = location;
+  const nextRecords = [...(answers.repeatables[blockId] ?? [])];
+  nextRecords[recordIndex] = { ...nextRecords[recordIndex], [key]: finalValue };
+  return {
+    ...answers,
+    repeatables: { ...answers.repeatables, [blockId]: nextRecords },
+    reflectedAt: { ...answers.reflectedAt, [compoundKey(blockId, recordIndex, key)]: at },
+  };
 }
 
 export function applyAddAnother(answers: Answers, blockId: string, wantsMore: boolean): Answers {
