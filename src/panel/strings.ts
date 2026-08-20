@@ -42,6 +42,11 @@ export const S = {
   rephrase: 'Ask me that a different way',
   addYourOwn: '+ add your own',
   addYourOwnPrompt: 'What should it say?',
+  addYourOwnConfirm: 'Add',
+  yes: 'Yes',
+  no: 'No',
+  // Provisional — the real end state is the file itself (R1-09) and the proof loop (R1-11).
+  flowDone: "That's every question, for now.",
 
   // ---------------------------------------------------------------- reflect
   reflectHeading: "Here's what I've got.",
@@ -117,6 +122,7 @@ export const S = {
   // Every one names the next action. None of them apologise.
   errNeedName: 'Add a name so the file has something to call you. First name is plenty.',
   errPickOne: 'Pick one to keep going, or skip this question.',
+  errNeedAnswer: 'Answer this to keep going, or skip it.',
   errSaveFailed: 'That did not save. Try once more, or download your file to be safe.',
   errFileUnreadable: 'I could not read that file. Pick the Context.md you downloaded from here.',
   errFileWrongKind: 'That looks like a different kind of file. Look for one ending in .md.',

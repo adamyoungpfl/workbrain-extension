@@ -238,4 +238,9 @@ describe('adaptContextFlow — verbatim spot-checks (hand-copied from the source
     expect(entities?.addAnotherPrompt).toBe('Want to tell AI about another person, team, tool, or process?');
     expect(entities?.seedFrom).toBeUndefined();
   });
+
+  it('carries multiline through for textareas and leaves single-line text questions unset', () => {
+    expect(byId('stop_explaining').multiline).toBe(true);
+    expect(byId('preferred_name').multiline).toBeUndefined();
+  });
 });

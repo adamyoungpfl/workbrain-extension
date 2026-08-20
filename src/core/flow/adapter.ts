@@ -101,6 +101,7 @@ function adaptQuestion(
   if (question.hint !== undefined) step.hint = question.hint;
   if (question.options) step.options = question.options.map(adaptOption);
   if (question.placeholder !== undefined) step.ph = question.placeholder;
+  if (question.multiline !== undefined) step.multiline = question.multiline;
   if (question.skipIf) step.skipIf = question.skipIf;
   if (question.required !== undefined) step.required = question.required;
   if (question.interpret) step.interpret = question.interpret;

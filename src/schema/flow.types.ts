@@ -77,6 +77,8 @@ export interface Step {
   options?: Option[];
   ph?: string;
   prefill?: string;
+  /** text only: textarea vs a single-line input */
+  multiline?: boolean;
   /** Branching: return true to skip this node entirely, evaluated against answers so far. */
   skipIf?: (ctx: FlowContext) => boolean;
   /** Default true — false renders a visible Skip. How a runner uses this isn't decided by this schema. */

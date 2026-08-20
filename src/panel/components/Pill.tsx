@@ -1,5 +1,6 @@
 import { forwardRef, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, KeyboardEvent } from 'react';
+import { S } from '../strings';
 import './Pill.css';
 
 export interface PillProps extends ButtonHTMLAttributes<HTMLButtonElement> {
@@ -128,7 +129,7 @@ export function PillGroup({ legend, options, mode, value, onChange, onAddOwn }: 
           onFocus={() => setRovingIndex(options.length)}
           onKeyDown={(e) => handleKeyDown(e, options.length)}
         >
-          + add your own
+          {S.addYourOwn}
         </button>
       )}
     </div>

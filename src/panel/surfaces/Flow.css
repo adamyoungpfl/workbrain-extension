@@ -1,0 +1,94 @@
+.flow {
+  display: flex;
+  flex-direction: column;
+  padding: 20px 18px;
+  gap: 4px;
+}
+
+.flow-eyebrow {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0 0 10px;
+}
+
+.flow-q {
+  font-size: 22px;
+  line-height: 1.25;
+  letter-spacing: -0.018em;
+  font-weight: 660;
+  margin: 0 0 8px;
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.flow-hint {
+  font-size: 14px;
+  color: var(--ink-2);
+  margin: 0 0 18px;
+}
+
+/* The visible flow-q heading already carries the question; the Field's own
+   label would otherwise repeat it — kept for a real programmatic label
+   (screen readers still get it), hidden visually. Standard sr-only pattern. */
+.flow-field-sr-label .field-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+  padding: 0;
+  margin: -1px;
+}
+
+.flow-custom {
+  display: flex;
+  align-items: flex-end;
+  gap: 10px;
+  margin-top: 12px;
+}
+.flow-custom .flow-field-sr-label {
+  flex: 1;
+}
+
+.flow-rephrase {
+  align-self: flex-start;
+  padding-left: 0;
+  margin-top: 14px;
+}
+
+.flow-error {
+  font-size: 13px;
+  color: var(--danger);
+  margin-top: 10px;
+}
+
+.flow-foot {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 28px;
+  padding-top: 16px;
+  border-top: 1px solid var(--divider);
+}
+
+.flow-save {
+  margin-left: auto;
+  font-size: 11.5px;
+  color: var(--ink-3);
+  text-align: right;
+  line-height: 1.35;
+  display: flex;
+  flex-direction: column;
+}
+
+.flow-done {
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 240px;
+}
