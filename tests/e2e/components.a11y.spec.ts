@@ -11,6 +11,9 @@ test.describe('component harness — accessibility', () => {
   });
 
   test('axe finds no violations with the sheet open', async ({ page }) => {
+    // Force reduced motion so the scan reads the settled state, not a
+    // mid-slide-up-animation frame with transiently blended contrast.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/harness.html');
     await page.getByRole('button', { name: 'Open sheet' }).click();
     await expect(page.getByRole('dialog')).toBeVisible();
@@ -19,6 +22,8 @@ test.describe('component harness — accessibility', () => {
   });
 
   test('every control is at least 44x44, including icon buttons and pills', async ({ page }) => {
+    // Reduced motion avoids measuring mid-slide-up-transform geometry.
+    await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.goto('/harness.html');
     await page.getByRole('button', { name: 'Open sheet' }).click();
     const controls = page.locator('button, input, textarea, [role="group"] .pill');

@@ -1,0 +1,138 @@
+import { describe, it, expect, vi } from 'vitest';
+import type { Migration } from '../../schema/storage.types';
+import type { StorageBackend } from './client';
+import { getLocal, setLocal, getSync, setSync, initStorage } from './client';
+
+/**
+ * client.ts is core/storage's one deliberate exception to the "no chrome.*"
+ * rule (see the module's own header comment), kept testable by taking its
+ * backend as an injected parameter — so these tests never mock chrome.*.
+ */
+function fakeBackend(seed: Record<string, unknown> = {}): StorageBackend {
+  const store: Record<string, unknown> = { ...seed };
+  return {
+    get: async (keys) => Object.fromEntries(keys.filter((k) => k in store).map((k) => [k, store[k]])),
+    set: async (items) => {
+      Object.assign(store, items);
+    },
+  };
+}
+
+describe('getLocal / setLocal', () => {
+  it('round-trips a value through the backend', async () => {
+    const backend = fakeBackend();
+    await setLocal('wb:skills', [{ id: '1', title: 't', body: 'b', source: 'self', addedAt: 'now' }], backend);
+    const result = await getLocal('wb:skills', backend);
+    expect(result).toEqual([{ id: '1', title: 't', body: 'b', source: 'self', addedAt: 'now' }]);
+  });
+
+  it('returns undefined for a key that was never set', async () => {
+    const backend = fakeBackend();
+    expect(await getLocal('wb:skills', backend)).toBeUndefined();
+  });
+
+  it('setLocal never throws — a failed write reports ok:false instead', async () => {
+    const backend: StorageBackend = {
+      get: async () => ({}),
+      set: async () => {
+        throw new Error('quota exceeded');
+      },
+    };
+    const result = await setLocal('wb:skills', [], backend);
+    expect(result).toEqual({ ok: false, reason: 'quota exceeded' });
+  });
+});
+
+describe('getSync / setSync', () => {
+  it('round-trips prefs through the backend', async () => {
+    const backend = fakeBackend();
+    const prefs = {
+      narrator: false,
+      mic: false,
+      reducedMotion: 'system' as const,
+      handoff: 'manual' as const,
+      packUrls: [],
+    };
+    await setSync('wb:prefs', prefs, backend);
+    expect(await getSync('wb:prefs', backend)).toEqual(prefs);
+  });
+});
+
+describe('initStorage', () => {
+  it('a fresh install writes meta at the current schema version and never calls exportBeforeMigrate', async () => {
+    const backend = fakeBackend();
+    const exportBeforeMigrate = vi.fn();
+    const result = await initStorage({ exportBeforeMigrate, backend });
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('unreachable');
+    expect(result.data.schemaVersion).toBe(1);
+    expect(new Date(result.data.installedAt).toString()).not.toBe('Invalid Date');
+    expect(exportBeforeMigrate).not.toHaveBeenCalled();
+    expect(await getLocal('wb:meta', backend)).toEqual(result.data);
+  });
+
+  it('already at the current version: returns the existing meta and writes nothing back', async () => {
+    const meta = { schemaVersion: 1, installedAt: '2020-01-01T00:00:00.000Z' };
+    const backend = fakeBackend({ 'wb:meta': meta });
+    const setSpy = vi.spyOn(backend, 'set');
+    const result = await initStorage({ exportBeforeMigrate: () => {}, backend });
+    expect(result).toEqual({ ok: true, data: meta });
+    expect(setSpy).not.toHaveBeenCalled();
+  });
+
+  it('behind the current version: migrates, exports the pre-migration snapshot first, and writes the migrated state back under the same keys', async () => {
+    // SCHEMA_VERSION is really 1, so "behind" here means schemaVersion 0 —
+    // the fixture migration bridges 0 -> 1, matching the real target.
+    const oldMeta = { schemaVersion: 0, installedAt: '2020-01-01T00:00:00.000Z' };
+    const backend = fakeBackend({
+      'wb:meta': oldMeta,
+      'wb:answers': { values: { name: 'old' }, repeatables: {}, answeredAt: {} },
+    });
+    const bumpTo1: Migration = {
+      to: 1,
+      up: (s) => {
+        const state = s as Record<string, unknown>;
+        return {
+          ...state,
+          'wb:answers': { ...(state['wb:answers'] as object), migrated: true },
+        };
+      },
+    };
+    const snapshots: unknown[] = [];
+
+    const result = await initStorage({
+      exportBeforeMigrate: (s) => snapshots.push(s),
+      backend,
+      migrations: [bumpTo1],
+    });
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('unreachable');
+    expect(result.data.schemaVersion).toBe(1);
+    expect(result.data.installedAt).toBe(oldMeta.installedAt); // preserved, not reset
+
+    // exported before anything changed
+    expect((snapshots[0] as Record<string, unknown>)['wb:meta']).toEqual(oldMeta);
+
+    const answers = await getLocal('wb:answers', backend);
+    expect(answers).toEqual({ values: { name: 'old' }, repeatables: {}, answeredAt: {}, migrated: true });
+    expect(await getLocal('wb:meta', backend)).toEqual(result.data);
+  });
+
+  it('a migration failure reports why and leaves existing storage untouched', async () => {
+    const oldMeta = { schemaVersion: 0, installedAt: '2020-01-01T00:00:00.000Z' };
+    const backend = fakeBackend({ 'wb:meta': oldMeta, 'wb:answers': { values: { name: 'old' } } });
+    const broken: Migration = {
+      to: 1,
+      up: () => {
+        throw new Error('bad shape');
+      },
+    };
+
+    const result = await initStorage({ exportBeforeMigrate: () => {}, backend, migrations: [broken] });
+
+    expect(result).toEqual({ ok: false, reason: 'migration to schema v1 failed' });
+    // untouched — still the pre-migration meta, not partially advanced
+    expect(await getLocal('wb:meta', backend)).toEqual(oldMeta);
+  });
+});
