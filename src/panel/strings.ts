@@ -60,7 +60,10 @@ export const S = {
   reflectUseThis: 'Use this instead',
 
   // ---------------------------------------------------------------- the proof
-  // The prompts themselves are ported — see docs/CONTENT-SOURCES.md, R1-11.
+  // The prompts and per-service tips are ported — see docs/CONTENT-SOURCES.md,
+  // R1-11, and src/core/flow/proofSource.ts. Everything below is new panel
+  // chrome, not ported content — chip labels, field labels, and the score
+  // prompts are the interface's own words, never the AI's.
   proofHeading: "Let's prove it works.",
   proofSub: 'First a baseline: the same question, with nothing loaded.',
   proofPickAI: 'Which AI do you use most?',
@@ -75,6 +78,28 @@ export const S = {
   copyPrompt: 'Copy',
   copyToClipboard: 'Copy to clipboard',
   copied: 'Copied',
+  proofCta: 'Prove it works',
+  proofFinished: "That's the whole loop.",
+  // Chip labels for the service picker — key order matches
+  // manifest.config.ts's optional_host_permissions (chatgpt.com, claude.ai,
+  // gemini.google.com, copilot.microsoft.com), confirmed in
+  // proofAdapter.test.ts. Labels only — the attach instructions for each
+  // service are ported verbatim, see src/core/flow/proofSource.ts.
+  proofServiceOptions: [
+    { key: 'chatgpt', label: 'ChatGPT' },
+    { key: 'claude', label: 'Claude' },
+    { key: 'gemini', label: 'Gemini' },
+    { key: 'copilot', label: 'Copilot' },
+    { key: 'other', label: 'Something else' },
+  ] as const,
+  proofScoreBaselineLabel: 'Score for the first answer, out of 10',
+  proofScoreContextLabel: 'Score for the second answer, out of 10',
+  errNeedScore: 'Type a score from 0 to 10 for both answers, or skip this question.',
+  proofScoreDelta: (delta: number) => {
+    if (delta > 0) return `${delta} points higher with your file.`;
+    if (delta < 0) return `${Math.abs(delta)} points lower with your file.`;
+    return 'The same score either way.';
+  },
 
   // ---------------------------------------------------------------- the file
   fileContext: 'Context.md',

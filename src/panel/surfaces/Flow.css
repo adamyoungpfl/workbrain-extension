@@ -120,6 +120,16 @@
   margin: -1px;
 }
 
+/* R1-11 proof loop */
+.flow-scores {
+  display: grid;
+  gap: 14px;
+  margin-top: 14px;
+}
+.flow-scores input {
+  max-width: 120px;
+}
+
 /* R1-07 reflect step */
 .flow .readonly {
   margin: 4px 0 18px;

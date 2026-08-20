@@ -19,9 +19,14 @@ export type Position =
 
 /** A step's storage key. Most kinds key by their own id; `intro` has no `key`
  * (nothing to record) but still needs a mark that it was seen, or it would
- * be re-shown on every reopen — its own id serves that purpose. */
+ * be re-shown on every reopen — its own id serves that purpose. `gen` (R1-11
+ * proof loop) is the one kind whose paste-in destination is deliberately
+ * decoupled from its own id/key — `outKey` names where the generated
+ * prompt's pasted result is stored, distinct from `genKey` (which prompt to
+ * generate — resolved by the panel, not this module) — so it takes priority
+ * when present. */
 function storageKeyFor(step: Step): string {
-  return step.key ?? step.id;
+  return step.outKey ?? step.key ?? step.id;
 }
 
 /** `answeredAt`/`reflectedAt`'s shared key convention: plain at top level,

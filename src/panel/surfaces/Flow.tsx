@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import type { KeyboardEvent } from 'react';
+import type { KeyboardEvent, ReactNode } from 'react';
 import { Button, Field, PillGroup, ReadOnlyBlock } from '../components';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
@@ -16,15 +16,28 @@ import {
   topLevelIndex,
   moduleFor,
 } from '../../core/flow/runner';
-import type { Position } from '../../core/flow/runner';
+import type { Position, StepLocation } from '../../core/flow/runner';
+import {
+  promptFor,
+  attachHintFor,
+  PROOF_SCORE_BASELINE_KEY,
+  PROOF_SCORE_CONTEXT_KEY,
+  PROOF_GRADE_TEXT_KEY,
+  PROOF_SERVICE_KEY,
+} from '../../core/flow/proofAdapter';
+import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
 import type { AnswerValue, FlowContext, Module, Option, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import { S } from '../strings';
-import { FlowDone } from './FlowDone';
 import './Flow.css';
 
 export interface FlowProps {
   modules: Module[];
+  /** What to show once every step in `modules` is answered. Each flow owns
+   * its own — the Context flow's is Context.md generate/download/import
+   * (R1-09/R1-10, see App.tsx), and that machinery has no meaning for the
+   * proof loop (R1-11) or any future flow, so `Flow` no longer hardcodes it. */
+  renderDone: (answers: Answers, persist: (next: Answers) => Promise<boolean>) => ReactNode;
 }
 
 const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
@@ -42,8 +55,26 @@ function resolvePhrase(phrase: Step['q'], ctx: FlowContext): string {
 
 function errorFor(step: Step): string {
   if (step.id === 'preferred_name') return S.errNeedName;
-  if (step.kind === 'text') return S.errNeedAnswer;
+  if (step.kind === 'text' || step.kind === 'gen') return S.errNeedAnswer;
   return S.errPickOne;
+}
+
+/** R1-11: which paste-in label a `kind: 'gen'` step shows — switches on
+ * `genKey` the same way `errorFor` above switches on a step's own id, since
+ * neither is worth a new Step field just for one flow's three variants. */
+function pasteLabelFor(step: Step): string {
+  if (step.genKey === 'withContext') return S.proofPaste2;
+  if (step.genKey === 'grade') return S.proofPaste3;
+  return S.proofPaste1; // 'baseline'
+}
+
+/** A synthetic top-level Step whose only real purpose is naming a storage
+ * key — used to persist the grade step's two score sub-fields through the
+ * same `applyAnswer` every other answer goes through, without adding a
+ * second Step-shaped thing to the proof module's own data for two numbers
+ * that are genuinely part of one screen, not two more questions. */
+function scoreSubStep(key: string): Step {
+  return { id: key, module: 0, section: -1, eyebrow: '', q: '', kind: 'text', key };
 }
 
 /**
@@ -54,7 +85,7 @@ function errorFor(step: Step): string {
  * everything specific to the question on screen lives in `StepView`, mounted
  * fresh per position via `key` — see its own comment for why.
  */
-export function Flow({ modules }: FlowProps) {
+export function Flow({ modules, renderDone }: FlowProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [declinedBlocks, setDeclinedBlocks] = useState<ReadonlySet<string>>(new Set());
   const [history, setHistory] = useState<Position[]>([]);
@@ -122,8 +153,7 @@ export function Flow({ modules }: FlowProps) {
             {S.errSaveFailed}
           </div>
         )}
-        <p className="flow-q">{S.flowDone}</p>
-        <FlowDone answers={ans} onImport={persist} />
+        {renderDone(ans, persist)}
       </div>
     );
   }
@@ -141,6 +171,30 @@ export function Flow({ modules }: FlowProps) {
       onCommit={(next) => handleCommit(position, next)}
       onAddAnotherDecision={(blockId, wantsMore) => handleAddAnotherDecision(position, blockId, wantsMore)}
     />
+  );
+}
+
+/**
+ * The proof loop's `kind: 'demo'` recommendations screen (R1-11) — relays
+ * whatever was pasted on the grade step back verbatim, read-only, and shows
+ * the score difference computed for display only (core/report/scoring.ts's
+ * `scoreDelta` — never persisted; only the with-context number itself was
+ * ever written to wb:report). If the grade step was skipped, there is
+ * nothing to relay or compute — this degrades to the heading/hint alone
+ * rather than showing an empty block or a stray "NaN".
+ */
+function DemoBody({ answers }: { answers: Answers }) {
+  const gradeText = answers.values[PROOF_GRADE_TEXT_KEY];
+  const baselineScore = answers.values[PROOF_SCORE_BASELINE_KEY];
+  const contextScore = answers.values[PROOF_SCORE_CONTEXT_KEY];
+  const hasGrade = typeof gradeText === 'string' && gradeText.trim() !== '';
+  const hasScores = typeof baselineScore === 'string' && typeof contextScore === 'string';
+
+  return (
+    <>
+      {hasScores && <p className="flow-hint">{S.proofScoreDelta(scoreDelta(Number(baselineScore), Number(contextScore)))}</p>}
+      {hasGrade && <ReadOnlyBlock tag={S.proofDoneSub}>{gradeText}</ReadOnlyBlock>}
+    </>
   );
 }
 
@@ -178,15 +232,34 @@ function StepView({
   onAddAnotherDecision,
 }: StepViewProps) {
   const [draftValues, setDraftValues] = useState<string[]>(() => {
-    if (pos.kind === 'add-another' || pos.step.kind === 'text') return [];
+    if (pos.kind === 'add-another' || pos.step.kind === 'text' || pos.step.kind === 'gen' || pos.step.kind === 'demo')
+      return [];
     const existing = existingValue(answers, pos.step, pos.location);
     return Array.isArray(existing) ? existing : typeof existing === 'string' ? [existing] : [];
   });
   // Doubles as the reflect screen's "Say it again" draft — pre-filled with
   // the already-typed raw text so redoing edits it instead of starting over.
+  // Also doubles as `kind: 'gen'`'s paste-in field (R1-11) — same "one free
+  // text buffer per step" shape, just a different storage key underneath
+  // (see runner.ts's `storageKeyFor`, which prefers `outKey` for `gen`).
   const [draftText, setDraftText] = useState(() => {
-    if (pos.kind === 'add-another' || pos.step.kind !== 'text') return '';
+    if (pos.kind === 'add-another' || (pos.step.kind !== 'text' && pos.step.kind !== 'gen')) return '';
     const existing = existingValue(answers, pos.step, pos.location);
+    return typeof existing === 'string' ? existing : '';
+  });
+  // R1-11: the grade step's two self-reported "out of 10" numbers. Not
+  // modelled as their own Steps — they're genuinely two fields on one
+  // screen, not two more questions — so they get their own draft state and
+  // are persisted via `scoreSubStep` (see above) alongside the pasted
+  // grade text on that one step's Next.
+  const [draftScoreBaseline, setDraftScoreBaseline] = useState(() => {
+    if (pos.kind === 'add-another' || pos.step.genKey !== 'grade') return '';
+    const existing = answers.values[PROOF_SCORE_BASELINE_KEY];
+    return typeof existing === 'string' ? existing : '';
+  });
+  const [draftScoreContext, setDraftScoreContext] = useState(() => {
+    if (pos.kind === 'add-another' || pos.step.genKey !== 'grade') return '';
+    const existing = answers.values[PROOF_SCORE_CONTEXT_KEY];
     return typeof existing === 'string' ? existing : '';
   });
   const [rephraseIndex, setRephraseIndex] = useState(0);
@@ -223,6 +296,41 @@ function StepView({
     onAddAnotherDecision(pos.block.id, draftValues[0] === 'yes');
   }
 
+  /** R1-11's grade step: the pasted grade text plus two required
+   * self-reported "out of 10" scores, all committed together. Writes
+   * exactly one `ScoreEntry` to `wb:report.scores` — the with-context
+   * number only, never the baseline number, never a computed delta (that's
+   * display-only, see core/report/scoring.ts) — and only the first time
+   * this step is actually completed, so navigating Back and resubmitting
+   * the same answers this session doesn't double the history. */
+  async function commitGrade(step: Step, location: StepLocation) {
+    const baselineNum = Number(draftScoreBaseline);
+    const contextNum = Number(draftScoreContext);
+    const validScore = (n: number) => Number.isFinite(n) && n >= 0 && n <= 10;
+
+    if (draftText.trim() === '') {
+      setPendingError(errorFor(step));
+      return;
+    }
+    if (draftScoreBaseline.trim() === '' || draftScoreContext.trim() === '' || !validScore(baselineNum) || !validScore(contextNum)) {
+      setPendingError(S.errNeedScore);
+      return;
+    }
+
+    const alreadyScored = typeof answers.values[PROOF_SCORE_CONTEXT_KEY] === 'string';
+
+    let next = applyAnswer(answers, step, location, draftText);
+    next = applyAnswer(next, scoreSubStep(PROOF_SCORE_BASELINE_KEY), location, String(baselineNum));
+    next = applyAnswer(next, scoreSubStep(PROOF_SCORE_CONTEXT_KEY), location, String(contextNum));
+    onCommit(next);
+
+    if (!alreadyScored) {
+      const existingReport = await getLocal('wb:report');
+      const entry = makeScoreEntry(contextNum, new Date().toISOString());
+      await setLocal('wb:report', appendScore(existingReport, entry));
+    }
+  }
+
   function handleNext() {
     if (pos.kind === 'add-another') {
       handleAddAnother();
@@ -230,15 +338,20 @@ function StepView({
     }
     const { step, location } = pos;
 
-    if (step.kind === 'intro') {
+    if (step.kind === 'intro' || step.kind === 'demo') {
       onCommit(applySkip(answers, step, location));
+      return;
+    }
+
+    if (step.kind === 'gen' && step.genKey === 'grade') {
+      void commitGrade(step, location);
       return;
     }
 
     const required = step.required !== false;
     let value: AnswerValue;
     let isEmpty: boolean;
-    if (step.kind === 'text') {
+    if (step.kind === 'text' || step.kind === 'gen') {
       value = draftText;
       isEmpty = draftText.trim() === '';
     } else {
@@ -484,7 +597,7 @@ function StepView({
   const questionText = resolvePhrase(rephraseIndex === 0 ? step.q : (rephrasings[rephraseIndex - 1] ?? step.q), ctx);
   const displayOptions =
     rephraseIndex === 0 ? step.options : (step.optionRephrasings?.[rephraseIndex - 1] ?? step.options);
-  const showSkip = step.kind !== 'intro';
+  const showSkip = step.kind !== 'intro' && step.kind !== 'demo';
 
   function cycleRephrase() {
     setRephraseIndex((i) => (i + 1) % (rephrasings.length + 1));
@@ -531,7 +644,60 @@ function StepView({
         </div>
       )}
 
-      {step.kind !== 'text' && step.kind !== 'intro' && (
+      {step.kind === 'gen' && (
+        <>
+          {step.genKey === 'withContext' && (
+            <p className="flow-hint">
+              {attachHintFor(typeof ctx.answers[PROOF_SERVICE_KEY] === 'string' ? (ctx.answers[PROOF_SERVICE_KEY] as string) : undefined)}
+            </p>
+          )}
+          <ReadOnlyBlock tag={S.proofAskThis}>{promptFor(step.genKey, ctx)}</ReadOnlyBlock>
+          <div className="flow-field-sr-label">
+            <Field
+              id={`flow-${step.id}-paste`}
+              label={pasteLabelFor(step)}
+              as="textarea"
+              value={draftText}
+              onChange={setDraftText}
+            />
+          </div>
+          {step.genKey === 'grade' && (
+            <div className="flow-scores">
+              <Field
+                id="flow-proof-score-baseline"
+                label={S.proofScoreBaselineLabel}
+                type="number"
+                min={0}
+                max={10}
+                step={0.5}
+                inputMode="decimal"
+                value={draftScoreBaseline}
+                onChange={setDraftScoreBaseline}
+              />
+              <Field
+                id="flow-proof-score-context"
+                label={S.proofScoreContextLabel}
+                type="number"
+                min={0}
+                max={10}
+                step={0.5}
+                inputMode="decimal"
+                value={draftScoreContext}
+                onChange={setDraftScoreContext}
+              />
+            </div>
+          )}
+          {pendingError && (
+            <div role="alert" className="flow-error">
+              {pendingError}
+            </div>
+          )}
+        </>
+      )}
+
+      {step.kind === 'demo' && <DemoBody answers={answers} />}
+
+      {step.kind !== 'text' && step.kind !== 'intro' && step.kind !== 'gen' && step.kind !== 'demo' && (
         <>
           <PillGroup
             legend={questionText}
