@@ -57,24 +57,45 @@
 .brainglobe-stop-glow  { stop-color: var(--globe-field-glow); }
 .brainglobe-stop-field { stop-color: var(--globe-field); }
 
-/* ── The spheres ─────────────────────────────────────────────────────────── */
+/* ── The orbs ────────────────────────────────────────────────────────────── */
 
-/* One shared highlight, five mid/deep pairs. The highlight stop is what makes
-   a node a lit sphere instead of a flat disc; its offset (34%/30%, set in the
-   component) puts the light source up and to the left of every one of them,
-   which is the only reason twelve separate gradients read as one scene. */
-.brainglobe-stop-hi { stop-color: var(--globe-highlight); }
+/* V1.4 VB-23. An answered node is ONE FLAT FILL. The V1.2 version was a
+   three-stop radial with a white specular dot, which at 12px read as a glass
+   bead rather than as something lit; a saturated solid on a near-black field
+   reads as a source. The bloom behind it (still a radial, below) is what makes
+   that legible, and it is doing the job the specular dot was pretending to.
 
+   Solid is not flat. Depth still moves the radius and the group's opacity in
+   the component, and `.brainglobe-shade` below sinks a far orb toward its own
+   deep colour, so the back of the solid recedes without a single node changing
+   shape. */
+.brainglobe-solid-1 { fill: var(--globe-node-1-solid); }
+.brainglobe-solid-2 { fill: var(--globe-node-2-solid); }
+.brainglobe-solid-3 { fill: var(--globe-node-3-solid); }
+.brainglobe-solid-4 { fill: var(--globe-node-4-solid); }
+.brainglobe-solid-5 { fill: var(--globe-node-5-solid); }
+
+/* The depth shade: the node's own deep colour, laid over the solid at an
+   opacity the component folds out of depth. Its own colour rather than a
+   neutral black, so a far orb is a darker version of itself and not a grey
+   version of everything. */
+.brainglobe-deep-1 { fill: var(--globe-node-1-deep); }
+.brainglobe-deep-2 { fill: var(--globe-node-2-deep); }
+.brainglobe-deep-3 { fill: var(--globe-node-3-deep); }
+.brainglobe-deep-4 { fill: var(--globe-node-4-deep); }
+.brainglobe-deep-5 { fill: var(--globe-node-5-deep); }
+
+/* The bloom's stops. The only radial gradients left in the picture. */
 .brainglobe-stop-mid-1  { stop-color: var(--globe-node-1-mid); }
-.brainglobe-stop-deep-1 { stop-color: var(--globe-node-1-deep); }
 .brainglobe-stop-mid-2  { stop-color: var(--globe-node-2-mid); }
-.brainglobe-stop-deep-2 { stop-color: var(--globe-node-2-deep); }
 .brainglobe-stop-mid-3  { stop-color: var(--globe-node-3-mid); }
-.brainglobe-stop-deep-3 { stop-color: var(--globe-node-3-deep); }
 .brainglobe-stop-mid-4  { stop-color: var(--globe-node-4-mid); }
-.brainglobe-stop-deep-4 { stop-color: var(--globe-node-4-deep); }
 .brainglobe-stop-mid-5  { stop-color: var(--globe-node-5-mid); }
-.brainglobe-stop-deep-5 { stop-color: var(--globe-node-5-deep); }
+
+/* V1.4 VB-23 — the joints. Faint enough that the orbs stay the subject:
+   `--globe-edge` at the stroke-opacity the component folds out of the
+   stagger, which tops out at 0.4. */
+.brainglobe-link { stroke: var(--globe-edge); }
 
 .brainglobe-edge-far  { stroke: var(--globe-edge-far); }
 .brainglobe-edge-near { stroke: var(--globe-edge); }
@@ -115,7 +136,7 @@
      overlay stays registered with the SVG at any rendered size. The translate
      puts the 44px hit circle's centre — not the button's top-left, and not the
      label — exactly on the node. */
-  transform: translate(-50%, calc(var(--target-min) / -2));
+  transform: translate(-50%, calc(max(var(--target-min), var(--brainglobe-hit-size, 0px)) / -2));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -145,8 +166,12 @@
    the twelve of them overlap into mush (docs/GUARDRAILS.md). */
 .brainglobe-hit {
   display: block;
-  width: var(--target-min);
-  height: var(--target-min);
+  /* 44px, or the orb itself once it is bigger than that — V1.4 VB-23's
+     featured sub-node is a ~60px circle, and a 44px square in the middle of it
+     would leave its rim looking clickable and not being. `max()` is what keeps
+     this a floor rather than a size. */
+  width: max(var(--target-min), var(--brainglobe-hit-size, 0px));
+  height: max(var(--target-min), var(--brainglobe-hit-size, 0px));
   border-radius: var(--r-pill);
   flex: none;
 }
@@ -215,6 +240,168 @@
 
 .brainglobe-pin.is-child .brainglobe-label {
   color: var(--globe-highlight);
+}
+
+/* ── The split's information panel ───────────────────────────────────────── */
+
+/* V1.4 VB-23. Picking a sub-node makes the stage two columns: the orb travels
+   to a feature position on the left (real geometry, in the component — see
+   FEATURE_X) and this opens beside it.
+
+   THE PROPORTIONS ARE MEASURED, NOT CHOSEN, and they were measured against
+   `2.1 Roles` with three roles — thirteen cells, the longest real sub-section
+   in the file (core/flow/nodeDetails.ts's own tests count them).
+
+   The stage is square, so it is 260px at the height the drawer opens Brain at
+   and at most 380px inside a 400px panel. 35%/2% gives this panel 164px there
+   and 239px at full height — 144px and 221px of content — which is what makes
+   the grid below two columns at every height Brain runs at. Half the stage was
+   the first attempt and was 20px short: every cell fell back to full width and
+   the grid quietly became a list. The other 35% is the orb's, and FEATURE_X /
+   FEATURE_R in BrainGlobe.tsx are set against the 260px case for the same
+   reason — a feature position tuned at full height had the orb touching this
+   panel at the resting one. */
+.brainglobe-detail {
+  position: absolute;
+  left: 35%;
+  right: 2%;
+  /* Below the way out, not behind it. `Back to the whole file` is a 44px pill
+     pinned to the stage's top-left and it is wider than the left column — the
+     first build of this panel put its heading under that button, which is a
+     heading nobody can read. A px top rather than a percentage because the
+     button's own height is in px and does not scale with the stage. */
+  top: 60px;
+  /* Height follows the content and stops at the stage's own floor, rather than
+     always filling to it: `2.4 Decision Rights` before anybody has answered it
+     is one sentence, and a one-sentence panel drawn 230px tall reads as
+     something that failed to load. */
+  max-height: calc(100% - 68px);
+  /* Stated, not assumed: this repo has no global reset, so a content-box
+     `max-height` would let the padding and the border push the panel 18px past
+     the bottom of the stage — which is exactly what it did, and what the e2e
+     geometry check caught. */
+  box-sizing: border-box;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 8px 9px;
+  border: 1px solid var(--globe-panel-line);
+  border-radius: var(--r-md);
+  background: var(--globe-panel);
+  font-family: var(--font-sans);
+  color: var(--globe-label);
+  /* The stage owns pointer gestures (`touch-action: none` up top) so that a
+     drag turns the globe. This is text, and text scrolls. */
+  touch-action: pan-y;
+  user-select: text;
+  -webkit-user-select: text;
+  cursor: auto;
+  /* The panel arrives with the orb rather than after it: `--brainglobe-split`
+     is the component's own eased clock, the same number the orb's travel is
+     drawn from, so there is one motion and not two that nearly agree. No
+     keyframes, nothing to cancel — under reduced motion the clock is simply
+     already 1 (see BrainGlobe.tsx's `runSplit`). */
+  opacity: var(--brainglobe-split, 1);
+}
+
+.brainglobe-detail:focus-visible {
+  outline: 2px solid var(--globe-focus);
+  outline-offset: -2px;
+}
+
+.brainglobe-detail-name {
+  margin: 0 0 8px;
+  font-size: 13px;
+  font-weight: 660;
+  line-height: 1.25;
+  letter-spacing: -0.01em;
+  color: var(--globe-label);
+}
+
+.brainglobe-detail-group + .brainglobe-detail-group {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--globe-panel-line);
+}
+
+/* A record's title — the same string the generated file prints as its heading
+   (core/files/generate.ts's `repeatableRecordTitle`). */
+.brainglobe-detail-record {
+  margin: 0 0 6px;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.3;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--globe-detail-key);
+}
+
+/* The grid. `auto-fill` rather than a fixed two columns, so the same rule
+   gives two cells across at the drawer's resting height and stays honest if
+   the stage is ever narrower — a hard `1fr 1fr` at 150px would be two columns
+   of one word each. */
+.brainglobe-detail-grid {
+  display: grid;
+  /* 64px, measured. The panel is 144px of content at the drawer's resting
+     height, so two columns and an 8px gutter need a minimum at or under 68 —
+     and 68 exactly is one pixel too greedy. Both earlier values (74, then 68)
+     were caught the same way: by measuring the rendered cells and finding the
+     whole grid had silently collapsed to a single column, which `auto-fill`
+     does quietly and correctly and looks exactly like a bug. */
+  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
+  gap: 8px 8px;
+  margin: 0;
+}
+
+.brainglobe-detail-cell {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* A long answer takes the whole row. Decided in core, on the answer's own
+   length — see `WIDE_VALUE_CHARS` in core/flow/nodeDetails.ts for why it is
+   the answer and never the question that decides. */
+.brainglobe-detail-cell[data-wide='true'] {
+  grid-column: 1 / -1;
+}
+
+/* The person's own words, and the loud line. `order` puts them above the
+   question they answer while the markup keeps `dt` first, which is what HTML
+   requires inside a `dl` and what a screen reader wants to hear. Never
+   clamped: an answer is the one thing on this panel that must not be cut. */
+.brainglobe-detail-value {
+  order: 1;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--globe-label);
+  overflow-wrap: anywhere;
+}
+
+/* The question that was asked. Two lines, then an ellipsis — these are whole
+   spoken sentences and at 90px wide the full text of one would bury the answer
+   it belongs to. The whole of it stays in `title`, so nothing is lost, and
+   7.9:1 on the panel means "quieter" never means "under the floor". */
+.brainglobe-detail-key {
+  order: 2;
+  margin: 2px 0 0;
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 1.3;
+  color: var(--globe-detail-key);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+
+.brainglobe-detail-empty {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: var(--globe-detail-key);
 }
 
 /* ── Back out of a section ───────────────────────────────────────────────── */

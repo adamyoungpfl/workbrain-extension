@@ -485,3 +485,338 @@ test.describe('VB-14 — it stays inside the panel', () => {
     expect(body).not.toBe(stage);
   });
 });
+
+// ---------------------------------------------------------------------
+// V1.4 VB-23 — the orbs, the cluster, and the split.
+//
+// Everything below is measured off the rendered page: real computed fills,
+// real bounding boxes, real overlap arithmetic. A class that toggled would
+// prove none of it (docs/TESTING.md).
+// ---------------------------------------------------------------------
+
+/** Fly into About Me. Reached from the keyboard, because at rest it is behind
+ * the section in front of it. */
+async function flyIntoAboutMe(page: Page): Promise<void> {
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('ArrowRight');
+  await expect.poll(() => page.locator('.brainglobe').getAttribute('data-moving'), { timeout: 4000 }).toBe('false');
+  await page.keyboard.press('Enter');
+  await expect.poll(() => page.locator('.brainglobe').getAttribute('data-zoom'), { timeout: 3000 }).toBe('1.000');
+  await expect(page.locator('.brainglobe-child-node')).toHaveCount(5);
+}
+
+const centreX = (box: { x: number; width: number }) => box.x + box.width / 2;
+
+test.describe('VB-23 — an answered node is a solid orb', () => {
+  test('is one flat token fill, with no gradient and no highlight anywhere in the picture', async ({ page }) => {
+    await open(page);
+    const fills = await page
+      .locator('.brainglobe-node:not([data-node-state="untouched"]) .brainglobe-sphere')
+      .evaluateAll((orbs) => orbs.map((orb) => getComputedStyle(orb).fill));
+    expect(fills.length).toBeGreaterThan(3);
+    for (const fill of fills) {
+      // A real rgb(), not `url(#…)`: the three-stop radial is gone.
+      expect(fill).toMatch(/^rgb\(/);
+    }
+    // The five sphere gradients went with it; only the blooms and the field
+    // are left.
+    expect(await page.locator('radialGradient').count()).toBe(6);
+  });
+
+  test('solid does not mean flat — a far orb is smaller, dimmer and sunk toward its own deep colour', async ({ page }) => {
+    await open(page);
+    const measured = await page
+      .locator('.brainglobe-node:not([data-node-state="untouched"])')
+      .evaluateAll((nodes) =>
+        nodes.map((node) => ({
+          depth: Number(node.getAttribute('data-depth')),
+          // The rendered radius, in real pixels off the real layout.
+          size: node.querySelector('.brainglobe-sphere')!.getBoundingClientRect().width,
+          opacity: Number(node.getAttribute('opacity')),
+          shade: Number(node.querySelector('.brainglobe-shade')!.getAttribute('opacity')),
+        })),
+      );
+    const sorted = measured.sort((a, b) => a.depth - b.depth);
+    const back = sorted[0]!;
+    const front = sorted[sorted.length - 1]!;
+
+    expect(front.size).toBeGreaterThan(back.size * 1.3);
+    expect(front.opacity).toBeGreaterThan(back.opacity);
+    expect(back.shade).toBeGreaterThan(front.shade);
+    // ...and the shade never takes an orb over: it is a veil, not a repaint.
+    expect(back.shade).toBeLessThan(0.45);
+  });
+});
+
+test.describe('VB-23 — inside a section: size, no halo, and joints', () => {
+  test('the centre orb is more than twice the sub-nodes, measured in real pixels', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+
+    const centre = (await page.locator('.brainglobe-node[data-section-id="sec2"] .brainglobe-sphere').boundingBox())!;
+    const children = await page
+      .locator('.brainglobe-child-node .brainglobe-sphere')
+      .evaluateAll((orbs) => orbs.map((orb) => orb.getBoundingClientRect().width));
+    expect(children).toHaveLength(5);
+    for (const child of children) expect(centre.width / child).toBeGreaterThan(2);
+    // Every sub-node is the same size as every other: they are siblings.
+    expect(Math.max(...children) - Math.min(...children)).toBeLessThan(1);
+  });
+
+  test('the halo is gone from the centre orb once the camera has arrived', async ({ page }) => {
+    await open(page);
+    // sec4 is the section being written now in the harness, and it wears the
+    // only halo on the stage.
+    await expect(page.locator('.brainglobe-halo')).toHaveCount(1);
+    const at = () => page.locator('.brainglobe-halo').evaluate((el) => Number(getComputedStyle(el).opacity));
+    expect(await at()).toBeGreaterThan(0.9);
+
+    // Reached from the keyboard: a pointer click on a node behind the ones in
+    // front of it lands on whichever pin is topmost at those coordinates, and
+    // this test is about a specific section.
+    await page.keyboard.press('Tab');
+    for (let i = 0; i < 3; i++) {
+      await page.keyboard.press('ArrowRight');
+      await expect.poll(() => page.locator('.brainglobe').getAttribute('data-moving'), { timeout: 4000 }).toBe('false');
+    }
+    await expect(page.locator('.brainglobe-pin[data-section-id="sec4"]')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-zoom'), { timeout: 3000 }).toBe('1.000');
+    expect(await at(), 'the centre orb kept its halo — hierarchy is size, not glow').toBeLessThan(0.02);
+
+    // And it comes back on the way out, where it is the only mark of the
+    // section being written now among ten equal siblings.
+    await page.keyboard.press('Escape');
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-zoom'), { timeout: 3000 }).toBe('0.000');
+    expect(await at()).toBeGreaterThan(0.9);
+  });
+
+  test('a faint line joins the centre orb to every sub-node, rim to rim', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+
+    const links = page.locator('.brainglobe-link');
+    await expect(links).toHaveCount(5);
+
+    const centre = (await page.locator('.brainglobe-node[data-section-id="sec2"] .brainglobe-sphere').boundingBox())!;
+    for (let i = 0; i < 5; i++) {
+      const link = links.nth(i);
+      const opacity = await link.evaluate((el) => Number(getComputedStyle(el).strokeOpacity));
+      // Faint: never competing with the orbs it joins. The near edges of the
+      // solid itself run up to 0.78.
+      expect(opacity).toBeGreaterThan(0.05);
+      expect(opacity).toBeLessThanOrEqual(0.4);
+
+      const id = await link.getAttribute('data-link-id');
+      const orb = (await page.locator(`.brainglobe-child-node[data-child-id="${id}"] .brainglobe-sphere`).boundingBox())!;
+      const line = (await link.boundingBox())!;
+      // The line lives entirely in the gap: it starts outside the centre orb
+      // and stops outside its sub-node, so nothing is drawn across an orb.
+      const span = Math.hypot(centreX(orb) - centreX(centre), orb.y + orb.height / 2 - (centre.y + centre.height / 2));
+      const gap = span - centre.width / 2 - orb.width / 2;
+      const drawn = Math.hypot(line.width, line.height);
+      expect(drawn).toBeLessThanOrEqual(gap + 2);
+      expect(drawn).toBeGreaterThan(gap - 4);
+    }
+  });
+});
+
+test.describe('VB-23 — clicking a sub-node splits the stage', () => {
+  test('the orb features on the left and its details open on the right, without overlapping', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+
+    const before = (await page.locator('.brainglobe-child-node[data-child-id="sec2-1"] .brainglobe-sphere').boundingBox())!;
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
+
+    const stage = (await page.locator('.brainglobe').boundingBox())!;
+    const orb = (await page.locator('.brainglobe-child-node[data-picked="true"] .brainglobe-sphere').boundingBox())!;
+    const panel = (await page.locator('.brainglobe-detail').boundingBox())!;
+
+    // Left: the orb travelled, and grew into a feature.
+    expect(centreX(orb)).toBeLessThan(stage.x + stage.width * 0.4);
+    expect(orb.width).toBeGreaterThan(before.width * 2);
+    // Right: the panel, entirely inside the stage and entirely clear of the orb.
+    expect(panel.x).toBeGreaterThan(orb.x + orb.width);
+    expect(panel.x + panel.width).toBeLessThanOrEqual(stage.x + stage.width + 1);
+    expect(panel.y + panel.height).toBeLessThanOrEqual(stage.y + stage.height + 1);
+    // Not hidden behind the way out, either.
+    const back = (await page.locator('.brainglobe-back').boundingBox())!;
+    expect(panel.y).toBeGreaterThanOrEqual(back.y + back.height);
+    // And the whole cluster it came out of has gone.
+    const others = await page
+      .locator('.brainglobe-child-node[data-picked="false"]')
+      .evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute('opacity'))));
+    expect(Math.max(...others)).toBeLessThan(0.02);
+  });
+
+  test('the panel carries the sub-node’s name and a real grid of its details', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
+
+    await expect(page.locator('.brainglobe-detail-name')).toHaveText('2.1 Roles');
+    // The real stress case: three roles, thirteen cells, three headings.
+    await expect(page.locator('.brainglobe-detail-cell')).toHaveCount(13);
+    await expect(page.locator('.brainglobe-detail-record')).toHaveCount(3);
+    await expect(page.locator('.brainglobe-detail-record').first()).toHaveText('Manager / Team Lead');
+
+    // A GRID, not a list: at least one pair of cells shares a row — same top,
+    // different left — which is the thing 400px makes hard and is why
+    // `NodeDetail.wide` exists at all.
+    const boxes = await page
+      .locator('.brainglobe-detail-cell')
+      .evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect()).map((r) => ({ x: r.x, y: r.y, w: r.width })));
+    const paired = boxes.filter((a, i) => boxes.some((b, j) => i !== j && Math.abs(a.y - b.y) < 2 && Math.abs(a.x - b.x) > 2));
+    expect(paired.length, 'no two cells ever sat side by side — the grid is a list').toBeGreaterThanOrEqual(4);
+    // ...and no paired cell is a sliver: two columns, not four.
+    for (const cell of paired) expect(cell.w).toBeGreaterThan(60);
+
+    // Nothing runs outside the panel it is in.
+    const panel = (await page.locator('.brainglobe-detail').boundingBox())!;
+    for (const cell of boxes) {
+      expect(cell.x).toBeGreaterThanOrEqual(panel.x - 1);
+      expect(cell.x + cell.w).toBeLessThanOrEqual(panel.x + panel.width + 1);
+    }
+  });
+
+  test('the panel scrolls, and everything in it is reachable', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
+
+    const scroll = await page.locator('.brainglobe-detail').evaluate((el) => ({
+      scrollable: el.scrollHeight > el.clientHeight,
+      focusable: el.getAttribute('tabindex') === '0',
+    }));
+    // Thirteen cells is taller than the stage, so this must be a real scroller
+    // AND a real tab stop — a scrolling box a keyboard cannot reach is a box
+    // whose bottom half does not exist.
+    expect(scroll.scrollable).toBe(true);
+    expect(scroll.focusable).toBe(true);
+
+    const bottom = await page.locator('.brainglobe-detail').evaluate((el) => {
+      el.scrollTop = el.scrollHeight;
+      return el.scrollTop;
+    });
+    expect(bottom).toBeGreaterThan(0);
+    await expect(page.locator('.brainglobe-detail-value').last()).toBeInViewport();
+  });
+
+  test('it still navigates — the split is on top of click-to-navigate, not instead of it', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+    await expect(page.locator('[data-testid="selected"]')).toHaveText('sec2');
+    await page.locator('.brainglobe-pin[data-child-id="sec2-3"]').click();
+    // The sub-node is reported to the caller exactly as it was before VB-23.
+    await expect(page.locator('[data-testid="selected"]')).toHaveText('sec2-3');
+  });
+
+  test('nothing about the split makes the panel scroll sideways', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
+    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+    expect(overflow).toBeLessThanOrEqual(0);
+  });
+});
+
+test.describe('VB-23 — the split by keyboard', () => {
+  test('a sub-node is reachable and openable with no pointer at all, and does not trap focus', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+
+    // Tab from the section you are inside onto its first sub-node.
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
+    await expect(page.locator('.brainglobe-detail')).toBeVisible();
+    await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toHaveAttribute('aria-pressed', 'true');
+
+    // Forward: the panel itself, then out of the globe entirely. No trap.
+    await page.keyboard.press('Tab');
+    await expect(page.locator('.brainglobe-detail')).toBeFocused();
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
+    expect(await page.evaluate(() => !!document.activeElement?.closest('.brainglobe'))).toBe(false);
+  });
+
+  test('Escape closes the split first, and the section only on the second press', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
+
+    await page.keyboard.press('Escape');
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('0.000');
+    await expect(page.locator('.brainglobe-detail')).toHaveCount(0);
+    // Still inside the section, with the whole cluster back.
+    await expect(page.locator('.brainglobe')).toHaveAttribute('data-inside', 'true');
+    await expect(page.locator('.brainglobe-pin.is-child:not([hidden])')).toHaveCount(5);
+    // Focus went back to the sub-node it closed, not to nowhere.
+    await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toBeFocused();
+
+    await page.keyboard.press('Escape');
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-inside'), { timeout: 3000 }).toBe('false');
+  });
+
+  test('the featured orb is a control the whole way across, not a 44px square in the middle of it', async ({ page }) => {
+    await open(page);
+    await flyIntoAboutMe(page);
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
+
+    const orb = (await page.locator('.brainglobe-child-node[data-picked="true"] .brainglobe-sphere').boundingBox())!;
+    const hit = (await page.locator('.brainglobe-pin[data-child-id="sec2-1"] .brainglobe-hit').boundingBox())!;
+    expect(hit.width).toBeGreaterThanOrEqual(44);
+    expect(hit.width).toBeGreaterThanOrEqual(orb.width - 1);
+    expect(Math.abs(centreX(hit) - centreX(orb))).toBeLessThan(2);
+
+    // And pressing it again closes the split.
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('0.000');
+  });
+});
+
+test.describe('VB-23 — the split under reduced motion', () => {
+  test('is already there: no frame, no travel, everything present', async ({ page }) => {
+    await countFrames(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await open(page);
+
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+
+    await expect(page.locator('.brainglobe')).toHaveAttribute('data-split', '1.000');
+    await expect(page.locator('.brainglobe-detail-cell')).toHaveCount(13);
+    // Arrived, not travelling.
+    const stage = (await page.locator('.brainglobe').boundingBox())!;
+    const orb = (await page.locator('.brainglobe-child-node[data-picked="true"] .brainglobe-sphere').boundingBox())!;
+    expect(centreX(orb)).toBeLessThan(stage.x + stage.width * 0.4);
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.brainglobe')).toHaveAttribute('data-split', '0.000');
+
+    expect(await frames(page), 'a reduced-motion visitor must get no rAF loop at all').toBe(0);
+  });
+
+  test('the panel is fully drawn, not waiting on a fade that will never come', async ({ page }) => {
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await open(page);
+    await page.keyboard.press('Tab');
+    await page.keyboard.press('ArrowRight');
+    await page.keyboard.press('Enter');
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+
+    const panel = page.locator('.brainglobe-detail');
+    expect(await panel.evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(1);
+    expect(await panel.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0s');
+  });
+});

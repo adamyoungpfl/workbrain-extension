@@ -43,8 +43,14 @@ function optionLabelFor(step: Step, value: string): string {
  * fully omitted (returns null, same as the source); `null` (explicitly
  * skipped) renders the marker instead of being omitted — the one
  * confirmed departure from the source's formatAnswerValue, see the module
- * comment above. */
-function formatAnswerValue(step: Step, value: AnswerValue | undefined): string | null {
+ * comment above.
+ *
+ * Exported since V1.4 VB-23 for core/flow/nodeDetails.ts, which shows the
+ * same answers in the globe's detail panel. Exported rather than copied on
+ * purpose: two formatters would drift, and the panel claiming a person said
+ * something slightly different from what their own file says would be worse
+ * than showing nothing at all. */
+export function formatAnswerValue(step: Step, value: AnswerValue | undefined): string | null {
   if (value === undefined) return null;
   if (value === null) return SKIPPED_ANSWER_MARKER;
   if (Array.isArray(value)) {

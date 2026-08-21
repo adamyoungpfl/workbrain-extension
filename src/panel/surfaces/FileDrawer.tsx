@@ -32,6 +32,7 @@ import {
   outlineNodeState,
   positionForQuestionId,
 } from '../../core/flow/outline';
+import { nodeDetailsByNode } from '../../core/flow/nodeDetails';
 import type { OutlineNodeState } from '../../core/flow/outline';
 import type { Position } from '../../core/flow/runner';
 import type { FileOutlineNode, Module } from '../../schema/flow.types';
@@ -343,6 +344,12 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
 
   const reached = outline.filter((node) => states[node.id] !== 'untouched').length;
 
+  /** V1.4 VB-23. What each node holds, for the globe's sub-node split — the
+   * same answers the file preview below is generated from, folded into cells
+   * by core/flow/nodeDetails.ts. Derived per render like everything else here;
+   * nothing about it is stored. */
+  const details = useMemo(() => nodeDetailsByNode(outline, answers, modules), [outline, answers, modules]);
+
   /**
    * Keeps the section being written inside the peek.
    *
@@ -567,6 +574,7 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
           states={states}
           size={stageSize}
           drift={drifting}
+          details={details}
           onSelect={handleGlobeSelect}
         />
       </div>

@@ -322,6 +322,19 @@ export const S = {
   brainGlobeInside: (label: string) => `Inside ${label}`,
   brainGlobeBack: 'Back to the whole file',
 
+  /**
+   * V1.4 VB-23 — the split. Picking a sub-node moves it to the left and opens
+   * a panel of what it holds on the right.
+   *
+   * `brainGlobeDetail` names that panel for a screen reader and is never
+   * printed: the panel already prints the sub-section's own name as its
+   * heading, so a second copy above it would be a wasted line at 400px.
+   * "What's in" rather than "Details of" — the person's word, not ours
+   * (docs/design-system.html §08).
+   */
+  brainGlobeDetail: (label: string) => `What's in ${label}`,
+  brainGlobeDetailEmpty: 'Nothing written here yet.',
+
   // ---------------------------------------------------------------- reflect
   reflectHeading: "Here's what I've got.",
   reflectSub: 'Nothing has been sent anywhere. Keep it, or let your own AI tighten it.',

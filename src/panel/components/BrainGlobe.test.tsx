@@ -2,6 +2,7 @@ import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act } from 'react';
 import { BrainGlobe } from './BrainGlobe';
 import { contextOutline } from '../../core/flow/flow';
+import { nodeDetailsByNode } from '../../core/flow/nodeDetails';
 import { S } from '../strings';
 import { mount } from './testUtils';
 import type { FileOutlineNode } from '../../schema/flow.types';
@@ -145,31 +146,63 @@ describe('BrainGlobe — the drawing', () => {
     expect(Math.max(...depths) - Math.min(...depths)).toBeGreaterThan(0.5);
   });
 
-  it('nodes are lit spheres, not flat discs — a three-stop radial with an offset highlight, plus a bloom', () => {
+  it('V1.4 VB-23 — an answered node is a solid orb: one flat fill, no highlight, no gradient', () => {
     stubEnvironment({ reduce: false });
     const { container } = render();
 
+    // Five blooms and the field. The five sphere gradients are gone, and with
+    // them the specular dot that made a node read as a glass bead.
     const gradients = [...container.querySelectorAll('radialGradient')];
-    // Five sphere gradients, five blooms, one field.
-    expect(gradients).toHaveLength(11);
+    expect(gradients).toHaveLength(6);
+    expect(gradients.filter((g) => g.getAttribute('cx') === '34%')).toHaveLength(0);
+    expect(container.querySelector('.brainglobe-stop-hi')).toBeNull();
 
-    const sphereGradients = gradients.filter((g) => g.getAttribute('cx') === '34%');
-    expect(sphereGradients).toHaveLength(5);
-    for (const gradient of sphereGradients) {
-      expect(gradient.getAttribute('cy')).toBe('30%');
-      const stops = [...gradient.querySelectorAll('stop')];
-      expect(stops).toHaveLength(3);
-      expect(stops[0]!.getAttribute('class')).toBe('brainglobe-stop-hi');
-      expect(stops[1]!.getAttribute('class')).toMatch(/^brainglobe-stop-mid-[1-5]$/);
-      expect(stops[2]!.getAttribute('class')).toMatch(/^brainglobe-stop-deep-[1-5]$/);
+    for (const sphere of container.querySelectorAll('.brainglobe-sphere')) {
+      // A class the stylesheet fills from a token, not a `url(#…)` and not a
+      // colour of its own.
+      expect(sphere.getAttribute('class')).toMatch(/brainglobe-solid-[1-5]/);
+      expect(sphere.getAttribute('fill')).toBeNull();
     }
 
-    // The bloom is a separate, larger circle behind the sphere.
+    // The bloom is still a separate, larger circle behind the orb — it is what
+    // makes a flat fill read as something emitting rather than printed.
     const lit = container.querySelector('.brainglobe-node[data-node-state="reached"]')!;
     const bloom = lit.querySelector('.brainglobe-bloom')!;
     const sphere = lit.querySelector('.brainglobe-sphere')!;
     expect(Number(bloom.getAttribute('r'))).toBeGreaterThan(Number(sphere.getAttribute('r')) * 2);
-    expect([...lit.children].indexOf(bloom)).toBeLessThan([...lit.children].indexOf(sphere));
+    expect(lit.querySelector('.brainglobe-orb')).not.toBeNull();
+    expect([...lit.children].indexOf(bloom)).toBeLessThan([...lit.children].indexOf(lit.querySelector('.brainglobe-orb')!));
+  });
+
+  it('V1.4 VB-23 — solid does not mean flat: a far orb is shaded toward its own deep colour', () => {
+    stubEnvironment({ reduce: false });
+    const { container } = render();
+    const lit = [...container.querySelectorAll('.brainglobe-node')].filter(
+      (node) => node.getAttribute('data-node-state') !== 'untouched',
+    );
+    expect(lit.length).toBeGreaterThan(2);
+
+    const read = (node: Element) => ({
+      depth: Number(node.getAttribute('data-depth')),
+      shade: Number(node.querySelector('.brainglobe-shade')!.getAttribute('opacity')),
+      radius: Number(node.querySelector('.brainglobe-sphere')!.getAttribute('r')),
+      opacity: Number(node.getAttribute('opacity')),
+    });
+    const sorted = lit.map(read).sort((a, b) => a.depth - b.depth);
+    const back = sorted[0]!;
+    const front = sorted[sorted.length - 1]!;
+
+    // All three depth cues survive the change to a solid fill.
+    expect(back.shade).toBeGreaterThan(front.shade);
+    expect(front.radius).toBeGreaterThan(back.radius);
+    expect(front.opacity).toBeGreaterThan(back.opacity);
+    // The shade is a veil over the orb, never a replacement for it.
+    for (const node of lit) {
+      const shade = node.querySelector('.brainglobe-shade')!;
+      const sphere = node.querySelector('.brainglobe-sphere')!;
+      expect(shade.getAttribute('r')).toBe(sphere.getAttribute('r'));
+      expect(Number(shade.getAttribute('opacity'))).toBeLessThan(0.55);
+    }
   });
 
   it('every fill points at a gradient that is actually defined', () => {
@@ -496,6 +529,345 @@ describe('BrainGlobe — flying in', () => {
     expect(stillThere[0]!.getAttribute('data-section-id')).toBe('sec2');
     // And a real way back that is not only a keystroke.
     expect(container.querySelector('.brainglobe-back')).not.toBeNull();
+  });
+});
+
+// ---------------------------------------------------------------------
+// V1.4 VB-23. The cluster, and the split.
+// ---------------------------------------------------------------------
+
+/** The real 2.1 Roles, filled in the way the harness fills it. Three records
+ * is the longest real sub-section there is — the panel's stress case. */
+const ROLE_ANSWERS = {
+  values: { role_names: ['manager', 'volunteer-board', 'freelancer'] },
+  repeatables: {
+    roles: [
+      {
+        role_name: 'Manager / Team Lead',
+        role_for: 'employer',
+        role_mandate: 'Keep the team’s reporting accurate, on time, and trusted by leadership.',
+        role_standing: 'primary',
+        role_durability: 'current',
+      },
+      {
+        role_name: 'Volunteer / Board Member',
+        role_for: 'community',
+        role_mandate: 'Raise money and awareness for a cause I care about.',
+        role_standing: 'occasional',
+        role_durability: 'current',
+      },
+      {
+        role_name: 'Freelancer / Contractor',
+        role_for: 'clients',
+        role_mandate: 'Deliver design work clients are happy to pay for again.',
+        role_standing: 'secondary',
+        role_durability: 'historical',
+      },
+    ],
+  },
+};
+const DETAILS = nodeDetailsByNode(contextOutline, ROLE_ANSWERS);
+
+const childPin = (container: Element, id: string) =>
+  container.querySelector<HTMLButtonElement>(`.brainglobe-pin[data-child-id="${id}"]`)!;
+
+/** Fly into About Me and pick one of its five sub-nodes. */
+function openChild(container: Element, env: ReturnType<typeof stubEnvironment>, childId = 'sec2-1') {
+  act(() => pin(container, 'sec2').click());
+  env.settle();
+  act(() => childPin(container, childId).click());
+  env.settle();
+}
+
+describe('BrainGlobe — VB-23, hierarchy inside a section', () => {
+  it('the centre orb is proportionately larger than the sub-nodes ringing it', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render();
+    act(() => pin(container, 'sec2').click());
+    env.settle();
+
+    // On-screen radius: the centre is drawn inside the scene group, which is
+    // scaled, and the children are not.
+    const scene = container.querySelector('.brainglobe-scene')!.getAttribute('transform')!;
+    const sceneScale = Number(/scale\(([\d.]+)\)/.exec(scene)![1]);
+    const centre = Number(
+      container
+        .querySelector('.brainglobe-node[data-section-id="sec2"] .brainglobe-sphere')!
+        .getAttribute('r'),
+    ) * sceneScale;
+    const children = [...container.querySelectorAll('.brainglobe-child-node .brainglobe-sphere')].map((c) =>
+      Number(c.getAttribute('r')),
+    );
+    expect(children).toHaveLength(5);
+    for (const child of children) expect(centre / child).toBeGreaterThan(2);
+  });
+
+  it('the centre orb is the same size whichever pose it was clicked from', () => {
+    const sizes: number[] = [];
+    for (const key of ['ArrowRight', 'End']) {
+      const env = stubEnvironment({ reduce: false });
+      const { container } = render();
+      const stage = container.querySelector('.brainglobe')!;
+      // Turn the globe somewhere else entirely first, so sec2 is flown into
+      // from two genuinely different depths.
+      act(() => stage.dispatchEvent(new KeyboardEvent('keydown', { key, bubbles: true })));
+      env.settle();
+      act(() => pin(container, 'sec2').click());
+      env.settle();
+      const scene = container.querySelector('.brainglobe-scene')!.getAttribute('transform')!;
+      const sceneScale = Number(/scale\(([\d.]+)\)/.exec(scene)![1]);
+      sizes.push(
+        Number(
+          container.querySelector('.brainglobe-node[data-section-id="sec2"] .brainglobe-sphere')!.getAttribute('r'),
+        ) * sceneScale,
+      );
+      vi.unstubAllGlobals();
+    }
+    // Hierarchy that depended on which way the globe happened to be turned
+    // would not be hierarchy. This is the bug CENTRE_R exists to fix.
+    expect(sizes[0]!).toBeCloseTo(sizes[1]!, 2);
+  });
+
+  it('the halo goes on the way in — size carries the hierarchy, not a ring', () => {
+    const env = stubEnvironment({ reduce: false });
+    // sec2 is the section being written now, so it starts with a halo.
+    const { container } = render({ states: { ...STATES, sec2: 'current' } });
+    const halo = () => container.querySelector('.brainglobe-halo');
+    expect(Number(halo()!.getAttribute('opacity') ?? 1)).toBeCloseTo(1, 3);
+
+    act(() => pin(container, 'sec2').click());
+    env.settle();
+    expect(Number(halo()!.getAttribute('opacity'))).toBeCloseTo(0, 3);
+
+    // ...and comes back out here, where it is the only mark of the section
+    // being written now among ten equal siblings.
+    act(() => container.querySelector<HTMLButtonElement>('.brainglobe-back')!.click());
+    env.settle();
+    expect(Number(halo()!.getAttribute('opacity'))).toBeCloseTo(1, 3);
+  });
+
+  it('draws a faint line from the centre orb to every sub-node', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render();
+    act(() => pin(container, 'sec2').click());
+    env.settle();
+
+    const links = [...container.querySelectorAll('.brainglobe-link')];
+    expect(links).toHaveLength(5);
+    for (const link of links) {
+      // Faint: never competing with the orbs it joins.
+      expect(Number(link.getAttribute('stroke-opacity'))).toBeLessThanOrEqual(0.4);
+      expect(Number(link.getAttribute('stroke-opacity'))).toBeGreaterThan(0);
+      expect(Number(link.getAttribute('stroke-width'))).toBeLessThan(1);
+    }
+
+    // Each line starts on the centre orb's rim and ends on its sub-node's, so
+    // it reads as a joint rather than a spoke laid over two circles.
+    const scene = container.querySelector('.brainglobe-scene')!.getAttribute('transform')!;
+    const sceneScale = Number(/scale\(([\d.]+)\)/.exec(scene)![1]);
+    const centreR =
+      Number(container.querySelector('.brainglobe-node[data-section-id="sec2"] .brainglobe-sphere')!.getAttribute('r')) *
+      sceneScale;
+    for (const link of links) {
+      const child = container.querySelector(
+        `.brainglobe-child-node[data-child-id="${link.getAttribute('data-link-id')}"] .brainglobe-sphere`,
+      )!;
+      const cx = Number(child.getAttribute('cx'));
+      const cy = Number(child.getAttribute('cy'));
+      const childR = Number(child.getAttribute('r'));
+      const x1 = Number(link.getAttribute('x1'));
+      const y1 = Number(link.getAttribute('y1'));
+      const x2 = Number(link.getAttribute('x2'));
+      const y2 = Number(link.getAttribute('y2'));
+      expect(Math.hypot(x2 - cx, y2 - cy)).toBeCloseTo(childR, 1);
+      // The centre orb sits at the origin of the children's layer.
+      expect(Math.hypot(x1, y1)).toBeCloseTo(centreR, 1);
+    }
+  });
+
+  it('the whole cluster leaves when a sub-node takes the stage', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render({ details: DETAILS });
+    openChild(container, env);
+
+    const opacityOf = (selector: string) => Number(container.querySelector(selector)!.getAttribute('opacity'));
+    expect(opacityOf('.brainglobe-node[data-section-id="sec2"]')).toBeCloseTo(0, 2);
+    for (const link of container.querySelectorAll('.brainglobe-link')) {
+      expect(Number(link.getAttribute('stroke-opacity'))).toBeCloseTo(0, 2);
+    }
+    for (const id of ['sec2-2', 'sec2-3', 'sec2-4', 'sec2-5']) {
+      expect(opacityOf(`.brainglobe-child-node[data-child-id="${id}"]`)).toBeCloseTo(0, 2);
+    }
+    // The one you picked is the only thing left, and it is bigger than it was.
+    expect(opacityOf('.brainglobe-child-node[data-child-id="sec2-1"]')).toBeCloseTo(1, 2);
+  });
+});
+
+describe('BrainGlobe — VB-23, the split', () => {
+  it('moves the picked orb to a feature position on the left and grows it', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render({ details: DETAILS });
+    act(() => pin(container, 'sec2').click());
+    env.settle();
+
+    const orb = () => container.querySelector('.brainglobe-child-node[data-child-id="sec2-1"] .brainglobe-sphere')!;
+    const before = { x: Number(orb().getAttribute('cx')), r: Number(orb().getAttribute('r')) };
+
+    act(() => childPin(container, 'sec2-1').click());
+    env.settle();
+
+    const after = { x: Number(orb().getAttribute('cx')), r: Number(orb().getAttribute('r')) };
+    // Left of the stage's own centre, which is x = 0 in the -100..100 viewBox.
+    expect(after.x).toBeLessThan(-30);
+    expect(after.x).toBeLessThan(before.x);
+    expect(after.r).toBeGreaterThan(before.r * 2);
+  });
+
+  it('opens a panel with the sub-node’s name and a grid of what it holds', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render({ details: DETAILS });
+    expect(container.querySelector('.brainglobe-detail')).toBeNull();
+
+    openChild(container, env);
+
+    const panel = container.querySelector('.brainglobe-detail')!;
+    expect(panel.querySelector('.brainglobe-detail-name')!.textContent).toBe('2.1 Roles');
+    expect(panel.getAttribute('aria-label')).toBe(S.brainGlobeDetail('2.1 Roles'));
+
+    // The real thirteen cells, grouped under the three role headings the
+    // generated file prints (core/flow/nodeDetails.ts).
+    expect(panel.querySelectorAll('.brainglobe-detail-cell')).toHaveLength(13);
+    expect([...panel.querySelectorAll('.brainglobe-detail-record')].map((el) => el.textContent)).toEqual([
+      'Manager / Team Lead',
+      'Volunteer / Board Member',
+      'Freelancer / Contractor',
+    ]);
+    // Every cell says both halves, in the file's own words.
+    const values = [...panel.querySelectorAll('.brainglobe-detail-value')].map((el) => el.textContent);
+    expect(values).toContain('My employer');
+    expect(values).toContain('Historical');
+    for (const key of panel.querySelectorAll('.brainglobe-detail-key')) {
+      // The whole question is kept, however few lines of it are drawn.
+      expect(key.getAttribute('title')).toBe(key.textContent);
+    }
+  });
+
+  it('says so plainly when a sub-node holds nothing yet — never an empty grid', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render({ details: DETAILS });
+    openChild(container, env, 'sec2-4');
+
+    const panel = container.querySelector('.brainglobe-detail')!;
+    expect(panel.querySelectorAll('.brainglobe-detail-cell')).toHaveLength(0);
+    expect(panel.querySelector('.brainglobe-detail-empty')!.textContent).toBe(S.brainGlobeDetailEmpty);
+  });
+
+  it('splits with no details prop at all — the showcase degrades, it does not break', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = mount(<BrainGlobe sections={contextOutline} states={STATES} />);
+    openChild(container, env);
+    const panel = container.querySelector('.brainglobe-detail')!;
+    expect(panel.querySelector('.brainglobe-detail-name')!.textContent).toBe('2.1 Roles');
+    expect(panel.querySelector('.brainglobe-detail-empty')).not.toBeNull();
+  });
+
+  it('still reports the sub-node to the caller — click-to-navigate is untouched', () => {
+    const env = stubEnvironment({ reduce: false });
+    const chosen: Array<string | null> = [];
+    const { container } = render({ details: DETAILS, onSelect: (node) => chosen.push(node?.id ?? null) });
+    openChild(container, env);
+    expect(chosen).toEqual(['sec2', 'sec2-1']);
+  });
+
+  it('closing the split reports nothing — shutting a panel is not a request to go anywhere', () => {
+    const env = stubEnvironment({ reduce: false });
+    const chosen: Array<string | null> = [];
+    const { container } = render({ details: DETAILS, onSelect: (node) => chosen.push(node?.id ?? null) });
+    openChild(container, env);
+    act(() => childPin(container, 'sec2-1').click());
+    env.settle();
+    expect(chosen).toEqual(['sec2', 'sec2-1']);
+    expect(container.querySelector('.brainglobe-detail')).toBeNull();
+  });
+
+  it('takes the four you did not pick out of the tab order, and does not trap the one you did', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render({ details: DETAILS });
+    openChild(container, env);
+
+    const visible = [...container.querySelectorAll<HTMLButtonElement>('.brainglobe-pin')].filter((p) => !p.hidden);
+    expect(visible.map((p) => p.getAttribute('data-child-id'))).toEqual(['sec2-1']);
+    expect(childPin(container, 'sec2-1').getAttribute('aria-pressed')).toBe('true');
+    // The panel is a real stop of its own, because it scrolls.
+    expect(container.querySelector('.brainglobe-detail')!.getAttribute('tabindex')).toBe('0');
+    // Nothing removed the way back out.
+    expect(container.querySelector('.brainglobe-back')).not.toBeNull();
+  });
+
+  it('Escape closes the split first and the section only after it', () => {
+    const env = stubEnvironment({ reduce: false });
+    const chosen: Array<string | null> = [];
+    const { container } = render({ details: DETAILS, onSelect: (node) => chosen.push(node?.id ?? null) });
+    const stage = container.querySelector('.brainglobe')!;
+    openChild(container, env);
+
+    act(() => stage.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    env.settle();
+    expect(container.querySelector('.brainglobe-detail')).toBeNull();
+    expect(stage.getAttribute('data-inside')).toBe('true');
+
+    act(() => stage.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+    env.settle();
+    expect(stage.getAttribute('data-inside')).toBe('false');
+    expect(chosen).toEqual(['sec2', 'sec2-1', null]);
+  });
+
+  it('flying out of the section closes the split with it', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render({ details: DETAILS });
+    openChild(container, env);
+    act(() => container.querySelector<HTMLButtonElement>('.brainglobe-back')!.click());
+    env.settle();
+    expect(container.querySelector('.brainglobe-detail')).toBeNull();
+    expect(container.querySelector('.brainglobe')!.getAttribute('data-split')).toBe('0.000');
+  });
+
+  it('names the sub-node out loud when the stage splits', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render({ details: DETAILS });
+    const live = container.querySelector('[aria-live="polite"]')!;
+    openChild(container, env);
+    expect(live.textContent).toBe(S.brainGlobeInside('2.1 Roles'));
+  });
+});
+
+describe('BrainGlobe — VB-23 under reduced motion', () => {
+  it('splits instantly, with everything present and nothing moving', () => {
+    const env = stubEnvironment({ reduce: true });
+    const { container } = render({ details: DETAILS });
+    act(() => pin(container, 'sec2').click());
+    act(() => childPin(container, 'sec2-1').click());
+
+    expect(env.frameCount, 'a reduced-motion visitor must get no rAF loop at all').toBe(0);
+    expect(container.querySelector('.brainglobe')!.getAttribute('data-split')).toBe('1.000');
+    const panel = container.querySelector('.brainglobe-detail')!;
+    expect(panel.querySelectorAll('.brainglobe-detail-cell')).toHaveLength(13);
+    // Arrived, not on its way: the orb is already at the feature position.
+    const orb = container.querySelector('.brainglobe-child-node[data-child-id="sec2-1"] .brainglobe-sphere')!;
+    expect(Number(orb.getAttribute('cx'))).toBeLessThan(-30);
+  });
+
+  it('closes instantly too, and puts the whole cluster back', () => {
+    const env = stubEnvironment({ reduce: true });
+    const { container } = render({ details: DETAILS });
+    const stage = container.querySelector('.brainglobe')!;
+    act(() => pin(container, 'sec2').click());
+    act(() => childPin(container, 'sec2-1').click());
+    act(() => stage.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+
+    expect(env.frameCount).toBe(0);
+    expect(stage.getAttribute('data-split')).toBe('0.000');
+    expect(container.querySelectorAll('.brainglobe-pin.is-child:not([hidden])')).toHaveLength(5);
   });
 });
 

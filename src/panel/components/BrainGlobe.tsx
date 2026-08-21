@@ -2,6 +2,7 @@ import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import type { CSSProperties, PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { FileOutlineNode } from '../../schema/flow.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
+import type { NodeDetail } from '../../core/flow/nodeDetails';
 import {
   CAMERA,
   ICOSAHEDRON_EDGES,
@@ -37,12 +38,16 @@ import './BrainGlobe.css';
  *
  * ── The five decisions worth knowing about ────────────────────────────────
  *
- * 1. **Nodes are lit spheres, not flat discs.** Each is a three-stop SVG
- *    radialGradient — a shared white-ish highlight offset to 34%/30%, then the
- *    node's own mid colour, then a deep rim — with a separate soft radial
- *    bloom behind it. That is the whole difference between a diagram and a
- *    feature visual, and it is why `color.globe.*` exists in
- *    design/tokens.json as a deeper palette than VB-01's lighter `color.brand.*`.
+ * 1. **An answered node is a solid, lit orb.** Since V1.4 VB-23 it is one flat
+ *    fill — `color.globe.node-N-solid` — and not the three-stop radial with a
+ *    white specular dot it wore in V1.2. The dot made twelve small circles look
+ *    like twelve small glass beads; a saturated solid on a near-black field
+ *    reads as something *emitting*, which is what a bloom behind it was always
+ *    trying to say. Solid is not flat: depth still moves radius, still moves
+ *    group opacity, and now also sinks a far orb toward its own deep colour
+ *    (`brainglobe-shade`), so the back of the solid recedes without any node
+ *    changing shape. Unanswered nodes are untouched by this — they were never
+ *    lit, and they are still a ring rather than a dimmer sphere.
  *
  * 2. **The interactive layer is HTML, not SVG.** The spheres, edges and field
  *    are SVG and entirely `aria-hidden`; every control and every label is a
@@ -74,6 +79,28 @@ import './BrainGlobe.css';
  *    V1.2 VB-14b adds the one exception, and hedges it about: `drift`, an
  *    opt-in slow idle turn, off unless the caller asks for it. See DRIFT_RATE
  *    below for the four separate conditions that stop it.
+ *
+ * ── V1.4 VB-23: what happens inside a section ─────────────────────────────
+ *
+ * Flying in used to leave a haloed centre with its children ringing it, all of
+ * them floating unattached, and picking one did nothing you could see. Three
+ * changes, and they are one idea: **hierarchy by size and by attachment**.
+ *
+ *  - The centre orb grows to a fixed CENTRE_R as the camera arrives, so it is
+ *    reliably ~2.7× the sub-nodes whatever pose it was clicked from — and its
+ *    halo goes, because a ring around the biggest thing on a stage is saying
+ *    something the size already said.
+ *  - Faint lines run from the centre orb's rim to each sub-node's rim, so the
+ *    cluster is a thing with parts rather than six circles that happen to be
+ *    near each other. Trimmed at both ends by real radii, which is why they
+ *    still look right at every stage of the stagger.
+ *  - Picking a sub-node **splits the stage**: that orb travels to a feature
+ *    position on the left and everything else in the cluster fades, while a
+ *    panel of what the sub-section actually holds opens on the right. At 400px
+ *    that panel is ~200px wide, which is the whole reason `NodeDetail.wide`
+ *    exists in core/flow/nodeDetails.ts — see its `WIDE_VALUE_CHARS` comment
+ *    for the measurement that settled these proportions against `2.1 Roles`
+ *    with three records, the longest real sub-section there is.
  */
 
 // ── Geometry constants ─────────────────────────────────────────────────────
@@ -173,6 +200,48 @@ const CHILD_STAGGER = 0.09;
 const CHILD_SPAN = 0.55;
 /** How far out the children ring the section they belong to, in view units. */
 const CHILD_RING = 54;
+/** A sub-node's own radius, from the moment it leaves the centre to the moment
+ * it arrives. Its arrived value, 5.8, is the number CENTRE_R is set against. */
+const CHILD_R_MIN = 3.2;
+const CHILD_R_SPAN = 2.6;
+
+/**
+ * V1.4 VB-23 — the centre orb's radius once the camera has arrived, in view
+ * units, *after* the scene transform.
+ *
+ * Fixed, rather than "whatever the vertex's own depth makes it", and that is
+ * the point. A section clicked while it faced the camera drew at ~22 units and
+ * the same section clicked edge-on drew at ~10 — sometimes four times a
+ * sub-node, sometimes not quite twice one. Hierarchy that depends on which way
+ * the globe happened to be turned is not hierarchy. 15.5 against an arrived
+ * sub-node's 5.8 is a hair under 2.7×: unmistakably the parent, without
+ * crowding the ring at CHILD_RING.
+ */
+const CENTRE_R = 15.5;
+
+/**
+ * The split, in ms and in view units.
+ *
+ * 320ms is docs/design-system.html §06's drawer value, and a whole stage
+ * re-forming into two columns is the drawer-sized change on this surface. The
+ * feature position is left of centre and dead on the vertical middle; the
+ * panel that opens beside it starts at DETAIL_LEFT_PCT (BrainGlobe.css), and
+ * FEATURE_X is set so the orb sits in the middle of what is left.
+ */
+const SPLIT_MS = 320;
+/* -58 and 19 are measured against the SMALLEST stage the drawer opens Brain
+   at — 260px, where the left column is 91px and this orb is 49px of it. A
+   feature position tuned at the drawer's full height would have the orb
+   touching the panel at its resting one. */
+const FEATURE_X = -58;
+const FEATURE_Y = 0;
+const FEATURE_R = 19;
+
+/** The connection lines from the centre orb to each sub-node. Faint on
+ * purpose — VB-23 asks for "attached", not for a second graph competing with
+ * the orbs — and trimmed to the rims at both ends so they read as joints. */
+const LINK_WIDTH = 0.7;
+const LINK_OPACITY = 0.4;
 
 /** The fly-in's easing, given in VB-14 as 1-(1-t)^3 — an ease-out cubic. Also
  * used for each child's own arrival, so the two read as one movement. */
@@ -190,6 +259,18 @@ function clamp01(value: number): number {
 const NODE_R_MIN = 3.0;
 const NODE_R_SPAN = 5.4;
 const BLOOM_SCALE = 2.7;
+/**
+ * V1.4 VB-23. How far the back of the solid sinks toward each orb's own deep
+ * colour — the third depth cue, and the one that keeps a flat fill from
+ * reading as a flat drawing.
+ *
+ * 0.42, screenshotted rather than reasoned: a far orb already carries the
+ * group's own 0.62 opacity against the field, and at 0.5 the two together took
+ * the teal ones at the back to something indistinguishable from the stage. At
+ * 0.42 the back of the solid is plainly further away and still plainly a
+ * colour.
+ */
+const SHADE_DEPTH = 0.42;
 const EDGE_W_MIN = 0.5;
 const EDGE_W_SPAN = 1.9;
 /** Below this depth a label is behind the globe and is not shown at all.
@@ -268,6 +349,19 @@ export interface BrainGlobeProps {
    * `brainDriftAllowed`); this component decides what it looks like.
    */
   drift?: boolean;
+  /**
+   * V1.4 VB-23. What each node holds, keyed by node id — the cells the split's
+   * detail panel draws. Built by `nodeDetailsByNode` in core/flow/nodeDetails.ts
+   * from `wb:answers`; nothing here is stored and nothing is derived twice.
+   *
+   * Optional, and its absence is a real state rather than a bug: the globe is
+   * usable as a pure showcase with no flow state at all, and a node with no
+   * entry says so in one sentence instead of drawing empty boxes. The split
+   * itself still happens — the sub-node still moves, the panel still opens
+   * with its name — because degradation means doing less, never doing nothing
+   * (docs/GUARDRAILS.md).
+   */
+  details?: Readonly<Record<string, readonly NodeDetail[]>>;
   /** The section or sub-section now in focus — a section when one is flown
    * into, one of its children when a child is picked, null when the globe is
    * back to the whole file. The caller owns what to show for it. */
@@ -298,6 +392,10 @@ interface Frame {
   transform: string;
   /** Eased zoom, 0..1 — the camera's own progress. */
   ez: number;
+  /** What the scene group is scaled by this frame. Published because a radius
+   * that has to end up at a fixed *on-screen* size has to be divided by it —
+   * see CENTRE_R and the flown node's radius below. */
+  sceneScale: number;
 }
 
 function computeFrame(rx: number, ry: number, zoomClock: number, selectedVertex: number | null): Frame {
@@ -339,6 +437,7 @@ function computeFrame(rx: number, ry: number, zoomClock: number, selectedVertex:
     order,
     transform: `scale(${sceneScale.toFixed(4)}) translate(${tx.toFixed(3)} ${ty.toFixed(3)})`,
     ez,
+    sceneScale,
   };
 }
 
@@ -370,11 +469,100 @@ function labelPlacement(leftPct: number): { shift: string; room: string } {
   };
 }
 
+// ── The split's information panel ──────────────────────────────────────────
+
+/**
+ * The grid of what a sub-section holds — V1.4 VB-23's "information panel on
+ * the right".
+ *
+ * Three decisions, all of them forced by 400px:
+ *
+ * 1. **The answer is the cell, the question is its caption.** Every question in
+ *    this interview is a whole spoken sentence ("Is this your primary role, a
+ *    secondary role, or something occasional?"), and a grid whose labels are
+ *    sentences is a list. So the person's own words are the loud line and the
+ *    question sits under them, two lines at most, with the whole of it in
+ *    `title` for anyone who wants it. Nothing they *said* is ever clipped.
+ * 2. **Records become headings, not indentation.** Three roles are three
+ *    headings, exactly as the generated file prints them — indentation at this
+ *    width would cost more than it explains.
+ * 3. **A `<dl>`, because these are name/value pairs.** Grouped in `<div>`s,
+ *    which is valid inside a description list and is what lets each pair be
+ *    one grid cell.
+ *
+ * **No headings in here, deliberately.** A record's title looks like an `<h4>`
+ * and is not one: this component is dropped into a drawer whose own heading is
+ * an `<h2>`, and into a bare harness page whose first heading is an `<h1>`, so
+ * any level hard-coded here is wrong somewhere and axe's `heading-order` says
+ * so. Each record is a named `role="group"` instead, labelled by the very text
+ * that is drawn — which is the structure a record actually has, and it needs no
+ * knowledge of what is above it on the page.
+ *
+ * Empty is a real state and says so in a sentence: a section nobody has
+ * answered yet draws no boxes at all (core/flow/nodeDetails.ts).
+ */
+function DetailGrid({ details }: { details: readonly NodeDetail[] }) {
+  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
+  if (details.length === 0) {
+    return <p className="brainglobe-detail-empty">{S.brainGlobeDetailEmpty}</p>;
+  }
+
+  // Consecutive runs of the same group, in the order core handed them over —
+  // never sorted, so the panel reads in the order the file writes.
+  const groups: Array<{ group: string; cells: NodeDetail[] }> = [];
+  for (const detail of details) {
+    const last = groups[groups.length - 1];
+    if (last && last.group === detail.group) last.cells.push(detail);
+    else groups.push({ group: detail.group, cells: [detail] });
+  }
+
+  return (
+    <>
+      {groups.map(({ group, cells }, index) => (
+        <div
+          className="brainglobe-detail-group"
+          key={`${group}-${index}`}
+          {...(group ? { role: 'group', 'aria-labelledby': `${uid}-g${index}` } : {})}
+        >
+          {group && (
+            <p className="brainglobe-detail-record" id={`${uid}-g${index}`}>
+              {group}
+            </p>
+          )}
+          <dl className="brainglobe-detail-grid">
+            {cells.map((cell, cellIndex) => (
+              <div
+                className="brainglobe-detail-cell"
+                key={`${cell.label}-${cellIndex}`}
+                data-wide={cell.wide ? 'true' : 'false'}
+              >
+                {/* `dt` before `dd`, which is the order HTML requires inside a
+                    description list and the order a screen reader wants:
+                    question, then answer. The cell shows them the other way up
+                    — the answer is the content — and that is one `order` in
+                    BrainGlobe.css rather than invalid markup here. */}
+                <dt className="brainglobe-detail-key" title={cell.label}>
+                  {cell.label}
+                </dt>
+                <dd className="brainglobe-detail-value">{cell.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      ))}
+    </>
+  );
+}
+
 // ── The component ──────────────────────────────────────────────────────────
 
-export function BrainGlobe({ sections, states, size = 300, drift = false, onSelect }: BrainGlobeProps) {
+export function BrainGlobe({ sections, states, size = 300, drift = false, details, onSelect }: BrainGlobeProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const pinRefs = useRef<Array<HTMLButtonElement | null>>([]);
+  /** The sub-node buttons, by child id. Keyed rather than indexed: which
+   * children exist changes with the section flown into, and Escape has to put
+   * focus back on the one it just closed. */
+  const childPinRefs = useRef(new Map<string, HTMLButtonElement>());
 
   const shown = useMemo(() => sections.slice(0, SECTION_VERTICES.length), [sections]);
 
@@ -407,6 +595,10 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
   const [activeIndex, setActiveIndex] = useState(0);
   /** Which child of the flown-into section is picked, by id. */
   const [pickedChildId, setPickedChildId] = useState<string | null>(null);
+  /** V1.4 VB-23. The split's own clock, 0 (the ring) to 1 (feature left,
+   * panel right). Its own clock and not derived from `pickedChildId`, so the
+   * orb travels rather than teleports — and so it can travel back. */
+  const [splitClock, setSplitClock] = useState(0);
 
   // ── Animation plumbing. Refs, not state: these change every frame and no
   // render should depend on them directly.
@@ -418,6 +610,9 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
   const zoomRef = useRef<{ startedAt: number; from: number; to: number } | null>(null);
   const zoomClockRef = useRef(0);
   zoomClockRef.current = zoomClock;
+  const splitRef = useRef<{ startedAt: number; from: number; to: number } | null>(null);
+  const splitClockRef = useRef(0);
+  splitClockRef.current = splitClock;
   const draggingRef = useRef(false);
   const draggedRef = useRef(false);
   const reducedRef = useRef(reduced);
@@ -491,6 +686,21 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
         zoomClockRef.current = value;
         setZoomClock(value);
         if (p >= 1) zoomRef.current = null;
+        else active = true;
+      }
+
+      // V1.4 VB-23's split, run exactly like the zoom above and deliberately
+      // not folded into it: they overlap (a sub-node can be picked before the
+      // fly-in's stagger tail has finished) and one clock cannot be in two
+      // places at once.
+      const split = splitRef.current;
+      if (split) {
+        const span = Math.abs(split.to - split.from) || 1;
+        const p = clamp01((now - split.startedAt) / (SPLIT_MS * span));
+        const value = split.from + (split.to - split.from) * p;
+        splitClockRef.current = value;
+        setSplitClock(value);
+        if (p >= 1) splitRef.current = null;
         else active = true;
       }
 
@@ -581,6 +791,12 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
         zoomClockRef.current = zoom.to;
         setZoomClock(zoom.to);
       }
+      const split = splitRef.current;
+      if (split) {
+        splitRef.current = null;
+        splitClockRef.current = split.to;
+        setSplitClock(split.to);
+      }
       setMovingOnce(false);
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -631,23 +847,64 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
     [startLoop],
   );
 
+  /** The split's clock, driven the same way `runZoom` drives the camera's —
+   * instantly under reduced motion, which is what makes the split "already
+   * there" rather than a 320ms move nobody asked to watch. */
+  const runSplit = useCallback(
+    (to: number) => {
+      if (reducedRef.current) {
+        splitRef.current = null;
+        splitClockRef.current = to;
+        setSplitClock(to);
+        return;
+      }
+      splitRef.current = { startedAt: performance.now(), from: splitClockRef.current, to };
+      startLoop();
+    },
+    [startLoop],
+  );
+
   const flyInto = useCallback(
     (index: number) => {
       setFlownIndex(index);
       setActiveIndex(index);
       setPickedChildId(null);
+      runSplit(0);
       runZoom(ZOOM_TAIL);
       onSelect?.(shown[index] ?? null);
     },
-    [onSelect, runZoom, shown],
+    [onSelect, runSplit, runZoom, shown],
   );
 
   const flyOut = useCallback(() => {
     setFlownIndex(null);
     setPickedChildId(null);
+    runSplit(0);
     runZoom(0);
     onSelect?.(null);
-  }, [onSelect, runZoom]);
+  }, [onSelect, runSplit, runZoom]);
+
+  const pickChild = useCallback(
+    (child: FileOutlineNode) => {
+      setPickedChildId(child.id);
+      runSplit(1);
+      onSelect?.(child);
+    },
+    [onSelect, runSplit],
+  );
+
+  /**
+   * Back from the split to the ring.
+   *
+   * Deliberately reports nothing. `onSelect` is a request to go somewhere —
+   * the drawer turns it into interview navigation — and closing a panel is
+   * not one, exactly as flying out of a section reports `null` rather than
+   * re-reporting the file.
+   */
+  const unpickChild = useCallback(() => {
+    setPickedChildId(null);
+    runSplit(0);
+  }, [runSplit]);
 
   // ── Pointer: drag to rotate ──────────────────────────────────────────────
 
@@ -777,6 +1034,16 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
         jumpActive(shown.length - 1);
         return;
       case 'Escape':
+        // One level at a time, and in the order they were opened: the split
+        // closes back to the ring first, the section only after that. Escape
+        // that jumped straight out of a section you were reading a sub-node of
+        // would throw away two steps for one keystroke.
+        if (pickedChildId !== null) {
+          event.preventDefault();
+          unpickChild();
+          childPinRefs.current.get(pickedChildId)?.focus();
+          return;
+        }
         if (flownIndex === null) return;
         event.preventDefault();
         flyOut();
@@ -814,17 +1081,38 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
   const children = flownSection?.children ?? [];
   const flownNode = flownVertex === null ? null : frame.nodes[flownVertex]!;
 
+  /** The split, eased — 0 is the ring, 1 is feature-left / panel-right. */
+  const es = easeOutCubic(clamp01(splitClock));
+  const pickedChild = pickedChildId === null ? null : (children.find((child) => child.id === pickedChildId) ?? null);
+  /** The centre orb's on-screen radius this frame: its own, walked to CENTRE_R
+   * as the camera arrives, then shrinking away as the stage splits. */
+  const centreR = flownNode ? (flownNode.radius * frame.sceneScale) * (1 - frame.ez) + CENTRE_R * frame.ez : 0;
+
+  const originX = flownNode?.lx ?? 0;
+  const originY = flownNode?.ly ?? 0;
+
   const childLayout = children.map((child, i) => {
     const progress = easeOutCubic(clamp01((zoomClock - CHILD_DELAY - i * CHILD_STAGGER) / CHILD_SPAN));
     const angle = -Math.PI / 2 + (i * Math.PI * 2) / Math.max(1, children.length);
-    const originX = flownNode?.lx ?? 0;
-    const originY = flownNode?.ly ?? 0;
+    const ringX = originX + Math.cos(angle) * CHILD_RING * progress;
+    const ringY = originY + Math.sin(angle) * CHILD_RING * progress;
+    const ringR = CHILD_R_MIN + CHILD_R_SPAN * progress;
+    const picked = child.id === pickedChildId;
+    // The picked one travels to the feature position and grows into it;
+    // everything else in the cluster stays where it is and fades, so the left
+    // column is one orb rather than one orb and four ghosts.
+    const t = picked ? es : 0;
     return {
       child,
       progress,
-      x: originX + Math.cos(angle) * CHILD_RING * progress,
-      y: originY + Math.sin(angle) * CHILD_RING * progress,
-      radius: 3.2 + 2.6 * progress,
+      picked,
+      ringX,
+      ringY,
+      ringR,
+      x: ringX + (FEATURE_X - ringX) * t,
+      y: ringY + (FEATURE_Y - ringY) * t,
+      radius: ringR + (FEATURE_R - ringR) * t,
+      fade: picked ? 1 : 1 - es,
       gradient: GRADIENTS[i % GRADIENTS.length]!,
     };
   });
@@ -839,6 +1127,8 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
       data-inside={inside ? 'true' : 'false'}
       data-reduced={reduced ? 'true' : 'false'}
       data-zoom={frame.ez.toFixed(3)}
+      data-split={es.toFixed(3)}
+      data-picked={pickedChildId ?? ''}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -854,17 +1144,9 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
             <stop offset="0%" className="brainglobe-stop-glow" />
             <stop offset="100%" className="brainglobe-stop-field" />
           </radialGradient>
-          {GRADIENTS.map((n) => (
-            // A lit sphere, not a disc: the highlight is offset up and left of
-            // centre (34%/30%, VB-14's own numbers) so every node is lit from
-            // one place, and the rim goes to a deep colour rather than to the
-            // same hue dimmed.
-            <radialGradient key={`s${n}`} id={`${uid}-s${n}`} cx="34%" cy="30%" r="72%">
-              <stop offset="0%" className="brainglobe-stop-hi" />
-              <stop offset="36%" className={`brainglobe-stop-mid-${n}`} />
-              <stop offset="100%" className={`brainglobe-stop-deep-${n}`} />
-            </radialGradient>
-          ))}
+          {/* V1.4 VB-23 removed five sphere gradients from here. An orb is one
+              flat fill now (see `brainglobe-solid-*` in BrainGlobe.css); the
+              blooms below are the only radials the nodes still need. */}
           {GRADIENTS.map((n) => (
             // The bloom. A separate, much larger radial behind the sphere, in
             // the sphere's own mid colour, fading to nothing — this is what
@@ -926,7 +1208,20 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
               const state = entry ? stateOf(entry.section) : 'reached';
               const structural = !entry;
               const lit = !structural && state !== 'untouched';
-              const fade = flownIndex !== null && entry?.index !== flownIndex ? 1 - frame.ez * 0.86 : 1;
+              const isCentre = flownIndex !== null && entry?.index === flownIndex;
+              const fade = flownIndex !== null && !isCentre ? 1 - frame.ez * 0.86 : 1;
+              // The centre orb is the cluster's parent, so it leaves with the
+              // rest of the cluster when a sub-node takes the stage.
+              const splitFade = isCentre ? 1 - es : 1;
+              /** V1.4 VB-23: hierarchy by size. The section flown into grows to
+               * a fixed on-screen CENTRE_R rather than keeping whatever radius
+               * its own depth gave it — see CENTRE_R. Divided by the scene
+               * scale because this radius is drawn inside the scene group. */
+              const radius = structural
+                ? node.radius * 0.62
+                : isCentre
+                  ? centreR / frame.sceneScale
+                  : node.radius;
 
               return (
                 <g
@@ -936,36 +1231,53 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
                   data-section-id={entry?.section.id ?? ''}
                   data-node-state={structural ? 'structural' : state}
                   data-depth={node.t.toFixed(3)}
-                  opacity={((structural ? 0.34 : 0.62 + node.t * 0.38) * fade).toFixed(3)}
+                  opacity={((structural ? 0.34 : 0.62 + node.t * 0.38) * fade * splitFade).toFixed(3)}
                 >
                   {lit && (
                     <circle
                       className="brainglobe-bloom"
                       cx={node.x}
                       cy={node.y}
-                      r={(node.radius * BLOOM_SCALE).toFixed(2)}
+                      r={(radius * BLOOM_SCALE).toFixed(2)}
                       fill={`url(#${uid}-b${gradient})`}
                       opacity={(0.25 + node.t * 0.75).toFixed(3)}
                     />
                   )}
                   {state === 'current' && !structural && (
+                    // VB-23: the halo goes on the way in. Hierarchy inside a
+                    // section comes from size, and a ring around the largest
+                    // thing on the stage repeats what the size already said.
+                    // Out here, among ten equal siblings, it is still the only
+                    // shape that marks the section being written now.
                     <circle
                       className="brainglobe-halo"
                       cx={node.x}
                       cy={node.y}
-                      r={(node.radius + 3.4).toFixed(2)}
+                      r={(radius + 3.4).toFixed(2)}
                       fill="none"
                       strokeWidth={(0.8 + node.t * 0.9).toFixed(2)}
+                      opacity={(isCentre ? 1 - frame.ez : 1).toFixed(3)}
                     />
                   )}
                   {structural || state !== 'untouched' ? (
-                    <circle
-                      className="brainglobe-sphere"
-                      cx={node.x}
-                      cy={node.y}
-                      r={(structural ? node.radius * 0.62 : node.radius).toFixed(2)}
-                      fill={`url(#${uid}-s${gradient})`}
-                    />
+                    // One flat fill — a solid orb, not a shaded bead (VB-23).
+                    // Depth is still carried, by the radius above, by the
+                    // group's opacity, and by the shade that follows.
+                    <g className="brainglobe-orb">
+                      <circle
+                        className={`brainglobe-sphere brainglobe-solid-${gradient}`}
+                        cx={node.x}
+                        cy={node.y}
+                        r={radius.toFixed(2)}
+                      />
+                      <circle
+                        className={`brainglobe-shade brainglobe-deep-${gradient}`}
+                        cx={node.x}
+                        cy={node.y}
+                        r={radius.toFixed(2)}
+                        opacity={((1 - node.t) * SHADE_DEPTH).toFixed(3)}
+                      />
+                    </g>
                   ) : (
                     // Not a dimmer sphere — a different shape. State is never
                     // carried by colour alone (docs/GUARDRAILS.md), and an
@@ -992,9 +1304,46 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
             to has already been walked to the origin, so they ring the origin
             and never inherit the camera push twice. */}
         <g className="brainglobe-children-layer">
-          {childLayout.map(({ child, progress, x, y, radius, gradient }) =>
+          {/* V1.4 VB-23 — the joints. Drawn before the orbs and trimmed to
+              both rims by the real radii, so a line is the gap between two
+              orbs rather than a spoke crossing them. They fade out with the
+              rest of the cluster when the stage splits. */}
+          <g className="brainglobe-links">
+            {childLayout.map(({ child, progress, ringX, ringY, ringR, fade }) => {
+              if (progress <= 0) return null;
+              const dx = ringX - originX;
+              const dy = ringY - originY;
+              const length = Math.hypot(dx, dy);
+              // Still inside the centre orb: there is no gap to draw yet.
+              if (length <= centreR + ringR) return null;
+              const ux = dx / length;
+              const uy = dy / length;
+              return (
+                <line
+                  key={child.id}
+                  className="brainglobe-link"
+                  data-link-id={child.id}
+                  x1={(originX + ux * centreR).toFixed(2)}
+                  y1={(originY + uy * centreR).toFixed(2)}
+                  x2={(ringX - ux * ringR).toFixed(2)}
+                  y2={(ringY - uy * ringR).toFixed(2)}
+                  strokeWidth={LINK_WIDTH}
+                  strokeOpacity={(progress * LINK_OPACITY * (1 - es)).toFixed(3)}
+                  strokeLinecap="round"
+                  opacity={fade.toFixed(3)}
+                />
+              );
+            })}
+          </g>
+          {childLayout.map(({ child, progress, x, y, radius, gradient, fade, picked }) =>
             progress <= 0 ? null : (
-              <g key={child.id} className="brainglobe-child-node" data-child-id={child.id} opacity={progress.toFixed(3)}>
+              <g
+                key={child.id}
+                className="brainglobe-child-node"
+                data-child-id={child.id}
+                data-picked={picked ? 'true' : 'false'}
+                opacity={(progress * fade).toFixed(3)}
+              >
                 <circle
                   className="brainglobe-bloom"
                   cx={x}
@@ -1003,7 +1352,12 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
                   fill={`url(#${uid}-b${gradient})`}
                   opacity={(progress * 0.8).toFixed(3)}
                 />
-                <circle className="brainglobe-sphere" cx={x} cy={y} r={radius.toFixed(2)} fill={`url(#${uid}-s${gradient})`} />
+                <circle
+                  className={`brainglobe-sphere brainglobe-solid-${gradient}`}
+                  cx={x}
+                  cy={y}
+                  r={radius.toFixed(2)}
+                />
               </g>
             ),
           )}
@@ -1025,11 +1379,17 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
             // the other nine's names down with their spheres, so the one you
             // are inside is the only thing left to read.
             const labelFade = flownIndex !== null && !isFlown ? 1 - frame.ez * 0.95 : 1;
-            const labelOpacity = (LABEL_OPACITY_MIN + node.t * (1 - LABEL_OPACITY_MIN)) * labelFade;
+            const labelOpacity = (LABEL_OPACITY_MIN + node.t * (1 - LABEL_OPACITY_MIN)) * labelFade * (isFlown ? 1 - es : 1);
             const left = pct(node.lx);
+            // The hit target — and therefore where the label sits — follows the
+            // orb whenever the orb is bigger than the 44px floor. Without this
+            // the centre orb grew to 93px at VB-23's CENTRE_R and its own name
+            // was printed across the middle of it.
+            const orbPx = ((isFlown ? centreR : node.radius * frame.sceneScale) * size) / 100;
             const style = {
               left: `${left}%`,
               top: `${pct(node.ly)}%`,
+              '--brainglobe-hit-size': `${orbPx.toFixed(1)}px`,
               '--brainglobe-label-opacity': visible ? labelOpacity.toFixed(3) : '0',
               '--brainglobe-label-size': `${(LABEL_SIZE_MIN + node.t * LABEL_SIZE_SPAN).toFixed(1)}px`,
               '--brainglobe-label-weight': String(Math.round((450 + node.t * 150) / 50) * 50),
@@ -1050,7 +1410,11 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
                 data-depth={node.t.toFixed(3)}
                 data-label-hidden={visible ? 'false' : 'true'}
                 style={style}
-                hidden={inside && !isFlown}
+                // The section you are inside goes too once a sub-node takes
+                // the stage: its orb has faded out, and a control nobody can
+                // see is not a control. The way back is the sub-node itself,
+                // Escape, or the button below that says so in words.
+                hidden={inside && (!isFlown || pickedChildId !== null)}
                 tabIndex={entry.index === activeIndex ? 0 : -1}
                 aria-pressed={isFlown}
                 // The state, in words, on every node — because the picture
@@ -1076,19 +1440,39 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
             );
           })}
 
-        {childLayout.map(({ child, progress, x, y }) =>
+        {childLayout.map(({ child, progress, x, y, radius, picked }) =>
           progress <= 0 ? null : (
             <button
               key={child.id}
               type="button"
+              ref={(el) => {
+                if (el) childPinRefs.current.set(child.id, el);
+                else childPinRefs.current.delete(child.id);
+              }}
               className="brainglobe-pin is-child"
               data-child-id={child.id}
-              data-picked={pickedChildId === child.id ? 'true' : 'false'}
+              data-picked={picked ? 'true' : 'false'}
+              // The four you did not pick leave with their orbs — off screen
+              // and out of the tab order together, so Tab never lands on
+              // something invisible.
+              hidden={pickedChildId !== null && !picked}
+              // Its own name is printed as the panel's heading beside it while
+              // the stage is split, so the label under the orb would be the
+              // same three words twice at 400px wide. The accessible name is
+              // untouched either way.
+              data-label-hidden={picked && es > 0.5 ? 'true' : 'false'}
+              aria-pressed={picked}
+              aria-label={child.label}
               style={
                 {
                   left: `${pct(x)}%`,
                   top: `${pct(y)}%`,
-                  '--brainglobe-label-opacity': progress.toFixed(3),
+                  // The hit target grows with the orb once it is featured, so
+                  // the whole of a 60px circle answers a click rather than a
+                  // 44px square in the middle of it. `max()` in the stylesheet
+                  // keeps the 44px floor whatever this says.
+                  '--brainglobe-hit-size': `${((radius * size) / 100).toFixed(1)}px`,
+                  '--brainglobe-label-opacity': (progress * (picked ? 1 - es : 1)).toFixed(3),
                   '--brainglobe-label-size': `${LABEL_SIZE_MIN - 0.5}px`,
                   '--brainglobe-label-weight': '550',
                   '--brainglobe-label-shift': labelPlacement(pct(x)).shift,
@@ -1097,16 +1481,53 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
               }
               onClick={() => {
                 if (draggedRef.current) return;
-                setPickedChildId(child.id);
-                onSelect?.(child);
+                if (picked) {
+                  unpickChild();
+                  return;
+                }
+                pickChild(child);
               }}
             >
               <span className="brainglobe-hit" aria-hidden="true" />
-              <span className="brainglobe-label">{child.label}</span>
+              <span className="brainglobe-label" aria-hidden="true">
+                {child.label}
+              </span>
             </button>
           ),
         )}
       </div>
+
+      {/*
+        V1.4 VB-23 — the right-hand half of the split.
+
+        A `region` rather than a plain div, and focusable, because it scrolls:
+        `2.1 Roles` with three records is thirteen cells and taller than the
+        stage, and a scrolling box a keyboard cannot reach is a box whose
+        bottom half does not exist (WCAG 2.1.1, and axe's
+        `scrollable-region-focusable`). It is a stop *after* the sub-node that
+        opened it and *before* the way back out, so tabbing forward leaves the
+        globe exactly as it did before the split existed — no trap.
+
+        Mounted only while a sub-node is picked, so nothing behind the globe
+        holds a name or a tab stop it should not.
+      */}
+      {pickedChild && (
+        <div
+          className="brainglobe-detail"
+          role="region"
+          tabIndex={0}
+          aria-label={S.brainGlobeDetail(pickedChild.label)}
+          data-detail-id={pickedChild.id}
+          style={{ '--brainglobe-split': es.toFixed(3) } as CSSProperties}
+        >
+          {/* Not a heading, for the same reason the record titles below are
+              not: this component does not know what heading level is above it.
+              The region's own accessible name carries the sub-section's name
+              to a screen reader; this is the visible copy of it. */}
+          <p className="brainglobe-detail-name">{pickedChild.label}</p>
+          <DetailGrid details={details?.[pickedChild.id] ?? []} />
+        </div>
+      )}
 
       {flownSection && (
         <button type="button" className="brainglobe-back" onClick={flyOut} hidden={!inside}>
@@ -1119,7 +1540,7 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, onSele
         {S.brainGlobeHelp}
       </p>
       <p className="brainglobe-sr" aria-live="polite">
-        {flownSection ? S.brainGlobeInside(flownSection.label) : ''}
+        {pickedChild ? S.brainGlobeInside(pickedChild.label) : flownSection ? S.brainGlobeInside(flownSection.label) : ''}
       </p>
     </div>
   );
