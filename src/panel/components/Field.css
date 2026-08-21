@@ -1,4 +1,11 @@
+/* `width: 100%` plus 30px of padding and 2px of border makes a content-box
+ * field 32px wider than its container. This repo ships no global reset, so
+ * without this the input bled off the right edge of the 400px panel on every
+ * surface that has one, and the panel scrolled sideways (measured: Home's
+ * scrollWidth 408 against a 400 client width). Found during V1.4's layout
+ * rework; pre-existing since the component was written at R1-03. */
 .field {
+  box-sizing: border-box;
   width: 100%;
   font-family: inherit;
   font-size: 15px;
@@ -19,7 +26,11 @@
   color: var(--ink-3);
 }
 textarea.field {
-  min-height: 96px;
+  /* 128, not 96, since `.field` became `border-box` above: under content-box
+     this floor rendered as 96 + 30px padding + 2px border = 128px, and the
+     box-model repair was meant to change how wide a field is, not how tall.
+     Keeping the rendered floor identical is what makes that true. */
+  min-height: 128px;
   resize: vertical;
 }
 .field-label {

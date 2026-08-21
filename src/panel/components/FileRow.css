@@ -1,4 +1,11 @@
 .filerow {
+  /* This row renders as a <button> for a file and an <a> for the "talk to a
+     person" link (V1.1 VB-12's `href` variant). Chrome's UA stylesheet gives
+     buttons `border-box` but not anchors, so with `width: 100%` and 34px of
+     padding and border the link — and only the link — hung 8px off the right
+     of the 400px panel and made Home scroll sideways. Stated here so both
+     elements measure the same way rather than depending on a UA default. */
+  box-sizing: border-box;
   display: flex;
   align-items: center;
   gap: 14px;
