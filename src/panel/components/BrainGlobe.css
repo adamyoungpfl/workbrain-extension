@@ -1,0 +1,280 @@
+/* V1.2 VB-14 — the Brain globe.
+
+   THE ONE SANCTIONED DARK SURFACE. docs/V1.2-REFINEMENT.md, iteration three:
+   "Brain gets a dark stage, deliberately... This is the one sanctioned dark
+   surface in the product, contained inside the drawer, and it does not change
+   the panel's own light identity." Everything below is scoped under
+   `.brainglobe`, so nothing here can leak into the light panel around it.
+
+   Every colour is a token from design/tokens.json's `color.globe` group. No
+   hex may appear in this file — `npm run audit` and tests/tokens.test.mjs both
+   fail the build on one.
+
+   MOTION (docs/design-system.html §06, binding). Only two things here
+   transition at all: a label's opacity on settle, and the hover/focus lift on
+   a pin. Everything else — the whole globe turning, the fly-in, the children
+   arriving — is real geometry recomputed per frame in BrainGlobe.tsx, because
+   a CSS transform would spin the drawing like a flat card and lose the thing
+   that makes it read as a sphere. So there are no keyframes below for reduced
+   motion to cancel; that switch lives in the component, where it stops the
+   frame loop from ever starting rather than merely hiding it. */
+
+.brainglobe {
+  position: relative;
+  width: var(--brainglobe-size);
+  height: var(--brainglobe-size);
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: var(--r-lg);
+  overflow: hidden;
+  background: var(--globe-field);
+  /* The stage owns rotation within its own bounds; the drawer's grip owns
+     vertical resize (VB-14's open item 1). `touch-action: none` is what makes
+     that true on a touch screen — without it the browser claims the vertical
+     drag for scrolling before the pointer handler ever sees it. */
+  touch-action: none;
+  /* A drag is a drag, not a text selection. */
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.brainglobe:active {
+  cursor: grabbing;
+}
+
+.brainglobe-svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* ── The field ───────────────────────────────────────────────────────────── */
+
+/* Not a flat black rectangle. The globe needs something to sit *in front of*,
+   so the stage is a soft radial: lighter behind the solid, falling to the deep
+   field at the corners. */
+.brainglobe-stop-glow  { stop-color: var(--globe-field-glow); }
+.brainglobe-stop-field { stop-color: var(--globe-field); }
+
+/* ── The spheres ─────────────────────────────────────────────────────────── */
+
+/* One shared highlight, five mid/deep pairs. The highlight stop is what makes
+   a node a lit sphere instead of a flat disc; its offset (34%/30%, set in the
+   component) puts the light source up and to the left of every one of them,
+   which is the only reason twelve separate gradients read as one scene. */
+.brainglobe-stop-hi { stop-color: var(--globe-highlight); }
+
+.brainglobe-stop-mid-1  { stop-color: var(--globe-node-1-mid); }
+.brainglobe-stop-deep-1 { stop-color: var(--globe-node-1-deep); }
+.brainglobe-stop-mid-2  { stop-color: var(--globe-node-2-mid); }
+.brainglobe-stop-deep-2 { stop-color: var(--globe-node-2-deep); }
+.brainglobe-stop-mid-3  { stop-color: var(--globe-node-3-mid); }
+.brainglobe-stop-deep-3 { stop-color: var(--globe-node-3-deep); }
+.brainglobe-stop-mid-4  { stop-color: var(--globe-node-4-mid); }
+.brainglobe-stop-deep-4 { stop-color: var(--globe-node-4-deep); }
+.brainglobe-stop-mid-5  { stop-color: var(--globe-node-5-mid); }
+.brainglobe-stop-deep-5 { stop-color: var(--globe-node-5-deep); }
+
+.brainglobe-edge-far  { stroke: var(--globe-edge-far); }
+.brainglobe-edge-near { stroke: var(--globe-edge); }
+
+/* The section being written now. A ring is a shape, not a colour — the state
+   is also in the node's accessible name, so nothing here is the only signal
+   (docs/GUARDRAILS.md). */
+.brainglobe-halo {
+  stroke: var(--globe-ring);
+  stroke-opacity: 0.85;
+}
+
+/* Not yet reached. Deliberately a different shape rather than a dimmer sphere,
+   for the same reason the file tree uses `[ ]` and `[x]` glyphs. */
+.brainglobe-hollow-ring {
+  stroke: var(--globe-edge);
+  stroke-opacity: 0.95;
+}
+
+.brainglobe-hollow-dot {
+  fill: var(--globe-edge);
+  fill-opacity: 0.55;
+}
+
+/* ── The interactive overlay ─────────────────────────────────────────────── */
+
+/* Real buttons over the picture. See BrainGlobe.tsx's header for why the
+   controls are HTML and not SVG `<g tabindex>`: the 44px floor, and a screen
+   reader that wants a name rather than a shape. */
+.brainglobe-pins {
+  position: absolute;
+  inset: 0;
+}
+
+.brainglobe-pin {
+  position: absolute;
+  /* `left`/`top` come from the component as percentages of the stage, so the
+     overlay stays registered with the SVG at any rendered size. The translate
+     puts the 44px hit circle's centre — not the button's top-left, and not the
+     label — exactly on the node. */
+  transform: translate(-50%, calc(var(--target-min) / -2));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  color: var(--globe-label);
+  cursor: pointer;
+  /* The buttons overlap where the geometry overlaps. They are painted in the
+     same back-to-front order as the spheres, so the pointer always lands on
+     the nearest node — the one that looks like it is in front. */
+}
+
+/* `.brainglobe-pin` sets `display: flex`, which out-specifies the UA
+   stylesheet's `[hidden] { display: none }` — so the `hidden` attribute the
+   component puts on the sections you have flown away from would do nothing at
+   all without this line. Found by screenshot: their labels were still sitting
+   on top of the section you had just flown into. */
+.brainglobe-pin[hidden] {
+  display: none;
+}
+
+/* The 44 × 44 floor, met by a real box rather than by a hit circle so large
+   the twelve of them overlap into mush (docs/GUARDRAILS.md). */
+.brainglobe-hit {
+  display: block;
+  width: var(--target-min);
+  height: var(--target-min);
+  border-radius: var(--r-pill);
+  flex: none;
+}
+
+.brainglobe-label {
+  display: block;
+  /* 16ch is the taste limit; the second term is the physical one — how much
+     room this node actually has before its label would run off the stage. Both
+     custom properties are fractions of the stage width, set per frame by
+     `labelPlacement` in BrainGlobe.tsx. The shift moves the text only; the
+     44px hit target stays exactly on the node. */
+  max-width: min(16ch, calc(var(--brainglobe-size) * var(--brainglobe-label-room, 1)));
+  transform: translateX(calc(var(--brainglobe-size) * var(--brainglobe-label-shift, 0)));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: center;
+  /* Size, weight and opacity are all folds over depth, set per frame by the
+     component. Far labels read as further away and stay legible: the dimmest
+     value the component will emit measures 8.8:1 on the field. */
+  font-size: var(--brainglobe-label-size, 13px);
+  font-weight: var(--brainglobe-label-weight, 500);
+  line-height: 1.25;
+  opacity: var(--brainglobe-label-opacity, 1);
+  /* The settle. Motion carries shape; rest carries information. */
+  transition: opacity var(--base) var(--ease);
+  pointer-events: none;
+  /* The stage is dark and the geometry moves behind the text, so a label can
+     land over a bright sphere. A soft shadow in the field's own colour keeps
+     it readable without adding a plate that would clutter the picture. */
+  text-shadow: 0 1px 3px var(--globe-field), 0 0 8px var(--globe-field);
+}
+
+/* LABELS HIDE WHILE IT MOVES. Non-negotiable (VB-14): text tumbling in 3D is
+   unreadable. Higher specificity than the per-node opacity above, so this wins
+   whatever depth the node happens to be at. */
+.brainglobe[data-moving='true'] .brainglobe-pin .brainglobe-label {
+  opacity: 0;
+}
+
+/* ...except on the node you are actually on. A control whose name you cannot
+   see is not a control. */
+.brainglobe .brainglobe-pin:focus-visible .brainglobe-label,
+.brainglobe .brainglobe-pin:hover .brainglobe-label {
+  opacity: 1;
+}
+
+/* Focus. --primary is the panel's ring everywhere else and measures 2.90:1 on
+   this field — under WCAG 1.4.11's 3:1 for a non-text indicator — so the dark
+   stage gets an equal-or-better replacement rather than a ring nobody can
+   find. This is the "equal replacement" docs/GUARDRAILS.md requires, not an
+   `outline: none`. */
+.brainglobe-pin:focus-visible {
+  outline: 2px solid var(--globe-focus);
+  outline-offset: 2px;
+  border-radius: var(--r-md);
+}
+
+/* A node you can reach is a node that answers when you point at it. */
+.brainglobe-pin:hover .brainglobe-hit,
+.brainglobe-pin:focus-visible .brainglobe-hit {
+  box-shadow: inset 0 0 0 2px var(--globe-focus);
+  opacity: 0.55;
+  transition: opacity var(--fast) var(--ease);
+}
+
+.brainglobe-pin.is-child .brainglobe-label {
+  color: var(--globe-highlight);
+}
+
+/* ── Back out of a section ───────────────────────────────────────────────── */
+
+.brainglobe-back {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  min-height: var(--target-min);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px solid var(--globe-edge);
+  border-radius: var(--r-pill);
+  background: var(--globe-field);
+  color: var(--globe-label);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.brainglobe-back:hover {
+  border-color: var(--globe-focus);
+}
+
+.brainglobe-back:focus-visible {
+  outline: 2px solid var(--globe-focus);
+  outline-offset: 2px;
+}
+
+/* ── Said, never printed ─────────────────────────────────────────────────── */
+
+.brainglobe-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ── Reduced motion ──────────────────────────────────────────────────────── */
+
+/* NOT "animations off". The component never starts a frame loop under this
+   preference — no drift, no momentum, no fly-in tween — so the globe becomes a
+   thing that changes state instantly instead of a thing that moves. It has to
+   carry the same information, so: every label is visible at once rather than
+   only the near ones, nothing waits on a settle that will never come, and
+   every node is still reachable and activatable from the keyboard. */
+@media (prefers-reduced-motion: reduce) {
+  .brainglobe-label,
+  .brainglobe-pin .brainglobe-hit {
+    transition: none;
+  }
+
+  .brainglobe[data-moving='true'] .brainglobe-pin .brainglobe-label {
+    opacity: var(--brainglobe-label-opacity, 1);
+  }
+}

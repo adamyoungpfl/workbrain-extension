@@ -39,3 +39,6 @@ export type { BeatsProps } from './Beats';
 
 export { FileTree } from './FileTree';
 export type { FileTreeProps } from './FileTree';
+
+export { BrainGlobe } from './BrainGlobe';
+export type { BrainGlobeProps } from './BrainGlobe';

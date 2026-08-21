@@ -202,6 +202,25 @@ export const S = {
   filePreviewNote:
     "This is your file assembling as you answer — each section appears the moment you reach it. It's plain text, copy it any time.",
 
+  /**
+   * V1.2 VB-14 — the Brain globe. Four strings, and three of them are only
+   * ever heard, not seen: the picture says everything a sighted person needs,
+   * and a picture says nothing at all to a screen reader.
+   *
+   * `brainGlobeNode` deliberately reuses the three `fileTreeState*` words
+   * above rather than inventing a second vocabulary for the same three
+   * states. The globe and the list are two views of one file; a section that
+   * is "Written" in one must not be "Done" in the other.
+   *
+   * "Turn" rather than "rotate", "step between" rather than "navigate" —
+   * words a person would say (docs/design-system.html §08).
+   */
+  brainGlobeStage: 'Your file, as a globe',
+  brainGlobeHelp: 'Drag to turn it. Tab to step between sections.',
+  brainGlobeNode: (label: string, state: string) => `${label} — ${state}`,
+  brainGlobeInside: (label: string) => `Inside ${label}`,
+  brainGlobeBack: 'Back to the whole file',
+
   // ---------------------------------------------------------------- reflect
   reflectHeading: "Here's what I've got.",
   reflectSub: 'Nothing has been sent anywhere. Keep it, or let your own AI tighten it.',
