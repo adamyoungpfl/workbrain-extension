@@ -293,11 +293,24 @@ function showsHint(step: Step): boolean {
  * stay tight together at the top where they are read.
  *
  * It exists purely so Flow.css has something to hand the leftover room to. The
- * question surface now fills the panel down to the docked chrome (see
- * core/flow/composition.ts), and *where the slack goes* is the whole of VB-17:
- * given to this band, it becomes breathing space around the thing being
- * answered and a text box big enough to write in. Given to nobody, it is the
- * blank strip above the drawer that this task exists to remove.
+ * question surface fills the panel down to the docked chrome (see
+ * core/flow/composition.ts), and *where the slack goes* is the whole of VB-17.
+ *
+ * REWORKED. The first build handed the slack to this band and centred it,
+ * which put air on BOTH sides of the answer — a 124px hole between the
+ * question and its field and a 140px one under the last control, measured on
+ * the built extension at 400x760. Two dead bands are blanker than the one they
+ * replaced, so the band now takes the room at its own foot instead: the
+ * question, its help and these controls stay one cluster, and the leftover
+ * room falls in a single seam below them, with the save note riding on top of
+ * it just above the docked bar. A `multiline` question spends that room on its
+ * text box rather than leaving it blank (Flow.css), which is the only thing on
+ * the screen that can genuinely use it.
+ *
+ * core/flow/composition.ts's `inspectCluster` is what holds this — every seam
+ * inside the cluster measured against CLUSTER_MAX_INTERNAL_GAP by
+ * tests/e2e/question-fill.spec.ts, because the old e2e checked only the
+ * cluster's outer bounds and a hole in the middle of it passed.
  *
  * A wrapper rather than a rule on the form's children, because "the answer"
  * is two or three siblings on most kinds and none at all on an intro — the

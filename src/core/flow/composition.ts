@@ -125,3 +125,135 @@ export function questionAreaFraction(viewportHeight: number, drawerHeight: numbe
 export function fillsQuestionArea(viewportHeight: number, drawerHeight: number): boolean {
   return questionAreaFraction(viewportHeight, drawerHeight) >= QUESTION_AREA_TARGET_FRACTION - QUESTION_AREA_TOLERANCE;
 }
+
+/* ── The cluster, and where the slack is allowed to fall ──────────────────
+ *
+ * VB-17 shipped once and missed. Filling the panel down to the dock was read
+ * as "share the leftover pixels out evenly", so the answer band was centred in
+ * the room it was given — which on the real built extension at 400x760, on
+ * `preferred_name`, put a 124px hole between the question and its own field
+ * AND a 140px one between the last control and the save note. Two dead bands
+ * where V1.2 had one. Blanker, not less blank.
+ *
+ * The rule that replaces it, and the thing the code below exists to make
+ * checkable:
+ *
+ *   The question, its help and its controls are ONE CLUSTER, spaced by the
+ *   ordinary margins that say "these belong together", anchored at the top.
+ *   The leftover room falls in ONE seam, below the cluster, above the dock.
+ *
+ * The first half of that is a statement about gaps between adjacent things on
+ * screen, so it can only be checked by measuring a real layout — which is what
+ * tests/e2e/question-fill.spec.ts does. But *judging* a list of measurements is
+ * arithmetic, and arithmetic belongs here, tested without a browser
+ * (CLAUDE.md's one architectural rule). The e2e measures; this decides.
+ *
+ * The old e2e checked only the cluster's outer bounds — the top row was near
+ * the top, the bottom row was near the bar — which is exactly why a 124px hole
+ * between two of the rows in the middle sailed through it.
+ */
+
+/**
+ * The widest gap between two adjacent things inside the cluster that still
+ * reads as related spacing, in px.
+ *
+ * 32 is a little over the biggest margin this surface actually uses to
+ * separate two related rows — the hint's 18px bottom margin plus the flow's own
+ * 4px row gap, the readonly block's 18px, the idea row's 12px — with enough
+ * headroom that ordinary typographic spacing never trips it and nothing that
+ * reads as a hole ever passes. It is a ceiling on a mistake, not a spacing
+ * value: no rule in Flow.css is derived from it.
+ */
+export const CLUSTER_MAX_INTERNAL_GAP = 32;
+
+/** One measured thing on the question surface — a rendered row's own box, in
+ * viewport pixels, named by whatever the measurer calls it. */
+export interface MeasuredRow {
+  readonly name: string;
+  readonly top: number;
+  readonly bottom: number;
+}
+
+/** The vertical space between two adjacent rows, and which two they were —
+ * the name is what makes a failure say where the hole is rather than just how
+ * big it was. */
+export interface MeasuredGap {
+  readonly after: string;
+  readonly before: string;
+  readonly gap: number;
+}
+
+/**
+ * Every seam between consecutive rows, top to bottom.
+ *
+ * Sorted here rather than trusted, because a caller reading the DOM gets rows
+ * in document order and a fixed or flex-reordered element would put them out of
+ * visual order. Overlaps clamp to zero: two rows on top of each other is a
+ * different bug, and reporting it as a negative gap would let it masquerade as
+ * the tightest spacing on the screen.
+ */
+export function gapsBetween(rows: readonly MeasuredRow[]): MeasuredGap[] {
+  const ordered = [...rows].sort((a, b) => a.top - b.top);
+  const gaps: MeasuredGap[] = [];
+  for (let i = 1; i < ordered.length; i++) {
+    const previous = ordered[i - 1]!;
+    const next = ordered[i]!;
+    gaps.push({ after: previous.name, before: next.name, gap: Math.max(0, next.top - previous.bottom) });
+  }
+  return gaps;
+}
+
+/** The worst seam in a list, or null when there was never more than one row. */
+export function widestGap(gaps: readonly MeasuredGap[]): MeasuredGap | null {
+  return gaps.reduce<MeasuredGap | null>((worst, gap) => (worst === null || gap.gap > worst.gap ? gap : worst), null);
+}
+
+/** What `inspectCluster` found. */
+export interface ClusterInspection {
+  /** Every seam between two rows of the cluster itself. */
+  readonly internal: MeasuredGap[];
+  /** The widest of them, which is the one a failure should name. */
+  readonly worst: MeasuredGap | null;
+  /** The one seam the leftover room is allowed to fall into: between the
+   * cluster's last row and the foot row pinned above the dock. Null when the
+   * surface has no foot row, or nothing above it. */
+  readonly slack: MeasuredGap | null;
+  /** Whether the cluster still reads as one composed thing. */
+  readonly composed: boolean;
+}
+
+export interface ClusterOptions {
+  /**
+   * The row pinned to the foot of the surface — the save note. Everything
+   * above it is the cluster; the seam immediately before it is the slack, and
+   * is the only one on the screen allowed to be wide.
+   */
+  readonly footRow?: string;
+  /** Override for `CLUSTER_MAX_INTERNAL_GAP`, for a surface with a reason. */
+  readonly maxInternalGap?: number;
+}
+
+/**
+ * Judges a measured question surface against VB-17's rule.
+ *
+ * Everything above `footRow` is the cluster and every seam inside it must be
+ * ordinary spacing. The single seam between the cluster and the foot row is
+ * the slack and is deliberately unbounded — it is the whole point: on a short
+ * question at the drawer's peek it is most of the lower half of the panel, and
+ * that is the composition working, not failing.
+ *
+ * A surface with no foot row (nothing matched, or a screen that renders none)
+ * is all cluster, and then every seam on it is held to the threshold — which
+ * is the safe direction to be wrong in.
+ */
+export function inspectCluster(rows: readonly MeasuredRow[], options: ClusterOptions = {}): ClusterInspection {
+  const limit = options.maxInternalGap ?? CLUSTER_MAX_INTERNAL_GAP;
+  const ordered = [...rows].sort((a, b) => a.top - b.top);
+  const footIndex = options.footRow === undefined ? -1 : ordered.findIndex((row) => row.name === options.footRow);
+  const cluster = footIndex === -1 ? ordered : ordered.slice(0, footIndex);
+  const internal = gapsBetween(cluster);
+  const worst = widestGap(internal);
+  const slack =
+    footIndex <= 0 ? null : gapsBetween([ordered[footIndex - 1]!, ordered[footIndex]!])[0] ?? null;
+  return { internal, worst, slack, composed: worst === null || worst.gap <= limit };
+}

@@ -4,30 +4,46 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import { FLOW_NAV_GAP } from '../../src/core/flow/dock';
-import { questionAreaHeight } from '../../src/core/flow/composition';
+import { drawerBounds } from '../../src/core/drawer/height';
+import { CLUSTER_MAX_INTERNAL_GAP, inspectCluster, questionAreaHeight } from '../../src/core/flow/composition';
+import type { MeasuredRow } from '../../src/core/flow/composition';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 
 /**
- * V1.3 VB-17 accept criteria, driven in a real browser against the real ported
+ * V1.3 VB-17, REWORKED — driven in a real browser against the real ported
  * interview.
  *
- * The unit tests (src/core/flow/composition.test.ts) prove the proportion the
- * geometry produces. What they cannot prove is the only thing this task
- * actually is: that a question with almost nothing on it no longer leaves half
- * the panel doing nothing, that the tallest questions in the ported data are
- * still whole at the drawer's resting height, and that both of those survive
- * the drawer being dragged to either end (V1.2 VB-12) with the navigation bar
- * riding on its edge (V1.2 VB-11).
+ * **Why this file was rewritten.** VB-17 shipped, this suite passed, and the
+ * screen still looked wrong. The first build read "fill the top 60%" as "share
+ * the leftover pixels out evenly", centred the answer band, and produced — at
+ * 400x760, on `preferred_name` — a 124px hole between the question and its own
+ * field AND a 140px one between the last control and the save note. Two dead
+ * bands where V1.2 had one.
+ *
+ * The old suite measured the cluster's OUTER BOUNDS: the top row was near the
+ * top, the bottom row was near the bar, the widest seam was under 35% of the
+ * area. A 124px hole in the middle of a 507px area satisfies every one of
+ * those. That is the hole this file exists to close: **every seam between two
+ * adjacent things inside the cluster is measured, and held to
+ * `CLUSTER_MAX_INTERNAL_GAP`.**
+ *
+ * The rule being checked, in one sentence: the question, its help and its
+ * controls are one cluster spaced by ordinary related margins and anchored at
+ * the top; the leftover room falls in exactly one seam, below the cluster and
+ * above the dock, with the save note riding on top of it.
  *
  * EVERYTHING HERE MEASURES REAL BOUNDING BOXES. DOM order proves nothing about
- * a layout that distributes space, and a class toggling proves less.
+ * a layout that distributes space, and a class toggling proves less. The
+ * judging is core/flow/composition.ts's `inspectCluster`, unit-tested without a
+ * browser; this file only supplies it with real geometry.
  *
- * Three real questions, chosen because they are the extremes of the ported
+ * Four real questions, chosen because they are the extremes of the ported
  * content and not because they are convenient:
  *  - `preferred_name` — the shortest. One line, one field, no hint.
  *  - `peeves` — ten options and an "add your own". The tallest.
+ *  - `guardrails_list` — a tall multiline text question.
  *  - `voice_qualification` — three options under a hint that is three worked
  *    examples, i.e. tall in the part the layout must NOT stretch.
  *
@@ -35,7 +51,10 @@ import type { Answers } from '../../src/schema/storage.types';
  */
 const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const SHOTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../test-results/vb17');
-const PANEL = { width: 400, height: 700 };
+/** The panel Adam measured the failure in, so a number here and a number in
+ * the bug report mean the same thing. */
+const PANEL = { width: 400, height: 760 };
+const DRAWER = drawerBounds(PANEL.height);
 
 async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
   const context = await chromium.launchPersistentContext('', {
@@ -119,45 +138,55 @@ async function box(target: Locator): Promise<Box> {
   return { top: b.y, bottom: b.y + b.height, left: b.x, right: b.x + b.width, height: b.height, width: b.width };
 }
 
+/** The row pinned to the foot of the surface. Everything above it is the
+ * cluster; the seam between them is the slack, and is the only one on this
+ * screen allowed to be wide. */
+const FOOT_ROW = '.flow-save';
+
 /**
- * The composition, measured in one pass so nothing can move between reads.
+ * Every visible row of a question, top to bottom — the narrator toggle, the
+ * module strip, the question and its help, whatever the answer band holds, and
+ * the save note. Anything with no box (an sr-only span, an unrendered branch)
+ * is skipped rather than counted as a zero-height row in the middle of the
+ * page.
  *
- * `bands` is every gap between two consecutive pieces of the question's own
- * content, top to bottom — which is what "a large dead band" actually means on
- * screen. The selectors are the visible rows of a question: the progress
- * strip, the question and its help, whatever the answer band holds, and the
- * save note. Anything with no box (an sr-only span, an unrendered branch) is
- * skipped rather than counted as a zero-height row in the middle of the page.
+ * These are the things a person sees as separate objects, which is what makes
+ * the space between two of them a seam rather than an implementation detail.
  */
-async function composition(page: Page): Promise<{
+const ROW_SELECTORS = [
+  '.narrator',
+  '.flowprogress',
+  '.flow-q-row',
+  '.beats',
+  '.flow-hint',
+  '.deepdive',
+  '.flow-answer .field',
+  '.flow-answer .field-errmsg',
+  '.flow-answer .pillgroup',
+  '.flow-answer .readonly',
+  '.flow-answer .flow-idea-row',
+  '.flow-answer .flow-custom',
+  '.flow-answer .flow-error',
+  '.flow-answer .flow-reflect-actions',
+  FOOT_ROW,
+];
+
+interface Composition {
   areaTop: number;
   areaBottom: number;
   areaContentBottom: number;
   contentBottom: number;
   navTop: number;
   drawerTop: number;
-  bands: { after: string; gap: number }[];
-  rows: { name: string; top: number; bottom: number }[];
-}> {
-  return page.evaluate(() => {
+  rows: MeasuredRow[];
+}
+
+/** The composition, measured in one pass so nothing can move between reads. */
+async function composition(page: Page): Promise<Composition> {
+  return page.evaluate((selectors) => {
     const flow = document.querySelector('.flow') as HTMLElement;
     const nav = document.querySelector('.flow-foot')!.getBoundingClientRect();
     const drawer = document.querySelector('.filedrawer')!.getBoundingClientRect();
-    const selectors = [
-      '.flowprogress',
-      '.flow-q-row',
-      '.beats',
-      '.flow-hint',
-      '.deepdive',
-      '.flow-answer .field',
-      '.flow-answer .pillgroup',
-      '.flow-answer .readonly',
-      '.flow-answer .flow-idea-row',
-      '.flow-answer .flow-custom',
-      '.flow-answer .flow-error',
-      '.flow-answer .flow-reflect-actions',
-      '.flow-save',
-    ];
     const rows: { name: string; top: number; bottom: number }[] = [];
     for (const selector of selectors) {
       for (const element of Array.from(document.querySelectorAll(selector))) {
@@ -167,10 +196,6 @@ async function composition(page: Page): Promise<{
       }
     }
     rows.sort((a, b) => a.top - b.top);
-    const bands: { after: string; gap: number }[] = [];
-    for (let i = 1; i < rows.length; i++) {
-      bands.push({ after: rows[i - 1]!.name, gap: Math.max(0, rows[i]!.top - rows[i - 1]!.bottom) });
-    }
     const flowBox = flow.getBoundingClientRect();
     return {
       areaTop: flowBox.top,
@@ -181,14 +206,37 @@ async function composition(page: Page): Promise<{
       contentBottom: rows.length ? rows[rows.length - 1]!.bottom : flowBox.top,
       navTop: nav.top,
       drawerTop: drawer.top,
-      bands,
       rows,
     };
-  });
+  }, ROW_SELECTORS);
 }
 
-function widestBand(bands: { after: string; gap: number }[]): { after: string; gap: number } {
-  return bands.reduce((worst, band) => (band.gap > worst.gap ? band : worst), { after: 'nothing', gap: 0 });
+/**
+ * THE ASSERTION THE OLD SUITE DID NOT HAVE.
+ *
+ * Every seam inside the cluster, held to the threshold, with the offender
+ * named. The one seam below the cluster — the slack — is deliberately not
+ * judged: on a short question at the drawer's peek it is most of the lower half
+ * of the panel, and that is the composition working.
+ */
+function expectComposedCluster(c: Composition, where: string): void {
+  const cluster = inspectCluster(c.rows, { footRow: FOOT_ROW });
+  const worst = cluster.worst;
+  expect(
+    worst === null ? 0 : worst.gap,
+    `${where}: dead band of ${Math.round(worst?.gap ?? 0)}px between ${worst?.after} and ${worst?.before}` +
+      ` — every seam: ${cluster.internal.map((g) => `${g.after}→${g.before} ${Math.round(g.gap)}px`).join(', ')}`,
+  ).toBeLessThanOrEqual(CLUSTER_MAX_INTERNAL_GAP);
+}
+
+/** ...and the other half of the same rule: the leftover room really is where
+ * the cluster is not. */
+function expectSlackBelowTheCluster(c: Composition, where: string): void {
+  const cluster = inspectCluster(c.rows, { footRow: FOOT_ROW });
+  expect(cluster.slack, `${where}: no foot row, so nothing is holding the slack down`).not.toBeNull();
+  // The save note is the last thing before the bar, so the surface's content
+  // reaches the bottom of the room rather than stopping half way up it.
+  expect(c.areaContentBottom - c.contentBottom, `${where}: blank strip under the save note`).toBeLessThanOrEqual(4);
 }
 
 async function setHeight(page: Page, key: string): Promise<number> {
@@ -208,8 +256,39 @@ async function answerTop(page: Page): Promise<number> {
   return page.evaluate(() => document.querySelector('.flow-answer > *')!.getBoundingClientRect().top);
 }
 
-test.describe('VB-17 — the question area fills the panel down to the dock', () => {
-  test('the shortest question in the flow leaves no dead band', async () => {
+test.describe('VB-17 — one composed cluster, and the slack in one place', () => {
+  /**
+   * THE REGRESSION TEST FOR THIS REWORK.
+   *
+   * Four real questions at three drawer heights — the minimum, where the
+   * question has the most room and therefore the most slack to misplace; the
+   * height it opens at; and the maximum, where it has least. Twelve real
+   * layouts, every seam in each of them measured.
+   */
+  test('no dead band inside the cluster, on the real content, at every drawer height', async () => {
+    const { context, sw, id } = await launchExtension();
+
+    for (const stepId of ['preferred_name', 'peeves', 'guardrails_list', 'voice_qualification']) {
+      const page = await openAt(context, sw, id, stepId);
+
+      // As it opens, before anything is dragged.
+      expectComposedCluster(await composition(page), `${stepId} at the resting height`);
+
+      for (const [name, key] of [
+        ['minimum', 'Home'],
+        ['maximum', 'End'],
+      ] as const) {
+        const height = await setHeight(page, key);
+        expect(height, `${stepId} ${name}`).toBe(name === 'minimum' ? DRAWER.min : DRAWER.max);
+        expectComposedCluster(await composition(page), `${stepId} at the ${name} drawer height (${height}px)`);
+      }
+      await page.close();
+    }
+
+    await context.close();
+  });
+
+  test('the shortest question fills the panel with one seam, not two', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openAt(context, sw, id, 'preferred_name');
 
@@ -221,26 +300,48 @@ test.describe('VB-17 — the question area fills the panel down to the dock', ()
     expect(c.areaBottom).toBeGreaterThanOrEqual(c.navTop - FLOW_NAV_GAP - 2);
     expect(c.areaBottom).toBeLessThanOrEqual(c.navTop + 1);
 
-    // 2. And its content reaches the bottom of that room: the last thing the
-    //    question prints sits just above the bar, not half a screen above it.
-    expect(c.areaContentBottom - c.contentBottom, 'blank strip under the last row').toBeLessThanOrEqual(4);
+    // 2. The cluster is one composed thing, and the slack is below it.
+    expectComposedCluster(c, 'preferred_name');
+    expectSlackBelowTheCluster(c, 'preferred_name');
 
-    // 3. No single gap inside the question swallows the screen. Before this
-    //    task the strip under the field was over half the area; the slack is
-    //    now shared between two seams either side of the answer.
-    const worst = widestBand(c.bands);
-    expect(worst.gap, `widest band is after ${worst.after}`).toBeLessThan(area * 0.35);
+    // 3. Exactly ONE seam on the whole screen is wide, and it is the one under
+    //    the cluster. This is the difference between this build and the one it
+    //    replaces, stated as plainly as it can be measured: the old layout had
+    //    two, either side of the field.
+    const cluster = inspectCluster(c.rows, { footRow: FOOT_ROW });
+    const wide = [...cluster.internal, cluster.slack!].filter((g) => g.gap > CLUSTER_MAX_INTERNAL_GAP);
+    expect(wide.map((g) => `${g.after}→${g.before}`)).toEqual([`${cluster.slack!.after}→${FOOT_ROW}`]);
 
-    // 4. The question is still at the top, where it is read — filling the
-    //    panel must not mean floating the question into the middle of it.
+    // 4. The question is still at the top, where it is read — and so is its
+    //    field, which the previous build pushed a third of the way down the
+    //    panel in the name of distributing space.
     const question = await box(page.locator('.flow-q'));
-    expect(question.top - c.areaTop).toBeLessThan(area * 0.2);
-
-    // 5. And the field is still a field: distributing space around it must not
-    //    have stretched a single-line input into a panel.
     const field = await box(page.locator('.flow-answer .field'));
+    expect(question.top - c.areaTop).toBeLessThan(area * 0.2);
+    expect(field.bottom - c.areaTop, 'the whole cluster sits in the upper third').toBeLessThan(area / 3);
+
+    // 5. And the field is still a field: nothing stretched a single-line input
+    //    into a panel to fill the room.
     expect(field.height).toBeLessThan(70);
     expect(field.top).toBeGreaterThan(question.bottom);
+
+    await context.close();
+  });
+
+  test('a text question spends the room on its box instead of leaving it blank', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openAt(context, sw, id, 'terms_depend_on');
+
+    // The one thing on this screen that can genuinely use the leftover room is
+    // the box being written in, so it takes it — up to the ceiling Flow.css
+    // sets, past which a field would have become a page.
+    const field = await box(page.locator('.flow-answer textarea.field'));
+    expect(field.height).toBeGreaterThan(96);
+    expect(field.height).toBeLessThanOrEqual(320);
+
+    const c = await composition(page);
+    expectComposedCluster(c, 'terms_depend_on');
+    expectSlackBelowTheCluster(c, 'terms_depend_on');
 
     await context.close();
   });
@@ -262,15 +363,12 @@ test.describe('VB-17 — the question area fills the panel down to the dock', ()
       expect(p.right, `option ${i} inside the panel`).toBeLessThanOrEqual(PANEL.width + 1);
     }
 
-    // Nothing is cut off: the surface grew past the room instead of clipping,
-    // and the page scrolls to reach the rest.
+    // Nothing is cut off: where the question is taller than the room the
+    // surface grows past it instead of clipping, and the page scrolls.
     const overflow = await page.evaluate(() => ({
-      scrollHeight: document.documentElement.scrollHeight,
-      clientHeight: document.documentElement.clientHeight,
       clipped: getComputedStyle(document.querySelector('.flow') as HTMLElement).overflow,
     }));
     expect(overflow.clipped).toBe('visible');
-    expect(overflow.scrollHeight).toBeGreaterThan(overflow.clientHeight);
 
     // The last option is reachable, and scrolled to the end of the page it is
     // clear of the docked bar — the reservation (V1.2 VB-11) still holds under
@@ -303,9 +401,9 @@ test.describe('VB-17 — the question area fills the panel down to the dock', ()
     const pills = await box(page.locator('.flow-answer .pillgroup'));
 
     // The hint is three worked examples and is the reason this question is
-    // answerable at a glance. Space is distributed AROUND the answer, never
-    // between a question and its own help — so the help is deliberately not in
-    // the band the space is distributed into, and the controls are.
+    // answerable at a glance. It is part of the prompt, so it is deliberately
+    // outside the band the leftover room is given to — and the controls are
+    // deliberately inside it.
     const inTheBand = await page.evaluate(() => ({
       hint: !!document.querySelector('.flow-hint')!.closest('.flow-answer'),
       deepDive: !!document.querySelector('.deepdive')!.closest('.flow-answer'),
@@ -320,8 +418,8 @@ test.describe('VB-17 — the question area fills the panel down to the dock', ()
     expect(pills.top).toBeGreaterThanOrEqual(hint.bottom);
     expect(pills.bottom).toBeLessThanOrEqual(c.navTop + 1);
 
-    const worst = widestBand(c.bands);
-    expect(worst.gap, `widest band is after ${worst.after}`).toBeLessThan((c.navTop - c.areaTop) * 0.35);
+    expectComposedCluster(c, 'voice_qualification');
+    expectSlackBelowTheCluster(c, 'voice_qualification');
 
     await context.close();
   });
@@ -342,13 +440,10 @@ test.describe('VB-17 — the question area fills the panel down to the dock', ()
         expect(Math.round(c.areaBottom), where).toBeGreaterThanOrEqual(Math.round(c.navTop) - FLOW_NAV_GAP - 2);
         expect(questionAreaHeight(PANEL.height, height), where).toBeCloseTo(c.navTop - c.areaTop - FLOW_NAV_GAP, -1);
 
-        // At the peek the question has more room and still fills it; at full
-        // height it has little and must not be covered by anything.
-        if (key === 'Home') {
-          expect(c.areaContentBottom - c.contentBottom, `blank strip, ${where}`).toBeLessThanOrEqual(4);
-          const worst = widestBand(c.bands);
-          expect(worst.gap, `widest band after ${worst.after}, ${where}`).toBeLessThan((c.navTop - c.areaTop) * 0.35);
-        }
+        // At the peek the question has the most room, and therefore the most
+        // slack to put in the wrong place.
+        expectComposedCluster(c, where);
+        if (key === 'Home') expectSlackBelowTheCluster(c, where);
 
         // The question itself is always on screen and never under the chrome:
         // the module strip and the question are at the top at every height...
@@ -377,31 +472,43 @@ test.describe('VB-17 — the question area fills the panel down to the dock', ()
     const { context, sw, id } = await launchExtension();
     const page = await openAt(context, sw, id, 'preferred_name');
 
-    const before = await answerTop(page);
+    const startingAnswerTop = await answerTop(page);
+    const startingNoteTop = (await composition(page)).rows.find((row) => row.name === FOOT_ROW)!.top;
     await page.locator('.filedrawer-handle').focus();
     await page.keyboard.press('End');
 
     // Caught inside the 320ms jump, three times. The drawer takes the room
     // over a settle, so the question has to give it up over the same settle —
-    // an untransitioned min-height would move the field to its final place in
+    // an untransitioned min-height would move the surface to its final size in
     // one frame and leave the drawer arriving underneath it afterwards.
+    //
+    // The cluster is anchored at the top now, so what moves during a settle is
+    // the save note riding on the shrinking slack, not the field. Watched on
+    // the note for exactly that reason: watching something that no longer moves
+    // would make this test pass by accident.
     let sawMotion = false;
     for (let i = 0; i < 3; i++) {
       await page.waitForTimeout(60);
-      const now = await answerTop(page);
-      const drawerTop = (await composition(page)).drawerTop;
-      if (now < before - 4 && drawerTop > PANEL.height - 380 + 4) sawMotion = true;
+      const c = await composition(page);
+      const note = c.rows.find((row) => row.name === FOOT_ROW)!;
+      if (note.top < startingNoteTop - 4 && c.drawerTop > PANEL.height - DRAWER.max + 4) sawMotion = true;
     }
     expect(sawMotion, 'never caught the composition in flight — that is a snap, not a settle').toBe(true);
 
-    // ...and both ended up where they belong. The surface is at least the
-    // room — `preferred_name` is a hair taller than the room at full drawer
-    // height, so it overflows and scrolls rather than being squeezed.
+    // And the thing that must NOT have moved: the cluster is anchored, so the
+    // field is where it was before the drawer took the room. That is the whole
+    // difference from the build this replaces, where the same drag slid the
+    // field up the screen because the slack was being shared around it.
+    expect(await answerTop(page)).toBeCloseTo(startingAnswerTop, -1);
+
+    // ...and both ended up where they belong. The surface is at least the room;
+    // a question taller than it overflows and scrolls rather than being
+    // squeezed.
     await page.waitForTimeout(420);
     const settled = await composition(page);
     expect(settled.areaBottom).toBeGreaterThanOrEqual(settled.navTop - FLOW_NAV_GAP - 2);
     expect(await page.locator('.flow').evaluate((el) => getComputedStyle(el).minHeight)).toBe(
-      `${questionAreaHeight(PANEL.height, 380)}px`,
+      `${questionAreaHeight(PANEL.height, DRAWER.max)}px`,
     );
     const duration = await page.locator('.flow').evaluate((el) => ({
       property: getComputedStyle(el).transitionProperty,
@@ -446,12 +553,13 @@ test.describe('VB-17 — the question area fills the panel down to the dock', ()
     expect(durations.drawer).toBe('0s');
 
     // The still equivalent carries the same information: the question has its
-    // new room from the first frame, and fills it.
+    // new room from the first frame, fills it, and is still one cluster.
     const c = await composition(page);
     expect(c.areaBottom).toBeGreaterThanOrEqual(c.navTop - FLOW_NAV_GAP - 2);
     expect(await page.locator('.flow').evaluate((el) => getComputedStyle(el).minHeight)).toBe(
       `${questionAreaHeight(PANEL.height, Number(await page.locator('.filedrawer-handle').getAttribute('aria-valuenow')))}px`,
     );
+    expectComposedCluster(c, 'preferred_name, reduced motion');
 
     await context.close();
   });
@@ -483,20 +591,19 @@ test.describe('VB-17 — the question area fills the panel down to the dock', ()
 
     for (const stepId of ['preferred_name', 'peeves', 'voice_qualification']) {
       const page = await openAt(context, sw, id, stepId);
+      // Rest first, as it opens, then either end of the drag — so no screenshot
+      // depends on a toggle putting the drawer back where it started. The extra
+      // wait is the typewriter (V1.2 VB-10) finishing the longest question:
+      // it reserves its box from the first frame so it never moves anything,
+      // but a half-typed heading in a screenshot is a picture of the wrong
+      // moment.
+      await page.waitForTimeout(1200);
+      await page.screenshot({ path: path.join(SHOTS, `${stepId}-rest.png`) });
       for (const [name, key] of [
         ['min', 'Home'],
-        ['rest', 'ArrowUp'],
         ['max', 'End'],
       ] as const) {
-        if (name === 'rest') {
-          // Back to where it opens, rather than a third arbitrary height.
-          await setHeight(page, 'Home');
-          await page.locator('.filedrawer-handle').focus();
-          await page.keyboard.press('Enter');
-          await page.waitForTimeout(420);
-        } else {
-          await setHeight(page, key);
-        }
+        await setHeight(page, key);
         await page.screenshot({ path: path.join(SHOTS, `${stepId}-${name}.png`) });
       }
       await page.close();
