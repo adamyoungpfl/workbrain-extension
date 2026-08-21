@@ -234,6 +234,25 @@ export const S = {
    * "Turn" rather than "rotate", "step between" rather than "navigate" —
    * words a person would say (docs/design-system.html §08).
    */
+  /**
+   * V1.2 VB-14b — the drawer's two modes.
+   *
+   * The names are decided in docs/V1.2-REFINEMENT.md's "Iteration three" and
+   * are not up for rewording here: `Brain` and `List`. "Brain" passes
+   * docs/design-system.html §08's test — it is already in the product's own
+   * name, so it is not a noun the person did not bring — and "List" is a word
+   * everybody arrives with. (`Map` / `Outline` is the recorded alternative if
+   * "Brain" ever reads as too cute on every screen.)
+   *
+   * `drawerModes` is the group's accessible name and is never printed: the two
+   * buttons are visible and say what they do, so a printed label above them
+   * would be a third piece of text in a 44px bar. It exists because a group of
+   * controls with no name is a group a screen reader cannot describe.
+   */
+  drawerModes: 'How to show your file',
+  drawerModeBrain: 'Brain',
+  drawerModeList: 'List',
+
   brainGlobeStage: 'Your file, as a globe',
   brainGlobeHelp: 'Drag to turn it. Tab to step between sections.',
   brainGlobeNode: (label: string, state: string) => `${label} — ${state}`,

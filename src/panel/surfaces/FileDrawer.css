@@ -46,11 +46,75 @@
   transition: height var(--slow) var(--ease);
 }
 
-/* The 44px band at the top of the drawer, holding the grip and the count. */
+/* The 44px band at the top of the drawer, holding the two mode buttons, the
+   grip and the count. */
 .filedrawer-head {
   position: relative;
   flex: none;
   height: var(--target-min);
+  /* Over both content layers, which are absolutely positioned from the bottom
+     of this band down. Without it the globe's own stage would paint across the
+     buttons that switch away from it. */
+  z-index: 1;
+}
+
+/* ── V1.2 VB-14b: Brain / List ───────────────────────────────────────────── */
+
+/* At the left of the band, clear of the grip in the middle and the count at
+   the right. Absolutely positioned like both of those, so the grip keeps the
+   centre of the panel — which is where a handle is looked for. */
+.filedrawer-modes {
+  position: absolute;
+  left: 8px;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  /* Above the handle, which covers the whole band (`inset: 0`) and comes after
+     this in the markup. Without it the handle takes every press meant for
+     these two buttons — the tab order puts them first, so the paint order has
+     to be corrected here rather than by moving them after it. */
+  z-index: 1;
+}
+
+.filedrawer-mode {
+  /* A control, so the 44px floor, including the icon-free ones
+     (docs/GUARDRAILS.md). The visible pill is inset inside that box. */
+  min-width: var(--target-min);
+  height: var(--target-min);
+  padding: 0 10px;
+  margin: 0;
+  appearance: none;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-2);
+  cursor: pointer;
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+.filedrawer-mode:hover {
+  background: var(--sunken);
+  color: var(--ink);
+}
+
+.filedrawer-mode:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+/* The chosen one. THREE signals, not one: a fill, more weight, and a solid bar
+   under the word. Colour alone would fail docs/GUARDRAILS.md, and this pair
+   sits in an 44px strip where a person is glancing rather than reading. */
+.filedrawer-mode[aria-pressed='true'] {
+  background: var(--primary-tint);
+  color: var(--primary);
+  font-weight: 700;
+  box-shadow: inset 0 -2px 0 var(--primary);
 }
 
 /* Everything visible about the handle is the rule and the grip. The rule is
@@ -172,6 +236,113 @@
   padding: 0 14px 10px;
 }
 
+/* ── V1.2 VB-14b: the two layers ─────────────────────────────────────────── */
+
+/* Brain's stage occupies exactly the room List's does: everything below the
+   44px band. Absolute rather than a second flex child, so both layers are laid
+   out in the same box at the same time and the morph can measure both ends of
+   every flight whichever one is showing.
+
+   `align-items: flex-start` is not a taste decision. The drawer's height
+   settles over 320ms when a mode change resizes it, and a globe centred in a
+   box that is still growing slides upward for the whole of that settle — which
+   would land every flying node somewhere the globe no longer is. Anchored to
+   the top, its position relative to the drawer's own edge never changes and
+   the measurements stay true. */
+.filedrawer-stage {
+  position: absolute;
+  top: var(--target-min);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 10px;
+  box-sizing: border-box;
+  overflow: hidden;
+  /* THE ONE SANCTIONED DARK SURFACE (docs/V1.2-REFINEMENT.md, iteration
+     three), and it fills the drawer's whole content area rather than sitting
+     in it as a card. A dark square floating in a white band reads as a widget
+     someone embedded; the whole band dark reads as a mode the drawer is in,
+     which is what this is. It stops at the drawer's edge, so the panel's own
+     light identity is untouched — the globe's stage is the same colour, so
+     the two are one surface and the seam does not show. */
+  background: var(--globe-field);
+}
+
+/* Only one layer is on screen at a time, and the one that is not is
+   `visibility: hidden` rather than `display: none`. That is what keeps it out
+   of the tab order and out of the accessibility tree while KEEPING ITS LAYOUT
+   — the morph measures both ends of every flight from the real DOM, and a
+   display-none layer has no geometry to measure.
+
+   The crossfade is the "rows resolve underneath" half of VB-14's morph: the
+   mode being left is gone in --morph-out-ms while the mode arriving takes the
+   whole --morph-ms to resolve, so the nodes spend their flight travelling over
+   their destination instead of over an empty drawer. The `visibility`
+   transition has a duration of zero and a delay, which is the standard way to
+   keep a fading layer visible until its fade has finished. */
+.filedrawer-stage,
+.filedrawer-body {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity var(--morph-ms, 520ms) var(--ease), visibility 0s;
+}
+
+.filedrawer[data-mode='brain'] .filedrawer-body,
+.filedrawer[data-mode='list'] .filedrawer-stage {
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity var(--morph-out-ms, 200ms) var(--ease), visibility 0s linear var(--morph-out-ms, 200ms);
+}
+
+/* ── V1.2 VB-14b: the morph ──────────────────────────────────────────────── */
+
+/* THE WHOLE POINT OF THIS LAYER: a mode change is a morph, not a swap
+   (docs/V1.2-REFINEMENT.md, iteration three — the swap was rejected for
+   popping). Each section's node travels from where its sphere is in the globe
+   to where its row's marker is in the list, over --morph-ms, on the system's
+   one easing curve.
+
+   Over both layers, and transparent to the pointer: it is a picture of ten
+   controls that exist for real in whichever layer is arriving. */
+.filedrawer-morph {
+  position: absolute;
+  top: var(--target-min);
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow: hidden;
+  pointer-events: none;
+  z-index: 2;
+}
+
+/* Positioned entirely by `transform` — set inline, per node, per phase, by
+   FileDrawer.tsx — so a flight is one composited property changing and no
+   layout happens on any frame of it. The box is
+   core/drawer/mode.ts's MORPH_DOT_SIZE; `morphTransform` scales it to the
+   radius each end was measured at, so a node is the size of the sphere it
+   leaves and the size of the marker it lands on. */
+.filedrawer-morph-node {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 16px;
+  height: 16px;
+  margin: -8px 0 0 -8px;
+  border-radius: var(--r-pill);
+  transition: transform var(--morph-ms, 520ms) var(--ease);
+}
+
+/* The same five-colour cycle the globe's own spheres wear, so the thing that
+   flies out of a sphere is visibly that sphere and not a new object. */
+.filedrawer-morph-node[data-gradient='1'] { background: var(--globe-node-1-mid); }
+.filedrawer-morph-node[data-gradient='2'] { background: var(--globe-node-2-mid); }
+.filedrawer-morph-node[data-gradient='3'] { background: var(--globe-node-3-mid); }
+.filedrawer-morph-node[data-gradient='4'] { background: var(--globe-node-4-mid); }
+.filedrawer-morph-node[data-gradient='5'] { background: var(--globe-node-5-mid); }
+
 .filepreview {
   margin-top: 14px;
   padding-top: 12px;
@@ -223,6 +394,22 @@
      for, from the first frame. */
   .filedrawer[data-settle='nudge'],
   .filedrawer[data-settle='jump'] {
+    transition: none;
+  }
+
+  /* VB-14b. Not "the morph, faster" — no morph at all: FileDrawer.tsx never
+     mounts a single flying node under this preference, so there is nothing
+     here to cancel except the crossfade the two layers would otherwise do.
+     The still equivalent carries the same information because the information
+     is which mode is showing, and that arrives whole on the first frame with
+     every node and every row still reachable. */
+  .filedrawer-stage,
+  .filedrawer-body,
+  .filedrawer[data-mode='brain'] .filedrawer-body,
+  .filedrawer[data-mode='list'] .filedrawer-stage {
+    transition: none;
+  }
+  .filedrawer-mode {
     transition: none;
   }
   /* The section still arrives — it simply arrives finished. The state change

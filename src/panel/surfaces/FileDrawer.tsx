@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
-import { FileTree } from '../components';
+import { BrainGlobe, FileTree } from '../components';
+import { sectionNodeGradient } from '../components/BrainGlobe';
 import { contextFileDate, generateContextFileParts } from '../../core/files/generate';
 import type { ContextFileSection } from '../../core/files/generate';
 import {
@@ -13,14 +14,29 @@ import {
 } from '../../core/drawer/height';
 import type { DrawerBounds, DrawerSettle } from '../../core/drawer/height';
 import {
+  MORPH_FADE_OUT_MS,
+  MORPH_MS,
+  brainDriftAllowed,
+  brainFitsIn,
+  brainStageSize,
+  heightForMode,
+  modeForHeight,
+  morphPoints,
+  morphTransform,
+} from '../../core/drawer/mode';
+import type { DrawerMode, MorphPoint } from '../../core/drawer/mode';
+import {
   currentQuestionIdFor,
   currentSectionId as sectionIdFor,
+  navigationTargetFor,
   outlineNodeState,
   positionForQuestionId,
 } from '../../core/flow/outline';
+import type { OutlineNodeState } from '../../core/flow/outline';
 import type { Position } from '../../core/flow/runner';
 import type { FileOutlineNode, Module } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
+import { prefersReducedMotion } from '../cues/verbs';
 import { S } from '../strings';
 import './FileDrawer.css';
 
@@ -67,6 +83,46 @@ import './FileDrawer.css';
  * Up/Down move further, Home and End go to the ends, Enter collapses it to the
  * peek and restores it. A drag-only control would fail the keyboard-path
  * guardrail (docs/GUARDRAILS.md) outright.
+ *
+ * ── V1.2 VB-14b — two modes in one drawer ─────────────────────────────────
+ *
+ * docs/V1.2-REFINEMENT.md's "Iteration three": **Brain** — the globe on its
+ * deep-field dark stage, the mode someone shows a colleague — and **List** —
+ * the navigable tree this drawer has always had, inside the light design
+ * system. The arithmetic behind all of it is core/drawer/mode.ts.
+ *
+ * Five decisions worth knowing about, because none of them is obvious from
+ * the markup:
+ *
+ * 1. **List is what the drawer opens on.** Brain is chosen, never defaulted
+ *    into. The peek is 186px tall and a globe drawn into 122px of it is the
+ *    unusable thing VB-14's own height note is about, so defaulting to Brain
+ *    would mean the first thing everybody sees is the version of it that does
+ *    not work. It is also the mode that answers "what's left" honestly.
+ *
+ * 2. **Both modes are mounted at all times; only one is visible.** The hidden
+ *    one is `visibility: hidden`, which keeps its layout — so it is measurable
+ *    — while taking it out of the tab order and out of the accessibility tree.
+ *    The morph below needs both ends of every flight measured from the real
+ *    DOM, and a `display: none` layer has no geometry to measure.
+ *
+ * 3. **The mode on screen is derived, never stored.** What is held is the
+ *    *request*; `modeForHeight` turns that plus the current height into what
+ *    shows. Drag below ~180px and Brain hands over to List; drag back up and
+ *    Brain returns. See core/drawer/mode.ts for why holding the request rather
+ *    than the result is what makes that reversible.
+ *
+ * 4. **Navigation is identical in both modes.** A lit node in Brain resolves
+ *    through the same `navigationTargetFor` → `positionForQuestionId` →
+ *    `onNavigate` seam a written row in List does, with the same rule: only a
+ *    written or in-progress section is a jump, because jumping into an
+ *    unreached one would skip questions the flow otherwise guarantees.
+ *
+ * 5. **The thin bar and the module label stay above the drawer in both.**
+ *    VB-14's open item 2: Brain answers "what's left" worse than a list does,
+ *    and those two are the mitigation. They live in `Flow`, above this
+ *    component, and nothing here may push them off the screen — the drawer's
+ *    own ceiling (core/drawer/height.ts) is what guarantees it.
  */
 
 export interface FileDrawerProps {
@@ -99,9 +155,37 @@ function viewportHeight(): number {
   return typeof window === 'undefined' ? 700 : window.innerHeight;
 }
 
+function viewportWidth(): number {
+  return typeof window === 'undefined' ? 400 : window.innerWidth;
+}
+
+/**
+ * A morph in flight.
+ *
+ * `phase` is the whole trick. `start` renders every node at the end it is
+ * leaving; `run` renders it at the end it is arriving at, and the CSS
+ * transition between the two renders is the flight. Interrupting a morph goes
+ * straight to `run` with the new targets, so the browser interpolates from
+ * wherever each node has got to rather than snapping it back to an end it left
+ * two hundred milliseconds ago.
+ */
+interface Morph {
+  readonly to: DrawerMode;
+  readonly points: readonly MorphPoint[];
+  readonly phase: 'start' | 'run';
+}
+
+/** A box, or nothing — the shape core/drawer/mode.ts's `morphPoints` expects
+ * for one end of one flight. */
+function boxOf(element: Element | null): DOMRect | null {
+  return element ? element.getBoundingClientRect() : null;
+}
+
 export function FileDrawer({ outline, modules, answers, position, height, onResize, onNavigate }: FileDrawerProps) {
+  const rootRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
+  const morphRef = useRef<HTMLDivElement>(null);
 
   /**
    * How tall the drawer is allowed to be right now. Derived from the viewport,
@@ -109,16 +193,21 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
    * derivation itself is core/drawer/height.ts's and is never stored.
    */
   const [bounds, setBounds] = useState<DrawerBounds>(() => drawerBounds(viewportHeight()));
+  /** The panel's width, for the globe's square stage. Same story as `bounds`:
+   * read from the window, kept in state only so a resize is honest. */
+  const [panelWidth, setPanelWidth] = useState<number>(viewportWidth);
   useEffect(() => {
     if (typeof window === 'undefined') return undefined;
     // Keeps the same object when the numbers have not moved. A resize fires a
     // stream of events, and a fresh object each time would re-render the whole
     // drawer — and re-run the clamp below — on every one of them.
-    const onWindowResize = () =>
+    const onWindowResize = () => {
       setBounds((prev) => {
         const next = drawerBounds(window.innerHeight);
         return prev.min === next.min && prev.max === next.max ? prev : next;
       });
+      setPanelWidth(window.innerWidth);
+    };
     onWindowResize();
     window.addEventListener('resize', onWindowResize);
     return () => window.removeEventListener('resize', onWindowResize);
@@ -135,6 +224,23 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
   const [settle, setSettle] = useState<DrawerSettle | 'none'>('none');
   const [dragging, setDragging] = useState(false);
 
+  /**
+   * V1.2 VB-14b. Which mode was *asked for* — not which one is showing. What
+   * shows is `modeForHeight(this, height)`, recomputed every render, so the
+   * drawer getting shorter hands Brain over to List and getting taller hands
+   * it back. Ephemeral, like the height it is paired with: the drawer opens on
+   * List every session however it was left.
+   */
+  const [requestedMode, setRequestedMode] = useState<DrawerMode>('list');
+  const mode = modeForHeight(requestedMode, height);
+  const brainOffered = brainFitsIn(bounds);
+
+  const [morph, setMorph] = useState<Morph | null>(null);
+  /** Whether a morph is live right now. A ref rather than derived from
+   * `morph`, because the effect that starts one has to know whether it is
+   * interrupting a flight *before* it decides which phase to start in. */
+  const morphingRef = useRef(false);
+
   /** The height Enter restores to — the last one this session that was not the
    * peek. A ref, not state: it changes nothing on screen until Enter is
    * pressed, so it must not cause a render. */
@@ -146,9 +252,9 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
   const dragRef = useRef<{ id: number; startY: number; startHeight: number } | null>(null);
 
   const applyHeight = useCallback(
-    (next: number, mode: DrawerSettle | 'none') => {
+    (next: number, how: DrawerSettle | 'none') => {
       if (next > bounds.min) restoreRef.current = next;
-      setSettle(mode);
+      setSettle(how);
       if (next !== height) onResize(next);
     },
     [bounds.min, height, onResize],
@@ -199,6 +305,21 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
     applyHeight(change.height, change.settle);
   }
 
+  /**
+   * Choosing a mode. VB-14: "Asking for Brain expands the drawer to fit it.
+   * The two are linked, not independent."
+   *
+   * The height change rides the same `jump` settle a keyboard End does, so the
+   * drawer opens at the drawer's own speed and the navigation bar pegged to
+   * its top edge (Flow.css) travels with it off the one `data-settle` both
+   * read. Choosing List resizes nothing: List works at every height.
+   */
+  function chooseMode(next: DrawerMode) {
+    setRequestedMode(next);
+    const grown = heightForMode(next, height, bounds);
+    if (grown !== height) applyHeight(grown, 'jump');
+  }
+
   const currentQuestionId = currentQuestionIdFor(position);
   const currentSectionId = sectionIdFor(outline, currentQuestionId);
 
@@ -211,7 +332,16 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
     [answers, generatedOn, modules, outline],
   );
 
-  const reached = outline.filter((node) => outlineNodeState(node, answers.values, currentQuestionId) !== 'untouched').length;
+  /** Every top-level section's state, for the globe — the same three-way fold
+   * FileTree runs per row, so a section that is "Written" in one mode cannot
+   * be anything else in the other. */
+  const states = useMemo(() => {
+    const map: Record<string, OutlineNodeState> = {};
+    for (const node of outline) map[node.id] = outlineNodeState(node, answers.values, currentQuestionId);
+    return map;
+  }, [outline, answers.values, currentQuestionId]);
+
+  const reached = outline.filter((node) => states[node.id] !== 'untouched').length;
 
   /**
    * Keeps the section being written inside the peek.
@@ -226,6 +356,11 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
    * Not during the drag itself — yanking the scroll under a moving pointer 60
    * times a second is the one version of this that feels broken — so the drag
    * runs it once, when it ends.
+   *
+   * V1.2 VB-14b: it runs in both modes, because in Brain the list is hidden
+   * but still laid out, and the morph measures where its rows *are*. Declared
+   * above the morph's own effect on purpose — effects run in order, so the
+   * rows have finished moving before anything measures them.
    */
   useEffect(() => {
     if (dragging) return;
@@ -236,6 +371,101 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
     box.scrollTop = Math.max(0, row.offsetTop - (box.clientHeight - row.offsetHeight) / 2);
   }, [currentSectionId, height, dragging]);
 
+  /**
+   * THE MORPH. VB-14: "Mode change is a morph, not a swap: every node flies to
+   * its list-row position while the edges fade and the rows resolve
+   * underneath (~520ms)."
+   *
+   * Both ends of every flight are measured from the live DOM at the moment the
+   * mode changes, never computed from the geometry: the globe is at whatever
+   * pose the person left it in and the list is scrolled wherever the section
+   * being written put it. A node that flies to where a row *would* be is the
+   * "it pops" this task exists to fix.
+   *
+   * A passive effect rather than a layout one, deliberately. It has to run
+   * *after* the scroll effect above — a morph measured against rows that are
+   * about to be scrolled somewhere else lands every node in the wrong place —
+   * and effects run in declaration order. The cost is one painted frame in the
+   * new mode before the nodes appear, which is 2% of the way through a
+   * crossfade nobody can see yet.
+   */
+  const shownModeRef = useRef(mode);
+  useEffect(() => {
+    if (shownModeRef.current === mode) return;
+    shownModeRef.current = mode;
+
+    // Reduced motion: no flight at all. The mode simply changes, with every
+    // node and row still reachable — VB-14's own reduced-motion clause. The
+    // still equivalent carries the same information because the information is
+    // which mode is showing, and that arrives on the first frame.
+    const root = rootRef.current;
+    const layer = morphRef.current;
+    if (prefersReducedMotion() || !root || !layer) {
+      morphingRef.current = false;
+      setMorph(null);
+      return;
+    }
+
+    const points = morphPoints(
+      layer.getBoundingClientRect(),
+      outline.map((node) => ({
+        id: node.id,
+        // Either the lit sphere or the hollow ring of an unreached section —
+        // whichever this node is drawn as (BrainGlobe.tsx).
+        brain: boxOf(
+          root.querySelector(
+            `.brainglobe-node[data-section-id="${node.id}"] .brainglobe-sphere, .brainglobe-node[data-section-id="${node.id}"] .brainglobe-hollow-ring`,
+          ),
+        ),
+        // The row's state marker, not the whole row: it is the one thing in a
+        // row that is the same shape as a node.
+        list: boxOf(root.querySelector(`.filetree-row[data-node-id="${node.id}"] .filetree-glyph`)),
+      })),
+    );
+    if (points.length === 0) {
+      morphingRef.current = false;
+      setMorph(null);
+      return;
+    }
+
+    // Interrupting: keep the nodes where they are and re-aim them. Starting
+    // again from `start` would snap every one of them back to the end it left.
+    const phase = morphingRef.current ? 'run' : 'start';
+    morphingRef.current = true;
+    setMorph({ to: mode, points, phase });
+  }, [mode, outline]);
+
+  /**
+   * `start` → `run`, in the same frame.
+   *
+   * The forced read is load-bearing and is not a superstition: a CSS
+   * transition fires on a change *between two style recalculations*. Both
+   * renders land before the browser would otherwise recalculate anything, so
+   * without a flush in between they collapse into one — and every node
+   * teleports. Reading the layer's box is what makes the browser resolve the
+   * `start` transforms first, giving the `run` transforms something to
+   * interpolate away from.
+   */
+  useLayoutEffect(() => {
+    if (!morph || morph.phase !== 'start') return;
+    morphRef.current?.getBoundingClientRect();
+    setMorph((current) => (current && current.phase === 'start' ? { ...current, phase: 'run' } : current));
+  }, [morph]);
+
+  /** The end of the flight. A timer rather than `transitionend`, because a
+   * morph interrupted at 90% has fewer transitions to end than it started
+   * with, and a layer left mounted forever would sit over the drawer's own
+   * content. Restarted on every phase change, so an interruption gets the full
+   * flight it was just given. */
+  useEffect(() => {
+    if (!morph) return undefined;
+    const id = setTimeout(() => {
+      morphingRef.current = false;
+      setMorph(null);
+    }, MORPH_MS + 40);
+    return () => clearTimeout(id);
+  }, [morph]);
+
   function handleNavigate(questionId: string) {
     const target = positionForQuestionId(modules, questionId);
     // Degrade silently (docs/GUARDRAILS.md): a section whose first question id
@@ -243,13 +473,45 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
     if (target) onNavigate(target);
   }
 
+  /**
+   * Picking a node in the globe. The same navigation a row performs, through
+   * the same seam, under the same rule: only a written or in-progress section
+   * is a jump.
+   *
+   * An unreached node still flies in, and still says what it holds — the globe
+   * is a view of the whole file, not only of the answered part — it simply
+   * does not move the interview. Flying back out (`null`) navigates nowhere,
+   * because leaving a section is not a request to go anywhere.
+   */
+  function handleGlobeSelect(node: FileOutlineNode | null) {
+    if (!node) return;
+    if (outlineNodeState(node, answers.values, currentQuestionId) === 'untouched') return;
+    const target = navigationTargetFor(node);
+    if (target) handleNavigate(target);
+  }
+
+  const stageSize = brainStageSize(height, panelWidth);
+  const drifting = brainDriftAllowed(mode, height, morph !== null);
+
   return (
     <aside
+      ref={rootRef}
       className="filedrawer"
       aria-labelledby={HEADING_ID}
       data-dragging={dragging ? 'true' : 'false'}
       data-settle={settle}
-      style={{ '--filedrawer-h': `${height}px` } as CSSProperties}
+      data-mode={mode}
+      data-morph={morph ? morph.to : 'none'}
+      style={
+        {
+          '--filedrawer-h': `${height}px`,
+          // The morph's clock, published from core/drawer/mode.ts so the
+          // stylesheet never carries a second copy of a number that has to
+          // agree with the component's.
+          '--morph-ms': `${MORPH_MS}ms`,
+          '--morph-out-ms': `${MORPH_FADE_OUT_MS}ms`,
+        } as CSSProperties
+      }
     >
       {/* The heading V1.1 printed above the tree. It is not printed any more —
           VB-12 replaces it with the divider and its grip — but the drawer is
@@ -259,6 +521,15 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
         {S.fileTreeHeading}
       </h2>
       <div className="filedrawer-head">
+        {/* Before the handle in the markup, so the tab order reads
+            "what am I looking at" then "how big is it" — and so the last
+            control inside the drawer stays one of the file's own. */}
+        {brainOffered && (
+          <div className="filedrawer-modes" role="group" aria-label={S.drawerModes}>
+            <ModeButton mode="brain" active={mode === 'brain'} label={S.drawerModeBrain} onPick={chooseMode} />
+            <ModeButton mode="list" active={mode === 'list'} label={S.drawerModeList} onPick={chooseMode} />
+          </div>
+        )}
         <div
           ref={handleRef}
           className="filedrawer-handle"
@@ -286,6 +557,19 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
             grab target. */}
         <p className="filedrawer-count">{S.sectionsOf(reached, outline.length)}</p>
       </div>
+      {/* Brain. Mounted in both modes — see decision 2 in the header — and
+          anchored to the top of its box rather than centred, so the globe does
+          not slide while the drawer's own height is still settling underneath
+          it. That is what keeps the morph's measurements true. */}
+      <div className="filedrawer-stage">
+        <BrainGlobe
+          sections={outline}
+          states={states}
+          size={stageSize}
+          drift={drifting}
+          onSelect={handleGlobeSelect}
+        />
+      </div>
       <div className="filedrawer-body" id={BODY_ID} ref={bodyRef}>
         <FileTree
           outline={outline}
@@ -297,7 +581,61 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
         />
         <FilePreview sections={parts.sections} />
       </div>
+      {/* The flight path. Always mounted, so there is always a box to measure
+          against; empty except during a morph. `aria-hidden` because every
+          node it draws is a picture of a control that exists, focusable and
+          named, in whichever layer is arriving. */}
+      <div className="filedrawer-morph" ref={morphRef} data-phase={morph?.phase ?? 'none'} aria-hidden="true">
+        {morph?.points.map((point, index) => {
+          const arriving = morph.to === 'brain' ? point.brain : point.list;
+          const leaving = morph.to === 'brain' ? point.list : point.brain;
+          return (
+            <span
+              key={point.id}
+              className="filedrawer-morph-node"
+              data-node-id={point.id}
+              // The colour of the sphere it left, so the same object is
+              // visibly the same object in both modes.
+              data-gradient={sectionNodeGradient(index)}
+              style={{ transform: morphTransform(morph.phase === 'start' ? leaving : arriving) }}
+            />
+          );
+        })}
+      </div>
     </aside>
+  );
+}
+
+/**
+ * One of the two mode buttons.
+ *
+ * `aria-pressed` rather than a radio group: these are two states of one view,
+ * not a value being collected, and a toggle button is what a screen reader
+ * announces most plainly. The pressed one is never distinguished by colour
+ * alone (docs/GUARDRAILS.md) — it also carries more weight and a solid
+ * underline bar, either of which reads on its own.
+ */
+function ModeButton({
+  mode,
+  active,
+  label,
+  onPick,
+}: {
+  mode: DrawerMode;
+  active: boolean;
+  label: string;
+  onPick: (mode: DrawerMode) => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="filedrawer-mode"
+      data-mode={mode}
+      aria-pressed={active}
+      onClick={() => onPick(mode)}
+    >
+      {label}
+    </button>
   );
 }
 

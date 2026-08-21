@@ -66,10 +66,14 @@ import './BrainGlobe.css';
  *
  * 5. **The rAF loop only exists while something is actually moving.** VB-14's
  *    own open item 3 warns that a per-frame loop would be the only
- *    continuously-running thing in this product. So there is no idle drift:
- *    the loop starts on a drag, a turn or a fly-in and stops itself the frame
- *    after the last of them finishes. It also stops if the panel is hidden.
- *    Under `prefers-reduced-motion` it never starts at all.
+ *    continuously-running thing in this product. So the loop starts on a drag,
+ *    a turn or a fly-in and stops itself the frame after the last of them
+ *    finishes. It also stops if the panel is hidden. Under
+ *    `prefers-reduced-motion` it never starts at all.
+ *
+ *    V1.2 VB-14b adds the one exception, and hedges it about: `drift`, an
+ *    opt-in slow idle turn, off unless the caller asks for it. See DRIFT_RATE
+ *    below for the four separate conditions that stop it.
  */
 
 // ── Geometry constants ─────────────────────────────────────────────────────
@@ -101,6 +105,41 @@ const DRAG_SLOP_PX = 4;
  * pixel — the settle, in other words, is the friction curve's own tail. */
 const FRICTION = 0.94;
 const MOMENTUM_STOP = 0.0006;
+
+/**
+ * V1.2 VB-14b — the idle drift, in radians a second.
+ *
+ * A full turn takes just over a minute. At a 260px stage that is under 9px a
+ * second at the equator: slow enough to read a label straight through, fast
+ * enough that the globe is obviously a live object rather than a picture of
+ * one. It deliberately does NOT set `data-moving` — that flag means "moving
+ * too fast to read", and hiding every label for as long as the drawer is open
+ * would throw away the thing labels are for.
+ *
+ * Four separate things stop it, and it is worth listing them in one place
+ * because VB-14's open item 3 is explicit that this is the only unending
+ * motion in the product:
+ *
+ *  1. the caller not asking for it (`drift`, default false) — which is how the
+ *     drawer stops it at the peek and in List mode (core/drawer/mode.ts);
+ *  2. `prefers-reduced-motion`, which stops every loop in this component;
+ *  3. the panel losing visibility (`document.visibilityState`), below;
+ *  4. any real gesture — a drag, a keyboard turn, a fly-in — which owns the
+ *     pose while it runs and hands it back when it is done.
+ */
+const DRIFT_RATE = 0.1;
+
+/**
+ * How often a drift frame is actually applied, in ms.
+ *
+ * The loop still runs at the display's rate, because that is the only clock a
+ * browser offers, but it only *does the work* — recompute twelve rotations,
+ * re-render ninety-odd SVG elements — every other frame. At DRIFT_RATE a 60Hz
+ * frame turns the globe by 0.0017 radians, about a sixth of a pixel at the
+ * equator, so nobody can see the difference between 60 and 30 updates a second
+ * and it costs half as much main thread for as long as the drawer is open.
+ */
+const DRIFT_FRAME_MS = 32;
 
 /** How long the globe takes to turn to face a node picked with the keyboard.
  * 320ms — docs/design-system.html §06's value for something the size of a
@@ -186,6 +225,17 @@ const SECTION_VERTICES: readonly number[] = BY_HEIGHT.filter((i) => !STRUCTURAL_
 const GRADIENTS = [1, 2, 3, 4, 5] as const;
 const gradientFor = (vertexIndex: number) => GRADIENTS[vertexIndex % GRADIENTS.length]!;
 
+/**
+ * Which of the five gradients the n-th section wears, by its position in the
+ * file. Exported for V1.2 VB-14b's morph: the node that flies out of the globe
+ * and into a list row has to be the colour of the sphere it left, and the only
+ * place that knows which sphere that is, is the vertex map above.
+ */
+export function sectionNodeGradient(sectionIndex: number): number {
+  const vertex = SECTION_VERTICES[sectionIndex % SECTION_VERTICES.length];
+  return vertex === undefined ? GRADIENTS[0] : gradientFor(vertex);
+}
+
 // ── Props ──────────────────────────────────────────────────────────────────
 
 export interface BrainGlobeProps {
@@ -209,6 +259,15 @@ export interface BrainGlobeProps {
   /** Stage size in px, square. Below ~180px VB-14 hands over to the list; that
    * decision belongs to the drawer, not here. */
   size?: number;
+  /**
+   * V1.2 VB-14b. Whether the globe turns slowly by itself while nothing is
+   * touching it. **Off unless asked for**, because this is the only unending
+   * motion in the product and VB-14's open item 3 requires it to be paid for
+   * deliberately — see DRIFT_RATE for the four things that stop it. The
+   * caller decides *when* it is worth having (core/drawer/mode.ts's
+   * `brainDriftAllowed`); this component decides what it looks like.
+   */
+  drift?: boolean;
   /** The section or sub-section now in focus — a section when one is flown
    * into, one of its children when a child is picked, null when the globe is
    * back to the whole file. The caller owns what to show for it. */
@@ -313,7 +372,7 @@ function labelPlacement(leftPct: number): { shift: string; room: string } {
 
 // ── The component ──────────────────────────────────────────────────────────
 
-export function BrainGlobe({ sections, states, size = 300, onSelect }: BrainGlobeProps) {
+export function BrainGlobe({ sections, states, size = 300, drift = false, onSelect }: BrainGlobeProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const pinRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
@@ -363,16 +422,42 @@ export function BrainGlobe({ sections, states, size = 300, onSelect }: BrainGlob
   const draggedRef = useRef(false);
   const reducedRef = useRef(reduced);
   reducedRef.current = reduced;
+  /** Whether the caller wants the idle turn. A ref as well as a prop, because
+   * the loop reads it per frame and must never close over a stale value. */
+  const driftRef = useRef(drift);
+  driftRef.current = drift;
+  /** The timestamp of the last frame that actually moved the globe, so drift
+   * is a rate over real elapsed time rather than a per-frame nudge that would
+   * run at whatever speed the display happens to refresh at. Zero means "no
+   * previous frame" — the loop was stopped, or has never run. */
+  const lastFrameRef = useRef(0);
+  /** What `moving` already is. Set-state-to-the-same-value is cheap but not
+   * free, and under drift this would be asked thirty times a second forever. */
+  const movingRef = useRef(false);
 
   const stopLoop = useCallback(() => {
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = 0;
+    lastFrameRef.current = 0;
+  }, []);
+
+  const setMovingOnce = useCallback((next: boolean) => {
+    if (movingRef.current === next) return;
+    movingRef.current = next;
+    setMoving(next);
   }, []);
 
   const tick = useCallback(
     (now: number) => {
       rafRef.current = 0;
-      let busy = false;
+      const previous = lastFrameRef.current;
+      // Clamped: a tab that was backgrounded mid-loop comes back with an
+      // enormous gap, and a drift step of "four seconds' worth" is a jump.
+      const elapsed = previous === 0 ? 0 : Math.min(64, now - previous);
+      /** Real motion — a gesture, a turn, a fly-in. Distinct from `busy`
+       * below: drift keeps the loop alive without ever claiming the globe is
+       * moving too fast to read a label on. */
+      let active = false;
       let { rx, ry } = poseRef.current;
 
       // Momentum, then its own settle: the friction curve is the settle.
@@ -382,7 +467,7 @@ export function BrainGlobe({ sections, states, size = 300, onSelect }: BrainGlob
         ry += velocity.x;
         velocity.x *= FRICTION;
         velocity.y *= FRICTION;
-        busy = true;
+        active = true;
       } else if (!draggingRef.current) {
         velocity.x = 0;
         velocity.y = 0;
@@ -395,7 +480,7 @@ export function BrainGlobe({ sections, states, size = 300, onSelect }: BrainGlob
         rx = clampTilt(turn.fromRx + turn.dRx * eased);
         ry = turn.fromRy + turn.dRy * eased;
         if (p >= 1) turnRef.current = null;
-        else busy = true;
+        else active = true;
       }
 
       const zoom = zoomRef.current;
@@ -406,29 +491,78 @@ export function BrainGlobe({ sections, states, size = 300, onSelect }: BrainGlob
         zoomClockRef.current = value;
         setZoomClock(value);
         if (p >= 1) zoomRef.current = null;
-        else busy = true;
+        else active = true;
       }
 
-      poseRef.current = { rx, ry };
-      setPose({ rx, ry });
+      let busy = active;
+      // The idle turn. Last, so any real gesture owns the pose while it runs
+      // and drift simply carries on from wherever that gesture left it.
+      const drifting = driftRef.current && !draggingRef.current && !active;
+      if (drifting) {
+        busy = true;
+        if (elapsed >= DRIFT_FRAME_MS) ry += DRIFT_RATE * (elapsed / 1000);
+        // Below the throttle this frame does no work at all — see the guard on
+        // `setPose` below, which is what turns "no work" into "no render".
+      }
+
+      // Only stamp the clock on a frame that actually moved something, so the
+      // skipped frames' elapsed time is carried forward rather than dropped.
+      if (active || draggingRef.current || (drifting && elapsed >= DRIFT_FRAME_MS) || previous === 0) {
+        lastFrameRef.current = now;
+      }
+
+      // Guarded, because a fresh object is never `Object.is`-equal and React
+      // would therefore re-render — twelve rotations, thirty edges, ten pins —
+      // on every throttled drift frame that moved nothing at all. This is what
+      // makes DRIFT_FRAME_MS an actual saving rather than a comment.
+      if (rx !== poseRef.current.rx || ry !== poseRef.current.ry) {
+        poseRef.current = { rx, ry };
+        setPose({ rx, ry });
+      }
 
       if (busy) rafRef.current = requestAnimationFrame(tick);
-      else if (!draggingRef.current) setMoving(false);
+      else lastFrameRef.current = 0;
+      if (!active && !draggingRef.current) setMovingOnce(false);
     },
-    [],
+    [setMovingOnce],
   );
 
   const startLoop = useCallback(() => {
     if (reducedRef.current) return;
     if (rafRef.current) return;
+    if (typeof document !== 'undefined' && document.visibilityState === 'hidden') return;
     rafRef.current = requestAnimationFrame(tick);
   }, [tick]);
+
+  /**
+   * Starts the idle turn when the caller asks for it.
+   *
+   * Turning it *off* needs nothing here, deliberately: the next frame reads
+   * `driftRef` and finds nothing left to do, so the loop stops itself exactly
+   * the way it does at the end of a gesture. One place decides whether the
+   * loop lives — the tick — and dragging the drawer below the peek or
+   * switching to List therefore stops it within a frame without a second
+   * mechanism that could disagree with the first.
+   */
+  useEffect(() => {
+    // `reduced` is a dependency rather than only a guard inside `startLoop`,
+    // so a person who turns the preference off mid-session gets the turn
+    // without reopening the panel — the same live reading the rest of this
+    // component makes.
+    if (drift && !reduced) startLoop();
+  }, [drift, reduced, startLoop]);
 
   // Nothing may keep ticking behind a hidden panel — VB-14's open item 3.
   useEffect(() => {
     if (typeof document === 'undefined') return undefined;
     const onVisibility = () => {
-      if (document.visibilityState !== 'hidden') return;
+      if (document.visibilityState !== 'hidden') {
+        // Back on screen: pick the idle turn up again, if it is wanted. A
+        // gesture that was mid-flight is not resumed — it was snapped to its
+        // end state below rather than left half-done.
+        if (driftRef.current) startLoop();
+        return;
+      }
       stopLoop();
       velocityRef.current = { x: 0, y: 0 };
       // Snap whatever was mid-flight to its end state rather than freezing it
@@ -447,11 +581,11 @@ export function BrainGlobe({ sections, states, size = 300, onSelect }: BrainGlob
         zoomClockRef.current = zoom.to;
         setZoomClock(zoom.to);
       }
-      setMoving(false);
+      setMovingOnce(false);
     };
     document.addEventListener('visibilitychange', onVisibility);
     return () => document.removeEventListener('visibilitychange', onVisibility);
-  }, [stopLoop]);
+  }, [setMovingOnce, startLoop, stopLoop]);
 
   useEffect(() => stopLoop, [stopLoop]);
 
@@ -475,7 +609,7 @@ export function BrainGlobe({ sections, states, size = 300, onSelect }: BrainGlob
         dRx: clampTilt(target.rx) - from.rx,
         dRy: shortestTurn(from.ry, target.ry),
       };
-      setMoving(true);
+      setMovingOnce(true);
       startLoop();
     },
     [startLoop],
@@ -570,7 +704,7 @@ export function BrainGlobe({ sections, states, size = 300, onSelect }: BrainGlob
     poseRef.current = next;
     setPose(next);
     if (!reducedRef.current) {
-      setMoving(true);
+      setMovingOnce(true);
       // Velocity is per-frame, so per-ms travel is scaled by a 16ms frame.
       velocityRef.current = {
         x: (dx * DRAG_SENSITIVITY * 16) / dt,
@@ -585,13 +719,18 @@ export function BrainGlobe({ sections, states, size = 300, onSelect }: BrainGlob
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     if (reducedRef.current) {
       velocityRef.current = { x: 0, y: 0 };
-      setMoving(false);
+      setMovingOnce(false);
       return;
     }
     // A flick throws it; a slow drag that ended still simply stops.
     if (performance.now() - pointerRef.current.at > 90) velocityRef.current = { x: 0, y: 0 };
     if (Math.abs(velocityRef.current.x) > MOMENTUM_STOP || Math.abs(velocityRef.current.y) > MOMENTUM_STOP) startLoop();
-    else setMoving(false);
+    else {
+      setMovingOnce(false);
+      // A drag that ended dead still leaves the idle turn to pick up from
+      // wherever the pointer put it, rather than the globe stopping for good.
+      if (driftRef.current) startLoop();
+    }
   };
 
   // ── Keyboard ─────────────────────────────────────────────────────────────
