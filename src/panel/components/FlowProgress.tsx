@@ -1,4 +1,5 @@
 import { BrandMark, type BrandMarkSpin } from './BrandMark';
+import { TypedModuleLabel } from './Typed';
 import { S } from '../strings';
 import './FlowProgress.css';
 
@@ -133,9 +134,12 @@ export function FlowProgress({ title, current, total }: FlowProgressProps) {
           spinCue={title}
           entrance={false}
         />
-        <p className="flowprogress-title" aria-hidden="true">
-          {title}
-        </p>
+        {/* V1.2 VB-10: the label types itself in when the module changes, and
+            sits there unchanged for every question inside it. The remount-per-
+            question problem `spinCue` solves for the mark is the same one
+            `TypedModuleLabel` solves for the words, by the same means — a
+            module-scope memory of when the current cue started. */}
+        <TypedModuleLabel className="flowprogress-title" title={title} />
       </div>
       <div className="flowprogress-track" aria-hidden="true">
         {/* Width is set inline because it is data, not design — the one

@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
-import { Beats, Button, DeepDive, Field, FlowProgress, PillGroup, ReadOnlyBlock } from '../components';
+import { Beats, Button, DeepDive, Field, FlowProgress, PillGroup, ReadOnlyBlock, TypedHeading } from '../components';
 import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
@@ -772,7 +772,7 @@ function StepView({
       >
         {errorBanner}
         {progress}
-        <h2 className="flow-q">{pos.block.addAnotherPrompt}</h2>
+        <TypedHeading className="flow-q" text={pos.block.addAnotherPrompt} />
         <PillGroup
           legend={pos.block.addAnotherPrompt}
           mode="single"
@@ -847,7 +847,7 @@ function StepView({
         <div className="flow" data-position="reflect" data-step-id={step.id}>
           {errorBanner}
           {progress}
-          <h2 className="flow-q">{S.reflectTighten}</h2>
+          <TypedHeading className="flow-q" text={S.reflectTighten} />
           <ReadOnlyBlock tag={S.reflectPromptTag}>{builtPrompt}</ReadOnlyBlock>
           <form
             onSubmit={(e) => {
@@ -893,7 +893,7 @@ function StepView({
         >
           {errorBanner}
           {progress}
-          <h2 className="flow-q">{questionText}</h2>
+          <TypedHeading className="flow-q" text={questionText} />
           <QuestionHelp step={step} />
           <div className="flow-field-sr-label">
             <Field
@@ -926,7 +926,7 @@ function StepView({
       <div className="flow" data-position="reflect" data-step-id={step.id}>
         {errorBanner}
         {progress}
-        <h2 className="flow-q">{S.reflectHeading}</h2>
+        <TypedHeading className="flow-q" text={S.reflectHeading} />
         <p className="flow-hint">{S.reflectSub}</p>
         <ReadOnlyBlock tag={step.interpret?.reflectPrefix ?? ''}>{raw}</ReadOnlyBlock>
         <div className="flow-reflect-actions">
@@ -1049,7 +1049,10 @@ function StepView({
            would fold its label into the heading's accessible name and change
            what a screen reader announces when it lands on the question. */
         <div className="flow-q-row">
-          <h2 className="flow-q">{questionText}</h2>
+          {/* V1.2 VB-10: the question types itself in on arrival, and on every
+              rephrasing — a new wording is a new sentence arriving, which is
+              the same moment. Skippable and non-blocking; see Typed.tsx. */}
+          <TypedHeading className="flow-q" text={questionText} />
           {hasRephrasings && (
             <Button
               type="button"

@@ -37,6 +37,9 @@ export type { BrandMarkProps, BrandMarkSpin } from './BrandMark';
 export { Beats } from './Beats';
 export type { BeatsProps } from './Beats';
 
+export { TypedHeading, TypedModuleLabel } from './Typed';
+export type { TypedHeadingProps, TypedModuleLabelProps } from './Typed';
+
 export { FileTree } from './FileTree';
 export type { FileTreeProps } from './FileTree';
 

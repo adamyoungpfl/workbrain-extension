@@ -1,0 +1,28 @@
+/* V1.2 VB-10 — the characters that have not been typed yet.
+
+   `visibility: hidden`, and nothing else, because every property of this one
+   declaration is load-bearing:
+
+   - It still takes up space. The heading occupies its final box from the first
+     frame, so nothing below the question moves while it prints — no control
+     walking down the panel under someone's pointer, and no re-wrap on every
+     character under `.flow-q`'s `text-wrap: balance`.
+   - It is out of the accessibility tree, so a screen reader is never read the
+     text twice. While a heading is printing it carries an `aria-label` of the
+     whole question instead (see Typed.tsx).
+   - It leaves `textContent` complete throughout, so the question is one whole
+     string to anything reading the DOM, mid-print or not.
+
+   Not `opacity: 0` or `color: transparent`: both would keep the text in the
+   accessibility tree, announcing every question twice, and transparent text is
+   a contrast violation waiting to be found by an axe run that happens to land
+   mid-print.
+
+   There is no `prefers-reduced-motion` block here on purpose. Reduced motion
+   does not dim this rule — it means no print happens at all, so this element is
+   never rendered. Typed.tsx makes that decision in JavaScript, where it can be
+   asserted, rather than leaving a still-animating component looking finished. */
+
+.typed-rest {
+  visibility: hidden;
+}

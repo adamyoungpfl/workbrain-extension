@@ -1,7 +1,32 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeAll } from 'vitest';
 import { FlowProgress, STATUS_MARK_SPIN } from './FlowProgress';
 import { S } from '../strings';
 import { mount } from './testUtils';
+
+/**
+ * V1.2 VB-10 put a typewriter on the label. jsdom has no `matchMedia` at all,
+ * so `prefersReducedMotion()` would fall through to "not reduced" and every
+ * mount below would start a real 10ms interval updating state outside `act` —
+ * noise that says nothing about this component. Declaring the preference is
+ * the same move FileTree.test.tsx makes, for the same reason: these tests are
+ * about structure, and the printing itself is asserted in Typed.test.tsx and,
+ * where it actually matters, in a real browser in tests/e2e/typewriter.spec.ts.
+ */
+beforeAll(() => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: (query: string) => ({
+      matches: query.includes('prefers-reduced-motion'),
+      media: query,
+      onchange: null,
+      addEventListener: () => {},
+      removeEventListener: () => {},
+      addListener: () => {},
+      removeListener: () => {},
+      dispatchEvent: () => false,
+    }),
+  });
+});
 
 describe('FlowProgress', () => {
   it('shows the module title and nothing else', () => {
