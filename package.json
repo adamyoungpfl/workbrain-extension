@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "npm run tokens && tsc --noEmit && vite build",
+    "build:dev": "npm run tokens && tsc --noEmit && NODE_ENV=development vite build",
     "zip": "npm run build && cd dist && zip -r ../dist.zip .",
     "tokens": "node scripts/tokens.mjs",
     "typecheck": "tsc --noEmit",

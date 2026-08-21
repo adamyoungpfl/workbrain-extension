@@ -75,6 +75,19 @@ clears `chrome.storage.local` *and* `.sync` and reloads to the welcome screen �
 It is gated on `import.meta.env.DEV` and is absent from production builds; `src/panel/devReset.ts`
 explains why that is not the settings page `docs/GUARDRAILS.md` forbids.
 
+**You must build with `npm run build:dev` for the chord to exist.** `npm run build` forces
+`NODE_ENV=production` — Vite does this for the build command regardless of `--mode` — so
+`import.meta.env.DEV` is false and the whole handler is dead-code-eliminated. A `dist/` from
+`npm run build` has no reset in it, by design. The dogfooding loop is:
+
+```bash
+npm run build:dev        # dist/ WITH the reset chord
+# chrome://extensions -> reload icon on Workbrain's card
+# open the panel -> Ctrl+Alt+Shift+R to wipe and land on the welcome screen
+```
+
+Ship and verify with `npm run build` / `npm run check`, which are what `npm run zip` uses.
+
 **Dev-only voice audition (V1.3 VB-18).** In a development build the panel's console has `wbVoices`:
 `list()` every installed voice, `roles()` to see which voice each narrator role resolves to,
 `play('Samantha')` for one, and `audition()` to hear every English voice read a real interview
