@@ -1,0 +1,77 @@
+/* V1.3 VB-19 — section health in List mode.
+
+   THIS FILE ADDS TO FileRow.css's `.badge`, IT DOES NOT REPLACE IT. The three
+   tones (fresh / due / next), the pill radius, the weight and the
+   `white-space: nowrap` all come from there, so Home's "1 due" and a drawer
+   row's "Due" are visibly the same object. What is here is only what a 12px
+   drawer needs on top: a smaller box, the ASCII glyph, and the one hollow
+   variant the fifth state needs.
+
+   NOTHING IS DISTINGUISHED BY COLOUR ALONE (docs/GUARDRAILS.md). Each state
+   carries a word, a glyph and a fill treatment before colour is considered —
+   see SectionHealth.tsx. Greyscale is asserted, not assumed:
+   tests/e2e/section-health.spec.ts strips colour and re-reads every row. */
+
+.sectionhealth-pill {
+  /* `.badge` sets `margin-left: auto` for FileRow's right-aligned slot. In a
+     tree row the pill is pushed right by its own line's spacer, and in the
+     summary strip several sit side by side, so the auto margin has to go. */
+  margin-left: 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  flex: none;
+  padding: 2px 7px;
+  font-size: 10.5px;
+  font-weight: 650;
+  line-height: 1.35;
+}
+
+/* Bracketed ASCII, in the same mono face as the tree's own state markers, so
+   the two read as one family of marks rather than two conventions stacked on
+   one row. `-0.04em` matches FileTree.css's glyph tracking. */
+.sectionhealth-glyph {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: -0.04em;
+  /* The mark must not shift when the word beside it is longer or shorter —
+     the glyph column is what the eye scans down. */
+  flex: none;
+}
+
+/* The fifth state: no fill at all, and a dashed edge. Two non-colour signals
+   on their own — the pill is hollow where every other pill is filled, and the
+   edge is broken where nothing else in the panel is. Same convention
+   FileRow.css already uses for a row that is not available yet
+   (`.filerow.locked`), so it is a borrowed idea rather than a new one.
+   --border-i (not --divider) because WCAG 1.4.11 wants 3:1 on a boundary that
+   carries meaning, and --ink-3 is 4.71:1 on the canvas. */
+.sectionhealth-pill.is-hollow {
+  background: none;
+  border: 1px dashed var(--border-i);
+  color: var(--ink-3);
+  /* The border would otherwise make this pill a pixel taller than its filled
+     neighbours and the row of them would sit unevenly. */
+  padding: 1px 6px;
+}
+
+/* ── The counts across the top ───────────────────────────────────────────── */
+
+/* Pinned to the top of the scrolling list, because a summary that scrolls
+   away is a summary you have to go looking for — and this one is carrying the
+   job that sorting the rows by urgency would otherwise do (VB-19 fixes the
+   list in file order). Bled to the drawer body's own edges so nothing shows
+   through beside it as the tree scrolls underneath. */
+.sectionhealth-summary {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  margin: 0 -14px;
+  padding: 5px 14px;
+  background: var(--canvas);
+  border-bottom: 1px solid var(--divider);
+}

@@ -1,9 +1,12 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FileOutlineNode, Module } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
 import { navigationTargetFor, outlineNodeState, repeatableBlocksForNode } from '../../core/flow/outline';
+import type { SectionHealth } from '../../core/freshness/sectionHealth';
+import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
 import { repeatableRecordTitle } from '../../core/files/generate';
+import { HealthPill, HealthSummary, healthDetail } from './SectionHealth';
 import { prefersReducedMotion } from '../cues/verbs';
 import { S } from '../strings';
 import './FileTree.css';
@@ -122,6 +125,11 @@ interface RowProps {
   modules: Module[];
   answers: Answers;
   currentQuestionId: string | null;
+  /** V1.3 VB-19 — every node's health, keyed by node id, computed once for
+   * the whole tree by `FileTree` (see its `health` memo). Passed down rather
+   * than derived per row: a per-row derivation would walk all twelve modules
+   * once for every row, on every keystroke. */
+  health: Record<string, SectionHealth>;
   expandedId: string | null;
   onToggleExpand: (id: string) => void;
   onNavigate: (questionId: string) => void;
@@ -137,9 +145,20 @@ interface RowProps {
  * questions. If this were remounted per position, every row would look like a
  * first mount and nothing would ever type itself.
  */
-function FileTreeRow({ node, depth, modules, answers, currentQuestionId, expandedId, onToggleExpand, onNavigate }: RowProps) {
+function FileTreeRow({
+  node,
+  depth,
+  modules,
+  answers,
+  currentQuestionId,
+  health,
+  expandedId,
+  onToggleExpand,
+  onNavigate,
+}: RowProps) {
   const state = outlineNodeState(node, answers.values, currentQuestionId);
   const typedLabel = useTypewriterOnChange(node.label, `${node.id}:${state}`);
+  const detailId = useId();
 
   // Records the generated file gives their own titled block — role names,
   // entity names, initiative names. Shown as sub-items so the tree has the
@@ -171,12 +190,38 @@ function FileTreeRow({ node, depth, modules, answers, currentQuestionId, expande
     </span>
   );
 
+  /**
+   * V1.3 VB-19 — the two things a row now says about itself.
+   *
+   * WHERE EACH ONE SITS IS AN ACCESSIBILITY DECISION, NOT A LAYOUT ONE. The
+   * navigate control carries an `aria-label`, and an accessible name replaces
+   * an element's contents, so anything put inside it is on screen but absent
+   * from the accessibility tree.
+   *
+   * - The PILL sits OUTSIDE it, so its word is read as the row's own text.
+   * - The DETAIL sits INSIDE it, bound back as `aria-describedby`. Inside is
+   *   what lets the control be one 44px box holding both lines instead of a
+   *   44px box with a line hanging under it — which would push every answered
+   *   row to nearly sixty pixels and halve what the drawer's default peek can
+   *   show. `aria-describedby` is what stops that costing a screen reader the
+   *   line: a description is computed from the referenced element wherever it
+   *   lives, including inside the thing it describes.
+   */
+  const sectionHealth = health[node.id];
+  const detail = sectionHealth ? healthDetail(sectionHealth) : null;
+  const detailLine = detail ? (
+    <span className="filetree-detail" id={detailId}>
+      {detail}
+    </span>
+  ) : null;
+
   return (
     <li className="filetree-item">
       <div
         className={`filetree-row is-${state}`}
         data-node-id={node.id}
         data-node-state={state}
+        data-health={sectionHealth?.state}
         style={{ paddingLeft: `${depth * 14}px` }}
       >
         {hasChildren ? (
@@ -199,13 +244,26 @@ function FileTreeRow({ node, depth, modules, answers, currentQuestionId, expande
             competes with the button's own name. The glyph beside it says the
             same thing visually. */}
         <span className="filetree-srstate">{STATE_WORD[state]}</span>
-        {clickable ? (
-          <button type="button" className="filetree-nav" aria-label={S.fileTreeGoTo(node.label)} onClick={() => onNavigate(target)}>
-            {label}
-          </button>
-        ) : (
-          label
-        )}
+        <span className="filetree-main">
+          {clickable ? (
+            <button
+              type="button"
+              className="filetree-nav"
+              aria-label={S.fileTreeGoTo(node.label)}
+              aria-describedby={detail ? detailId : undefined}
+              onClick={() => onNavigate(target)}
+            >
+              {label}
+              {detailLine}
+            </button>
+          ) : (
+            <span className="filetree-static">
+              {label}
+              {detailLine}
+            </span>
+          )}
+          {sectionHealth && <HealthPill state={sectionHealth.state} />}
+        </span>
       </div>
       {/* Records are not behind the disclosure — they follow their own row
           wherever it renders, exactly as the source does. The accordion holds
@@ -240,6 +298,7 @@ function FileTreeRow({ node, depth, modules, answers, currentQuestionId, expande
               modules={modules}
               answers={answers}
               currentQuestionId={currentQuestionId}
+              health={health}
               expandedId={expandedId}
               onToggleExpand={onToggleExpand}
               onNavigate={onNavigate}
@@ -277,6 +336,24 @@ export interface FileTreeProps {
  */
 export function FileTree({ outline, modules, answers, currentQuestionId, currentSectionId, onNavigate }: FileTreeProps) {
   const [override, setOverride] = useState<{ against: string | null; id: string | null } | null>(null);
+
+  /**
+   * V1.3 VB-19 — what "now" means for the whole drawer, stamped once when
+   * the tree mounts.
+   *
+   * Not `new Date()` inline: a fresh Date every render changes the memo's
+   * dependency every render, so the memo would never hit and all twelve
+   * modules would be re-walked on every keystroke of the interview. That is
+   * the same trap FileDrawer.tsx's `generatedOn` already documents. Freshness
+   * is measured in days and a panel session is measured in minutes, so a
+   * clock that does not tick during one is not a lie.
+   */
+  const [now] = useState(() => new Date());
+  const health = useMemo(
+    () => sectionHealthMap(outline, modules, answers, currentQuestionId, now),
+    [outline, modules, answers, currentQuestionId, now],
+  );
+  const summary = useMemo(() => summariseSectionHealth(outline, health), [outline, health]);
   // Adjusting state during render, the documented React escape hatch for
   // "derive from props" — cheaper and less error-prone than an effect, which
   // would render one frame with the stale expansion first. The override is
@@ -294,6 +371,9 @@ export function FileTree({ outline, modules, answers, currentQuestionId, current
 
   return (
     <div className="filetree">
+      {/* V1.3 VB-19 — the counts across the top, doing the "what needs
+          attention" job that keeping the rows in file order gives up. */}
+      <HealthSummary summary={summary} />
       <p className="filetree-root">{S.fileTreeRoot(name)}</p>
       <ul className="filetree-list">
         {outline.map((node) => (
@@ -304,6 +384,7 @@ export function FileTree({ outline, modules, answers, currentQuestionId, current
             modules={modules}
             answers={answers}
             currentQuestionId={currentQuestionId}
+            health={health}
             expandedId={expandedId}
             onToggleExpand={toggleExpand}
             onNavigate={onNavigate}

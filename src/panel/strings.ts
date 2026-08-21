@@ -203,6 +203,48 @@ export const S = {
     "This is your file assembling as you answer — each section appears the moment you reach it. It's plain text, copy it any time.",
 
   /**
+   * V1.3 VB-19 — section health in List mode.
+   *
+   * EXTENDING THE EXISTING BADGE LANGUAGE, NOT STARTING A SECOND ONE. Home
+   * already prints `badgeDue` ("1 due") and `badgeCurrent` against
+   * `FileRow`'s fresh/due/next tones, and the drawer already prints
+   * `sectionsOf`. Those are reused verbatim here rather than restated, so a
+   * section that is due in the drawer is due in the same words on Home.
+   * `fileTreeStateUntouched` ("Not yet") is likewise reused as the fifth
+   * state's own pill label — it is already the right word, said in the right
+   * register, and a second one would be drift.
+   *
+   * Four state words are genuinely new, because the drawer now draws a
+   * distinction the tree never did: the tree knows written / writing /
+   * untouched, and this splits "written" into finished, finished-but-aged,
+   * and part-done. One word each, because they sit in a pill in a 400px
+   * panel beside a section name that may be twenty-five characters long.
+   *
+   * The detail line is the part the pill cannot carry: how much of the
+   * section is answered, and either what was passed on or how long ago it was
+   * written. Both halves are plain counts — never a percentage and never a
+   * score (docs/GUARDRAILS.md rules out a composite score out of 100), and
+   * never a congratulation, which is the line VB-19 flags as easy to cross by
+   * accident once a list has pills on it.
+   */
+  sectionStateHere: 'Here',
+  sectionStateDone: 'Done',
+  sectionStateDue: 'Due',
+  sectionStatePartly: 'Partly',
+  sectionAnsweredOf: (answered: number, total: number) => `${answered} of ${total}`,
+  sectionSkipped: (n: number) => `${n} skipped`,
+  /** `ago` arrives already worded by `agoLabel` — "7 months", "3 days". */
+  sectionAnsweredAgo: (ago: string) => `answered ${ago} ago`,
+  sectionAnsweredToday: 'answered today',
+  /** The counts across the top of the list. VB-19 fixes the rows in FILE
+   * ORDER — the list is the file — so these do the "what needs attention"
+   * job that sorting by status would otherwise have to. */
+  sectionSummaryLabel: 'How your file is doing',
+  sectionSummaryPartly: (n: number) => `${n} partly`,
+  sectionSummaryNotYet: (n: number) => `${n} not yet`,
+  sectionSummaryDone: (n: number) => `${n} done`,
+
+  /**
    * V1.2 VB-12 — the drawer's grab handle. Two strings, and neither is ever
    * printed: the handle is a rule with a grip on it, and the whole point of
    * VB-12's "it should be obvious it's a handle without a tooltip explaining

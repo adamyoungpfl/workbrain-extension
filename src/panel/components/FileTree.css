@@ -35,6 +35,13 @@
   margin: 0;
 }
 
+/* V1.3 VB-19 gave a row a second line, and deliberately did NOT change this:
+   the detail line lives inside the row's own 44px control (see
+   `.filetree-main`), so a row is still exactly one 44px band and everything in
+   it still centres against that band. That matters beyond tidiness — the mode
+   morph flies each section's node to `.filetree-glyph`, and sizes it from that
+   box, so growing the glyph's box would silently change where and how big
+   every node lands (core/drawer/mode.ts's `endOf`). */
 .filetree-row {
   display: flex;
   align-items: center;
@@ -103,13 +110,62 @@
   margin: -1px;
 }
 
+/* V1.3 VB-19 — everything to the right of the glyph column: the name with its
+   detail line under it, and the status pill pinned to the right of both.
+
+   THE NAME AND THE DETAIL SHARE ONE 44px BOX rather than stacking two. The
+   navigate control has to clear 44x44 whatever is in it (docs/GUARDRAILS.md),
+   so a detail line hung *underneath* a 44px control would put every answered
+   row near sixty pixels and halve what the drawer's default peek can show.
+   Two lines inside the one control cost nothing: a 12px name over a 10.5px
+   detail is still under 44, so a row that reports its health is exactly as
+   tall as one that has nothing to report. */
+.filetree-main {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  min-height: var(--target-min);
+}
+
+/* What the pill cannot carry: how much is written, and either what was passed
+   on or how long ago. --ink-3 is 4.71:1 on the canvas, above the 4.5:1 floor
+   (docs/GUARDRAILS.md) — quiet, never sub-threshold. */
+.filetree-detail {
+  display: block;
+  margin-top: 1px;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  line-height: 1.3;
+  color: var(--ink-3);
+  overflow-wrap: anywhere;
+}
+
+/* A section nobody has reached is not a button, so its name is a bare span —
+   given the same box the button form gets, so the two forms are
+   pixel-identical at rest. That is the existing rule (see `.filetree-nav`
+   below) and VB-19 does not change it: an empty section is still not
+   clickable, and still not a tab stop. */
+.filetree-static {
+  display: block;
+  flex: 1;
+  min-width: 0;
+  padding: 0 4px;
+}
+
 /* A clickable row looks IDENTICAL to a non-clickable one at rest — every
    browser button default is reset — with hover and focus as the only visible
    sign it is interactive. That keeps the tree reading as a file listing
    rather than a stack of buttons. */
 .filetree-nav {
+  /* A column, since V1.3 VB-19 put the detail line inside this control (see
+     `.filetree-main`), centred so a row with no detail sits exactly where it
+     always did. */
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  justify-content: center;
+  align-items: stretch;
   flex: 1;
   min-width: 0;
   min-height: var(--target-min);

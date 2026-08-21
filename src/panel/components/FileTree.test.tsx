@@ -258,3 +258,72 @@ describe('FileTree', () => {
     expect(nav.getAttribute('aria-label')).toBe(S.fileTreeGoTo('2. Later'));
   });
 });
+
+/**
+ * V1.3 VB-19. The health derivation itself is covered in
+ * core/freshness/sectionHealth.test.ts and the pill's own rendering in
+ * SectionHealth.test.tsx; what is left for the tree is the wiring — that a
+ * row carries its own section's health, that the detail line is bound to the
+ * row's control, and that adding a pill did not quietly make an empty section
+ * clickable.
+ */
+describe('FileTree — section health (VB-19)', () => {
+  const YEAR_AGO = new Date(Date.now() - 800 * 24 * 60 * 60 * 1000).toISOString();
+  const TODAY = new Date().toISOString();
+
+  it('gives every section row a health pill', () => {
+    const { container } = renderTree(makeAnswers(), null, null);
+    for (const row of rows(container)) {
+      expect(row.dataset.health, row.dataset.nodeId).toBeDefined();
+      expect(row.querySelector('.sectionhealth-pill'), row.dataset.nodeId).not.toBe(null);
+    }
+  });
+
+  it('reports the section being answered as here, and an empty one as not yet', () => {
+    const { container } = renderTree(makeAnswers(), 'name', 'sec1');
+    expect(rowFor(container, 'sec1').dataset.health).toBe('here');
+    expect(rowFor(container, 'sec2').dataset.health).toBe('not-yet');
+  });
+
+  it('reports a finished section as done, and the same section aged as due', () => {
+    const fresh = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: TODAY } }), 'name', 'sec1');
+    expect(rowFor(fresh.container, 'sec2').dataset.health).toBe('done');
+    fresh.unmount();
+
+    const stale = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: YEAR_AGO } }), 'name', 'sec1');
+    expect(rowFor(stale.container, 'sec2').dataset.health).toBe('due');
+    stale.unmount();
+  });
+
+  it('binds the detail line to the row\'s own control, so it is not lost behind an aria-label', () => {
+    const { container } = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: TODAY } }), 'name', 'sec1');
+    const row = rowFor(container, 'sec2');
+    const nav = row.querySelector('.filetree-nav') as HTMLElement;
+    const detail = row.querySelector('.filetree-detail') as HTMLElement;
+    expect(detail).not.toBe(null);
+    expect(nav.getAttribute('aria-describedby')).toBe(detail.id);
+    expect(detail.id.length).toBeGreaterThan(0);
+  });
+
+  it('keeps an empty section inert — a pill is not a control', () => {
+    const { container } = renderTree(makeAnswers(), 'name', 'sec1');
+    const row = rowFor(container, 'sec2');
+    expect(row.dataset.health).toBe('not-yet');
+    expect(row.querySelector('button')).toBe(null);
+    expect(row.querySelector('.filetree-detail')).toBe(null);
+  });
+
+  it('prints the counts across the top, and they agree with the rows', () => {
+    const { container } = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: YEAR_AGO } }), 'name', 'sec1');
+    const pills = Array.from(container.querySelectorAll('.sectionhealth-summary .sectionhealth-pill')) as HTMLElement[];
+    // sec1 is "here" and sec2 is "due", so only the due count prints.
+    expect(pills.map((p) => p.dataset.healthSummary)).toEqual(['due']);
+    expect(pills[0]!.textContent).toContain(S.badgeDue(1));
+  });
+
+  it('keeps the summary above the file name, so it reads as the list\'s own header', () => {
+    const { container } = renderTree(makeAnswers(), null, null);
+    const tree = container.querySelector('.filetree') as HTMLElement;
+    expect(tree.firstElementChild!.classList.contains('sectionhealth-summary')).toBe(true);
+  });
+});
