@@ -505,6 +505,95 @@
   border-top: 1px solid var(--divider);
 }
 
+/* ── V1.4 VB-22: the drawer's chrome becomes one surface ──────────────────
+   The complaint: the mode switch and this bar read as two strips stacked on
+   the drawer. They should read as the drawer's own edge.
+
+   THE DOCK'S PALETTE LIVES HERE, IN ONE PLACE, AND NOWHERE ELSE. Both halves
+   of the chrome — this bar and FileDrawer.css below it — dress from these
+   variables rather than each naming its own colours, because the whole point
+   of the task is that the two are one surface and two lists of colours are two
+   surfaces waiting to drift apart. `Flow` publishes which stage is showing as
+   `data-stage` (one value, derived once from the requested mode and the
+   height, so the bar and the drawer cannot disagree about what colour they
+   are), and everything below is a function of that.
+
+   The light set is the default and the `list` block restates it, deliberately:
+   a shell that somehow rendered without `data-stage` gets the panel's own
+   light chrome rather than a transparent bar. */
+.flowshell {
+  --dock-stage: var(--canvas);
+  --dock-chip: var(--canvas);
+  --dock-chip-hover: var(--sunken);
+  --dock-ink: var(--ink);
+  --dock-ink-quiet: var(--ink-2);
+  /* Every interactive edge inside the dock. --border-i is measured against
+     --canvas and drops to 2.92:1 on the drawer's own stage — under WCAG
+     1.4.11's 3:1 — which is the whole reason --dock-edge exists
+     (design/tokens.json). */
+  --dock-secondary-edge: var(--dock-edge);
+  /* The primary needs no keyline on a light stage: its own fill is 6.6:1
+     against every pixel of the ramp there. On the dark stage it measures 1.6:1
+     against the middle of the ramp and the keyline is the only boundary it
+     has. */
+  --dock-primary-edge: transparent;
+  --dock-quiet-bg: transparent;
+  --dock-accent: var(--primary);
+  --dock-accent-chip: var(--primary-tint);
+  /* The stage travels between the two ends over the drawer's own settle
+     duration (docs/design-system.html §06), so a mode change moves the whole
+     dock at one speed instead of flipping the bar dark above a list that is
+     still fading out. Only the gradient travels — see the note on the buttons
+     below, which change in one frame. */
+  transition: --dock-stage var(--slow) var(--ease);
+}
+
+/* A custom property the browser has not been told the type of cannot be
+   transitioned at all, so without this the rule above means nothing and the
+   stage flips in one frame — leaving the bar dark over a list that is still
+   fading out (the drawer crossfades its two layers over --morph-ms,
+   core/drawer/mode.ts). The initial value is never used: every shell matches
+   one of the two blocks. */
+@property --dock-stage {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+/* Brain — THE ONE SANCTIONED DARK SURFACE (docs/V1.2-REFINEMENT.md), which
+   this task extends from "the globe's stage" to "the drawer's whole chrome".
+   Every value is from the globe's own palette rather than a second dark set
+   that would have to agree with it (design/tokens.json's `globe` group). */
+.flowshell[data-stage='brain'] {
+  --dock-stage: var(--globe-field);
+  --dock-chip: var(--globe-panel);
+  --dock-chip-hover: var(--globe-edge-far);
+  --dock-ink: var(--globe-label);
+  --dock-ink-quiet: var(--globe-detail-key);
+  --dock-secondary-edge: var(--globe-field);
+  --dock-primary-edge: var(--globe-field);
+  --dock-quiet-bg: var(--globe-panel);
+  /* --primary measures 2.90:1 on this field, under the 3:1 floor for a
+     non-text indicator, so the dark stage focuses with the ring the globe
+     already uses (docs/GUARDRAILS.md: an equal replacement, never none). */
+  --dock-accent: var(--globe-focus);
+  --dock-accent-chip: var(--globe-panel);
+}
+
+/* List — the same structure on the drawer's own lighter stage. */
+.flowshell[data-stage='list'] {
+  --dock-stage: var(--surface);
+  --dock-chip: var(--canvas);
+  --dock-chip-hover: var(--sunken);
+  --dock-ink: var(--ink);
+  --dock-ink-quiet: var(--ink-2);
+  --dock-secondary-edge: var(--dock-edge);
+  --dock-primary-edge: transparent;
+  --dock-quiet-bg: transparent;
+  --dock-accent: var(--primary);
+  --dock-accent-chip: var(--primary-tint);
+}
+
 /* ── V1.2 VB-11: the navigation, docked to the drawer ────────────────────
    Back / Next / Skip stop being the end of the question and become a bar
    pegged to the drawer's top edge, so the two read as one object and the
@@ -546,8 +635,104 @@
   height: var(--flow-nav-h, 60px);
   margin-top: 0;
   padding: 0 26px;
-  background: var(--canvas);
-  border-top: 1px solid var(--divider);
+  /* THE FADE, AND WHY IT TRACKS THE HANDLE.
+     `bottom` is the drawer's top edge, so this box begins exactly where the
+     bar has been dragged to; a gradient anchored to the bottom of it therefore
+     starts at the handle by construction and cannot drift a pixel from it. No
+     second number, no listener, no fixed height anywhere.
+
+     The shape is core/drawer/chrome.ts's and arrives as custom properties: a
+     steep foot below the buttons (`--nav-ramp-foot`, lifting
+     `--nav-ramp-foot-mix` off the stage colour), then the long half running
+     out into --canvas exactly at this bar's top edge. That is not styling —
+     it is what gives Back / Next / Skip a background they can hold a boundary
+     against along their whole height, and chrome.test.ts proves no evenly
+     spread ramp can. It also stops at the top edge on purpose: a softer fade
+     running on into the question area would be painting over the save note,
+     and core/flow/composition.ts has no room to reserve for it.
+
+     No border-top. The seam between this bar and the drawer's head IS the
+     surface continuing — a line across it is the thing this task removes. */
+  background: linear-gradient(
+    to top,
+    var(--dock-stage) 0,
+    color-mix(in srgb, var(--dock-stage), var(--canvas) var(--nav-ramp-foot-mix, 45%))
+      var(--nav-ramp-foot, 8px),
+    color-mix(in srgb, var(--dock-stage), var(--canvas) var(--nav-ramp-knee-mix, 80%))
+      var(--nav-ramp-knee, 26px),
+    var(--canvas) var(--nav-ramp-h, 60px)
+  );
+}
+
+/* THE BUTTONS, DESIGNED INTO THE GRADIENT RATHER THAN PASTED ON IT.
+   docs/V1.4-REFINEMENT.md offers two ways to survive a moving background:
+   give the buttons their own solid ground so the gradient passes behind them,
+   or interpolate their treatment with the variable driving the gradient. This
+   is the first with the second folded into it — the ground is not white, it is
+   cut from the dock's own stage — so a label is read against a colour that
+   never moves while the control still visibly belongs to the surface it grew
+   out of. Every ratio is asserted twice: against the tokens in
+   src/core/drawer/chrome.test.ts, and against the pixels a browser really
+   painted, at three drag heights in both modes, in
+   tests/e2e/dock-surface.spec.ts. */
+.flowshell .flow-foot .btn-secondary {
+  background: var(--dock-chip);
+  color: var(--dock-ink);
+  border-color: var(--dock-secondary-edge);
+}
+.flowshell .flow-foot .btn-secondary:hover {
+  background: var(--dock-chip-hover);
+}
+
+.flowshell .flow-foot .btn-primary {
+  border-color: var(--dock-primary-edge);
+}
+
+/* Skip. On the light stage it stays what it was — a word, on nothing, at
+   6.7:1 against every pixel of that ramp. On the dark stage a word on nothing
+   would be a word on a gradient, which is exactly the thing that cannot hold
+   4.5:1, so it takes the same chip Back has and stays subordinate by carrying
+   the quieter ink and no keyline. Its boundary is then the chip itself, at
+   3.6:1 against the ramp beside it. */
+.flowshell .flow-foot .btn-quiet {
+  background: var(--dock-quiet-bg);
+  color: var(--dock-ink-quiet);
+}
+.flowshell .flow-foot .btn-quiet:hover {
+  background: var(--dock-chip-hover);
+  color: var(--dock-ink);
+}
+
+/* THE CONTROLS THEMSELVES DO NOT CROSSFADE. `.btn` animates its background
+   over 120ms, which is right for a hover and wrong for a change of stage: a
+   light chip crossfading to a dark one passes through a frame where the label
+   has already flipped to the other stage's ink and cannot be read on the
+   ground underneath it. axe catches it, and it is a real 120ms of unreadable
+   button, not a test artefact. So the fade belongs to the surface and the
+   controls change with it in one frame — and the hover fade is kept by scoping
+   the transition to the state that wants it. */
+.flowshell .flow-foot .btn {
+  transition: none;
+}
+.flowshell .flow-foot .btn:hover {
+  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
+}
+
+/* The ring goes INSIDE. Drawn outside, its adjacent colour is the ramp — and a
+   ring on a ramp is the same unwinnable problem the buttons have: whatever
+   colour it is, the gradient passes through it somewhere and the indicator
+   disappears at that height. Inset, its neighbour is the button's own ground,
+   which never moves: 9.4:1 on the dark chip, 6.8:1 on the light one. The
+   primary takes the white ring instead of the accent for the same reason —
+   --primary on --primary is 1:1. Same 2px, same visibility, one direction
+   over (docs/GUARDRAILS.md asks for an equal replacement, and this is the
+   equal replacement). */
+.flowshell .flow-foot .btn:focus-visible {
+  outline: 2px solid var(--dock-accent);
+  outline-offset: -2px;
+}
+.flowshell .flow-foot .btn-primary:focus-visible {
+  outline-color: var(--ink-inv);
 }
 
 /* Back at the left, the primary and its escape hatch at the right. Achieved by
@@ -589,6 +774,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* V1.4 VB-22. The gradient does not go away — it is how the dock's edge is
+     drawn, not a cue — but it stops *travelling* between the two stages when
+     the mode changes. The still equivalent carries the same information for
+     the same reason the morph's does: the information is which stage the dock
+     is in, and it is in it from the first frame. */
+  .flowshell {
+    transition: none;
+  }
+
   /* FileDrawer.css drops the drawer's settle here, so the bar has to drop it
      too — otherwise the bar is the one thing on screen still travelling, and
      it travels away from the edge it is pegged to. The still equivalent

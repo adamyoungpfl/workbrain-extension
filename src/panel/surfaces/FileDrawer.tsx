@@ -20,7 +20,6 @@ import {
   brainFitsIn,
   brainStageSize,
   heightForMode,
-  modeForHeight,
   morphPoints,
   morphTransform,
 } from '../../core/drawer/mode';
@@ -141,6 +140,15 @@ export interface FileDrawerProps {
    */
   height: number;
   onResize: (height: number) => void;
+  /**
+   * V1.4 VB-22. Which mode is on screen — derived by `Flow` from the mode
+   * requested and the height, because the docked bar above this drawer now
+   * wears the same stage colour and the two must not be able to disagree.
+   * This component asks for a change and renders what it is told, exactly as
+   * it already does with its height.
+   */
+  mode: DrawerMode;
+  onRequestMode: (mode: DrawerMode) => void;
   /** Navigating from a written row — resolved to a real `Position` here and
    * handed to `Flow`, which already knows how to view an arbitrary position
    * (its `viewing` state, built at R1-12 for Home's deep-link). */
@@ -182,7 +190,17 @@ function boxOf(element: Element | null): DOMRect | null {
   return element ? element.getBoundingClientRect() : null;
 }
 
-export function FileDrawer({ outline, modules, answers, position, height, onResize, onNavigate }: FileDrawerProps) {
+export function FileDrawer({
+  outline,
+  modules,
+  answers,
+  position,
+  height,
+  onResize,
+  onNavigate,
+  mode,
+  onRequestMode,
+}: FileDrawerProps) {
   const rootRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const handleRef = useRef<HTMLDivElement>(null);
@@ -225,15 +243,11 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
   const [settle, setSettle] = useState<DrawerSettle | 'none'>('none');
   const [dragging, setDragging] = useState(false);
 
-  /**
-   * V1.2 VB-14b. Which mode was *asked for* — not which one is showing. What
-   * shows is `modeForHeight(this, height)`, recomputed every render, so the
-   * drawer getting shorter hands Brain over to List and getting taller hands
-   * it back. Ephemeral, like the height it is paired with: the drawer opens on
-   * List every session however it was left.
-   */
-  const [requestedMode, setRequestedMode] = useState<DrawerMode>('list');
-  const mode = modeForHeight(requestedMode, height);
+  /* V1.2 VB-14b's requested-vs-shown mode moved up to `Flow` at V1.4 VB-22 —
+     see the `mode` prop. The rule is unchanged: what is held is the request,
+     what is rendered is `modeForHeight(request, height)`, so the drawer
+     getting shorter hands Brain over to List and getting taller hands it back,
+     and neither is ever stored. */
   const brainOffered = brainFitsIn(bounds);
 
   const [morph, setMorph] = useState<Morph | null>(null);
@@ -316,7 +330,7 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
    * read. Choosing List resizes nothing: List works at every height.
    */
   function chooseMode(next: DrawerMode) {
-    setRequestedMode(next);
+    onRequestMode(next);
     const grown = heightForMode(next, height, bounds);
     if (grown !== height) applyHeight(grown, 'jump');
   }
@@ -619,9 +633,22 @@ export function FileDrawer({ outline, modules, answers, position, height, onResi
  *
  * `aria-pressed` rather than a radio group: these are two states of one view,
  * not a value being collected, and a toggle button is what a screen reader
- * announces most plainly. The pressed one is never distinguished by colour
- * alone (docs/GUARDRAILS.md) — it also carries more weight and a solid
- * underline bar, either of which reads on its own.
+ * announces most plainly.
+ *
+ * ── V1.4 VB-22: icons, and the name that survives losing the word ─────────
+ *
+ * The bar these sit in now wears the stage's own colour, and on Brain's deep
+ * field a word inside a light chip was the loudest thing on the drawer. So the
+ * word goes and a glyph takes its place — but **an icon is not a name**
+ * (docs/GUARDRAILS.md's keyboard and screen-reader floor), so the same string
+ * that used to be printed is now the button's `aria-label`. Nothing is lost in
+ * the accessibility tree; the two specs that find these buttons by their names
+ * (tests/e2e/drawer-modes*.spec.ts) never had to change.
+ *
+ * The pressed one is still never distinguished by colour alone: it carries a
+ * filled chip, a solid underline bar, and a heavier glyph stroke, any of which
+ * reads on its own — plus `aria-pressed`, which is the one that matters when
+ * nothing is being read at all.
  */
 function ModeButton({
   mode,
@@ -640,10 +667,50 @@ function ModeButton({
       className="filedrawer-mode"
       data-mode={mode}
       aria-pressed={active}
+      aria-label={label}
       onClick={() => onPick(mode)}
     >
-      {label}
+      {mode === 'brain' ? <BrainGlyph /> : <ListGlyph />}
     </button>
+  );
+}
+
+/**
+ * The brain: one outline, split down the middle.
+ *
+ * Drawn rather than imported — a dependency that "just adds an icon set" is
+ * named in docs/GUARDRAILS.md as a thing that looks helpful and is not. Two
+ * mirrored lobes and the fissure between them is the least a brain can be and
+ * still be read as one at this size, and the fissure is what stops it reading as a
+ * cloud.
+ */
+function BrainGlyph() {
+  return (
+    <svg className="filedrawer-glyph" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+        {/* Two lobes and the fissure between them, and nothing else. An
+            earlier draft carried a fold inside each lobe: at 22px and one
+            device pixel per CSS pixel the folds close up into a smudge and the
+            glyph reads as a scribbled circle. Four bumps a side is what
+            survives that size. */}
+        <path d="M12 5.2C11.4 4 9.9 3.4 8.6 3.9 7.4 4.3 6.7 5.5 6.8 6.7 5.4 7.1 4.5 8.5 4.8 9.9 3.6 10.7 3.3 12.3 4 13.5c.5.9 1.5 1.4 2.5 1.4-.2 1.4.7 2.7 2.1 3 1.2.3 2.4-.3 3-1.3" />
+        <path d="M12 5.2c.6-1.2 2.1-1.8 3.4-1.3 1.2.4 1.9 1.6 1.8 2.8 1.4.4 2.3 1.8 2 3.2 1.2.8 1.5 2.4.8 3.6-.5.9-1.5 1.4-2.5 1.4.2 1.4-.7 2.7-2.1 3-1.2.3-2.4-.3-3-1.3" />
+        <path d="M12 5.2v11.4" />
+      </g>
+    </svg>
+  );
+}
+
+/** The list: three rows, each with its marker — the same shape the file tree
+ * underneath is, which is the whole point of the pair. */
+function ListGlyph() {
+  return (
+    <svg className="filedrawer-glyph" viewBox="0 0 24 24" width="22" height="22" aria-hidden="true" focusable="false">
+      <g fill="none" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round">
+        <path d="M5 7h1.4M5 12h1.4M5 17h1.4" />
+        <path d="M10 7h9M10 12h9M10 17h9" />
+      </g>
+    </svg>
   );
 }
 

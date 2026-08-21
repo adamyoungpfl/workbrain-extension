@@ -32,6 +32,18 @@
 export const FLOW_NAV_HEIGHT = 60;
 
 /**
+ * The room above and below the buttons inside that bar, in px — the "8 above
+ * and below" the height above is built from, given a name at V1.4 VB-22.
+ *
+ * It stopped being a description of the bar's padding and became geometry the
+ * moment the bar took a gradient: the ramp's steep half has to finish exactly
+ * where the buttons start, or the boundary a control needs against its own
+ * background is not there along its whole height. See core/drawer/chrome.ts.
+ * core/drawer/chrome.test.ts holds the two constants to each other.
+ */
+export const FLOW_NAV_INSET = 8;
+
+/**
  * The breathing space between the last thing in the question and the docked
  * bar, in px. Carried over unchanged from V1.1's reservation, which had the
  * same 8px under the question before the drawer began.

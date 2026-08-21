@@ -117,19 +117,24 @@ test('the two modes are a named group of toggles that say which is on (VB-14b)',
   await expect(listButton(page)).toHaveAttribute('aria-pressed', 'false');
 
   // Which one is on is never carried by colour alone (docs/GUARDRAILS.md):
-  // the pressed one is heavier and wears a bar under it.
+  // the pressed one is drawn heavier and wears a bar under it.
+  //
+  // V1.4 VB-22 changed what "heavier" is measured on, and nothing else: these
+  // buttons print a glyph rather than a word now (the name moved to
+  // aria-label), so the extra weight is the glyph's stroke instead of the
+  // label's font-weight. Two non-colour signals, same as before.
   const weights = await group
     .getByRole('button')
     .evaluateAll((els) =>
       els.map((el) => ({
         pressed: el.getAttribute('aria-pressed'),
-        weight: Number(getComputedStyle(el).fontWeight),
+        stroke: parseFloat(getComputedStyle(el.querySelector('svg')!).strokeWidth),
         shadow: getComputedStyle(el).boxShadow,
       })),
     );
   const on = weights.find((w) => w.pressed === 'true')!;
   const off = weights.find((w) => w.pressed === 'false')!;
-  expect(on.weight).toBeGreaterThan(off.weight);
+  expect(on.stroke).toBeGreaterThan(off.stroke);
   expect(on.shadow).not.toBe('none');
   expect(off.shadow).toBe('none');
 

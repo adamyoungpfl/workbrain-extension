@@ -29,11 +29,24 @@
      otherwise the box on screen is one taller than the height the handle
      announces, and the space `.flowshell` reserves is one short. */
   box-sizing: border-box;
-  background: var(--canvas);
-  /* --border-i, not --divider: this edge sits directly above an interactive
-     control and WCAG 1.4.11 wants 3:1 on it (docs/GUARDRAILS.md). It is also
-     the rule the grip sits on — see .filedrawer-handle. */
-  border-top: 1px solid var(--border-i);
+  /* V1.4 VB-22. The drawer, its head band and the docked bar above it are ONE
+     SURFACE now, so the colour comes from the dock's palette — declared once,
+     in Flow.css, on the shell that wraps both — rather than from a token named
+     here. The fallback is the panel's own canvas, for any surface that somehow
+     renders this drawer outside that shell.
+
+     The rule that used to be drawn here is gone with it. V1.2 gave this edge
+     --border-i because a control sat directly above it and WCAG 1.4.11 wants
+     3:1 on an interactive boundary; V1.4 VB-22 removes the boundary rather
+     than weakening it — the bar above is now the same colour, continuing down
+     into this box, and a line across the seam is precisely the "strips stacked
+     on the drawer" the task exists to fix. The handle keeps its own visible
+     representation (the grip) and its own focus ring, so nothing that was
+     identified by that rule is left unidentified. The 1px stays in the box
+     model, in the stage's own colour, so the drawer's height on screen is
+     still exactly the height the handle announces. */
+  background: var(--dock-stage, var(--canvas));
+  border-top: 1px solid var(--dock-stage, var(--canvas));
 }
 
 /* Only a settled change animates. A drag must track the pointer to the pixel:
@@ -78,49 +91,71 @@
   z-index: 1;
 }
 
+/* V1.4 VB-22: two glyphs, not two words. The band wears the stage's own
+   colour now, and on Brain's deep field a word in a light chip was the
+   loudest thing on the drawer. The name did not go anywhere — it is the
+   button's aria-label (FileDrawer.tsx) — only the print did. */
 .filedrawer-mode {
-  /* A control, so the 44px floor, including the icon-free ones
-     (docs/GUARDRAILS.md). The visible pill is inset inside that box. */
+  /* A control, so the 44px floor, icon-only ones included
+     (docs/GUARDRAILS.md). */
   min-width: var(--target-min);
   height: var(--target-min);
-  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   margin: 0;
   appearance: none;
   border: 0;
   border-radius: var(--r-sm);
   background: none;
-  font-family: var(--font-sans);
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--ink-2);
+  color: var(--dock-ink-quiet, var(--ink-2));
   cursor: pointer;
-  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+  /* Not on the resting state — see Flow.css's note on why the dock's controls
+     change with the stage in one frame instead of crossfading through a
+     moment nobody can read. The hover keeps its 120ms. */
+  transition: none;
+}
+
+.filedrawer-glyph {
+  /* The stroke is set here rather than on the SVG so the pressed state can
+     thicken it — one of the three signals below. */
+  stroke-width: 1.75;
 }
 
 .filedrawer-mode:hover {
-  background: var(--sunken);
-  color: var(--ink);
+  background: var(--dock-chip-hover, var(--sunken));
+  color: var(--dock-ink, var(--ink));
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 
 .filedrawer-mode:focus-visible {
-  outline: 2px solid var(--primary);
+  /* The dock's own accent: --primary measures 2.90:1 on the dark stage, under
+     the floor for a non-text indicator, so the ring changes with the stage
+     (Flow.css). Inset for the reason it always was — a ring outside this box
+     would sit over the question above it. */
+  outline: 2px solid var(--dock-accent, var(--primary));
   outline-offset: -2px;
 }
 
-/* The chosen one. THREE signals, not one: a fill, more weight, and a solid bar
-   under the word. Colour alone would fail docs/GUARDRAILS.md, and this pair
-   sits in an 44px strip where a person is glancing rather than reading. */
+/* The chosen one. THREE signals, not one: a fill, a heavier glyph, and a solid
+   bar under it. Colour alone would fail docs/GUARDRAILS.md, and this pair sits
+   in a 44px strip where a person is glancing rather than reading. */
 .filedrawer-mode[aria-pressed='true'] {
-  background: var(--primary-tint);
-  color: var(--primary);
-  font-weight: 700;
-  box-shadow: inset 0 -2px 0 var(--primary);
+  background: var(--dock-accent-chip, var(--primary-tint));
+  color: var(--dock-accent, var(--primary));
+  box-shadow: inset 0 -2px 0 var(--dock-accent, var(--primary));
+}
+.filedrawer-mode[aria-pressed='true'] .filedrawer-glyph {
+  stroke-width: 2.4;
 }
 
-/* Everything visible about the handle is the rule and the grip. The rule is
-   the drawer's own top border, above; this box is the 44x44+ target around it
-   (docs/GUARDRAILS.md — a control that looks like a rule is still a control),
-   and the grip is pulled up onto the rule so the two read as one object. */
+/* Everything visible about the handle is the grip. V1.2 drew it straddling
+   the drawer's top rule; V1.4 VB-22 took that rule away — the bar above is the
+   same surface now — so the grip is the whole of the control's visible
+   representation and carries WCAG 1.4.11 on its own (see the two bars below).
+   This box is the 44x44+ target around it: a control that looks like a mark on
+   a surface is still a control (docs/GUARDRAILS.md). */
 .filedrawer-handle {
   position: absolute;
   inset: 0;
@@ -133,7 +168,9 @@
   user-select: none;
 }
 .filedrawer-handle:focus-visible {
-  outline: 2px solid var(--primary);
+  /* Follows the stage, like every other ring in the dock — see
+     `.filedrawer-mode:focus-visible`. */
+  outline: 2px solid var(--dock-accent, var(--primary));
   /* Inset: a ring drawn outside this box would sit over the question above it
      and be clipped by the panel's own edge. */
   outline-offset: -2px;
@@ -143,12 +180,20 @@
   position: relative;
   width: 44px;
   height: 14px;
-  /* Opaque, so the rule stops either side of it: a broken rule with a grip in
-     the gap is the software-panel convention this is meant to read as. */
-  background: var(--canvas);
+  /* Opaque and the stage's own colour (V1.4 VB-22): there is no rule left for
+     it to break, so what it does now is sit in the surface rather than on it,
+     and the two bars are the whole of what is visible. */
+  background: var(--dock-stage, var(--canvas));
   border-radius: var(--r-pill);
-  /* Half of it above the rule, half below. */
+  /* Half of it above the seam, half below. */
   transform: translateY(-50%);
+  /* Same reasoning as the mode buttons above: the stage changes in one frame
+     under the grip, and only the hover fades. */
+  transition: none;
+}
+.filedrawer-handle:hover .filedrawer-grip,
+.filedrawer-handle:hover .filedrawer-grip::before,
+.filedrawer-handle:hover .filedrawer-grip::after {
   transition: background var(--fast) var(--ease);
 }
 /* Two bars, because one is a dash and three is a hamburger menu. */
@@ -160,8 +205,11 @@
   right: 8px;
   height: 2px;
   border-radius: 1px;
-  background: var(--ink-3);
-  transition: background var(--fast) var(--ease);
+  /* The grip IS the handle's visible representation — the rule it used to
+     straddle is gone (see `.filedrawer`) — so these two bars carry WCAG
+     1.4.11 on their own: 9.7:1 on the dark stage, 6.5:1 on the light one. */
+  background: var(--dock-ink-quiet, var(--ink-3));
+  transition: none;
 }
 .filedrawer-grip::before {
   top: 4px;
@@ -171,22 +219,22 @@
 }
 
 .filedrawer-handle:hover .filedrawer-grip {
-  background: var(--sunken);
+  background: var(--dock-chip-hover, var(--sunken));
 }
 .filedrawer-handle:hover .filedrawer-grip::before,
 .filedrawer-handle:hover .filedrawer-grip::after,
 .filedrawer-handle:focus-visible .filedrawer-grip::before,
 .filedrawer-handle:focus-visible .filedrawer-grip::after {
-  background: var(--ink);
+  background: var(--dock-ink, var(--ink));
 }
 /* Held. Not colour alone — the grip has already moved by the time this shows,
    and the movement is the cue. This is confirmation of which thing moved it. */
 .filedrawer[data-dragging='true'] .filedrawer-grip {
-  background: var(--primary-tint);
+  background: var(--dock-accent-chip, var(--primary-tint));
 }
 .filedrawer[data-dragging='true'] .filedrawer-grip::before,
 .filedrawer[data-dragging='true'] .filedrawer-grip::after {
-  background: var(--primary);
+  background: var(--dock-accent, var(--primary));
 }
 
 /* How much of the file has been written. Not a label for the drawer — that is
@@ -202,7 +250,11 @@
   align-items: center;
   margin: 0;
   font-size: 11.5px;
-  color: var(--ink-3);
+  /* V1.4 VB-22: it goes light with the band. --ink-3 was 4.71:1 on the canvas
+     this used to sit on and is 4.40:1 on List's stage — under the floor — so
+     the count moved a step up the neutral ramp with the surface it sits on:
+     6.5:1 on List, 9.7:1 on Brain. */
+  color: var(--dock-ink-quiet, var(--ink-3));
   pointer-events: none;
 }
 
@@ -267,8 +319,47 @@
      someone embedded; the whole band dark reads as a mode the drawer is in,
      which is what this is. It stops at the drawer's edge, so the panel's own
      light identity is untouched — the globe's stage is the same colour, so
-     the two are one surface and the seam does not show. */
-  background: var(--globe-field);
+     the two are one surface and the seam does not show.
+
+     V1.4 VB-22 widens that argument by one band: the stage colour is now the
+     drawer's own (Flow.css's --dock-stage, which resolves to --globe-field
+     here), so the head above this box and the docked bar above that are the
+     same surface too, and the seam does not show there either. */
+  background: var(--dock-stage, var(--globe-field));
+}
+
+/* ── What tinting the ground costs, paid here ─────────────────────────────
+   V1.4 VB-22 gave List a stage of its own instead of the panel's canvas, and
+   everything inside the drawer was measured against that canvas. Four things
+   land differently on --surface, and all four are corrected in one place —
+   scoped to `.filedrawer`, because none of these components is wrong anywhere
+   else and the drawer is the only place any of them sits on a stage:
+
+     · the hover on a tree row: --sunken on --surface is a 1.06 difference, a
+       cue nobody could see. It lifts to the panel's white instead of sinking,
+       which is exactly the strength it had before.
+     · the detail line and an untouched row: --ink-3 is 4.71:1 on the canvas
+       and 4.40:1 here — under the floor (docs/GUARDRAILS.md) — so both take
+       the next step up, at 6.5:1, and stay quieter than the label beside them.
+     · the hollow "not yet" pill: --border-i carries meaning on it (WCAG
+       1.4.11) and measures 2.92:1 on this stage, so it takes --dock-edge,
+       which exists for exactly this (design/tokens.json).
+     · the sticky summary: a --canvas bar on a tinted stage is a white strip
+       laid over the drawer, which is the thing this whole task is about. */
+.filedrawer .filetree-nav:hover,
+.filedrawer .filetree-toggle:hover {
+  background: var(--canvas);
+}
+.filedrawer .filetree-detail,
+.filedrawer .filetree-row.is-untouched {
+  color: var(--ink-2);
+}
+.filedrawer .sectionhealth-pill.is-hollow {
+  border-color: var(--dock-edge);
+  color: var(--ink-2);
+}
+.filedrawer .sectionhealth-summary {
+  background: var(--dock-stage, var(--canvas));
 }
 
 /* Only one layer is on screen at a time, and the one that is not is

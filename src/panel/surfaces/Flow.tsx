@@ -16,6 +16,15 @@ import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
+import {
+  NAV_RAMP_FOOT,
+  NAV_RAMP_FOOT_MIX,
+  NAV_RAMP_HEIGHT,
+  NAV_RAMP_KNEE,
+  NAV_RAMP_KNEE_MIX,
+} from '../../core/drawer/chrome';
+import { modeForHeight } from '../../core/drawer/mode';
+import type { DrawerMode } from '../../core/drawer/mode';
 import { FLOW_NAV_HEIGHT, flowBottomReserve } from '../../core/flow/dock';
 import { questionAreaOffset } from '../../core/flow/composition';
 import {
@@ -405,6 +414,20 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
   // peek on every open, however far it was dragged last time. The question
   // stays the primary object on a 400px panel.
   const [drawerHeight, setDrawerHeight] = useState(DRAWER_REST_HEIGHT);
+  /**
+   * V1.4 VB-22. Which drawer mode was *asked for* — held here rather than
+   * inside `FileDrawer` because the drawer's chrome is no longer only the
+   * drawer's: the docked bar above it takes the same stage colour and fades it
+   * into the panel, so the mode has to be known one level up from the thing it
+   * used to be private to. Ephemeral, exactly like `drawerHeight` beside it —
+   * the panel opens on List however it was left (see core/drawer/mode.ts).
+   *
+   * What is *shown* is still derived, never held: `modeForHeight` folds the
+   * request together with the current height, so dragging the drawer short
+   * hands Brain over to List and dragging it back hands it back — with the
+   * bar's colour following, because both read this one value.
+   */
+  const [requestedDrawerMode, setRequestedDrawerMode] = useState<DrawerMode>('list');
 
   useEffect(() => {
     let cancelled = false;
@@ -509,15 +532,28 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
    */
   function withDrawer(screen: ReactNode): ReactNode {
     if (!outline) return screen;
+    const drawerMode = modeForHeight(requestedDrawerMode, drawerHeight);
     return (
       <div
         className="flowshell"
+        // V1.4 VB-22. Which stage the whole docked chrome is dressed in —
+        // read by the drawer AND by the bar above it, so the two cannot
+        // disagree about what colour they are.
+        data-stage={drawerMode}
         style={
           {
             '--drawer-h': `${drawerHeight}px`,
             '--flow-nav-h': `${FLOW_NAV_HEIGHT}px`,
             '--flow-reserve': `${flowBottomReserve(drawerHeight)}px`,
             '--flow-area-offset': `${questionAreaOffset(drawerHeight)}px`,
+            // The fade's shape, from core/drawer/chrome.ts. The stylesheet
+            // draws the gradient; it does not decide where the steep half
+            // ends or how far it has lifted by the time it gets there.
+            '--nav-ramp-h': `${NAV_RAMP_HEIGHT}px`,
+            '--nav-ramp-foot': `${NAV_RAMP_FOOT}px`,
+            '--nav-ramp-foot-mix': `${NAV_RAMP_FOOT_MIX * 100}%`,
+            '--nav-ramp-knee': `${NAV_RAMP_KNEE}px`,
+            '--nav-ramp-knee-mix': `${NAV_RAMP_KNEE_MIX * 100}%`,
           } as CSSProperties
         }
       >
@@ -529,6 +565,8 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
           position={position}
           height={drawerHeight}
           onResize={setDrawerHeight}
+          mode={drawerMode}
+          onRequestMode={setRequestedDrawerMode}
           onNavigate={(next) => {
             // Exactly what `goBack` does in reverse: remember where we were so
             // Back returns there, then view the requested position. No new
