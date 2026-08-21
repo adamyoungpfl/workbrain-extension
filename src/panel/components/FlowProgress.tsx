@@ -11,9 +11,9 @@ import './FlowProgress.css';
  *   'continuous' — it turns for the whole interview. What Adam asked for.
  *   'once'       — it turns once when the module changes, then settles.
  *
- * Shipping 'continuous', as asked. Both are built, both are tested, and the
- * recommendation from building them is 'once', for two reasons that only
- * showed up on screen:
+ * Shipping 'once' (Adam's call, 2026-08-20, after seeing both on screen).
+ * 'continuous' is what was originally asked for and remains one word away.
+ * The two reasons 'once' won, both of which only showed up on screen:
  *
  * 1. **The still mark is the better picture.** At 24px the crisp exported pose
  *    reads as the logo. Every frame of a turn is a slightly soft, slightly
@@ -31,7 +31,7 @@ import './FlowProgress.css';
  * and neither schedules a frame, so this constant is not an accessibility
  * decision. It is a taste decision, and it is one line.
  */
-export const STATUS_MARK_SPIN: BrandMarkSpin = 'continuous';
+export const STATUS_MARK_SPIN: BrandMarkSpin = 'once';
 
 /**
  * How big the status-bar mark is, in px.
