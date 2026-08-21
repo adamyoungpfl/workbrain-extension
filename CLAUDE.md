@@ -70,6 +70,11 @@ npm run check        # typecheck + audit + test + build + e2e + a11y — the gat
 
 Load unpacked: `chrome://extensions` → Developer mode → Load unpacked → select `dist/`.
 
+**Dev-only reset (V1.2 VB-09).** In a development build, `Ctrl+Alt+Shift+R` anywhere in the panel
+clears `chrome.storage.local` *and* `.sync` and reloads to the welcome screen — no DevTools needed.
+It is gated on `import.meta.env.DEV` and is absent from production builds; `src/panel/devReset.ts`
+explains why that is not the settings page `docs/GUARDRAILS.md` forbids.
+
 ## How to work here
 
 1. **Plan before building.** For anything larger than a single file, produce a plan and check it
