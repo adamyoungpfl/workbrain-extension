@@ -469,6 +469,19 @@ export const S = {
   errNeedName: 'Add a name so the file has something to call you. First name is plenty.',
   errPickOne: 'Pick one to keep going, or skip this question.',
   errNeedAnswer: 'Answer this to keep going, or skip it.',
+  /**
+   * V1.4 VB-20. Said when someone picks "Yes" at the end of the roles loop but
+   * leaves the name blank. Both ways forward, since either is fine: name it,
+   * or say no. No skip here — there is no question to skip, only a choice
+   * already made that needs one more word.
+   */
+  errNeedItsName: 'Give it a name to keep going, or pick No.',
+  /**
+   * The name is how this record is found again (core/flow/runner.ts's
+   * `seededNameTaken` explains what breaks otherwise), so two of them cannot
+   * share one. Says what to do, names neither a rule nor a failure.
+   */
+  errNameTaken: 'That name is already on your list. Try a different one.',
   errSaveFailed: 'That did not save. Try once more, or download your file to be safe.',
   errFileUnreadable: 'I could not read that file. Pick the Context.md you downloaded from here.',
   errFileWrongKind: 'That looks like a different kind of file. Look for one ending in .md.',

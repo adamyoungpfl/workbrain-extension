@@ -8,8 +8,11 @@ import {
   applySkip,
   applyReflect,
   applyAddAnother,
+  applySeededAddAnother,
+  seededNameTaken,
   reconcileSeededRepeatable,
   findSeedTarget,
+  findSeedStep,
   questionCount,
   existingValue,
   topLevelIndex,
@@ -247,6 +250,266 @@ describe('reconcileSeededRepeatable', () => {
     });
     const result = reconcileSeededRepeatable(answers, rolesBlock, roleNamesStep, ['manager']);
     expect(result.repeatables.roles).toEqual([{ role_name: 'Manager' }]);
+  });
+});
+
+/**
+ * V1.4 VB-20 — the seeded block that is allowed to grow.
+ *
+ * Everything here exists because of one property of
+ * `reconcileSeededRepeatable`: it rebuilds the record array from the seed
+ * answer with `selectedValues.map(...)`. A record the seed answer does not
+ * name is deleted the next time that question is re-submitted — silently,
+ * taking every field answered inside it. So "add a role" cannot mean "append a
+ * record"; it has to mean "append a name to the seed answer, and the record it
+ * seeds", which is what makes the next reconcile a no-op.
+ */
+describe('applySeededAddAnother / seededNameTaken (VB-20)', () => {
+  const roleNamesStep: Step = {
+    id: 'role_names',
+    module: 1,
+    section: 0,
+    eyebrow: 'E',
+    q: 'Roles?',
+    kind: 'multi',
+    key: 'role_names',
+    options: [
+      { v: 'employee', l: 'Employee' },
+      { v: 'manager', l: 'Manager' },
+    ],
+  };
+  const roleFor: Step = { id: 'role_for', module: 1, section: 0, eyebrow: 'E', q: 'For?', kind: 'chips', key: 'role_for' };
+  const rolesBlock: RepeatableBlock = {
+    id: 'roles',
+    addAnotherPrompt: 'Want to tell AI about another role?',
+    addAnotherName: { prompt: 'What do you call this role?', placeholder: 'A short name for it' },
+    seedFrom: { questionId: 'role_names', seedField: 'role_name' },
+    fields: [roleFor],
+  };
+  const rolesModules: Module[] = [
+    {
+      id: 'm',
+      n: 1,
+      title: 'M',
+      purpose: 'p',
+      required: true,
+      estimatedMinutes: [1, 1],
+      nodes: [roleNamesStep, rolesBlock],
+    },
+  ];
+
+  /** One seeded role, fully answered — where the loop actually ends. */
+  function afterOneRole(): Answers {
+    return makeAnswers({
+      values: { role_names: ['employee'] },
+      repeatables: { roles: [{ role_name: 'Employee', role_for: 'employer' }] },
+    });
+  }
+
+  it('appends the name to the seed answer AND appends the record it seeds', () => {
+    const result = applySeededAddAnother(afterOneRole(), rolesBlock, roleNamesStep, 'Board member');
+    expect(result.values.role_names).toEqual(['employee', 'Board member']);
+    expect(result.repeatables.roles).toEqual([
+      { role_name: 'Employee', role_for: 'employer' },
+      { role_name: 'Board member' },
+    ]);
+  });
+
+  it('re-stamps the seed question\'s answeredAt, whose stored value genuinely changed', () => {
+    const result = applySeededAddAnother(afterOneRole(), rolesBlock, roleNamesStep, 'Board member');
+    expect(typeof result.answeredAt.role_names).toBe('string');
+    // …and nothing for the record's name: no question was answered there, and
+    // reconcileSeededRepeatable's own seeded records carry no stamp either.
+    expect(result.answeredAt['roles#1#role_name']).toBeUndefined();
+  });
+
+  it('trims the typed name, so " Coach " and "Coach" are the one role', () => {
+    const result = applySeededAddAnother(afterOneRole(), rolesBlock, roleNamesStep, '  Coach  ');
+    expect(result.values.role_names).toEqual(['employee', 'Coach']);
+    expect(result.repeatables.roles?.[1]).toEqual({ role_name: 'Coach' });
+  });
+
+  it('works from a seed answer that does not exist yet, rather than writing a non-array', () => {
+    const result = applySeededAddAnother(makeAnswers(), rolesBlock, roleNamesStep, 'Coach');
+    expect(result.values.role_names).toEqual(['Coach']);
+  });
+
+  it('refuses a blank name instead of adding a record nothing can find again', () => {
+    const before = afterOneRole();
+    expect(applySeededAddAnother(before, rolesBlock, roleNamesStep, '   ')).toEqual(before);
+  });
+
+  it('refuses a name already taken — two records with one name collapse into one on reconcile', () => {
+    const before = afterOneRole();
+    expect(applySeededAddAnother(before, rolesBlock, roleNamesStep, 'Employee')).toEqual(before);
+  });
+
+  it('does nothing at all to an open-ended block — that is applyAddAnother\'s job', () => {
+    const before = makeAnswers({ repeatables: { items: [{ item_name: 'a' }] } });
+    expect(applySeededAddAnother(before, openBlock, roleNamesStep, 'Another')).toEqual(before);
+  });
+
+  it('seededNameTaken sees an existing record\'s name, whatever its case', () => {
+    expect(seededNameTaken(afterOneRole(), rolesBlock, roleNamesStep, 'employee')).toBe(true);
+    expect(seededNameTaken(afterOneRole(), rolesBlock, roleNamesStep, 'EMPLOYEE')).toBe(true);
+    expect(seededNameTaken(afterOneRole(), rolesBlock, roleNamesStep, 'Coach')).toBe(false);
+  });
+
+  it('seededNameTaken sees a selected option\'s raw value too, not only its label', () => {
+    // "employee" is the stored value, "Employee" the label. Typing either
+    // would produce a duplicate entry in role_names, so both are taken.
+    const answers = makeAnswers({ values: { role_names: ['employee'] } });
+    expect(seededNameTaken(answers, rolesBlock, roleNamesStep, 'employee')).toBe(true);
+    expect(seededNameTaken(answers, rolesBlock, roleNamesStep, 'Employee')).toBe(true);
+  });
+
+  /** THE test this whole task exists for. */
+  it('survives re-answering the seed question unchanged — reconcile becomes a no-op, not a deletion', () => {
+    let answers = applySeededAddAnother(afterOneRole(), rolesBlock, roleNamesStep, 'Board member');
+    // Four questions answered about the added role.
+    answers = applyAnswer(answers, roleFor, { in: 'repeatable', blockId: 'roles', recordIndex: 1 }, 'community');
+
+    // Back to role_names, Next pressed with nothing changed — exactly what
+    // the panel does (applyAnswer, then reconcileSeededRepeatable).
+    const resubmitted = answers.values.role_names as string[];
+    let after = applyAnswer(answers, roleNamesStep, { in: 'top' }, resubmitted);
+    after = reconcileSeededRepeatable(after, rolesBlock, roleNamesStep, resubmitted);
+
+    expect(after.repeatables.roles).toEqual([
+      { role_name: 'Employee', role_for: 'employer' },
+      { role_name: 'Board member', role_for: 'community' },
+    ]);
+    expect(after.values.role_names).toEqual(['employee', 'Board member']);
+  });
+
+  it('the appended role would have been dropped by that same reconcile without the seed write', () => {
+    // The bug, demonstrated: applyAddAnother's plain append is what VB-20 was
+    // told not to do, and this is why.
+    let answers = applyAddAnother(afterOneRole(), 'roles', true);
+    answers = applyAnswer(answers, roleFor, { in: 'repeatable', blockId: 'roles', recordIndex: 1 }, 'community');
+    const after = reconcileSeededRepeatable(answers, rolesBlock, roleNamesStep, ['employee']);
+    expect(after.repeatables.roles).toEqual([{ role_name: 'Employee', role_for: 'employer' }]);
+  });
+
+  it('the added role is the next thing asked about — the loop runs again for it', () => {
+    const answers = applySeededAddAnother(afterOneRole(), rolesBlock, roleNamesStep, 'Board member');
+    expect(findPosition(rolesModules, answers, NONE)).toEqual({
+      kind: 'step',
+      step: roleFor,
+      location: { in: 'repeatable', blockId: 'roles', recordIndex: 1 },
+    });
+  });
+
+  it('a seeded block with a prompt asks once its records are complete', () => {
+    expect(findPosition(rolesModules, afterOneRole(), NONE)).toEqual({
+      kind: 'add-another',
+      block: rolesBlock,
+      recordIndex: 1,
+    });
+  });
+
+  it('answering "no" moves past it — the block is declined for the session', () => {
+    expect(findPosition(rolesModules, afterOneRole(), new Set(['roles']))).toEqual({ kind: 'done' });
+  });
+
+  it('a seeded block with no prompt still never asks — "" means never, for every block', () => {
+    const silent: RepeatableBlock = { ...rolesBlock, addAnotherPrompt: '' };
+    const silentModules: Module[] = [{ ...rolesModules[0]!, nodes: [roleNamesStep, silent] }];
+    expect(findPosition(silentModules, afterOneRole(), NONE)).toEqual({ kind: 'done' });
+  });
+
+  it('findSeedStep finds the question a block is seeded from, and nothing for an open-ended one', () => {
+    expect(findSeedStep(rolesModules, rolesBlock)).toBe(roleNamesStep);
+    expect(findSeedStep(rolesModules, openBlock)).toBeUndefined();
+  });
+});
+
+describe('the real Context flow — adding a role (VB-20)', () => {
+  const rolesBlock = contextModules
+    .flatMap((m) => m.nodes)
+    .find((n): n is RepeatableBlock => 'fields' in n && n.id === 'roles')!;
+  const roleNamesStep = contextModules
+    .flatMap((m) => m.nodes)
+    .find((n): n is Step => !('fields' in n) && n.id === 'role_names')!;
+
+  /** Walks the real flow until the roles loop asks for another one. */
+  function walkToRolesAddAnother(): Answers {
+    let answers = makeAnswers();
+    const declined = new Set<string>();
+    const seenIntros = new Set<string>();
+    for (let guard = 0; guard < 400; guard++) {
+      const pos = findPosition(contextModules, answers, declined, seenIntros);
+      if (pos.kind === 'add-another' && pos.block.id === 'roles') return answers;
+      if (pos.kind === 'done') break;
+      if (pos.kind === 'module-intro') {
+        seenIntros.add(pos.module.id);
+        continue;
+      }
+      if (pos.kind === 'add-another') {
+        declined.add(pos.block.id);
+        continue;
+      }
+      if (pos.kind === 'reflect') {
+        answers = applyReflect(answers, pos.step, pos.location, 'kept');
+        continue;
+      }
+      const value: AnswerValue =
+        pos.step.kind === 'multi'
+          ? [pos.step.options?.[0]?.v ?? 'x']
+          : pos.step.kind === 'chips'
+            ? (pos.step.options?.[0]?.v ?? 'x')
+            : pos.step.kind === 'yesno'
+              ? 'no'
+              : 'an answer';
+      answers = applyAnswer(answers, pos.step, pos.location, value);
+      if (pos.location.in === 'top' && Array.isArray(value)) {
+        const seedTarget = findSeedTarget(contextModules, pos.step.id);
+        if (seedTarget) answers = reconcileSeededRepeatable(answers, seedTarget, pos.step, value);
+      }
+    }
+    throw new Error('the roles loop never asked for another role');
+  }
+
+  it('asks, in the real data, once the seeded roles are all answered', () => {
+    const answers = walkToRolesAddAnother();
+    expect(answers.repeatables.roles).toHaveLength(1);
+    const pos = findPosition(contextModules, answers, new Set(), new Set());
+    expect(pos.kind).toBe('add-another');
+    expect(moduleFor(contextModules, pos)?.id).toBe(contextModules[1]!.id);
+  });
+
+  it('an added role keeps all four of its answers when role_names is re-submitted unchanged', () => {
+    let answers = applySeededAddAnother(walkToRolesAddAnother(), rolesBlock, roleNamesStep, 'Board member');
+
+    // Answer every field of the new record, the way the panel would.
+    for (let guard = 0; guard < 20; guard++) {
+      const pos = findPosition(contextModules, answers, new Set(), new Set());
+      if (pos.kind === 'add-another' || pos.kind === 'done' || pos.kind === 'module-intro') break;
+      if (pos.location.in !== 'repeatable' || pos.location.blockId !== 'roles') break;
+      if (pos.kind === 'reflect') {
+        answers = applyReflect(answers, pos.step, pos.location, 'kept');
+        continue;
+      }
+      answers = applyAnswer(
+        answers,
+        pos.step,
+        pos.location,
+        pos.step.kind === 'chips' ? (pos.step.options?.[0]?.v ?? 'x') : 'an answer',
+      );
+    }
+
+    const added = () => (answers.repeatables.roles ?? [])[1];
+    expect(added()).toBeDefined();
+    expect(Object.keys(added()!)).toEqual(['role_name', 'role_for', 'role_mandate', 'role_standing', 'role_durability']);
+    const before = added();
+
+    // Back to role_names; Next, nothing changed.
+    const resubmitted = answers.values.role_names as string[];
+    answers = applyAnswer(answers, roleNamesStep, { in: 'top' }, resubmitted);
+    answers = reconcileSeededRepeatable(answers, rolesBlock, roleNamesStep, resubmitted);
+
+    expect(answers.repeatables.roles).toHaveLength(2);
+    expect(added()).toEqual(before);
   });
 });
 

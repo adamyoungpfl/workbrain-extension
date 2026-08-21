@@ -737,6 +737,13 @@ test.describe('the deeper-dive follow-ups', () => {
 
     const page = await openPanel(context, id);
     await enterInterview(page);
+    // V1.4 VB-20: a fixture with every role answered now resumes at the roles
+    // loop's "another role?" — the first unfinished thing in the flow, and
+    // before this question. There isn't another; say so and carry on.
+    if ((await page.locator('.flow').getAttribute('data-position')) === 'add-another') {
+      await page.getByRole('button', { name: 'No', exact: true }).click();
+      await page.getByRole('button', { name: 'Next', exact: true }).click();
+    }
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'voice_directness');
 
     // The examples are what make this question answerable at a glance, so

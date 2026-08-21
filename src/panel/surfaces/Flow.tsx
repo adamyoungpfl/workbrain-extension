@@ -33,14 +33,19 @@ import {
   applySkip,
   applyReflect,
   applyAddAnother,
+  applySeededAddAnother,
+  seededNameTaken,
   reconcileSeededRepeatable,
   findSeedTarget,
+  findSeedStep,
   questionCount,
   existingValue,
   topLevelIndex,
   moduleFor,
 } from '../../core/flow/runner';
 import type { Position, StepLocation } from '../../core/flow/runner';
+import { needsName } from '../../core/flow/addAnother';
+import { offListOptions } from '../../core/flow/customOptions';
 import {
   promptFor,
   attachHintFor,
@@ -480,14 +485,44 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
     setViewing(null);
   }
 
-  function handleAddAnotherDecision(from: Position, blockId: string, wantsMore: boolean) {
-    if (wantsMore) {
+  /**
+   * V1.4 VB-20 adds `name`, and with it the second way a record can be added.
+   *
+   * An open-ended block appends an empty record and asks its first field next.
+   * A SEEDED block cannot: its records are rebuilt from the seed question's
+   * answer, so an unnamed record is deleted — with everything answered inside
+   * it — the moment that question is re-submitted. `applySeededAddAnother`
+   * writes the name to both places at once, which is what makes the next
+   * reconcile a no-op instead of a deletion (see its own comment).
+   *
+   * The seeded path therefore refuses rather than guesses: no name, or no seed
+   * question to append it to, and nothing is added at all. Nothing is lost by
+   * refusing — the record would hold no answers yet — whereas adding one that
+   * cannot survive is exactly the trap this task exists to close. The panel
+   * never reaches it: `StepView` will not submit "Yes" on a naming block
+   * without a name.
+   */
+  function handleAddAnotherDecision(from: Position, blockId: string, wantsMore: boolean, name?: string) {
+    const block = from.kind === 'add-another' ? from.block : undefined;
+    const seedStep = block && needsName(block) ? findSeedStep(modules, block) : undefined;
+    // What "yes" writes — or null when it cannot be honoured, which is also
+    // what "no" produces. A naming block needs both a name and a seed question
+    // to append it to; every other block just gets an empty record.
+    const grown = !wantsMore
+      ? null
+      : block && needsName(block)
+        ? seedStep && name?.trim()
+          ? applySeededAddAnother(ans, block, seedStep, name)
+          : null
+        : applyAddAnother(ans, blockId, true);
+
+    if (grown) {
       setDeclinedBlocks((s) => {
         const next = new Set(s);
         next.delete(blockId);
         return next;
       });
-      void persist(applyAddAnother(ans, blockId, true));
+      void persist(grown);
     } else {
       setDeclinedBlocks((s) => new Set(s).add(blockId));
     }
@@ -634,7 +669,9 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
       saveError={saveError}
       onBack={goBack}
       onCommit={(next) => handleCommit(position, next)}
-      onAddAnotherDecision={(blockId, wantsMore) => handleAddAnotherDecision(position, blockId, wantsMore)}
+      onAddAnotherDecision={(blockId, wantsMore, name) =>
+        handleAddAnotherDecision(position, blockId, wantsMore, name)
+      }
     />,
   );
 }
@@ -674,6 +711,26 @@ function DemoBody({ answers }: { answers: Answers }) {
   );
 }
 
+/**
+ * What a select question starts with selected: whatever is already stored for
+ * it. Lifted out of `StepView`'s draft initialiser at V1.4 VB-20, because two
+ * pieces of that component's opening state are now computed from it — the
+ * draft itself, and the pills for any value the question's own options do not
+ * carry (see `offListOptions`). Both have to see the same list, and both are
+ * lazy initialisers that run exactly once at mount, so it is a function rather
+ * than a value.
+ */
+function initialSelection(
+  pos: Exclude<Position, { kind: 'done' } | { kind: 'module-intro' }>,
+  answers: Answers,
+): string[] {
+  if (pos.kind === 'add-another') return [];
+  const { step } = pos;
+  if (step.kind === 'text' || step.kind === 'gen' || step.kind === 'demo') return [];
+  const existing = existingValue(answers, step, pos.location);
+  return Array.isArray(existing) ? existing : typeof existing === 'string' ? [existing] : [];
+}
+
 interface StepViewProps {
   modules: Module[];
   /** Every position that is a question of some shape. `done` hands off to
@@ -686,7 +743,9 @@ interface StepViewProps {
   saveError: boolean;
   onBack: () => void;
   onCommit: (next: Answers) => void;
-  onAddAnotherDecision: (blockId: string, wantsMore: boolean) => void;
+  /** `name` is V1.4 VB-20's: set only when the block names its new records —
+   * see `Flow`'s `handleAddAnotherDecision`. */
+  onAddAnotherDecision: (blockId: string, wantsMore: boolean, name?: string) => void;
 }
 
 /**
@@ -710,12 +769,7 @@ function StepView({
   onCommit,
   onAddAnotherDecision,
 }: StepViewProps) {
-  const [draftValues, setDraftValues] = useState<string[]>(() => {
-    if (pos.kind === 'add-another' || pos.step.kind === 'text' || pos.step.kind === 'gen' || pos.step.kind === 'demo')
-      return [];
-    const existing = existingValue(answers, pos.step, pos.location);
-    return Array.isArray(existing) ? existing : typeof existing === 'string' ? [existing] : [];
-  });
+  const [draftValues, setDraftValues] = useState<string[]>(() => initialSelection(pos, answers));
   // Doubles as the reflect screen's "Say it again" draft — pre-filled with
   // the already-typed raw text so redoing edits it instead of starting over.
   // Also doubles as `kind: 'gen'`'s paste-in field (R1-11) — same "one free
@@ -753,8 +807,19 @@ function StepView({
   // it — the same information, at the same moment, without focus moving.
   const [spokenIdea, setSpokenIdea] = useState('');
   const [customOpen, setCustomOpen] = useState(false);
+  // Doubles as V1.4 VB-20's "what do you call this role?" buffer on a naming
+  // add-another screen — same shape (one short typed name, added to a list of
+  // options), same commit-on-Next, so it is the same field rather than a
+  // second one that would have to be kept in step with it.
   const [customText, setCustomText] = useState('');
-  const [customOptions, setCustomOptions] = useState<Option[]>([]);
+  // V1.4 VB-20: seeded with the pills this question's own data does not carry
+  // — a value added by "+ add your own", or a role named at the end of the
+  // roles loop, both of which are stored in the answer and nowhere else. Come
+  // Back to the question and they are on the row, selected, and removable,
+  // rather than selected but invisible. Derived at mount, never stored.
+  const [customOptions, setCustomOptions] = useState<Option[]>(() =>
+    pos.kind === 'add-another' ? [] : offListOptions(pos.step, initialSelection(pos, answers)),
+  );
   const [pendingError, setPendingError] = useState<string | null>(null);
   // Reflect-only sub-screens — never persisted, never part of Position (see
   // core/flow/runner.ts's comment on why position is always derived, never
@@ -840,13 +905,41 @@ function StepView({
     </div>
   ) : null;
 
+  /** V1.4 VB-20: whether this add-another screen also has to name what it is
+   * adding. A property of the block, decided in one place for the renderer and
+   * the commit alike — see core/flow/addAnother.ts's `needsName`. */
+  const namesItsRecords = pos.kind === 'add-another' && needsName(pos.block);
+
+  /**
+   * V1.4 VB-20: "yes" on a seeded block has to come with a name.
+   *
+   * The name is not decoration — it is what keeps the new record alive through
+   * the next reconcile (core/flow/runner.ts's `applySeededAddAnother`), so
+   * "yes" without one is not a partial answer to accept quietly, it is an
+   * answer that cannot be stored. Both refusals name the way out.
+   */
   function handleAddAnother() {
     if (pos.kind !== 'add-another') return;
     if (draftValues.length === 0) {
       setPendingError(S.errPickOne);
       return;
     }
-    onAddAnotherDecision(pos.block.id, draftValues[0] === 'yes');
+    const wantsMore = draftValues[0] === 'yes';
+    if (wantsMore && namesItsRecords) {
+      const name = customText.trim();
+      const seedStep = findSeedStep(modules, pos.block);
+      if (!name) {
+        setPendingError(S.errNeedItsName);
+        return;
+      }
+      if (seedStep && seededNameTaken(answers, pos.block, seedStep, name)) {
+        setPendingError(S.errNameTaken);
+        return;
+      }
+      onAddAnotherDecision(pos.block.id, true, name);
+      return;
+    }
+    onAddAnotherDecision(pos.block.id, wantsMore);
   }
 
   /** R1-11's grade step: the pasted grade text plus two required
@@ -996,6 +1089,30 @@ function StepView({
             value={draftValues}
             onChange={setDraftValues}
           />
+          {/* V1.4 VB-20. The name of the thing being added, on the same screen
+              as the decision to add it — revealed by "Yes", exactly the way
+              "+ add your own" reveals its field on a select question, and gone
+              again on "No" so the screen only ever asks what it needs.
+
+              Its label is visible, not screen-reader-only as it is under a
+              question (`.flow-field-sr-label`): the heading above asks whether
+              there is another, and this field asks something else. A hidden
+              label here would leave a box with no printed question at all.
+
+              Nothing takes focus when it appears — the person is mid-keyboard
+              and Tab reaches it next (docs/GUARDRAILS.md: nothing steals
+              focus). */}
+          {namesItsRecords && pos.block.addAnotherName && draftValues[0] === 'yes' && (
+            <div className="flow-add-name">
+              <Field
+                id="flow-add-another-name"
+                label={pos.block.addAnotherName.prompt}
+                value={customText}
+                onChange={setCustomText}
+                placeholder={pos.block.addAnotherName.placeholder}
+              />
+            </div>
+          )}
           {pendingError && (
             <div role="alert" className="flow-error">
               {pendingError}

@@ -163,6 +163,15 @@ test.describe('Home surface (R1-12)', () => {
     await page.getByRole('button', { name: 'Next', exact: true }).focus();
     await page.keyboard.press('Enter');
 
+    // V1.4 VB-20: finishing a role's last question now ends the roles loop by
+    // asking whether there is another one. There isn't — say so, keyboard-only
+    // like everything else here, and the flow carries on exactly as before.
+    await expect(page.locator('.flow')).toHaveAttribute('data-position', 'add-another');
+    await page.getByRole('button', { name: 'No', exact: true }).focus();
+    await page.keyboard.press('Space');
+    await page.getByRole('button', { name: 'Next', exact: true }).focus();
+    await page.keyboard.press('Enter');
+
     // Every other question in the fixture was already answered, so this
     // was the only thing left — Flow hands back to Home on its own.
     await expect(page.locator('.home')).toBeVisible();

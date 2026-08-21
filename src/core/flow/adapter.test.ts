@@ -230,13 +230,36 @@ describe('adaptContextFlow — verbatim spot-checks (hand-copied from the source
     expect(step.options?.find((o) => o.v === 'schema')?.rec).toBeUndefined();
   });
 
-  it('the seeded "roles" repeatable never shows add-another; the open-ended ones have a real prompt', () => {
-    const roles = allRepeatables(modules).find((r) => r.id === 'roles');
+  it('the open-ended repeatables keep their ported add-another prompt, and no naming question', () => {
     const entities = allRepeatables(modules).find((r) => r.id === 'entities');
-    expect(roles?.addAnotherPrompt).toBe('');
-    expect(roles?.seedFrom).toEqual({ questionId: 'role_names', seedField: 'role_name' });
     expect(entities?.addAnotherPrompt).toBe('Want to tell AI about another person, team, tool, or process?');
     expect(entities?.seedFrom).toBeUndefined();
+    expect(entities?.addAnotherName).toBeUndefined();
+  });
+
+  /**
+   * V1.4 VB-20. `source.ts` still says `addAnotherPrompt: ""` for `roles` —
+   * it is a verbatim snapshot and is not hand-edited — so the prompt the
+   * roles loop now ends on can only be here, attached by the adapter from
+   * ./addAnother.ts, alongside the question that names the new role. Both
+   * halves matter: the prompt is what makes `findPosition` ask at all, and
+   * `addAnotherName` is what makes answering "yes" survive the next reconcile.
+   */
+  it('the seeded "roles" repeatable gets its V1.4 add-another prompt AND a naming question', () => {
+    const roles = allRepeatables(modules).find((r) => r.id === 'roles');
+    expect(roles?.seedFrom).toEqual({ questionId: 'role_names', seedField: 'role_name' });
+    expect(roles?.addAnotherPrompt).toBe('Want to tell AI about another role?');
+    expect(roles?.addAnotherName).toEqual({
+      prompt: 'What do you call this role?',
+      placeholder: 'A short name for it',
+    });
+  });
+
+  it('a block with no entry in the copy map keeps whatever the snapshot said, "" included', () => {
+    const { modules: bare } = adaptContextFlow(undefined, undefined, undefined, {});
+    const roles = allRepeatables(bare).find((r) => r.id === 'roles');
+    expect(roles?.addAnotherPrompt).toBe('');
+    expect(roles?.addAnotherName).toBeUndefined();
   });
 
   it('carries multiline through for textareas and leaves single-line text questions unset', () => {

@@ -230,6 +230,39 @@
   flex: 1;
 }
 
+/* V1.4 VB-20: the "what do you call this role?" field, revealed under the
+   Yes/No row by picking Yes.
+
+   The same 12px step off the pills that `.flow-custom` above uses, because it
+   is the same move — a row of choices, then the field the choice opened. It
+   needs nothing else: `Field` brings its own visible label, its own 49px box
+   (over the 44px floor) and its own focus ring, and the answer band around it
+   already handles the width.
+
+   Deliberately not animated in, matching `.flow-custom`: a field appearing
+   where there was none is legible on its own, and an entrance here would be
+   the only one on the screen. Nothing to add under reduced motion, because
+   there is nothing to reduce. */
+.flow-add-name {
+  margin-top: 12px;
+}
+/* `.field` is `width: 100%` on the default content-box, so its 15px of side
+   padding and its border land OUTSIDE the width it was given — every text
+   field in the panel is 32px wider than the column it sits in, and at 400px
+   that runs past the panel's own edge. Measured, not guessed:
+   tests/e2e/roles-loop.spec.ts asserts this field's right edge and the body's
+   horizontal overflow.
+
+   Corrected here rather than in Field.css because that file dresses every
+   input in the product — the same 32px is under the interview's text
+   questions, the paste boxes and the import screen — and changing it changes
+   the height of every textarea on every surface. That is a repair worth
+   making, and worth making deliberately, by whoever owns those screens; it is
+   not something a new field on one screen should do on its way past. */
+.flow-add-name .field {
+  box-sizing: border-box;
+}
+
 /* VB-04: the question and its rephrase icon-button share one row. The heading
    keeps its own bottom margin so the spacing below is unchanged from when the
    <h2> sat here alone. `min-width: 0` lets a long question wrap instead of

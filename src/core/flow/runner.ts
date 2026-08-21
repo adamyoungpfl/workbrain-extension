@@ -111,7 +111,13 @@ function findInModule(
       if (result) {
         return positionFor(result.action, result.step, { in: 'repeatable', blockId: node.id, recordIndex: lastIndex });
       }
-      if (node.seedFrom) continue; // every seeded record is complete — move on
+      // "" means this block never asks — the schema's own words
+      // (RepeatableBlock.addAnotherPrompt). Until V1.4 VB-20 this line read
+      // `if (node.seedFrom) continue`, which said the same thing about the one
+      // seeded block in the data but said it twice, in two files. Now the
+      // prompt alone decides: a seeded block that carries one asks, and it is
+      // `addAnotherName` (see the schema) that makes asking safe.
+      if (!node.addAnotherPrompt) continue;
       if (declinedBlocks.has(node.id)) continue; // said "no more" this session — move on
       return { kind: 'add-another', block: node, recordIndex: records.length };
     }
@@ -339,4 +345,121 @@ export function findSeedTarget(modules: Module[], questionId: string): Repeatabl
     }
   }
   return undefined;
+}
+
+/** The inverse of `findSeedTarget`: the question a seeded block's records are
+ * built from. V1.4 VB-20 needs it because growing the block means writing to
+ * that question's own answer, not only to the records. */
+export function findSeedStep(modules: Module[], block: RepeatableBlock): Step | undefined {
+  const questionId = block.seedFrom?.questionId;
+  if (!questionId) return undefined;
+  for (const module of modules) {
+    for (const node of module.nodes) {
+      if (!('fields' in node) && node.id === questionId) return node;
+    }
+  }
+  return undefined;
+}
+
+/** Trimmed and case-folded, for comparing one typed name against names that
+ * already exist. Names are the seeded block's identity — see
+ * `seededNameTaken` — so "employee" and "Employee" have to count as the same
+ * name, not as two. */
+function nameKey(name: string): string {
+  return name.trim().toLowerCase();
+}
+
+/**
+ * V1.4 VB-20. Is this name already one of the block's records, or already one
+ * of the seed question's selected values?
+ *
+ * NOT a nicety — it is the second half of the data-loss fix.
+ * `reconcileSeededRepeatable` finds a record by matching its seed field
+ * against the seed answer's LABEL, so two entries with the same name resolve
+ * to the same record: the second one's answers would be dropped the next time
+ * the seed question is re-submitted, silently, which is the exact failure this
+ * task exists to prevent (docs/GUARDRAILS.md, "never lose an answer
+ * silently"). Both sides are checked — a value and its label are different
+ * strings ("employee" vs "Employee") and either one colliding is enough to
+ * cause it.
+ */
+export function seededNameTaken(
+  answers: Answers,
+  block: RepeatableBlock,
+  seedStep: Step,
+  name: string,
+): boolean {
+  if (!block.seedFrom) return false;
+  const { seedField } = block.seedFrom;
+  const taken = new Set<string>();
+  for (const record of answers.repeatables[block.id] ?? []) {
+    const existing = record[seedField];
+    if (typeof existing === 'string') taken.add(nameKey(existing));
+  }
+  const selected = answers.values[storageKeyFor(seedStep)];
+  if (Array.isArray(selected)) {
+    for (const value of selected) {
+      taken.add(nameKey(value));
+      const label = seedStep.options?.find((o) => o.v === value)?.l;
+      if (label) taken.add(nameKey(label));
+    }
+  }
+  return taken.has(nameKey(name));
+}
+
+/**
+ * V1.4 VB-20 — adds one more record to a SEEDED block, the only way that can
+ * be done without losing it again.
+ *
+ * A seeded block's records are not the record of what exists; the seed answer
+ * is. `reconcileSeededRepeatable` rebuilds the array from that answer with
+ * `selectedValues.map(...)`, so a record appended on its own — the way
+ * `applyAddAnother` appends to an open-ended block — is deleted, along with
+ * every field answered inside it, the next time someone goes Back to the seed
+ * question and presses Next. No warning, no trace.
+ *
+ * So this writes BOTH: the name onto the seed answer (as a custom value,
+ * exactly what "+ add your own" already puts there — see the panel's
+ * `addCustom`) and the record it seeds. Written as a pair, the next reconcile
+ * finds the record by its own name and keeps it: a no-op instead of a
+ * deletion. That is the whole design.
+ *
+ * The record's seed field holds the name verbatim, which is also what
+ * `reconcileSeededRepeatable` stores (an option's label, or the value itself
+ * for a custom one — for a name typed here they are the same string), so the
+ * two paths produce identical records and nothing downstream can tell which
+ * made a given role.
+ *
+ * `answeredAt` is stamped for the seed question, whose stored value genuinely
+ * changed. It is NOT stamped for the record's seed field: no question was
+ * answered there — the name is seed data, and the seeded records
+ * `reconcileSeededRepeatable` creates carry no stamp either.
+ *
+ * Refuses (returning `answers` untouched) rather than half-applying when the
+ * name is blank or already taken — see `seededNameTaken`.
+ */
+export function applySeededAddAnother(
+  answers: Answers,
+  block: RepeatableBlock,
+  seedStep: Step,
+  name: string,
+): Answers {
+  if (!block.seedFrom) return answers;
+  const trimmed = name.trim();
+  if (trimmed === '') return answers;
+  if (seededNameTaken(answers, block, seedStep, trimmed)) return answers;
+
+  const seedKey = storageKeyFor(seedStep);
+  const selected = answers.values[seedKey];
+  const nextSelected = [...(Array.isArray(selected) ? selected : []), trimmed];
+  const records = answers.repeatables[block.id] ?? [];
+  return {
+    ...answers,
+    values: { ...answers.values, [seedKey]: nextSelected },
+    repeatables: {
+      ...answers.repeatables,
+      [block.id]: [...records, { [block.seedFrom.seedField]: trimmed }],
+    },
+    answeredAt: { ...answers.answeredAt, [seedKey]: new Date().toISOString() },
+  };
 }

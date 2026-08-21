@@ -130,8 +130,25 @@ export interface RepeatableBlock {
   id: string;
   /** seeded from a multi-select answer, one record per item, pre-filled into `seedField` */
   seedFrom?: { questionId: string; seedField: string };
-  /** "" means never show — used by seeded blocks, whose record count is already fixed */
+  /** "" means never show — the block's record count is fixed by something else */
   addAnotherPrompt: string;
+  /**
+   * V1.4 VB-20: what to ask for the new record's NAME when a **seeded** block
+   * is allowed to grow.
+   *
+   * A seeded block's records are rebuilt from its seed answer every time that
+   * answer is re-submitted (see core/flow/runner.ts's
+   * `reconcileSeededRepeatable`), so a record whose name is not in the seed
+   * answer is deleted the next time someone goes Back and presses Next. A new
+   * record therefore cannot just be appended: it has to be *named*, and the
+   * name appended to the seed answer as well, which is what keeps the two in
+   * step and turns the next reconcile into a no-op.
+   *
+   * Present means "this seeded block may grow, and this is the question that
+   * names the new record". Absent (every other block) means the add-another
+   * screen is the plain yes/no it has always been.
+   */
+  addAnotherName?: { prompt: string; placeholder: string };
   skipIf?: (ctx: FlowContext) => boolean;
   fields: Step[];
 }

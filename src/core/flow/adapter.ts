@@ -3,6 +3,8 @@ import {
   CONTEXT_FILE_OUTLINE,
 } from './source';
 import { DEEP_DIVE } from './deepDive';
+import { ADD_ANOTHER } from './addAnother';
+import type { AddAnotherCopy } from './addAnother';
 import type {
   Question as SrcQuestion,
   Module as SrcModule,
@@ -92,6 +94,8 @@ interface Lookups {
   indexByQuestionId: Map<string, number>;
   /** V1.1 VB-03 — per-question follow-up copy, see ./deepDive.ts. */
   deepDive: Record<string, DeepDiveEntry[]>;
+  /** V1.4 VB-20 — per-block "another one?" copy, see ./addAnother.ts. */
+  addAnother: Record<string, AddAnotherCopy>;
 }
 
 function adaptQuestion(
@@ -138,11 +142,17 @@ function adaptRepeatable(
   eyebrow: string,
   lookups: Lookups,
 ): RepeatableBlock {
+  // V1.4 VB-20. Attached here, not authored on the source block — source.ts is
+  // a verbatim snapshot of the ported interview and stays that way, exactly as
+  // with `deepDive` above. A block with no entry keeps its ported prompt,
+  // including the deliberate "" that means "never ask".
+  const grows = lookups.addAnother[block.id];
   const result: RepeatableBlock = {
     id: block.id,
-    addAnotherPrompt: block.addAnotherPrompt,
+    addAnotherPrompt: grows?.prompt ?? block.addAnotherPrompt,
     fields: block.questions.map((sub) => adaptQuestion(sub, moduleNumber, eyebrow, lookups)),
   };
+  if (grows) result.addAnotherName = { prompt: grows.namePrompt, placeholder: grows.namePlaceholder };
   if (block.seedFrom) result.seedFrom = block.seedFrom;
   if (block.skipIf) result.skipIf = block.skipIf;
   return result;
@@ -169,10 +179,11 @@ export function adaptContextFlow(
   sourceModules: SrcModule[] = CONTEXT_INTERVIEW_MODULES,
   sourceOutline: SrcFileOutlineNode[] = CONTEXT_FILE_OUTLINE,
   deepDive: Record<string, DeepDiveEntry[]> = DEEP_DIVE,
+  addAnother: Record<string, AddAnotherCopy> = ADD_ANOTHER,
 ): { modules: Module[]; outline: FileOutlineNode[] } {
   const { indexByQuestionId } = flattenOutline(sourceOutline);
   return {
-    modules: sourceModules.map((m) => adaptModule(m, { indexByQuestionId, deepDive })),
+    modules: sourceModules.map((m) => adaptModule(m, { indexByQuestionId, deepDive, addAnother })),
     outline: sourceOutline.map(adaptOutlineNode),
   };
 }
