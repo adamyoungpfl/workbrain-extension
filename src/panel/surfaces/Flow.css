@@ -27,6 +27,142 @@
   padding-bottom: var(--flow-reserve, 254px);
 }
 
+/* ── V1.3 VB-17: the question fills the panel down to the dock ────────────
+   The complaint: the question sat at its own natural height at the top and
+   left a wide blank strip between the last thing it printed and the drawer.
+   Half a screen doing nothing.
+
+   THE RULE IS A COMPOSITION, NOT A HEIGHT. The surface is as tall as
+   everything the dock has not taken — `100dvh` less
+   core/flow/composition.ts's offset, which Flow.tsx publishes as
+   `--flow-area-offset` — and the slack inside it is distributed rather than
+   left at the bottom. At the drawer's resting height that comes out at
+   roughly the top 60% of the panel, which is what VB-17 asks for; the 60% is
+   never typed as a length anywhere, it falls out of the drawer's peek and the
+   docked bar, and composition.test.ts is what holds those two to it.
+
+   `dvh`, not `vh`: the panel is a resizable side panel and the composition has
+   to follow it. The viewport term is the one piece of this arithmetic left to
+   CSS, deliberately — see composition.ts's header. Everything summed is summed
+   there. Where `dvh` is not understood the whole `calc()` is invalid, the
+   min-height simply does not apply, and the surface is exactly the V1.2
+   layout: shorter than the room, never broken (docs/GUARDRAILS.md).
+
+   `min-height`, never `height`: a question taller than the panel — `peeves`
+   with ten options and an "add your own", `guardrails_list`, the `voice_*`
+   questions carrying worked examples — grows past this and scrolls. Nothing is
+   ever clipped to make a proportion true.
+
+   Scoped to `.flowshell`, which exists only where there is a drawer to dock to
+   (Flow.tsx's `withDrawer`), exactly like the docked bar below: the proof loop
+   has no dock to fill down to and keeps V1.2's layout untouched. */
+.flowshell .flow {
+  box-sizing: border-box;
+  min-height: calc(100dvh - var(--flow-area-offset, 262px));
+}
+
+/* The room has to change at exactly the speed the drawer's edge moves.
+   Unlike `.flowshell`'s reservation above — which only changes how far the
+   page can scroll and so is deliberately not animated — this number decides
+   where the answer sits, so leaving it instant would pop the field to its new
+   place and then let the drawer take 320ms to arrive under it. The drawer
+   publishes which settle it is in on its own element (`data-settle`,
+   FileDrawer.tsx) and the surface reads it from the shell they share, exactly
+   as the docked bar does below: one decision, made once, honoured by all
+   three.
+
+   A drag is `none` on all of them, deliberately — the composition tracks the
+   grip to the pixel. Where `:has()` is not understood these rules do not
+   match and the room simply changes in one frame: still correct, one cue
+   less (docs/GUARDRAILS.md). */
+.flowshell:has(.filedrawer[data-settle='nudge']) .flow {
+  transition: min-height var(--base) var(--ease);
+}
+.flowshell:has(.filedrawer[data-settle='jump']) .flow {
+  transition: min-height var(--slow) var(--ease);
+}
+
+/* The reflect screen's tighten/redo forms are a `<form>` inside `.flow`
+   rather than being the `.flow` element themselves, so the fill has to pass
+   through them or the band inside has nothing to grow into. */
+.flowshell .flow > form {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+/* THE BAND THE SLACK GOES TO (Flow.tsx's `AnswerArea`) — the field, the pills,
+   the paste box, and whatever error they raised. The question, its hint and
+   its deep-dive stay tight together above it: they are the prompt, they are
+   read as one thing, and space opened between a question and its own hint
+   would read as a mistake.
+
+   `justify-content: center` is the distribution: the controls sit in the
+   middle of the room the band is given, so the slack arrives as equal air
+   above and below them rather than as one strip at the bottom. Drawn and
+   compared against the alternatives on the real `preferred_name` screen —
+   all of it below the answer is the blank strip this task exists to remove,
+   moved up by one element; all of it above pushes a one-line field down onto
+   the save note. Centred, the field lands near the middle of the panel and
+   the two seams read as one deliberate amount of space.
+
+   It cannot push anything off the top: when the question is taller than the
+   room, `.flow` grows past its min-height, the band gets exactly its content
+   height, and there is no free space left to centre with. */
+.flowshell .flow-answer {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  justify-content: center;
+}
+
+/* A text box takes the room instead of the air around it, because a text box
+   can use it: the answer area of a question you type into IS the box, and
+   a bigger one is an invitation to write rather than empty canvas. The chain is
+   three deep because `Field` wraps its control in a div of its own and this
+   surface wraps that in the sr-only label wrapper — every link has to pass the
+   height on.
+
+   `:has()` is what keeps this to the questions that actually have a text box —
+   a single-line input given the same treatment would swallow the room and sit
+   at the top of it, which is the centring above defeated. Where `:has()` is not
+   understood none of these rules match, the box stays its own 96px and the
+   centring does the distributing for every kind alike: one refinement fewer,
+   still composed. Same degradation the docked bar's own `:has()` rules take
+   (below). */
+.flowshell .flow-answer:has(textarea.field) > .flow-field-sr-label,
+.flowshell .flow-answer:has(textarea.field) > .flow-field-sr-label > div {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+.flowshell .flow-answer textarea.field {
+  flex: 1 1 auto;
+  /* Past this it stops being a field and becomes a page. The floor stays
+     `Field.css`'s 96px; this is the ceiling, and anything over it goes back to
+     the air above and below, centred with everything else. */
+  max-height: 320px;
+}
+
+/* The module transition is the one screen in the shell with no answer band —
+   there is nothing to answer on it — so nothing there flexes and the room
+   below the preview would be left over at the bottom. Its save note takes the
+   slack in an auto margin instead, which puts it exactly where every other
+   screen's sits: at the foot of the question area, above the bar.
+
+   Deliberately NOT applied to the screens that do have a band: an auto margin
+   is served before `flex-grow` is, so a note that pinned itself this way would
+   quietly take the room the answer area is meant to distribute — the old blank
+   strip, back, one element further up. The breather is padding rather than
+   margin so it survives the auto. */
+.flowshell .modintro .flow-save {
+  margin-top: auto;
+  padding-top: 24px;
+}
+
 /* V1.1 VB-02 removed `.flow-eyebrow` — the "Question N of Total · Module"
    breadcrumb it styled is now components/FlowProgress.tsx, which carries the
    same 12px uppercase treatment for the module title. */
@@ -439,6 +575,16 @@
      on it from the first frame. */
   .flowshell:has(.filedrawer[data-settle='nudge']) .flow-foot,
   .flowshell:has(.filedrawer[data-settle='jump']) .flow-foot {
+    transition: none;
+  }
+
+  /* V1.3 VB-17, on identical reasoning: the drawer and its bar arrive at the
+     new height in one frame here, so the room above them has to as well or
+     the question is the one thing left travelling. The still equivalent
+     carries the same information — the information is how much room the
+     question now has, and it has it from the first frame. */
+  .flowshell:has(.filedrawer[data-settle='nudge']) .flow,
+  .flowshell:has(.filedrawer[data-settle='jump']) .flow {
     transition: none;
   }
 }

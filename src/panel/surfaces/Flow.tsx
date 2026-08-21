@@ -7,6 +7,7 @@ import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
 import { FLOW_NAV_HEIGHT, flowBottomReserve } from '../../core/flow/dock';
+import { questionAreaOffset } from '../../core/flow/composition';
 import {
   findPosition,
   applyAnswer,
@@ -266,6 +267,32 @@ function showsHint(step: Step): boolean {
   return !step.deepDive?.length || hintStaysVisible(step.id);
 }
 
+/**
+ * V1.3 VB-17 — the answer area, as a band the layout can distribute space
+ * into.
+ *
+ * Everything the person acts on for the question on screen: the field and its
+ * "give me an example" button, the pills and their "add your own", the paste
+ * box on a `gen` step, and whatever error any of them raised. Not the
+ * question, not its hint, not the deep-dive — those are the prompt, and they
+ * stay tight together at the top where they are read.
+ *
+ * It exists purely so Flow.css has something to hand the leftover room to. The
+ * question surface now fills the panel down to the docked chrome (see
+ * core/flow/composition.ts), and *where the slack goes* is the whole of VB-17:
+ * given to this band, it becomes breathing space around the thing being
+ * answered and a text box big enough to write in. Given to nobody, it is the
+ * blank strip above the drawer that this task exists to remove.
+ *
+ * A wrapper rather than a rule on the form's children, because "the answer"
+ * is two or three siblings on most kinds and none at all on an intro — the
+ * grouping is real, and the accessible structure is unchanged either way (no
+ * role, no label: every control inside keeps its own).
+ */
+function AnswerArea({ children }: { children: ReactNode }) {
+  return <div className="flow-answer">{children}</div>;
+}
+
 /** The question block's hint and deep-dive, rendered identically wherever a
  * question is asked — including the reflect screen's "Say it again" re-ask,
  * which is the same question and deserves the same help. */
@@ -434,6 +461,13 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
    *                    the bar and the drawer move off one number.
    *  - `--flow-nav-h`  how tall that bar is.
    *  - `--flow-reserve` how much room the whole dock needs underneath.
+   *
+   * V1.3 VB-17 adds a fourth, `--flow-area-offset`: everything the question
+   * area is *not*, which the stylesheet subtracts from `100dvh` to get the
+   * room the question fills. Same discipline as the other three — the sum is
+   * core/flow/composition.ts's and arrives here already evaluated — with the
+   * viewport term deliberately left to CSS so the composition follows a panel
+   * being resized without a listener. See that file's header.
    */
   function withDrawer(screen: ReactNode): ReactNode {
     if (!outline) return screen;
@@ -445,6 +479,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
             '--drawer-h': `${drawerHeight}px`,
             '--flow-nav-h': `${FLOW_NAV_HEIGHT}px`,
             '--flow-reserve': `${flowBottomReserve(drawerHeight)}px`,
+            '--flow-area-offset': `${questionAreaOffset(drawerHeight)}px`,
           } as CSSProperties
         }
       >
@@ -818,18 +853,20 @@ function StepView({
         {errorBanner}
         {progress}
         <TypedHeading className="flow-q" text={pos.block.addAnotherPrompt} />
-        <PillGroup
-          legend={pos.block.addAnotherPrompt}
-          mode="single"
-          options={options}
-          value={draftValues}
-          onChange={setDraftValues}
-        />
-        {pendingError && (
-          <div role="alert" className="flow-error">
-            {pendingError}
-          </div>
-        )}
+        <AnswerArea>
+          <PillGroup
+            legend={pos.block.addAnotherPrompt}
+            mode="single"
+            options={options}
+            value={draftValues}
+            onChange={setDraftValues}
+          />
+          {pendingError && (
+            <div role="alert" className="flow-error">
+              {pendingError}
+            </div>
+          )}
+        </AnswerArea>
         {saveNote}
         <footer className="flow-foot">
           {canGoBack && (
@@ -900,16 +937,18 @@ function StepView({
               commitTightened();
             }}
           >
-            <div className="flow-field-sr-label">
-              <Field
-                id={`flow-${step.id}-tighten`}
-                label={S.reflectPasteLabel}
-                as="textarea"
-                value={tightenedDraft}
-                onChange={setTightenedDraft}
-                error={pendingError ?? undefined}
-              />
-            </div>
+            <AnswerArea>
+              <div className="flow-field-sr-label">
+                <Field
+                  id={`flow-${step.id}-tighten`}
+                  label={S.reflectPasteLabel}
+                  as="textarea"
+                  value={tightenedDraft}
+                  onChange={setTightenedDraft}
+                  error={pendingError ?? undefined}
+                />
+              </div>
+            </AnswerArea>
             {saveNote}
             <footer className="flow-foot">
               <Button type="button" variant="secondary" onClick={backToView}>
@@ -940,17 +979,19 @@ function StepView({
           {progress}
           <TypedHeading className="flow-q" text={questionText} />
           <QuestionHelp step={step} />
-          <div className="flow-field-sr-label">
-            <Field
-              id={`flow-${step.id}`}
-              label={questionText}
-              as={step.multiline ? 'textarea' : 'input'}
-              value={draftText}
-              onChange={setDraftText}
-              placeholder={step.ph}
-              error={pendingError ?? undefined}
-            />
-          </div>
+          <AnswerArea>
+            <div className="flow-field-sr-label">
+              <Field
+                id={`flow-${step.id}`}
+                label={questionText}
+                as={step.multiline ? 'textarea' : 'input'}
+                value={draftText}
+                onChange={setDraftText}
+                placeholder={step.ph}
+                error={pendingError ?? undefined}
+              />
+            </div>
+          </AnswerArea>
           {saveNote}
           <footer className="flow-foot">
             <Button type="button" variant="secondary" onClick={backToView}>
@@ -974,17 +1015,19 @@ function StepView({
         <TypedHeading className="flow-q" text={S.reflectHeading} />
         <p className="flow-hint">{S.reflectSub}</p>
         <ReadOnlyBlock tag={step.interpret?.reflectPrefix ?? ''}>{raw}</ReadOnlyBlock>
-        <div className="flow-reflect-actions">
-          <Button type="button" variant="primary" onClick={commitKeep}>
-            {S.reflectKeep}
-          </Button>
-          <Button type="button" variant="ai" onClick={() => setReflectMode('tighten')}>
-            {S.reflectTighten}
-          </Button>
-          <Button type="button" variant="quiet" onClick={() => setReflectMode('edit')}>
-            {S.reflectRedo}
-          </Button>
-        </div>
+        <AnswerArea>
+          <div className="flow-reflect-actions">
+            <Button type="button" variant="primary" onClick={commitKeep}>
+              {S.reflectKeep}
+            </Button>
+            <Button type="button" variant="ai" onClick={() => setReflectMode('tighten')}>
+              {S.reflectTighten}
+            </Button>
+            <Button type="button" variant="quiet" onClick={() => setReflectMode('edit')}>
+              {S.reflectRedo}
+            </Button>
+          </div>
+        </AnswerArea>
         {saveNote}
         <footer className="flow-foot">
           {canGoBack && (
@@ -1114,139 +1157,144 @@ function StepView({
       )}
       <QuestionHelp step={step} />
 
-      {step.kind === 'text' && (
-        <>
-          <div className="flow-field-sr-label">
-            <Field
-              id={`flow-${step.id}`}
-              label={questionText}
-              as={step.multiline ? 'textarea' : 'input'}
-              value={draftText}
-              onChange={setDraftText}
-              placeholder={step.ph}
-              error={pendingError ?? undefined}
-            />
-          </div>
-          {/* V1.1 VB-08. Under the field, not beside the question: this
-              control writes into the box, so it belongs with the box, and
-              the sibling app puts it in the same place. Rendered only where
-              the question actually carries examples — 22 of 49 steps do.
-
-              Secondary, not primary: a solid fill in this system means "the
-              one thing this screen wants" (docs/design-system.html §04, one
-              per screen) and Next holds that slot on every question. A filled
-              bulb would argue with it. Bordered keeps the control obvious
-              without claiming to be the point of the screen. */}
-          {ideas.length > 0 && (
-            <div className="flow-idea-row">
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="flow-idea"
-                onClick={(e) => dropIdea(e.currentTarget)}
-              >
-                {IDEA_ICON}
-                {S.giveExample}
-              </Button>
-              {/* What just landed in the field, for anyone who cannot see it
-                  do so. Polite and out of the way: nothing takes focus, so a
-                  keyboard user can keep pressing to hear the next one. */}
-              <span className="flow-idea-live" role="status">
-                {spokenIdea}
-              </span>
-            </div>
-          )}
-        </>
-      )}
-
-      {step.kind === 'gen' && (
-        <>
-          {step.genKey === 'withContext' && (
-            <p className="flow-hint">
-              {attachHintFor(typeof ctx.answers[PROOF_SERVICE_KEY] === 'string' ? (ctx.answers[PROOF_SERVICE_KEY] as string) : undefined)}
-            </p>
-          )}
-          <ReadOnlyBlock tag={S.proofAskThis}>{promptFor(step.genKey, ctx)}</ReadOnlyBlock>
-          <div className="flow-field-sr-label">
-            <Field
-              id={`flow-${step.id}-paste`}
-              label={pasteLabelFor(step)}
-              as="textarea"
-              value={draftText}
-              onChange={setDraftText}
-            />
-          </div>
-          {step.genKey === 'grade' && (
-            <div className="flow-scores">
+      {/* V1.3 VB-17: every kind's controls in one band, so the room the
+          question surface now fills has somewhere deliberate to put its
+          slack. See AnswerArea above. */}
+      <AnswerArea>
+        {step.kind === 'text' && (
+          <>
+            <div className="flow-field-sr-label">
               <Field
-                id="flow-proof-score-baseline"
-                label={S.proofScoreBaselineLabel}
-                type="number"
-                min={0}
-                max={10}
-                step={0.5}
-                inputMode="decimal"
-                value={draftScoreBaseline}
-                onChange={setDraftScoreBaseline}
-              />
-              <Field
-                id="flow-proof-score-context"
-                label={S.proofScoreContextLabel}
-                type="number"
-                min={0}
-                max={10}
-                step={0.5}
-                inputMode="decimal"
-                value={draftScoreContext}
-                onChange={setDraftScoreContext}
+                id={`flow-${step.id}`}
+                label={questionText}
+                as={step.multiline ? 'textarea' : 'input'}
+                value={draftText}
+                onChange={setDraftText}
+                placeholder={step.ph}
+                error={pendingError ?? undefined}
               />
             </div>
-          )}
-          {pendingError && (
-            <div role="alert" className="flow-error">
-              {pendingError}
+            {/* V1.1 VB-08. Under the field, not beside the question: this
+                control writes into the box, so it belongs with the box, and
+                the sibling app puts it in the same place. Rendered only where
+                the question actually carries examples — 22 of 49 steps do.
+
+                Secondary, not primary: a solid fill in this system means "the
+                one thing this screen wants" (docs/design-system.html §04, one
+                per screen) and Next holds that slot on every question. A filled
+                bulb would argue with it. Bordered keeps the control obvious
+                without claiming to be the point of the screen. */}
+            {ideas.length > 0 && (
+              <div className="flow-idea-row">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="flow-idea"
+                  onClick={(e) => dropIdea(e.currentTarget)}
+                >
+                  {IDEA_ICON}
+                  {S.giveExample}
+                </Button>
+                {/* What just landed in the field, for anyone who cannot see it
+                    do so. Polite and out of the way: nothing takes focus, so a
+                    keyboard user can keep pressing to hear the next one. */}
+                <span className="flow-idea-live" role="status">
+                  {spokenIdea}
+                </span>
+              </div>
+            )}
+          </>
+        )}
+
+        {step.kind === 'gen' && (
+          <>
+            {step.genKey === 'withContext' && (
+              <p className="flow-hint">
+                {attachHintFor(typeof ctx.answers[PROOF_SERVICE_KEY] === 'string' ? (ctx.answers[PROOF_SERVICE_KEY] as string) : undefined)}
+              </p>
+            )}
+            <ReadOnlyBlock tag={S.proofAskThis}>{promptFor(step.genKey, ctx)}</ReadOnlyBlock>
+            <div className="flow-field-sr-label">
+              <Field
+                id={`flow-${step.id}-paste`}
+                label={pasteLabelFor(step)}
+                as="textarea"
+                value={draftText}
+                onChange={setDraftText}
+              />
             </div>
-          )}
-        </>
-      )}
-
-      {step.kind === 'demo' && <DemoBody answers={answers} />}
-
-      {step.kind !== 'text' && step.kind !== 'intro' && step.kind !== 'gen' && step.kind !== 'demo' && (
-        <>
-          <PillGroup
-            legend={questionText}
-            mode={step.kind === 'multi' ? 'multi' : 'single'}
-            options={pillOptions}
-            value={draftValues}
-            onChange={setDraftValues}
-            onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
-          />
-          {customOpen && (
-            <div className="flow-custom">
-              <div className="flow-field-sr-label">
+            {step.genKey === 'grade' && (
+              <div className="flow-scores">
                 <Field
-                  id="flow-custom-value"
-                  label={S.addYourOwnPrompt}
-                  value={customText}
-                  onChange={setCustomText}
-                  placeholder={step.customPlaceholder}
-                  onKeyDown={handleCustomKeyDown}
+                  id="flow-proof-score-baseline"
+                  label={S.proofScoreBaselineLabel}
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  inputMode="decimal"
+                  value={draftScoreBaseline}
+                  onChange={setDraftScoreBaseline}
+                />
+                <Field
+                  id="flow-proof-score-context"
+                  label={S.proofScoreContextLabel}
+                  type="number"
+                  min={0}
+                  max={10}
+                  step={0.5}
+                  inputMode="decimal"
+                  value={draftScoreContext}
+                  onChange={setDraftScoreContext}
                 />
               </div>
-              <Button type="button" size="sm" variant="secondary" onClick={addCustom}>
-                {S.addYourOwnConfirm}
-              </Button>
-            </div>
-          )}
-          {pendingError && (
-            <div role="alert" className="flow-error">
-              {pendingError}
-            </div>
-          )}
-        </>
-      )}
+            )}
+            {pendingError && (
+              <div role="alert" className="flow-error">
+                {pendingError}
+              </div>
+            )}
+          </>
+        )}
+
+        {step.kind === 'demo' && <DemoBody answers={answers} />}
+
+        {step.kind !== 'text' && step.kind !== 'intro' && step.kind !== 'gen' && step.kind !== 'demo' && (
+          <>
+            <PillGroup
+              legend={questionText}
+              mode={step.kind === 'multi' ? 'multi' : 'single'}
+              options={pillOptions}
+              value={draftValues}
+              onChange={setDraftValues}
+              onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
+            />
+            {customOpen && (
+              <div className="flow-custom">
+                <div className="flow-field-sr-label">
+                  <Field
+                    id="flow-custom-value"
+                    label={S.addYourOwnPrompt}
+                    value={customText}
+                    onChange={setCustomText}
+                    placeholder={step.customPlaceholder}
+                    onKeyDown={handleCustomKeyDown}
+                  />
+                </div>
+                <Button type="button" size="sm" variant="secondary" onClick={addCustom}>
+                  {S.addYourOwnConfirm}
+                </Button>
+              </div>
+            )}
+            {pendingError && (
+              <div role="alert" className="flow-error">
+                {pendingError}
+              </div>
+            )}
+          </>
+        )}
+      </AnswerArea>
 
       {saveNote}
       <footer className="flow-foot">
