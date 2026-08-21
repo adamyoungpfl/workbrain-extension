@@ -1,41 +1,103 @@
-/* V1.1 VB-03 — the deeper-dive disclosure. Chip styling is inherited from
-   Pill.css's `.pill`; everything here is the quieting-down and the
-   open/closed treatment. */
+/* V1.1 VB-03 — the deeper-dive disclosure.
+   V1.3 VB-15 — thinner: the bubble is 30px, the hit target is still 44.
+   V1.3 VB-16 — a one-time coloured shimmer, and expand-in-place.
+
+   Read components/DeepDive.tsx first: it holds the reasoning. This file holds
+   the numbers, and two of them are load-bearing.
+
+   rgba() literals mirror --primary (42,79,203) at reduced alpha — the same
+   pattern cues/verbs.css and Banner.css already use, and the only way to get a
+   translucent wash out of a token. No hex literal may exist outside the
+   generated tokens.css (npm run audit). */
 
 .deepdive {
+  position: relative; /* every ghost is pinned to this box */
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  /* 16px between rows, not 8: the hit targets overhang their bubbles by 8px
+     top and bottom (see .deepdive-chip), so a tighter row-gap would make two
+     rows of 44px targets overlap. 8px across, where nothing overhangs. */
+  gap: 16px 8px;
   margin: 2px 0 18px;
+  transition: height var(--base) var(--ease);
 }
 
-/* Closed items pack side by side; an open one claims a whole row so its
-   answer renders directly beneath its own chip and never reads as belonging
-   to a neighbour. */
+/* THE BUBBLE. Painted here, on the item, in both states — so that opening is
+   one box growing rather than one box swapping for another. */
 .deepdive-item {
+  box-sizing: border-box;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
+  align-items: stretch;
   max-width: 100%;
+  position: relative;
+  border: 1px solid var(--border-i);
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  transition:
+    width var(--base) var(--ease),
+    height var(--base) var(--ease),
+    transform var(--base) var(--ease),
+    border-radius var(--base) var(--ease),
+    padding var(--base) var(--ease),
+    background-color var(--fast) var(--ease),
+    border-color var(--fast) var(--ease);
 }
-.deepdive-item.is-open {
-  flex-basis: 100%;
+.deepdive-item:hover {
+  border-color: var(--primary);
+  background: var(--primary-tint);
 }
 
+/* The ring goes on the bubble, not on the button: the button is 14px taller
+   than the thing you can see, and a ring around empty space is not a visible
+   focus indicator (docs/GUARDRAILS.md). 2px solid --primary, 2px offset —
+   identical to every other ring in the product. */
+.deepdive-item:has(.deepdive-chip:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* VB-15, and the whole point of it: 13px of vertical padding makes the button
+   exactly 44px tall, and -8px of margin takes 16 of those 44 back out of the
+   layout, so the bubble reads at 30px while the box you can press is still the
+   full 44. Shrink the paint, keep the target. */
 .deepdive-chip {
+  box-sizing: border-box;
+  font-family: inherit;
   font-size: 13px;
-  padding: 9px 14px;
+  line-height: 18px;
+  min-height: var(--target-min);
+  padding: 13px 11px;
+  margin: -8px 0;
+  border: 0;
+  background: none;
   color: var(--ink-2);
   text-align: left;
-  max-width: 100%;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  transition: color var(--fast) var(--ease);
+}
+/* Replaced, not removed — see .deepdive-item:has() above. */
+.deepdive-chip:focus-visible {
+  outline: none;
+}
+.deepdive-chip-label {
+  min-width: 0;
 }
 
-/* Open state carries three signals, not one: fill, weight, and the chevron
-   below — docs/GUARDRAILS.md, "nothing distinguished by colour alone". */
-.deepdive-chip[aria-expanded='true'] {
-  background: var(--primary-tint);
+/* Open carries four signals, not one: fill, weight, radius, and the chevron —
+   docs/GUARDRAILS.md, "nothing distinguished by colour alone". */
+.deepdive-item.is-open {
+  width: 100%;
+  overflow: hidden; /* the answer is laid out at its final width; reveal it */
+  padding: 8px 6px 14px;
+  border-radius: var(--r-lg);
   border-color: var(--primary);
+  background: var(--primary-tint);
+}
+.deepdive-item.is-open .deepdive-chip {
   color: var(--ink);
   font-weight: 600;
 }
@@ -50,31 +112,81 @@
   color: var(--primary);
 }
 
-/* The turn is the signal, not the turning: with motion off the chevron is
-   simply already pointing down. */
-@media (prefers-reduced-motion: reduce) {
-  .deepdive-mark {
-    transition: none;
-  }
+/* A permanent live region per item, so revealing an answer is a change inside
+   one rather than a change nobody hears. It has no box of its own. */
+.deepdive-say {
+  position: relative;
 }
 
 .deepdive-answer {
   font-size: 14px;
   line-height: 1.45;
   color: var(--ink-2);
-  margin: 0;
-  padding-left: 12px;
-  border-left: 2px solid var(--border);
-  animation: wb-deepdive-in var(--fast) var(--ease);
+  margin: 6px 11px 0;
 }
 .deepdive-answer[hidden] {
   display: none;
 }
+.deepdive-item.is-open .deepdive-answer {
+  animation: wb-dd-answer-in var(--base) var(--ease) both;
+}
 
-@keyframes wb-deepdive-in {
+/* ── VB-16, expand in place ─────────────────────────────────────────────
+   Ghosts. A sibling on its way out, a sibling on its way back, and the answer
+   of a bubble that is closing are all pinned out of flow for exactly the
+   length of the transition, so the row's natural height is already its
+   destination and nothing reflows underneath the box that is moving. */
+.deepdive-item.is-leaving,
+.deepdive-item.is-entering {
+  position: absolute;
+  margin: 0;
+  pointer-events: none;
+}
+/* The leaving chips go in 120ms, not 200: they are a fade, §06's own duration
+   for one, and they sit exactly where the bubble is about to grow — held for
+   the full 200ms they read as smearing under it rather than clearing out of
+   it. They stay mounted for the whole transition either way. */
+.deepdive-item.is-leaving {
+  animation: wb-dd-out var(--fast) var(--ease) both;
+}
+/* The moving bubble owns the space it is moving through: both ghosts and the
+   bubble are positioned, so without this the ghosts win on document order. */
+.deepdive-item.is-open,
+.deepdive-item.is-collapsing {
+  z-index: 1;
+}
+.deepdive-item.is-entering {
+  animation: wb-dd-in var(--base) var(--ease) both;
+}
+.deepdive-answer.is-collapsing {
+  position: absolute;
+  animation: wb-dd-out var(--base) var(--ease) both;
+}
+
+@keyframes wb-dd-out {
+  from {
+    opacity: 1;
+    transform: scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: scale(0.94);
+  }
+}
+@keyframes wb-dd-in {
   from {
     opacity: 0;
-    transform: translateY(-2px);
+    transform: scale(0.94);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes wb-dd-answer-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
   }
   to {
     opacity: 1;
@@ -82,9 +194,101 @@
   }
 }
 
-/* The still version carries the same meaning — the answer is simply there. */
+/* ── VB-16, the shimmer ─────────────────────────────────────────────────
+   A band of --primary swept across the bubble by moving the background, not
+   the element: a translated overlay would need `overflow: hidden` on the item,
+   and that would clip the 44px hit target this file just went to some trouble
+   to build. At rest the band sits off the right-hand edge, which is why doing
+   nothing shows nothing. */
+.deepdive-item::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  background-image: linear-gradient(
+    100deg,
+    transparent 38%,
+    rgba(42, 79, 203, 0.24) 50%,
+    transparent 62%
+  );
+  background-repeat: no-repeat;
+  background-size: 260% 100%;
+  background-position-x: 0%;
+}
+/* Nothing shimmers once it is the answer. */
+.deepdive-item.is-open::after {
+  animation: none;
+  background-image: none;
+}
+
+@keyframes wb-dd-shimmer {
+  from {
+    background-position-x: 100%;
+  }
+  to {
+    background-position-x: 0%;
+  }
+}
+/* The continuous variant needs a rest between passes or it is a strobe; the
+   sweep is the same 320ms, the wait is the rest of the cycle. */
+@keyframes wb-dd-shimmer-loop {
+  0% {
+    background-position-x: 100%;
+  }
+  17% {
+    background-position-x: 0%;
+  }
+  100% {
+    background-position-x: 0%;
+  }
+}
+
+/* The three triggers. Which one ships is CHIP_SHIMMER in DeepDive.tsx; this
+   file always carries all three, so changing it is one word. The stagger is
+   one --fast per chip, so a row reads as a wave rather than a flash. */
+.deepdive[data-shimmer='once'] .deepdive-item::after {
+  animation: wb-dd-shimmer var(--slow) var(--ease) both;
+  animation-delay: calc(var(--dd-index, 0) * var(--fast));
+}
+.deepdive[data-shimmer='hover'] .deepdive-item:hover::after,
+.deepdive[data-shimmer='hover'] .deepdive-item:has(.deepdive-chip:focus-visible)::after {
+  animation: wb-dd-shimmer var(--slow) var(--ease) both;
+}
+.deepdive[data-shimmer='continuous'] .deepdive-item::after {
+  animation: wb-dd-shimmer-loop calc(var(--slow) * 6) var(--ease) infinite;
+  animation-delay: calc(var(--dd-index, 0) * var(--fast));
+}
+
+/* ── Reduced motion ─────────────────────────────────────────────────────
+   Not "animations off". Every cue keeps a still form that carries the same
+   thing: the chevron is simply already turned, the answer is simply there,
+   and the shimmer becomes the steady tint docs/design-system.html §06 asks
+   for — because being easy to find is the entire job of that cue, and a chip
+   nobody notices is the bug VB-16 exists to fix.
+
+   The panel never schedules the ghosts or the height transition under this
+   preference (DeepDive.tsx), so what is switched off here is belt to that
+   braces — and the tint below is the part that is doing real work. */
 @media (prefers-reduced-motion: reduce) {
-  .deepdive-answer {
+  .deepdive,
+  .deepdive-item,
+  .deepdive-chip,
+  .deepdive-mark {
+    transition: none;
+  }
+  .deepdive-item.is-leaving,
+  .deepdive-item.is-entering,
+  .deepdive-item.is-open .deepdive-answer,
+  .deepdive-answer.is-collapsing {
     animation: none;
+  }
+  .deepdive[data-shimmer] .deepdive-item::after {
+    animation: none;
+    background-image: none;
+    background-color: rgba(42, 79, 203, 0.1);
+  }
+  .deepdive[data-shimmer] .deepdive-item.is-open::after {
+    background-color: transparent;
   }
 }
