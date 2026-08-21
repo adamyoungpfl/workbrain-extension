@@ -3,6 +3,7 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules, contextOutline } from '../../src/core/flow/flow';
+import { DRAWER_REST_HEIGHT } from '../../src/core/drawer/height';
 import { generateContextFile, contextFileDate } from '../../src/core/files/generate';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
@@ -86,10 +87,20 @@ function answersUpToModule(modules: Module[], stopBeforeModuleId: string): Answe
  * is being written, and several are still untouched. */
 const MID_MODULE = contextModules[3]!;
 
+/**
+ * Open it as far as it goes.
+ *
+ * V1.2 VB-12 replaced the collapsed/expanded toggle these tests were written
+ * against with a continuously draggable handle, so "open the drawer" is now
+ * "send the handle to its maximum" — `End`, per the WAI-ARIA window-splitter
+ * keys the handle implements. Everything each test then asserts is unchanged;
+ * only the way the drawer is opened moved.
+ */
 async function openDrawer(page: Page): Promise<void> {
-  const toggle = page.locator('.filedrawer-toggle');
-  if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
-  await expect(page.locator('.filedrawer')).toHaveClass(/is-open/);
+  const handle = page.locator('.filedrawer-handle');
+  await handle.focus();
+  await page.keyboard.press('End');
+  await expect(handle).toHaveAttribute('aria-valuenow', (await handle.getAttribute('aria-valuemax'))!);
 }
 
 test.describe('VB-07 — the living file tree', () => {
@@ -233,17 +244,22 @@ test.describe('VB-07 — the drawer is a dock, never a modal', () => {
     const page = await openPanel(context, id);
     await enterInterview(page);
 
-    const toggle = page.locator('.filedrawer-toggle');
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
-    await toggle.focus();
+    // V1.2 VB-12: the toggle button became a draggable handle, so opening and
+    // closing from the keyboard is now Enter on the handle — collapse to the
+    // peek, and restore. The promise this test exists for is unchanged: the
+    // drawer can be worked with no pointer at all.
+    const handle = page.locator('.filedrawer-handle');
+    const min = Number(await handle.getAttribute('aria-valuemin'));
+    await handle.focus();
+    await page.keyboard.press('End');
+    await expect(handle).toHaveAttribute('aria-valuenow', (await handle.getAttribute('aria-valuemax'))!);
     await page.keyboard.press('Enter');
-    await expect(toggle).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('.filedrawer')).toHaveClass(/is-open/);
+    await expect(handle).toHaveAttribute('aria-valuenow', String(min));
     await page.keyboard.press('Enter');
-    await expect(toggle).toHaveAttribute('aria-expanded', 'false');
+    expect(Number(await handle.getAttribute('aria-valuenow'))).toBeGreaterThan(min);
 
     // Its target is a real element, and the drawer is not an overlay.
-    const controls = await toggle.getAttribute('aria-controls');
+    const controls = await handle.getAttribute('aria-controls');
     await expect(page.locator(`#${controls}`)).toHaveCount(1);
     await expect(page.locator('.filedrawer [role="dialog"]')).toHaveCount(0);
 
@@ -299,7 +315,8 @@ test.describe('VB-07 — the drawer is a dock, never a modal', () => {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).not.toHaveAttribute('data-step-id', 'preferred_name');
     // The drawer survived the question changing, still open, still tracking.
-    await expect(page.locator('.filedrawer')).toHaveClass(/is-open/);
+    const handle = page.locator('.filedrawer-handle');
+    await expect(handle).toHaveAttribute('aria-valuenow', (await handle.getAttribute('aria-valuemax'))!);
     expect(await page.locator('.filetree-row[data-node-state="current"]').count()).toBeGreaterThanOrEqual(1);
 
     await context.close();
@@ -345,7 +362,7 @@ test.describe('VB-07 — the drawer is a dock, never a modal', () => {
     await context.close();
   });
 
-  test('open/closed is never written down — reopening the panel starts at the peek', async () => {
+  test('how open it is is never written down — reopening the panel starts at the peek', async () => {
     const { context, sw, id } = await launchExtension();
     const seeded = answersUpToModule(contextModules, MID_MODULE.id);
     await seedAnswers(sw, seeded);
@@ -357,11 +374,11 @@ test.describe('VB-07 — the drawer is a dock, never a modal', () => {
 
     page = await openPanel(context, id);
     await enterInterview(page);
-    await expect(page.locator('.filedrawer-toggle')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('.filedrawer-handle')).toHaveAttribute('aria-valuenow', String(DRAWER_REST_HEIGHT));
 
     // Nothing drawer-shaped was persisted anywhere.
     const keys = await sw.evaluate(async () => Object.keys(await chrome.storage.local.get(null)));
-    expect(keys.filter((k) => /drawer|tree|expand|open/i.test(k))).toEqual([]);
+    expect(keys.filter((k) => /drawer|tree|expand|open|height/i.test(k))).toEqual([]);
     const stored = await sw.evaluate(async () => (await chrome.storage.local.get('wb:answers'))['wb:answers'] as Answers);
     expect(stored).toEqual(seeded);
 

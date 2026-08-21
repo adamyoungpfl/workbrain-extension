@@ -8,14 +8,15 @@
 /* V1.1 VB-07. Wraps the question and the file drawer docked beneath it, and
    reserves exactly the drawer's own height as bottom padding — which is what
    makes the drawer a dock rather than an overlay: the question and every one
-   of its controls stay on screen and reachable with the drawer open. The two
-   values below mirror FileDrawer.css's collapsed and expanded body heights
-   plus its 44px header. */
+   of its controls stay on screen and reachable with the drawer open.
+
+   V1.2 VB-12: the drawer's height is dragged, so the reservation is the live
+   value (`--drawer-h`, set by Flow.tsx) rather than one of two fixed states.
+   Deliberately not transitioned even when the drawer's own height is: this
+   padding only changes how far the page can scroll, so animating it would
+   animate nothing anyone can see while making every drag frame a layout. */
 .flowshell {
-  padding-bottom: 190px;
-}
-.flowshell.is-drawer-open {
-  padding-bottom: calc(46vh + 60px);
+  padding-bottom: calc(var(--drawer-h, 186px) + 8px);
 }
 
 /* V1.1 VB-02 removed `.flow-eyebrow` — the "Question N of Total · Module"

@@ -1,10 +1,11 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import { Beats, Button, DeepDive, Field, FlowProgress, PillGroup, ReadOnlyBlock, TypedHeading } from '../components';
 import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
+import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
 import {
   findPosition,
   applyAnswer,
@@ -332,11 +333,12 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
   // data and silently miss the very last answer. Gating the redirect on this
   // closes that race without Home needing to know or care that it exists.
   const [savePending, setSavePending] = useState(false);
-  // V1.1 VB-07. Ephemeral, like `history` and `declinedBlocks` above and for
-  // the same reason: it is a fact about this glance at the panel, not about
-  // the person's file. Collapsed to a peek by default — the question stays
-  // the primary object on a 400px panel.
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  // V1.1 VB-07, continuous since V1.2 VB-12. Ephemeral, like `history` and
+  // `declinedBlocks` above and for the same reason: it is a fact about this
+  // glance at the panel, not about the person's file — so it starts at the
+  // peek on every open, however far it was dragged last time. The question
+  // stays the primary object on a 400px panel.
+  const [drawerHeight, setDrawerHeight] = useState(DRAWER_REST_HEIGHT);
 
   useEffect(() => {
     let cancelled = false;
@@ -416,20 +418,22 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
    * the interview and sees every transition.
    *
    * `.flowshell` reserves the drawer's height beneath the screen, so the
-   * drawer never covers the question: it is docked, not an overlay.
+   * drawer never covers the question: it is docked, not an overlay. V1.2
+   * VB-12 makes that height a number the person drags to, so the reservation
+   * is now the live value rather than the two states it used to be.
    */
   function withDrawer(screen: ReactNode): ReactNode {
     if (!outline) return screen;
     return (
-      <div className={drawerOpen ? 'flowshell is-drawer-open' : 'flowshell'}>
+      <div className="flowshell" style={{ '--drawer-h': `${drawerHeight}px` } as CSSProperties}>
         {screen}
         <FileDrawer
           outline={outline}
           modules={modules}
           answers={ans}
           position={position}
-          open={drawerOpen}
-          onToggle={() => setDrawerOpen((isOpen) => !isOpen)}
+          height={drawerHeight}
+          onResize={setDrawerHeight}
           onNavigate={(next) => {
             // Exactly what `goBack` does in reverse: remember where we were so
             // Back returns there, then view the requested position. No new

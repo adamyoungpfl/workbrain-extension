@@ -78,6 +78,16 @@ async function openMidInterview(context: BrowserContext, sw: Worker, id: string)
   return page;
 }
 
+/** V1.2 VB-12 — the collapsed/expanded toggle these tests were written
+ * against is now a draggable handle, so "open it" is "send it to its
+ * maximum": `End`, per the window-splitter keys the handle implements. */
+async function openFully(page: Page): Promise<void> {
+  const handle = page.locator('.filedrawer-handle');
+  await handle.focus();
+  await page.keyboard.press('End');
+  await expect(handle).toHaveAttribute('aria-valuenow', (await handle.getAttribute('aria-valuemax'))!);
+}
+
 test('axe finds no violations on the file drawer, open or at the peek (VB-07)', async () => {
   const { context, sw, id } = await launch();
   const page = await openMidInterview(context, sw, id);
@@ -93,8 +103,8 @@ test('axe finds no violations on the file drawer, open or at the peek (VB-07)', 
   const peek = await new AxeBuilder({ page }).include('.filedrawer').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(peek.violations).toEqual([]);
 
-  await page.locator('.filedrawer-toggle').click();
-  await expect(page.locator('.filedrawer')).toHaveClass(/is-open/);
+  // V1.2 VB-12: opening it is now sending the drag handle to its maximum.
+  await openFully(page);
   const open = await new AxeBuilder({ page }).include('.filedrawer').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(open.violations).toEqual([]);
 
@@ -104,7 +114,7 @@ test('axe finds no violations on the file drawer, open or at the peek (VB-07)', 
 test('every control the drawer adds clears the 44x44 floor (VB-07)', async () => {
   const { context, sw, id } = await launch();
   const page = await openMidInterview(context, sw, id);
-  await page.locator('.filedrawer-toggle').click();
+  await openFully(page);
 
   for (const button of await page.locator('.filedrawer button').all()) {
     const box = await button.boundingBox();
@@ -120,7 +130,7 @@ test('every control the drawer adds clears the 44x44 floor (VB-07)', async () =>
 test('the flow surface as a whole stays axe-clean with the drawer docked under it (VB-07)', async () => {
   const { context, sw, id } = await launch();
   const page = await openMidInterview(context, sw, id);
-  await page.locator('.filedrawer-toggle').click();
+  await openFully(page);
 
   const results = await new AxeBuilder({ page }).include('.flowshell').withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   expect(results.violations).toEqual([]);

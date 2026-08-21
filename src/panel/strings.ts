@@ -203,6 +203,25 @@ export const S = {
     "This is your file assembling as you answer — each section appears the moment you reach it. It's plain text, copy it any time.",
 
   /**
+   * V1.2 VB-12 — the drawer's grab handle. Two strings, and neither is ever
+   * printed: the handle is a rule with a grip on it, and the whole point of
+   * VB-12's "it should be obvious it's a handle without a tooltip explaining
+   * it" is that the picture does the explaining for anyone who can see it.
+   *
+   * `drawerHandle` is the separator's accessible name, so it does two jobs at
+   * once: it keeps the heading V1.1 printed above the tree ("Your file so
+   * far") available to a screen reader, and it says what dragging does — the
+   * one audience that cannot see a grip is the one that needs telling.
+   *
+   * `drawerHandleValue` is its `aria-valuetext`. `aria-valuenow` carries the
+   * real height in pixels because that is what the range is measured in;
+   * "three hundred and six" is a useless thing to hear, so what gets spoken
+   * is how far open it is.
+   */
+  drawerHandle: 'Your file so far — drag to resize',
+  drawerHandleValue: (percent: number) => `${percent}% open`,
+
+  /**
    * V1.2 VB-14 — the Brain globe. Four strings, and three of them are only
    * ever heard, not seen: the picture says everything a sighted person needs,
    * and a picture says nothing at all to a screen reader.

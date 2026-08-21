@@ -12,6 +12,10 @@
    the drawer open (docs/GUARDRAILS.md: no modals; the design system's Sheet is
    the only overlay in the system and this is not one). */
 
+/* V1.2 VB-12 — the height is now a number the person chooses by dragging, so
+   it arrives as an inline custom property rather than being two states in
+   here. `--filedrawer-h` is set by FileDrawer.tsx and is always the clamped
+   value core/drawer/height.ts handed back. */
 .filedrawer {
   position: fixed;
   left: 0;
@@ -20,78 +24,152 @@
   z-index: 2;
   display: flex;
   flex-direction: column;
+  height: var(--filedrawer-h, 186px);
+  /* The rule below is part of the drawer, not an extra pixel on top of it —
+     otherwise the box on screen is one taller than the height the handle
+     announces, and the space `.flowshell` reserves is one short. */
+  box-sizing: border-box;
   background: var(--canvas);
   /* --border-i, not --divider: this edge sits directly above an interactive
-     control and WCAG 1.4.11 wants 3:1 on it (docs/GUARDRAILS.md). */
+     control and WCAG 1.4.11 wants 3:1 on it (docs/GUARDRAILS.md). It is also
+     the rule the grip sits on — see .filedrawer-handle. */
   border-top: 1px solid var(--border-i);
 }
 
-.filedrawer-head {
-  margin: 0;
-  font-size: inherit;
-  font-weight: inherit;
+/* Only a settled change animates. A drag must track the pointer to the pixel:
+   a drawer easing along behind the grip is broken, not smooth (VB-12), so
+   `none` is the state a drag runs in and it is also the resting state. */
+.filedrawer[data-settle='nudge'] {
+  transition: height var(--base) var(--ease);
+}
+.filedrawer[data-settle='jump'] {
+  transition: height var(--slow) var(--ease);
 }
 
-.filedrawer-toggle {
+/* The 44px band at the top of the drawer, holding the grip and the count. */
+.filedrawer-head {
+  position: relative;
+  flex: none;
+  height: var(--target-min);
+}
+
+/* Everything visible about the handle is the rule and the grip. The rule is
+   the drawer's own top border, above; this box is the 44x44+ target around it
+   (docs/GUARDRAILS.md — a control that looks like a rule is still a control),
+   and the grip is pulled up onto the rule so the two read as one object. */
+.filedrawer-handle {
+  position: absolute;
+  inset: 0;
   display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  min-height: var(--target-min);
-  appearance: none;
-  background: none;
-  border: none;
-  padding: 0 16px;
-  margin: 0;
-  text-align: left;
-  color: var(--ink-2);
-  cursor: pointer;
+  justify-content: center;
+  cursor: ns-resize;
+  /* The browser must not claim this gesture for scrolling, or a touch drag
+     scrolls the panel instead of resizing the drawer. */
+  touch-action: none;
+  user-select: none;
 }
-.filedrawer-toggle:hover {
-  background: var(--sunken);
-}
-.filedrawer-toggle:focus-visible {
+.filedrawer-handle:focus-visible {
   outline: 2px solid var(--primary);
+  /* Inset: a ring drawn outside this box would sit over the question above it
+     and be clipped by the panel's own edge. */
   outline-offset: -2px;
 }
 
-.filedrawer-chevron {
-  flex: none;
-  transition: transform var(--fast) var(--ease);
+.filedrawer-grip {
+  position: relative;
+  width: 44px;
+  height: 14px;
+  /* Opaque, so the rule stops either side of it: a broken rule with a grip in
+     the gap is the software-panel convention this is meant to read as. */
+  background: var(--canvas);
+  border-radius: var(--r-pill);
+  /* Half of it above the rule, half below. */
+  transform: translateY(-50%);
+  transition: background var(--fast) var(--ease);
 }
-.filedrawer-chevron.is-open {
-  transform: rotate(90deg);
+/* Two bars, because one is a dash and three is a hamburger menu. */
+.filedrawer-grip::before,
+.filedrawer-grip::after {
+  content: '';
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--ink-3);
+  transition: background var(--fast) var(--ease);
+}
+.filedrawer-grip::before {
+  top: 4px;
+}
+.filedrawer-grip::after {
+  bottom: 4px;
 }
 
-.filedrawer-title {
-  font-size: 12px;
-  font-weight: 650;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ink-2);
+.filedrawer-handle:hover .filedrawer-grip {
+  background: var(--sunken);
+}
+.filedrawer-handle:hover .filedrawer-grip::before,
+.filedrawer-handle:hover .filedrawer-grip::after,
+.filedrawer-handle:focus-visible .filedrawer-grip::before,
+.filedrawer-handle:focus-visible .filedrawer-grip::after {
+  background: var(--ink);
+}
+/* Held. Not colour alone — the grip has already moved by the time this shows,
+   and the movement is the cue. This is confirmation of which thing moved it. */
+.filedrawer[data-dragging='true'] .filedrawer-grip {
+  background: var(--primary-tint);
+}
+.filedrawer[data-dragging='true'] .filedrawer-grip::before,
+.filedrawer[data-dragging='true'] .filedrawer-grip::after {
+  background: var(--primary);
 }
 
+/* How much of the file has been written. Not a label for the drawer — that is
+   the heading, which is now read rather than printed — just the one number
+   worth carrying at a glance. Out of the way at the end of the rule, and
+   transparent to the pointer so it never eats a piece of the grab target. */
 .filedrawer-count {
-  margin-left: auto;
+  position: absolute;
+  right: 14px;
+  top: 0;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  margin: 0;
   font-size: 11.5px;
   color: var(--ink-3);
+  pointer-events: none;
 }
 
-/* The peek: about three rows of tree, scrolled so the section being written
-   sits in the middle of them (see FileDrawer.tsx's scroll effect). Everything
+/* Present for a screen reader, absent from the screen. Standard sr-only. */
+.filedrawer-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Whatever is left after the handle. Scrolled so the section being written
+   sits in the middle of it (see FileDrawer.tsx's scroll effect). Everything
    below stays mounted and merely scrolls — which is what lets the tree's
    typewriter keep its per-row memory instead of remounting rows in and out of
    a window. */
 .filedrawer-body {
   position: relative;
-  max-height: 132px;
+  flex: 1 1 auto;
+  /* Without this a flex child refuses to shrink below its content, and the
+     drawer would silently ignore every height under the tree's full one. */
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 14px 10px;
-  transition: max-height var(--base) var(--ease);
-}
-.filedrawer.is-open .filedrawer-body {
-  max-height: 46vh;
 }
 
 .filepreview {
@@ -138,8 +216,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .filedrawer-body,
-  .filedrawer-chevron {
+  /* VB-12 is explicit that this applies to the settle, not to the drag — the
+     drag has no transition to remove in the first place. The still equivalent
+     carries the same information because the information is the new height,
+     and the new height still arrives: the drawer is simply the size you asked
+     for, from the first frame. */
+  .filedrawer[data-settle='nudge'],
+  .filedrawer[data-settle='jump'] {
     transition: none;
   }
   /* The section still arrives — it simply arrives finished. The state change
