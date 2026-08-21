@@ -22,6 +22,8 @@ export type { MeterProps, MeterStepData } from './Meter';
 export { FlowProgress, STATUS_MARK_SPIN } from './FlowProgress';
 export type { FlowProgressProps } from './FlowProgress';
 
+export { NarratorToggle, NARRATOR_ICON } from './NarratorToggle';
+
 export { Toast } from './Toast';
 export type { ToastProps } from './Toast';
 

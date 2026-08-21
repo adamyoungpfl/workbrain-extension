@@ -64,6 +64,27 @@ export const S = {
    * would actually say out loud.
    */
   giveExample: 'Give me an example',
+  /**
+   * V1.3 VB-18 — the narrator toggle's accessible name, in both states.
+   *
+   * Never printed: the control is an icon in the top-right corner, and a label
+   * beside it would be four words of chrome above a question. It is what a
+   * screen reader announces and what a pointer's tooltip shows, so it has to
+   * say what pressing it does, not what the feature is called: "Read questions
+   * aloud", not "Narrator". `aria-pressed` carries which way it is set, which
+   * is why this does not flip to "Turn narrator off" — a control that renames
+   * itself as you use it has to be re-learned on every press.
+   */
+  narrator: 'Read questions aloud',
+  /**
+   * Spoken at the end of the reflect screen's playback, and nowhere printed —
+   * the three buttons are on screen saying the same thing, so printing it
+   * again would be the same instruction twice. It exists because someone
+   * listening has just heard their own answer read back and needs to know what
+   * they can do about it. Ported in spirit from the sibling app's
+   * REFLECT_SPOKEN_CTA, reworded to name this panel's actual buttons.
+   */
+  narratorReflectCta: 'Keep it as-is, tighten it with your AI, or say it again.',
   addYourOwn: '+ add your own',
   addYourOwnPrompt: 'What should it say?',
   addYourOwnConfirm: 'Add',

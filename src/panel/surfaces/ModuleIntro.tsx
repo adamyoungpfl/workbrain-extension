@@ -1,5 +1,10 @@
-import { Beats, Button, FlowProgress } from '../components';
+import { Beats, Button, FlowProgress, NarratorToggle } from '../components';
 import type { Module } from '../../schema/flow.types';
+import type { Answers } from '../../schema/storage.types';
+import { narrationFor } from '../../core/voice/narration';
+import { NARRATION_COPY } from '../voice/copy';
+import { useNarration } from '../voice/useNarration';
+import { useNarratorPref } from '../voice/prefs';
 import { S } from '../strings';
 import './ModuleIntro.css';
 
@@ -22,6 +27,10 @@ export interface ModuleIntroProps {
   /** For the progress bar, which is computed by the caller — see Flow.tsx. */
   current: number;
   total: number;
+  /** V1.3 VB-18: what the narrator narrates is decided over a `Position` and
+   * `wb:answers` in one place (core/voice/narration.ts), and this screen is
+   * one of the positions. It reads nothing out of them itself. */
+  answers: Answers;
   canGoBack: boolean;
   saveError: boolean;
   onBack: () => void;
@@ -61,12 +70,19 @@ export function ModuleIntro({
   module,
   current,
   total,
+  answers,
   canGoBack,
   saveError,
   onBack,
   onContinue,
 }: ModuleIntroProps) {
   const copy = introCopyFor(module.id);
+  // V1.3 VB-18: a transition is the `recap` voice role — the beats and the
+  // preview line under them, read as one screen. Like `StepView`, this
+  // component is mounted per position, so continuing past it cancels the
+  // utterance on the way out (see voice/useNarration.ts).
+  const { on: narratorOn } = useNarratorPref();
+  useNarration(narrationFor({ kind: 'module-intro', module }, answers, NARRATION_COPY), narratorOn);
 
   return (
     <form
@@ -83,6 +99,10 @@ export function ModuleIntro({
           {S.errSaveFailed}
         </div>
       )}
+      {/* V1.3 VB-18: the same top section every other flow screen carries —
+          the toggle above the bar, right-justified. See Flow.tsx's
+          `topSection`, which is this pair on the question screens. */}
+      <NarratorToggle />
       <FlowProgress title={module.title} current={current} total={total} />
       {/* No authored copy for this module: the module's own title (in the bar
           above) and the way forward are still both here. Degrade, never

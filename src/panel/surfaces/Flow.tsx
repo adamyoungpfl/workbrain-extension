@@ -1,6 +1,16 @@
 import { useEffect, useLayoutEffect, useState } from 'react';
 import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
-import { Beats, Button, DeepDive, Field, FlowProgress, PillGroup, ReadOnlyBlock, TypedHeading } from '../components';
+import {
+  Beats,
+  Button,
+  DeepDive,
+  Field,
+  FlowProgress,
+  NarratorToggle,
+  PillGroup,
+  ReadOnlyBlock,
+  TypedHeading,
+} from '../components';
 import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
@@ -33,7 +43,12 @@ import {
 import { hintStaysVisible } from '../../core/flow/deepDive';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
-import type { AnswerValue, FileOutlineNode, FlowContext, Module, Option, Step } from '../../schema/flow.types';
+import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
+import { NARRATION_COPY } from '../voice/copy';
+import { useNarration } from '../voice/useNarration';
+import { useNarratorPref } from '../voice/prefs';
+import { speak, stopSpeaking } from '../voice/speech';
+import type { AnswerValue, DeepDiveEntry, FileOutlineNode, FlowContext, Module, Option, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import { S } from '../strings';
 import './Flow.css';
@@ -295,13 +310,23 @@ function AnswerArea({ children }: { children: ReactNode }) {
 
 /** The question block's hint and deep-dive, rendered identically wherever a
  * question is asked — including the reflect screen's "Say it again" re-ask,
- * which is the same question and deserves the same help. */
-function QuestionHelp({ step }: { step: Step }) {
+ * which is the same question and deserves the same help.
+ *
+ * V1.3 VB-18: `onDisclose` is how a follow-up reaches the narrator — the
+ * `followUp` voice role is the one whose content only exists here. It fires
+ * with the entry that just opened, or `null` when the open one closes. */
+function QuestionHelp({
+  step,
+  onDisclose,
+}: {
+  step: Step;
+  onDisclose?: ((entry: DeepDiveEntry | null) => void) | undefined;
+}) {
   return (
     <>
       {showsHint(step) && <p className="flow-hint">{step.hint}</p>}
       {step.deepDive && step.deepDive.length > 0 && (
-        <DeepDive idPrefix={`flow-${step.id}`} entries={step.deepDive} />
+        <DeepDive idPrefix={`flow-${step.id}`} entries={step.deepDive} onDisclose={onDisclose} />
       )}
     </>
   );
@@ -538,6 +563,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
         module={position.module}
         current={topLevelIndex(modules, position)}
         total={total}
+        answers={ans}
         canGoBack={history.length > 0}
         saveError={saveError}
         onBack={goBack}
@@ -686,6 +712,51 @@ function StepView({
   const [reflectMode, setReflectMode] = useState<'view' | 'tighten' | 'edit'>('view');
   const [tightenedDraft, setTightenedDraft] = useState('');
 
+  /**
+   * V1.3 VB-18 — the narrator, driven from here rather than from `Flow`.
+   *
+   * This component is the thing that knows *what is on the screen*: not just
+   * which position it is, but which of a question's rephrasings is showing and
+   * which of the reflect screen's three sub-screens someone is looking at. The
+   * voice has to follow both, and both live in this component's state.
+   *
+   * Being mounted per position (see this component's own header) is also what
+   * makes stopping free: advancing, skipping, going Back and jumping from the
+   * file tree are all a remount, and `useNarration`'s cleanup cancels the
+   * utterance on the way out — before the next one starts, in the same commit.
+   *
+   * The reflect screen narrates only its playback. Opening "Tighten it with my
+   * AI" or "Say it again" is a different screen with a different job, and a
+   * voice still reading the answer back while someone starts retyping it is
+   * the behaviour VB-18 exists to prevent. Coming back to the playback reads
+   * it again, which is what returning to a screen means.
+   */
+  const { on: narratorOn } = useNarratorPref();
+  const onReflectSubScreen = pos.kind === 'reflect' && reflectMode !== 'view';
+  useNarration(
+    onReflectSubScreen ? null : narrationFor(pos, answers, NARRATION_COPY, { rephraseIndex }),
+    narratorOn,
+  );
+
+  /**
+   * V1.1 VB-03's follow-ups, in the `followUp` voice role.
+   *
+   * The one content type on this screen the person opts into a second time:
+   * the narrator being on is the first choice, pressing the tag is the second,
+   * so this is never speech nobody asked for. Closing the tag stops it
+   * mid-sentence, on the same reasoning as everything else here — the answer
+   * has left the screen.
+   *
+   * With the narrator off this touches no speech API at all, not even to
+   * cancel.
+   */
+  function narrateFollowUp(entry: DeepDiveEntry | null) {
+    if (!narratorOn) return;
+    const narration = entry ? narrationForFollowUp(entry.a) : null;
+    if (narration) speak(narration);
+    else stopSpeaking();
+  }
+
   const ctx: FlowContext = { answers: answers.values, repeatables: answers.repeatables };
   /**
    * "Saved on this device / Nothing leaves your browser".
@@ -824,16 +895,29 @@ function StepView({
     }
   }
 
-  // V1.1 VB-02: what used to be a "Question 12 of 38 · About Me" string is now
-  // the module's title over a bar. Same two numbers, same single derivation —
-  // only the rendering changed. Built once here and reused by every branch
-  // below, exactly as the string it replaced was.
-  const progress = (
-    <FlowProgress
-      title={moduleFor(modules, pos)?.title ?? ''}
-      current={topLevelIndex(modules, pos)}
-      total={total}
-    />
+  /**
+   * The top section, built once and reused by every branch below.
+   *
+   * V1.1 VB-02: what used to be a "Question 12 of 38 · About Me" string is now
+   * the module's title over a bar. Same two numbers, same single derivation —
+   * only the rendering changed.
+   *
+   * V1.3 VB-18 puts the narrator toggle above that bar, right-justified, which
+   * is where the spec places it. Above rather than beside: the bar is a
+   * `role="progressbar"` whose accessible name is the module title, and a
+   * button inside it would be a control inside a value. It costs almost no
+   * height — see NarratorToggle.css on how a 44×44 target lives in a 24px row,
+   * which is what keeps VB-17's composition intact.
+   */
+  const topSection = (
+    <>
+      <NarratorToggle />
+      <FlowProgress
+        title={moduleFor(modules, pos)?.title ?? ''}
+        current={topLevelIndex(modules, pos)}
+        total={total}
+      />
+    </>
   );
 
   if (pos.kind === 'add-another') {
@@ -851,7 +935,7 @@ function StepView({
         }}
       >
         {errorBanner}
-        {progress}
+        {topSection}
         <TypedHeading className="flow-q" text={pos.block.addAnotherPrompt} />
         <AnswerArea>
           <PillGroup
@@ -928,7 +1012,7 @@ function StepView({
       return (
         <div className="flow" data-position="reflect" data-step-id={step.id}>
           {errorBanner}
-          {progress}
+          {topSection}
           <TypedHeading className="flow-q" text={S.reflectTighten} />
           <ReadOnlyBlock tag={S.reflectPromptTag}>{builtPrompt}</ReadOnlyBlock>
           <form
@@ -976,9 +1060,9 @@ function StepView({
           }}
         >
           {errorBanner}
-          {progress}
+          {topSection}
           <TypedHeading className="flow-q" text={questionText} />
-          <QuestionHelp step={step} />
+          <QuestionHelp step={step} onDisclose={narrateFollowUp} />
           <AnswerArea>
             <div className="flow-field-sr-label">
               <Field
@@ -1011,7 +1095,7 @@ function StepView({
     return (
       <div className="flow" data-position="reflect" data-step-id={step.id}>
         {errorBanner}
-        {progress}
+        {topSection}
         <TypedHeading className="flow-q" text={S.reflectHeading} />
         <p className="flow-hint">{S.reflectSub}</p>
         <ReadOnlyBlock tag={step.interpret?.reflectPrefix ?? ''}>{raw}</ReadOnlyBlock>
@@ -1120,7 +1204,7 @@ function StepView({
       }}
     >
       {errorBanner}
-      {progress}
+      {topSection}
       {/* V1.1 VB-05: an intro that authored `beats` is read one beat at a
           time instead of printed as one paragraph — the behaviour
           `Step.beats` has always specified and nothing rendered until now
@@ -1155,7 +1239,7 @@ function StepView({
           )}
         </div>
       )}
-      <QuestionHelp step={step} />
+      <QuestionHelp step={step} onDisclose={narrateFollowUp} />
 
       {/* V1.3 VB-17: every kind's controls in one band, so the room the
           question surface now fills has somewhere deliberate to put its

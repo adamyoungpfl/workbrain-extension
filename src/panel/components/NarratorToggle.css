@@ -1,0 +1,133 @@
+/* V1.3 VB-18 — the narrator toggle, above the progress bar, right-justified.
+
+   THE ROW COSTS NO HEIGHT AT ALL, ON PURPOSE. V1.3 VB-17 has just spent a whole
+   task giving the question and its answer area the top of the panel; a 44px
+   band of chrome above the progress bar would take a fifth of that back for one
+   icon, and question-fill.spec.ts fails the moment the question is pushed more
+   than a fifth of the way down its own area. So this row is `height: 0` and the
+   button hangs out of it, into the right-hand end of the header the module
+   label and the bar already occupy — which is empty on every module in the
+   ported data, the longest title being about half the width of the panel.
+
+   The *hit target* is untouched: the full 44×44 docs/GUARDRAILS.md requires,
+   overlapping only the flow's own top padding and the unused end of a bar
+   nobody can press. `z-index` keeps it above the bar it overhangs; the bar is
+   not interactive, so nothing is stolen from anything. */
+.narrator {
+  display: flex;
+  justify-content: flex-end;
+  height: 0;
+  margin: -10px -9px 0 0;
+}
+
+.narrator-toggle {
+  /* The floor, exactly: 44×44 of pressable box (docs/GUARDRAILS.md). */
+  width: var(--target-min);
+  height: var(--target-min);
+  position: relative;
+  /* Lifts the button — and therefore the face painted inside it — clear of the
+     bar underneath, WITHOUT moving the header: a negative margin on the
+     zero-height row above would pull the module label and the bar up with it,
+     which is not this control's business. */
+  top: -8px;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  appearance: none;
+  border: 0;
+  background: none;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+
+/* THE PAINT IS SMALLER THAN THE TARGET — the same distinction V1.3 VB-15 draws
+   on the follow-up tags, for the same reason and with the same floor intact.
+   A 44px tinted square in a 24px header covers the right-hand end of the
+   progress bar and hangs below it, which reads as a mistake (drawn, looked at,
+   fixed). This is a 30px face centred on the label's line; the bar passes
+   4px underneath it, untouched.
+
+   §06: 120ms for a colour or a fill, the "below perception" band. Nothing here
+   moves, so nothing here is 200ms. */
+.narrator-toggle::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: var(--r-sm);
+  background: none;
+  transition: background var(--fast) var(--ease);
+}
+
+/* The glyph rides above the face it sits on. */
+.narrator-toggle svg {
+  position: relative;
+}
+
+.narrator-toggle:hover::before {
+  background: var(--sunken);
+}
+
+.narrator-toggle:hover {
+  color: var(--ink);
+}
+
+/* docs/GUARDRAILS.md: 2px --primary, 2px offset. Drawn on the face rather than
+   on the button, or the ring would be a 44px rectangle around a 30px control
+   with nothing visible inside most of it. The button's own outline is removed
+   only because this replaces it, in the same rule. */
+.narrator-toggle:focus-visible {
+  outline: none;
+}
+
+.narrator-toggle:focus-visible::before {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ON. Three signals, and the first of them survives colour being removed:
+   the drawing changes (waves instead of a stroke through it), the box takes a
+   fill, and `aria-pressed` says so out loud. --primary on --primary-tint is
+   7.4:1. */
+.narrator-toggle[aria-pressed='true'] {
+  color: var(--primary);
+}
+
+.narrator-toggle[aria-pressed='true']::before {
+  background: var(--primary-tint);
+}
+
+.narrator-toggle[aria-pressed='true']:hover {
+  color: var(--primary-hover);
+}
+
+/* The two halves of the drawing that swap. Opacity rather than `display` or
+   `hidden`, so both parts keep their place in the SVG's box and the speaker
+   itself never shifts as the state changes — and so the swap can be a
+   cross-fade at §06's 120ms band, which is a state change rather than a thing
+   that moves. The fade is decoration on top of a difference that is already
+   complete without it: the shape a person ends up looking at is different
+   either way. */
+.narrator-waves,
+.narrator-mute {
+  transition: opacity var(--fast) var(--ease);
+}
+
+.narrator-toggle[aria-pressed='true'] .narrator-mute,
+.narrator-toggle[aria-pressed='false'] .narrator-waves {
+  opacity: 0;
+}
+
+/* Reduced motion: the fade goes, the swap stays. The instruction the cue
+   carries — which state this is in — is in the shapes themselves, so the
+   still version loses nothing (docs/design-system.html §06). */
+@media (prefers-reduced-motion: reduce) {
+  .narrator-toggle,
+  .narrator-toggle::before,
+  .narrator-waves,
+  .narrator-mute {
+    transition: none;
+  }
+}

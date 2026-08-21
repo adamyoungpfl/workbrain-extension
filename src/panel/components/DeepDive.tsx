@@ -121,6 +121,17 @@ export interface DeepDiveProps {
   /** Namespaces the generated answer element ids — must be unique on screen. */
   idPrefix: string;
   entries: DeepDiveEntry[];
+  /**
+   * V1.3 VB-18: which follow-up is open, for anything outside this component
+   * that has to follow it — today, the narrator, whose `followUp` voice role
+   * is exactly this content (see Flow.tsx's `narrateFollowUp`). Called with
+   * the entry that just opened, or `null` when the open one closes.
+   *
+   * Fired from the press handler rather than an effect, so it lands on the
+   * press itself with no frame of lag, and it changes nothing about the
+   * disclosure — a caller that ignores it gets V1.3 VB-16's behaviour exactly.
+   */
+  onDisclose?: ((entry: DeepDiveEntry | null) => void) | undefined;
 }
 
 /**
@@ -185,7 +196,7 @@ export interface DeepDiveProps {
  * (chevron turns, label goes bold, fill changes); and the copy is not here —
  * these are per-question strings from core/flow/deepDive.ts.
  */
-export function DeepDive({ idPrefix, entries }: DeepDiveProps) {
+export function DeepDive({ idPrefix, entries, onDisclose }: DeepDiveProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<ExpandPhase>(CLOSED);
   const [ghosts, setGhosts] = useState<ReadonlyMap<number, Box>>(() => new Map());
@@ -213,6 +224,10 @@ export function DeepDive({ idPrefix, entries }: DeepDiveProps) {
     const item = root?.querySelector<HTMLElement>(`[data-dd-item="${index}"]`) ?? null;
     const next = toggle(phase, index, true);
     const opening = next.kind === 'opening';
+    // Told on the press, not on the settle: whether this press opens or closes
+    // is already decided here, and it is the same answer on the reduced-motion
+    // path below, which skips the transitional states entirely.
+    onDisclose?.(opening ? (entries[index] ?? null) : null);
 
     // Reduced motion, or nothing to measure: straight to the end state.
     // Nothing is lost — the disclosure opens, announces, and keeps focus.

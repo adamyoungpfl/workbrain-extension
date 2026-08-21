@@ -75,6 +75,13 @@ clears `chrome.storage.local` *and* `.sync` and reloads to the welcome screen â€
 It is gated on `import.meta.env.DEV` and is absent from production builds; `src/panel/devReset.ts`
 explains why that is not the settings page `docs/GUARDRAILS.md` forbids.
 
+**Dev-only voice audition (V1.3 VB-18).** In a development build the panel's console has `wbVoices`:
+`list()` every installed voice, `roles()` to see which voice each narrator role resolves to,
+`play('Samantha')` for one, and `audition()` to hear every English voice read a real interview
+question in turn (`stop()` to stop). It exists so the narrator's voice is chosen by ear rather than
+from a list of names. Same gate, same reasoning, same proof â€” `src/panel/voice/audition.ts`, and
+`tests/e2e/narrator.spec.ts` greps `dist/` to show it never ships.
+
 ## How to work here
 
 1. **Plan before building.** For anything larger than a single file, produce a plan and check it
