@@ -6,17 +6,25 @@
 }
 
 /* V1.1 VB-07. Wraps the question and the file drawer docked beneath it, and
-   reserves exactly the drawer's own height as bottom padding — which is what
-   makes the drawer a dock rather than an overlay: the question and every one
-   of its controls stay on screen and reachable with the drawer open.
+   reserves the docked chrome's height as bottom padding — which is what makes
+   that chrome a dock rather than an overlay: the question and every one of its
+   controls stay on screen and reachable with the drawer open.
 
-   V1.2 VB-12: the drawer's height is dragged, so the reservation is the live
-   value (`--drawer-h`, set by Flow.tsx) rather than one of two fixed states.
+   V1.2 VB-12: the drawer's height is dragged, so the reservation is a live
+   value rather than one of two fixed states.
+
+   V1.2 VB-11: the chrome is now the drawer *plus* the navigation bar pegged to
+   its top edge, so the number is a sum — and the sum is computed and tested in
+   core/flow/dock.ts, not here. `--flow-reserve` is `flowBottomReserve()`
+   already evaluated; this file never adds anything up. The fallback is that
+   function at the resting drawer height, for the one frame before the inline
+   style lands and for any surface that somehow renders the class without it.
+
    Deliberately not transitioned even when the drawer's own height is: this
    padding only changes how far the page can scroll, so animating it would
    animate nothing anyone can see while making every drag frame a layout. */
 .flowshell {
-  padding-bottom: calc(var(--drawer-h, 186px) + 8px);
+  padding-bottom: var(--flow-reserve, 254px);
 }
 
 /* V1.1 VB-02 removed `.flow-eyebrow` — the "Question N of Total · Module"
@@ -328,6 +336,8 @@
   margin-top: 10px;
 }
 
+/* The flow's own footer, as it still renders on a surface with no drawer —
+   the proof loop, which writes no file and so has nothing to dock to. */
 .flow-foot {
   display: flex;
   align-items: center;
@@ -337,14 +347,121 @@
   border-top: 1px solid var(--divider);
 }
 
-.flow-save {
+/* ── V1.2 VB-11: the navigation, docked to the drawer ────────────────────
+   Back / Next / Skip stop being the end of the question and become a bar
+   pegged to the drawer's top edge, so the two read as one object and the
+   buttons hold the same position relative to the file however far the drawer
+   is dragged.
+
+   Scoped to `.flowshell`, which exists only when there is a drawer to dock to
+   (Flow.tsx's `withDrawer`): the proof loop keeps the ordinary footer above,
+   because a bar pegged to a drawer that is not there is just a bar floating at
+   the bottom of the screen.
+
+   It stays the last child of the form in the markup, which is the whole reason
+   the tab order still runs question → its own controls → nav. Fixed position
+   moves where it paints, not where it sits in the document.
+
+   `bottom` is the drawer's top edge and nothing else — one number, set by
+   Flow.tsx from the same state the drawer's height comes from, so the bar
+   cannot drift a pixel away from the edge it is pegged to. `--canvas` and no
+   bottom border because the drawer's own `--border-i` rule is immediately
+   below and the grip straddles it: the seam between the two is the handle, not
+   a second line. `z-index: 1` puts it over the scrolling question but under
+   the drawer's own 2, so the grip's top half still paints across the bar and
+   the handle keeps every pixel of its grab target.
+
+   The rule goes edge to edge like the drawer's, but the buttons keep the
+   question's own left margin — 26px, which is the panel's 8px body margin plus
+   the flow's 18px gutter, and is exactly where Back sat before this task moved
+   it. Written as one number rather than as that sum because a fixed element is
+   positioned against the viewport and has no access to either term: the
+   comment is what keeps them tied, and tests/e2e/nav-dock.spec.ts asserts the
+   column really does line up. */
+.flowshell .flow-foot {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--drawer-h, 186px);
+  z-index: 1;
+  box-sizing: border-box;
+  height: var(--flow-nav-h, 60px);
+  margin-top: 0;
+  padding: 0 26px;
+  background: var(--canvas);
+  border-top: 1px solid var(--divider);
+}
+
+/* Back at the left, the primary and its escape hatch at the right. Achieved by
+   pushing the primary rather than by reordering, so the visual order and the
+   focus order stay the same sequence (WCAG 2.4.3) — a bar whose Tab key jumps
+   right-to-left is worse than an unbalanced bar. */
+.flowshell .flow-foot .btn-primary {
   margin-left: auto;
-  font-size: 11.5px;
-  color: var(--ink-3);
-  text-align: right;
-  line-height: 1.35;
+}
+
+/* The reflect screen's own buttons are in the question, so its nav can hold
+   nothing but Back — and on the rare position with no Back, nothing at all.
+   An empty 60px bar with a rule across it reads as a broken control; the
+   reservation stays, so nothing below moves. */
+.flowshell .flow-foot:empty {
+  display: none;
+}
+
+/* The bar has to arrive at the drawer's new edge at exactly the speed the edge
+   moves, or the two visibly come apart mid-settle — which is the one thing
+   "docked" cannot survive. The drawer publishes which settle it is in on its
+   own element (`data-settle`, FileDrawer.tsx) and the bar reads it from the
+   shell they share, so there is one decision, made once, honoured by both.
+
+   A drag is `none` on both, deliberately: a bar easing along behind the grip
+   is broken, not smooth (the same reasoning as FileDrawer.css). --base for a
+   nudge and --slow for a jump are the drawer's own durations, and --ease is
+   the system's only curve (docs/design-system.html §06).
+
+   Where `:has()` is not understood these two rules simply do not match, and
+   the bar arrives at the drawer's new edge in one frame instead of travelling
+   there — still docked, still attached at rest, one cue less. Degrade, never
+   break (docs/GUARDRAILS.md). */
+.flowshell:has(.filedrawer[data-settle='nudge']) .flow-foot {
+  transition: bottom var(--base) var(--ease);
+}
+.flowshell:has(.filedrawer[data-settle='jump']) .flow-foot {
+  transition: bottom var(--slow) var(--ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* FileDrawer.css drops the drawer's settle here, so the bar has to drop it
+     too — otherwise the bar is the one thing on screen still travelling, and
+     it travels away from the edge it is pegged to. The still equivalent
+     carries the same information for the same reason the drawer's does: the
+     information is where the drawer's top edge now is, and the bar is sitting
+     on it from the first frame. */
+  .flowshell:has(.filedrawer[data-settle='nudge']) .flow-foot,
+  .flowshell:has(.filedrawer[data-settle='jump']) .flow-foot {
+    transition: none;
+  }
+}
+
+/* V1.2 VB-11. Out of the footer, since the footer is now navigation and this
+   is not — see Flow.tsx's `saveNote`. It is the last thing in the question's
+   own scrolling content, immediately above the bar, which is where it read
+   before. One line rather than the stacked pair it was, because it no longer
+   has a narrow right-hand column to fit into: the separator is drawn here
+   rather than written into the copy, so both halves stay whole strings in
+   strings.ts. */
+.flow-save {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  column-gap: 6px;
+  margin: 24px 0 0;
+  font-size: 11.5px;
+  line-height: 1.35;
+  color: var(--ink-3);
+}
+.flow-save span + span::before {
+  content: '·';
+  margin-right: 6px;
 }
 
 .flow-done {

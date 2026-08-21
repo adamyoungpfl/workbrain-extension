@@ -20,6 +20,8 @@
  * lives between calls is React state that dies with the panel.
  */
 
+import { FLOW_NAV_HEIGHT } from '../flow/dock';
+
 /** The grab handle's own height. 44px because it is a control and the
  * accessibility floor (docs/GUARDRAILS.md) has no exception for a control
  * that happens to look like a rule. Exported so the drawer's minimum can be
@@ -56,6 +58,12 @@ export const DRAWER_REST_HEIGHT = DRAWER_HANDLE_HEIGHT + DRAWER_ROW_HEIGHT * 3 +
  * lines of a 22px/1.25 question (~83) plus its hint and the gap under it
  * (~60), with the rest as slack. Measured against the tallest real question
  * in the ported interview, not guessed.
+ *
+ * This is the question's own room and nothing else. V1.2 VB-11 moved Back /
+ * Next / Skip down onto the drawer's top edge, which put a second piece of
+ * furniture between the question and the drawer — that bar is
+ * `FLOW_NAV_HEIGHT` and is subtracted separately in `drawerBounds`, so this
+ * number stays exactly the measurement it always was.
  */
 export const DRAWER_QUESTION_RESERVE = 260;
 
@@ -102,10 +110,16 @@ function round(value: number): number {
  * Degenerate viewports collapse to `min === max` rather than throwing or
  * producing an inverted range — a drawer that cannot be resized is a worse
  * drawer, not a broken panel (docs/GUARDRAILS.md's degradation rule).
+ *
+ * V1.2 VB-11: the navigation bar is now pegged to the drawer's top edge and
+ * rides up with it, so the ceiling has to clear the question *and* the bar.
+ * That is the only reason `FLOW_NAV_HEIGHT` appears here — the reserve itself
+ * is unchanged, and the two terms stay separate so each one still says what it
+ * is protecting.
  */
 export function drawerBounds(viewportHeight: number): DrawerBounds {
   if (!Number.isFinite(viewportHeight)) return { min: DRAWER_MIN_HEIGHT, max: DRAWER_MIN_HEIGHT };
-  const room = viewportHeight - DRAWER_QUESTION_RESERVE;
+  const room = viewportHeight - DRAWER_QUESTION_RESERVE - FLOW_NAV_HEIGHT;
   const capped = Math.min(room, viewportHeight * DRAWER_MAX_FRACTION);
   return { min: DRAWER_MIN_HEIGHT, max: Math.max(DRAWER_MIN_HEIGHT, round(capped)) };
 }

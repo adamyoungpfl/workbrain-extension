@@ -13,6 +13,7 @@ import {
   drawerOpenPercent,
   restingDrawerHeight,
 } from './height';
+import { FLOW_NAV_HEIGHT } from '../flow/dock';
 
 /** The real side panel: 400px wide, and about this tall on a laptop. */
 const PANEL = 700;
@@ -32,10 +33,13 @@ describe('drawerBounds', () => {
   });
 
   it('is the fraction on a tall panel and the reserve on a short one', () => {
-    // Tall: 62% of 1600 is 992, which is far less than 1600 - 260.
+    // V1.2 VB-11 put the Back/Next/Skip bar on the drawer's top edge, so the
+    // room the ceiling has to leave is the question's reserve *plus* that bar.
+    const kept = DRAWER_QUESTION_RESERVE + FLOW_NAV_HEIGHT;
+    // Tall: 62% of 1600 is 992, which is far less than 1600 - 320.
     expect(drawerBounds(1600).max).toBe(Math.round(1600 * DRAWER_MAX_FRACTION));
-    // Short: 62% of 520 is 322, which is more than 520 - 260 = 260.
-    expect(drawerBounds(520).max).toBe(520 - DRAWER_QUESTION_RESERVE);
+    // Short: 62% of 520 is 322, which is more than 520 - 320 = 200.
+    expect(drawerBounds(520).max).toBe(520 - kept);
   });
 
   it('collapses to a fixed peek rather than inverting on an impossible panel', () => {

@@ -176,8 +176,14 @@ test.describe('VB-12 — the drawer drags', () => {
     // Six stops up the panel. Each one must land on its own height, and each
     // one must be the height the pointer is actually at — this is the whole
     // difference between a drag and a toggle.
+    //
+    // They all sit inside `BOUNDS`, which is the point: the clamp gets its own
+    // test below and this one must never touch it. The top stop moved down
+    // when V1.2 VB-11 pegged the nav bar to the drawer's top edge and the
+    // ceiling came down by the bar's height to keep the question's room — see
+    // core/drawer/height.ts's `drawerBounds`.
     const seen = new Set<number>();
-    for (const target of [500, 460, 420, 380, 340, 300]) {
+    for (const target of [560, 520, 480, 440, 400, 360]) {
       await dragHandleTo(page, target);
       const measured = await renderedHeight(page);
       expect(Math.abs(measured - (PANEL.height - target)), `pointer at ${target}`).toBeLessThanOrEqual(2);

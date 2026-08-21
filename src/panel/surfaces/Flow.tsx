@@ -6,6 +6,7 @@ import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
+import { FLOW_NAV_HEIGHT, flowBottomReserve } from '../../core/flow/dock';
 import {
   findPosition,
   applyAnswer,
@@ -417,15 +418,36 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
    * a sibling of whatever screen is showing, means it lives for the length of
    * the interview and sees every transition.
    *
-   * `.flowshell` reserves the drawer's height beneath the screen, so the
-   * drawer never covers the question: it is docked, not an overlay. V1.2
-   * VB-12 makes that height a number the person drags to, so the reservation
-   * is now the live value rather than the two states it used to be.
+   * `.flowshell` reserves the docked chrome's height beneath the screen, so
+   * nothing down there ever covers the question: it is a dock, not an overlay.
+   * V1.2 VB-12 makes the drawer's height a number the person drags to, so the
+   * reservation is a live value rather than the two states it used to be, and
+   * V1.2 VB-11 adds the navigation bar riding on the drawer's top edge to what
+   * is being reserved for.
+   *
+   * The three custom properties are the only channel between the arithmetic
+   * (core/flow/dock.ts, unit-tested) and the stylesheet, which never does the
+   * sum itself:
+   *
+   *  - `--drawer-h`    where the drawer's top edge is, i.e. where the nav bar
+   *                    is pegged. Set here rather than read from the drawer so
+   *                    the bar and the drawer move off one number.
+   *  - `--flow-nav-h`  how tall that bar is.
+   *  - `--flow-reserve` how much room the whole dock needs underneath.
    */
   function withDrawer(screen: ReactNode): ReactNode {
     if (!outline) return screen;
     return (
-      <div className="flowshell" style={{ '--drawer-h': `${drawerHeight}px` } as CSSProperties}>
+      <div
+        className="flowshell"
+        style={
+          {
+            '--drawer-h': `${drawerHeight}px`,
+            '--flow-nav-h': `${FLOW_NAV_HEIGHT}px`,
+            '--flow-reserve': `${flowBottomReserve(drawerHeight)}px`,
+          } as CSSProperties
+        }
+      >
         {screen}
         <FileDrawer
           outline={outline}
@@ -630,11 +652,30 @@ function StepView({
   const [tightenedDraft, setTightenedDraft] = useState('');
 
   const ctx: FlowContext = { answers: answers.values, repeatables: answers.repeatables };
+  /**
+   * "Saved on this device / Nothing leaves your browser".
+   *
+   * V1.2 VB-11 moved it out of the footer, because the footer stopped being a
+   * footer: it is now a navigation bar pegged to the drawer's top edge, and
+   * this note is not navigation. It sits at the end of the question's own
+   * scrolling content instead — the last thing before the bar, which is
+   * exactly where it read before, so the reading order and the tab order are
+   * both unchanged.
+   *
+   * Not left in the bar and not moved into the drawer. Not in the bar because
+   * in a 400px panel every docked pixel is taken from the question, and a
+   * two-line reassurance that never changes is the last thing that should hold
+   * permanent chrome — keeping it there would have made the bar half as tall
+   * again for the whole interview. Not in the drawer because the drawer is
+   * about the file being written, while this is about the answer that was just
+   * typed; it belongs with the answering, and it belongs to a surface this
+   * task owns rather than one another task does.
+   */
   const saveNote = (
-    <span className="flow-save">
+    <p className="flow-save">
       <span>{S.savedNote}</span>
       <span>{S.privacyNote}</span>
-    </span>
+    </p>
   );
   const errorBanner = saveError ? (
     <div role="alert" className="flow-error">
@@ -789,6 +830,7 @@ function StepView({
             {pendingError}
           </div>
         )}
+        {saveNote}
         <footer className="flow-foot">
           {canGoBack && (
             <Button type="button" variant="secondary" onClick={onBack}>
@@ -798,7 +840,6 @@ function StepView({
           <Button type="submit" variant="primary">
             {S.next}
           </Button>
-          {saveNote}
         </footer>
       </form>
     );
@@ -869,6 +910,7 @@ function StepView({
                 error={pendingError ?? undefined}
               />
             </div>
+            {saveNote}
             <footer className="flow-foot">
               <Button type="button" variant="secondary" onClick={backToView}>
                 {S.back}
@@ -876,7 +918,6 @@ function StepView({
               <Button type="submit" variant="primary">
                 {S.reflectUseThis}
               </Button>
-              {saveNote}
             </footer>
           </form>
         </div>
@@ -910,6 +951,7 @@ function StepView({
               error={pendingError ?? undefined}
             />
           </div>
+          {saveNote}
           <footer className="flow-foot">
             <Button type="button" variant="secondary" onClick={backToView}>
               {S.back}
@@ -920,7 +962,6 @@ function StepView({
             <Button type="button" variant="quiet" onClick={() => onCommit(applySkip(answers, step, location))}>
               {S.skip}
             </Button>
-            {saveNote}
           </footer>
         </form>
       );
@@ -944,13 +985,13 @@ function StepView({
             {S.reflectRedo}
           </Button>
         </div>
+        {saveNote}
         <footer className="flow-foot">
           {canGoBack && (
             <Button type="button" variant="secondary" onClick={onBack}>
               {S.back}
             </Button>
           )}
-          {saveNote}
         </footer>
       </div>
     );
@@ -1207,6 +1248,7 @@ function StepView({
         </>
       )}
 
+      {saveNote}
       <footer className="flow-foot">
         {canGoBack && (
           <Button type="button" variant="secondary" onClick={onBack}>
@@ -1221,7 +1263,6 @@ function StepView({
             {S.skip}
           </Button>
         )}
-        {saveNote}
       </footer>
     </form>
   );

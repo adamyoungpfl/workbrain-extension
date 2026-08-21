@@ -98,6 +98,14 @@ export function ModuleIntro({
           ))}
         </div>
       )}
+      {/* V1.2 VB-11: out of the footer, because the footer is now a navigation
+          bar pegged to the drawer's top edge and this note is not navigation.
+          It stays exactly where it read before — the last thing above the
+          buttons — see Flow.tsx's `saveNote` for the full reasoning. */}
+      <p className="flow-save">
+        <span>{S.savedNote}</span>
+        <span>{S.privacyNote}</span>
+      </p>
       <footer className="flow-foot">
         {canGoBack && (
           <Button type="button" variant="secondary" onClick={onBack}>
@@ -110,10 +118,6 @@ export function ModuleIntro({
         <Button type="submit" variant="primary">
           {S.next}
         </Button>
-        <span className="flow-save">
-          <span>{S.savedNote}</span>
-          <span>{S.privacyNote}</span>
-        </span>
       </footer>
     </form>
   );
