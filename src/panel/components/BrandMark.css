@@ -1,10 +1,32 @@
-/* V1.1 VB-01. Colour and the one-time entrance for the node-graph mark.
-   Every value here is a token — see design/tokens.json's `color.brand` group
-   and the note in BrandMark.tsx on why this component is multi-colour when
-   every other icon in the panel is a currentColor stroke. */
+/* V1.1 VB-01, extended by V1.2 VB-13. Colour, and the one-time entrance, for
+   the node-graph mark. Every value here is a token — see design/tokens.json's
+   `color.brand` group and the note in BrandMark.tsx on why this component is
+   multi-colour when every other icon in the panel is a currentColor stroke.
+
+   NOTE ON WHAT IS *NOT* HERE. The rotation is not a CSS transform. It is real
+   3D geometry recomputed per frame in core/geometry/markSpin and written into
+   the SVG's own attributes — a CSS `rotate()` would spin the drawing like a
+   flat card and lose the thing that makes it read as a sphere. So there is no
+   spin keyframe below to find, and no `animation` for reduced motion to
+   cancel; that switch lives in the component, where it can stop the frame loop
+   rather than merely hide it. */
 
 .brand-mark {
   display: block;
+  /* The rotation rewrites around 220 SVG attributes per frame, and several of
+     them (stroke-width, stroke-opacity, r) are presentation attributes, so
+     each one invalidates style. `contain: strict` keeps that invalidation
+     inside the mark rather than letting it ask questions of the question
+     screen around it. It costs nothing to give: the element's size is already
+     fixed by its width/height attributes, and nothing it draws escapes its
+     viewBox.
+
+     Honest about the size of the win — measured at about half a percent of
+     main-thread time on the interview screen, which is at the edge of the
+     noise. It is here because the guarantee is worth having as the panel gets
+     busier (VB-14 puts a second animated surface in the drawer), not because
+     it showed up as a dramatic improvement. */
+  contain: strict;
 }
 
 /* The gradient stops. Classes rather than `stop-color="var(--…)"`
@@ -25,9 +47,10 @@
   stroke: var(--brand-edge);
 }
 
-/* One entrance, on mount, and then it is a still picture forever. Not a loop,
-   not a hover state, no requestAnimationFrame anywhere — see BrandMark.tsx.
-   `both` holds the end frame so nothing can leave the mark part-faded. */
+/* One entrance, on arrival. `both` holds the end frame so nothing can leave
+   the mark part-faded. Opt-out via `entrance={false}`: the status-bar mark
+   remounts on every question, and an entrance on each of forty-nine questions
+   is a flicker, not a welcome. */
 @keyframes brand-mark-in {
   from {
     opacity: 0;
@@ -39,16 +62,17 @@
   }
 }
 
-.brand-mark {
+.brand-mark[data-entrance='on'] {
   animation: brand-mark-in var(--slow) var(--ease) both;
   transform-origin: center;
 }
 
 /* The still version carries the whole meaning already — the mark is a picture,
    not an instruction, so there is nothing the motion was saying that has to be
-   said another way (docs/GUARDRAILS.md). */
+   said another way (docs/GUARDRAILS.md). The rotation is stopped in the
+   component, before a frame is ever scheduled; this only cancels the fade. */
 @media (prefers-reduced-motion: reduce) {
-  .brand-mark {
+  .brand-mark[data-entrance='on'] {
     animation: none;
   }
 }

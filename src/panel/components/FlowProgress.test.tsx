@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FlowProgress } from './FlowProgress';
+import { FlowProgress, STATUS_MARK_SPIN } from './FlowProgress';
 import { S } from '../strings';
 import { mount } from './testUtils';
 
@@ -72,5 +72,47 @@ describe('FlowProgress', () => {
   it('does not divide by zero on an empty flow', () => {
     const { container } = mount(<FlowProgress title="Orientation" current={0} total={0} />);
     expect((container.querySelector('.flowprogress-fill') as HTMLElement).style.width).toBe('0%');
+  });
+
+  // ── V1.2 VB-13 — the mark to the left of the label ───────────────────────
+  describe('the status-bar mark', () => {
+    it('sits before the title, in the same row', () => {
+      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
+      const head = container.querySelector('.flowprogress-head')!;
+      const children = [...head.children];
+      expect(children).toHaveLength(2);
+      expect(children[0]!.tagName.toLowerCase()).toBe('svg');
+      expect(children[0]!.classList.contains('flowprogress-mark')).toBe(true);
+      expect(children[1]!.classList.contains('flowprogress-title')).toBe(true);
+    });
+
+    it('adds nothing to what is read out, and nothing to what is on screen as text', () => {
+      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
+      expect(container.querySelector('.flowprogress-mark')!.getAttribute('aria-hidden')).toBe('true');
+      expect(container.textContent).toBe('About Me');
+    });
+
+    it('is a fixed 24px box, so no frame of the turn can move the label', () => {
+      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
+      const mark = container.querySelector('.flowprogress-mark')!;
+      expect(mark.getAttribute('width')).toBe('24');
+      expect(mark.getAttribute('height')).toBe('24');
+    });
+
+    it('does not replay the entrance animation on every question', () => {
+      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
+      expect(container.querySelector('.flowprogress-mark')!.getAttribute('data-entrance')).toBe('off');
+    });
+
+    it('takes the module title as its spin cue, so "once" turns per module', () => {
+      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
+      // The rendered mode is whatever the ship constant says; the cue wiring
+      // has to be right either way, because flipping the constant must not
+      // also require rewiring the component.
+      expect(container.querySelector('.flowprogress-mark')!.getAttribute('data-spin')).toBe(
+        STATUS_MARK_SPIN,
+      );
+      expect(['continuous', 'once']).toContain(STATUS_MARK_SPIN);
+    });
   });
 });

@@ -1,109 +1,258 @@
+import { useEffect, useRef } from 'react';
+import {
+  MARK_STATIC_ANGLE,
+  MARK_SPIN_MS,
+  MARK_VIEWBOX,
+  markFrame,
+  spinAngleAt,
+  type MarkFrame,
+} from '../../core/geometry/markSpin';
+import { ease } from '../../core/motion/easing';
 import './BrandMark.css';
 
 /**
- * The Model Citizen node-graph mark — an icosahedron drawn as twelve nodes
- * and their thirty edges. V1.1 VB-01.
+ * The Model Citizen node-graph mark — an icosahedron drawn as twelve nodes and
+ * their thirty edges, and, as of V1.2 VB-13, one that turns.
  *
- * PORTED, NOT INVENTED. The geometry below is transcribed exactly from
- * `../modelcitizen/public/mark.svg`, which is itself a single-frame export of
- * the marketing site's rotating version. Every coordinate, radius, stroke
- * width and stroke opacity is the source export's own — the varying radii and
- * line opacities are what make a flat drawing read as a sphere, so rounding
- * them to something tidier would flatten it.
+ * WHAT CHANGED FROM V1.1, AND WHY
+ * VB-01 shipped this as a single static pose transcribed from
+ * `../modelcitizen/public/mark.svg`, with a note arguing that a permanently
+ * moving thing in a working panel is a cost with no benefit. Adam overrode
+ * that in VB-13: the welcome screen gets the rotation from
+ * `../modelcitizen/src/components/ModelSphere.tsx`.
  *
- * THREE DELIBERATE DIFFERENCES FROM THE SOURCE:
+ * The geometry is no longer transcribed. It is computed, per frame, by
+ * `core/geometry/markSpin` — real 3D vertices rotated and projected, so near
+ * nodes grow and brighten and far ones shrink and dim as the solid turns. The
+ * V1.1 drawing is not lost: it is exactly `markFrame(MARK_STATIC_ANGLE)`, the
+ * pose `mark.svg` was exported at, asserted attribute-for-attribute in
+ * `markSpin.test.ts`. Nothing about the still mark changed.
  *
- * 1. No animation of any kind lives in the SVG. The source has a per-node
- *    `blink` keyframe running forever; the sibling app's React version
- *    rotates the whole thing on a requestAnimationFrame loop. A side panel is
- *    a working surface that stays open for a fifteen-minute interview —
- *    something pulsing in the corner of it the whole time is a cost with no
- *    benefit. The only motion here is a single fade-and-scale on mount, in
- *    BrandMark.css, skipped entirely under `prefers-reduced-motion`.
+ * REDUCED MOTION STOPS THE LOOP, NOT JUST THE MOVEMENT
+ * `docs/GUARDRAILS.md` requires a still equivalent that carries the same
+ * information; VB-13 additionally requires that no `requestAnimationFrame`
+ * loop runs at all — "assert the loop isn't merely invisible". So the check
+ * happens before anything is scheduled, and the first render already draws the
+ * still pose. A reduced-motion user gets the V1.1 component's exact output and
+ * one `matchMedia` call, and nothing is ever queued.
  *
- * 2. Colours come from `--brand-*` tokens, applied through BrandMark.css
- *    classes rather than the source's inline hex. No hex literal may exist
- *    outside the generated tokens.css (docs/GUARDRAILS.md, enforced by
- *    `npm run audit` and tests/tokens.test.mjs). The classes carry the colour
- *    and nothing else, so the geometry stays readable as data.
+ * HOW IT DRAWS
+ * The element tree is fixed: thirty `<line>` slots and twelve `<circle>`
+ * slots, written once by React and then addressed by index. Each frame writes
+ * attributes into those slots — no React render per frame, no re-parenting for
+ * depth order (the frame arrives already sorted furthest-first, so slot *i* is
+ * simply the *i*th-furthest node).
  *
- * 3. This is the one component in the panel that is NOT stroke-based
- *    `currentColor` like Home's PERSON_ICON. It is a multi-colour brand mark
- *    and that is the point of it. It is also purely decorative: it is
- *    `aria-hidden`, and the real, selectable word "Workbrain" always sits
- *    directly beneath it — so nothing here is distinguished by colour alone
- *    and no contrast ratio is claimed for these values.
+ * That is around 220 attribute writes per frame. Measured on the interview
+ * screen it costs roughly 2% of the main thread in script and drops no frames
+ * at all — 120 frames in two seconds, worst gap under 20ms. Honest about what
+ * that means: an animation that runs is never *free*, and the reduced-motion
+ * build measures at 0.05% because it produces no frames whatsoever. What the
+ * measurement establishes is that nothing is ever felt. Both numbers come from
+ * tests/e2e/brand-mark.spec.ts, which measures rather than assumes.
+ *
+ * Colours still come from `--brand-*` tokens via BrandMark.css classes: no hex
+ * literal may exist outside the generated tokens.css. And the mark is still
+ * purely decorative — `aria-hidden`, with the real selectable word
+ * "Workbrain" beneath it on the welcome screen and the module title beside it
+ * in the status bar, so nothing is distinguished by colour or motion alone.
  */
 
-/** [x1, y1, x2, y2, strokeWidth, strokeOpacity] — source order preserved. */
-const EDGES: ReadonlyArray<readonly [number, number, number, number, number, number]> = [
-  [72.93, 44.18, 167.07, 34.04, 3.96, 0.69],
-  [72.93, 44.18, 153.91, 88.43, 4.51, 0.83],
-  [72.93, 44.18, 86.09, 51.58, 3.57, 0.59],
-  [72.93, 44.18, 22.89, 116.82, 3.88, 0.67],
-  [72.93, 44.18, 64.8, 139.59, 4.46, 0.81],
-  [167.07, 34.04, 153.91, 88.43, 4.25, 0.76],
-  [167.07, 34.04, 86.09, 51.58, 3.31, 0.53],
-  [167.07, 34.04, 175.2, 100.41, 3.2, 0.5],
-  [167.07, 34.04, 217.11, 123.18, 3.78, 0.65],
-  [72.93, 205.96, 167.07, 195.82, 3.44, 0.56],
-  [72.93, 205.96, 153.91, 188.42, 4.09, 0.72],
-  [72.93, 205.96, 86.09, 151.57, 3.15, 0.49],
-  [72.93, 205.96, 22.89, 116.82, 3.62, 0.6],
-  [72.93, 205.96, 64.8, 139.59, 4.2, 0.75],
-  [167.07, 195.82, 153.91, 188.42, 3.83, 0.66],
-  [167.07, 195.82, 86.09, 151.57, 2.89, 0.42],
-  [167.07, 195.82, 175.2, 100.41, 2.94, 0.44],
-  [167.07, 195.82, 217.11, 123.18, 3.52, 0.58],
-  [153.91, 188.42, 153.91, 88.43, 4.64, 0.86],
-  [153.91, 188.42, 217.11, 123.18, 4.17, 0.74],
-  [153.91, 188.42, 64.8, 139.59, 4.59, 0.85],
-  [153.91, 88.43, 217.11, 123.18, 4.33, 0.78],
-  [153.91, 88.43, 64.8, 139.59, 4.75, 0.89],
-  [86.09, 151.57, 86.09, 51.58, 2.76, 0.39],
-  [86.09, 151.57, 175.2, 100.41, 2.65, 0.36],
-  [86.09, 151.57, 22.89, 116.82, 3.07, 0.47],
-  [86.09, 51.58, 175.2, 100.41, 2.81, 0.4],
-  [86.09, 51.58, 22.89, 116.82, 3.23, 0.51],
-  [175.2, 100.41, 217.11, 123.18, 3.28, 0.52],
-  [22.89, 116.82, 64.8, 139.59, 4.12, 0.73],
-];
-
-/**
- * [cx, cy, r, gradient] — source order preserved, which is smallest radius
- * first. That order IS the depth cue: SVG paints in document order, so the
- * far (small) nodes end up behind the near (large) ones. Sorting these would
- * break the drawing.
- */
-const NODES: ReadonlyArray<readonly [number, number, number, number]> = [
-  [86.09, 151.57, 6.5, 2],
-  [175.2, 100.41, 6.73, 4],
-  [86.09, 51.58, 7.22, 3],
-  [167.07, 195.82, 7.83, 4],
-  [22.89, 116.82, 8.63, 1],
-  [167.07, 34.04, 9.0, 2],
-  [72.93, 205.96, 9.0, 3],
-  [217.11, 123.18, 9.37, 5],
-  [72.93, 44.18, 10.17, 1],
-  [153.91, 188.42, 10.78, 5],
-  [64.8, 139.59, 11.27, 2],
-  [153.91, 88.43, 11.5, 1],
-];
+/** The pose `mark.svg` exports, and so what a still mark draws. */
+const STILL: MarkFrame = markFrame(MARK_STATIC_ANGLE);
 
 const GRADIENTS = [1, 2, 3, 4, 5] as const;
+
+const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
+
+/**
+ * One 360° turn for `spin="once"`.
+ *
+ * This is `--slow` from design/tokens.json, in milliseconds, because a
+ * `requestAnimationFrame` loop cannot read a CSS token. §06's three durations
+ * are the only ones allowed and this is the longest: the turn marks a section
+ * change — a sheet-scale event, not press feedback — and VB-04's 200ms icon
+ * spin, the other full revolution in the product, is a direct response to a
+ * press. At 20px, 360° in 200ms is a strobe rather than a turn.
+ */
+export const SPIN_ONCE_MS = 320;
+
+/**
+ * When the current `spinCue` last changed, on the shared clock.
+ *
+ * Module scope on purpose. `Flow` remounts its step view on every question, so
+ * anything held in component state would restart the turn forty-nine times per
+ * interview — the mark would spin on every question instead of on every
+ * module. Holding the moment here means a remount mid-turn *continues* the
+ * turn, and a remount after it *stays still*.
+ *
+ * Ephemeral, and deliberately so: a plain variable, alive for exactly as long
+ * as the panel document is. Nothing here is derived state that gets persisted
+ * (`docs/ARCHITECTURE.md`), and reopening the panel starts it over.
+ *
+ * Recording rather than consuming also makes it idempotent, which matters:
+ * `<StrictMode>` invokes render bodies twice in development, and a
+ * "has it changed since last time?" flag would answer differently on the
+ * second call.
+ */
+let lastCue: { readonly cue: string; readonly startedAt: number } | null = null;
+
+function spinStartFor(cue: string, now: number): number {
+  if (!lastCue || lastCue.cue !== cue) lastCue = { cue, startedAt: now };
+  return lastCue.startedAt;
+}
+
+/** Test seam: forget the remembered cue, so specs start from a clean slate. */
+export function resetSpinCueMemory(): void {
+  lastCue = null;
+}
+
+export type BrandMarkSpin =
+  /** Turns for as long as it is on screen. The welcome screen's mark. */
+  | 'continuous'
+  /** Turns once when `spinCue` changes, then settles on the still pose. */
+  | 'once'
+  /** Never moves, and never schedules a frame. */
+  | 'none';
 
 export interface BrandMarkProps {
   /** Rendered size in px, square. The viewBox is 240×240 regardless. */
   size?: number;
+  /** How it moves. Reduced motion overrides every value here with `none`. */
+  spin?: BrandMarkSpin;
+  /** For `spin="once"`: change this value to make it turn. */
+  spinCue?: string;
+  /**
+   * The one-time fade-and-scale entrance. On by default, because the welcome
+   * screen's mark arrives with the screen. Off for the status bar, where the
+   * component remounts on every question and an entrance would be a flash on
+   * each of them.
+   */
+  entrance?: boolean;
+  className?: string;
 }
 
-export function BrandMark({ size = 96 }: BrandMarkProps) {
+export function BrandMark({
+  size = 96,
+  spin = 'continuous',
+  spinCue = '',
+  entrance = true,
+  className,
+}: BrandMarkProps) {
+  const lines = useRef<(SVGLineElement | null)[]>([]);
+  const circles = useRef<(SVGCircleElement | null)[]>([]);
+  /** Which gradient each slot currently shows, so `fill` is only rewritten on
+   * the frames where a node has actually overtaken another. */
+  const fills = useRef<number[]>(STILL.nodes.map((n) => n.gradient));
+
+  useEffect(() => {
+    if (spin === 'none') return;
+    // No matchMedia means no way to know the person's preference. Treat that
+    // as "reduce": the still mark is the safe answer, and it is the same
+    // drawing either way.
+    if (typeof window.matchMedia !== 'function') return;
+    const query = window.matchMedia(REDUCE_QUERY);
+
+    let raf = 0;
+    let live = true;
+
+    function paint(frame: MarkFrame) {
+      const edgeEls = lines.current;
+      for (let i = 0; i < frame.edges.length; i++) {
+        const el = edgeEls[i];
+        if (!el) continue;
+        const e = frame.edges[i]!;
+        el.setAttribute('x1', String(e.x1));
+        el.setAttribute('y1', String(e.y1));
+        el.setAttribute('x2', String(e.x2));
+        el.setAttribute('y2', String(e.y2));
+        el.setAttribute('stroke-width', String(e.width));
+        el.setAttribute('stroke-opacity', String(e.opacity));
+      }
+      const nodeEls = circles.current;
+      for (let i = 0; i < frame.nodes.length; i++) {
+        const el = nodeEls[i];
+        if (!el) continue;
+        const n = frame.nodes[i]!;
+        el.setAttribute('cx', String(n.cx));
+        el.setAttribute('cy', String(n.cy));
+        el.setAttribute('r', String(n.r));
+        if (fills.current[i] !== n.gradient) {
+          el.setAttribute('fill', `url(#wb-mark-g${n.gradient})`);
+          fills.current[i] = n.gradient;
+        }
+      }
+    }
+
+    function settle() {
+      if (raf) cancelAnimationFrame(raf);
+      raf = 0;
+      // Whatever stopped it, the mark lands on the pose we ship still. Motion
+      // is never the thing carrying the meaning.
+      if (live) paint(STILL);
+    }
+
+    function runContinuous() {
+      function frame() {
+        // The absolute clock, not time-since-mount: a remount must not snap
+        // the mark back to its start pose. See spinAngleAt's own note.
+        paint(markFrame(spinAngleAt(performance.now(), MARK_SPIN_MS)));
+        raf = requestAnimationFrame(frame);
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    function runOnce() {
+      const startedAt = spinStartFor(spinCue, performance.now());
+      function frame() {
+        const elapsed = performance.now() - startedAt;
+        if (elapsed >= SPIN_ONCE_MS) {
+          settle();
+          return;
+        }
+        const turn = ease(elapsed / SPIN_ONCE_MS) * Math.PI * 2;
+        paint(markFrame(MARK_STATIC_ANGLE + turn));
+        raf = requestAnimationFrame(frame);
+      }
+      // A remount after the turn already finished must not start a new one,
+      // and must not schedule a frame to discover that. It settles instead of
+      // simply returning, so that arriving here from a mode change (rather
+      // than from a remount) cannot leave the mark frozen mid-pose.
+      if (performance.now() - startedAt >= SPIN_ONCE_MS) {
+        settle();
+        return;
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    function start() {
+      if (raf || query.matches) return;
+      if (spin === 'continuous') runContinuous();
+      else runOnce();
+    }
+
+    function onPreferenceChange() {
+      if (query.matches) settle();
+      else start();
+    }
+
+    start();
+    query.addEventListener('change', onPreferenceChange);
+    return () => {
+      live = false;
+      query.removeEventListener('change', onPreferenceChange);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, [spin, spinCue]);
+
   return (
     <svg
-      className="brand-mark"
+      className={className ? `brand-mark ${className}` : 'brand-mark'}
+      data-entrance={entrance ? 'on' : 'off'}
+      data-spin={spin}
       width={size}
       height={size}
-      viewBox="0 0 240 240"
+      viewBox={`0 0 ${MARK_VIEWBOX} ${MARK_VIEWBOX}`}
       // Decorative: the wordmark next to it carries the name. Nothing in the
       // mark is information the person needs read out.
       aria-hidden="true"
@@ -113,9 +262,9 @@ export function BrandMark({ size = 96 }: BrandMarkProps) {
         {GRADIENTS.map((n) => (
           // Gradient ids are document-global in SVG. Prefixed rather than
           // bare `g1` so a second inline SVG on the same screen can never
-          // collide with these. Only one BrandMark renders today, so a
-          // useId() per instance would buy nothing and cost the markup its
-          // stability under test.
+          // collide with these. The welcome mark and the status-bar mark live
+          // on different surfaces and never render together, so one shared
+          // set of ids is correct and keeps the markup stable under test.
           <linearGradient key={n} id={`wb-mark-g${n}`} x1="0" y1="0" x2="1" y2="1">
             <stop offset="0%" className={`brand-mark-node-${n}-from`} />
             <stop offset="100%" className={`brand-mark-node-${n}-to`} />
@@ -123,21 +272,37 @@ export function BrandMark({ size = 96 }: BrandMarkProps) {
         ))}
       </defs>
       <g className="brand-mark-edges">
-        {EDGES.map(([x1, y1, x2, y2, width, opacity], i) => (
+        {STILL.edges.map((e, i) => (
           <line
             key={i}
-            x1={x1}
-            y1={y1}
-            x2={x2}
-            y2={y2}
-            strokeWidth={width}
-            strokeOpacity={opacity}
+            ref={(el) => {
+              lines.current[i] = el;
+            }}
+            x1={e.x1}
+            y1={e.y1}
+            x2={e.x2}
+            y2={e.y2}
+            strokeWidth={e.width}
+            strokeOpacity={e.opacity}
             strokeLinecap="round"
           />
         ))}
       </g>
-      {NODES.map(([cx, cy, r, gradient], i) => (
-        <circle key={i} cx={cx} cy={cy} r={r} fill={`url(#wb-mark-g${gradient})`} />
+      {STILL.nodes.map((n, i) => (
+        // Keyed by slot, not by vertex. The slots are depth positions —
+        // furthest first — and which vertex occupies each one changes as the
+        // solid turns. Keying by vertex would make React reorder twelve
+        // elements every time two nodes swapped depth.
+        <circle
+          key={i}
+          ref={(el) => {
+            circles.current[i] = el;
+          }}
+          cx={n.cx}
+          cy={n.cy}
+          r={n.r}
+          fill={`url(#wb-mark-g${n.gradient})`}
+        />
       ))}
     </svg>
   );

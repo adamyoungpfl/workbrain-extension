@@ -1,5 +1,49 @@
+import { BrandMark, type BrandMarkSpin } from './BrandMark';
 import { S } from '../strings';
 import './FlowProgress.css';
+
+/**
+ * V1.2 VB-13 — THE ONE CONSTANT THAT DECIDES HOW THE STATUS-BAR MARK MOVES.
+ *
+ * Flip this line and rebuild; nothing else changes.
+ *
+ *   'continuous' — it turns for the whole interview. What Adam asked for.
+ *   'once'       — it turns once when the module changes, then settles.
+ *
+ * Shipping 'continuous', as asked. Both are built, both are tested, and the
+ * recommendation from building them is 'once', for two reasons that only
+ * showed up on screen:
+ *
+ * 1. **The still mark is the better picture.** At 24px the crisp exported pose
+ *    reads as the logo. Every frame of a turn is a slightly soft, slightly
+ *    ambiguous version of it, and under 'continuous' that soft version is the
+ *    only one anybody ever sees, on all forty-nine questions. 'once' shows the
+ *    real mark for 99% of the interview and the turn at the one moment it
+ *    means something — the module changing.
+ * 2. **It is the product's only unending motion**, sitting beside text people
+ *    are reading to think, and it costs ~2% of the main thread for as long as
+ *    the panel is open. 'once' costs that for 320ms per module: eleven turns
+ *    across a whole interview, and nothing in between (measured: zero frames
+ *    requested while settled).
+ *
+ * Under `prefers-reduced-motion` both values collapse to the same still mark
+ * and neither schedules a frame, so this constant is not an accessibility
+ * decision. It is a taste decision, and it is one line.
+ */
+export const STATUS_MARK_SPIN: BrandMarkSpin = 'continuous';
+
+/**
+ * How big the status-bar mark is, in px.
+ *
+ * 24 is a judgement, not a spec value, and it was chosen by looking at it.
+ * The label beside it is 12px uppercase on a 1.4 line, so its box is about
+ * 17px. At 20px the twelve nodes fall below a pixel each and the mark reads as
+ * a shimmering smudge rather than a logo; at 28px it out-weighs the label and
+ * stops being the quiet orientation element FlowProgress.css describes. 24 is
+ * legible and still subordinate. The sibling site mounts the same sphere at
+ * 30–38px beside nav text; 400px of panel does not have that room.
+ */
+const STATUS_MARK_SIZE = 24;
 
 export interface FlowProgressProps {
   /** The current module's own title — "Orientation", "How I Communicate".
@@ -15,7 +59,8 @@ export interface FlowProgressProps {
 
 /**
  * V1.1 VB-02 — what sits where the "Question 12 of 38 · About Me" breadcrumb
- * used to. The module's own title, and a slim bar underneath it.
+ * used to. The module's own title, and a slim bar underneath it. V1.2 VB-13
+ * put the brand mark to the left of the title.
  *
  * Decisions, all deliberate:
  *
@@ -42,6 +87,18 @@ export interface FlowProgressProps {
  *   product leans on, so the fill is the neutral `--ink-3`. "Thematic" here
  *   means the module's own title, not a colour per module.
  *
+ * - **The mark cannot move the label.** It is a fixed-size, `flex: none` box
+ *   in a flex row, and everything the rotation changes happens inside its own
+ *   viewBox. There is no frame on which the SVG's layout box can differ, so
+ *   the title's baseline is not merely stable in practice — it has nothing to
+ *   respond to. tests/e2e/brand-mark.spec.ts samples it mid-turn anyway.
+ *
+ * - **`title` is the mark's spin cue.** Under `STATUS_MARK_SPIN = 'once'` the
+ *   mark turns when that string changes, which is precisely "the module
+ *   changed". `Flow` remounts this component on every question; `BrandMark`
+ *   remembers the cue across remounts so the turn happens once per module and
+ *   not once per question.
+ *
  * Structure follows `Meter`: the wrapper *is* the progressbar and everything
  * visible inside it is `aria-hidden`, so the title is announced once as the
  * bar's name rather than twice — once as a paragraph and again as a label.
@@ -65,9 +122,21 @@ export function FlowProgress({ title, current, total }: FlowProgressProps) {
       aria-valuenow={current}
       aria-valuetext={valueText}
     >
-      <p className="flowprogress-title" aria-hidden="true">
-        {title}
-      </p>
+      {/* The head carries no `aria-hidden` of its own: the mark sets its own,
+          and the title keeps the one VB-02 gave it, so the announced tree is
+          byte-for-byte what it was before the mark arrived. */}
+      <div className="flowprogress-head">
+        <BrandMark
+          className="flowprogress-mark"
+          size={STATUS_MARK_SIZE}
+          spin={STATUS_MARK_SPIN}
+          spinCue={title}
+          entrance={false}
+        />
+        <p className="flowprogress-title" aria-hidden="true">
+          {title}
+        </p>
+      </div>
       <div className="flowprogress-track" aria-hidden="true">
         {/* Width is set inline because it is data, not design — the one
             value on this element that changes per question. */}

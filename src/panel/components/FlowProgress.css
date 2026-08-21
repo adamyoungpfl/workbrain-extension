@@ -1,20 +1,51 @@
 /* V1.1 VB-02 — the module title and its bar, where the "Question N of Total"
    breadcrumb used to sit. Deliberately quiet: this is orientation, not the
-   thing on the screen worth reading first. */
+   thing on the screen worth reading first. V1.2 VB-13 added the mark to its
+   left. */
 
 .flowprogress {
   margin: 0 0 10px;
 }
 
+/* The mark and the title, on one line.
+   `align-items: center` and not `baseline`: an SVG has no baseline of its own,
+   so `baseline` would align its bottom edge to the text baseline and hang the
+   mark's lower third below the line. */
+.flowprogress-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 7px;
+}
+
+/* THE BASELINE RULE (VB-13 accept criterion). The mark must not shift the
+   label as it turns.
+
+   `flex: none` with the width and height set as attributes on the element
+   means its layout box is a constant 24×24 whatever the geometry inside is
+   doing — the rotation only ever changes attributes inside the viewBox, which
+   cannot reach layout. `min-width` is belt and braces for a flex row that ever
+   ends up short of space: without it a flex item may shrink below its
+   intrinsic size, and a mark that narrowed mid-turn would drag the title with
+   it. It matches STATUS_MARK_SIZE in FlowProgress.tsx. */
+.flowprogress-mark {
+  flex: none;
+  min-width: 24px;
+}
+
 /* Same treatment the old `.flow-eyebrow` carried, so nothing else on the
-   screen shifts: 12px, uppercase, --ink-3 (4.7:1 on --canvas). */
+   screen shifts: 12px, uppercase, --ink-3 (4.7:1 on --canvas).
+   The bottom margin moved up to `.flowprogress-head` — it is the row that is
+   spaced away from the bar now, not the paragraph. */
 .flowprogress-title {
   font-size: 12px;
   font-weight: 650;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--ink-3);
-  margin: 0 0 7px;
+  margin: 0;
+  /* A long module title wraps rather than pushing the mark out of the row. */
+  min-width: 0;
 }
 
 .flowprogress-track {
@@ -35,8 +66,12 @@
   background: var(--ink-3);
 }
 
-/* No transition, deliberately. `Flow` remounts `StepView` per position (see
-   its `key={positionKey(position)}`), so this element is new on every
-   question and mounts already at the right width — an animation here would
-   be code that can never run, and `prefers-reduced-motion` would have
-   nothing to honour. */
+/* No transition on the fill, deliberately. `Flow` remounts `StepView` per
+   question (see its `key={positionKey(position)}`), so this element is new on
+   every question and mounts already at the right width — an animation here
+   would be code that can never run, and `prefers-reduced-motion` would have
+   nothing to honour.
+
+   The mark is the exception, and it is why it is not a CSS animation: it
+   survives those remounts by phasing off the shared clock rather than off its
+   own mount. See core/geometry/markSpin's `spinAngleAt`. */
