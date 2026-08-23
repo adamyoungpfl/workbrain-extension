@@ -32,7 +32,12 @@ import {
   positionForQuestionId,
 } from '../../core/flow/outline';
 import { nodeDetailsByNode } from '../../core/flow/nodeDetails';
+import { nodeSummaries } from '../../core/flow/nodeSummary';
 import { sectionHealthMap } from '../../core/freshness/sectionHealth';
+import { recommend, recommendationsByNode } from '../../core/recommend/engine';
+import { NO_DISMISSALS, readDismissals } from '../../core/recommend/dismissals';
+import { getLocal } from '../../core/storage/client';
+import type { Dismissals } from '../../schema/storage.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
 import type { Position } from '../../core/flow/runner';
 import type { FileOutlineNode, Module } from '../../schema/flow.types';
@@ -381,6 +386,40 @@ export function FileDrawer({
   const details = useMemo(() => nodeDetailsByNode(outline, answers, modules), [outline, answers, modules]);
 
   /**
+   * V1.5 VB-27. What each node holds in counts, for the summary a sub-node
+   * shows on hover, on focus and on activation — the same `wb:answers` and the
+   * same health the two derivations above read, so the card, the detail panel
+   * and the List's rows cannot disagree about one section.
+   */
+  const summaries = useMemo(() => nodeSummaries(outline, answers, health, modules), [outline, answers, health, modules]);
+
+  /**
+   * The recommendations that attach to those nodes (V1.5 VB-28).
+   *
+   * `wb:recs` is read once, exactly as Home reads it, because a dismissal is
+   * about the whole file and not about one surface: hiding an offer on Home
+   * has to hide it here too, or "ignore it permanently" would mean "except on
+   * the globe". A failed or absent read is an empty map — every offer still
+   * on offer, which is what a fresh install means (docs/GUARDRAILS.md's
+   * degradation rule).
+   */
+  const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
+  useEffect(() => {
+    let cancelled = false;
+    void getLocal('wb:recs').then((stored) => {
+      if (!cancelled) setDismissals(readDismissals(stored));
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const recommendations = useMemo(
+    () => recommendationsByNode(recommend({ answers, now, dismissals, outline, modules })),
+    [answers, now, dismissals, outline, modules],
+  );
+
+  /**
    * Keeps the section being written inside the peek.
    *
    * Deliberately not `Element.scrollIntoView`: that scrolls every scrollable
@@ -603,6 +642,8 @@ export function FileDrawer({
           size={stageSize}
           drift={drifting}
           details={details}
+          summaries={summaries}
+          recommendations={recommendations}
           onSelect={handleGlobeSelect}
         />
       </div>

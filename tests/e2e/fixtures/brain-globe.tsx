@@ -4,9 +4,11 @@ import '../../../src/panel/tokens.css';
 import { BrainGlobe } from '../../../src/panel/components/BrainGlobe';
 import { contextModules, contextOutline } from '../../../src/core/flow/flow';
 import { nodeDetailsByNode } from '../../../src/core/flow/nodeDetails';
+import { nodeSummaries } from '../../../src/core/flow/nodeSummary';
 import { outlineNodeState } from '../../../src/core/flow/outline';
 import { sectionHealthMap } from '../../../src/core/freshness/sectionHealth';
 import { halfLifeFor } from '../../../src/core/freshness/halfLives';
+import { recommend, recommendationsByNode } from '../../../src/core/recommend/engine';
 import type { AnswerValue, FileOutlineNode } from '../../../src/schema/flow.types';
 import type { Answers } from '../../../src/schema/storage.types';
 import type { OutlineNodeState } from '../../../src/core/flow/outline';
@@ -79,25 +81,40 @@ const ANSWERS = {
   },
 };
 
-const DETAILS = nodeDetailsByNode(contextOutline, ANSWERS);
-
 /**
- * V1.5 VB-24 / VB-25 — the three models the illumination has to be looked at
- * in, chosen with `?model=`: `empty` (nothing answered), `half` (the default,
- * and what every earlier spec drives), `complete` (answered, complete and
- * fresh — the unified glow), and `stale` (the same file with one section past
- * its own half-life, which must visibly break it).
+ * V1.5 VB-24 / VB-25 / VB-27 — the models this stage has to be looked at in,
+ * chosen with `?model=`: `empty` (nothing answered), `half` (the default, and
+ * what every earlier spec drives), `complete` (answered, complete and fresh —
+ * the unified glow), `stale` (the same file with one section past its own
+ * half-life, which must visibly break it), and `rich` (a finished file with
+ * three real roles in it, one of them aged past the roles clock — the only
+ * model in which a node summary has categories AND a recommendation to show).
  *
  * THE HEALTH IS DERIVED, NOT FABRICATED. Each model builds real `Answers` and
  * runs the real `sectionHealthMap` over the real modules, so the unified state
  * on this page is true for the same reason it would be true in the panel. A
  * fixture that hand-wrote `state: 'done'` would prove the CSS and nothing else.
+ * VB-27's summaries and recommendations are derived the same way, by the same
+ * two functions the drawer calls.
  */
-type Model = 'empty' | 'half' | 'complete' | 'stale';
+type Model = 'empty' | 'half' | 'complete' | 'stale' | 'rich';
 
 const MODEL = ((): Model => {
   const asked = new URLSearchParams(window.location.search).get('model');
-  return asked === 'empty' || asked === 'complete' || asked === 'stale' ? asked : 'half';
+  return asked === 'empty' || asked === 'complete' || asked === 'stale' || asked === 'rich' ? asked : 'half';
+})();
+
+/**
+ * The stage size, with `?stage=`. 300 is what every spec before V1.5 drives and
+ * is what the drawer gives Brain at a comfortable height; 260 is the SMALLEST
+ * stage the drawer ever opens Brain at (core/drawer/mode.ts's own note, quoted
+ * in BrainGlobe.css), and it is the size VB-27's floating card has the least
+ * room in. A feature checked only at its roomiest size is a feature checked in
+ * the one place it cannot fail.
+ */
+const STAGE = ((): number => {
+  const asked = Number(new URLSearchParams(window.location.search).get('stage'));
+  return Number.isFinite(asked) && asked >= 180 ? Math.round(asked) : 300;
 })();
 
 const NOW = new Date('2026-08-23T12:00:00.000Z');
@@ -141,17 +158,51 @@ function stale(): Answers {
   return answers;
 }
 
+/**
+ * V1.5 VB-27 — the file the node summary was actually laid out against.
+ *
+ * A finished file (so `recommend` speaks at all — it is silent while the
+ * interview still has questions waiting) with the three real roles above
+ * written into `2.1 Roles`, every field of every record answered, and the
+ * first role's "is this current?" answer stamped past the roles clock. That
+ * one stamp is what produces the single recommendation on this page, through
+ * the real engine: a role marked current, last confirmed seven months ago.
+ */
+function rich(): Answers {
+  const answers = complete();
+  answers.values.role_names = ANSWERS.values.role_names;
+  answers.repeatables.roles = ANSWERS.repeatables.roles.map((role) => ({ ...role }));
+  ANSWERS.repeatables.roles.forEach((role, index) => {
+    for (const key of Object.keys(role)) {
+      if (key === 'role_name') continue; // the seed, not a question of its own
+      answers.answeredAt[`roles#${index}#${key}`] = daysAgo(2);
+    }
+  });
+  // Seven months since "this role is current" — past DUE_AFTER_DAYS, which is
+  // what core/freshness/nextMove.ts asks and what core/recommend folds in.
+  answers.answeredAt['roles#0#role_durability'] = daysAgo(212);
+  return answers;
+}
+
 const MODEL_ANSWERS: Record<Model, Answers> = {
   empty: empty(),
   half: { ...ANSWERS, answeredAt: {}, reflectedAt: {} },
   complete: complete(),
   stale: stale(),
+  rich: rich(),
 };
 
 const answers = MODEL_ANSWERS[MODEL];
 const HEALTH = sectionHealthMap(contextOutline, contextModules, answers, null, NOW);
+/** V1.5 VB-27. The two derivations behind the floating summary, run exactly as
+ * FileDrawer runs them — counts from the same answers the health above is
+ * built from, and recommendations from the same engine Home draws its list
+ * with, so a card here says what the panel would say. */
+const SUMMARIES = nodeSummaries(contextOutline, answers, HEALTH);
+const RECOMMENDATIONS = recommendationsByNode(recommend({ answers, now: NOW }));
+const DETAILS = nodeDetailsByNode(contextOutline, answers);
 /** `half` keeps the hand-written states above, because every earlier spec on
- * this page is written against them. The other three read theirs off the same
+ * this page is written against them. The others read theirs off the same
  * answers the health does, so the picture cannot disagree with itself. */
 const MODEL_STATES: Record<string, OutlineNodeState> =
   MODEL === 'half'
@@ -168,8 +219,10 @@ function Harness() {
         sections={contextOutline}
         states={MODEL_STATES}
         health={HEALTH}
-        size={300}
+        size={STAGE}
         details={DETAILS}
+        summaries={SUMMARIES}
+        recommendations={RECOMMENDATIONS}
         onSelect={setSelected}
       />
       {/* Where the drawer's own detail panel will go. Here it exists only so a

@@ -352,6 +352,50 @@ export const S = {
   brainGlobeDetail: (label: string) => `What's in ${label}`,
   brainGlobeDetailEmpty: 'Nothing written here yet.',
 
+  /**
+   * V1.5 VB-27 — the node summary, on hover, on focus and on activation.
+   *
+   * ── COUNTS AND DATES, IN THAT ORDER, AND NOTHING ELSE ────────────────────
+   *
+   * Every string here prints a number the person could count themselves or a
+   * date they could check. There is no percentage, no "how complete" and no
+   * word that grades anything (docs/GUARDRAILS.md: "a composite score out of
+   * 100. Real metrics only"), and core/flow/nodeSummary.ts has no field one
+   * could be built from even if this file wanted to.
+   *
+   * ── IT BORROWS THE LIST'S OWN WORDS WHEREVER IT CAN ──────────────────────
+   *
+   * `sectionSkipped` and `recsLabel` are printed here unchanged, and the age
+   * is worded by `agoLabel` exactly as `sectionAnsweredAgo` and `recStaleWhy`
+   * word it. Brain and List are two views of one file; a section that is "1
+   * skipped" in the drawer's list must not be anything else on its own node.
+   *
+   * `summaryAnswered` is a fragment rather than a reuse of `sectionAnsweredOf`
+   * ("8 of 9") because in the list that pair sits beside a state pill that
+   * says what is being counted, and here it is on its own.
+   *
+   * ── THE TWO COUNT LINES SAY WHAT AN ITEM IS ──────────────────────────────
+   *
+   * A node with a repeatable block holds things the person NAMED — three
+   * roles, four people — and a node of plain questions holds answers. Two
+   * sentences, because "3 items" is our word for both and neither of them is
+   * a word anybody brought (docs/design-system.html §08).
+   *
+   * `summaryAge` is deliberately "3 months old" and never "not updated in 3
+   * months": the same arithmetic, one of them a fact about the file and the
+   * other an accusation about the person (see the recommendations block
+   * below, which is written against the same line).
+   */
+  summaryNamed: (n: number) => (n === 1 ? '1 thing named here' : `${n} things named here`),
+  summaryAnswers: (n: number) => (n === 1 ? '1 answer here' : `${n} answers here`),
+  /** One bar of the distribution: the option's own label, and how many. */
+  summaryCategory: (label: string, n: number) => `${label} — ${n}`,
+  summaryCategoriesMore: (n: number) => `${n} more`,
+  summaryAnswered: (answered: number, total: number) => `${answered} of ${total} answered`,
+  /** `ago` arrives already worded by `agoLabel` — "7 months", "3 days". */
+  summaryAge: (ago: string) => `${ago} old`,
+  summaryToday: 'written today',
+
   // ---------------------------------------------------------------- reflect
   reflectHeading: "Here's what I've got.",
   reflectSub: 'Nothing has been sent anywhere. Keep it, or let your own AI tighten it.',

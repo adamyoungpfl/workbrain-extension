@@ -3,6 +3,9 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, KeyboardEvent as
 import type { FileOutlineNode } from '../../schema/flow.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
 import type { NodeDetail } from '../../core/flow/nodeDetails';
+import type { NodeSummary } from '../../core/flow/nodeSummary';
+import type { Recommendation } from '../../core/recommend/types';
+import { NodeSummaryCard } from './NodeSummary';
 import { globeLabelFor } from '../../core/flow/globeLabels';
 import { EDGE_LIGHT_LEVEL, edgeLight, globeNodeState, isUnifiedGlow } from '../../core/globe/illumination';
 import type { GlobeNodeState } from '../../core/globe/illumination';
@@ -145,6 +148,42 @@ import './BrainGlobe.css';
  *    caps it at "2–3 words", so the globe gets short display names from
  *    core/flow/globeLabels.ts while the file keeps its real ones. The full name
  *    stays on the node as its `title`.
+ *
+ * ── V1.5 VB-27: the node summary ──────────────────────────────────────────
+ *
+ * A sub-node with something in it shows a floating card of what it holds —
+ * counts, categories, one date, and any recommendation attached to that node.
+ * The card itself is components/NodeSummary.tsx; what lives here is when it is
+ * open and where it sits.
+ *
+ * **THREE WAYS IN, AND ALL THREE ARE REAL.** VB-27 says it in as many words:
+ * "Hover is not enough on its own. A hover-only affordance is unreachable by
+ * keyboard and on touch." So:
+ *
+ *   HOVER — a pointer that can hover, MOVING over the node. Not `pointerenter`
+ *           on its own: the stage rearranges under a stationary cursor (the
+ *           ring forms, the split closes) and the node that slides underneath
+ *           would otherwise pop a card nobody pointed at. `onPointerMove`
+ *           below carries the whole reasoning.
+ *   FOCUS — every focus, however it arrived. This is the keyboard's path: Tab
+ *           to the globe, arrow to a node, and the summary is simply there.
+ *   ACTIVATION — a tap opens the summary and does NOT pick the node; the tap
+ *           after it picks. That first tap is the only summary a touch user
+ *           can ever get, and spending it on the split would mean this feature
+ *           does not exist on a phone. A mouse click and Enter are unchanged
+ *           and still pick, because for both of those the summary is already
+ *           open — hover opened it, or focus did.
+ *
+ * **ESCAPE CLOSES IT AND MOVES NOTHING.** It is the first rung of the ladder
+ * below (summary → split → section), and closing it leaves focus exactly where
+ * it was, on the node. Nothing here traps focus: the card holds no control at
+ * all, so Tab goes straight past it to the next node.
+ *
+ * **IT NEVER COVERS THE NODE IT DESCRIBES.** `summaryPlace` puts it in the half
+ * of the stage the node is not in, and `summaryRoom` caps its height at the
+ * real distance to the orb, so it cannot grow into the node whatever the
+ * content or the stage size. It may sit over the node's *label* — the card's
+ * first line is that same section's full name, so nothing is lost.
  */
 
 // ── Geometry constants ─────────────────────────────────────────────────────
@@ -280,6 +319,39 @@ const SPLIT_MS = 320;
 const FEATURE_X = -58;
 const FEATURE_Y = 0;
 const FEATURE_R = 19;
+
+/**
+ * V1.5 VB-27 — how long the summary waits before closing when the pointer
+ * leaves the node.
+ *
+ * 120ms, docs/design-system.html §06's hover value, and it is not decoration:
+ * WCAG 1.4.13 requires content shown on hover to be *hoverable*, so the
+ * pointer has to be able to cross the gap between the node and the card
+ * without the card disappearing on the way. Zero delay makes that gap
+ * impassable; anything long enough to notice makes the card feel stuck.
+ */
+const SUMMARY_CLOSE_MS = 120;
+
+/**
+ * Which half of the stage the card takes, as a percentage of the stage height.
+ *
+ * A node at or below this line gets a card pinned to the top; everything else
+ * gets one pinned to the bottom. 55 rather than 50 because the sub-node ring
+ * is not symmetrical about the middle — CHILD_RING puts the lower nodes at
+ * ~72% and the upper ones at 23% and 42%, so the line only has to separate
+ * those two groups, and 55 does it with room on both sides.
+ */
+const SUMMARY_PLACE_PCT = 55;
+
+/** The card's margin from the stage's own edge, and from the orb it must not
+ * touch. Both in px, because both are about a box drawn in px over a stage
+ * whose size the drawer chooses. */
+const SUMMARY_EDGE_PX = 8;
+const SUMMARY_GAP = 6;
+/** Where a top-placed card starts: below `Back to the whole file`, a 44px pill
+ * pinned to the stage's top-left. A card tucked under it would have its first
+ * line behind a button. Matches BrainGlobe.css. */
+const SUMMARY_TOP_PX = 60;
 
 /** The connection lines from the centre orb to each sub-node. Faint on
  * purpose — VB-23 asks for "attached", not for a second graph competing with
@@ -465,6 +537,28 @@ export interface BrainGlobeProps {
    * (docs/GUARDRAILS.md).
    */
   details?: Readonly<Record<string, readonly NodeDetail[]>>;
+  /**
+   * V1.5 VB-27. What each node holds, in counts — `nodeSummaries` in
+   * core/flow/nodeSummary.ts, folded from `wb:answers` and the same section
+   * health the unified glow above reads. A node ABSENT from this map has
+   * nothing in it and shows no summary at all, which is VB-27's own gate
+   * ("where a secondary node has items"); an empty card saying "nothing here"
+   * would teach somebody that hovering is not worth doing.
+   *
+   * Optional, like everything else derived here: with no summaries the globe
+   * is exactly the globe it was before this feature, and picking a sub-node
+   * still opens the detail panel.
+   */
+  summaries?: Readonly<Record<string, NodeSummary>>;
+  /**
+   * V1.5 VB-28's recommendations, grouped by the node they belong to —
+   * `recommendationsByNode(recommend({...}))`. The summary prints the first
+   * one for its node; the engine already keeps at most one per node.
+   *
+   * Same ids, same ranking and the same dismissals as Home's list, because it
+   * is the same call: hiding one there hides it here.
+   */
+  recommendations?: Readonly<Record<string, readonly Recommendation[]>>;
   /** The section or sub-section now in focus — a section when one is flown
    * into, one of its children when a child is picked, null when the globe is
    * back to the whole file. The caller owns what to show for it. */
@@ -659,7 +753,17 @@ function DetailGrid({ details }: { details: readonly NodeDetail[] }) {
 
 // ── The component ──────────────────────────────────────────────────────────
 
-export function BrainGlobe({ sections, states, health, size = 300, drift = false, details, onSelect }: BrainGlobeProps) {
+export function BrainGlobe({
+  sections,
+  states,
+  health,
+  size = 300,
+  drift = false,
+  details,
+  summaries,
+  recommendations,
+  onSelect,
+}: BrainGlobeProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const pinRefs = useRef<Array<HTMLButtonElement | null>>([]);
   /** The sub-node buttons, by child id. Keyed rather than indexed: which
@@ -967,8 +1071,71 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
     [startLoop],
   );
 
+  // ── V1.5 VB-27: the node summary ─────────────────────────────────────────
+
+  /** Which sub-node's summary is open, or null. Ephemeral session state, like
+   * the pose and the split — nothing about it is stored. */
+  const [summaryId, setSummaryId] = useState<string | null>(null);
+  /**
+   * The sub-node whose summary a tap has already revealed.
+   *
+   * The whole of the touch path is this one value: the first tap on a node
+   * opens its summary and records it here, and the tap after it — finding its
+   * own id already here — picks the node. It is cleared whenever the summary
+   * closes, so "tap, read, tap" works the same way the second time.
+   */
+  const tapRevealedRef = useRef<string | null>(null);
+  /** Which sub-node the pointer is actually over, so blurring a node the mouse
+   * is still resting on does not close a card the person is reading. */
+  const pointerOverRef = useRef<string | null>(null);
+  /** Set immediately before focus is moved BY US — closing the split puts
+   * focus back on the sub-node it opened, and a summary appearing because you
+   * just pressed Escape is a dismissal that did not take. */
+  const skipFocusOpenRef = useRef<string | null>(null);
+  /** The node whose summary was dismissed with Escape while the pointer was on
+   * it. Cleared the moment the pointer leaves that node, so a dismissal lasts
+   * exactly as long as the hover that it dismissed. */
+  const dismissedRef = useRef<string | null>(null);
+  const closeTimerRef = useRef(0);
+
+  const cancelClose = useCallback(() => {
+    if (closeTimerRef.current) clearTimeout(closeTimerRef.current);
+    closeTimerRef.current = 0;
+  }, []);
+
+  const openSummary = useCallback(
+    (childId: string) => {
+      cancelClose();
+      setSummaryId(childId);
+    },
+    [cancelClose],
+  );
+
+  const closeSummary = useCallback(() => {
+    cancelClose();
+    tapRevealedRef.current = null;
+    setSummaryId(null);
+  }, [cancelClose]);
+
+  /** The 120ms grace WCAG 1.4.13 needs — see SUMMARY_CLOSE_MS. */
+  const closeSummarySoon = useCallback(() => {
+    cancelClose();
+    closeTimerRef.current = window.setTimeout(() => {
+      closeTimerRef.current = 0;
+      tapRevealedRef.current = null;
+      setSummaryId(null);
+    }, SUMMARY_CLOSE_MS);
+  }, [cancelClose]);
+
+  useEffect(() => cancelClose, [cancelClose]);
+
+  /* Every one of these four closes the summary, for one reason: the card
+     describes a sub-node of the cluster on screen, and all four change which
+     cluster that is. A card left over from the stage before would be a
+     description of something nobody can see. */
   const flyInto = useCallback(
     (index: number) => {
+      closeSummary();
       setFlownIndex(index);
       setActiveIndex(index);
       setPickedChildId(null);
@@ -976,24 +1143,29 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
       runZoom(ZOOM_TAIL);
       onSelect?.(shown[index] ?? null);
     },
-    [onSelect, runSplit, runZoom, shown],
+    [closeSummary, onSelect, runSplit, runZoom, shown],
   );
 
   const flyOut = useCallback(() => {
+    closeSummary();
     setFlownIndex(null);
     setPickedChildId(null);
     runSplit(0);
     runZoom(0);
     onSelect?.(null);
-  }, [onSelect, runSplit, runZoom]);
+  }, [closeSummary, onSelect, runSplit, runZoom]);
 
   const pickChild = useCallback(
     (child: FileOutlineNode) => {
+      // The split's own panel opens with everything this card was summarising
+      // and more, in the same place on the stage. Two of them at once would be
+      // the same node described twice.
+      closeSummary();
       setPickedChildId(child.id);
       runSplit(1);
       onSelect?.(child);
     },
-    [onSelect, runSplit],
+    [closeSummary, onSelect, runSplit],
   );
 
   /**
@@ -1005,9 +1177,10 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
    * re-reporting the file.
    */
   const unpickChild = useCallback(() => {
+    closeSummary();
     setPickedChildId(null);
     runSplit(0);
-  }, [runSplit]);
+  }, [closeSummary, runSplit]);
 
   // ── Pointer: drag to rotate ──────────────────────────────────────────────
 
@@ -1038,6 +1211,66 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
   };
 
   const onPointerMove = (event: ReactPointerEvent<HTMLDivElement>) => {
+    /**
+     * V1.5 VB-27 — HOVER IS A POINTER THAT MOVED, not a `pointerenter`.
+     *
+     * The stage rearranges under a stationary pointer constantly: flying into
+     * a section rings five new nodes around the middle, and closing the split
+     * walks the featured orb back out to the ring. The browser fires
+     * `pointerenter` on whatever slides under the cursor, so opening the card
+     * there would pop a summary for a node nobody pointed at — and, worse,
+     * would spend the next Escape closing it instead of leaving the section.
+     * Found by driving it: it broke VB-23's own Escape-ladder test, which is
+     * exactly the contract it should have broken.
+     *
+     * So `pointerenter` only records WHERE the pointer is, and this — a real
+     * movement, over a node, of a pointer that can hover — is what opens.
+     */
+    if (
+      event.pointerType === 'mouse' &&
+      pointerOverRef.current !== null &&
+      pointerOverRef.current !== summaryId &&
+      pointerOverRef.current !== dismissedRef.current &&
+      pickedChildId === null &&
+      !draggingRef.current &&
+      summaries?.[pointerOverRef.current]
+    ) {
+      openSummary(pointerOverRef.current);
+    }
+    /**
+     * V1.5 VB-27 — WCAG 1.4.13's "hoverable", done from the stage.
+     *
+     * The card is transparent to the pointer (NodeSummary.css says why: it
+     * covers a third of a stage full of 44px targets, and swallowing their
+     * clicks to describe them would be a poor trade). So the pointer resting
+     * on it looks, to the node, exactly like the pointer having left — and the
+     * card would close under somebody who was reading it. This is the other
+     * half of that decision: while the pointer is inside the card's own box,
+     * the pending close is cancelled. Costs one `getBoundingClientRect` per
+     * move, and only while a card is open at all.
+     *
+     * `pointerOverRef` is the other half of the *other* half. A sub-node under
+     * the card is still a node the pointer can land on, and landing on one has
+     * to close the card that was covering it — otherwise moving from Roles to
+     * Boundaries leaves Roles' summary up over the node you are now on. Found
+     * by driving it, not by reading it.
+     */
+    if (summaryId !== null && pointerOverRef.current === null) {
+      const box = event.currentTarget.querySelector('.nodesummary')?.getBoundingClientRect();
+      const onCard =
+        !!box &&
+        event.clientX >= box.left &&
+        event.clientX <= box.right &&
+        event.clientY >= box.top &&
+        event.clientY <= box.bottom;
+      // On the card: hold it. Off the card and off every node: let it go, the
+      // same way leaving the node does — otherwise a pointer that had rested
+      // on the card and wandered off would leave it open with nothing under
+      // the cursor. Scheduled once, not re-armed on every move, so it closes
+      // 120ms after leaving rather than 120ms after the pointer next stops.
+      if (onCard) cancelClose();
+      else if (!closeTimerRef.current) closeSummarySoon();
+    }
     if (!draggingRef.current || event.pointerId !== pointerRef.current.id) return;
     const dx = event.clientX - pointerRef.current.x;
     const dy = event.clientY - pointerRef.current.y;
@@ -1137,12 +1370,32 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
         jumpActive(shown.length - 1);
         return;
       case 'Escape':
-        // One level at a time, and in the order they were opened: the split
-        // closes back to the ring first, the section only after that. Escape
-        // that jumped straight out of a section you were reading a sub-node of
-        // would throw away two steps for one keystroke.
+        // One level at a time, and in the order they were opened: the summary
+        // closes first, then the split back to the ring, then the section.
+        // Escape that jumped straight out of a section you were reading a
+        // sub-node of would throw away three steps for one keystroke.
+        //
+        // V1.5 VB-27: CLOSING THE SUMMARY MOVES NOTHING. Focus is already on
+        // the node the card belongs to and stays there — the card holds no
+        // control to lose focus from, and taking focus somewhere else to
+        // dismiss a description would be the product moving somebody's cursor
+        // for them. It also does not reopen: it is opened by events, and
+        // sitting still fires none.
+        if (summaryId !== null) {
+          event.preventDefault();
+          // While the pointer stays where it is, this node's summary stays
+          // dismissed — otherwise the next twitch of the mouse would bring
+          // back the thing that was just dismissed.
+          dismissedRef.current = summaryId;
+          closeSummary();
+          return;
+        }
         if (pickedChildId !== null) {
           event.preventDefault();
+          // Focus goes back to the sub-node that opened the split — and this
+          // is the one focus move in the component that must NOT open a
+          // summary, because it is the tail of a dismissal.
+          skipFocusOpenRef.current = pickedChildId;
           unpickChild();
           childPinRefs.current.get(pickedChildId)?.focus();
           return;
@@ -1245,6 +1498,42 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
     };
   });
 
+  /**
+   * V1.5 VB-27 — the summary on screen this frame, and which half it takes.
+   *
+   * Derived, never held: the open card is one id in state, and everything else
+   * about it — the counts, the recommendation, the side of the stage — is
+   * recomputed from the props on the same render as the picture it sits over.
+   * A card is only ever shown for a node of the cluster on screen, so a stale
+   * id (the section was left, the stage split) simply produces nothing.
+   */
+  const summaryLayout = summaryId === null ? undefined : childLayout.find((entry) => entry.child.id === summaryId);
+  const openSummaryData = summaryId === null || pickedChildId !== null ? undefined : summaries?.[summaryId];
+  const summaryDomId = `${uid}-summary`;
+  const summaryPlace: 'top' | 'bottom' =
+    summaryLayout && pct(summaryLayout.y) >= SUMMARY_PLACE_PCT ? 'top' : 'bottom';
+  /**
+   * How much room the card has, in real pixels — and therefore the rule "it
+   * never covers the node it describes", made structural rather than hoped
+   * for.
+   *
+   * The band runs from the stage's own edge to the near side of the orb, less
+   * SUMMARY_GAP. The card is capped at it (NodeSummary.css), so a card that
+   * somehow grew — a longer recommendation, a fifth category, a stage smaller
+   * than any the drawer opens — is cut off at the node rather than drawn over
+   * it. tests/e2e/node-summary.spec.ts measures both ends of that: that the
+   * card clears the orb at every node, and that nothing is actually being cut
+   * off at either size the drawer runs Brain at.
+   */
+  const summaryRoom = (() => {
+    if (!summaryLayout) return 0;
+    const nodeY = ((summaryLayout.y + VIEW_HALF) / (VIEW_HALF * 2)) * size;
+    const orbR = (summaryLayout.radius / (VIEW_HALF * 2)) * size;
+    return summaryPlace === 'top'
+      ? Math.max(0, nodeY - orbR - SUMMARY_GAP - SUMMARY_TOP_PX)
+      : Math.max(0, size - SUMMARY_EDGE_PX - (nodeY + orbR + SUMMARY_GAP));
+  })();
+
   const rootStyle = { '--brainglobe-size': `${size}px` } as CSSProperties;
 
   return (
@@ -1266,6 +1555,14 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
       onPointerCancel={endDrag}
+      /* The pointer leaving the stage altogether takes any open summary with
+         it. The node's own `pointerleave` covers the usual case; this covers
+         the one where the pointer was resting ON the card when it left, where
+         there is no further move to notice it going. */
+      onPointerLeave={() => {
+        pointerOverRef.current = null;
+        if (summaryId !== null) closeSummarySoon();
+      }}
       onKeyDown={onKeyDown}
     >
       {/* Every pixel of the picture. Decorative in the strict sense: the
@@ -1612,6 +1909,50 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
               className="brainglobe-pin is-child"
               data-child-id={child.id}
               data-picked={picked ? 'true' : 'false'}
+              // V1.5 VB-27. The card is a description of this node, so it is
+              // announced as one — the same summary a sighted person reads,
+              // on the same focus, with nothing moving.
+              data-has-summary={summaries?.[child.id] ? 'true' : 'false'}
+              {...(summaryId === child.id ? { 'aria-describedby': summaryDomId } : {})}
+              onPointerEnter={(event) => {
+                // Records where the pointer is; the OPEN happens on the first
+                // real movement inside the node (the stage's own pointer-move
+                // handler, above). Only a pointer that can hover counts: on a
+                // touch screen this fires as the first half of the tap that
+                // follows it, and treating that as a hover would make the tap
+                // below think the reveal had already happened — which is the
+                // bug that leaves a touch user with no summary at all.
+                if (event.pointerType !== 'mouse') return;
+                pointerOverRef.current = child.id;
+              }}
+              onPointerLeave={(event) => {
+                if (pointerOverRef.current === child.id) pointerOverRef.current = null;
+                // A dismissal lasts as long as the hover it dismissed: leaving
+                // the node and coming back is a new question.
+                if (dismissedRef.current === child.id) dismissedRef.current = null;
+                if (event.pointerType !== 'mouse') return;
+                // Still the focused node: the card is being held open by the
+                // keyboard, and the mouse leaving is not that person's doing.
+                if (document.activeElement === event.currentTarget) return;
+                if (summaryId === child.id) closeSummarySoon();
+              }}
+              onFocus={() => {
+                if (skipFocusOpenRef.current === child.id) {
+                  skipFocusOpenRef.current = null;
+                  return;
+                }
+                if (summaries?.[child.id] && pickedChildId === null) openSummary(child.id);
+              }}
+              onBlur={() => {
+                // Unless the pointer is still resting on it, in which case the
+                // card is open for a reason that has not gone away.
+                if (pointerOverRef.current === child.id) return;
+                // Immediately, not after the hover grace: focus has gone
+                // somewhere else on purpose, and there is no gap for it to
+                // travel across. Tabbing from a node that has a summary to one
+                // that has none must leave nothing behind.
+                if (summaryId === child.id) closeSummary();
+              }}
               // The four you did not pick leave with their orbs — off screen
               // and out of the tab order together, so Tab never lands on
               // something invisible.
@@ -1642,8 +1983,27 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
                   '--brainglobe-label-room': labelPlacement(pct(x)).room,
                 } as CSSProperties
               }
-              onClick={() => {
+              onClick={(event) => {
                 if (draggedRef.current) return;
+                /**
+                 * V1.5 VB-27's third way in. A tap on a pointer that cannot
+                 * hover opens the summary and stops there; the tap after it
+                 * picks the node. On a mouse and from the keyboard nothing
+                 * changes — hover or focus has already opened the card, so
+                 * the first click still picks, exactly as it did before.
+                 *
+                 * `pointerType` read defensively: `click` is a PointerEvent in
+                 * every browser this ships in, but it is a plain MouseEvent in
+                 * jsdom, and a picture must never be the thing that throws.
+                 */
+                const native: MouseEvent = event.nativeEvent;
+                const pointerType = 'pointerType' in native ? String((native as PointerEvent).pointerType) : '';
+                const cannotHover = pointerType === 'touch' || pointerType === 'pen';
+                if (cannotHover && summaries?.[child.id] && tapRevealedRef.current !== child.id && !picked) {
+                  tapRevealedRef.current = child.id;
+                  openSummary(child.id);
+                  return;
+                }
                 if (picked) {
                   unpickChild();
                   return;
@@ -1659,6 +2019,29 @@ export function BrainGlobe({ sections, states, health, size = 300, drift = false
           ),
         )}
       </div>
+
+      {/*
+        V1.5 VB-27 — the floating summary.
+
+        Outside `.brainglobe-pins` on purpose: it is not a control and must
+        never sit inside the group of them, where a screen reader would count
+        it among the nodes. It is `role="tooltip"`, pointed at by the node's
+        own `aria-describedby` while it is open, and it holds nothing
+        focusable — so Tab goes straight from the node to the next node and
+        there is no trap to escape from.
+
+        Mounted only while it is open, so nothing behind the globe holds a
+        description of a node nobody is on.
+      */}
+      {openSummaryData && (
+        <NodeSummaryCard
+          id={summaryDomId}
+          summary={openSummaryData}
+          recommendation={recommendations?.[openSummaryData.nodeId]?.[0]}
+          place={summaryPlace}
+          room={summaryRoom}
+        />
+      )}
 
       {/*
         V1.4 VB-23 — the right-hand half of the split.

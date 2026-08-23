@@ -3,11 +3,13 @@ import { act } from 'react';
 import { BrainGlobe } from './BrainGlobe';
 import { contextOutline } from '../../core/flow/flow';
 import { nodeDetailsByNode } from '../../core/flow/nodeDetails';
+import { nodeSummaries } from '../../core/flow/nodeSummary';
 import { S } from '../strings';
 import { mount } from './testUtils';
 import type { FileOutlineNode } from '../../schema/flow.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
+import type { Recommendation } from '../../core/recommend/types';
 
 /**
  * V1.2 VB-14a.
@@ -997,6 +999,125 @@ describe('BrainGlobe — VB-23, the split', () => {
     const live = container.querySelector('[aria-live="polite"]')!;
     openChild(container, env);
     expect(live.textContent).toBe(S.brainGlobeInside('2.1 Roles'));
+  });
+});
+
+describe('BrainGlobe — VB-27, the node summary', () => {
+  /** The same three roles the split's grid is tested against, folded into
+   * counts — real derivation, not a hand-written card. */
+  const SUMMARIES = nodeSummaries(contextOutline, ROLE_ANSWERS, {});
+  const RECS: Record<string, Recommendation[]> = {
+    'sec2-1': [
+      {
+        id: 'role-stale:0',
+        kind: 'role-stale',
+        nodeId: 'sec2-1',
+        rank: 120,
+        target: { in: 'repeatable', blockId: 'roles', recordIndex: 0, questionId: 'role_durability' },
+        role: 'Manager / Team Lead',
+        elapsed: { value: 7, unit: 'month' },
+      },
+    ],
+  };
+
+  const withSummaries = () => render({ details: DETAILS, summaries: SUMMARIES, recommendations: RECS });
+  const card = (container: Element) => container.querySelector('.nodesummary');
+
+  function flyIn(container: Element, env: ReturnType<typeof stubEnvironment>) {
+    act(() => pin(container, 'sec2').click());
+    env.settle();
+  }
+
+  it('opens on focus, with no pointer anywhere near it', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = withSummaries();
+    flyIn(container, env);
+    expect(card(container)).toBeNull();
+
+    act(() => childPin(container, 'sec2-1').focus());
+    expect(card(container)!.getAttribute('data-node-id')).toBe('sec2-1');
+    expect(card(container)!.getAttribute('role')).toBe('tooltip');
+    // What it says is the fold's, not the component's: three records, and the
+    // file's own name for the node rather than the stage's short one.
+    expect(card(container)!.textContent).toContain('2.1 Roles');
+    expect(card(container)!.textContent).toContain('3 things named here');
+  });
+
+  it('names itself as the node\u2019s description, so a screen reader gets it on the same focus', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = withSummaries();
+    flyIn(container, env);
+    act(() => childPin(container, 'sec2-1').focus());
+
+    const describedBy = childPin(container, 'sec2-1').getAttribute('aria-describedby');
+    expect(describedBy).toBe(card(container)!.id);
+  });
+
+  it('carries the recommendation that belongs to that node, and only that node', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = withSummaries();
+    flyIn(container, env);
+
+    act(() => childPin(container, 'sec2-1').focus());
+    expect(card(container)!.querySelector('.nodesummary-rec')!.getAttribute('data-rec-kind')).toBe('role-stale');
+
+    act(() => childPin(container, 'sec2-2').focus());
+    expect(card(container)).toBeNull(); // nothing in 2.2 yet, so no card at all
+  });
+
+  it('Escape closes it and leaves focus exactly where it was', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = withSummaries();
+    flyIn(container, env);
+    const node = childPin(container, 'sec2-1');
+    act(() => node.focus());
+    expect(card(container)).not.toBeNull();
+
+    const stage = container.querySelector('.brainglobe')!;
+    act(() => stage.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
+
+    expect(card(container)).toBeNull();
+    expect(document.activeElement).toBe(node);
+    // One rung only: still inside the section, still on the ring.
+    expect(stage.getAttribute('data-inside')).toBe('true');
+    expect(node.hasAttribute('aria-describedby')).toBe(false);
+  });
+
+  it('a node with nothing in it says so on the node, and shows no card', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = withSummaries();
+    flyIn(container, env);
+    expect(childPin(container, 'sec2-1').getAttribute('data-has-summary')).toBe('true');
+    expect(childPin(container, 'sec2-4').getAttribute('data-has-summary')).toBe('false');
+
+    act(() => childPin(container, 'sec2-4').focus());
+    expect(card(container)).toBeNull();
+  });
+
+  it('picking the node closes it — the split says everything it said and more', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = withSummaries();
+    flyIn(container, env);
+    act(() => childPin(container, 'sec2-1').focus());
+    expect(card(container)).not.toBeNull();
+
+    act(() => childPin(container, 'sec2-1').click());
+    env.settle();
+    expect(card(container)).toBeNull();
+    expect(container.querySelector('.brainglobe-detail')).not.toBeNull();
+  });
+
+  it('degrades to the globe it was: no summaries prop, no card, and the split still opens', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = render({ details: DETAILS });
+    flyIn(container, env);
+    act(() => childPin(container, 'sec2-1').focus());
+    expect(card(container)).toBeNull();
+    expect(childPin(container, 'sec2-1').getAttribute('data-has-summary')).toBe('false');
+
+    act(() => childPin(container, 'sec2-1').click());
+    env.settle();
+    expect(container.querySelector('.brainglobe-detail')).not.toBeNull();
   });
 });
 
