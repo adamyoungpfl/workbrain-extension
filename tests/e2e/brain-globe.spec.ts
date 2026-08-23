@@ -1,5 +1,7 @@
 import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
+import { channelDistance, contrastRatio, parseCssColor, relativeLuminance } from '../../src/core/color/contrast';
+import type { Rgb } from '../../src/core/color/contrast';
 
 /**
  * V1.2 VB-14a — the Brain globe, driven in a real browser.
@@ -40,9 +42,13 @@ async function countFrames(page: Page): Promise<void> {
 
 const frames = (page: Page) => page.evaluate(() => (window as unknown as { __wbFrames: number }).__wbFrames);
 
-async function open(page: Page): Promise<void> {
+/**
+ * The harness, in one of its four models (tests/e2e/fixtures/brain-globe.tsx).
+ * `half` is the default and is what every spec written before V1.5 drives.
+ */
+async function open(page: Page, model?: 'empty' | 'complete' | 'stale'): Promise<void> {
   await page.setViewportSize(PANEL);
-  await page.goto('/brain-globe.html');
+  await page.goto(model ? `/brain-globe.html?model=${model}` : '/brain-globe.html');
   await page.waitForSelector('.brainglobe');
 }
 
@@ -299,7 +305,9 @@ test.describe('VB-14 — click a node to fly in', () => {
 
     // The real hierarchy, not an invented one: About Me's own five.
     await expect(page.locator('.brainglobe-pin.is-child')).toHaveCount(5);
-    await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"] .brainglobe-label')).toHaveText('2.1 Roles');
+    // V1.5 VB-26: the short name on the stage, the real one in the tooltip.
+    await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"] .brainglobe-label')).toHaveText('Roles');
+    await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toHaveAttribute('title', '2.1 Roles');
   });
 
   test('Escape brings it back out, and the whole file is there again', async ({ page }) => {
@@ -819,4 +827,368 @@ test.describe('VB-23 — the split under reduced motion', () => {
     expect(await panel.evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(1);
     expect(await panel.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0s');
   });
+});
+
+// ---------------------------------------------------------------------
+// V1.5 VB-24 / VB-25 / VB-26 — the illumination model.
+//
+// EVERYTHING HERE IS MEASURED OFF THE PAINTED PAGE. The rules themselves are
+// pure functions with their own unit tests (src/core/globe/illumination.ts,
+// src/core/flow/globeLabels.ts); what a browser is needed for is whether the
+// picture that comes out of them is legible — real computed styles, real
+// screenshot pixels, and the greyscale pass that proves state is never carried
+// by colour alone.
+// ---------------------------------------------------------------------
+
+/**
+ * A painted pixel, decoded back inside the page onto a canvas.
+ *
+ * The same technique tests/e2e/dock-surface.spec.ts uses, and for the same
+ * reason: it is the only way to read what was actually painted without a
+ * decoding dependency, and this repo ships two runtime dependencies and no
+ * more (docs/DEPENDENCIES.md). The device pixel ratio is 1 here, so a CSS
+ * pixel is a screenshot pixel.
+ */
+async function paintedAt(page: Page, points: readonly { x: number; y: number }[]): Promise<Rgb[]> {
+  const shot = (await page.screenshot()).toString('base64');
+  return page.evaluate(
+    async ({ shot, points }) => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${shot}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.width;
+      canvas.height = image.height;
+      const context = canvas.getContext('2d')!;
+      context.drawImage(image, 0, 0);
+      return points.map((point) => {
+        const data = context.getImageData(Math.round(point.x), Math.round(point.y), 1, 1).data;
+        return { r: data[0]!, g: data[1]!, b: data[2]!, a: data[3]! / 255 };
+      });
+    },
+    { shot, points: points.map((point) => ({ x: point.x, y: point.y })) },
+  );
+}
+
+/**
+ * One token's value, resolved by the browser rather than restated here — a
+ * probe element painted with it and read back. Keeps this spec measuring the
+ * product's own colours instead of a copy of them (and no hex may appear
+ * outside the generated tokens.css anyway).
+ */
+async function tokenValue(page: Page, property: string): Promise<Rgb> {
+  const raw = await page.evaluate((name) => {
+    const probe = document.createElement('div');
+    probe.style.backgroundColor = `var(${name})`;
+    document.body.append(probe);
+    const read = getComputedStyle(probe).backgroundColor;
+    probe.remove();
+    return read;
+  }, property);
+  const parsed = parseCssColor(raw);
+  expect(parsed, `could not read ${property} (${raw})`).not.toBeNull();
+  return parsed!;
+}
+
+/**
+ * Every SECTION node, with what it is drawn as and where its orb is. The two
+ * structural vertices are excluded — they carry no section and are muted
+ * always, so counting them as "unanswered" would flatter every measurement
+ * below (`[data-section-id]` alone matches them: theirs is empty, not absent).
+ */
+async function orbs(page: Page) {
+  return page.locator('.brainglobe-node[data-node-state]:not([data-node-state="structural"])').evaluateAll((nodes) =>
+    nodes.map((node) => {
+      const sphere = node.querySelector('.brainglobe-sphere')!;
+      const box = sphere.getBoundingClientRect();
+      return {
+        id: node.getAttribute('data-section-id')!,
+        state: node.getAttribute('data-node-state')!,
+        depth: Number(node.getAttribute('data-depth')),
+        lit: node.querySelector('.brainglobe-orb')!.getAttribute('data-lit')!,
+        fill: getComputedStyle(sphere).fill,
+        radius: box.width / 2,
+        bloom: node.querySelector('.brainglobe-bloom') !== null,
+        x: box.x + box.width / 2,
+        y: box.y + box.height / 2,
+      };
+    }),
+  );
+}
+
+test.describe('VB-24 — solid orbs, muted and vibrant', () => {
+  test('there is no hollow ring anywhere, at any state of the file', async ({ page }) => {
+    for (const model of [undefined, 'empty', 'complete'] as const) {
+      await open(page, model);
+      await expect(page.locator('.brainglobe-hollow-ring')).toHaveCount(0);
+      await expect(page.locator('.brainglobe-hollow-dot')).toHaveCount(0);
+      // Twelve nodes, twelve orbs — the two structural ones included.
+      await expect(page.locator('.brainglobe-node .brainglobe-sphere')).toHaveCount(12);
+    }
+  });
+
+  test('an unanswered node is an object: solid fill, real radius, still legible at the back', async ({ page }) => {
+    await open(page);
+    const field = await tokenValue(page, '--globe-field');
+    const drawn = await orbs(page);
+    const muted = drawn.filter((orb) => orb.state === 'untouched');
+    expect(muted.length).toBeGreaterThan(2);
+
+    for (const orb of muted) {
+      expect(orb.lit).toBe('muted');
+      // A real colour, not `none` and not a `url(#…)`.
+      expect(orb.fill, `${orb.id} has no solid fill`).toMatch(/^rgb\(/);
+      expect(orb.radius, `${orb.id} is too small to be an orb`).toBeGreaterThan(2);
+      expect(orb.bloom, `${orb.id} should not be blooming`).toBe(false);
+    }
+
+    // ...and what was PAINTED, at the very back of the solid, is still an
+    // object against the field rather than the field itself. VB-24: "a muted
+    // orb must not sink into the field colour."
+    const back = [...muted].sort((a, b) => a.depth - b.depth)[0]!;
+    const [pixel] = await paintedAt(page, [{ x: back.x, y: back.y }]);
+    expect(
+      contrastRatio(pixel!, field),
+      `the furthest muted orb measures ${contrastRatio(pixel!, field).toFixed(2)}:1 on the field`,
+    ).toBeGreaterThan(1.6);
+  });
+
+  test('an answered node is more lit than an unanswered one, measured in real pixels', async ({ page }) => {
+    await open(page);
+    const drawn = await orbs(page);
+    const lit = drawn.filter((orb) => orb.state !== 'untouched');
+    const muted = drawn.filter((orb) => orb.state === 'untouched');
+
+    // Compared at comparable depth, so the answer is about state and not about
+    // which way the globe happens to be turned.
+    const brightest = [...lit].sort((a, b) => b.depth - a.depth)[0]!;
+    const nearestMuted = [...muted].sort(
+      (a, b) => Math.abs(b.depth - brightest.depth) - Math.abs(a.depth - brightest.depth),
+    )[muted.length - 1]!;
+
+    const [litPixel, mutedPixel] = await paintedAt(page, [
+      { x: brightest.x, y: brightest.y },
+      { x: nearestMuted.x, y: nearestMuted.y },
+    ]);
+    expect(relativeLuminance(litPixel!)).toBeGreaterThan(relativeLuminance(mutedPixel!) * 1.6);
+    // The bloom and the radius are the two cues that are not brightness.
+    expect(brightest.bloom).toBe(true);
+    expect(nearestMuted.bloom).toBe(false);
+    expect(nearestMuted.radius).toBeLessThan(brightest.radius);
+  });
+
+  test('and the difference survives greyscale — nothing here is carried by colour', async ({ page }) => {
+    await open(page);
+    // Every colour in the picture, collapsed to its luminance. If active and
+    // inactive were only a hue apart, this is where it would show.
+    await page.addStyleTag({ content: 'html { filter: grayscale(1) !important; }' });
+    const drawn = await orbs(page);
+    const near = [...drawn].sort((a, b) => b.depth - a.depth);
+    const lit = near.find((orb) => orb.state !== 'untouched')!;
+    const muted = near.find((orb) => orb.state === 'untouched')!;
+
+    const [litPixel, mutedPixel] = await paintedAt(page, [
+      { x: lit.x, y: lit.y },
+      { x: muted.x, y: muted.y },
+    ]);
+    expect(
+      relativeLuminance(litPixel!) / relativeLuminance(mutedPixel!),
+      'in greyscale an answered orb must still be plainly brighter than an unanswered one',
+    ).toBeGreaterThan(1.5);
+  });
+});
+
+/** Every edge, with the brightness core gave it and the opacity it drew. */
+async function edgeLights(page: Page) {
+  return page.locator('[data-edge]').evaluateAll((edges) =>
+    edges.map((edge) => ({
+      light: edge.getAttribute('data-edge-light')!,
+      lit: Number(edge.querySelector('.brainglobe-edge-near')!.getAttribute('stroke-opacity')),
+      base: Number(edge.querySelector('.brainglobe-edge-far')!.getAttribute('stroke-opacity')),
+      stroke: getComputedStyle(edge.querySelector('.brainglobe-edge-near')!).stroke,
+    })),
+  );
+}
+
+test.describe('VB-25 — edges brighten from both ends', () => {
+  test('an empty file is all structure and no light; a finished one is all light', async ({ page }) => {
+    await open(page, 'empty');
+    const empty = await edgeLights(page);
+    expect(empty).toHaveLength(30);
+    expect(new Set(empty.map((edge) => edge.light))).toEqual(new Set(['dim']));
+    // Dim, never absent: the model is a real object from question one.
+    for (const edge of empty) expect(edge.base).toBeGreaterThan(0.1);
+
+    await open(page, 'complete');
+    const full = await edgeLights(page);
+    expect(new Set(full.map((edge) => edge.light))).toEqual(new Set(['bright']));
+  });
+
+  test('half-answered draws all three at once, and brighter really is brighter', async ({ page }) => {
+    await open(page);
+    const drawn = await edgeLights(page);
+    expect(new Set(drawn.map((edge) => edge.light))).toEqual(new Set(['bright', 'mid', 'dim']));
+
+    const best = (light: string) => Math.max(...drawn.filter((edge) => edge.light === light).map((edge) => edge.lit));
+    expect(best('bright')).toBeGreaterThan(best('mid'));
+    expect(best('mid')).toBeGreaterThan(best('dim'));
+    expect(best('dim')).toBeGreaterThan(0);
+
+    // The struts do not brighten with the light — they are the model, not the
+    // progress. Every edge's base is drawn from depth alone.
+    const bases = drawn.map((edge) => edge.base);
+    for (const light of ['bright', 'mid', 'dim']) {
+      const group = drawn.filter((edge) => edge.light === light).map((edge) => edge.base);
+      expect(Math.max(...group)).toBeLessThanOrEqual(Math.max(...bases));
+      expect(Math.min(...group)).toBeGreaterThanOrEqual(Math.min(...bases));
+    }
+  });
+});
+
+test.describe('VB-25 — one unified glow, and what breaks it', () => {
+  test('a complete, fresh file resolves to ONE colour — every orb, every edge', async ({ page }) => {
+    await open(page, 'complete');
+    await expect(page.locator('.brainglobe')).toHaveAttribute('data-unified', 'true');
+
+    const unified = await tokenValue(page, '--globe-unified');
+    const drawn = await orbs(page);
+    expect(drawn).toHaveLength(10);
+    for (const orb of drawn) {
+      const painted = parseCssColor(orb.fill)!;
+      expect(channelDistance(painted, unified), `${orb.id} is not the unified colour`).toBeLessThanOrEqual(1);
+    }
+    for (const edge of await edgeLights(page)) {
+      expect(channelDistance(parseCssColor(edge.stroke)!, unified)).toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('one stale section breaks it, and the model goes back to being a network', async ({ page }) => {
+    await open(page, 'stale');
+    // Every section is still answered — the edges are all bright — but one is
+    // past its own half-life, so the file is not current and does not glow.
+    await expect(page.locator('.brainglobe')).toHaveAttribute('data-unified', 'false');
+    expect(new Set((await edgeLights(page)).map((edge) => edge.light))).toEqual(new Set(['bright']));
+
+    const unified = await tokenValue(page, '--globe-unified');
+    const colours = new Set((await orbs(page)).map((orb) => orb.fill));
+    expect(colours.size, 'a broken glow is many colours again').toBeGreaterThan(1);
+    for (const fill of colours) expect(channelDistance(parseCssColor(fill)!, unified)).toBeGreaterThan(8);
+  });
+
+  test('is a state, not a celebration: nothing animates into it and nothing is announced', async ({ page }) => {
+    await open(page, 'complete');
+    // No keyframes anywhere in the picture — the only transitions on the stage
+    // are the 120ms colour change and the label's own settle.
+    const animations = await page.locator('.brainglobe *').evaluateAll((nodes) =>
+      nodes.flatMap((node) => {
+        const style = getComputedStyle(node);
+        return style.animationName === 'none' ? [] : [style.animationName];
+      }),
+    );
+    expect(animations, 'something fires when the glow arrives').toEqual([]);
+
+    const colourChange = await page
+      .locator('.brainglobe-node[data-section-id] .brainglobe-sphere')
+      .first()
+      .evaluate((el) => {
+        const style = getComputedStyle(el);
+        return { duration: style.transitionDuration, timing: style.transitionTimingFunction };
+      });
+    expect(colourChange.duration.split(',')[0]!.trim()).toBe('0.12s');
+    expect(colourChange.timing.replace(/\s/g, '')).toContain('cubic-bezier(0.2,0,0,1)');
+
+    // Said once, quietly, as a description of the stage — never fired at
+    // anybody. There is no live region carrying it and no opposite sentence.
+    const said = page.locator('.brainglobe-sr', { hasText: 'Every section is answered and up to date.' });
+    await expect(said).toHaveCount(1);
+    expect(await said.evaluate((el) => el.getAttribute('aria-live'))).toBeNull();
+
+    await open(page, 'stale');
+    await expect(page.locator('.brainglobe-sr', { hasText: 'Every section is answered' })).toHaveCount(0);
+    await expect(page.locator('.brainglobe-sr[aria-live]')).toHaveText('');
+  });
+
+  test('reduced motion reaches the same state without moving into it', async ({ page }) => {
+    await countFrames(page);
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await open(page, 'complete');
+    await expect(page.locator('.brainglobe')).toHaveAttribute('data-unified', 'true');
+
+    const unified = await tokenValue(page, '--globe-unified');
+    for (const orb of await orbs(page)) {
+      expect(channelDistance(parseCssColor(orb.fill)!, unified)).toBeLessThanOrEqual(1);
+    }
+    expect(await frames(page), 'a reduced-motion visitor must get no rAF loop at all').toBe(0);
+  });
+});
+
+test.describe('VB-26 — labels as icon lettering', () => {
+  test('wear the interface\'s own label treatment, scaled for depth', async ({ page }) => {
+    await open(page);
+    const labels = await page
+      .locator('.brainglobe-pin[data-section-id][data-label-hidden="false"] .brainglobe-label')
+      .evaluateAll((nodes) =>
+        nodes.map((node) => {
+          const style = getComputedStyle(node);
+          return {
+            text: node.textContent!,
+            transform: style.textTransform,
+            tracking: style.letterSpacing,
+            weight: Number(style.fontWeight),
+            size: Number.parseFloat(style.fontSize),
+          };
+        }),
+      );
+    expect(labels.length).toBeGreaterThan(2);
+    for (const label of labels) {
+      expect(label.transform).toBe('uppercase');
+      // 0.08em of the label's own size, resolved by the browser.
+      expect(Number.parseFloat(label.tracking)).toBeCloseTo(label.size * 0.08, 1);
+      expect(label.weight).toBeGreaterThanOrEqual(600);
+      expect(label.size).toBeGreaterThanOrEqual(11);
+      expect(label.size).toBeLessThanOrEqual(14);
+    }
+    // Scaled for depth, not one flat size.
+    expect(new Set(labels.map((label) => label.size)).size).toBeGreaterThan(1);
+  });
+
+  test('nothing is truncated, at any depth or any rotation', async ({ page }) => {
+    await open(page);
+    const clipped = async () =>
+      page
+        .locator('.brainglobe-pin[data-label-hidden="false"] .brainglobe-label')
+        .evaluateAll((nodes) =>
+          nodes
+            .filter((node) => node.scrollWidth > node.clientWidth + 0.5)
+            .map((node) => `${node.textContent} (${node.scrollWidth} > ${node.clientWidth})`),
+        );
+
+    expect(await clipped(), 'a label is clipped at rest').toEqual([]);
+    for (const dx of [70, -140, 90]) {
+      await dragBy(page, dx, 30);
+      await expect.poll(() => page.locator('.brainglobe').getAttribute('data-moving'), { timeout: 4000 }).toBe('false');
+      expect(await clipped(), `a label is clipped after turning ${dx}px`).toEqual([]);
+    }
+  });
+
+  test('the short name is on the stage and the real one is still on the node', async ({ page }) => {
+    await open(page);
+    const pin = page.locator('.brainglobe-pin[data-section-id="sec6"]');
+    await expect(pin.locator('.brainglobe-label')).toHaveText('My Voice');
+    await expect(pin).toHaveAttribute('title', '6. How I Communicate');
+    // The name a screen reader hears contains the words that are on screen
+    // (WCAG 2.5.3), and still says the state out loud.
+    const name = (await pin.getAttribute('aria-label'))!;
+    expect(name).toContain('My Voice');
+    expect(name.length).toBeGreaterThan('My Voice'.length);
+  });
+});
+
+test('VB-25 — under reduced motion the colour is simply there, with no trip into it', async ({ page }) => {
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await open(page, 'complete');
+  const durations = await page
+    .locator('.brainglobe-node[data-section-id] .brainglobe-sphere')
+    .evaluateAll((orbs) => orbs.map((orb) => getComputedStyle(orb).transitionDuration));
+  for (const duration of durations) expect(duration).toBe('0s');
 });

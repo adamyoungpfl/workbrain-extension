@@ -3,6 +3,10 @@ import type { CSSProperties, PointerEvent as ReactPointerEvent, KeyboardEvent as
 import type { FileOutlineNode } from '../../schema/flow.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
 import type { NodeDetail } from '../../core/flow/nodeDetails';
+import { globeLabelFor } from '../../core/flow/globeLabels';
+import { EDGE_LIGHT_LEVEL, edgeLight, globeNodeState, isUnifiedGlow } from '../../core/globe/illumination';
+import type { GlobeNodeState } from '../../core/globe/illumination';
+import type { SectionHealth } from '../../core/freshness/sectionHealth';
 import {
   CAMERA,
   ICOSAHEDRON_EDGES,
@@ -38,7 +42,7 @@ import './BrainGlobe.css';
  *
  * ── The five decisions worth knowing about ────────────────────────────────
  *
- * 1. **An answered node is a solid, lit orb.** Since V1.4 VB-23 it is one flat
+ * 1. **Every node is a solid orb.** Since V1.4 VB-23 an answered one is one flat
  *    fill — `color.globe.node-N-solid` — and not the three-stop radial with a
  *    white specular dot it wore in V1.2. The dot made twelve small circles look
  *    like twelve small glass beads; a saturated solid on a near-black field
@@ -46,8 +50,8 @@ import './BrainGlobe.css';
  *    trying to say. Solid is not flat: depth still moves radius, still moves
  *    group opacity, and now also sinks a far orb toward its own deep colour
  *    (`brainglobe-shade`), so the back of the solid recedes without any node
- *    changing shape. Unanswered nodes are untouched by this — they were never
- *    lit, and they are still a ring rather than a dimmer sphere.
+ *    changing shape. V1.5 VB-24 finished the thought — an unanswered node is
+ *    the same orb turned down rather than a hollow ring (see below).
  *
  * 2. **The interactive layer is HTML, not SVG.** The spheres, edges and field
  *    are SVG and entirely `aria-hidden`; every control and every label is a
@@ -101,6 +105,46 @@ import './BrainGlobe.css';
  *    exists in core/flow/nodeDetails.ts — see its `WIDE_VALUE_CHARS` comment
  *    for the measurement that settled these proportions against `2.1 Roles`
  *    with three records, the longest real sub-section there is.
+ *
+ * ── V1.5 VB-24 / VB-25 / VB-26: the illumination model ────────────────────
+ *
+ * One idea in three parts: **the globe stops being a diagram of progress and
+ * becomes a picture of a system coming alive.**
+ *
+ *  - **VB-24. No hollow rings.** An unanswered node used to be an outline with
+ *    a dot in it, which reads as a placeholder for an orb that does not exist
+ *    yet. Every node is a real part of the model from question one, so an
+ *    unanswered one is now the *same solid orb, turned down*: its own hue at
+ *    `color.globe.node-N-muted`, about half an answered orb's luminance, with
+ *    no bloom behind it and at the ring's old footprint (MUTED_R_SCALE). The
+ *    difference is brightness and saturation, not presence versus absence —
+ *    and it survives greyscale, because three separate cues carry it (the
+ *    brightness, the missing bloom, the smaller radius) on top of the state
+ *    word every node already says in its accessible name.
+ *
+ *  - **VB-25. Edges brighten from both ends.** An edge between two answered
+ *    sections is bright, an edge with one answered end is mid, an edge between
+ *    two untouched ones is dim — so illumination *spreads along the structure*
+ *    as the interview proceeds instead of appearing node by node. The rule is a
+ *    pure function of both endpoints in core/globe/illumination.ts, tested at
+ *    every combination; nothing here decides anything, it multiplies.
+ *
+ *  - **VB-25's complete state.** When every section is answered, complete and
+ *    fresh — VB-19's `done`, on VB-19's own clocks, never a second definition —
+ *    the whole model resolves to ONE colour (`color.globe.unified`) and stops
+ *    being a network of differently-lit parts. It is a **state**, not a reward:
+ *    no flourish fires when it arrives, nothing counts how long it is held, and
+ *    when a section goes stale it simply stops being true. Losing it reads as
+ *    "something is out of date", which is the information, and never as failure
+ *    (docs/GUARDRAILS.md rules out badges, streaks and guilt, and this is the
+ *    easiest line in the product to cross).
+ *
+ *  - **VB-26. Labels are icon lettering.** `type.label` from design/tokens.json
+ *    — 12px / 650 / +0.08em / uppercase — scaled for depth. That treatment is a
+ *    third wider than what the labels wore before and the token's own comment
+ *    caps it at "2–3 words", so the globe gets short display names from
+ *    core/flow/globeLabels.ts while the file keeps its real ones. The full name
+ *    stays on the node as its `title`.
  */
 
 // ── Geometry constants ─────────────────────────────────────────────────────
@@ -271,15 +315,60 @@ const BLOOM_SCALE = 2.7;
  * colour.
  */
 const SHADE_DEPTH = 0.42;
+
+/**
+ * V1.5 VB-24 — the two numbers that keep a muted orb an orb.
+ *
+ * `MUTED_SHADE_DEPTH` is the far-side sink for an unanswered node, and it is
+ * deliberately gentler than the answered one's 0.42. An answered orb can afford
+ * to sink: it has a bloom around it holding its place. A muted orb has nothing
+ * behind it, so the same 0.42 at the back of the solid took it to within 1.5:1
+ * of the stage — VB-24's "must not collapse into the field colour", exactly.
+ * At 0.24 the far muted orb still measures ~2:1 against the field it sits on and
+ * is still visibly further away than the near ones.
+ *
+ * `MUTED_R_SCALE` is the hollow ring's own old footprint, kept on purpose. The
+ * ring drew at 0.86 of the node radius, so an unanswered node occupies exactly
+ * the space it always did — and the small size difference is a second cue that
+ * survives greyscale, on top of the brightness and the missing bloom.
+ */
+const MUTED_SHADE_DEPTH = 0.24;
+const MUTED_R_SCALE = 0.86;
+
 const EDGE_W_MIN = 0.5;
 const EDGE_W_SPAN = 1.9;
+/**
+ * V1.5 VB-25. How much of an edge is structure and how much is illumination.
+ *
+ * The base line is the strut: it is drawn at the same weight whatever the two
+ * ends are doing, because the model is a real object from question one and its
+ * branches do not appear as they are earned. The near line is the light, and
+ * it is what core/globe/illumination.ts's level multiplies — so "two answered
+ * ends" is a bright branch and "neither" is a branch you can still see.
+ */
+const EDGE_BASE_OPACITY_MIN = 0.16;
+const EDGE_BASE_OPACITY_SPAN = 0.22;
+const EDGE_LIT_OPACITY = 0.86;
 /** Below this depth a label is behind the globe and is not shown at all.
  * Anything still shown stays at or above LABEL_OPACITY_MIN, which measures
  * 8.8:1 on the field — dimmer-with-distance must never mean under 4.5:1. */
 const LABEL_DEPTH_FLOOR = 0.5;
 const LABEL_OPACITY_MIN = 0.62;
-const LABEL_SIZE_MIN = 11;
-const LABEL_SIZE_SPAN = 3;
+/**
+ * V1.5 VB-26 — `type.label`, scaled for depth.
+ *
+ * design/tokens.json gives the treatment as 12px / 650 / +0.08em / uppercase.
+ * A globe cannot use one flat size — a far label has to read as further away —
+ * so the token's 12 is the middle of a range rather than a constant: 11.2 at
+ * the very back, 13.2 at the very front, and weight from 600 to 700 around the
+ * same centre. The floor is what matters and it is not a taste decision: 11px
+ * is the smallest text this product draws anywhere, and the label opacity floor
+ * above keeps even that at 8.8:1 on the field.
+ */
+const LABEL_SIZE_MIN = 11.2;
+const LABEL_SIZE_SPAN = 2;
+const LABEL_WEIGHT_MIN = 600;
+const LABEL_WEIGHT_SPAN = 100;
 
 // ── Which vertex carries which section ─────────────────────────────────────
 
@@ -331,12 +420,26 @@ export interface BrainGlobeProps {
   /**
    * How far each section has got, keyed by section id. Absent ids read as
    * `reached`, so the component is usable as a pure showcase with no flow
-   * state at all. State is never carried by colour alone: an untouched node
-   * is a hollow ring rather than a lit sphere, the section being written now
-   * wears a halo, and every one of the three says its state out loud in its
-   * own accessible name.
+   * state at all. State is never carried by colour alone: an untouched node is
+   * a smaller, dimmer orb with no bloom behind it (V1.5 VB-24), the section
+   * being written now wears a halo, and every one of the three says its state
+   * out loud in its own accessible name.
    */
   states?: Readonly<Record<string, OutlineNodeState>>;
+  /**
+   * V1.5 VB-25. Each section's health — `sectionHealthMap` from
+   * core/freshness/sectionHealth.ts, the same derivation the List mode's rows
+   * are drawn from. The globe reads exactly one thing from it: whether every
+   * section is answered, complete and still inside its own half-life, which is
+   * when the whole model resolves to one glow colour.
+   *
+   * Optional, and its absence simply means "not unified" rather than a bug: the
+   * globe is usable as a pure showcase with no flow state at all, and a picture
+   * must never be the thing that breaks a screen (docs/GUARDRAILS.md). Nothing
+   * about it is stored — it is recomputed from `wb:answers` per render, and the
+   * unified state is recomputed from it here.
+   */
+  health?: Readonly<Record<string, SectionHealth>>;
   /** Stage size in px, square. Below ~180px VB-14 hands over to the list; that
    * decision belongs to the drawer, not here. */
   size?: number;
@@ -556,7 +659,7 @@ function DetailGrid({ details }: { details: readonly NodeDetail[] }) {
 
 // ── The component ──────────────────────────────────────────────────────────
 
-export function BrainGlobe({ sections, states, size = 300, drift = false, details, onSelect }: BrainGlobeProps) {
+export function BrainGlobe({ sections, states, health, size = 300, drift = false, details, onSelect }: BrainGlobeProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const pinRefs = useRef<Array<HTMLButtonElement | null>>([]);
   /** The sub-node buttons, by child id. Keyed rather than indexed: which
@@ -1074,6 +1177,31 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
   };
   const stateOf = (section: FileOutlineNode): OutlineNodeState => states?.[section.id] ?? 'reached';
 
+  /**
+   * V1.5 VB-25 — the whole model as one lit object, or not.
+   *
+   * Derived here, on every render, from the health the caller derived from
+   * `wb:answers` on the same render. Nothing about it is stored and nothing
+   * about it is remembered: it is true while the file is complete and current
+   * and false the moment it is not, in both directions, silently.
+   */
+  const unified = isUnifiedGlow(shown, health);
+
+  /**
+   * What each of the twelve vertices is worth to the edges that meet it —
+   * `active`, `inactive`, or `structural` for the two poles that carry no
+   * section. Computed once per frame rather than per edge: thirty edges would
+   * otherwise ask the same question sixty times.
+   */
+  const lightByVertex = useMemo(() => {
+    const map = new Map<number, GlobeNodeState>();
+    ICOSAHEDRON_VERTICES.forEach((_, vertexIndex) => map.set(vertexIndex, 'structural'));
+    shown.forEach((section, index) => {
+      map.set(SECTION_VERTICES[index]!, globeNodeState(states?.[section.id] ?? 'reached'));
+    });
+    return map;
+  }, [shown, states]);
+
   /** Past this the fly-in has committed, and the sections left behind stop
    * being controls — they are not on screen to be pressed. */
   const inside = zoomClock >= 0.7 && flownIndex !== null;
@@ -1126,6 +1254,11 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
       data-moving={moving ? 'true' : 'false'}
       data-inside={inside ? 'true' : 'false'}
       data-reduced={reduced ? 'true' : 'false'}
+      /* V1.5 VB-25. One flag, one colour swap in the stylesheet — every orb,
+         every bloom and every edge at once. A state, not an event: it goes on
+         when the file is complete and current and off when it is not, with
+         nothing fired in either direction. */
+      data-unified={unified ? 'true' : 'false'}
       data-zoom={frame.ez.toFixed(3)}
       data-split={es.toFixed(3)}
       data-picked={pickedChildId ?? ''}
@@ -1162,17 +1295,24 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
         <rect className="brainglobe-field" x="-100" y="-100" width="200" height="200" fill={`url(#${uid}-field)`} />
 
         <g className="brainglobe-scene" transform={frame.transform}>
-          {/* Edges first, whole. Two lines each: a constant far-colour base
-              and a near-colour highlight whose opacity is depth, which gives a
-              continuous colour cue instead of a two-step one. */}
+          {/* Edges first, whole. Two lines each, and V1.5 VB-25 is the reason
+              they are two rather than one: the base is the STRUCT — drawn at
+              full weight whatever its ends are doing, because the model is a
+              real object from question one — and the near line is the LIGHT,
+              whose opacity is depth multiplied by what core/globe/illumination
+              says both endpoints are worth. Illumination therefore spreads
+              along the structure as sections fill in, instead of appearing
+              node by node. */}
           <g className="brainglobe-edges" opacity={(1 - frame.ez * 0.92).toFixed(3)}>
             {ICOSAHEDRON_EDGES.map(([a, b], i) => {
               const na = frame.nodes[a]!;
               const nb = frame.nodes[b]!;
               const t = (na.t + nb.t) / 2;
               const width = EDGE_W_MIN + t * EDGE_W_SPAN;
+              const light = edgeLight(lightByVertex.get(a)!, lightByVertex.get(b)!);
+              const level = EDGE_LIGHT_LEVEL[light];
               return (
-                <g key={i} data-edge={`${a}-${b}`}>
+                <g key={i} data-edge={`${a}-${b}`} data-edge-light={light}>
                   <line
                     className="brainglobe-edge-far"
                     x1={na.x}
@@ -1180,7 +1320,7 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
                     x2={nb.x}
                     y2={nb.y}
                     strokeWidth={width.toFixed(2)}
-                    strokeOpacity={(0.22 + t * 0.3).toFixed(3)}
+                    strokeOpacity={(EDGE_BASE_OPACITY_MIN + t * EDGE_BASE_OPACITY_SPAN).toFixed(3)}
                     strokeLinecap="round"
                   />
                   <line
@@ -1190,7 +1330,7 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
                     x2={nb.x}
                     y2={nb.y}
                     strokeWidth={width.toFixed(2)}
-                    strokeOpacity={(t ** 1.6 * 0.78).toFixed(3)}
+                    strokeOpacity={(t ** 1.6 * EDGE_LIT_OPACITY * level).toFixed(3)}
                     strokeLinecap="round"
                   />
                 </g>
@@ -1208,6 +1348,17 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
               const state = entry ? stateOf(entry.section) : 'reached';
               const structural = !entry;
               const lit = !structural && state !== 'untouched';
+              /**
+               * V1.5 VB-24. Not "no orb" — a turned-down one.
+               *
+               * The two structural vertices are muted always. They carry no
+               * section, so they can never be answered, and drawing them at
+               * full saturation made the poles the brightest things on an empty
+               * stage — the picture claiming progress where there is none. They
+               * still join the unified glow, because at that point the whole
+               * solid is one object and they are part of it.
+               */
+              const muted = structural || state === 'untouched';
               const isCentre = flownIndex !== null && entry?.index === flownIndex;
               const fade = flownIndex !== null && !isCentre ? 1 - frame.ez * 0.86 : 1;
               // The centre orb is the cluster's parent, so it leaves with the
@@ -1221,7 +1372,9 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
                 ? node.radius * 0.62
                 : isCentre
                   ? centreR / frame.sceneScale
-                  : node.radius;
+                  : muted
+                    ? node.radius * MUTED_R_SCALE
+                    : node.radius;
 
               return (
                 <g
@@ -1259,41 +1412,29 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
                       opacity={(isCentre ? 1 - frame.ez : 1).toFixed(3)}
                     />
                   )}
-                  {structural || state !== 'untouched' ? (
-                    // One flat fill — a solid orb, not a shaded bead (VB-23).
-                    // Depth is still carried, by the radius above, by the
-                    // group's opacity, and by the shade that follows.
-                    <g className="brainglobe-orb">
-                      <circle
-                        className={`brainglobe-sphere brainglobe-solid-${gradient}`}
-                        cx={node.x}
-                        cy={node.y}
-                        r={radius.toFixed(2)}
-                      />
-                      <circle
-                        className={`brainglobe-shade brainglobe-deep-${gradient}`}
-                        cx={node.x}
-                        cy={node.y}
-                        r={radius.toFixed(2)}
-                        opacity={((1 - node.t) * SHADE_DEPTH).toFixed(3)}
-                      />
-                    </g>
-                  ) : (
-                    // Not a dimmer sphere — a different shape. State is never
-                    // carried by colour alone (docs/GUARDRAILS.md), and an
-                    // outline against a solid reads instantly at 12px.
-                    <g className="brainglobe-hollow">
-                      <circle
-                        className="brainglobe-hollow-ring"
-                        cx={node.x}
-                        cy={node.y}
-                        r={(node.radius * 0.86).toFixed(2)}
-                        fill="none"
-                        strokeWidth={(0.7 + node.t * 0.8).toFixed(2)}
-                      />
-                      <circle className="brainglobe-hollow-dot" cx={node.x} cy={node.y} r={(node.radius * 0.2).toFixed(2)} />
-                    </g>
-                  )}
+                  {/* One flat fill — a solid orb, not a shaded bead (VB-23) —
+                      and V1.5 VB-24: EVERY node is one, answered or not. The
+                      unanswered one is the same object turned down: its own
+                      hue at `node-N-muted`, no bloom behind it, the hollow
+                      ring's old footprint. Depth is carried by the radius
+                      above, by the group's opacity, and by the shade below,
+                      which sinks a muted orb less far so it stays an object at
+                      the back of the solid. */}
+                  <g className="brainglobe-orb" data-lit={muted ? 'muted' : 'lit'}>
+                    <circle
+                      className={`brainglobe-sphere ${muted ? `brainglobe-muted-${gradient}` : `brainglobe-solid-${gradient}`}`}
+                      cx={node.x}
+                      cy={node.y}
+                      r={radius.toFixed(2)}
+                    />
+                    <circle
+                      className={`brainglobe-shade brainglobe-deep-${gradient}`}
+                      cx={node.x}
+                      cy={node.y}
+                      r={radius.toFixed(2)}
+                      opacity={((1 - node.t) * (muted ? MUTED_SHADE_DEPTH : SHADE_DEPTH)).toFixed(3)}
+                    />
+                  </g>
                 </g>
               );
             })}
@@ -1366,7 +1507,17 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
 
       {/* The whole interactive layer. Real buttons, real text, positioned in
           percentages over the stage. */}
-      <div className="brainglobe-pins" role="group" aria-label={S.brainGlobeStage} aria-describedby={`${uid}-help`}>
+      <div
+        className="brainglobe-pins"
+        role="group"
+        aria-label={S.brainGlobeStage}
+        // V1.5 VB-25. The unified glow is a colour, and a colour says nothing
+        // to a screen reader — so when it is true, the same fact is said in one
+        // plain sentence below. A description and never a live announcement:
+        // this is a state somebody can go and read, not an event fired at them
+        // (docs/GUARDRAILS.md — no congratulation, no notification surface).
+        aria-describedby={unified ? `${uid}-help ${uid}-state` : `${uid}-help`}
+      >
         {frame.order
           .map((vertexIndex) => ({ vertexIndex, entry: sectionByVertex.get(vertexIndex) }))
           .filter((item): item is { vertexIndex: number; entry: { section: FileOutlineNode; index: number } } => !!item.entry)
@@ -1392,7 +1543,9 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
               '--brainglobe-hit-size': `${orbPx.toFixed(1)}px`,
               '--brainglobe-label-opacity': visible ? labelOpacity.toFixed(3) : '0',
               '--brainglobe-label-size': `${(LABEL_SIZE_MIN + node.t * LABEL_SIZE_SPAN).toFixed(1)}px`,
-              '--brainglobe-label-weight': String(Math.round((450 + node.t * 150) / 50) * 50),
+              '--brainglobe-label-weight': String(
+                Math.round((LABEL_WEIGHT_MIN + node.t * LABEL_WEIGHT_SPAN) / 50) * 50,
+              ),
               '--brainglobe-label-shift': labelPlacement(left).shift,
               '--brainglobe-label-room': labelPlacement(left).room,
             } as CSSProperties;
@@ -1417,11 +1570,18 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
                 hidden={inside && (!isFlown || pickedChildId !== null)}
                 tabIndex={entry.index === activeIndex ? 0 : -1}
                 aria-pressed={isFlown}
-                // The state, in words, on every node — because the picture
-                // says it with a shape and a halo, and neither of those
-                // reaches a screen reader. The visible label is contained in
-                // the name, so voice control still works (WCAG 2.5.3).
-                aria-label={S.brainGlobeNode(entry.section.label, stateWord[state])}
+                // V1.5 VB-26. The name is the SHORT one — the words actually
+                // printed on the node — because WCAG 2.5.3 asks a control's
+                // name to contain its visible label, and voice control fails on
+                // a node called something nobody can see. The section's real
+                // name is on the `title` below, which is where the full text
+                // lives for anyone who wants it (the List mode prints it in
+                // full, and so does the file).
+                aria-label={S.brainGlobeNode(globeLabelFor(entry.section), stateWord[state])}
+                // The state, in words, on every node — because the picture says
+                // it with brightness, a missing bloom and a halo, and none of
+                // those reaches a screen reader.
+                title={entry.section.label}
                 onFocus={() => setActiveIndex(entry.index)}
                 onClick={() => {
                   if (draggedRef.current) return;
@@ -1434,7 +1594,7 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
               >
                 <span className="brainglobe-hit" aria-hidden="true" />
                 <span className="brainglobe-label" aria-hidden="true">
-                  {entry.section.label}
+                  {globeLabelFor(entry.section)}
                 </span>
               </button>
             );
@@ -1462,7 +1622,10 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
               // untouched either way.
               data-label-hidden={picked && es > 0.5 ? 'true' : 'false'}
               aria-pressed={picked}
-              aria-label={child.label}
+              // Short on the stage, full in the tooltip — VB-26, and the same
+              // 2.5.3 reasoning as the section pins above.
+              aria-label={globeLabelFor(child)}
+              title={child.label}
               style={
                 {
                   left: `${pct(x)}%`,
@@ -1490,7 +1653,7 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
             >
               <span className="brainglobe-hit" aria-hidden="true" />
               <span className="brainglobe-label" aria-hidden="true">
-                {child.label}
+                {globeLabelFor(child)}
               </span>
             </button>
           ),
@@ -1539,6 +1702,11 @@ export function BrainGlobe({ sections, states, size = 300, drift = false, detail
       <p className="brainglobe-sr" id={`${uid}-help`}>
         {S.brainGlobeHelp}
       </p>
+      {unified && (
+        <p className="brainglobe-sr" id={`${uid}-state`}>
+          {S.brainGlobeUnified}
+        </p>
+      )}
       <p className="brainglobe-sr" aria-live="polite">
         {pickedChild ? S.brainGlobeInside(pickedChild.label) : flownSection ? S.brainGlobeInside(flownSection.label) : ''}
       </p>

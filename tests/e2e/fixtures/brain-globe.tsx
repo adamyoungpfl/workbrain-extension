@@ -2,9 +2,13 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../../src/panel/tokens.css';
 import { BrainGlobe } from '../../../src/panel/components/BrainGlobe';
-import { contextOutline } from '../../../src/core/flow/flow';
+import { contextModules, contextOutline } from '../../../src/core/flow/flow';
 import { nodeDetailsByNode } from '../../../src/core/flow/nodeDetails';
-import type { FileOutlineNode } from '../../../src/schema/flow.types';
+import { outlineNodeState } from '../../../src/core/flow/outline';
+import { sectionHealthMap } from '../../../src/core/freshness/sectionHealth';
+import { halfLifeFor } from '../../../src/core/freshness/halfLives';
+import type { AnswerValue, FileOutlineNode } from '../../../src/schema/flow.types';
+import type { Answers } from '../../../src/schema/storage.types';
 import type { OutlineNodeState } from '../../../src/core/flow/outline';
 
 /**
@@ -77,13 +81,97 @@ const ANSWERS = {
 
 const DETAILS = nodeDetailsByNode(contextOutline, ANSWERS);
 
+/**
+ * V1.5 VB-24 / VB-25 — the three models the illumination has to be looked at
+ * in, chosen with `?model=`: `empty` (nothing answered), `half` (the default,
+ * and what every earlier spec drives), `complete` (answered, complete and
+ * fresh — the unified glow), and `stale` (the same file with one section past
+ * its own half-life, which must visibly break it).
+ *
+ * THE HEALTH IS DERIVED, NOT FABRICATED. Each model builds real `Answers` and
+ * runs the real `sectionHealthMap` over the real modules, so the unified state
+ * on this page is true for the same reason it would be true in the panel. A
+ * fixture that hand-wrote `state: 'done'` would prove the CSS and nothing else.
+ */
+type Model = 'empty' | 'half' | 'complete' | 'stale';
+
+const MODEL = ((): Model => {
+  const asked = new URLSearchParams(window.location.search).get('model');
+  return asked === 'empty' || asked === 'complete' || asked === 'stale' ? asked : 'half';
+})();
+
+const NOW = new Date('2026-08-23T12:00:00.000Z');
+const DAY_MS = 24 * 60 * 60 * 1000;
+const daysAgo = (n: number) => new Date(NOW.getTime() - n * DAY_MS).toISOString();
+
+function empty(): Answers {
+  return { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
+}
+
+/**
+ * Every top-level question in the flow, answered today.
+ *
+ * The gates are answered "no" on purpose, which is a real and complete way to
+ * finish `3. My World` and `4. Initiatives` — `skipIf` takes the whole block
+ * out of the interview, so those sections genuinely have one question and it
+ * genuinely has an answer (core/freshness/sectionHealth.ts's own note on what
+ * "8 of 8" counts).
+ */
+function complete(): Answers {
+  const values: Record<string, AnswerValue> = {};
+  const answeredAt: Record<string, string> = {};
+  for (const module of contextModules) {
+    for (const node of module.nodes) {
+      if ('fields' in node || node.kind === 'intro') continue;
+      const key = node.outKey ?? node.key ?? node.id;
+      values[key] = node.kind === 'yesno' ? 'no' : node.kind === 'multi' ? ['Answered'] : 'Answered';
+      answeredAt[key] = daysAgo(1);
+    }
+  }
+  return { values, repeatables: {}, answeredAt, reflectedAt: {} };
+}
+
+/** The complete file with one section left to age past its own clock. `4.
+ * Initiatives` runs the shortest one in the table — 90 days. */
+function stale(): Answers {
+  const answers = complete();
+  for (const id of contextOutline.find((node) => node.id === 'sec4')!.questionIds) {
+    if (answers.answeredAt[id]) answers.answeredAt[id] = daysAgo(halfLifeFor('sec4') + 30);
+  }
+  return answers;
+}
+
+const MODEL_ANSWERS: Record<Model, Answers> = {
+  empty: empty(),
+  half: { ...ANSWERS, answeredAt: {}, reflectedAt: {} },
+  complete: complete(),
+  stale: stale(),
+};
+
+const answers = MODEL_ANSWERS[MODEL];
+const HEALTH = sectionHealthMap(contextOutline, contextModules, answers, null, NOW);
+/** `half` keeps the hand-written states above, because every earlier spec on
+ * this page is written against them. The other three read theirs off the same
+ * answers the health does, so the picture cannot disagree with itself. */
+const MODEL_STATES: Record<string, OutlineNodeState> =
+  MODEL === 'half'
+    ? STATES
+    : Object.fromEntries(contextOutline.map((node) => [node.id, outlineNodeState(node, answers.values, null)]));
+
 function Harness() {
   const [selected, setSelected] = useState<FileOutlineNode | null>(null);
 
   return (
     <main style={{ width: 400, margin: '0 auto', padding: 20, boxSizing: 'border-box' }}>
       <h1 style={{ fontSize: 16, fontFamily: 'var(--font-sans)' }}>Brain globe harness</h1>
-      <BrainGlobe sections={contextOutline} states={STATES} size={300} details={DETAILS} onSelect={setSelected} />
+      <BrainGlobe
+        sections={contextOutline}
+        states={MODEL_STATES}
+        health={HEALTH}
+        size={300}
+        details={DETAILS}
+        onSelect={setSelected}
+      />
       {/* Where the drawer's own detail panel will go. Here it exists only so a
           test can read back what the globe reported without reaching into
           React's internals. */}

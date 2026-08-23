@@ -32,6 +32,7 @@ import {
   positionForQuestionId,
 } from '../../core/flow/outline';
 import { nodeDetailsByNode } from '../../core/flow/nodeDetails';
+import { sectionHealthMap } from '../../core/freshness/sectionHealth';
 import type { OutlineNodeState } from '../../core/flow/outline';
 import type { Position } from '../../core/flow/runner';
 import type { FileOutlineNode, Module } from '../../schema/flow.types';
@@ -358,6 +359,21 @@ export function FileDrawer({
 
   const reached = outline.filter((node) => states[node.id] !== 'untouched').length;
 
+  /**
+   * V1.5 VB-25. Every section's health, for the globe's unified glow — the same
+   * VB-19 derivation the List's own rows run (components/FileTree.tsx), so the
+   * two modes cannot disagree about whether a section is done or due.
+   *
+   * `now` is stamped once per panel session rather than read inline, for the
+   * same reason `generatedOn` above is: a fresh `new Date()` every render would
+   * change the memo's dependency every time and it would never hit.
+   */
+  const [now] = useState(() => new Date());
+  const health = useMemo(
+    () => sectionHealthMap(outline, modules, answers, currentQuestionId, now),
+    [outline, modules, answers, currentQuestionId, now],
+  );
+
   /** V1.4 VB-23. What each node holds, for the globe's sub-node split — the
    * same answers the file preview below is generated from, folded into cells
    * by core/flow/nodeDetails.ts. Derived per render like everything else here;
@@ -431,13 +447,10 @@ export function FileDrawer({
       layer.getBoundingClientRect(),
       outline.map((node) => ({
         id: node.id,
-        // Either the lit sphere or the hollow ring of an unreached section —
-        // whichever this node is drawn as (BrainGlobe.tsx).
-        brain: boxOf(
-          root.querySelector(
-            `.brainglobe-node[data-section-id="${node.id}"] .brainglobe-sphere, .brainglobe-node[data-section-id="${node.id}"] .brainglobe-hollow-ring`,
-          ),
-        ),
+        // The node's orb. Every section has one since V1.5 VB-24 — an
+        // unanswered one is the same solid turned down rather than a ring —
+        // so one selector covers all ten (BrainGlobe.tsx).
+        brain: boxOf(root.querySelector(`.brainglobe-node[data-section-id="${node.id}"] .brainglobe-sphere`)),
         // The row's state marker, not the whole row: it is the one thing in a
         // row that is the same shape as a node.
         list: boxOf(root.querySelector(`.filetree-row[data-node-id="${node.id}"] .filetree-glyph`)),
@@ -586,6 +599,7 @@ export function FileDrawer({
         <BrainGlobe
           sections={outline}
           states={states}
+          health={health}
           size={stageSize}
           drift={drifting}
           details={details}

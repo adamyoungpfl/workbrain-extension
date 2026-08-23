@@ -7,6 +7,7 @@ import { S } from '../strings';
 import { mount } from './testUtils';
 import type { FileOutlineNode } from '../../schema/flow.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
+import type { SectionHealth } from '../../core/freshness/sectionHealth';
 
 /**
  * V1.2 VB-14a.
@@ -159,8 +160,9 @@ describe('BrainGlobe — the drawing', () => {
 
     for (const sphere of container.querySelectorAll('.brainglobe-sphere')) {
       // A class the stylesheet fills from a token, not a `url(#…)` and not a
-      // colour of its own.
-      expect(sphere.getAttribute('class')).toMatch(/brainglobe-solid-[1-5]/);
+      // colour of its own. V1.5 VB-24: every node wears one of these — the lit
+      // five, or the same five turned down.
+      expect(sphere.getAttribute('class')).toMatch(/brainglobe-(solid|muted)-[1-5]/);
       expect(sphere.getAttribute('fill')).toBeNull();
     }
 
@@ -288,26 +290,61 @@ describe('BrainGlobe — state is never colour alone', () => {
     stubEnvironment({ reduce: false });
     const { container } = render();
     const nameOf = (id: string) => pin(container, id).getAttribute('aria-label');
-    expect(nameOf('sec1')).toBe(S.brainGlobeNode('1. About This Context', S.fileTreeStateReached));
-    expect(nameOf('sec3')).toBe(S.brainGlobeNode('3. My World', S.fileTreeStateCurrent));
-    expect(nameOf('sec4')).toBe(S.brainGlobeNode('4. Initiatives', S.fileTreeStateUntouched));
+    // V1.5 VB-26: the name is the short one, because it is the one printed on
+    // the node. The section's real name is on the same button's `title`.
+    expect(nameOf('sec1')).toBe(S.brainGlobeNode('Context', S.fileTreeStateReached));
+    expect(nameOf('sec3')).toBe(S.brainGlobeNode('My World', S.fileTreeStateCurrent));
+    expect(nameOf('sec4')).toBe(S.brainGlobeNode('Initiatives', S.fileTreeStateUntouched));
+    expect(pin(container, 'sec1').getAttribute('title')).toBe('1. About This Context');
     // The visible label is inside the name, so speaking it works (WCAG 2.5.3).
     for (const pin of sectionPins(container)) {
       expect(pin.getAttribute('aria-label')).toContain(pin.querySelector('.brainglobe-label')!.textContent);
     }
   });
 
-  it('draws an untouched section as a different shape, not a dimmer colour', () => {
+  it('V1.5 VB-24 — an untouched section is the same orb turned down, never a hollow ring', () => {
     stubEnvironment({ reduce: false });
     const { container } = render();
+    expect(container.querySelectorAll('.brainglobe-hollow-ring')).toHaveLength(0);
+    expect(container.querySelectorAll('.brainglobe-hollow-dot')).toHaveLength(0);
+
     const untouched = container.querySelector('.brainglobe-node[data-node-state="untouched"]')!;
-    expect(untouched.querySelector('.brainglobe-hollow-ring')).not.toBeNull();
-    expect(untouched.querySelector('.brainglobe-sphere')).toBeNull();
+    const muted = untouched.querySelector('.brainglobe-sphere')!;
+    // A real orb, in the muted half of the palette...
+    expect(muted.getAttribute('class')).toMatch(/brainglobe-muted-[1-5]/);
+    expect(untouched.querySelector('.brainglobe-orb')!.getAttribute('data-lit')).toBe('muted');
+    // ...and the difference is never brightness alone: no bloom behind it, a
+    // smaller radius, and the state word in its own accessible name.
     expect(untouched.querySelector('.brainglobe-bloom')).toBeNull();
 
     const reached = container.querySelector('.brainglobe-node[data-node-state="reached"]')!;
-    expect(reached.querySelector('.brainglobe-sphere')).not.toBeNull();
-    expect(reached.querySelector('.brainglobe-hollow-ring')).toBeNull();
+    expect(reached.querySelector('.brainglobe-sphere')!.getAttribute('class')).toMatch(/brainglobe-solid-[1-5]/);
+    expect(reached.querySelector('.brainglobe-bloom')).not.toBeNull();
+    expect(reached.querySelector('.brainglobe-orb')!.getAttribute('data-lit')).toBe('lit');
+  });
+
+  it('V1.5 VB-24 — a muted orb sinks less far at the back, so it stays an object', () => {
+    stubEnvironment({ reduce: false });
+    const { container } = render();
+    const shadeOf = (state: string) =>
+      [...container.querySelectorAll(`.brainglobe-node[data-node-state="${state}"]`)]
+        .map((node) => ({
+          depth: Number(node.getAttribute('data-depth')),
+          shade: Number(node.querySelector('.brainglobe-shade')!.getAttribute('opacity')),
+        }))
+        .sort((a, b) => a.depth - b.depth);
+
+    const muted = shadeOf('untouched');
+    const lit = shadeOf('reached');
+    // Depth still moves the shade, in both treatments...
+    expect(muted[0]!.shade).toBeGreaterThan(muted[muted.length - 1]!.shade);
+    // ...but the muted one is veiled less, at comparable depth, because it has
+    // no bloom holding its place.
+    const deepestMuted = muted[0]!;
+    const litAtSimilarDepth = lit.reduce((best, item) =>
+      Math.abs(item.depth - deepestMuted.depth) < Math.abs(best.depth - deepestMuted.depth) ? item : best,
+    );
+    expect(deepestMuted.shade).toBeLessThan(litAtSimilarDepth.shade);
   });
 
   it('gives the section being written now a halo, and only that one', () => {
@@ -326,6 +363,128 @@ describe('BrainGlobe — state is never colour alone', () => {
     const { container } = mount(<BrainGlobe sections={contextOutline} />);
     expect(container.querySelectorAll('.brainglobe-node[data-node-state="reached"]')).toHaveLength(10);
     expect(container.querySelectorAll('.brainglobe-hollow-ring')).toHaveLength(0);
+  });
+});
+
+// ── V1.5 VB-25 — edges that brighten, and the unified state ────────────────
+//
+// The rule itself is core/globe/illumination.ts's and is proven there at every
+// combination of endpoint states. What is proven here is that this component
+// applies it — to every one of the thirty edges, from both ends.
+
+const edges = (container: Element) =>
+  [...container.querySelectorAll('[data-edge]')].map((edge) => ({
+    light: edge.getAttribute('data-edge-light'),
+    lit: Number(edge.querySelector('.brainglobe-edge-near')!.getAttribute('stroke-opacity')),
+    depth:
+      (Number(container.querySelector(`.brainglobe-node[data-node-index="${edge.getAttribute('data-edge')!.split('-')[0]}"]`)!.getAttribute('data-depth')) +
+        Number(container.querySelector(`.brainglobe-node[data-node-index="${edge.getAttribute('data-edge')!.split('-')[1]}"]`)!.getAttribute('data-depth'))) /
+      2,
+  }));
+
+/** A health record in the given state. The numbers are the ones
+ * `isUnifiedGlow` reads; `sectionHealth.test.ts` owns how they are derived. */
+function health(state: 'done' | 'due' | 'partly', id: string): SectionHealth {
+  return {
+    id,
+    state,
+    total: 4,
+    answered: state === 'partly' ? 2 : 4,
+    skipped: 0,
+    left: state === 'partly' ? 2 : 0,
+    due: state === 'due' ? 1 : 0,
+    lastAnsweredAt: '2026-08-01T00:00:00.000Z',
+    ageDays: 22,
+    elapsed: { value: 22, unit: 'day' as const },
+    halfLifeDays: 365,
+  };
+}
+
+const healthMap = (state: 'done' | 'due' | 'partly', except?: { id: string; state: 'done' | 'due' | 'partly' }) =>
+  Object.fromEntries(
+    contextOutline.map((node) => [node.id, health(node.id === except?.id ? except.state : state, node.id)]),
+  );
+
+const ALL_REACHED: Record<string, OutlineNodeState> = Object.fromEntries(
+  contextOutline.map((node) => [node.id, 'reached' as OutlineNodeState]),
+);
+
+describe('BrainGlobe — VB-25, illumination spreads along the structure', () => {
+  it('gives every edge a brightness read from both of its ends', () => {
+    stubEnvironment({ reduce: false });
+    const { container } = render();
+    const drawn = edges(container);
+    expect(drawn).toHaveLength(30);
+    for (const edge of drawn) expect(['bright', 'mid', 'dim']).toContain(edge.light);
+    // The default fixture is part-answered, so all three are on screen at once.
+    expect(new Set(drawn.map((edge) => edge.light))).toEqual(new Set(['bright', 'mid', 'dim']));
+  });
+
+  it('a brighter edge is really brighter, at comparable depth', () => {
+    stubEnvironment({ reduce: false });
+    const { container } = render();
+    const near = edges(container).filter((edge) => edge.depth > 0.55);
+    const brightest = (light: string) => Math.max(...near.filter((e) => e.light === light).map((e) => e.lit));
+    expect(brightest('bright')).toBeGreaterThan(brightest('mid'));
+    expect(brightest('mid')).toBeGreaterThan(brightest('dim'));
+    // Dim is turned down, never off — the model is a real object from question
+    // one and its branches do not appear as they are earned.
+    expect(brightest('dim')).toBeGreaterThan(0);
+  });
+
+  it('an empty file draws every edge dim, and a full one draws every edge bright', () => {
+    stubEnvironment({ reduce: false });
+    const untouched: Record<string, OutlineNodeState> = Object.fromEntries(
+      contextOutline.map((node) => [node.id, 'untouched' as OutlineNodeState]),
+    );
+    const empty = render({ states: untouched });
+    expect(new Set(edges(empty.container).map((e) => e.light))).toEqual(new Set(['dim']));
+
+    const full = render({ states: ALL_REACHED });
+    expect(new Set(edges(full.container).map((e) => e.light))).toEqual(new Set(['bright']));
+  });
+});
+
+describe('BrainGlobe — VB-25, the unified state', () => {
+  it('resolves to one glow only when every section is answered, complete and fresh', () => {
+    stubEnvironment({ reduce: false });
+    const { container } = render({ states: ALL_REACHED, health: healthMap('done') });
+    expect(container.querySelector('.brainglobe')!.getAttribute('data-unified')).toBe('true');
+  });
+
+  it('one stale section breaks it — the glow is what maintenance buys', () => {
+    stubEnvironment({ reduce: false });
+    const { container } = render({
+      states: ALL_REACHED,
+      health: healthMap('done', { id: 'sec4', state: 'due' }),
+    });
+    expect(container.querySelector('.brainglobe')!.getAttribute('data-unified')).toBe('false');
+  });
+
+  it('says the state in words too, because a colour says nothing to a screen reader', () => {
+    stubEnvironment({ reduce: false });
+    const unified = render({ states: ALL_REACHED, health: healthMap('done') });
+    const said = [...unified.container.querySelectorAll('.brainglobe-sr')].map((p) => p.textContent);
+    expect(said).toContain(S.brainGlobeUnified);
+    const group = unified.container.querySelector('.brainglobe-pins')!;
+    const described = group.getAttribute('aria-describedby')!.split(' ');
+    expect(described).toHaveLength(2);
+    for (const id of described) expect(unified.container.querySelector(`#${id}`)).not.toBeNull();
+
+    // ...and there is no opposite sentence. Losing the glow is information the
+    // List already carries; a picture that announced it would be the nudge
+    // docs/GUARDRAILS.md rules out.
+    const broken = render({ states: ALL_REACHED, health: healthMap('done', { id: 'sec4', state: 'due' }) });
+    expect([...broken.container.querySelectorAll('.brainglobe-sr')].map((p) => p.textContent)).not.toContain(
+      S.brainGlobeUnified,
+    );
+    expect(broken.container.querySelector('.brainglobe-pins')!.getAttribute('aria-describedby')!.split(' ')).toHaveLength(1);
+  });
+
+  it('is not unified with no health at all — the showcase case is a state, not a claim', () => {
+    stubEnvironment({ reduce: false });
+    const { container } = mount(<BrainGlobe sections={contextOutline} states={ALL_REACHED} />);
+    expect(container.querySelector('.brainglobe')!.getAttribute('data-unified')).toBe('false');
   });
 });
 

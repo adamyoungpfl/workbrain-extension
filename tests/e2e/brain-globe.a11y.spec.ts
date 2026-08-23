@@ -96,9 +96,13 @@ test.describe('Brain globe — accessibility', () => {
     await expect(page.getByRole('region', { name: "What's in 2.1 Roles" })).toHaveCount(1);
     await expect(page.locator('.brainglobe-detail')).toHaveAttribute('tabindex', '0');
 
-    // The sub-node says it is open, in words rather than by position.
+    // The sub-node says it is open, in words rather than by position. Its name
+    // is the short one V1.5 VB-26 prints on the stage — a control's accessible
+    // name has to contain the words on it (WCAG 2.5.3) — and the section's real
+    // name is on the same button's `title`.
     await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toHaveAttribute('aria-pressed', 'true');
-    await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toHaveAttribute('aria-label', '2.1 Roles');
+    await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toHaveAttribute('aria-label', 'Roles');
+    await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toHaveAttribute('title', '2.1 Roles');
   });
 
   test('every section is named, and named with its state — never by colour alone', async ({ page }) => {
@@ -107,11 +111,24 @@ test.describe('Brain globe — accessibility', () => {
     await page.goto('/brain-globe.html');
     await page.waitForSelector('.brainglobe');
 
-    const names = await page
+    const named = await page
       .locator('.brainglobe-pin[data-section-id]')
-      .evaluateAll((pins) => pins.map((pin) => pin.getAttribute('aria-label') ?? ''));
-    expect(names).toHaveLength(10);
-    for (const name of names) expect(name).toMatch(/^\d+\. .+ — (Writing now|Written|Not yet)$/);
+      .evaluateAll((pins) =>
+        pins.map((pin) => ({
+          name: pin.getAttribute('aria-label') ?? '',
+          title: pin.getAttribute('title') ?? '',
+          shown: pin.querySelector('.brainglobe-label')?.textContent ?? '',
+        })),
+      );
+    expect(named).toHaveLength(10);
+    for (const pin of named) {
+      // V1.5 VB-26: the name is the short one printed on the node, plus the
+      // state in words. The file's real section name — the numbered one — is
+      // still there, as the node's `title`.
+      expect(pin.name).toMatch(/^[A-Z].* — (Writing now|Written|Not yet)$/);
+      expect(pin.name).toContain(pin.shown);
+      expect(pin.title).toMatch(/^\d+(\.\d+)?\. .+/);
+    }
 
     // The picture itself is hidden from assistive tech: it says the same
     // things with shapes, and the names above are what carries them.

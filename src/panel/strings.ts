@@ -323,6 +323,23 @@ export const S = {
   brainGlobeBack: 'Back to the whole file',
 
   /**
+   * V1.5 VB-25 — the unified glow, in words.
+   *
+   * The picture says it with one colour, and a colour says nothing to a screen
+   * reader, so the same fact is available as a description on the stage. It is
+   * a *description*, never announced: nothing about this state is an event.
+   *
+   * THE WORDING IS THE GUARDRAIL. "Every section is answered and up to date" is
+   * a statement about the file. It is not "well done", it is not a count of
+   * anything, and there is deliberately no opposite string — when the glow goes
+   * the sentence goes with it, because "some sections are out of date" said on
+   * a picture would be the nudge docs/GUARDRAILS.md rules out. What is out of
+   * date is already said, once, where it can be acted on: the section's own row
+   * in the List (components/SectionHealth.tsx).
+   */
+  brainGlobeUnified: 'Every section is answered and up to date.',
+
+  /**
    * V1.4 VB-23 — the split. Picking a sub-node moves it to the left and opens
    * a panel of what it holds on the right.
    *

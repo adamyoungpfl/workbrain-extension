@@ -75,6 +75,24 @@
 .brainglobe-solid-4 { fill: var(--globe-node-4-solid); }
 .brainglobe-solid-5 { fill: var(--globe-node-5-solid); }
 
+/* V1.5 VB-24. THE SAME ORB, TURNED DOWN. An unanswered node used to be a hollow
+   ring with a dot in it, which reads as a placeholder for an orb that does not
+   exist yet — and every node is a real part of the model from question one. So
+   it is the same solid, in its own hue at about half an answered orb's
+   luminance (design/tokens.json's `node-N-muted`), with the bloom left off and
+   a gentler depth shade (MUTED_SHADE_DEPTH in BrainGlobe.tsx) so the back of
+   the solid never sinks into the field.
+
+   The difference is brightness and saturation, not presence versus absence —
+   and it is never brightness ALONE (docs/GUARDRAILS.md): an answered orb also
+   carries a bloom and a slightly larger radius, and every node says its state
+   out loud in its accessible name. */
+.brainglobe-muted-1 { fill: var(--globe-node-1-muted); }
+.brainglobe-muted-2 { fill: var(--globe-node-2-muted); }
+.brainglobe-muted-3 { fill: var(--globe-node-3-muted); }
+.brainglobe-muted-4 { fill: var(--globe-node-4-muted); }
+.brainglobe-muted-5 { fill: var(--globe-node-5-muted); }
+
 /* The depth shade: the node's own deep colour, laid over the solid at an
    opacity the component folds out of depth. Its own colour rather than a
    neutral black, so a far orb is a darker version of itself and not a grey
@@ -108,16 +126,55 @@
   stroke-opacity: 0.85;
 }
 
-/* Not yet reached. Deliberately a different shape rather than a dimmer sphere,
-   for the same reason the file tree uses `[ ]` and `[x]` glyphs. */
-.brainglobe-hollow-ring {
-  stroke: var(--globe-edge);
-  stroke-opacity: 0.95;
+/* ── The unified glow (V1.5 VB-25) ───────────────────────────────────────── */
+
+/* WHEN EVERY SECTION IS ANSWERED, COMPLETE AND FRESH, THE MODEL BECOMES ONE
+   OBJECT. Not twelve orbs in five colours joined by edges of three
+   brightnesses — one colour, everywhere, at once. The predicate behind the flag
+   is core/globe/illumination.ts's `isUnifiedGlow`, which asks VB-19's own
+   section health rather than inventing a second definition of "done".
+
+   IT IS A STATE AND NOT A REWARD. There are no keyframes here, nothing fires,
+   nothing is counted, and the rules below are as true on the way out as on the
+   way in — a section going stale simply stops matching, and the picture goes
+   back to being a network. docs/GUARDRAILS.md rules out streaks, badges and
+   guilt-framed nudges; a colour that is true while a fact is true is none of
+   those. The 120ms is docs/design-system.html §06's value for a colour change,
+   which is exactly what this is.
+
+   The two structural nodes go with it: they are part of the object. */
+.brainglobe[data-unified='true'] .brainglobe-sphere {
+  fill: var(--globe-unified);
 }
 
-.brainglobe-hollow-dot {
-  fill: var(--globe-edge);
-  fill-opacity: 0.55;
+.brainglobe[data-unified='true'] .brainglobe-shade {
+  fill: var(--globe-unified-deep);
+}
+
+.brainglobe[data-unified='true'] .brainglobe-edge-near,
+.brainglobe[data-unified='true'] .brainglobe-link {
+  stroke: var(--globe-unified);
+}
+
+.brainglobe[data-unified='true'] .brainglobe-edge-far {
+  stroke: var(--globe-unified-deep);
+}
+
+/* The blooms too — the light around an orb has to be the light in it, or the
+   solid reads as one colour with five halos. */
+.brainglobe[data-unified='true'] .brainglobe-stop-mid-1,
+.brainglobe[data-unified='true'] .brainglobe-stop-mid-2,
+.brainglobe[data-unified='true'] .brainglobe-stop-mid-3,
+.brainglobe[data-unified='true'] .brainglobe-stop-mid-4,
+.brainglobe[data-unified='true'] .brainglobe-stop-mid-5 {
+  stop-color: var(--globe-unified-mid);
+}
+
+.brainglobe-sphere,
+.brainglobe-shade,
+.brainglobe-edge-near,
+.brainglobe-edge-far {
+  transition: fill var(--fast) var(--ease), stroke var(--fast) var(--ease);
 }
 
 /* ── The interactive overlay ─────────────────────────────────────────────── */
@@ -189,12 +246,27 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   text-align: center;
-  /* Size, weight and opacity are all folds over depth, set per frame by the
-     component. Far labels read as further away and stay legible: the dimmest
-     value the component will emit measures 8.8:1 on the field. */
-  font-size: var(--brainglobe-label-size, 13px);
-  font-weight: var(--brainglobe-label-weight, 500);
-  line-height: 1.25;
+  /* V1.5 VB-26 — THE INTERFACE'S OWN LABEL TREATMENT, not a second one.
+     design/tokens.json's `type.label`: 12px / 650 / +0.08em / uppercase, the
+     compact lettering the question eyebrow already wears. On the globe it is
+     scaled for depth — size and weight are folds over depth set per frame by
+     the component, centred on the token's own 12/650 — so a far label reads as
+     further away without ever dropping below 11px or below the opacity floor,
+     which measures 8.8:1 on the field.
+
+     The tracking is what forced core/flow/globeLabels.ts to exist: uppercase
+     with +0.08em is about a third wider than the text this carried before, and
+     the token's own note caps it at "2–3 words". The globe therefore draws
+     short names and keeps the real one in the node's `title`. */
+  font-size: var(--brainglobe-label-size, 12px);
+  font-weight: var(--brainglobe-label-weight, 650);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  /* The tracking is added AFTER the last character too, which is half a pixel
+     of empty space pulling a centred label off centre. Taken back here rather
+     than by nudging the transform, so the label's box is its text. */
+  padding-left: 0.08em;
+  line-height: 1.4;
   opacity: var(--brainglobe-label-opacity, 1);
   /* The settle. Motion carries shape; rest carries information. */
   transition: opacity var(--base) var(--ease);
@@ -457,7 +529,14 @@
    every node is still reachable and activatable from the keyboard. */
 @media (prefers-reduced-motion: reduce) {
   .brainglobe-label,
-  .brainglobe-pin .brainglobe-hit {
+  .brainglobe-pin .brainglobe-hit,
+  /* V1.5 VB-25: the unified glow arrives at exactly the same colour either
+     way. Under this preference it simply *is* the colour, with nothing to
+     watch — the state, and not a 120ms trip into it. */
+  .brainglobe-sphere,
+  .brainglobe-shade,
+  .brainglobe-edge-near,
+  .brainglobe-edge-far {
     transition: none;
   }
 
