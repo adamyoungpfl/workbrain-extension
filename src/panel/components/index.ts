@@ -47,3 +47,8 @@ export type { FileTreeProps } from './FileTree';
 
 export { BrainGlobe } from './BrainGlobe';
 export type { BrainGlobeProps } from './BrainGlobe';
+
+// V1.5 VB-28. Exported rather than kept private to Home because VB-27's node
+// summary renders the same recommendations against the same copy.
+export { RecommendationRow, RecommendationHide, recommendationCopy } from './Recommendation';
+export type { RecommendationRowProps, RecommendationHideProps, RecommendationCopy } from './Recommendation';

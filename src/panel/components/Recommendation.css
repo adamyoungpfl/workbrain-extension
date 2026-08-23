@@ -1,0 +1,145 @@
+/* V1.5 VB-28 — the quiet rows under the recommendation card.
+
+   DELIBERATELY QUIETER THAN `.filerow`. Home's file rows are the person's own
+   files and are the reason the screen exists; these are offers about them. So
+   they borrow FileRow's box — same radius, same divider, same 16px rhythm —
+   and sit on the surface tint rather than the canvas, which reads as "beside
+   the page" rather than "part of it" without needing a second colour.
+
+   NO SEVERITY COLOUR ANYWHERE. A recommendation is not an error and not a
+   warning. Amber in this system means "time is asking you to act"
+   (design/tokens.json), which the card above these already says once; saying
+   it again on three rows would make a page of alarms out of a page of offers.
+
+   NO `prefers-reduced-motion` BLOCK, on purpose. The only motion here is the
+   120ms hover/focus colour change docs/design-system.html §06 specifies for
+   exactly that — nothing enters, nothing moves, and nothing carries an
+   instruction that a still version could lose. `FileRow.css` holds the same
+   position for the same reason. */
+
+.rec-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rec-row {
+  box-sizing: border-box;
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.rec-row:hover {
+  border-color: var(--border-i);
+}
+
+/* The action. Takes the whole row bar the hide control, so the target is the
+   sentence itself rather than a small link at the end of it. */
+.rec-row-act {
+  flex: 1 1 auto;
+  min-width: 0;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  /* 12px vertical + two lines of text clears --target-min on its own; the
+     min-height is stated anyway so a one-line headline cannot drop under it. */
+  min-height: var(--target-min);
+  padding: 11px 4px 11px 14px;
+  border: 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: pointer;
+  color: var(--ink);
+  transition: background var(--fast) var(--ease);
+}
+
+.rec-row-act:hover {
+  background: var(--sunken);
+}
+
+.rec-row-act:focus-visible {
+  outline: 2px solid var(--primary);
+  /* Inset rather than offset: the row clips its children, so a 2px outside
+     ring would be cut off by `overflow: hidden` on the parent. */
+  outline-offset: -2px;
+}
+
+.rec-row-text {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.rec-row-headline {
+  display: block;
+  font-size: 13.5px;
+  line-height: 1.35;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+/* What pressing it does, printed. --ink-2 (6.96:1), not --ink-3, because this
+   is a real instruction rather than a caption. */
+.rec-row-action {
+  display: block;
+  margin-top: 3px;
+  font-size: 12.5px;
+  line-height: 1.3;
+  color: var(--ink-2);
+}
+
+.rec-row-chevron {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  color: var(--ink-3);
+}
+
+/* THE DECLINE, one control for the card and every row. Square, so it clears
+   the 44px floor in BOTH directions rather than only in height —
+   docs/GUARDRAILS.md, "every control >= 44 x 44, including icon buttons".
+   --ink-2 is 6.96:1, so the mark is real text contrast, not a ghost. */
+.rec-hide {
+  flex: 0 0 auto;
+  box-sizing: border-box;
+  width: var(--target-min);
+  height: var(--target-min);
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  cursor: pointer;
+  border-radius: var(--r-sm);
+  transition:
+    background var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+
+.rec-hide:hover {
+  background: var(--sunken);
+  color: var(--ink);
+}
+
+.rec-hide:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+/* In a row it takes a full-height column with a divider on its left — what
+   stops two adjacent targets reading as one control. */
+.rec-row-hide {
+  height: auto;
+  align-self: stretch;
+  border-left: 1px solid var(--divider);
+  border-radius: 0;
+}

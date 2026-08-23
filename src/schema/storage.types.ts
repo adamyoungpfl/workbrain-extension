@@ -62,6 +62,17 @@ export interface ReportState {
   };
 }
 
+/**
+ * V1.5 VB-28 — the one thing the recommendations engine persists.
+ *
+ * Recommendation id -> the ISO date it was hidden. Everything else about a
+ * recommendation is recomputed from `wb:answers` on every render; a dismissal
+ * cannot be, because the gap that produced the offer is still there. See
+ * src/core/recommend/dismissals.ts for the full justification, and
+ * docs/ARCHITECTURE.md's storage contract for where the key sits.
+ */
+export interface Dismissals { dismissed: Record<string, string>; }
+
 export interface Prefs {
   narrator: boolean;
   mic: boolean;
@@ -77,6 +88,12 @@ export interface LocalState {
   'wb:skills': Skill[];
   'wb:packs': PackSubscription[];
   'wb:report': ReportState;
+  /** V1.5 VB-28. Its own key rather than a field on another: it is written
+   * on a tap and read on every open, and docs/ARCHITECTURE.md splits local
+   * storage "by write frequency so a small change does not rewrite
+   * everything". Absent on every install before V1.5, which reads as "nothing
+   * hidden" with no migration — see core/recommend/dismissals.ts. */
+  'wb:recs': Dismissals;
 }
 /** sync — preferences only. ~100KB total, 8KB per item. Never put answers here. */
 export interface SyncState { 'wb:prefs': Prefs; }

@@ -6,7 +6,8 @@ import { Button } from './components';
 import { contextModules, contextOutline, buildProofModules } from '../core/flow/flow';
 import { serviceStepOptions } from '../core/flow/proofAdapter';
 import type { Position } from '../core/flow/runner';
-import { ROLES_BLOCK_ID, ROLE_DURABILITY_KEY } from '../core/freshness/nextMove';
+import { positionForTarget } from '../core/recommend/targets';
+import type { RecommendationTarget } from '../core/recommend/types';
 import { S } from './strings';
 
 /**
@@ -26,29 +27,6 @@ const proofModules = buildProofModules({
 
 type Surface = 'home' | 'flow';
 type FlowKind = 'context' | 'proof';
-
-/**
- * The one place Home's "answer this due role" deep-link becomes a real
- * `Position` (core/flow/runner.ts) — needs the actual ported `role_durability`
- * `Step` object, which core/freshness/nextMove.ts has no reason to import
- * just to hand back up (it only ever deals in record indices; see its own
- * header comment on staying a pure derivation over `wb:answers`). `roles`
- * is the one seeded repeatable in the real ported data (core/flow/runner.ts's
- * own comment on `reconcileSeededRepeatable` says the same) — `undefined`
- * here would mean that content changed shape, not a normal runtime case.
- */
-function roleDurabilityPosition(recordIndex: number): Position | undefined {
-  for (const module of contextModules) {
-    for (const node of module.nodes) {
-      if ('fields' in node && node.id === ROLES_BLOCK_ID) {
-        const step = node.fields.find((f) => f.id === ROLE_DURABILITY_KEY);
-        if (!step) return undefined;
-        return { kind: 'step', step, location: { in: 'repeatable', blockId: ROLES_BLOCK_ID, recordIndex } };
-      }
-    }
-  }
-  return undefined;
-}
 
 /**
  * Surface router (docs/ARCHITECTURE.md: 'home' | 'flow' | 'sheet' — no
@@ -71,9 +49,21 @@ export default function App() {
     setJumpTo(undefined);
   }
 
-  function openContext(recordIndexForDue?: number) {
+  /**
+   * V1.5 VB-28. The one place a recommendation's target becomes a real
+   * `Position` (core/flow/runner.ts) — building one needs the actual ported
+   * `Step` object, which core/recommend has no reason to hand around (it
+   * deals in ids and record indices; see its own header on staying a pure
+   * derivation over `wb:answers`). The lookup itself is pure and tested in
+   * core/recommend/targets.ts; this is only the wiring.
+   *
+   * `undefined` back means the ported content no longer holds that question,
+   * which lands the person on a plain resume rather than nowhere — see
+   * `positionForTarget`'s own note on degrading instead of throwing.
+   */
+  function openContext(target?: RecommendationTarget) {
     setFlowKind('context');
-    setJumpTo(recordIndexForDue !== undefined ? roleDurabilityPosition(recordIndexForDue) : undefined);
+    setJumpTo(target ? positionForTarget(contextModules, target) : undefined);
     setSurface('flow');
   }
 
@@ -84,7 +74,7 @@ export default function App() {
   }
 
   if (surface === 'home') {
-    return <Home onStart={() => openContext()} onAnswerDue={(recordIndex) => openContext(recordIndex)} onOpenProof={openProof} />;
+    return <Home onStart={() => openContext()} onOpenTarget={(target) => openContext(target)} onOpenProof={openProof} />;
   }
 
   if (flowKind === 'proof') {

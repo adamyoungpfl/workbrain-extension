@@ -100,6 +100,54 @@
   max-width: 32ch;
 }
 
+/* V1.5 VB-28 — the one "what to do next" region: the card, then at most two
+   quiet rows under it. One region, not two surfaces (see Home.tsx's header).
+   The rows sit closer to the card than `.home`'s own 20px rhythm, because
+   they belong to it rather than following it. */
+.home-recs {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* Focus lands here programmatically when a recommendation is hidden, so the
+   keyboard user stays where they were instead of falling to the top of the
+   document. A pointer-driven hide must not then paint a ring around a third
+   of the screen, so the resting `:focus` is suppressed and `:focus-visible`
+   carries the full 2px --primary ring — the equal replacement
+   docs/GUARDRAILS.md requires whenever an outline is removed. */
+.home-recs:focus {
+  outline: none;
+}
+.home-recs:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-md);
+}
+
+/* The card and its decline. The cross sits in the corner rather than beside
+   the primary button: an offer's decline must always be available and must
+   never compete with its accept (docs/design-system.html §04 — exactly one
+   primary), and at 400px a second button on that line wraps under the first,
+   which reads as a weaker second action rather than a way out. */
+.home-rec-card {
+  position: relative;
+}
+
+/* Room for the cross, so a long headline wraps before it reaches it rather
+   than running underneath. 44px target + 8px of air. */
+.home-rec-card .banner {
+  padding-right: 52px;
+}
+
+.home-rec-card-hide {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  /* The amber card's own ink. --ink-2 on --amber-tint is 6.4:1. */
+  color: var(--ink-2);
+}
+
 .home-hint {
   font-size: 13px;
   color: var(--ink-3);

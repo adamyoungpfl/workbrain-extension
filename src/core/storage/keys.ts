@@ -12,6 +12,10 @@ export const LOCAL_KEYS: readonly (keyof LocalState)[] = [
   'wb:skills',
   'wb:packs',
   'wb:report',
+  // V1.5 VB-28 — hidden recommendations. Additive: an install that predates
+  // it simply has no such key, which `readDismissals` reads as "nothing
+  // hidden", so there is nothing to migrate from.
+  'wb:recs',
 ] as const;
 
 /** Preferences only — chrome.storage.sync caps near 100KB total, 8KB/item. Never answers. */

@@ -459,6 +459,79 @@ export const S = {
    * duration). */
   agoLabel: (n: number, unit: 'day' | 'month' | 'year') => `${n} ${unit}${n === 1 ? '' : 's'}`,
 
+  /**
+   * V1.5 VB-28 — recommendations.
+   *
+   * ── THE ONE DISTINCTION THIS WHOLE BLOCK IS ABOUT ────────────────────────
+   *
+   * A recommendation says what would help and why. It never scolds, never
+   * counts days of neglect, never frames absence as failure. VB-28 gives the
+   * test case in one line: *"Most people name three or four people here" is
+   * help. "You've only named one" is a scold.* Every string below is written
+   * against that line, and the difference is always the same two things —
+   * whose failure the sentence is about, and whether it points forward.
+   *
+   *   `recEntitiesHeading` is the guardrail's own example, kept verbatim.
+   *   It says what is usual, not what they lack, and the word "only" appears
+   *   nowhere in this block on purpose.
+   *
+   *   `recStaleWhy` prints a DATE — "the newest answer in it is 7 months
+   *   old". A date is a real metric (docs/GUARDRAILS.md) and is simply true.
+   *   "You have not touched this in 214 days" is the same arithmetic turned
+   *   into an accusation, and it is the sentence this file must never grow.
+   *
+   *   `recEmptyWhy` says what the questions DO, and never mentions that they
+   *   were passed on. The person already knows; repeating it back is the
+   *   product arguing with a decision they made.
+   *
+   * ── ROLE STALENESS REUSES R1-12'S OWN WORDS ──────────────────────────────
+   *
+   * A role marked current that has aged past its clock is the recommendation
+   * Home has been making since R1-12, and it keeps `driftHeading`,
+   * `driftBecauseRole` and `driftAction` exactly as approved. One fact said
+   * in one set of words — the same reason `sectionStateDue` reuses `badgeDue`.
+   *
+   * ── EVERY ONE NAMES A CONCRETE ACTION ────────────────────────────────────
+   *
+   * The button is a verb the person would say and names the thing it opens:
+   * "Open My World", "Add another name", "Answer one question". Never "Fix",
+   * never "Improve", never "Review" — none of those tell you what happens
+   * when you press them.
+   */
+  recsLabel: 'What would help',
+  /**
+   * The decline, and it is never printed — the control is a cross in the
+   * corner (components/Recommendation.tsx explains why it is not a second
+   * button beside the primary). It names the recommendation it hides, so
+   * three of them in a list are three distinct controls to a screen reader
+   * rather than three identical "Hide" buttons.
+   */
+  recHideNamed: (what: string) => `Hide this: ${what}`,
+  recStaleHeading: (section: string) => `${section} could be out of date`,
+  /** `ago` arrives already worded by `agoLabel` — "7 months", "3 days". */
+  recStaleWhy: (ago: string) => `The newest answer in it is ${ago} old.`,
+  recOpenSection: (section: string) => `Open ${section}`,
+
+  recEmptyHeading: (section: string) => `Worth another look: ${section}`,
+  recEmptyWhy: (n: number) =>
+    n === 1
+      ? 'One question here, and it changes how AI writes for you.'
+      : `${wordFor(n)} questions here, and they change how AI writes for you.`,
+
+  recSuccessHeading: (name: string) => `Tell AI what done looks like for ${name}`,
+  recSuccessWhy: 'With a finish line, AI can tell you if a plan gets there.',
+
+  recEntitiesHeading: 'Most people name three or four here',
+  /** Forward, not backward. An earlier draft read "AI only knows the people
+   * you name for it", which is true and is still a sentence about what they
+   * have not done. This one is about what the next minute buys. */
+  recEntitiesWhy: 'Every name you add is one more thing AI can use.',
+  recEntitiesAction: 'Add another name',
+
+  recInitiativesHeading: 'Most people list two or three projects',
+  recInitiativesWhy: 'AI helps most with the work it already knows about.',
+  recInitiativesAction: 'Add a project',
+
   // ---------------------------------------------------------------- welcome
   // V1.1 VB-01. The first thing a person ever sees. Approved verbatim in
   // docs/V1.1-COPY-DRAFT.md — do not reword any of these four lines.

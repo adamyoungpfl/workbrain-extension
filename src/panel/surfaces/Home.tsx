@@ -1,10 +1,21 @@
-import { useEffect, useState } from 'react';
-import { Banner, BrandMark, Button, FileRow } from '../components';
+import { useEffect, useRef, useState } from 'react';
+import {
+  Banner,
+  BrandMark,
+  Button,
+  FileRow,
+  RecommendationHide,
+  RecommendationRow,
+  recommendationCopy,
+} from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { computeNextMove, mostRecentAnsweredAt } from '../../core/freshness/nextMove';
 import { daysSince } from '../../core/freshness/clocks';
+import { recommend, topRecommendations } from '../../core/recommend/engine';
+import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
+import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
 import { FileActions } from './FileActions';
-import type { Answers } from '../../schema/storage.types';
+import type { Answers, Dismissals } from '../../schema/storage.types';
 import { S } from '../strings';
 import './Home.css';
 
@@ -13,11 +24,17 @@ export interface HomeProps {
    * actually leaves off, see core/flow/runner.ts's `findPosition`) the
    * Context interview with no deep-link override. */
   onStart: () => void;
-  /** Deep-links straight into the given due role's `role_durability`
-   * question — App.tsx turns this record index into the real `Position`,
+  /**
+   * Deep-links straight at the question a recommendation is about. App.tsx
+   * turns the target into a real `Position` (core/recommend/targets.ts),
    * since building one needs the actual ported `Step` object, which this
-   * component has no reason to import just to hand back up. */
-  onAnswerDue: (recordIndex: number) => void;
+   * component has no reason to import just to hand back up.
+   *
+   * V1.5 VB-28 widened this from R1-12's `onAnswerDue(recordIndex)`: the due
+   * role is now one recommendation among several, and every one of them
+   * deep-links the same way rather than each new one growing its own prop.
+   */
+  onOpenTarget: (target: RecommendationTarget) => void;
   onOpenProof: () => void;
 }
 
@@ -46,14 +63,71 @@ const PERSON_ICON = (
  * `Flow`'s own "done" screen now hands off here immediately (see
  * `onDone` on Flow.tsx) rather than showing its own end state, which is
  * what makes Download/Import (`FileActions`) live here instead of there.
+ *
+ * ── V1.5 VB-28: THE NEXT-MOVE CARD BECAME THE TOP RECOMMENDATION ──────────
+ *
+ * VB-28 asks for recommendations on Home and says, in as many words: "this
+ * either extends [the next-move card] or sits beside it — decide deliberately
+ * rather than shipping two competing 'what to do next' surfaces on one
+ * screen."
+ *
+ * IT EXTENDS IT. There is still exactly one "what to do next" region on this
+ * screen, in the same place, in the same box: the strongest recommendation is
+ * drawn as the card, and the next two sit under it as quiet rows. A card plus
+ * its overflow, not a card and a rival list further down the page.
+ *
+ * That is affordable because R1-12's card was already a recommendation with
+ * one rule in it — a role marked current whose answer has aged past its clock.
+ * `core/recommend/engine.ts` folds that exact rule in by calling
+ * `computeNextMove`, not by re-deriving it, so the card cannot start
+ * disagreeing with itself; and `recommendationCopy` reuses R1-12's approved
+ * `driftHeading` / `driftBecauseRole` / `driftAction` verbatim, so when that
+ * rule is the strongest the screen says precisely what it said before.
+ *
+ * The alternative — a "Suggestions" block below the file list — was rejected
+ * for the reason VB-28 names: two boxes on one 400px screen, both answering
+ * "what should I do", competing for the same glance.
+ *
+ * `computeNextMove` keeps its other two jobs untouched: whether anything has
+ * been started at all, and the file row's own freshness badge. Those are facts
+ * about the file, not offers about it.
+ *
+ * ── The one thing here that is persisted ─────────────────────────────────
+ *
+ * `wb:recs`, the ids of recommendations the person has hidden. Everything
+ * else on this screen is derived on every render, as it always was. See
+ * core/recommend/dismissals.ts for why that exception exists and why it is
+ * the only one.
+ *
+ * ── One of VB-28's open questions is deliberately left open ──────────────
+ *
+ * "Whether a recommendation ever links to the paid human services the spec
+ * says this product qualifies people for, or stays purely self-serve" needs
+ * Adam, so nothing here answers it. Every recommendation is self-serve and
+ * opens a question in their own file. The quiet "Talk to a person" row lower
+ * down this screen is untouched and still the only route to a human, which is
+ * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onAnswerDue, onOpenProof }: HomeProps) {
+export function Home({ onStart, onOpenTarget, onOpenProof }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
+  const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
+  /**
+   * Where focus goes when a recommendation is hidden.
+   *
+   * The control that was focused has just unmounted, and leaving focus on a
+   * detached node drops a keyboard user back at the top of the document.
+   * Moving it to the region keeps them where they were, and the region's
+   * `aria-live` says what happened without anything stealing focus
+   * (docs/GUARDRAILS.md's accessibility floor).
+   */
+  const recsRef = useRef<HTMLElement | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    void getLocal('wb:answers').then((stored) => {
-      if (!cancelled) setAnswersState(stored ?? EMPTY_ANSWERS);
+    void Promise.all([getLocal('wb:answers'), getLocal('wb:recs')]).then(([storedAnswers, storedRecs]) => {
+      if (cancelled) return;
+      setAnswersState(storedAnswers ?? EMPTY_ANSWERS);
+      setDismissals(readDismissals(storedRecs));
     });
     return () => {
       cancelled = true;
@@ -68,10 +142,30 @@ export function Home({ onStart, onAnswerDue, onOpenProof }: HomeProps) {
     return result.ok;
   }
 
+  /**
+   * The one write this feature makes. Optimistic: the row goes immediately
+   * and the key is written after, because a hide that visibly hesitates
+   * reads as a control that did not work. A failed write leaves the
+   * in-memory state alone and says nothing — the offer comes back on the
+   * next open, which is the quietest possible degradation and the one
+   * docs/GUARDRAILS.md asks for.
+   */
+  function hide(rec: Recommendation) {
+    const next = dismiss(dismissals, rec.id, new Date());
+    setDismissals(next);
+    recsRef.current?.focus();
+    void setLocal('wb:recs', next);
+  }
+
   const nextMove = computeNextMove(answers);
   const hasStarted = nextMove.kind !== 'start';
   const lastAnswered = mostRecentAnsweredAt(answers);
   const ageDays = lastAnswered ? daysSince(lastAnswered, new Date()) : null;
+
+  // Derived fresh on every render, exactly like everything else here — the
+  // engine holds no state and the dismissal list is a filter over its output.
+  const recs = topRecommendations(recommend({ answers, now: new Date(), dismissals }));
+  const [top, ...rest] = recs;
 
   const fileSubtitle = !hasStarted
     ? S.notBuiltYet
@@ -83,6 +177,8 @@ export function Home({ onStart, onAnswerDue, onOpenProof }: HomeProps) {
       : nextMove.kind === 'current'
         ? { label: S.badgeCurrent, tone: 'fresh' as const }
         : undefined;
+
+  const topCopy = top ? recommendationCopy(top) : null;
 
   return (
     <div className="home">
@@ -112,26 +208,63 @@ export function Home({ onStart, onAnswerDue, onOpenProof }: HomeProps) {
         </section>
       )}
 
-      {nextMove.kind === 'due' && (
-        <Banner
-          title={S.driftHeading(nextMove.items.length)}
-          action={
-            <Button type="button" variant="primary" onClick={() => onAnswerDue(nextMove.items[0]!.recordIndex)}>
-              {S.driftAction(nextMove.items.length)}
-            </Button>
-          }
+      {/* V1.5 VB-28 — the one "what to do next" region. One card, then at most
+          two quiet rows. `aria-live="polite"` announces a hide without moving
+          anybody: docs/OPEN.md #1 settled that drift is surfaced on open and
+          never pushed, and this region is that surface. */}
+      {hasStarted && (
+        <section
+          className="home-recs"
+          ref={recsRef}
+          tabIndex={-1}
+          aria-label={S.recsLabel}
+          aria-live="polite"
         >
-          {S.driftBecauseRole(
-            nextMove.items[0]!.role,
-            S.agoLabel(nextMove.items[0]!.elapsed.value, nextMove.items[0]!.elapsed.unit),
-          )}
-        </Banner>
-      )}
+          {top && topCopy ? (
+            <>
+              {/* The card is the strongest recommendation, drawn in the
+                  next-move card's own box. Its decline is the same corner
+                  control every row carries, rather than a second button
+                  beside the primary — see components/Recommendation.tsx. */}
+              <div className="home-rec-card">
+                <Banner
+                  title={topCopy.headline}
+                  action={
+                    <Button type="button" variant="primary" onClick={() => onOpenTarget(top.target)}>
+                      {topCopy.action}
+                    </Button>
+                  }
+                >
+                  {topCopy.why}
+                </Banner>
+                <RecommendationHide rec={top} onHide={hide} className="home-rec-card-hide" />
+              </div>
 
-      {nextMove.kind === 'current' && (
-        <Banner variant="good" title={S.allCurrentHeading}>
-          {S.allCurrentSub}
-        </Banner>
+              {rest.length > 0 && (
+                <ul className="rec-list">
+                  {rest.map((rec) => (
+                    <RecommendationRow
+                      key={rec.id}
+                      rec={rec}
+                      onAct={(r) => onOpenTarget(r.target)}
+                      onHide={hide}
+                    />
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : (
+            /* Nothing to offer. Said once, as a state, never as praise — the
+               same line R1-12 shipped, now reached whenever the engine is
+               silent. It lives INSIDE this region rather than beside it so
+               that hiding the last recommendation replaces the region's
+               content instead of unmounting the element focus just moved to,
+               and so the live region announces what replaced it. */
+            <Banner variant="good" title={S.allCurrentHeading}>
+              {S.allCurrentSub}
+            </Banner>
+          )}
+        </section>
       )}
 
       <p className="home-section-label">{S.homeFilesLabel}</p>

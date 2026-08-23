@@ -70,6 +70,7 @@ data by month four and starts telling people untrue things about their own file.
 | `wb:skills` | Skills the person authored | |
 | `wb:packs` | `{ url, revision, cachedAt, skills }[]` | Last good copy kept |
 | `wb:report` | Baseline metrics + score history | Small, derived once, then appended |
+| `wb:recs` | `{ dismissed: Record<recommendationId, isoDate> }` | V1.5 VB-28. The **only** thing the recommendations engine persists — see below |
 
 ### `wb:answers`, precisely
 
@@ -96,6 +97,24 @@ Established by `core/flow/runner.ts` (R1-06), which is the only code that writes
 - **Which question is "current" is never stored.** It's recomputed from this data on every render
   by walking the flow's modules for the first unanswered, non-`skipIf`'d node — see
   `findPosition` in `core/flow/runner.ts`, and "Nothing derived is stored" below.
+
+### `wb:recs`, and why it is the one exception
+
+V1.5 VB-28. The recommendations engine (`core/recommend/`) is a pure fold over `wb:answers` plus a
+clock: the list is rebuilt on every render and no recommendation, ranking or count is ever written
+down. **A dismissal is not derived.** It is a decision the person made about an offer, it exists
+nowhere else, and there is no way to honour "hide this permanently" by recomputation — the gap that
+produced the recommendation is still there, which is the whole reason it was dismissed.
+
+- Keyed by the recommendation's own stable id (`section-stale:sec3`, `initiative-no-success:1`).
+  Ids never contain a timestamp, so a hidden offer cannot come back by ageing.
+- The value is the ISO date it was hidden. Permanent today; the date is stored so a future
+  "seasonal" policy is a filter over existing data rather than a migration.
+- Nothing is ever pruned. Sweeping a dismissal whose recommendation has stopped firing would
+  re-raise the exact offer the person turned down the next time it fired again.
+- Local, not `sync`: a dismissal is a fact about one file on one device, not a preference.
+- Additive — absent on every install before V1.5, which reads as "nothing hidden", so
+  `SCHEMA_VERSION` does not move. See `core/recommend/dismissals.ts`.
 
 `chrome.storage.sync` — **preferences only**. It caps near 100 KB total with an 8 KB per-item limit,
 so it cannot hold a context file. Never put answers here.
