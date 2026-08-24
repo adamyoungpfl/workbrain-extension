@@ -12,6 +12,12 @@ import {
   markSilhouettePoints,
   pointsAttribute,
 } from '../../core/geometry/markSilhouette';
+import {
+  ORBIT_PERIOD_MS,
+  ORBIT_STILL,
+  orbitFrame,
+  orbitViewAt,
+} from '../../core/geometry/markOrbit';
 import { ease } from '../../core/motion/easing';
 import './BrandMark.css';
 
@@ -78,6 +84,22 @@ import './BrandMark.css';
  * shortcut. The solid's vertical axis is a two-fold axis of symmetry, so its
  * shadow — which has no colour to give the game away — repeats exactly every
  * 180°. Turning it 360° would play the same animation twice.
+ *
+ * V1.7 VB-34 — THE ORBIT
+ * `spin="orbit"` runs the splash's camera: `core/geometry/markOrbit`'s
+ * drifting perspective path instead of this file's steady one-axis turn.
+ * Everything else about the component is unchanged, and that is the reason it
+ * lives here rather than in a second component. The slot machinery below, the
+ * decision to check the motion preference before scheduling anything, the
+ * `aria-hidden` contract, the gradient ids, the entrance — all of it is the
+ * same job, and a `SplashMark.tsx` would have been a copy of it that could
+ * quietly stop matching. What differs is one expression: which frame the
+ * clock maps to.
+ *
+ * Orbit is a graph-only mode. The silhouette exists because the mark has to
+ * survive being 24px; the splash's mark is 128px with nothing else competing
+ * for the eye, which is the one place the full node graph is unambiguously
+ * the right drawing.
  */
 
 /** The pose `mark.svg` exports, and so what a still mark draws. */
@@ -150,6 +172,12 @@ export function turnFor(variant: BrandMarkVariant): number {
 export type BrandMarkSpin =
   /** Turns for as long as it is on screen. The welcome screen's mark. */
   | 'continuous'
+  /**
+   * V1.7 VB-34. Drifts around the solid on the splash's camera path — yaw,
+   * pitch and perspective together, easing between four viewpoints, looping
+   * seamlessly. Graph variant only. See core/geometry/markOrbit.
+   */
+  | 'orbit'
   /** Turns once when `spinCue` changes, then settles on the still pose. */
   | 'once'
   /** Never moves, and never schedules a frame. */
@@ -182,12 +210,26 @@ export function BrandMark({
   entrance = true,
   className,
 }: BrandMarkProps) {
+  /**
+   * The frame React writes into the markup, and the one the mark returns to
+   * whenever it is not allowed to move.
+   *
+   * Mode-dependent, because "still" means a different picture for the two
+   * cameras: `markFrame(MARK_STATIC_ANGLE)` is the pose `mark.svg` exports,
+   * and `ORBIT_STILL` is the splash camera's first viewpoint — the same pose,
+   * framed and lensed the way the splash frames and lenses everything else it
+   * draws. Under `prefers-reduced-motion` this is the entire component: it is
+   * rendered once and nothing is ever scheduled, so the still frame has to be
+   * right in the markup rather than painted in afterwards.
+   */
+  const base: MarkFrame = spin === 'orbit' ? ORBIT_STILL : STILL;
+
   const lines = useRef<(SVGLineElement | null)[]>([]);
   const circles = useRef<(SVGCircleElement | null)[]>([]);
   const outline = useRef<SVGPolygonElement | null>(null);
   /** Which gradient each slot currently shows, so `fill` is only rewritten on
    * the frames where a node has actually overtaken another. */
-  const fills = useRef<number[]>(STILL.nodes.map((n) => n.gradient));
+  const fills = useRef<number[]>(base.nodes.map((n) => n.gradient));
 
   useEffect(() => {
     if (spin === 'none') return;
@@ -245,7 +287,9 @@ export function BrandMark({
       raf = 0;
       // Whatever stopped it, the mark lands on the pose we ship still. Motion
       // is never the thing carrying the meaning.
-      if (live) draw(MARK_STATIC_ANGLE);
+      if (!live) return;
+      if (spin === 'orbit') paint(ORBIT_STILL);
+      else draw(MARK_STATIC_ANGLE);
     }
 
     function runContinuous() {
@@ -253,6 +297,22 @@ export function BrandMark({
         // The absolute clock, not time-since-mount: a remount must not snap
         // the mark back to its start pose. See spinAngleAt's own note.
         draw(spinAngleAt(performance.now(), MARK_SPIN_MS));
+        raf = requestAnimationFrame(frame);
+      }
+      raf = requestAnimationFrame(frame);
+    }
+
+    /**
+     * V1.7 VB-34. The same loop, reading a camera path instead of an angle.
+     *
+     * Phased off the absolute clock for the same reason `runContinuous` is,
+     * and it matters more here: the splash's own fade-out remounts nothing,
+     * but a panel that re-renders mid-drift must not jump the camera back to
+     * viewpoint one. `orbitViewAt` is periodic on that clock, so it cannot.
+     */
+    function runOrbit() {
+      function frame() {
+        paint(orbitFrame(orbitViewAt(performance.now(), ORBIT_PERIOD_MS)));
         raf = requestAnimationFrame(frame);
       }
       raf = requestAnimationFrame(frame);
@@ -283,7 +343,8 @@ export function BrandMark({
 
     function start() {
       if (raf || query.matches) return;
-      if (spin === 'continuous') runContinuous();
+      if (spin === 'orbit') runOrbit();
+      else if (spin === 'continuous') runContinuous();
       else runOnce();
     }
 
@@ -362,7 +423,7 @@ export function BrandMark({
         ))}
       </defs>
       <g className="brand-mark-edges">
-        {STILL.edges.map((e, i) => (
+        {base.edges.map((e, i) => (
           <line
             key={i}
             ref={(el) => {
@@ -378,7 +439,7 @@ export function BrandMark({
           />
         ))}
       </g>
-      {STILL.nodes.map((n, i) => (
+      {base.nodes.map((n, i) => (
         // Keyed by slot, not by vertex. The slots are depth positions —
         // furthest first — and which vertex occupies each one changes as the
         // solid turns. Keying by vertex would make React reorder twelve

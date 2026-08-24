@@ -1,0 +1,105 @@
+/* V1.7 VB-34 — the splash. See Splash.tsx's header for the behaviour; this is
+   only how it looks.
+
+   IT IS THE PANEL'S OWN CANVAS, NOT A DARK CINEMA CARD.
+   The obvious move for something described as "cinematic" is a dark field —
+   the drawer's globe already has one (`--globe-field`), and the mark reads
+   well on it. It is the wrong move here. This surface is on top of a white
+   400px panel and lasts two seconds, so a dark card means a white panel, a
+   dark flash, and a white panel again, in a strip down the side of somebody's
+   browser. The cinema is the camera move, not the palette. On `--canvas` the
+   splash instead *becomes* Home as it fades, which is what it actually is.
+
+   Every value below is a token. No hex may exist outside the generated
+   tokens.css — see docs/GUARDRAILS.md and scripts/audit.mjs rule 2. */
+
+.splash {
+  position: fixed;
+  inset: 0;
+  /* Above everything the panel can raise. `Sheet` sits at 50 and is the
+     highest surface in the product; the splash covers even that, because it
+     covers the panel as a whole rather than a region of it. */
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: var(--canvas);
+  transition: opacity var(--slow) var(--ease);
+}
+
+/* A breath of the panel's own primary tint behind the mark, so the mark sits
+   in a space rather than on a sheet. `--canvas` at the far stop means the
+   tint has nowhere to end — it dissolves into the same white the panel is. */
+.splash::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(78% 42% at 50% 42%, var(--primary-tint), var(--canvas) 68%);
+}
+
+.splash-lockup {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 2px;
+  /* Off true centre. An optically centred lockup sits slightly high — the
+     tagline's descenders and the eye's own bias both pull the perceived
+     middle down — and this is the whole composition, so it is worth the two
+     percent. */
+  transform: translateY(-4%);
+}
+
+/* Matches the welcome screen's wordmark exactly: the same size, the same
+   weight, the same one violet (`--violet`, 6.47:1 on canvas). The splash and
+   the screen it fades into show the same lockup, so the fade is a dissolve
+   between two states of one thing and not a cut between two designs. */
+.splash-wordmark {
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 680;
+  letter-spacing: -0.022em;
+  color: var(--violet);
+  margin: 14px 0 0;
+}
+
+.splash-tagline {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin: 10px 0 0;
+}
+
+/* One sentence per line — see `taglineLines` in Splash.tsx for why the break
+   is placed rather than left to the browser. Each line may still wrap on its
+   own if the panel is dragged narrow; this sets where the *first* break goes,
+   it does not forbid a second. */
+.splash-tagline-line {
+  display: block;
+}
+
+/* Leaving. `pointer-events: none` from the first frame of the fade, so the
+   panel underneath is live for the whole 320ms rather than only after it. */
+.splash[data-leaving='on'] {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The still equivalent carries the same three things — mark, name, tagline —
+   so there is nothing the motion was saying that has to be said another way
+   (docs/GUARDRAILS.md). Two things are switched off here. The camera is
+   stopped in BrandMark, before a frame is ever scheduled. The fade is
+   cancelled here, because a fade the person cannot see is 320ms of an
+   invisible overlay in the way; Splash.tsx hands over immediately instead,
+   and this makes sure nothing lingers if it ever did not. */
+@media (prefers-reduced-motion: reduce) {
+  .splash {
+    transition: none;
+  }
+
+  .splash[data-leaving='on'] {
+    display: none;
+  }
+}

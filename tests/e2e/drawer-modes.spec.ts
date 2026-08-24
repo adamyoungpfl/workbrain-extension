@@ -124,6 +124,11 @@ async function openMidInterview(
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V1.7 VB-34. The splash runs its own animation loop for the first couple
+  // of seconds of a session, including the 320ms it spends fading out after
+  // it has stopped taking clicks. The frame-rate baselines below mean "the
+  // status mark, and nothing else", so wait until that is true.
+  await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /Context\.md/ }).click();
   await page.waitForSelector('.flow');
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {

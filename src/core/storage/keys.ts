@@ -1,4 +1,4 @@
-import type { LocalState, SyncState } from '../../schema/storage.types';
+import type { LocalState, SessionState, SyncState } from '../../schema/storage.types';
 
 /**
  * The five wb:* keys, split by which chrome.storage area they live in.
@@ -21,5 +21,14 @@ export const LOCAL_KEYS: readonly (keyof LocalState)[] = [
 /** Preferences only — chrome.storage.sync caps near 100KB total, 8KB/item. Never answers. */
 export const SYNC_KEYS: readonly (keyof SyncState)[] = ['wb:prefs'] as const;
 
+/**
+ * V1.7 VB-34. In-memory for the life of the browser session and gone after
+ * it — see the SessionState comment in schema/storage.types.ts for why the
+ * splash needs an area that outlives a panel close and nothing else.
+ * Deliberately absent from `reset.ts`: there is nothing here to lose.
+ */
+export const SESSION_KEYS: readonly (keyof SessionState)[] = ['wb:splash'] as const;
+
 export type LocalKey = (typeof LOCAL_KEYS)[number];
 export type SyncKey = (typeof SYNC_KEYS)[number];
+export type SessionKey = (typeof SESSION_KEYS)[number];

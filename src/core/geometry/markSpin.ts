@@ -126,6 +126,18 @@ export interface ProjectedVertex {
   readonly y: number;
   /** Depth, 0 = furthest this frame, 1 = nearest. Drives every shading ramp. */
   readonly depth: number;
+  /**
+   * Perspective magnification at this vertex — how much nearer-to-camera made
+   * it. Absent, or 1, for the mark's own orthographic camera, where every
+   * vertex is drawn at the same scale by definition.
+   *
+   * Added for V1.7 VB-34's splash, whose camera is a *perspective* one that
+   * dollies. Under a moving perspective camera a near node has to grow by
+   * more than the depth ramp alone says, or the solid reads as a flat
+   * drawing being tilted rather than a shape the camera is moving around.
+   * Optional so the orthographic path below is byte-for-byte what it was.
+   */
+  readonly gain?: number;
 }
 
 /**
@@ -209,18 +221,39 @@ function round2(n: number): number {
  * to the DOM writes the caller then does with it.
  */
 export function markFrame(spinAngle: number): MarkFrame {
-  const p = projectMark(spinAngle);
+  return markFrameFrom(projectMark(spinAngle));
+}
+
+/**
+ * The shading, given vertices somebody else projected. V1.7 VB-34.
+ *
+ * Split out of `markFrame` above so the splash's own camera
+ * (`./markOrbit.ts` — a drifting perspective orbit rather than this file's
+ * fixed orthographic one) draws the mark with *these* ramps rather than a
+ * second set of numbers that could drift from the export's. The two cameras
+ * are genuinely different and correctly live apart; the six constants that
+ * decide how a node's distance reads as size and brightness are the logo, and
+ * there is only one of those.
+ *
+ * `markFrame(MARK_STATIC_ANGLE)` is still exactly `mark.svg`, attribute for
+ * attribute — `gain` defaults to 1 and the arithmetic below is unchanged.
+ */
+export function markFrameFrom(points: readonly ProjectedVertex[]): MarkFrame {
+  const p = points;
 
   const edges = ICOSAHEDRON_EDGES.map(([a, b]) => {
     const pa = p[a]!;
     const pb = p[b]!;
     const depth = (pa.depth + pb.depth) / 2;
+    // An edge spans two vertices, so its width takes the mean of their
+    // magnifications — the same averaging its depth already uses.
+    const gain = ((pa.gain ?? 1) + (pb.gain ?? 1)) / 2;
     return {
       x1: round2(pa.x),
       y1: round2(pa.y),
       x2: round2(pb.x),
       y2: round2(pb.y),
-      width: round2(EDGE_W_FAR + depth * EDGE_W_SPAN),
+      width: round2((EDGE_W_FAR + depth * EDGE_W_SPAN) * gain),
       opacity: round2(EDGE_O_FAR + depth * EDGE_O_SPAN),
     };
   });
@@ -230,7 +263,7 @@ export function markFrame(spinAngle: number): MarkFrame {
       vertex,
       cx: round2(v.x),
       cy: round2(v.y),
-      r: round2(NODE_R_NEAR + v.depth * NODE_R_SPAN),
+      r: round2((NODE_R_NEAR + v.depth * NODE_R_SPAN) * (v.gain ?? 1)),
       gradient: NODE_GRADIENT[vertex]!,
       depth: v.depth,
     }))

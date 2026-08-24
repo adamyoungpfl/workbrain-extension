@@ -7,6 +7,12 @@ import {
   markSilhouettePoints,
   pointsAttribute,
 } from '../../core/geometry/markSilhouette';
+import {
+  ORBIT_PERIOD_MS,
+  ORBIT_STILL,
+  orbitFrame,
+  orbitViewAt,
+} from '../../core/geometry/markOrbit';
 import { mount } from './testUtils';
 
 /**
@@ -463,5 +469,91 @@ describe('BrandMark — the entrance', () => {
     expect(container.querySelector('svg')!.getAttribute('class')).toBe(
       'brand-mark flowprogress-mark',
     );
+  });
+});
+
+/**
+ * V1.7 VB-34 — the splash's camera, driven through this component.
+ *
+ * `markOrbit.test.ts` owns the path itself: that it loops without a seam,
+ * that it drifts rather than spins, that it stays inside the viewBox. What is
+ * left for here is what the component does with it — the mode really runs the
+ * orbit and not the spin, the still frame in the markup is the orbit's own,
+ * and reduced motion never schedules a frame.
+ */
+describe('BrandMark — the orbit', () => {
+  it('renders the orbit’s own still frame, not the logo’s spin pose', () => {
+    const { container } = mount(<BrandMark spin="orbit" />);
+    const drawn = pose(container);
+    expect(drawn).toEqual(
+      ORBIT_STILL.nodes.map((n) => `${n.cx},${n.cy},${n.r}`),
+    );
+    // And it is genuinely a different camera to the one `spin="none"` uses.
+    const other = mount(<BrandMark spin="none" />);
+    expect(drawn).not.toEqual(pose(other.container));
+  });
+
+  it('is still an icosahedron: twelve nodes, thirty edges', () => {
+    const { container } = mount(<BrandMark spin="orbit" />);
+    expect(container.querySelectorAll('circle')).toHaveLength(12);
+    expect(container.querySelectorAll('line')).toHaveLength(30);
+  });
+
+  it('drifts on the camera path, and keeps drawing the whole solid as it does', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = mount(<BrandMark spin="orbit" />);
+
+    const poses = new Set<string>();
+    for (let i = 0; i < 20; i++) {
+      env.tick(80);
+      poses.add(pose(container).join(' '));
+      expect(container.querySelectorAll('circle')).toHaveLength(12);
+    }
+    expect(poses.size).toBeGreaterThan(10);
+  });
+
+  it('draws exactly what the pure camera says, at the moment it says it', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = mount(<BrandMark spin="orbit" />);
+    env.tick(1234);
+    // `stubEnvironment` starts its clock at 1000 and `tick` advances it, so
+    // the frame just painted is the path's value at exactly 2234ms.
+    const expected = orbitFrame(orbitViewAt(2234, ORBIT_PERIOD_MS));
+    expect(pose(container)).toEqual(expected.nodes.map((n) => `${n.cx},${n.cy},${n.r}`));
+  });
+
+  it('schedules nothing at all when motion is not wanted', () => {
+    const env = stubEnvironment({ reduce: true });
+    const { container } = mount(<BrandMark spin="orbit" />);
+    expect(env.frameCount).toBe(0);
+    env.advance(5000);
+    expect(env.frameCount).toBe(0);
+    // And what is on screen is the composed still frame, not a blank slot set.
+    expect(pose(container)).toEqual(ORBIT_STILL.nodes.map((n) => `${n.cx},${n.cy},${n.r}`));
+  });
+
+  it('settles onto the orbit’s still frame if the preference turns on mid-drift', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = mount(<BrandMark spin="orbit" />);
+    env.tick(600);
+    expect(pose(container)).not.toEqual(ORBIT_STILL.nodes.map((n) => `${n.cx},${n.cy},${n.r}`));
+
+    env.setReduce(true);
+    expect(pose(container)).toEqual(ORBIT_STILL.nodes.map((n) => `${n.cx},${n.cy},${n.r}`));
+    const settled = env.frameCount;
+    env.tick(16);
+    expect(env.frameCount).toBe(settled);
+  });
+
+  it('picks the camera up from the absolute clock, so a remount does not restart it', () => {
+    const env = stubEnvironment({ reduce: false });
+    const first = mount(<BrandMark spin="orbit" />);
+    env.tick(700);
+    const before = pose(first.container);
+    first.unmount();
+
+    const second = mount(<BrandMark spin="orbit" />);
+    env.tick(0);
+    expect(pose(second.container)).toEqual(before);
   });
 });

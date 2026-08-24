@@ -305,7 +305,10 @@ test.describe('Home surface (R1-12)', () => {
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
 
-    const mark = page.locator('svg.brand-mark');
+    // Scoped to the welcome card. V1.7 VB-34 put a second mark on the panel —
+    // the splash's, on top for the first couple of seconds of a session — and
+    // this test is about the welcome screen's own.
+    const mark = page.locator('.home-welcome svg.brand-mark');
     await expect(mark).toBeVisible();
     // The still version carries everything the motion did: the whole mark,
     // at full opacity, immediately.
@@ -336,7 +339,10 @@ test.describe('Home surface (R1-12)', () => {
     const page = await openPanel(context, id);
     await expect(page.locator('.home-welcome')).toHaveCount(0);
     await expect(page.getByText('Teach AI who you are, once.')).toHaveCount(0);
-    await expect(page.locator('svg.brand-mark')).toHaveCount(0);
+    // Scoped to the panel's own surface. V1.7 VB-34's splash draws a mark of
+    // its own, over the top, for the first couple of seconds of a session —
+    // the claim here is that *Home* has no lockup once an answer exists.
+    await expect(page.locator('.home svg.brand-mark')).toHaveCount(0);
 
     await context.close();
   });

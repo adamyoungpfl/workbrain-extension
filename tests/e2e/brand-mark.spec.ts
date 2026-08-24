@@ -124,6 +124,11 @@ async function launchPanel(
 
 /** Walks Home into the interview, where the status-bar mark lives. */
 async function intoTheFlow(page: Page) {
+  // V1.7 VB-34. The splash animates over the panel for the first couple of
+  // seconds of a session and keeps its loop running through its own fade.
+  // The frame-cost measurements below are about the status mark's steady
+  // state, so let the splash finish leaving before walking in.
+  await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /Context\.md/ }).click();
   await page.waitForSelector('.flow');
 }

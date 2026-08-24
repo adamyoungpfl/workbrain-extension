@@ -111,7 +111,10 @@ test.describe('welcome screen — accessibility', () => {
   test('the mark says nothing to a screen reader, and the name is real text instead', async () => {
     const { context, page } = await openWelcome();
     // Nothing in the mark is exposed: no role, no label, no title element.
-    const mark = page.locator('svg.brand-mark');
+    // Scoped to the welcome lockup. V1.7 VB-34 put a second mark on the
+    // panel — the splash's — and it makes the same aria-hidden claim, which
+    // its own spec asserts.
+    const mark = page.locator('.home-welcome svg.brand-mark');
     await expect(mark).toHaveAttribute('aria-hidden', 'true');
     await expect(mark.locator('title')).toHaveCount(0);
     // What is exposed is text, selectable and translatable.

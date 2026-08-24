@@ -98,4 +98,28 @@ export interface LocalState {
 /** sync — preferences only. ~100KB total, 8KB per item. Never put answers here. */
 export interface SyncState { 'wb:prefs': Prefs; }
 
+/**
+ * session — V1.7 VB-34. `chrome.storage.session` lives in memory and is thrown
+ * away when the browser closes. It is not persistence and must never be used
+ * as any: nothing here survives a restart, nothing here is backed up by
+ * Download, and nothing here is worth a migration.
+ *
+ * It exists because the panel document does not. Chrome destroys the side
+ * panel's document when the panel is closed, so a plain module variable means
+ * "once per panel open", and Adam's decision on VB-34 is once per *session*:
+ * "a splash on every open is a toll booth on someone's own work". A session
+ * outliving a panel close is exactly what this area is, and the only area
+ * that is.
+ *
+ * This does not weaken docs/ARCHITECTURE.md's "nothing derived is stored".
+ * That rule is about `chrome.storage.local` and `.sync` — the two areas that
+ * are still there tomorrow. `wb:splash` records nothing about the person, is
+ * unreadable five minutes after they quit Chrome, and needs no permission
+ * beyond the `storage` one already granted at install.
+ */
+export interface SessionState {
+  /** True once the splash has been shown in this browser session. */
+  'wb:splash': boolean;
+}
+
 export interface Migration { to: number; up(state: unknown): unknown; }

@@ -1,7 +1,7 @@
-import type { LocalState, Meta, Migration, SyncState } from '../../schema/storage.types';
+import type { LocalState, Meta, Migration, SessionState, SyncState } from '../../schema/storage.types';
 import { SCHEMA_VERSION } from '../../schema/storage.types';
 import { LOCAL_KEYS } from './keys';
-import type { LocalKey, SyncKey } from './keys';
+import type { LocalKey, SessionKey, SyncKey } from './keys';
 import { migrations as productionMigrations, runMigrations } from './migrations';
 
 /**
@@ -24,6 +24,20 @@ const chromeLocal: StorageBackend = {
 const chromeSync: StorageBackend = {
   get: (keys) => chrome.storage.sync.get(keys as string[]),
   set: (items) => chrome.storage.sync.set(items),
+};
+
+/**
+ * V1.7 VB-34. In-memory, cleared when Chrome closes, and needs no permission
+ * beyond the `storage` one granted at install.
+ *
+ * Degrades to nothing rather than throwing: `chrome.storage.session` arrived
+ * in Chrome 102, and an older browser simply behaves as though the session
+ * had only just begun. That is the correct failure for the one thing stored
+ * here — the splash shows again — and it means no caller has to feature-test.
+ */
+const chromeSession: StorageBackend = {
+  get: (keys) => chrome.storage.session?.get(keys as string[]) ?? Promise.resolve({}),
+  set: (items) => chrome.storage.session?.set(items) ?? Promise.resolve(),
 };
 
 export type StorageResult<T> = { ok: true; data: T } | { ok: false; reason: string };
@@ -67,6 +81,30 @@ export function setSync<K extends SyncKey>(
   key: K,
   value: SyncState[K],
   backend: StorageBackend = chromeSync,
+): Promise<StorageResult<void>> {
+  return toResult(backend.set({ [key]: value }));
+}
+
+/**
+ * V1.7 VB-34. Reads the current browser session's ephemeral state.
+ *
+ * Never throws, and answers `undefined` for anything it cannot read — see
+ * `chromeSession` above. Session state is only ever used for things whose
+ * absence is harmless.
+ */
+export async function getSession<K extends SessionKey>(
+  key: K,
+  backend: StorageBackend = chromeSession,
+): Promise<SessionState[K] | undefined> {
+  const result = await backend.get([key]).catch(() => ({}) as Record<string, unknown>);
+  return result[key] as SessionState[K] | undefined;
+}
+
+/** Never throws. A failed write means the splash shows once more. */
+export function setSession<K extends SessionKey>(
+  key: K,
+  value: SessionState[K],
+  backend: StorageBackend = chromeSession,
 ): Promise<StorageResult<void>> {
   return toResult(backend.set({ [key]: value }));
 }

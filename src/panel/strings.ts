@@ -593,6 +593,18 @@ export const S = {
   recInitiativesWhy: 'AI helps most with the work it already knows about.',
   recInitiativesAction: 'Add a project',
 
+  // ---------------------------------------------------------------- splash
+  /**
+   * V1.7 VB-34. The one line on the splash, under the lockup. Adam's wording,
+   * quoted in docs/V1.7-REFINEMENT.md — do not reword it.
+   *
+   * It is the whole product in seven words, and it is the reason the splash
+   * is worth a couple of seconds of anyone's session: it says what the deal
+   * is before a single question is asked. Two short sentences, both active,
+   * both second person, no product noun in either.
+   */
+  splashTagline: 'AI does the work. You do the thinking.',
+
   // ---------------------------------------------------------------- welcome
   // V1.1 VB-01. The first thing a person ever sees. Approved verbatim in
   // docs/V1.1-COPY-DRAFT.md — do not reword any of these four lines.

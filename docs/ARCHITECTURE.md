@@ -123,6 +123,26 @@ so it cannot hold a context file. Never put answers here.
 |---|---|
 | `wb:prefs` | narrator, mic, reduced motion, hand-off posture, subscribed pack URLs |
 
+`chrome.storage.session` — **in memory, for one browser session**. V1.7 VB-34. Cleared when Chrome
+closes, never written to disk, covered by the `storage` permission already granted at install.
+
+| Key | Holds |
+|---|---|
+| `wb:splash` | `true` once the splash has been shown in this browser session |
+
+This is not a third place to keep things. It exists because the side panel's **document** does not
+survive the panel being closed, so a module variable means "once per panel open" and nothing in the
+panel can say "once per session" without it. The rule for what may live here is strict:
+
+- Nothing about the person, and nothing they typed. It is unreadable minutes after they quit.
+- Nothing whose loss matters. Every read must have a correct answer for `undefined` — for
+  `wb:splash` that answer is "show the splash", which costs a person nothing.
+- No migration, no export, no reset. `core/storage/reset.ts` deliberately does not clear it.
+
+"Nothing derived is stored" below is a rule about `local` and `sync` — the two areas that are still
+there tomorrow, and so the two that can start telling a person something untrue about their own
+file. A flag that cannot outlive the browser cannot do that.
+
 ### Migrations
 
 Forward-only, one function per version bump, in `core/storage/migrations.ts`:
