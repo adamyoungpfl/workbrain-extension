@@ -88,6 +88,23 @@ npm run build:dev        # dist/ WITH the reset chord
 
 Ship and verify with `npm run build` / `npm run check`, which are what `npm run zip` uses.
 
+**`npm run dev` writes a `dist/` that is NOT self-contained.** It is a shell that loads its code
+from the Vite dev server on `localhost:5173`, so it only works while that terminal is running. Stop
+the server and the loaded extension breaks with:
+
+```
+Failed to construct 'WebSocket': The URL 'ws://localhost:undefined/?token=…' is invalid
+WebSocket connection to 'ws://localhost:5173/?token=…' failed: net::ERR_CONNECTION_REFUSED
+Uncaught (in promise) TypeError: Failed to fetch
+```
+
+That is not a code problem — the `dist/` is pointing at a dev server that is gone. Fix it with
+`npm run build:dev` and reload the extension.
+
+**Rule of thumb:** use `npm run dev` only while you are actively iterating with the terminal open.
+The moment you want a build that survives on its own — dogfooding later, handing it to someone,
+walking away — use `npm run build:dev`.
+
 **Dev-only voice audition (V1.3 VB-18).** In a development build the panel's console has `wbVoices`:
 `list()` every installed voice, `roles()` to see which voice each narrator role resolves to,
 `play('Samantha')` for one, and `audition()` to hear every English voice read a real interview
