@@ -1,4 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { CSSProperties } from 'react';
 import type { FileOutlineNode, Module } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import { navigationTargetFor, outlineNodeState, repeatableBlocksForNode } from '../../core/flow/outline';
@@ -9,6 +10,8 @@ import { sectionLife } from '../../core/freshness/sectionLife';
 import { splitRevealedSectionLabel } from '../../core/flow/sectionLabel';
 import { repeatableRecordTitle } from '../../core/files/generate';
 import { childNodeGradient, sectionNodeGradient } from './BrainGlobe';
+import { HIGHLIGHT_RADIUS, LIMB_INNER, SHADE_RADIUS, orbLight } from '../../core/globe/lighting';
+import type { OrbLight } from '../../core/globe/lighting';
 import { HealthPill, healthFreshness } from './SectionHealth';
 import { prefersReducedMotion } from '../cues/verbs';
 import { S } from '../strings';
@@ -111,6 +114,26 @@ import './FileTree.css';
  * `core/freshness/sectionLife.ts` — ONE pure function, which BrainGlobe reads
  * too, because implementing "which row is live" twice is how the two views
  * drift apart.
+ *
+ * ── V1.9 VB-54 — and the orb is LIT, by the globe's own light ─────────────
+ *
+ * VB-54 gives the Brain one fixed light and shades every orb from its own
+ * position under it. The row orbs are the same orbs, so they are lit by the
+ * same function — `orbLight` in core/globe/lighting.ts, called with this row's
+ * own place in the column (`listOrbLight` below).
+ *
+ * THAT SHARING IS THE POINT AND NOT A TIDINESS. VB-45's whole claim is that an
+ * orb is one object across the two views, which is what makes the drawer's
+ * morph read as one thing moving. A row's orb flying out of a sphere lit one
+ * way and landing lit another would break that at the one moment somebody is
+ * actually watching the object move.
+ *
+ * NOTHING ABOUT STATE CHANGED. The light is on the FILL, and the fill is only
+ * one of the signals: a hollow `dim` orb is not lit at all, and every filled
+ * one carries the identical three layers whatever its state — so shading says
+ * nothing here that the fill, the mark and the ring were not already saying.
+ * tests/e2e/lit-orbs.spec.ts re-reads that with every colour stripped, and
+ * re-measures the deep hairline VB-45 added for WCAG 1.4.11.
  */
 
 /**
@@ -187,6 +210,55 @@ const LIFE_WORD: Record<SectionLife, string> = {
 };
 
 /**
+ * V1.9 VB-54 — WHERE A ROW'S ORB STANDS UNDER THE ONE LIGHT.
+ *
+ * The Brain's orbs have real positions to be lit from; a row's orb has a place
+ * in a list, so this is the conversion between the two. It is a MODEL of the
+ * layout and not a measurement of it, deliberately: reading every row's box
+ * back out of the DOM to light it would put a layout read on every keystroke of
+ * the interview, and the rows really are an evenly-spaced column — the model
+ * and the measurement would agree to within a pixel.
+ *
+ *   x  −0.86, near the pane's left edge, which is where the orb column sits.
+ *      A child row is indented, so it steps a little further in.
+ *   y  where the row is down the list, mapped onto core's −1 (top) to +1
+ *      (bottom).
+ *   z  0 — the pane is flat. It is the ROW's own position that varies, which
+ *      is the whole of what makes a column of orbs read as one lit object.
+ *
+ * WHY IT MATTERS THAT THIS IS THE SAME FUNCTION THE GLOBE CALLS. V1.8 VB-45's
+ * whole argument is that an orb is one object across both views, so the morph
+ * reads as one thing moving. Two lighting rules would make the top row's orb
+ * fly out of a sphere lit one way and land lit another, at the exact moment
+ * somebody is watching it — which is the one moment the difference is
+ * unmissable.
+ */
+const LIST_ORB_X = -0.86;
+const LIST_INDENT = 0.05;
+
+function listOrbLight(place: number, depth: number): OrbLight {
+  return orbLight({ x: LIST_ORB_X + depth * LIST_INDENT, y: place * 2 - 1, z: 0 });
+}
+
+/**
+ * How hard the light paints on THIS surface — the List's counterpart to
+ * BrainGlobe.tsx's four gain constants, and separate from them for the reason
+ * core/globe/lighting.ts gives for reporting `shade` as a physical quantity: an
+ * 18px orb on a near-white pane has nothing like the room to darken that a
+ * 12px orb on a near-black stage has.
+ *
+ * `LIST_LIMB` is the biggest of the three and that is not an accident. The row
+ * orbs sit in a column almost directly beneath the light — `shade` for the top
+ * row is about 0.015 — so almost nothing here is being said by the DIRECTION,
+ * and the roundness has to come from the curvature. The two directional terms
+ * are the ones that change down the column, and they are what makes it a lit
+ * column rather than ten identically-shaded circles.
+ */
+const LIST_LIMB = 0.42;
+const LIST_SPEC = 0.62;
+const LIST_TERMINATOR = 0.85;
+
+/**
  * The section's orb, at the row's left edge.
  *
  * `gradient` is the section's own colour in the Brain visual — the whole point
@@ -194,13 +266,52 @@ const LIFE_WORD: Record<SectionLife, string> = {
  * cycle, so the row's orb, the sphere it comes from and the node that flies
  * between them cannot pick different colours.
  *
+ * `light` is V1.9 VB-54's, and it arrives as custom properties rather than as a
+ * class, because there is no finite set of classes for "where this orb stands
+ * relative to a point" — which is exactly the difference between this and the
+ * per-orb gradients V1.4 VB-23 deleted from the globe, where the highlight sat
+ * in each orb's own local box and every orb wore the identical one.
+ *
+ * The offsets are fractions of the orb's RADIUS (core/globe/lighting.ts) and
+ * the box is a circle, so half the box is one radius and a fraction of it is
+ * that fraction of 50% — which is what `half` converts. `mix` turns core's
+ * physical 0..1 quantities into the percentages `color-mix` wants, so
+ * FileTree.css holds no arithmetic at all about a light it cannot see.
+ *
  * The class name is unchanged on purpose: `.filetree-glyph` is what
  * `core/drawer/mode.ts`'s morph measures and what four specs find this by.
  */
-function SectionOrb({ life, gradient }: { life: SectionLife; gradient: number }) {
+function SectionOrb({ life, gradient, light }: { life: SectionLife; gradient: number; light: OrbLight }) {
   const mark = LIFE_MARK[life];
+  const half = (fraction: number) => `${(fraction * 50).toFixed(2)}%`;
+  const mix = (amount: number) => `${Math.min(100, Math.max(0, amount * 100)).toFixed(1)}%`;
   return (
-    <span className="filetree-glyph" data-life={life} data-gradient={gradient} aria-hidden="true">
+    <span
+      className="filetree-glyph"
+      data-life={life}
+      data-gradient={gradient}
+      style={
+        {
+          '--orb-hx': half(light.hx),
+          '--orb-hy': half(light.hy),
+          '--orb-sx': half(light.sx),
+          '--orb-sy': half(light.sy),
+          // Published from core rather than restated in the stylesheet, so the
+          // blob is the same size relative to the orb in both views.
+          '--orb-spec-r': half(HIGHLIGHT_RADIUS),
+          '--orb-shade-r': half(SHADE_RADIUS),
+          '--orb-limb-inner': `${(LIMB_INNER * 100).toFixed(0)}%`,
+          // How strongly each of the three layers paints on THIS orb. Folded
+          // here rather than in `calc()` so the stylesheet holds no arithmetic
+          // about a light it cannot see — and so a test can read the numbers
+          // core produced straight off the element.
+          '--orb-spec-mix': mix(light.highlight * LIST_SPEC),
+          '--orb-shade-mix': mix(light.shade * LIST_TERMINATOR),
+          '--orb-limb-mix': mix(LIST_LIMB),
+        } as CSSProperties
+      }
+      aria-hidden="true"
+    >
       {mark && (
         <svg className="filetree-mark" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
           <path d={mark} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
@@ -235,6 +346,15 @@ interface RowProps {
    * passed down rather than derived here so a child row can be handed its own
    * place in its parent's cluster instead of a top-level one. */
   gradient: number;
+  /** V1.9 VB-54. How far down the list this row sits, 0 at the top and 1 at the
+   * bottom — the one thing a row's orb needs in order to know where it stands
+   * under the scene light. Passed rather than derived for the same reason
+   * `gradient` is: a nested row's place is its parent's business, not its own. */
+  place: number;
+  /** How much of the list one top-level section occupies, so an expanded
+   * section can spread its children inside its own slot instead of over the
+   * whole pane. */
+  slot: number;
   modules: Module[];
   answers: Answers;
   currentQuestionId: string | null;
@@ -262,6 +382,8 @@ function FileTreeRow({
   node,
   depth,
   gradient,
+  place,
+  slot,
   modules,
   answers,
   currentQuestionId,
@@ -439,7 +561,7 @@ function FileTreeRow({
         data-health={sectionHealth?.state}
         data-depth={depth}
       >
-        <SectionOrb life={life} gradient={gradient} />
+        <SectionOrb life={life} gradient={gradient} light={listOrbLight(place, depth)} />
         {/* Said out loud for a screen reader, outside the button so it never
             competes with the button's own name. The orb beside it says the
             same thing visually. */}
@@ -515,6 +637,13 @@ function FileTreeRow({
               // globe gives it when the camera flies into this section
               // (BrainGlobe.tsx's `childLayout`).
               gradient={childNodeGradient(childIndex)}
+              /* V1.9 VB-54. A child sits INSIDE its parent's slot in the list,
+                 so its place under the light is its parent's, nudged down by
+                 how far through the expanded group it is. That keeps an open
+                 section's orbs on the same smooth gradient as the rows above
+                 and below it rather than restarting the column. */
+              place={place + ((childIndex + 1) / (childNodes.length + 1) - 0.5) * slot}
+              slot={slot}
               modules={modules}
               answers={answers}
               currentQuestionId={currentQuestionId}
@@ -610,6 +739,12 @@ export function FileTree({ outline, modules, answers, currentQuestionId, current
             // V1.8 VB-45 — the colour this section's orb wears in the Brain
             // visual, from the one place that knows (BrainGlobe.tsx).
             gradient={sectionNodeGradient(index)}
+            /* V1.9 VB-54 — how far down the list this row sits, which is all
+               core needs to light its orb from the one scene light. The middle
+               of the row's own slot, so the first and last orbs are inside the
+               pane rather than on its very edges. */
+            place={(index + 0.5) / outline.length}
+            slot={1 / outline.length}
             modules={modules}
             answers={answers}
             currentQuestionId={currentQuestionId}

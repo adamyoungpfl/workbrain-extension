@@ -103,12 +103,50 @@
 .brainglobe-deep-4 { fill: var(--globe-node-4-deep); }
 .brainglobe-deep-5 { fill: var(--globe-node-5-deep); }
 
-/* The bloom's stops. The only radial gradients left in the picture. */
+/* The bloom's stops. */
 .brainglobe-stop-mid-1  { stop-color: var(--globe-node-1-mid); }
 .brainglobe-stop-mid-2  { stop-color: var(--globe-node-2-mid); }
 .brainglobe-stop-mid-3  { stop-color: var(--globe-node-3-mid); }
 .brainglobe-stop-mid-4  { stop-color: var(--globe-node-4-mid); }
 .brainglobe-stop-mid-5  { stop-color: var(--globe-node-5-mid); }
+
+/* ── V1.9 VB-54 — the one light ───────────────────────────────────────────
+
+   VB-24 took five per-sphere gradients out of this picture because each one
+   baked a highlight into the orb's own local box: every orb lit from its own
+   top-left wherever it sat, which reads as twelve stickers. The paint below is
+   the opposite arrangement, and the difference is the whole feature. It is
+   CENTRED and SHARED — one specular for the picture, one terminator per colour
+   — and the only thing that varies orb to orb is WHERE the circle carrying it
+   is placed, which core/globe/lighting.ts computes from that orb's own position
+   relative to a single fixed point in the scene.
+
+   So nothing here knows about any particular orb, and that is on purpose: a
+   stylesheet cannot express "where this one stands under the light", and the
+   moment it tried, the rule would have to be written twice — once for the globe
+   and once for the List's rows (FileTree.css), which is precisely how the
+   Brain↔List morph would stop reading as one object moving. */
+.brainglobe-stop-spec { stop-color: var(--globe-highlight); }
+
+/* The dark side of a sphere is that sphere's own colour in shadow, never a grey
+   wash — the same argument `.brainglobe-shade` above already makes for depth,
+   applied to direction. Five colours, so five. */
+.brainglobe-stop-deep-1 { stop-color: var(--globe-node-1-deep); }
+.brainglobe-stop-deep-2 { stop-color: var(--globe-node-2-deep); }
+.brainglobe-stop-deep-3 { stop-color: var(--globe-node-3-deep); }
+.brainglobe-stop-deep-4 { stop-color: var(--globe-node-4-deep); }
+.brainglobe-stop-deep-5 { stop-color: var(--globe-node-5-deep); }
+
+/* The limb's own class carries no paint — the gradient is on the element's
+   `fill` and the class is what a test finds it by. Listed so the five names
+   exist in one place beside everything else the orbs wear. */
+.brainglobe-limb-1,
+.brainglobe-limb-2,
+.brainglobe-limb-3,
+.brainglobe-limb-4,
+.brainglobe-limb-5 {
+  pointer-events: none;
+}
 
 /* V1.4 VB-23 — the joints. Faint enough that the orbs stay the subject:
    `--globe-edge` at the stroke-opacity the component folds out of the
@@ -168,6 +206,25 @@
 .brainglobe[data-unified='true'] .brainglobe-stop-mid-4,
 .brainglobe[data-unified='true'] .brainglobe-stop-mid-5 {
   stop-color: var(--globe-unified-mid);
+}
+
+/* V1.9 VB-54 — AND THE SHADOWS, or the glow is not one colour.
+   `--globe-unified-deep` is already what the depth shade sinks to when the file
+   resolves; the terminator is the same cue turned sideways, so it takes the
+   same colour. Without this rule a unified solid would be one bright colour
+   with five different dark sides, which is five objects again.
+
+   THE HIGHLIGHT IS DELIBERATELY NOT IN THIS BLOCK. It is not the orb's colour,
+   it is the LIGHT's, and there is one light before and after the file resolves.
+   Recolouring it here would say the light changed when what changed was the
+   file. `data-unified` is a claim about the model, and the room it sits in is
+   not part of the model. */
+.brainglobe[data-unified='true'] .brainglobe-stop-deep-1,
+.brainglobe[data-unified='true'] .brainglobe-stop-deep-2,
+.brainglobe[data-unified='true'] .brainglobe-stop-deep-3,
+.brainglobe[data-unified='true'] .brainglobe-stop-deep-4,
+.brainglobe[data-unified='true'] .brainglobe-stop-deep-5 {
+  stop-color: var(--globe-unified-deep);
 }
 
 .brainglobe-sphere,

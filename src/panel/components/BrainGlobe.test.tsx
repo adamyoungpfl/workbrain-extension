@@ -149,15 +149,31 @@ describe('BrainGlobe — the drawing', () => {
     expect(Math.max(...depths) - Math.min(...depths)).toBeGreaterThan(0.5);
   });
 
-  it('V1.4 VB-23 — an answered node is a solid orb: one flat fill, no highlight, no gradient', () => {
+  it('V1.4 VB-23 — an answered node is a solid orb: one flat fill, no gradient bound to a sphere', () => {
     stubEnvironment({ reduce: false });
     const { container } = render();
 
-    // Five blooms and the field. The five sphere gradients are gone, and with
-    // them the specular dot that made a node read as a glass bead.
+    /**
+     * V1.9 VB-54 CHANGED THE COUNT HERE ON PURPOSE.
+     *
+     * The field and five blooms were six; the light adds five limbs, five
+     * terminators and one specular, for seventeen. That is not the thing VB-23
+     * deleted coming back. What VB-23 deleted was a gradient bound to an ORB —
+     * `cx="34%"`, a highlight fixed in each orb's own local box, so every orb
+     * wore the identical one wherever it stood and twelve spheres read as
+     * twelve stickers.
+     *
+     * Everything added since is CENTRED (`cx="50%"`) and SHARED. What varies
+     * per orb is where the circle carrying it is placed, which core computes
+     * from that orb's own position under one fixed light. So the assertion that
+     * matters is not a count — it is that no gradient in the picture is
+     * off-centre, and that the sphere itself still takes a flat token fill.
+     */
     const gradients = [...container.querySelectorAll('radialGradient')];
-    expect(gradients).toHaveLength(6);
-    expect(gradients.filter((g) => g.getAttribute('cx') === '34%')).toHaveLength(0);
+    expect(gradients).toHaveLength(17);
+    for (const gradient of gradients) {
+      expect(gradient.getAttribute('cx'), 'a gradient is anchored inside one orb’s own box').toBe('50%');
+    }
     expect(container.querySelector('.brainglobe-stop-hi')).toBeNull();
 
     for (const sphere of container.querySelectorAll('.brainglobe-sphere')) {

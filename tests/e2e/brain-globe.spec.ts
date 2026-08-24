@@ -516,7 +516,24 @@ async function flyIntoAboutMe(page: Page): Promise<void> {
 const centreX = (box: { x: number; width: number }) => box.x + box.width / 2;
 
 test.describe('VB-23 — an answered node is a solid orb', () => {
-  test('is one flat token fill, with no gradient and no highlight anywhere in the picture', async ({ page }) => {
+  /**
+   * V1.9 VB-54 EDITED THIS TEST, AND THE EDIT IS THE POINT OF VB-54.
+   *
+   * It used to end "…and no highlight anywhere in the picture", counting six
+   * radial gradients: the field and the five blooms. That count was standing in
+   * for the real claim, which was never "no gradients" — it was **no gradient
+   * bound to an orb's own box**, because that is what made every orb wear an
+   * identical highlight and read as a sticker.
+   *
+   * VB-54 adds gradients back and does not bring the problem back with them:
+   * they are CENTRED and SHARED, and what varies per orb is where the circle
+   * carrying one is placed under a single fixed light. So the assertion is
+   * split in two — the sphere's own fill is still a flat token colour, and the
+   * light's paint is scene-level rather than per-orb — and the second half is
+   * proved by the two orbs' highlights being in different places, which the old
+   * treatment could never have produced.
+   */
+  test('is one flat token fill — no gradient is bound to a sphere', async ({ page }) => {
     await open(page);
     const fills = await page
       .locator('.brainglobe-node:not([data-node-state="untouched"]) .brainglobe-sphere')
@@ -526,9 +543,21 @@ test.describe('VB-23 — an answered node is a solid orb', () => {
       // A real rgb(), not `url(#…)`: the three-stop radial is gone.
       expect(fill).toMatch(/^rgb\(/);
     }
-    // The five sphere gradients went with it; only the blooms and the field
-    // are left.
-    expect(await page.locator('radialGradient').count()).toBe(6);
+    // The field, five blooms, five limbs, five terminators, one specular. One
+    // specular for twelve orbs is what "one light" costs.
+    expect(await page.locator('radialGradient').count()).toBe(17);
+    // And every one of them is CENTRED — `cx="50%"`, the orb's own middle. The
+    // gradient VB-23 deleted was at `cx="34%"`, off-centre in each orb's own
+    // box, which is the arrangement that made twelve orbs wear one highlight.
+    const anchors = await page
+      .locator('radialGradient')
+      .evaluateAll((els) => [...new Set(els.map((el) => el.getAttribute('cx')))]);
+    expect(anchors).toEqual(['50%']);
+    expect(await page.locator('.brainglobe-spec').count()).toBe(12);
+    const specFills = await page
+      .locator('.brainglobe-spec')
+      .evaluateAll((els) => new Set(els.map((el) => el.getAttribute('fill'))).size);
+    expect(specFills, 'the light is one paint, not one per orb').toBe(1);
   });
 
   test('solid does not mean flat — a far orb is smaller, dimmer and sunk toward its own deep colour', async ({ page }) => {

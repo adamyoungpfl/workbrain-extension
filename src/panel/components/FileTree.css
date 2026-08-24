@@ -160,31 +160,101 @@
    `mid` step, which is the one the globe's own bloom and the morph's flying
    node use, and the one that reads on a light ground. Which section wears
    which is `sectionNodeGradient`'s answer (BrainGlobe.tsx), never a second
-   cycle. */
+   cycle.
+
+   `background-color`, not the `background` shorthand: the shorthand resets
+   `background-image`, which is where V1.9 VB-54's light lives below. */
 .filetree-glyph[data-gradient='1'] {
-  background: var(--globe-node-1-mid);
+  background-color: var(--globe-node-1-mid);
   box-shadow: inset 0 0 0 1px var(--globe-node-1-deep);
   color: var(--globe-node-1-deep);
 }
 .filetree-glyph[data-gradient='2'] {
-  background: var(--globe-node-2-mid);
+  background-color: var(--globe-node-2-mid);
   box-shadow: inset 0 0 0 1px var(--globe-node-2-deep);
   color: var(--globe-node-2-deep);
 }
 .filetree-glyph[data-gradient='3'] {
-  background: var(--globe-node-3-mid);
+  background-color: var(--globe-node-3-mid);
   box-shadow: inset 0 0 0 1px var(--globe-node-3-deep);
   color: var(--globe-node-3-deep);
 }
 .filetree-glyph[data-gradient='4'] {
-  background: var(--globe-node-4-mid);
+  background-color: var(--globe-node-4-mid);
   box-shadow: inset 0 0 0 1px var(--globe-node-4-deep);
   color: var(--globe-node-4-deep);
 }
 .filetree-glyph[data-gradient='5'] {
-  background: var(--globe-node-5-mid);
+  background-color: var(--globe-node-5-mid);
   box-shadow: inset 0 0 0 1px var(--globe-node-5-deep);
   color: var(--globe-node-5-deep);
+}
+
+/* ── V1.9 VB-54 — THE SAME LIGHT, ON THIS SIDE OF THE MORPH ───────────────
+
+   VB-45's claim is that a row's orb and the globe's sphere are ONE OBJECT, so
+   the morph reads as one thing moving. An object lit one way at one end of a
+   flight and another way at the other end is two objects again, and the flight
+   is exactly when somebody is looking. So this is not "a highlight that looks
+   like the globe's" — it is the same function, given this orb's own place in
+   the list: `orbLight` in core/globe/lighting.ts, called from FileTree.tsx's
+   `listOrbLight`.
+
+   NOTHING HERE KNOWS WHICH ROW IT IS. Every offset, every blob size and every
+   strength arrives as a custom property, because there is no finite set of
+   classes for "where this orb stands relative to a fixed point" — which is
+   precisely the difference between this and the per-orb gradients V1.4 VB-23
+   deleted from the globe, where the highlight was in each orb's own local box
+   and every orb wore the identical one.
+
+   All the arithmetic is FileTree.tsx's (`half` and `mix`, over core's own
+   numbers), so no rule below can quietly hold a second opinion about a light it
+   cannot see.
+
+   THREE LAYERS, and the third is the one to understand. These orbs sit in a
+   column almost directly beneath the light, so the DIRECTION has very little to
+   say about the top of the list — `shade` there is about 0.015. A pair of
+   direction-only layers collapses at that angle into a smudge in the middle of
+   a disc. The limb is what carries the roundness instead, and the two
+   directional layers are what change down the column.
+
+   THE HAIRLINE SURVIVES THIS. VB-45 put a 1px inset ring in the orb's own deep
+   colour on it specifically to clear WCAG 1.4.11's 3:1 against the near-white
+   pane. An inset box-shadow paints ABOVE the background, so the ring is drawn
+   over the light rather than under it — and core's own budget keeps both blobs
+   a tenth of a radius clear of the rim anyway (HIGHLIGHT_REACH +
+   HIGHLIGHT_RADIUS, swept in lighting.test.ts). tests/e2e/lit-orbs.spec.ts
+   re-measures the painted edge, in real pixels, after relighting.
+
+   Only a filled orb is lit. A `dim` row is a hollow ring with nothing in it,
+   and a highlight inside it would claim a surface that is not there — the rule
+   below resets all three layers with the fill. */
+.filetree-glyph[data-gradient] {
+  background-image:
+    /* 1 — the specular, toward the light. */
+    radial-gradient(
+      ellipse var(--orb-spec-r, 17%) var(--orb-spec-r, 17%) at calc(50% + var(--orb-hx, 0%)) calc(50% + var(--orb-hy, 0%)),
+      color-mix(in srgb, var(--globe-highlight) var(--orb-spec-mix, 40%), transparent),
+      transparent
+    ),
+    /* 2 — the terminator, away from it. Its strength is the orb's own `shade`,
+       so a row sitting almost directly under the light barely has one — which
+       is true, and is why layer 3 exists. */
+    radial-gradient(
+      ellipse var(--orb-shade-r, 24%) var(--orb-shade-r, 24%) at calc(50% + var(--orb-sx, 0%)) calc(50% + var(--orb-sy, 0%)),
+      color-mix(in srgb, currentColor var(--orb-shade-mix, 10%), transparent),
+      transparent
+    ),
+    /* 3 — the limb: the curvature, which is not about the light at all. Nothing
+       across the middle half of the orb, then a ramp into its own deep colour
+       (`currentColor` — the same value the hairline is drawn in) at the rim.
+       This is what keeps the top of the column round; see LIST_LIMB. */
+    radial-gradient(
+      circle closest-side at 50% 50%,
+      transparent var(--orb-limb-inner, 50%),
+      color-mix(in srgb, currentColor calc(var(--orb-limb-mix, 42%) / 3), transparent) 80%,
+      color-mix(in srgb, currentColor var(--orb-limb-mix, 42%), transparent) 100%
+    );
 }
 
 /* THE FILL AND THE MARK ARE THE SIGNAL, and both track `sectionLife` — the one
@@ -199,6 +269,8 @@
    removed; VB-45 replaces the tile and keeps the guarantee, which is what
    tests/e2e/section-health.spec.ts re-reads with every hue stripped out. */
 .filetree-glyph[data-life='dim'] {
+  /* The shorthand, on purpose: it clears the fill AND V1.9 VB-54's light in one
+     line, which is what a hollow orb means — there is no surface here. */
   background: none;
   /* --border-i, never --divider: this edge carries meaning, and WCAG 1.4.11
      asks 3:1 of one that does. The drawer's own stage steps it up again —

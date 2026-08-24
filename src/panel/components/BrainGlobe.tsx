@@ -9,6 +9,8 @@ import { NodeSummaryCard } from './NodeSummary';
 import { globeLabelFor } from '../../core/flow/globeLabels';
 import { EDGE_LIGHT_LEVEL, edgeLight, globeNodeState, isUnifiedGlow } from '../../core/globe/illumination';
 import type { GlobeNodeState } from '../../core/globe/illumination';
+import { HIGHLIGHT_RADIUS, LIMB_INNER, SHADE_RADIUS, orbLight } from '../../core/globe/lighting';
+import type { OrbLight } from '../../core/globe/lighting';
 import type { SectionLife } from '../../core/freshness/sectionLife';
 import { sectionIsLit, sectionLife } from '../../core/freshness/sectionLife';
 import { detailBand } from '../../core/globe/detailBand';
@@ -34,6 +36,7 @@ import {
   CAMERA,
   ICOSAHEDRON_EDGES,
   ICOSAHEDRON_VERTICES,
+  PHI,
   clampTilt,
   depth,
   faceRotation,
@@ -282,6 +285,53 @@ import './BrainGlobe.css';
  * **WITH NO `files` PROP THERE IS NO TIER AT ALL.** The globe is usable as a
  * pure showcase of one file, which is what it was for six versions and what the
  * harness still drives by default.
+ *
+ * ── V1.9 VB-54: the orbs are lit, from ONE FIXED POINT ────────────────────
+ *
+ * Decision 1 above says an orb is a flat fill and gives VB-24's reason for it,
+ * and BOTH of those still stand. What VB-24 deleted was a highlight baked into
+ * each orb's OWN local box — `cx="34%"` on a per-sphere gradient, so every orb
+ * was lit from its own top-left however the globe was turned. Twelve circles
+ * wearing one identical highlight read as twelve stickers, and no amount of
+ * softening was going to fix that, because the highlight was not saying
+ * anything about the scene.
+ *
+ * VB-54 is the opposite arrangement and it is what makes a group of circles
+ * read as a group of spheres: **one fixed position in the stage**, and every
+ * orb's highlight offset and terminator computed from ITS OWN position relative
+ * to it. Turn the globe and the highlights walk across their orbs, because the
+ * orbs really have moved and the light has not.
+ *
+ * THE MATHS IS IN core/globe/lighting.ts AND NOT HERE, for the reason it always
+ * is — and for one more. V1.8 VB-45 put the same orbs in the List's rows, so
+ * there are two callers, and if they lit an orb differently the drawer's morph
+ * would stop reading as one object moving at the exact moment somebody is
+ * watching it move. `orbLight` is a pure function of (orb, light); this file
+ * decides only how hard to paint the answer on a near-black stage, exactly as
+ * it multiplies `EDGE_LIGHT_LEVEL` rather than deciding what an edge is worth.
+ *
+ * THREE LAYERS, AND THE THIRD IS NOT ABOUT THE LIGHT AT ALL:
+ *
+ *  - **the limb** — concentric, the orb sinking toward its own deep colour at
+ *    the rim. Curvature, not direction: a sphere lit from straight ahead has no
+ *    terminator anywhere and is still obviously a sphere.
+ *  - **the terminator** — the far side, offset away from the light, at a
+ *    strength core reports as `shade`.
+ *  - **the specular** — a soft blob offset toward the light, at `highlight`.
+ *
+ * WHAT IT COSTS, AND WHY THAT IS THE DESIGN. Two extra circles an orb, and
+ * eleven shared gradients for the whole picture. The paint is CENTRED and
+ * SHARED; only the placement of the circle carrying it varies. That is what
+ * keeps a per-frame drift loop affordable, and it is also the structural reason
+ * this cannot regress into what VB-24 deleted — there is no per-orb gradient
+ * for a highlight to be baked into.
+ *
+ * FOUR THINGS IT IS NOT ALLOWED TO SPEND, all measured rather than asserted:
+ * VB-25's unified glow still resolves to one colour (the shadows go with it;
+ * the highlight does not, because the light is not part of the model),
+ * VB-24's greyscale margin between an answered orb and an unanswered one,
+ * VB-24's floor on a far muted orb against the field, and VB-45's deep hairline
+ * on the List side. tests/e2e/lit-orbs.spec.ts measures all four.
  */
 
 // ── Geometry constants ─────────────────────────────────────────────────────
@@ -544,6 +594,166 @@ const SHADE_DEPTH = 0.42;
  */
 const MUTED_SHADE_DEPTH = 0.24;
 const MUTED_R_SCALE = 0.86;
+
+/**
+ * V1.9 VB-54 — how hard the one scene light is allowed to paint.
+ *
+ * WHERE the highlight and the terminator sit is core/globe/lighting.ts's
+ * answer and is not negotiable here; how strongly they are *painted* is this
+ * file's, because it depends on the stage. These four numbers are what turns
+ * that geometry into opacities on a near-black field, and every one of them was
+ * set by screenshotting the stage rather than reasoned to.
+ *
+ * `SPEC_STRENGTH` is the peak opacity of the specular blob on an answered orb.
+ * 0.5 rather than 1: VB-24 threw out a white specular dot for making twelve
+ * orbs read as glass beads, and the difference between that and this is not
+ * only that the offset now comes from the scene — it is also that the highlight
+ * is a lift on the orb's own colour rather than a white pip sitting on it.
+ *
+ * `MUTED_SPEC_SCALE` turns it down on an unanswered orb, and it is a
+ * correctness number and not a taste one. VB-24's whole treatment is "the same
+ * orb, turned down", proved by tests/e2e/brain-globe.spec.ts measuring a real
+ * pixel at an answered orb's centre against an unanswered one's — in colour AND
+ * in greyscale. A highlight that lifted both equally would eat that margin from
+ * the muted side, so the turned-down orb catches proportionally less light,
+ * which is also what a duller surface does.
+ *
+ * `TERMINATOR_GAIN` is applied to `shade`, which core reports as the physical
+ * (1 − cos)/2 and which lands between about 0.07 and 0.25 across this solid.
+ * 1.35 takes that to a far side between 9% and 34% sunk toward the orb's own
+ * deep colour. It was 1.7 before the limb layer below existed and came down
+ * when it did: with the curvature carried separately the direction only has to
+ * BIAS the darkness, and a heavier hand made the blob read as a disc drawn on
+ * the orb rather than as the side of it turning away.
+ *
+ * `TERMINATOR_DEPTH_FLOOR` is the one that keeps VB-24's other measured floor —
+ * "a muted orb must not sink into the field colour". A far orb is already
+ * carrying the group's 0.62 opacity and its own depth shade; piling a full
+ * terminator on top of that is exactly how the back of the solid disappears. So
+ * the terminator fades with distance, to this fraction of itself at the very
+ * back.
+ */
+const SPEC_STRENGTH = 0.5;
+const MUTED_SPEC_SCALE = 0.42;
+const TERMINATOR_GAIN = 1.35;
+const TERMINATOR_DEPTH_FLOOR = 0.45;
+
+/**
+ * How dark the LIMB goes — the layer that is about curvature rather than about
+ * where the light is (LIMB_INNER in core/globe/lighting.ts).
+ *
+ * 0.5 on an answered orb, and a third of that on a muted one for the same
+ * reason its highlight is turned down: VB-24's measured margin between the two
+ * is taken at the orb's CENTRE, which a limb never touches, but a muted orb is
+ * already close to the field and its rim is the part with the least room left.
+ */
+const LIMB_STRENGTH = 0.5;
+const MUTED_LIMB_SCALE = 0.34;
+
+/**
+ * The globe's own conversion into core's normalised stage space: the SVG
+ * viewBox is −100..100, so a view unit divided by VIEW_HALF is already the
+ * −1..+1 the light is defined in (core/globe/lighting.ts).
+ *
+ * IT IS THE POSITION ON SCREEN THAT MATTERS, not the position in the geometry.
+ * A light fixed in the scene has to see the orb where the viewer sees it, so
+ * callers pass the coordinates AFTER the scene transform and the tier camera —
+ * which is what makes an orb's highlight travel as the globe turns, as the
+ * camera flies in, and as the whole solid shrinks into its file node.
+ */
+function stageLight(x: number, y: number, z: number): OrbLight {
+  return orbLight({ x: x / VIEW_HALF, y: y / VIEW_HALF, z });
+}
+
+/**
+ * Half the solid's own depth, in the same normalised units. The vertices reach
+ * ±PHI and GEO scales them into the viewBox, so `PHI * GEO / VIEW_HALF` is how
+ * far the front of the solid stands in front of the stage's plane.
+ *
+ * Written as the arithmetic rather than as 0.6 so it stays true if GEO is ever
+ * re-tuned — a depth cue that silently stopped matching the geometry would be
+ * the hardest kind of wrong to see.
+ */
+const SOLID_Z_HALF = (PHI * GEO) / VIEW_HALF;
+
+/**
+ * The two circles that make a flat fill into a sphere, drawn over whatever orb
+ * they are given.
+ *
+ * ONE COMPONENT, FOUR CALL SITES — the ten section orbs, the two structural
+ * ones, the sub-node cluster and the work brain's file nodes — because the
+ * whole claim of VB-54 is that they are all in the same scene. An orb lit by a
+ * second rule would be the one that gives the trick away.
+ *
+ * Both blobs are soft radials that reach zero at their own edge, and core
+ * guarantees their edges never cross the orb's rim (`highlightExtent`,
+ * `shadeExtent`, swept over every position in lighting.test.ts). So neither can
+ * spill outside the circle it belongs to and neither needs a clip path — which
+ * matters, because a clip path per orb per frame is the one thing that would
+ * make this expensive.
+ *
+ * The gradients themselves live in the SVG's `<defs>` and are shared: the
+ * OFFSET is what varies per orb, never the paint. That is what keeps the DOM
+ * this adds to a frame at two circles an orb.
+ */
+function OrbLit({
+  uid,
+  cx,
+  cy,
+  r,
+  gradient,
+  light,
+  spec,
+  terminator,
+  limb,
+}: {
+  uid: string;
+  cx: number;
+  cy: number;
+  r: number;
+  gradient: number;
+  light: OrbLight;
+  /** Peak opacity for the highlight, already scaled for state and depth. */
+  spec: number;
+  /** Peak opacity for the terminator, likewise. */
+  terminator: number;
+  /** Peak opacity for the limb, which depends on state and depth but never on
+   * where the light is. */
+  limb: number;
+}) {
+  return (
+    <>
+      {/* THE LIMB. Concentric, and that is the point: an orb lit from straight
+          ahead has no terminator anywhere and is still round, because its own
+          surface turns away at the rim whatever the light is doing. Drawn first
+          so the two directional layers sit on top of it. */}
+      <circle
+        className={`brainglobe-limb brainglobe-limb-${gradient}`}
+        cx={cx.toFixed(2)}
+        cy={cy.toFixed(2)}
+        r={r.toFixed(2)}
+        fill={`url(#${uid}-l${gradient})`}
+        opacity={limb.toFixed(3)}
+      />
+      <circle
+        className="brainglobe-terminator"
+        cx={(cx + light.sx * r).toFixed(2)}
+        cy={(cy + light.sy * r).toFixed(2)}
+        r={(r * SHADE_RADIUS).toFixed(2)}
+        fill={`url(#${uid}-t${gradient})`}
+        opacity={terminator.toFixed(3)}
+      />
+      <circle
+        className="brainglobe-spec"
+        cx={(cx + light.hx * r).toFixed(2)}
+        cy={(cy + light.hy * r).toFixed(2)}
+        r={(r * HIGHLIGHT_RADIUS).toFixed(2)}
+        fill={`url(#${uid}-spec)`}
+        opacity={spec.toFixed(3)}
+      />
+    </>
+  );
+}
 
 const EDGE_W_MIN = 0.5;
 const EDGE_W_SPAN = 1.9;
@@ -2066,9 +2276,44 @@ export function BrainGlobe({
             <stop offset="0%" className="brainglobe-stop-glow" />
             <stop offset="100%" className="brainglobe-stop-field" />
           </radialGradient>
-          {/* V1.4 VB-23 removed five sphere gradients from here. An orb is one
-              flat fill now (see `brainglobe-solid-*` in BrainGlobe.css); the
-              blooms below are the only radials the nodes still need. */}
+          {/*
+            V1.9 VB-54 — THE LIGHT'S TWO BRUSHES, and there are only two of
+            them however many orbs are on the stage.
+
+            V1.4 VB-23 removed five per-sphere gradients from here because each
+            one baked a highlight into the orb's OWN box, so every orb wore the
+            same one wherever it sat. These are the opposite arrangement and it
+            is what makes VB-54 affordable: the paint is shared and CENTRED, and
+            the only thing that varies per orb is where the circle carrying it
+            is placed — which core computes from that orb's own position under
+            one fixed light (core/globe/lighting.ts).
+
+            One specular for the whole picture, because there is one light.
+            One terminator per colour, because a sphere's dark side is its own
+            colour in shadow and never a grey wash over everything.
+          */}
+          <radialGradient id={`${uid}-spec`} cx="50%" cy="50%" r="50%">
+            <stop offset="0%" className="brainglobe-stop-spec" stopOpacity="1" />
+            <stop offset="45%" className="brainglobe-stop-spec" stopOpacity="0.42" />
+            <stop offset="100%" className="brainglobe-stop-spec" stopOpacity="0" />
+          </radialGradient>
+          {GRADIENTS.map((n) => (
+            /* The limb. Nothing at all across the middle half of the orb, then
+               a ramp into the orb's own deep colour at the rim — the curvature,
+               said once per colour and shared by every orb wearing it. */
+            <radialGradient key={`l${n}`} id={`${uid}-l${n}`} cx="50%" cy="50%" r="50%">
+              <stop offset={`${LIMB_INNER * 100}%`} className={`brainglobe-stop-deep-${n}`} stopOpacity="0" />
+              <stop offset="80%" className={`brainglobe-stop-deep-${n}`} stopOpacity="0.34" />
+              <stop offset="100%" className={`brainglobe-stop-deep-${n}`} stopOpacity="1" />
+            </radialGradient>
+          ))}
+          {GRADIENTS.map((n) => (
+            <radialGradient key={`t${n}`} id={`${uid}-t${n}`} cx="50%" cy="50%" r="50%">
+              <stop offset="0%" className={`brainglobe-stop-deep-${n}`} stopOpacity="0.9" />
+              <stop offset="50%" className={`brainglobe-stop-deep-${n}`} stopOpacity="0.58" />
+              <stop offset="100%" className={`brainglobe-stop-deep-${n}`} stopOpacity="0" />
+            </radialGradient>
+          ))}
           {GRADIENTS.map((n) => (
             // The bloom. A separate, much larger radial behind the sphere, in
             // the sphere's own mid colour, fading to nothing — this is what
@@ -2157,6 +2402,14 @@ export function BrainGlobe({
               const at = workNodePosition(index, workFiles.length);
               const gradient = childNodeGradient(index);
               const locked = !!item.lock;
+              /* V1.9 VB-54. The tier above is in the same room, so its orbs are
+                 under the same light — a file node lit by a different rule
+                 would be the thing that makes the two tiers look like two
+                 pictures rather than one object at two distances. A LOCKED node
+                 is not lit at all: it is an empty dashed shell with nothing
+                 inside it, and a highlight on an empty shell would say there is
+                 a surface there to catch the light. */
+              const light = stageLight(at.x, at.y, 0);
               return (
                 <g
                   className="brainglobe-file-node"
@@ -2187,6 +2440,19 @@ export function BrainGlobe({
                     cy={at.y.toFixed(2)}
                     r={WORK_NODE_R}
                   />
+                  {!locked && (
+                    <OrbLit
+                      uid={uid}
+                      cx={at.x}
+                      cy={at.y}
+                      r={WORK_NODE_R}
+                      gradient={gradient}
+                      light={light}
+                      spec={light.highlight * SPEC_STRENGTH}
+                      terminator={light.shade * TERMINATOR_GAIN}
+                      limb={LIMB_STRENGTH}
+                    />
+                  )}
                 </g>
               );
             })}
@@ -2293,6 +2559,26 @@ export function BrainGlobe({
                       ? node.radius * MUTED_R_SCALE
                       : node.radius;
 
+                /**
+                 * V1.9 VB-54 — where this orb stands under the one light.
+                 *
+                 * Read off the ON-SCREEN position (`lx`/`ly`, then the tier
+                 * camera) rather than the drawing coordinates, because the
+                 * light is fixed in the STAGE and not in the scene group that
+                 * slides and scales under it. That difference is the whole
+                 * feature: turn the globe and every highlight walks across its
+                 * own orb, because each orb really has moved relative to the
+                 * source.
+                 *
+                 * The depth is the vertex's own, mapped back out of `t` into
+                 * the same normalised units — the solid reaches ±PHI in vertex
+                 * units, which is ±0.6 of the stage at GEO. So a node at the
+                 * front is genuinely nearer the light than one at the back and
+                 * is shaded less, which is a thing a flat picture cannot say.
+                 */
+                const at = onStage(node.lx, node.ly);
+                const nodeLight = stageLight(at.x, at.y, (node.t * 2 - 1) * SOLID_Z_HALF);
+
                 return (
                   <g
                     key={vertexIndex}
@@ -2338,7 +2624,16 @@ export function BrainGlobe({
                         above, by the group's opacity, and by the shade below,
                         which sinks a muted orb less far so it stays an object at
                         the back of the solid. */}
-                    <g className="brainglobe-orb" data-lit={muted ? 'muted' : 'lit'}>
+                    <g
+                      className="brainglobe-orb"
+                      data-lit={muted ? 'muted' : 'lit'}
+                      /* V1.9 VB-54. Published so a test can read what the light
+                         did to THIS orb and compare it with its neighbours —
+                         one scene light is a claim about the relationship
+                         between orbs, and only the whole set can show it. */
+                      data-shade={nodeLight.shade.toFixed(3)}
+                      data-highlight={`${nodeLight.hx.toFixed(3)},${nodeLight.hy.toFixed(3)}`}
+                    >
                       <circle
                         className={`brainglobe-sphere ${muted ? `brainglobe-muted-${gradient}` : `brainglobe-solid-${gradient}`}`}
                         cx={node.x}
@@ -2351,6 +2646,29 @@ export function BrainGlobe({
                         cy={node.y}
                         r={radius.toFixed(2)}
                         opacity={((1 - node.t) * (muted ? MUTED_SHADE_DEPTH : SHADE_DEPTH)).toFixed(3)}
+                      />
+                      {/* The light itself. Depth turns the terminator down as
+                          the orb recedes (TERMINATOR_DEPTH_FLOOR) so the back
+                          of the solid never sinks into the field, which is the
+                          floor VB-24 measured and this must not spend. */}
+                      <OrbLit
+                        uid={uid}
+                        cx={node.x}
+                        cy={node.y}
+                        r={radius}
+                        gradient={gradient}
+                        light={nodeLight}
+                        spec={nodeLight.highlight * SPEC_STRENGTH * (muted ? MUTED_SPEC_SCALE : 1)}
+                        terminator={
+                          nodeLight.shade *
+                          TERMINATOR_GAIN *
+                          (TERMINATOR_DEPTH_FLOOR + (1 - TERMINATOR_DEPTH_FLOOR) * node.t)
+                        }
+                        limb={
+                          LIMB_STRENGTH *
+                          (muted ? MUTED_LIMB_SCALE : 1) *
+                          (TERMINATOR_DEPTH_FLOOR + (1 - TERMINATOR_DEPTH_FLOOR) * node.t)
+                        }
                       />
                     </g>
                   </g>
@@ -2394,13 +2712,24 @@ export function BrainGlobe({
                 );
               })}
             </g>
-            {childLayout.map(({ child, progress, x, y, radius, gradient, fade, picked }) =>
-              progress <= 0 ? null : (
+            {childLayout.map(({ child, progress, x, y, radius, gradient, fade, picked }) => {
+              if (progress <= 0) return null;
+              /* V1.9 VB-54. The cluster is on the stage's own plane (z = 0) —
+                 it is drawn outside the scene transform, which is exactly why
+                 the section it rings has already been walked to the origin. So
+                 its orbs are lit from where they sit, and the ring's left-hand
+                 nodes catch the light while its right-hand ones carry the
+                 shading, which is what makes six circles read as six spheres
+                 around one centre rather than as a dial. */
+              const at = onStage(x, y);
+              const light = stageLight(at.x, at.y, 0);
+              return (
                 <g
                   key={child.id}
                   className="brainglobe-child-node"
                   data-child-id={child.id}
                   data-picked={picked ? 'true' : 'false'}
+                  data-shade={light.shade.toFixed(3)}
                   opacity={(progress * fade).toFixed(3)}
                 >
                   <circle
@@ -2417,9 +2746,20 @@ export function BrainGlobe({
                     cy={y}
                     r={radius.toFixed(2)}
                   />
+                  <OrbLit
+                    uid={uid}
+                    cx={x}
+                    cy={y}
+                    r={radius}
+                    gradient={gradient}
+                    light={light}
+                    spec={light.highlight * SPEC_STRENGTH}
+                    terminator={light.shade * TERMINATOR_GAIN}
+                    limb={LIMB_STRENGTH}
+                  />
                 </g>
-              ),
-            )}
+              );
+            })}
           </g>
         </g>
       </svg>
