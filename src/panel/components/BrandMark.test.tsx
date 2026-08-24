@@ -1,7 +1,12 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act } from 'react';
-import { BrandMark, SPIN_ONCE_MS, resetSpinCueMemory } from './BrandMark';
+import { BrandMark, SPIN_ONCE_MS, resetSpinCueMemory, turnFor } from './BrandMark';
 import { MARK_STATIC_ANGLE, markFrame } from '../../core/geometry/markSpin';
+import {
+  MARK_SILHOUETTE_STILL,
+  markSilhouettePoints,
+  pointsAttribute,
+} from '../../core/geometry/markSilhouette';
 import { mount } from './testUtils';
 
 /**
@@ -329,6 +334,119 @@ describe('BrandMark — spin once, the status-bar alternative', () => {
     const second = mount(<BrandMark spin="once" spinCue="About Me" />);
     env.tick(0);
     expect(pose(second.container)).toEqual(midTurn);
+  });
+});
+
+describe('BrandMark — the silhouette', () => {
+  const outline = (container: Element) =>
+    container.querySelector('polygon')!.getAttribute('points');
+
+  it('is one filled shape: no nodes, no edges, nothing inside it', () => {
+    const { container } = mount(<BrandMark variant="silhouette" spin="none" />);
+    expect(container.querySelectorAll('polygon')).toHaveLength(1);
+    expect(container.querySelectorAll('circle')).toHaveLength(0);
+    expect(container.querySelectorAll('line')).toHaveLength(0);
+    expect(container.querySelector('polygon')!.getAttribute('stroke')).toBeNull();
+  });
+
+  it('draws the shipped still pose on its very first frame', () => {
+    const { container } = mount(<BrandMark variant="silhouette" spin="none" />);
+    expect(outline(container)).toBe(pointsAttribute(MARK_SILHOUETTE_STILL));
+  });
+
+  it('is the same solid as the graph — every corner lands on a node', () => {
+    // The claim the whole variant rests on, checked against what the other
+    // variant actually renders rather than against the maths a second time.
+    const graph = mount(<BrandMark spin="none" />);
+    const silhouette = mount(<BrandMark variant="silhouette" spin="none" />);
+    const nodes = new Set(
+      [...graph.container.querySelectorAll('circle')].map(
+        (c) => `${c.getAttribute('cx')},${c.getAttribute('cy')}`,
+      ),
+    );
+    const corners = outline(silhouette.container)!.split(' ');
+    expect(corners.length).toBeGreaterThanOrEqual(6);
+    for (const corner of corners) {
+      expect(nodes.has(corner), `corner ${corner} is not a node of the mark`).toBe(true);
+    }
+  });
+
+  it('carries no colour of its own — the fill comes from a token class', () => {
+    const { container } = mount(<BrandMark variant="silhouette" spin="none" />);
+    expect(container.innerHTML).not.toMatch(/#[0-9a-fA-F]{3,8}\b/);
+    expect(container.querySelector('polygon')!.getAttribute('class')).toBe(
+      'brand-mark-silhouette',
+    );
+    expect(container.querySelector('polygon')!.getAttribute('fill')).toBeNull();
+    const stops = [...container.querySelectorAll('stop')];
+    expect(stops).toHaveLength(2);
+    for (const stop of stops) {
+      expect(stop.getAttribute('class')).toMatch(/^brand-mark-silhouette-(from|to)$/);
+      expect(stop.getAttribute('stop-color')).toBeNull();
+    }
+    // And the gradient it points at is one that exists.
+    const ref = /^url\(#(.+)\)$/.exec(
+      getComputedStyle(container.querySelector('polygon')!).fill || 'url(#wb-mark-silhouette)',
+    )?.[1];
+    expect(container.querySelector(`linearGradient#${ref}`)).not.toBeNull();
+  });
+
+  it('keeps the graph’s whole accessibility contract', () => {
+    const { container } = mount(<BrandMark variant="silhouette" spin="none" size={24} />);
+    const svg = container.querySelector('svg')!;
+    expect(svg.getAttribute('aria-hidden')).toBe('true');
+    expect(svg.getAttribute('focusable')).toBe('false');
+    expect(svg.getAttribute('role')).toBeNull();
+    expect(svg.getAttribute('viewBox')).toBe('0 0 240 240');
+    expect(svg.getAttribute('width')).toBe('24');
+    expect(svg.getAttribute('data-variant')).toBe('silhouette');
+  });
+
+  it('schedules no frame at all under reduced motion, and shows the still shape', () => {
+    const env = stubEnvironment({ reduce: true });
+    const { container } = mount(<BrandMark variant="silhouette" spin="once" spinCue="About Me" />);
+    expect(env.frameCount).toBe(0);
+    expect(outline(container)).toBe(pointsAttribute(MARK_SILHOUETTE_STILL));
+  });
+
+  it('turns on a cue and settles back exactly onto the still shape', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = mount(<BrandMark variant="silhouette" spin="once" spinCue="Orientation" />);
+    const still = pointsAttribute(MARK_SILHOUETTE_STILL);
+
+    env.tick(SPIN_ONCE_MS / 3);
+    expect(outline(container)).not.toBe(still);
+    // Still a closed polygon of real corners, mid-turn.
+    expect(outline(container)!.split(' ').length).toBeGreaterThanOrEqual(6);
+
+    env.tick(SPIN_ONCE_MS);
+    expect(outline(container)).toBe(still);
+    const settled = env.frameCount;
+    env.tick(16);
+    expect(env.frameCount).toBe(settled);
+  });
+
+  it('turns half a revolution, because the shadow repeats every half turn', () => {
+    expect(turnFor('silhouette')).toBeCloseTo(Math.PI, 12);
+    expect(turnFor('graph')).toBeCloseTo(Math.PI * 2, 12);
+    // Not a rounding trick: the outline really is the same at both ends.
+    expect(pointsAttribute(markSilhouettePoints(MARK_STATIC_ANGLE + Math.PI)).split(' ').sort()).toEqual(
+      pointsAttribute(markSilhouettePoints(MARK_STATIC_ANGLE)).split(' ').sort(),
+    );
+  });
+
+  it('rewrites one attribute per frame, not two hundred', () => {
+    const env = stubEnvironment({ reduce: false });
+    const { container } = mount(<BrandMark variant="silhouette" spin="continuous" />);
+    const polygon = container.querySelector('polygon')!;
+    const written: string[] = [];
+    const original = polygon.setAttribute.bind(polygon);
+    polygon.setAttribute = (name: string, value: string) => {
+      written.push(name);
+      original(name, value);
+    };
+    env.tick(1000);
+    expect(written).toEqual(['points']);
   });
 });
 

@@ -39,7 +39,7 @@ export { DeepDive, CHIP_SHIMMER } from './DeepDive';
 export type { DeepDiveProps } from './DeepDive';
 
 export { BrandMark } from './BrandMark';
-export type { BrandMarkProps, BrandMarkSpin } from './BrandMark';
+export type { BrandMarkProps, BrandMarkSpin, BrandMarkVariant } from './BrandMark';
 
 export { Beats } from './Beats';
 export type { BeatsProps } from './Beats';

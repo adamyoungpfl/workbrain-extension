@@ -1,4 +1,4 @@
-import { BrandMark, type BrandMarkSpin } from './BrandMark';
+import { BrandMark, type BrandMarkSpin, type BrandMarkVariant } from './BrandMark';
 import { TypedModuleLabel } from './Typed';
 import { S } from '../strings';
 import './FlowProgress.css';
@@ -45,6 +45,26 @@ export const STATUS_MARK_SPIN: BrandMarkSpin = 'once';
  * 30–38px beside nav text; 400px of panel does not have that room.
  */
 const STATUS_MARK_SIZE = 24;
+
+/**
+ * V1.7 VB-39 — the status-bar mark is the silhouette, not the node graph.
+ *
+ * The paragraph above records the problem this fixes: at this size the twelve
+ * nodes are sub-pixel and the mark reads as a smudge. 24px was the largest the
+ * graph could be without out-weighing its label and the smallest it could be
+ * and still resolve, which is another way of saying the graph never really fit
+ * here. A filled shape has no such floor — it is legible at 16 — so the
+ * silhouette is simply the right drawing for this slot, and the same object.
+ *
+ * It also makes the moving thing cheaper. VB-13's turn rewrites around 220 SVG
+ * attributes a frame; the silhouette rewrites one, and only for the 320ms per
+ * module that `STATUS_MARK_SPIN = 'once'` allows.
+ *
+ * The welcome screen keeps the node graph. It is 96px, it is the first thing
+ * anybody sees, and at that size every node and edge resolves — there is
+ * nothing there for a silhouette to fix.
+ */
+const STATUS_MARK_VARIANT: BrandMarkVariant = 'silhouette';
 
 export interface FlowProgressProps {
   /** The current module's own title — "Orientation", "How I Communicate".
@@ -130,6 +150,7 @@ export function FlowProgress({ title, current, total }: FlowProgressProps) {
         <BrandMark
           className="flowprogress-mark"
           size={STATUS_MARK_SIZE}
+          variant={STATUS_MARK_VARIANT}
           spin={STATUS_MARK_SPIN}
           spinCue={title}
           entrance={false}

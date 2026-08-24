@@ -4,6 +4,10 @@ import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { MARK_STATIC_ANGLE, markFrame } from '../../src/core/geometry/markSpin';
+import {
+  MARK_SILHOUETTE_STILL,
+  pointsAttribute,
+} from '../../src/core/geometry/markSilhouette';
 
 /**
  * V1.2 VB-13 accept criteria: "rotates on the welcome screen; a reduced-motion
@@ -140,6 +144,17 @@ const readPose = (page: Page, selector: string) =>
 const readRadii = (page: Page, selector: string) =>
   page.$$eval(`${selector} circle`, (circles) => circles.map((c) => Number(c.getAttribute('r'))));
 
+/**
+ * V1.7 VB-39. The status-bar mark is a silhouette now, so its pose is one
+ * `points` attribute rather than twelve circles. Same idea as `readPose`: read
+ * the geometry the component actually wrote, not a class it toggled.
+ */
+const readOutline = (page: Page, selector: string) =>
+  page.$eval(`${selector} polygon`, (p) => p.getAttribute('points') ?? '');
+
+/** The outline the panel must be showing when nothing is allowed to move. */
+const STILL_OUTLINE = pointsAttribute(MARK_SILHOUETTE_STILL);
+
 test.describe('VB-13 — the welcome mark turns', () => {
   test('rotates, in real 3D, and stays a whole icosahedron while it does', async () => {
     const { context, page } = await launchPanel();
@@ -222,7 +237,9 @@ test.describe('VB-13 — reduced motion stops the loop, not just the movement', 
 
     await page.waitForTimeout(800);
     expect(await frameCount(page)).toBe(0);
-    expect(await readPose(page, '.flowprogress-mark')).toEqual(STILL_POSE);
+    // V1.7 VB-39: this mark is the silhouette, so the still equivalent is the
+    // still *outline* — the same solid at the same angle, and the same claim.
+    expect(await readOutline(page, '.flowprogress-mark')).toBe(STILL_OUTLINE);
 
     await context.close();
   });
@@ -276,7 +293,7 @@ test.describe('VB-13 — the status-bar mark', () => {
           return `${rect.top.toFixed(3)}|${rect.bottom.toFixed(3)}|${rect.left.toFixed(3)}`;
         }),
       );
-      poses.push((await readPose(page, '.flowprogress-mark')).join(' '));
+      poses.push(await readOutline(page, '.flowprogress-mark'));
       if (STATUS_MARK_SPIN === 'continuous') await waitForFrames(page, 3);
       else await page.waitForTimeout(40);
     }
@@ -380,6 +397,146 @@ test.describe('VB-13 — the status-bar mark', () => {
       });
     });
     expect(stable).toBe(true);
+
+    await context.close();
+  });
+});
+
+/**
+ * V1.7 VB-39 — the status-bar mark is the silhouette.
+ *
+ * Everything here is a measurement rather than a class check. "The mark is a
+ * silhouette" is a claim about what is painted, and an element with the right
+ * attribute that paints nothing would pass any assertion about markup.
+ */
+test.describe('VB-39 — the mark as a silhouette', () => {
+  test('is one filled shape, and the welcome screen still has the whole graph', async () => {
+    const { context, page } = await launchPanel();
+
+    // The welcome mark is untouched: VB-39 changes the small mark, not the
+    // one the screen is built around.
+    const welcome = page.locator('.home-welcome .brand-mark');
+    await expect(welcome).toHaveAttribute('data-variant', 'graph');
+    expect(await page.locator('.home-welcome .brand-mark circle').count()).toBe(12);
+    expect(await page.locator('.home-welcome .brand-mark line').count()).toBe(30);
+
+    await intoTheFlow(page);
+    const mark = page.locator('.flowprogress-mark');
+    await expect(mark).toHaveAttribute('data-variant', 'silhouette');
+    expect(await page.locator('.flowprogress-mark polygon').count()).toBe(1);
+    expect(await page.locator('.flowprogress-mark circle').count()).toBe(0);
+    expect(await page.locator('.flowprogress-mark line').count()).toBe(0);
+
+    await context.close();
+  });
+
+  test('actually paints — a real filled area, in the brand gradient', async () => {
+    const { context, page } = await launchPanel();
+    await intoTheFlow(page);
+    await page.waitForSelector('.flowprogress-mark polygon');
+
+    const painted = await page.evaluate(() => {
+      const polygon = document.querySelector<SVGPolygonElement>('.flowprogress-mark polygon')!;
+      const box = polygon.getBoundingClientRect();
+      const fill = getComputedStyle(polygon).fill;
+      const id = /url\(["']?#([^"')]+)/.exec(fill)?.[1] ?? '';
+      const gradient = document.getElementById(id);
+      const stops = gradient
+        ? [...gradient.querySelectorAll('stop')].map((s) => getComputedStyle(s).stopColor)
+        : [];
+      return { width: box.width, height: box.height, fill, stops };
+    });
+
+    // The mark's box is 24px; the shadow of a solid inscribed in it fills most
+    // of that in both axes. A collapsed or empty polygon fails here, and a
+    // "silhouette" that is really an invisible element cannot pass.
+    expect(painted.width).toBeGreaterThan(14);
+    expect(painted.height).toBeGreaterThan(14);
+    expect(painted.width).toBeLessThanOrEqual(24);
+    expect(painted.height).toBeLessThanOrEqual(24);
+
+    // Filled from the token gradient, and both stops resolve to a real,
+    // opaque colour — not `none`, not a transparent default.
+    expect(painted.fill).toMatch(/^url\(["']?#wb-mark-silhouette/);
+    expect(painted.stops).toHaveLength(2);
+    for (const stop of painted.stops) {
+      expect(stop).toMatch(/^rgba?\(/);
+      expect(stop).not.toMatch(/rgba\(0, 0, 0, 0\)/);
+    }
+    expect(painted.stops[0]).not.toBe(painted.stops[1]);
+
+    await context.close();
+  });
+
+  test('the ink is really on the screen, not merely in the DOM', async () => {
+    // The strongest form of "it paints": screenshot the 24px box and count
+    // how much of it stops being the panel's background. A shape that renders
+    // as nothing, or in the surface's own colour, fails this and passes every
+    // attribute check above it.
+    const { context, page } = await launchPanel({ reduce: true });
+    await intoTheFlow(page);
+    const mark = page.locator('.flowprogress-mark');
+    await mark.waitFor();
+
+    const shot = await mark.screenshot();
+    const decoded = await page.evaluate(async (bytes) => {
+      const blob = new Blob([new Uint8Array(bytes)], { type: 'image/png' });
+      const bitmap = await createImageBitmap(blob);
+      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
+      const context2d = canvas.getContext('2d')!;
+      context2d.drawImage(bitmap, 0, 0);
+      const { data } = context2d.getImageData(0, 0, bitmap.width, bitmap.height);
+      // The corner pixel is the surface behind the mark; anything far from it
+      // is ink. Distance, not equality, so antialiasing counts as neither.
+      const base = [data[0]!, data[1]!, data[2]!];
+      let ink = 0;
+      let blue = 0;
+      for (let i = 0; i < data.length; i += 4) {
+        const d =
+          Math.abs(data[i]! - base[0]!) +
+          Math.abs(data[i + 1]! - base[1]!) +
+          Math.abs(data[i + 2]! - base[2]!);
+        if (d > 90) {
+          ink += 1;
+          if (data[i + 2]! > data[i]!) blue += 1;
+        }
+      }
+      return { ink, blue, total: (bitmap.width * bitmap.height) };
+    }, [...shot]);
+
+    // A hexagon-ish shadow inscribed in the box covers well over a third of
+    // it, and nothing else in the box paints at all.
+    expect(decoded.ink / decoded.total, `only ${decoded.ink} of ${decoded.total} pixels painted`)
+      .toBeGreaterThan(0.35);
+    // And it is the brand's blue-to-teal, not a grey or a black fallback:
+    // every painted pixel is bluer than it is red.
+    expect(decoded.blue / decoded.ink).toBeGreaterThan(0.95);
+
+    await context.close();
+  });
+
+  test('turns when the module changes, and lands back on the still outline', async () => {
+    const { context, page } = await launchPanel();
+    await intoTheFlow(page);
+    await page.waitForSelector('.flowprogress-mark polygon');
+
+    // The first module's turn happens on arrival. Sample through it: the
+    // outline must genuinely change shape, and stay a real polygon while it
+    // does — the silhouette gains and loses corners as the solid turns, and a
+    // frame with fewer than three of them would be a collapsed shape.
+    const seen = new Set<string>();
+    for (let i = 0; i < 16; i++) {
+      const points = await readOutline(page, '.flowprogress-mark');
+      seen.add(points);
+      expect(points.split(' ').length).toBeGreaterThanOrEqual(6);
+      await page.waitForTimeout(24);
+    }
+    expect(seen.size, 'the silhouette never moved').toBeGreaterThan(1);
+
+    // Settled, it is exactly the pose the still mark ships — the same one
+    // reduced motion gets, so motion carried nothing.
+    await page.waitForTimeout(500);
+    expect(await readOutline(page, '.flowprogress-mark')).toBe(STILL_OUTLINE);
 
     await context.close();
   });

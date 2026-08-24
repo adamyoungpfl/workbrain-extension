@@ -139,5 +139,15 @@ describe('FlowProgress', () => {
       );
       expect(['continuous', 'once']).toContain(STATUS_MARK_SPIN);
     });
+
+    // ── V1.7 VB-39 ────────────────────────────────────────────────────────
+    it('is the silhouette, not the node graph — one filled shape and no nodes', () => {
+      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
+      const mark = container.querySelector('.flowprogress-mark')!;
+      expect(mark.getAttribute('data-variant')).toBe('silhouette');
+      expect(mark.querySelectorAll('polygon')).toHaveLength(1);
+      expect(mark.querySelectorAll('circle')).toHaveLength(0);
+      expect(mark.querySelectorAll('line')).toHaveLength(0);
+    });
   });
 });

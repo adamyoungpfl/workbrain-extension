@@ -47,6 +47,23 @@
   stroke: var(--brand-edge);
 }
 
+/* V1.7 VB-39 — the silhouette. One shape, one gradient, no strokes and no
+   depth ramps: a shadow has no interior, which is the entire point of it.
+
+   The two stops are the ends of the node graph's own range — its bluest
+   gradient into its most teal one — so the filled shape reads as the same
+   logo rather than as a shape in a brand colour. No new token: these are the
+   `color.brand` values design/tokens.json already ships for the mark, and
+   that group's note applies here unchanged. The mark is decorative and
+   `aria-hidden`, so no contrast ratio is claimed for it and none is needed;
+   the module title beside it carries the meaning. */
+.brand-mark-silhouette {
+  fill: url(#wb-mark-silhouette);
+}
+
+.brand-mark-silhouette-from { stop-color: var(--brand-node-1-from); }
+.brand-mark-silhouette-to   { stop-color: var(--brand-node-2-to); }
+
 /* One entrance, on arrival. `both` holds the end frame so nothing can leave
    the mark part-faded. Opt-out via `entrance={false}`: the status-bar mark
    remounts on every question, and an entrance on each of forty-nine questions

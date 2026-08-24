@@ -4,6 +4,15 @@
     "lib": ["ES2022", "DOM", "DOM.Iterable"],
     "module": "ESNext",
     "moduleResolution": "bundler",
+    // V1.7 VB-39. Vite does every emit here and `npm run typecheck` already
+    // passes --noEmit, so declaring it costs nothing and unlocks the flag
+    // below. src/core/geometry/silhouette.ts writes a real `.ts` on its import
+    // because scripts/icons.mjs loads that module under Node's type stripping,
+    // and Node resolves files rather than TypeScript's extensionless
+    // specifiers. That import is what keeps the generated icon set and the
+    // panel's own mark on one copy of the geometry.
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
     "jsx": "react-jsx",
     "strict": true,
     "noUncheckedIndexedAccess": true,

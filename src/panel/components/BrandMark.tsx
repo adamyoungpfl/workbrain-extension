@@ -7,6 +7,11 @@ import {
   spinAngleAt,
   type MarkFrame,
 } from '../../core/geometry/markSpin';
+import {
+  MARK_SILHOUETTE_STILL,
+  markSilhouettePoints,
+  pointsAttribute,
+} from '../../core/geometry/markSilhouette';
 import { ease } from '../../core/motion/easing';
 import './BrandMark.css';
 
@@ -56,6 +61,23 @@ import './BrandMark.css';
  * purely decorative — `aria-hidden`, with the real selectable word
  * "Workbrain" beneath it on the welcome screen and the module title beside it
  * in the status bar, so nothing is distinguished by colour or motion alone.
+ *
+ * V1.7 VB-39 — THE SILHOUETTE
+ * `variant="silhouette"` draws the same solid as its shadow: one filled
+ * outline, no nodes, no edges, no depth cueing. It is not a second drawing —
+ * `core/geometry/markSilhouette` poses the solid through the mark's own
+ * camera, so every corner of the outline sits exactly on a node of the graph
+ * at the same angle, and a unit test asserts that rather than trusting it.
+ *
+ * It exists because the graph does not survive being small. Twelve nodes at
+ * 24px are sub-pixel dots and the mark reads as a shimmer; a filled shape at
+ * 24px reads as a shape. That is the same reasoning, and the same evidence,
+ * that made `scripts/icons.mjs` stop drawing the graph at 16px.
+ *
+ * The turn is half a revolution rather than a whole one, and that is not a
+ * shortcut. The solid's vertical axis is a two-fold axis of symmetry, so its
+ * shadow — which has no colour to give the game away — repeats exactly every
+ * 180°. Turning it 360° would play the same animation twice.
  */
 
 /** The pose `mark.svg` exports, and so what a still mark draws. */
@@ -107,6 +129,24 @@ export function resetSpinCueMemory(): void {
   lastCue = null;
 }
 
+export type BrandMarkVariant =
+  /** Twelve nodes and thirty edges, depth-cued. The welcome screen's mark. */
+  | 'graph'
+  /** The shape the same solid casts, filled. For the small places, where the
+   * graph turns to mud. */
+  | 'silhouette';
+
+/**
+ * How much of a revolution one `spin="once"` turn covers.
+ *
+ * A whole one for the graph, whose five gradients ride on individual vertices
+ * and only come back to where they started after 360°. Half for the
+ * silhouette, which repeats every 180° — see the note at the top of the file.
+ */
+export function turnFor(variant: BrandMarkVariant): number {
+  return variant === 'silhouette' ? Math.PI : Math.PI * 2;
+}
+
 export type BrandMarkSpin =
   /** Turns for as long as it is on screen. The welcome screen's mark. */
   | 'continuous'
@@ -118,6 +158,8 @@ export type BrandMarkSpin =
 export interface BrandMarkProps {
   /** Rendered size in px, square. The viewBox is 240×240 regardless. */
   size?: number;
+  /** Which drawing of the solid. Defaults to the full node graph. */
+  variant?: BrandMarkVariant;
   /** How it moves. Reduced motion overrides every value here with `none`. */
   spin?: BrandMarkSpin;
   /** For `spin="once"`: change this value to make it turn. */
@@ -134,6 +176,7 @@ export interface BrandMarkProps {
 
 export function BrandMark({
   size = 96,
+  variant = 'graph',
   spin = 'continuous',
   spinCue = '',
   entrance = true,
@@ -141,6 +184,7 @@ export function BrandMark({
 }: BrandMarkProps) {
   const lines = useRef<(SVGLineElement | null)[]>([]);
   const circles = useRef<(SVGCircleElement | null)[]>([]);
+  const outline = useRef<SVGPolygonElement | null>(null);
   /** Which gradient each slot currently shows, so `fill` is only rewritten on
    * the frames where a node has actually overtaken another. */
   const fills = useRef<number[]>(STILL.nodes.map((n) => n.gradient));
@@ -184,19 +228,31 @@ export function BrandMark({
       }
     }
 
+    /** One frame of the silhouette: a single attribute, on a single element. */
+    function paintOutline(angle: number) {
+      outline.current?.setAttribute('points', pointsAttribute(markSilhouettePoints(angle)));
+    }
+
+    /** The one line where the two drawings differ. Everything around it —
+     * when to move, how far, when to stop, when never to start — is shared. */
+    function draw(angle: number) {
+      if (variant === 'silhouette') paintOutline(angle);
+      else paint(markFrame(angle));
+    }
+
     function settle() {
       if (raf) cancelAnimationFrame(raf);
       raf = 0;
       // Whatever stopped it, the mark lands on the pose we ship still. Motion
       // is never the thing carrying the meaning.
-      if (live) paint(STILL);
+      if (live) draw(MARK_STATIC_ANGLE);
     }
 
     function runContinuous() {
       function frame() {
         // The absolute clock, not time-since-mount: a remount must not snap
         // the mark back to its start pose. See spinAngleAt's own note.
-        paint(markFrame(spinAngleAt(performance.now(), MARK_SPIN_MS)));
+        draw(spinAngleAt(performance.now(), MARK_SPIN_MS));
         raf = requestAnimationFrame(frame);
       }
       raf = requestAnimationFrame(frame);
@@ -210,8 +266,8 @@ export function BrandMark({
           settle();
           return;
         }
-        const turn = ease(elapsed / SPIN_ONCE_MS) * Math.PI * 2;
-        paint(markFrame(MARK_STATIC_ANGLE + turn));
+        const turn = ease(elapsed / SPIN_ONCE_MS) * turnFor(variant);
+        draw(MARK_STATIC_ANGLE + turn);
         raf = requestAnimationFrame(frame);
       }
       // A remount after the turn already finished must not start a new one,
@@ -243,21 +299,55 @@ export function BrandMark({
       query.removeEventListener('change', onPreferenceChange);
       if (raf) cancelAnimationFrame(raf);
     };
-  }, [spin, spinCue]);
+  }, [spin, spinCue, variant]);
+
+  /**
+   * The two drawings share the whole shell — the same 240 viewBox, the same
+   * decorative contract, the same data hooks a test or a stylesheet reaches
+   * for — and differ only in what is inside it. Written once so that
+   * "silhouette" cannot quietly become a second component with its own
+   * accessibility story.
+   */
+  const shell = {
+    className: className ? `brand-mark ${className}` : 'brand-mark',
+    'data-entrance': entrance ? 'on' : 'off',
+    'data-spin': spin,
+    'data-variant': variant,
+    width: size,
+    height: size,
+    viewBox: `0 0 ${MARK_VIEWBOX} ${MARK_VIEWBOX}`,
+    // Decorative: the wordmark next to it carries the name. Nothing in the
+    // mark is information the person needs read out.
+    'aria-hidden': true,
+    focusable: 'false',
+  } as const;
+
+  if (variant === 'silhouette') {
+    return (
+      <svg {...shell}>
+        <defs>
+          {/* One gradient, running the length of the shape: the graph's blue
+              through its teal, so the silhouette is recognisably the same
+              logo and not a grey blob. Its own id, because unlike the two
+              node-graph marks these two *can* appear on one screen. */}
+          <linearGradient id="wb-mark-silhouette" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0%" className="brand-mark-silhouette-from" />
+            <stop offset="100%" className="brand-mark-silhouette-to" />
+          </linearGradient>
+        </defs>
+        {/* The whole drawing. One element, and one attribute rewritten per
+            frame against the graph's two hundred and twenty. */}
+        <polygon
+          ref={outline}
+          className="brand-mark-silhouette"
+          points={pointsAttribute(MARK_SILHOUETTE_STILL)}
+        />
+      </svg>
+    );
+  }
 
   return (
-    <svg
-      className={className ? `brand-mark ${className}` : 'brand-mark'}
-      data-entrance={entrance ? 'on' : 'off'}
-      data-spin={spin}
-      width={size}
-      height={size}
-      viewBox={`0 0 ${MARK_VIEWBOX} ${MARK_VIEWBOX}`}
-      // Decorative: the wordmark next to it carries the name. Nothing in the
-      // mark is information the person needs read out.
-      aria-hidden="true"
-      focusable="false"
-    >
+    <svg {...shell}>
       <defs>
         {GRADIENTS.map((n) => (
           // Gradient ids are document-global in SVG. Prefixed rather than
