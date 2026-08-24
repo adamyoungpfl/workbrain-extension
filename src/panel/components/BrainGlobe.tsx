@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { FileOutlineNode } from '../../schema/flow.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
@@ -9,6 +9,7 @@ import { NodeSummaryCard } from './NodeSummary';
 import { globeLabelFor } from '../../core/flow/globeLabels';
 import { EDGE_LIGHT_LEVEL, edgeLight, globeNodeState, isUnifiedGlow } from '../../core/globe/illumination';
 import type { GlobeNodeState } from '../../core/globe/illumination';
+import { detailBand } from '../../core/globe/detailBand';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
 import {
   CAMERA,
@@ -184,6 +185,40 @@ import './BrainGlobe.css';
  * real distance to the orb, so it cannot grow into the node whatever the
  * content or the stage size. It may sit over the node's *label* — the card's
  * first line is that same section's full name, so nothing is lost.
+ *
+ * ── V1.6 VB-31: the detail zoom's text, centred and free-floating ─────────
+ *
+ * The split's right-hand half was a bordered panel at `left: 35%`. VB-31 takes
+ * the box away: **the feature node stays exactly where it is and the text
+ * becomes free text, centred horizontally on it, structured the same way for
+ * every node.** Nothing about the geometry above changed — FEATURE_X, FEATURE_Y
+ * and FEATURE_R are the numbers they were in V1.4, and the orb travels to the
+ * same place it always did.
+ *
+ * WITH NO BOX, ARITHMETIC IS THE ONLY THING KEEPING THE TEXT OFF THE ORB. So
+ * the placement is a fold in core/globe/detailBand.ts rather than a stylesheet
+ * guess, and it is the same technique VB-27 arrived at above for the hover
+ * card: the text lives in a band that starts below the orb's lowest point and
+ * is capped at the stage's floor, measured per frame in real pixels. Below the
+ * rim and capped at the floor, it cannot reach the node by growing, by being
+ * given a longer answer, or by being drawn on a smaller stage.
+ *
+ * "CENTRED ON THE NODE" HAS A PRICE, AND IT IS WORTH KNOWING WHAT IT IS. A
+ * column dead-centred on a node at 21% of a 260px stage is 93px wide — fifteen
+ * characters, and "Manager / Team Lead" breaks in two. So the measure is bought
+ * with a stated allowance: the block's own axis may sit up to half the orb's
+ * radius from the node's centre (DETAIL_DRIFT), which is 14px on the 300px
+ * stage and buys about half as much measure again. `detailBand` reports what it
+ * actually spent as `drift`, the direction is always towards the middle of the
+ * stage — `labelPlacement`'s rule above, the one every other label on this
+ * globe is already placed by — and core/globe/detailBand.ts names the single
+ * number that would make the drift zero (FEATURE_X, on the stage's axis).
+ *
+ * IT IS CENTRED ON THE ORB WHEREVER THE ORB IS THIS FRAME, not on where the orb
+ * ends up. The band is folded from the picked child's own live layout, so the
+ * text travels with the orb across the split and arrives with it — one motion,
+ * no keyframes, and already there under reduced motion because the split's
+ * clock is already 1 (see `runSplit`).
  */
 
 // ── Geometry constants ─────────────────────────────────────────────────────
@@ -306,19 +341,43 @@ const CENTRE_R = 15.5;
  * The split, in ms and in view units.
  *
  * 320ms is docs/design-system.html §06's drawer value, and a whole stage
- * re-forming into two columns is the drawer-sized change on this surface. The
- * feature position is left of centre and dead on the vertical middle; the
- * panel that opens beside it starts at DETAIL_LEFT_PCT (BrainGlobe.css), and
- * FEATURE_X is set so the orb sits in the middle of what is left.
+ * re-forming is the drawer-sized change on this surface. The feature position
+ * is left of centre and dead on the vertical middle.
  */
 const SPLIT_MS = 320;
 /* -58 and 19 are measured against the SMALLEST stage the drawer opens Brain
-   at — 260px, where the left column is 91px and this orb is 49px of it. A
-   feature position tuned at the drawer's full height would have the orb
-   touching the panel at its resting one. */
+   at — 260px, where the left column is 91px and this orb is 49px of it. They
+   were set in V1.4 so the orb sat in the middle of what was left beside the
+   bordered panel; V1.6 VB-31 deleted the panel and says in as many words to
+   keep the node exactly where it is, so they are untouched. What that costs is
+   written down in core/globe/detailBand.ts — a column dead-centred on a node at
+   21% of a 260px stage is 93px wide, which is why the text buys its measure
+   with DETAIL_DRIFT below instead of being dead-centred and unreadable. */
 const FEATURE_X = -58;
 const FEATURE_Y = 0;
 const FEATURE_R = 19;
+
+/**
+ * V1.6 VB-31 — the free text's own three numbers.
+ *
+ * `DETAIL_DRIFT` is the only taste decision in the whole placement, and it sets
+ * the measure rather than being set by it (core/globe/detailBand.ts): how far
+ * the block's own centre may sit from the node's, as a fraction of the node's
+ * radius. **0.5 puts the text's axis halfway between the orb's centre and its
+ * rim** — 14px on the 300px stage, under 5% of it, which nobody reads as
+ * "offset to one side" — and buys about 50% more measure than dead-centre for
+ * it. Screenshotted at both ends: at 0 the block is 93px on the smallest stage
+ * and "Manager / Team Lead" breaks in two; at 1 the axis is on the rim and the
+ * text has visibly stopped being under the orb.
+ *
+ * `DETAIL_EDGE_PX` is the margin the block keeps from the stage's own edge, and
+ * `DETAIL_GAP` the space between the orb's rim and the first line of text. 10
+ * rather than the hover card's 6: with no border between them, the gap is the
+ * only thing saying the text is *under* the orb rather than falling out of it.
+ */
+const DETAIL_DRIFT = 0.5;
+const DETAIL_EDGE_PX = 8;
+const DETAIL_GAP = 10;
 
 /**
  * V1.5 VB-27 — how long the summary waits before closing when the pointer
@@ -666,26 +725,35 @@ function labelPlacement(leftPct: number): { shift: string; room: string } {
   };
 }
 
-// ── The split's information panel ──────────────────────────────────────────
+// ── What the detail zoom says ─────────────────────────────────────────────
 
 /**
- * The grid of what a sub-section holds — V1.4 VB-23's "information panel on
- * the right".
+ * What a sub-section holds — V1.4 VB-23's "information panel on the right",
+ * which V1.6 VB-31 turned into free text centred under the node.
+ *
+ * THE MARKUP IS UNCHANGED AND THE PRESENTATION IS NOT. VB-31 asks for the same
+ * shape every time, and the shape was never the box: it is name → record →
+ * answer → the question the answer belongs to, in the order the person's own
+ * file writes them. What went is the card around it and the two-up grid, which
+ * existed because the panel had 144px of content beside the orb; a block of
+ * centred free text has one column, and a centred grid of two would be reading
+ * order fighting layout for no gain at 400px.
  *
  * Three decisions, all of them forced by 400px:
  *
- * 1. **The answer is the cell, the question is its caption.** Every question in
- *    this interview is a whole spoken sentence ("Is this your primary role, a
- *    secondary role, or something occasional?"), and a grid whose labels are
- *    sentences is a list. So the person's own words are the loud line and the
- *    question sits under them, two lines at most, with the whole of it in
- *    `title` for anyone who wants it. Nothing they *said* is ever clipped.
+ * 1. **The answer is the loud line, the question is its caption.** Every
+ *    question in this interview is a whole spoken sentence ("Is this your
+ *    primary role, a secondary role, or something occasional?"), and a list
+ *    whose labels are sentences buries the answers. So the person's own words
+ *    are the loud line and the question sits under them, three lines at most,
+ *    with the whole of it in `title` for anyone who wants it. Nothing they
+ *    *said* is ever clipped.
  * 2. **Records become headings, not indentation.** Three roles are three
  *    headings, exactly as the generated file prints them — indentation at this
  *    width would cost more than it explains.
  * 3. **A `<dl>`, because these are name/value pairs.** Grouped in `<div>`s,
  *    which is valid inside a description list and is what lets each pair be
- *    one grid cell.
+ *    one block.
  *
  * **No headings in here, deliberately.** A record's title looks like an `<h4>`
  * and is not one: this component is dropped into a drawer whose own heading is
@@ -731,11 +799,16 @@ function DetailGrid({ details }: { details: readonly NodeDetail[] }) {
               <div
                 className="brainglobe-detail-cell"
                 key={`${cell.label}-${cellIndex}`}
+                /* Still published, and no longer laid out on: V1.6 VB-31's
+                   single centred column has no row for a wide cell to take.
+                   Kept because it is core's own statement about this answer's
+                   length (`WIDE_VALUE_CHARS` in core/flow/nodeDetails.ts) and
+                   the DOM is where that contract is visible. */
                 data-wide={cell.wide ? 'true' : 'false'}
               >
                 {/* `dt` before `dd`, which is the order HTML requires inside a
                     description list and the order a screen reader wants:
-                    question, then answer. The cell shows them the other way up
+                    question, then answer. The block shows them the other way up
                     — the answer is the content — and that is one `order` in
                     BrainGlobe.css rather than invalid markup here. */}
                 <dt className="brainglobe-detail-key" title={cell.label}>
@@ -1534,6 +1607,52 @@ export function BrainGlobe({
       : Math.max(0, size - SUMMARY_EDGE_PX - (nodeY + orbR + SUMMARY_GAP));
   })();
 
+  /**
+   * V1.6 VB-31 — where the free text sits this frame.
+   *
+   * Folded from the picked child's OWN live layout rather than from FEATURE_X /
+   * FEATURE_Y directly, so the text is centred on the orb wherever the orb is
+   * mid-split and arrives with it rather than after it. Derived per render like
+   * everything else on this stage; nothing about it is stored.
+   */
+  const pickedLayout = childLayout.find((entry) => entry.picked);
+  const band = pickedLayout
+    ? detailBand({
+        size,
+        nodeX: pct(pickedLayout.x) / 100,
+        nodeY: pct(pickedLayout.y) / 100,
+        nodeRadius: pickedLayout.radius / (VIEW_HALF * 2),
+        driftAllowance: DETAIL_DRIFT,
+        edge: DETAIL_EDGE_PX,
+        gap: DETAIL_GAP,
+      })
+    : null;
+
+  /**
+   * V1.6 VB-31 — whether the free text has more below the fold.
+   *
+   * The one thing about this block that cannot be derived from props: it
+   * depends on how the browser broke the lines. So it is measured off the real
+   * element, after layout, and it decides exactly one thing — whether the
+   * fade at the block's foot is drawn (BrainGlobe.css). Guessing it from the
+   * content's length faded the last line of `2.5 Expertise`, which is one
+   * sentence and fits with 30px to spare.
+   *
+   * `useLayoutEffect` and no dependency array, because the answer changes with
+   * anything that changes the line breaking — the picked node, the stage's
+   * size, the band's own room — and enumerating those is a list that will be
+   * wrong by V1.7. The read costs one layout on a render where the block is
+   * mounted at all, and `setState` only ever runs on the frame the answer
+   * actually flips.
+   */
+  const detailRef = useRef<HTMLDivElement | null>(null);
+  const [detailScrolls, setDetailScrolls] = useState(false);
+  useLayoutEffect(() => {
+    const element = detailRef.current;
+    const scrolls = !!element && element.scrollHeight - element.clientHeight > 1;
+    setDetailScrolls((was) => (was === scrolls ? was : scrolls));
+  });
+
   const rootStyle = { '--brainglobe-size': `${size}px` } as CSSProperties;
 
   return (
@@ -2044,27 +2163,46 @@ export function BrainGlobe({
       )}
 
       {/*
-        V1.4 VB-23 — the right-hand half of the split.
+        V1.4 VB-23 — the other half of the split. V1.6 VB-31 — free text,
+        centred on the node, with no box around it at all.
 
         A `region` rather than a plain div, and focusable, because it scrolls:
-        `2.1 Roles` with three records is thirteen cells and taller than the
-        stage, and a scrolling box a keyboard cannot reach is a box whose
-        bottom half does not exist (WCAG 2.1.1, and axe's
+        `2.1 Roles` with three records is thirteen answers and taller than any
+        band this stage can offer, and a scrolling box a keyboard cannot reach
+        is a box whose bottom half does not exist (WCAG 2.1.1, and axe's
         `scrollable-region-focusable`). It is a stop *after* the sub-node that
         opened it and *before* the way back out, so tabbing forward leaves the
         globe exactly as it did before the split existed — no trap.
 
+        The four numbers below are the whole of its placement (core/globe/
+        detailBand.ts): a centre on the node, a measure, a top under the orb's
+        rim, and the room between that and the stage's floor. The room is a cap
+        and not a target — a one-sentence node draws one sentence.
+
         Mounted only while a sub-node is picked, so nothing behind the globe
         holds a name or a tab stop it should not.
       */}
-      {pickedChild && (
+      {pickedChild && band && (
         <div
           className="brainglobe-detail"
+          ref={detailRef}
           role="region"
           tabIndex={0}
           aria-label={S.brainGlobeDetail(pickedChild.label)}
           data-detail-id={pickedChild.id}
-          style={{ '--brainglobe-split': es.toFixed(3) } as CSSProperties}
+          /* Measured, not guessed — see `detailScrolls`. It draws the fade at
+             the block's foot and nothing else; the scrolling itself is the
+             browser's and the tab stop above is what reaches it. */
+          data-scrolls={detailScrolls ? 'true' : 'false'}
+          style={
+            {
+              '--brainglobe-split': es.toFixed(3),
+              '--brainglobe-detail-centre': `${band.centre.toFixed(2)}px`,
+              '--brainglobe-detail-width': `${band.width.toFixed(2)}px`,
+              '--brainglobe-detail-top': `${band.top.toFixed(2)}px`,
+              '--brainglobe-detail-room': `${band.room.toFixed(2)}px`,
+            } as CSSProperties
+          }
         >
           {/* Not a heading, for the same reason the record titles below are
               not: this component does not know what heading level is above it.

@@ -314,60 +314,72 @@
   color: var(--globe-highlight);
 }
 
-/* ── The split's information panel ───────────────────────────────────────── */
+/* ── The detail zoom's text ──────────────────────────────────────────────── */
 
-/* V1.4 VB-23. Picking a sub-node makes the stage two columns: the orb travels
-   to a feature position on the left (real geometry, in the component — see
-   FEATURE_X) and this opens beside it.
+/* V1.4 VB-23 put a bordered panel at `left: 35%` beside the featured orb.
+   V1.6 VB-31 TAKES THE BOX AWAY: the node stays exactly where it is and this
+   becomes free text, centred horizontally on it, with the same shape for every
+   node. No card, no border, no background, no radius — the words sit on the
+   stage's own field.
 
-   THE PROPORTIONS ARE MEASURED, NOT CHOSEN, and they were measured against
-   `2.1 Roles` with three roles — thirteen cells, the longest real sub-section
-   in the file (core/flow/nodeDetails.ts's own tests count them).
+   NOTHING HERE CHOOSES A POSITION. All four numbers arrive as custom
+   properties from core/globe/detailBand.ts, folded per frame from the picked
+   orb's real geometry:
 
-   The stage is square, so it is 260px at the height the drawer opens Brain at
-   and at most 380px inside a 400px panel. 35%/2% gives this panel 164px there
-   and 239px at full height — 144px and 221px of content — which is what makes
-   the grid below two columns at every height Brain runs at. Half the stage was
-   the first attempt and was 20px short: every cell fell back to full width and
-   the grid quietly became a list. The other 35% is the orb's, and FEATURE_X /
-   FEATURE_R in BrainGlobe.tsx are set against the 260px case for the same
-   reason — a feature position tuned at full height had the orb touching this
-   panel at the resting one. */
+     --brainglobe-detail-centre  the orb's own centre, clamped to the stage
+     --brainglobe-detail-width   the measure
+     --brainglobe-detail-top     the orb's lowest point, plus a gap
+     --brainglobe-detail-room    from there to the stage's floor
+
+   THE TOP AND THE ROOM ARE WHAT KEEP THE TEXT OFF THE ORB, and with no box
+   around it they are the only things that can. It is the technique VB-27
+   settled on for the hover card one section up — cap the height at a measured
+   distance rather than trust the content to behave — applied to a band that
+   starts *below the rim*, so the text cannot reach the node by growing, by
+   being handed a longer answer, or by being drawn on a smaller stage.
+
+   THE MEASURE IS BOUGHT, NOT CHOSEN. A column dead-centred on a node at 21% of
+   the 260px stage is 93px wide, so the block is allowed to sit up to half the
+   orb's radius off the node's centre and spends that on width. 14px at the
+   300px stage. core/globe/detailBand.ts carries the arithmetic and names the
+   one number that would make the drift zero. */
 .brainglobe-detail {
   position: absolute;
-  left: 35%;
-  right: 2%;
-  /* Below the way out, not behind it. `Back to the whole file` is a 44px pill
-     pinned to the stage's top-left and it is wider than the left column — the
-     first build of this panel put its heading under that button, which is a
-     heading nobody can read. A px top rather than a percentage because the
-     button's own height is in px and does not scale with the stage. */
-  top: 60px;
-  /* Height follows the content and stops at the stage's own floor, rather than
+  left: var(--brainglobe-detail-centre, 50%);
+  width: var(--brainglobe-detail-width, 62%);
+  transform: translateX(-50%);
+  top: var(--brainglobe-detail-top, 60px);
+  /* Height follows the content and stops at the band's floor, rather than
      always filling to it: `2.4 Decision Rights` before anybody has answered it
-     is one sentence, and a one-sentence panel drawn 230px tall reads as
+     is one sentence, and a one-sentence block drawn 100px tall reads as
      something that failed to load. */
-  max-height: calc(100% - 68px);
+  max-height: var(--brainglobe-detail-room, none);
   /* Stated, not assumed: this repo has no global reset, so a content-box
-     `max-height` would let the padding and the border push the panel 18px past
-     the bottom of the stage — which is exactly what it did, and what the e2e
-     geometry check caught. */
+     `max-height` would let padding push the block past the stage's floor —
+     which is exactly what the bordered version did, and what the e2e geometry
+     check caught. */
   box-sizing: border-box;
   overflow-y: auto;
   overscroll-behavior: contain;
-  padding: 8px 9px;
-  border: 1px solid var(--globe-panel-line);
-  border-radius: var(--r-md);
-  background: var(--globe-panel);
+  padding: 0;
+  /* CENTRED, AND CENTRED ALL THE WAY DOWN. VB-31 asks for a predictable shape,
+     and a block whose name is centred over left-aligned answers has two. */
+  text-align: center;
   font-family: var(--font-sans);
   color: var(--globe-label);
+  /* The words are on the picture now, not on a panel over it — the field is a
+     radial and the featured orb's own bloom reaches into the top of this band.
+     The same shadow the node labels wear, in the field's own colour, so the
+     text sits in front of the stage without a plate that would be a box by
+     another name. */
+  text-shadow: 0 1px 3px var(--globe-field), 0 0 8px var(--globe-field);
   /* The stage owns pointer gestures (`touch-action: none` up top) so that a
      drag turns the globe. This is text, and text scrolls. */
   touch-action: pan-y;
   user-select: text;
   -webkit-user-select: text;
   cursor: auto;
-  /* The panel arrives with the orb rather than after it: `--brainglobe-split`
+  /* The text arrives with the orb rather than after it: `--brainglobe-split`
      is the component's own eased clock, the same number the orb's travel is
      drawn from, so there is one motion and not two that nearly agree. No
      keyframes, nothing to cancel — under reduced motion the clock is simply
@@ -375,11 +387,36 @@
   opacity: var(--brainglobe-split, 1);
 }
 
+/* WHAT THE BORDER USED TO SAY. `2.1 Roles` holds thirteen answers and no band
+   this stage can offer will ever show all of them, so the block scrolls — and
+   a box with an edge said so simply by having one. Free text does not, and
+   text stopping dead at an invisible line reads as a bug rather than as "there
+   is more below". So the last 16px fade out: the same information the panel's
+   edge carried, drawn as the only mark a surface with no boxes left has.
+
+   ONLY WHEN THERE ACTUALLY IS MORE. `data-scrolls` is set by the component from
+   a real measurement of this element, not guessed from the content's length —
+   an earlier build faded whatever came within 16px of the band's floor and
+   greyed out the last line of `2.5 Expertise`, which is one sentence and fits.
+
+   Nothing is hidden by it: the region is a real scroller and a real tab stop,
+   and every answer in it is reachable. A mask reads alpha and nothing else, so
+   `currentColor` here means "opaque down to here" and carries no colour
+   decision with it. */
+.brainglobe-detail[data-scrolls='true'] {
+  -webkit-mask-image: linear-gradient(to bottom, currentColor calc(100% - 16px), transparent 100%);
+  mask-image: linear-gradient(to bottom, currentColor calc(100% - 16px), transparent 100%);
+}
+
 .brainglobe-detail:focus-visible {
   outline: 2px solid var(--globe-focus);
   outline-offset: -2px;
 }
 
+/* THE SHAPE, AND IT IS THE SAME SHAPE EVERY TIME (VB-31): the node's own name,
+   then — for as many records as it holds — a record's title, and under it each
+   answer with the question it answers. A node with no records skips the titles
+   and nothing else moves. Four type sizes, one column, one alignment. */
 .brainglobe-detail-name {
   margin: 0 0 8px;
   font-size: 13px;
@@ -389,38 +426,42 @@
   color: var(--globe-label);
 }
 
+/* SPACE, NOT A RULE. The bordered version separated records with a hairline;
+   a hairline is a box in one dimension and VB-31 asks for none. 12px is a
+   whole blank line at this type size, which is what a reader takes as "new
+   record" without anything being drawn. */
 .brainglobe-detail-group + .brainglobe-detail-group {
-  margin-top: 10px;
-  padding-top: 8px;
-  border-top: 1px solid var(--globe-panel-line);
+  margin-top: 12px;
 }
 
 /* A record's title — the same string the generated file prints as its heading
-   (core/files/generate.ts's `repeatableRecordTitle`). */
+   (core/files/generate.ts's `repeatableRecordTitle`). design/tokens.json's
+   `type.label` treatment, which is what the globe's own node labels wear: on a
+   stage with no boxes left, the lettering is what says "this is a heading". */
 .brainglobe-detail-record {
   margin: 0 0 6px;
   font-size: 11px;
   font-weight: 700;
   line-height: 1.3;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
+  /* The tracking is added after the last character too, which pulls a centred
+     line half a pixel off centre. Taken back here, exactly as the node labels
+     take it back. */
+  padding-left: 0.08em;
   color: var(--globe-detail-key);
 }
 
-/* The grid. `auto-fill` rather than a fixed two columns, so the same rule
-   gives two cells across at the drawer's resting height and stays honest if
-   the stage is ever narrower — a hard `1fr 1fr` at 150px would be two columns
-   of one word each. */
+/* One column. The two-up grid went with the panel: it existed because the
+   bordered version had 144px of content beside the orb and a hole the width of
+   a column looked like a bug, and `pairUp` in core/flow/nodeDetails.ts was
+   written to close those holes. Centred free text has no holes to close —
+   every answer takes the measure, and reading order and visual order are the
+   same thing again. */
 .brainglobe-detail-grid {
-  display: grid;
-  /* 64px, measured. The panel is 144px of content at the drawer's resting
-     height, so two columns and an 8px gutter need a minimum at or under 68 —
-     and 68 exactly is one pixel too greedy. Both earlier values (74, then 68)
-     were caught the same way: by measuring the rendered cells and finding the
-     whole grid had silently collapsed to a single column, which `auto-fill`
-     does quietly and correctly and looks exactly like a bug. */
-  grid-template-columns: repeat(auto-fill, minmax(64px, 1fr));
-  gap: 8px 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin: 0;
 }
 
@@ -428,13 +469,6 @@
   display: flex;
   flex-direction: column;
   min-width: 0;
-}
-
-/* A long answer takes the whole row. Decided in core, on the answer's own
-   length — see `WIDE_VALUE_CHARS` in core/flow/nodeDetails.ts for why it is
-   the answer and never the question that decides. */
-.brainglobe-detail-cell[data-wide='true'] {
-  grid-column: 1 / -1;
 }
 
 /* The person's own words, and the loud line. `order` puts them above the
@@ -451,10 +485,16 @@
   overflow-wrap: anywhere;
 }
 
-/* The question that was asked. Two lines, then an ellipsis — these are whole
-   spoken sentences and at 90px wide the full text of one would bury the answer
-   it belongs to. The whole of it stays in `title`, so nothing is lost, and
-   7.9:1 on the panel means "quieter" never means "under the floor". */
+/* The question that was asked. Three lines, then an ellipsis — these are whole
+   spoken sentences and the full text of one would bury the answer it belongs
+   to. Three rather than the panel's two because the measure is narrower now:
+   "What expertise do people normally come to you for?" is one of the shorter
+   questions in the file and two lines cut it in half, on a node that had 30px
+   of the band going spare. The whole of it stays in `title`, so nothing is
+   lost, and this colour on the stage's own field is what
+   tests/e2e/brain-globe.spec.ts measures off the painted page: "quieter" must
+   never mean "under 4.5:1", and with the panel gone the thing it has to clear
+   is the field and the featured orb's own bloom. */
 .brainglobe-detail-key {
   order: 2;
   margin: 2px 0 0;
@@ -464,7 +504,7 @@
   color: var(--globe-detail-key);
   display: -webkit-box;
   -webkit-box-orient: vertical;
-  -webkit-line-clamp: 2;
+  -webkit-line-clamp: 3;
   overflow: hidden;
   overflow-wrap: anywhere;
 }
