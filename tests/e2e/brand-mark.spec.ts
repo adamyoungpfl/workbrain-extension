@@ -129,7 +129,10 @@ async function intoTheFlow(page: Page) {
   // The frame-cost measurements below are about the status mark's steady
   // state, so let the splash finish leaving before walking in.
   await page.waitForSelector('.splash', { state: 'detached' });
-  await page.getByRole('button', { name: /Context\.md/ }).click();
+  await page.getByRole('button', { name: /^Context\.md/ }).click();
+  // V1.7 VB-37: the file row opens the FILE, and the file view is where the
+  // interview is entered from — see src/panel/surfaces/FileView.tsx.
+  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
   await page.waitForSelector('.flow');
 }
 

@@ -33,7 +33,11 @@ async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
-  await page.getByRole('button', { name: /Context\.md/ }).focus();
+  await page.getByRole('button', { name: /^Context\.md/ }).focus();
+  await page.keyboard.press('Enter');
+  // V1.7 VB-37: the file row opens the FILE, and the file view is where the
+  // interview is entered from — see src/panel/surfaces/FileView.tsx.
+  await page.getByRole('button', { name: 'Go through the questions', exact: true }).focus();
   await page.keyboard.press('Enter');
   await page.waitForSelector('.flow');
   return { context, page };
@@ -152,7 +156,10 @@ test.describe('VB-02 — module title + progress bar', () => {
     await reopened.setViewportSize({ width: 400, height: 700 });
     await reopened.goto(panelUrl);
     await reopened.waitForSelector('.home');
-    await reopened.getByRole('button', { name: /Context\.md/ }).click();
+    await reopened.getByRole('button', { name: /^Context\.md/ }).click();
+    // V1.7 VB-37: the file row opens the FILE, and the file view is where the
+    // interview is entered from — see src/panel/surfaces/FileView.tsx.
+    await reopened.getByRole('button', { name: 'Go through the questions', exact: true }).click();
     await reopened.waitForSelector('.flow');
 
     await expect(reopened.locator('.flowprogress-title')).toHaveText(titleBefore);

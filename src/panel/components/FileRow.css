@@ -54,11 +54,39 @@
   display: block;
   margin-top: 2px;
 }
+/* A slot that is part of the story but not part of this release (V1.7 VB-36 —
+   Skills.md and Actions.md on Home).
+
+   IT DOES NOT DIM. The first version of this rule was `opacity: 0.55`, which
+   was fine while nothing rendered it and wrong the moment Home did: opacity
+   composites the whole row over what is behind it, so --ink fell to 3.8:1 and
+   the subtitle — the line carrying "Finish Context.md first" — fell to 2.0:1,
+   both under docs/GUARDRAILS.md's 4.5:1 floor. Measured, not guessed; see
+   tests/e2e/file-slots.spec.ts, which reads the painted colours back.
+
+   So the row is drawn in real tokens instead: --ink-2 on --surface is 6.5:1
+   for the name AND the subtitle, and the "locked" reading is carried by the
+   dashed edge, the padlock and the badge — three signals, none of them
+   colour, before the muted ink is considered at all. --border-i (not
+   --divider) because that edge now carries meaning. */
 .filerow.locked {
-  opacity: 0.55;
   cursor: default;
   background: var(--surface);
   border-style: dashed;
+  border-color: var(--border-i);
+}
+.filerow.locked .nm,
+.filerow.locked .sb {
+  color: var(--ink-2);
+}
+.filerow.locked .ic {
+  background: var(--canvas);
+  color: var(--ink-3);
+}
+/* Nothing to hover. The row is not pressable, so it must not lift. */
+.filerow.locked:hover {
+  border-color: var(--border-i);
+  box-shadow: none;
 }
 .badge {
   margin-left: auto;

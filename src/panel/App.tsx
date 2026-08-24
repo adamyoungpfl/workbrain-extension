@@ -1,5 +1,6 @@
 import './tokens.css';
 import { useCallback, useEffect, useState } from 'react';
+import { FileView } from './surfaces/FileView';
 import { Flow } from './surfaces/Flow';
 import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
@@ -28,11 +29,23 @@ const proofModules = buildProofModules({
   doneQ: S.proofDone,
 });
 
-/** V1.7 VB-38 adds `multiples`: the list of roles, people and projects, which
+/**
+ * V1.7 VB-38 adds `multiples`: the list of roles, people and projects, which
  * is reached from Home and hands a record back to `flow` as a deep link. It is
  * a third surface rather than a screen inside `flow` because nothing on it
- * asks a question — see Multiples.tsx's header. */
-type Surface = 'home' | 'flow' | 'multiples';
+ * asks a question — see Multiples.tsx's header.
+ *
+ * V1.7 VB-37 adds `file` on the same reasoning, and it now sits between the
+ * other two: Home is the shelf of files (VB-36), `file` is one of them opened,
+ * and `flow` is the interview either of them starts. Nothing on `file` asks a
+ * question either — both of its doors hand `flow` a `Position`.
+ *
+ * EVERY ONE OF THESE IS IN-MEMORY ONLY. Which surface you are on is never
+ * stored (docs/ARCHITECTURE.md, "nothing derived is stored"): a reopen lands
+ * on Home and re-derives the shelf, the file and the interview's position from
+ * `wb:answers`.
+ */
+type Surface = 'home' | 'file' | 'flow' | 'multiples';
 type FlowKind = 'context' | 'proof';
 
 /**
@@ -49,9 +62,10 @@ type FlowKind = 'context' | 'proof';
 type SplashState = 'asking' | 'showing' | 'gone';
 
 /**
- * Surface router (docs/ARCHITECTURE.md: 'home' | 'flow' | 'sheet' — no
- * sheet exists yet in Release 1, see docs/RELEASE-1.md's exclusion list, so
- * only the first two are real here). Defaults to Home, which is now the
+ * Surface router (docs/ARCHITECTURE.md sketches 'home' | 'flow' | 'sheet' — no
+ * sheet exists yet in Release 1, see docs/RELEASE-1.md's exclusion list, and
+ * the two that have arrived since, `multiples` and `file`, are screens rather
+ * than sheets; see the `Surface` union above). Defaults to Home, which is now the
  * landing point both for a fresh open *and* a just-finished interview
  * (`Flow`'s own `onDone`, R1-12) — there is no separate "I just finished"
  * screen anymore. `flowKind` and `jumpTo` are in-memory only, same as
@@ -105,39 +119,48 @@ export default function App() {
   }
 
   /**
-   * V1.5 VB-28. The one place a recommendation's target becomes a real
-   * `Position` (core/flow/runner.ts) — building one needs the actual ported
-   * `Step` object, which core/recommend has no reason to hand around (it
-   * deals in ids and record indices; see its own header on staying a pure
-   * derivation over `wb:answers`). The lookup itself is pure and tested in
-   * core/recommend/targets.ts; this is only the wiring.
+   * The one way into the Context interview, from every surface that offers
+   * one, and the only place `jumpTo` is ever set.
+   *
+   * `undefined` means "no deep link" — `Flow` then resumes from wherever
+   * `wb:answers` really leaves off (core/flow/runner.ts's `findPosition`).
+   * Everything else hands over a `Position` that some pure, tested resolver in
+   * core/ produced:
+   *
+   *   · V1.5 VB-28's recommendations → `positionForTarget` (see `openContext`)
+   *   · V1.7 VB-38's multiples       → `positionForRecord` / `positionForNewRecord`
+   *   · V1.7 VB-37's file view       → `positionForQuestionId`
+   *
+   * One router, three callers. Each used to have its own near-identical
+   * three-line copy of this, and VB-37 would have made a fourth: resolving a
+   * position belongs to whoever knows what is being opened, and routing to it
+   * belongs here.
+   */
+  function openContextAt(position?: Position) {
+    setFlowKind('context');
+    setJumpTo(position);
+    setSurface('flow');
+  }
+
+  /**
+   * V1.5 VB-28. Where a recommendation's target becomes a real `Position` —
+   * building one needs the actual ported `Step` object, which core/recommend
+   * has no reason to hand around (it deals in ids and record indices; see its
+   * own header on staying a pure derivation over `wb:answers`). The lookup
+   * itself is pure and tested in core/recommend/targets.ts; this is only the
+   * wiring.
    *
    * `undefined` back means the ported content no longer holds that question,
    * which lands the person on a plain resume rather than nowhere — see
    * `positionForTarget`'s own note on degrading instead of throwing.
    */
   function openContext(target?: RecommendationTarget) {
-    setFlowKind('context');
-    setJumpTo(target ? positionForTarget(contextModules, target) : undefined);
-    setSurface('flow');
+    openContextAt(target ? positionForTarget(contextModules, target) : undefined);
   }
 
   function openProof() {
     setFlowKind('proof');
     setJumpTo(undefined);
-    setSurface('flow');
-  }
-
-  /**
-   * V1.7 VB-38. Opening a record — one role, one person, one initiative — is
-   * the same deep link a recommendation makes: a `Position` into the Context
-   * flow. The multiples screen resolves it (core/flow/runner.ts's
-   * `positionForRecord` / `positionForNewRecord`, both pure and tested); this
-   * only routes it, exactly as `openContext` does above.
-   */
-  function openContextAt(position: Position) {
-    setFlowKind('context');
-    setJumpTo(position);
     setSurface('flow');
   }
 
@@ -153,8 +176,22 @@ export default function App() {
         <Home
           onStart={() => openContext()}
           onOpenTarget={(target) => openContext(target)}
+          onOpenFile={() => setSurface('file')}
           onOpenProof={openProof}
           onOpenMultiples={() => setSurface('multiples')}
+        />
+      );
+    }
+
+    if (surface === 'file') {
+      return (
+        <FileView
+          modules={contextModules}
+          outline={contextOutline}
+          name={S.fileContext}
+          what={S.fileContextWhat}
+          onBack={goHome}
+          onOpen={openContextAt}
         />
       );
     }

@@ -473,6 +473,32 @@ export const S = {
   fileSkillsWhat: 'How you work',
   fileActions: 'Actions.md',
   fileActionsWhat: 'What should happen automatically',
+  /**
+   * V1.7 VB-37 — the file, opened.
+   *
+   * `fileSectionsLabel` heads the list of sections and is deliberately the
+   * same shape as Home's own `homeFilesLabel` / `homeMultiplesLabel`: a short
+   * uppercase label over a list, saying what the list is. "Sections" is a word
+   * the file itself uses in `sectionsOf` ("7 of 10 sections"), so it is not a
+   * new noun — but the label says it the way a person would.
+   *
+   * THE TWO ENTRY LABELS ARE THE SAME BUTTON IN TWO TRUE STATES. An unfinished
+   * file resumes wherever `wb:answers` leaves off, so the button cannot claim
+   * to start at the beginning — "go through the questions" is true whether it
+   * is the first one or the thirtieth. A FINISHED file has nothing to resume
+   * to, so that button walks it from the top instead, and says so. Neither is
+   * "Continue" and neither is "Start", because neither of those is true in
+   * both states.
+   *
+   * `fileSectionsClosed` is said only when NO section can be opened yet — a
+   * file nobody has been through. It explains a screen where every row is
+   * inert, which is the one moment that needs explaining; the moment a single
+   * section opens, it goes.
+   */
+  fileSectionsLabel: 'Sections',
+  fileGoThrough: 'Go through the questions',
+  fileGoThroughAgain: 'Go through them again',
+  fileSectionsClosed: 'Each section opens once you have answered something in it.',
   download: 'Download your file',
   downloadAgain: 'Download it again',
   importFile: 'I already have a file',
@@ -492,7 +518,30 @@ export const S = {
   badgeNext: 'Next',
   badgeLater: 'Later',
   badgeDue: (n: number) => `${n} due`,
+  /**
+   * V1.7 VB-36 — the two things a locked slot on the shelf can truthfully say,
+   * and the badge that marks it as one.
+   *
+   * Skills.md and Actions.md are on Home from now on, LOCKED (Adam, 2026-08-24):
+   * they are the way into the Skills and Actions interviews, and showing them
+   * is what makes Context.md read as step one rather than as the whole product.
+   *
+   * A LOCKED ROW SAYS WHAT UNLOCKS IT, IN THE ROW. `lockedNeedsFirst` is that
+   * sentence and it is true right up until somebody finishes the file before
+   * it — after which it reads as an instruction they have already carried out,
+   * so the row swaps to `lockedComingLater`, which is the fact that is true
+   * from then on. Which of the two a row prints is decided in
+   * core/files/slots.ts (`afterFinished`), not here.
+   *
+   * "Coming later" and not "Coming soon": we are not promising a date.
+   *
+   * `badgeLocked` is the word in the pill. The row is already told apart by a
+   * dashed edge, a padlock and its own subtitle, so this is the fourth signal
+   * rather than the only one (docs/GUARDRAILS.md: nothing by colour alone).
+   */
   lockedNeedsFirst: (file: string) => `Finish ${file} first`,
+  lockedComingLater: 'Coming later',
+  badgeLocked: 'Locked',
   notBuiltYet: 'Not built yet',
   updatedToday: 'Updated today',
   daysOld: (n: number) => (n === 1 ? '1 day old' : `${n} days old`),

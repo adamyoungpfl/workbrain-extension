@@ -128,7 +128,10 @@ test.describe('VB-09 · dev-only reset', () => {
     // Go one surface deeper, into the interview, so the reset is proven from
     // where a person actually is when they want one — mid-flow, not sitting
     // on Home. Also puts real focus somewhere inside the tree.
-    await page.getByRole('button', { name: /Context\.md/ }).click();
+    await page.getByRole('button', { name: /^Context\.md/ }).click();
+    // V1.7 VB-37: the file row opens the FILE, and the file view is where the
+    // interview is entered from — see src/panel/surfaces/FileView.tsx.
+    await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
     await expect(page.locator('.flow')).toBeVisible();
 
     // The chord itself, from the keyboard, exactly as a person would press it.

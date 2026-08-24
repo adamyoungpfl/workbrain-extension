@@ -173,7 +173,7 @@ test.describe('VB-34 — the splash arrives', () => {
     await page.waitForSelector('.home');
     const home = (await page.locator('.home').boundingBox())!;
     expect(home.height).toBeGreaterThan(100);
-    await expect(page.getByRole('button', { name: /Context\.md/ })).toBeAttached();
+    await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeAttached();
     // Still covered — this is a "the panel is ready under it" claim, not a
     // "the splash left early" one.
     await expect(page.locator('.splash')).toHaveCount(1);
@@ -274,7 +274,7 @@ test.describe('VB-34 — it never holds anyone up', () => {
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
     expect(Date.now() - started).toBeLessThan(1500);
     // And the panel is immediately usable.
-    await expect(page.getByRole('button', { name: /Context\.md/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeVisible();
 
     await context.close();
   });
@@ -299,7 +299,7 @@ test.describe('VB-34 — it never holds anyone up', () => {
     // Aim at the middle of a real button on Home, through the splash. The
     // splash must eat that click: acting on a control nobody could see is
     // worse than costing them one tap.
-    const target = page.getByRole('button', { name: /Context\.md/ });
+    const target = page.getByRole('button', { name: /^Context\.md/ });
     const box = (await target.boundingBox())!;
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 
@@ -317,7 +317,7 @@ test.describe('VB-34 — it never holds anyone up', () => {
     // No input of any kind. A splash that waits for a click is still a click
     // somebody has to make before they can start work.
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 6000 });
-    await expect(page.getByRole('button', { name: /Context\.md/ })).toBeVisible();
+    await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeVisible();
 
     await context.close();
   });

@@ -101,7 +101,10 @@ async function openAtRoleNames(context: BrowserContext, sw: Worker, id: string):
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
-  await page.getByRole('button', { name: /Context\.md/ }).click();
+  await page.getByRole('button', { name: /^Context\.md/ }).click();
+  // V1.7 VB-37: the file row opens the FILE, and the file view is where the
+  // interview is entered from — see src/panel/surfaces/FileView.tsx.
+  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
   return page;
 }

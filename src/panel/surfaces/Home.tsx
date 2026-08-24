@@ -13,6 +13,8 @@ import { computeNextMove, mostRecentAnsweredAt } from '../../core/freshness/next
 import { daysSince } from '../../core/freshness/clocks';
 import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { multipleRecordCount } from '../../core/flow/multiples';
+import { fileFinished, fileSlots } from '../../core/files/slots';
+import type { FileSlot, FileSlotId } from '../../core/files/slots';
 import { contextModules, contextOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
@@ -37,6 +39,19 @@ export interface HomeProps {
    * deep-links the same way rather than each new one growing its own prop.
    */
   onOpenTarget: (target: RecommendationTarget) => void;
+  /**
+   * V1.7 VB-36/VB-37: opens the file itself, not the interview for it. The
+   * slot is a door onto the file view, which is where somebody chooses between
+   * going through the whole thing and redoing one section — see
+   * surfaces/FileView.tsx. `onStart` above is still the welcome card's own
+   * button, which goes straight to the first question because there is nothing
+   * in the file to look at yet.
+   *
+   * No argument: `core/files/slots.ts`'s `BUILT` says exactly one slot is
+   * open, and every other one is locked and unclickable. The day Skills.md
+   * opens, this grows an id and App.tsx picks the flow data to hand over.
+   */
+  onOpenFile: () => void;
   onOpenProof: () => void;
   /**
    * V1.7 VB-38: opens the list of roles, people and projects — the things the
@@ -49,6 +64,40 @@ export interface HomeProps {
 const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
 const CONTACT_URL = 'https://www.model-citizen.org/contact';
 
+/**
+ * V1.7 VB-36 — what each slot on the shelf is called, and what it is for.
+ *
+ * The names live here rather than in `core/files/slots.ts` because a slot
+ * reports an id and two booleans and nothing else: every word in this panel
+ * lives in `strings.ts` (CLAUDE.md). Keyed by slot id so a locked row can name
+ * the file it is waiting on without knowing anything about what that file is.
+ */
+const SLOT_NAME: Record<FileSlotId, string> = {
+  context: S.fileContext,
+  skills: S.fileSkills,
+  actions: S.fileActions,
+};
+
+/**
+ * What a locked slot says under its name.
+ *
+ * ONE LINE, AND IT IS THE LOCK. An earlier draft printed the file's own
+ * "what" as well — `${S.fileSkillsWhat} · ${reason}` — matching the open
+ * slot's "Who you are · 3 days old" shape. Rendered at 400px it wrapped to
+ * two lines on Skills.md and three on Actions.md, and the shelf stopped
+ * reading as a shelf: three rows of three different heights, with the
+ * sentence that matters broken across a line. The requirement is that a
+ * locked row says WHAT UNLOCKS IT, in the row, without a tooltip — so that
+ * sentence gets the line, whole, and every row on the shelf is the same
+ * height again. What Skills.md and Actions.md will hold is carried by their
+ * names and by the padlock, which is what makes them read as the rest of the
+ * product rather than as decoration.
+ */
+function lockedReason(slot: FileSlot): string {
+  if (slot.after && !slot.afterFinished) return S.lockedNeedsFirst(SLOT_NAME[slot.after]);
+  return S.lockedComingLater;
+}
+
 /** V1.7 VB-38's row — two cards, one behind the other: more than one of a
  * thing. Same convention as PERSON_ICON below (stroke, `currentColor`,
  * `aria-hidden`; the row carries the name). */
@@ -56,6 +105,17 @@ const STACK_ICON = (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
     <rect x="3.5" y="7.5" width="13" height="13" rx="2.5" />
     <path d="M7.5 4.5h10a2.5 2.5 0 0 1 2.5 2.5v10" />
+  </svg>
+);
+
+/** V1.7 VB-36's locked slots — a closed padlock, drawn to the same convention
+ * as the two above. The row's badge and subtitle say "Locked" and what unlocks
+ * it in words; this is the same fact as a picture, so it is `aria-hidden` and
+ * nothing rests on it alone. */
+const LOCK_ICON = (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+    <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
+    <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
   </svg>
 );
 
@@ -126,7 +186,7 @@ const PERSON_ICON = (
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenTarget, onOpenProof, onOpenMultiples }: HomeProps) {
+export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMultiples }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
   /**
@@ -198,6 +258,16 @@ export function Home({ onStart, onOpenTarget, onOpenProof, onOpenMultiples }: Ho
 
   const topCopy = top ? recommendationCopy(top) : null;
   const multipleCount = multipleRecordCount(contextModules, contextOutline, answers);
+
+  /**
+   * V1.7 VB-36 — the shelf, derived like everything else on this screen.
+   *
+   * There is no "which files are unlocked" key and there must never be one:
+   * whether Context.md is finished is a fold over `wb:answers`, recomputed
+   * here on every render, so a locked row cannot go on saying "Finish
+   * Context.md first" to somebody who has just finished it.
+   */
+  const slots = fileSlots({ context: fileFinished(contextOutline, contextModules, answers, new Date()) });
 
   return (
     <div className="home">
@@ -286,9 +356,38 @@ export function Home({ onStart, onOpenTarget, onOpenProof, onOpenMultiples }: Ho
         </section>
       )}
 
+      {/* V1.7 VB-36 — the shelf. One slot per file in the work brain, each with
+          its status and a way in, rather than one file plus a pile of actions.
+
+          Skills.md and Actions.md are here and LOCKED (Adam, 2026-08-24). They
+          are not decoration: they are the way into the Skills and Actions
+          interviews, which will mirror the Context interview's flow, and
+          showing them is what makes Context.md read as step one rather than as
+          the whole product. Which slots exist, which are open and what a
+          locked one may truthfully claim are all core/files/slots.ts's, not
+          this component's — see its header on why that fold is worth a test. */}
       <p className="home-section-label">{S.homeFilesLabel}</p>
       <div className="home-filelist">
-        <FileRow name={S.fileContext} subtitle={fileSubtitle} badge={fileBadge} onClick={onStart} />
+        {slots.map((slot) =>
+          slot.state === 'open' ? (
+            <FileRow
+              key={slot.id}
+              name={SLOT_NAME[slot.id]}
+              subtitle={fileSubtitle}
+              badge={fileBadge}
+              onClick={onOpenFile}
+            />
+          ) : (
+            <FileRow
+              key={slot.id}
+              name={SLOT_NAME[slot.id]}
+              subtitle={lockedReason(slot)}
+              badge={{ label: S.badgeLocked }}
+              icon={LOCK_ICON}
+              locked
+            />
+          ),
+        )}
       </div>
 
       {/* V1.7 VB-38 — the parts of the file there are several of. Derived like
