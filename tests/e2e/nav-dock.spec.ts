@@ -169,11 +169,18 @@ test.describe('VB-11 — the nav is docked to the drawer', () => {
     expect(nav.left).toBeCloseTo(0, 0);
     expect(nav.width).toBeCloseTo(PANEL.width, 0);
 
-    // ...but its buttons stand in the question's own column, where they were
-    // before the bar was pegged to anything.
-    const column = await box(page.locator('.flow-q'));
-    const back = await box(page.getByRole('button', { name: S.back, exact: true }));
-    expect(back.left).toBeCloseTo(column.left, 0);
+    // V1.7 VB-41 REPLACED THIS ASSERTION. Until then, Back stood in the
+    // question's own 26px column, which is where V1.2 found it. The cluster is
+    // centred now, so what is checked is that: the controls are one group,
+    // centred in the panel, with the same air either side of it.
+    //
+    // tests/e2e/button-cluster.spec.ts owns the rest of VB-41; this one line
+    // stays here because it is the assertion it directly replaces.
+    const controls = await page.locator('.flow-foot .btn').all();
+    const boxes = await Promise.all(controls.map((control) => box(control)));
+    const leftAir = Math.min(...boxes.map((b) => b.left)) - nav.left;
+    const rightAir = nav.right - Math.max(...boxes.map((b) => b.right));
+    expect(Math.abs(leftAir - rightAir), 'the cluster is not centred').toBeLessThanOrEqual(1);
 
     await context.close();
   });

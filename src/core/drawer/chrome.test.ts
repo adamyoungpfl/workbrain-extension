@@ -1,37 +1,28 @@
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
-import { contrastRatio, mixSrgb } from '../color/contrast';
+import { contrastRatio } from '../color/contrast';
 import type { Rgb } from '../color/contrast';
-import { FLOW_NAV_HEIGHT, FLOW_NAV_INSET } from '../flow/dock';
-import {
-  DOCK_BOUNDARY_MIN_CONTRAST,
-  DOCK_FRAME,
-  DOCK_TEXT_MIN_CONTRAST,
-  NAV_CONTROL_BOTTOM,
-  NAV_CONTROL_TOP,
-  NAV_RAMP_FOOT,
-  NAV_RAMP_FOOT_MIX,
-  NAV_RAMP_HEIGHT,
-  navRampColorAt,
-  navRampMixAt,
-} from './chrome';
+import { DOCK_BOUNDARY_MIN_CONTRAST, DOCK_FRAME, DOCK_TEXT_MIN_CONTRAST } from './chrome';
 
 /**
- * V1.4 VB-22 — the ramp, and the floor it has to clear.
+ * The dock's palette, against docs/GUARDRAILS.md — read out of
+ * design/tokens.json rather than restated.
  *
- * Two halves. The first is ordinary arithmetic about a gradient. The second is
- * the point of the file: it reads **the real values out of design/tokens.json**
- * and checks that every colour the dock puts on that gradient clears
- * docs/GUARDRAILS.md — text at 4.5:1, an interactive boundary at 3:1 — at the
- * bottom edge of the buttons, in their middle, and at their top edge.
+ * V1.4 VB-22 wrote this file about a gradient: every colour the dock put on
+ * that ramp, checked at the bottom edge of the buttons, in their middle and at
+ * their top edge. V1.7 VB-41 removed the ramp (core/drawer/chrome.ts), so what
+ * is checked here is two flat grounds instead of one moving one — the panel's
+ * canvas, which the button cluster now stands on, and the drawer's own dark
+ * stage, which is unchanged from the handle down.
  *
  * Reading the tokens rather than restating them is deliberate. A test with the
  * hex values copied into it passes forever while the product drifts; this one
  * fails the moment someone edits `--globe-panel` or the stage colours, which is
- * exactly the conversation that should happen. tests/e2e/dock-surface.spec.ts
- * then proves the same thing about the pixels a browser really painted — this
- * proves it about the palette we chose.
+ * exactly the conversation that should happen. tests/e2e/button-cluster.spec.ts
+ * and tests/e2e/dock-surface.spec.ts then prove the same things about the
+ * pixels a browser really painted — this proves them about the palette we
+ * chose.
  */
 
 interface TokenFile {
@@ -66,12 +57,12 @@ const CANVAS = token('canvas');
 /**
  * The stage the dock takes its colour from, per mode.
  *
- * V1.6 VB-30 made those two the SAME colour: the bar takes the Brain visual's
- * dark field in List as well, so the ramp's foot is that field in both modes
- * and every control in the bar stands on it in both. Kept as a map rather than
- * collapsed to one constant because the two modes are still two cases that
- * have to be checked — the assertions below are the ones that would catch the
- * day one of them drifts back.
+ * V1.6 VB-30 made those two the SAME colour: the drawer's head band is the
+ * Brain visual's dark field in List as well, so everything drawn on it stands
+ * on that field in both modes. Kept as a map rather than collapsed to one
+ * constant because the two modes are still two cases that have to be checked —
+ * the assertions below are the ones that would catch the day one of them drifts
+ * back.
  */
 const STAGE = { brain: token('globe.field'), list: token('globe.field') };
 
@@ -79,145 +70,111 @@ const STAGE = { brain: token('globe.field'), list: token('globe.field') };
  * drawer's CONTENT sits on, which the bar above it no longer shares. */
 const PANE_LIST = token('surface');
 
-/** Where a control's edge meets the ramp: its bottom, its middle, its top. */
-const EDGES = [NAV_CONTROL_BOTTOM, (NAV_CONTROL_BOTTOM + NAV_CONTROL_TOP) / 2, NAV_CONTROL_TOP];
-
-function againstRamp(colour: Rgb, stage: Rgb): number {
-  return Math.min(...EDGES.map((y) => contrastRatio(colour, navRampColorAt(y, stage, CANVAS))));
-}
-
-describe('the bar the buttons sit in', () => {
-  it('is exactly the docked bar, and the buttons are inset inside it', () => {
-    expect(NAV_RAMP_HEIGHT).toBe(FLOW_NAV_HEIGHT);
-    expect(NAV_RAMP_FOOT).toBe(FLOW_NAV_INSET);
-    // The bar is one 44px control plus its inset above and below — the sum
-    // core/flow/dock.ts's FLOW_NAV_HEIGHT is written as prose.
-    expect(FLOW_NAV_HEIGHT - FLOW_NAV_INSET * 2).toBe(44);
-    // …which is what makes the ramp's steep half finish exactly where the
-    // buttons begin.
-    expect(NAV_CONTROL_BOTTOM).toBe(NAV_RAMP_FOOT);
-    expect(NAV_CONTROL_TOP).toBe(FLOW_NAV_HEIGHT - FLOW_NAV_INSET);
-  });
-});
-
 describe('the frame the pane sits inside (VB-29)', () => {
-  it('is the panel’s own margin, and the first term of the bar’s gutter', () => {
+  it('is the panel’s own margin', () => {
     // 8px is not a number somebody liked: it is the panel body's own margin,
     // which is why the pane's sides land in the column the rest of the product
-    // already uses. Flow.css writes that gutter as one number (26) with the
-    // sum in a comment, so this is where the first term is pinned.
+    // already uses.
     expect(DOCK_FRAME).toBe(8);
-    expect(DOCK_FRAME).toBeLessThan(NAV_RAMP_FOOT + DOCK_FRAME);
-    // Small enough that the bar's own inset still clears it — the ramp is
-    // inset by exactly this, and its steep foot is the same height, so the
-    // frame never reaches the buttons.
-    expect(DOCK_FRAME).toBeLessThanOrEqual(FLOW_NAV_INSET);
-  });
-});
-
-describe('navRampMixAt', () => {
-  it('starts at the stage colour and ends at the canvas', () => {
-    expect(navRampMixAt(0)).toBe(0);
-    expect(navRampMixAt(NAV_RAMP_HEIGHT)).toBe(1);
-  });
-
-  it('clamps rather than running off either end', () => {
-    expect(navRampMixAt(-40)).toBe(0);
-    expect(navRampMixAt(4000)).toBe(1);
-    expect(navRampMixAt(Number.NaN)).toBe(0);
-  });
-
-  it('has lifted by NAV_RAMP_FOOT_MIX at the bottom edge of the buttons', () => {
-    expect(navRampMixAt(NAV_RAMP_FOOT)).toBeCloseTo(NAV_RAMP_FOOT_MIX, 10);
-  });
-
-  it('only ever lightens, and does most of its work in the foot', () => {
-    let previous = -1;
-    for (let y = 0; y <= NAV_RAMP_HEIGHT; y++) {
-      const mix = navRampMixAt(y);
-      expect(mix).toBeGreaterThanOrEqual(previous);
-      previous = mix;
-    }
-    // Under an eighth of the height carries nearly half the change.
-    expect(NAV_RAMP_FOOT / NAV_RAMP_HEIGHT).toBeLessThan(0.15);
-    expect(NAV_RAMP_FOOT_MIX).toBeGreaterThan(0.4);
-  });
-});
-
-describe('navRampColorAt', () => {
-  it('is the stage colour at the drawer edge and the canvas at the top', () => {
-    expect(navRampColorAt(0, STAGE.brain, CANVAS)).toEqual(STAGE.brain);
-    expect(navRampColorAt(NAV_RAMP_HEIGHT, STAGE.brain, CANVAS)).toEqual(CANVAS);
-  });
-
-  it('agrees with a plain sRGB mix at the stop it was given', () => {
-    expect(navRampColorAt(NAV_RAMP_FOOT, STAGE.brain, CANVAS)).toEqual(
-      mixSrgb(STAGE.brain, CANVAS, NAV_RAMP_FOOT_MIX),
-    );
   });
 });
 
 /**
- * THE REASON THE RAMP HAS A FOOT.
+ * V1.7 VB-41 — THE FLOOR THE BUTTON CLUSTER HAS TO CLEAR NOW.
  *
- * Spread the same fade evenly across the bar and the buttons stand in a
- * background that travels most of the luminance range down their own height.
- * There is then no colour — none, not a darker one, not a lighter one, not a
- * cleverer one — that holds 3:1 along the whole edge of a control, because the
- * ramp passes *through* whatever luminance the edge has and the contrast there
- * is 1:1. This searches the entire greyscale for the best any fixed edge could
- * do and shows it falls short, which is what rules out "just pick a better
- * colour" as an answer and makes the foot geometry rather than taste.
+ * The containers are gone, so a nav label is no longer read against a chip cut
+ * from the dock's own palette. It is read against whatever the bar is painted,
+ * and the bar is painted the panel's own canvas — flat, the same at every drag
+ * height, in both modes, because the fade that used to move under these
+ * controls has gone with the boxes (core/drawer/chrome.ts's header).
+ *
+ * That makes the check simple, which is the point of it: three inks on one
+ * ground. tests/e2e/button-cluster.spec.ts then proves the ground really is
+ * that colour behind every control, from real pixels, at three drag heights in
+ * both modes — this proves the inks we chose are legible on it.
  */
-describe('an evenly spread ramp', () => {
-  it('cannot be given a boundary by any fixed colour', () => {
-    const evenRamp = (y: number): Rgb => mixSrgb(STAGE.brain, CANVAS, y / NAV_RAMP_HEIGHT);
-    let best = 0;
-    for (let level = 0; level <= 255; level += 1) {
-      const candidate = { r: level, g: level, b: level };
-      let worst = Infinity;
-      for (let y = NAV_CONTROL_BOTTOM; y <= NAV_CONTROL_TOP; y += 1) {
-        worst = Math.min(worst, contrastRatio(candidate, evenRamp(y)));
-      }
-      best = Math.max(best, worst);
-    }
-    expect(best).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
+describe('the button cluster, on the panel’s own canvas (VB-41)', () => {
+  it('reads every label on the canvas, well clear of the floor', () => {
+    // Back and any other secondary.
+    expect(contrastRatio(token('ink-2'), CANVAS)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
+    // Next, which is the only coloured word in the cluster.
+    expect(contrastRatio(token('primary'), CANVAS)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
+    // Skip, the quietest thing in the bar and therefore the one worth stating:
+    // --ink-3 is 4.71:1, which clears 4.5 with little to spare. If a future
+    // token change takes it under, this is where that shows up.
+    expect(contrastRatio(token('ink-3'), CANVAS)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
   });
 
-  it('is fixed by the foot: the dock’s own chip clears the floor all the way up', () => {
-    expect(againstRamp(token('globe.panel'), STAGE.brain)).toBeGreaterThanOrEqual(
-      DOCK_BOUNDARY_MIN_CONTRAST,
-    );
+  it('focuses with the panel’s own ring, which the dark stage could not use', () => {
+    // On the canvas --primary is the ring every other control in the product
+    // uses, and it clears 1.4.11 outright. Stated beside the reason the dock
+    // needed a different one: on the drawer's dark stage the same ring is
+    // 2.90:1, which is why --globe-focus exists (design/tokens.json).
+    expect(contrastRatio(token('primary'), CANVAS)).toBeGreaterThanOrEqual(DOCK_BOUNDARY_MIN_CONTRAST);
+    expect(contrastRatio(token('primary'), STAGE.brain)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
+  });
+
+  it('is not carried by colour alone — and could not be, at these ratios', () => {
+    // The three controls are three words, so nothing here is identified by
+    // colour in the first place (Back, Next and Skip are their own labels, and
+    // the two navigating ones carry a chevron as well — components/NavButton).
+    // What colour adds is emphasis, and this is the statement that emphasis is
+    // all it adds: the primary and the secondary are within a point of each
+    // other against the canvas, so a person who cannot tell the two hues apart
+    // has lost nothing but the accent.
+    const primary = contrastRatio(token('primary'), CANVAS);
+    const secondary = contrastRatio(token('ink-2'), CANVAS);
+    expect(Math.abs(primary - secondary)).toBeLessThan(1);
+  });
+
+  it('leaves nothing standing on the deleted ramp', () => {
+    // The old bar gave every control an opaque chip cut from --globe-panel so
+    // the gradient could pass behind it. Nothing in the cluster has a ground of
+    // its own now, and the ground it does have is the canvas — so the dark
+    // set's inks would be unreadable there. Stated so a half-done revert fails
+    // here rather than on a screen.
+    expect(contrastRatio(token('globe.label'), CANVAS)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
+    expect(contrastRatio(token('globe.detail-key'), CANVAS)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
   });
 });
 
-describe('Brain — every nav control on the dark stage', () => {
-  it('bounds each control against the ramp along its whole edge', () => {
-    // Back and Skip are chips cut from the dock's own deep navy…
-    expect(againstRamp(token('globe.panel'), STAGE.brain)).toBeGreaterThanOrEqual(3);
-    // …and every control, Next included, carries the stage's own near-black
-    // keyline, which is what gives the primary a boundary its fill cannot.
-    expect(againstRamp(token('globe.field'), STAGE.brain)).toBeGreaterThanOrEqual(3);
-    // Stated as the thing it is protecting against: the primary's fill alone
-    // is invisible against the middle of this ramp.
-    expect(againstRamp(token('primary'), STAGE.brain)).toBeLessThan(3);
+/**
+ * The dark stage did not go anywhere — VB-41 changed the bar ABOVE the drawer,
+ * not the drawer. Everything below is the chrome from the handle down: the head
+ * band, its two mode glyphs, the section count and the grip, which is now the
+ * first dark thing under the cluster and therefore the boundary that has to
+ * hold on its own.
+ */
+describe('Brain — the drawer’s own chrome on the dark stage', () => {
+  it('bounds the grip and the pressed toggle against the field they sit on', () => {
+    // The grip's two bars, which are the whole of the handle's visible
+    // representation (FileDrawer.css) — and, since VB-41 took the fade away,
+    // the first thing under the cluster with an edge to hold.
+    expect(contrastRatio(token('globe.detail-key'), STAGE.brain)).toBeGreaterThanOrEqual(
+      DOCK_BOUNDARY_MIN_CONTRAST,
+    );
+    // The pressed mode toggle's own chip, cut from the dock's deep navy.
+    expect(contrastRatio(token('globe.panel'), token('globe.label'))).toBeGreaterThanOrEqual(
+      DOCK_TEXT_MIN_CONTRAST,
+    );
+    // And the band itself against the canvas above it. VB-41 removed the ramp
+    // between the two, so this seam is now a plain edge — which only works
+    // because the two colours are nowhere near each other.
+    expect(contrastRatio(STAGE.brain, CANVAS)).toBeGreaterThan(DOCK_TEXT_MIN_CONTRAST * 2);
   });
 
-  it('reads every label against its own ground, not against the ramp', () => {
+  it('reads every label on the band against the band', () => {
     expect(contrastRatio(token('globe.label'), token('globe.panel'))).toBeGreaterThanOrEqual(
       DOCK_TEXT_MIN_CONTRAST,
     );
     expect(contrastRatio(token('globe.detail-key'), token('globe.panel'))).toBeGreaterThanOrEqual(
       DOCK_TEXT_MIN_CONTRAST,
     );
-    expect(contrastRatio(token('ink-inv'), token('primary'))).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
   });
 
   it('carries the bar’s own light text on the stage itself', () => {
     // The two mode toggles and the section count, which sit on the drawer's
-    // head rather than in the ramp.
+    // head.
     expect(contrastRatio(token('globe.detail-key'), STAGE.brain)).toBeGreaterThanOrEqual(
       DOCK_TEXT_MIN_CONTRAST,
     );
@@ -236,17 +193,19 @@ describe('Brain — every nav control on the dark stage', () => {
 });
 
 /**
- * V1.6 VB-30 — THE MOST LIKELY WAY THIS BATCH SHIPS AN ACCESSIBILITY
- * REGRESSION, and the reason these are extensions of VB-22's assertions rather
- * than a new file.
+ * V1.6 VB-30 — one head band, in both modes.
  *
- * The bar is now the dark field in both modes, so the ramp above it ends dark
- * in List — where it used to end within a few points of white. Every control
- * in that bar therefore stands on a background it has never stood on before,
- * and the honest way to say so is to run List's block against the same stage
- * Brain's is run against and watch it hold.
+ * The band takes the Brain visual's dark field in List as well, so in List it
+ * deliberately sits ON a light pane. Every glyph, count and grip bar on it
+ * therefore stands on a background it did not stand on before V1.6, and the
+ * honest way to say so is to run List's block against the same stage Brain's is
+ * run against and watch it hold.
+ *
+ * V1.7 VB-41 leaves this half untouched — it removed the ramp ABOVE the band,
+ * not the band — so what is gone from this block is only the assertions that
+ * were about controls standing in that ramp.
  */
-describe('List — the nav bar now stands on the same dark foot', () => {
+describe('List — the drawer’s head band stands on the same dark field', () => {
   it('is the same stage as Brain: one bar, not two dressed alike', () => {
     expect(STAGE.list).toEqual(STAGE.brain);
     // …and it really is dark, not merely equal to whatever Brain happens to
@@ -254,38 +213,28 @@ describe('List — the nav bar now stands on the same dark foot', () => {
     expect(contrastRatio(STAGE.list, CANVAS)).toBeGreaterThan(DOCK_TEXT_MIN_CONTRAST * 2);
   });
 
-  it('bounds each control against the ramp along its whole edge', () => {
-    // The same chips and keyline Brain's block checks, now checked as List's
-    // too — Back and Skip on the dock's deep navy, every control keylined
-    // with the stage itself.
-    expect(againstRamp(token('globe.panel'), STAGE.list)).toBeGreaterThanOrEqual(
+  it('bounds everything drawn on the band against the band', () => {
+    // The grip's two bars and the unpressed mode glyphs, which are non-text
+    // indicators and so carry WCAG 1.4.11 rather than the text floor.
+    expect(contrastRatio(token('globe.detail-key'), STAGE.list)).toBeGreaterThanOrEqual(
       DOCK_BOUNDARY_MIN_CONTRAST,
     );
-    expect(againstRamp(token('globe.field'), STAGE.list)).toBeGreaterThanOrEqual(
+    // The ring the band focuses with, and the reason it is not --primary.
+    expect(contrastRatio(token('globe.focus'), STAGE.list)).toBeGreaterThanOrEqual(
       DOCK_BOUNDARY_MIN_CONTRAST,
     );
-    // The treatment List used to carry would not survive this foot, which is
-    // why it did not keep it: --dock-edge held 3:1 against a near-white ramp
-    // and holds nothing against a dark one.
-    expect(againstRamp(token('dock-edge'), STAGE.list)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
-    // Nor would the primary's bare fill, which is why every control keeps the
-    // keyline in both modes now.
-    expect(againstRamp(token('primary'), STAGE.list)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
+    expect(contrastRatio(token('primary'), STAGE.list)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
   });
 
   it('reads every label against a ground that clears the floor', () => {
-    // Back and Next on their own chips, and Skip on the quiet one — the dark
-    // set, in the mode that used to use the light one.
+    // The pressed mode toggle's own chip, cut from the dock's deep navy.
     expect(contrastRatio(token('globe.label'), token('globe.panel'))).toBeGreaterThanOrEqual(
       DOCK_TEXT_MIN_CONTRAST,
     );
     expect(contrastRatio(token('globe.detail-key'), token('globe.panel'))).toBeGreaterThanOrEqual(
       DOCK_TEXT_MIN_CONTRAST,
     );
-    expect(contrastRatio(token('ink-inv'), token('primary'))).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    // And the bar's own two: the mode toggles and the section count, which
+    // And the band's own two: the mode toggles and the section count, which
     // VB-30 says go light and STAY light.
     expect(contrastRatio(token('globe.detail-key'), STAGE.list)).toBeGreaterThanOrEqual(
       DOCK_TEXT_MIN_CONTRAST,

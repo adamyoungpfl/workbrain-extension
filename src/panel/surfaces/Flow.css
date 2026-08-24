@@ -564,14 +564,12 @@
    chrome's colour is now a constant and the pane's is what a mode change
    changes.
 
-   THE CONSEQUENCE WORTH KNOWING ABOUT: the nav ramp below runs from
-   `--dock-stage` into `--canvas`, so its foot is now dark in List too, and
-   Back / Next / Skip stand on a dark foot in a mode where they did not before.
-   Every one of them therefore keeps the dark stage's treatment at all times —
-   which is the whole reason the two sets collapsed into one here instead of
-   the bar being restyled on its own. src/core/drawer/chrome.test.ts holds the
-   palette to docs/GUARDRAILS.md and tests/e2e/dock-surface.spec.ts holds the
-   painted pixels to it, at three drag heights in both modes.
+   V1.6's consequence — that the nav's ramp ran from this dark stage in both
+   modes, so Back / Next / Skip stood on a dark foot in List too — is gone with
+   V1.7 VB-41's removal of the ramp. The palette below now dresses the drawer's
+   chrome and nothing above it. src/core/drawer/chrome.test.ts holds it to
+   docs/GUARDRAILS.md and tests/e2e/dock-surface.spec.ts holds the painted
+   pixels to it, at three drag heights in both modes.
 
    Every value is from the globe's own palette rather than a second dark set
    that would have to agree with it (design/tokens.json's `globe` group) —
@@ -580,19 +578,15 @@
    extends again to "the drawer's chrome, in both of its modes". */
 .flowshell {
   --dock-stage: var(--globe-field);
-  --dock-chip: var(--globe-panel);
   --dock-chip-hover: var(--globe-edge-far);
   --dock-ink: var(--globe-label);
   --dock-ink-quiet: var(--globe-detail-key);
-  /* Every interactive edge inside the dock. --border-i is measured against
-     --canvas and drops to 2.92:1 on the drawer's own light pane — under WCAG
-     1.4.11's 3:1 — which is the whole reason --dock-edge exists
-     (design/tokens.json). On this dark foot the edge is the stage itself. */
-  --dock-secondary-edge: var(--globe-field);
-  /* The primary's own fill measures 1.6:1 against the middle of a dark ramp,
-     so the keyline is the only boundary it has. */
-  --dock-primary-edge: var(--globe-field);
-  --dock-quiet-bg: var(--globe-panel);
+  /* V1.7 VB-41 took four more of these out — `--dock-chip`, its two edges and
+     the quiet button's ground. They dressed Back / Next / Skip, which have no
+     ground and no keyline any more; the cluster stands on the panel's own
+     canvas above this stage and is coloured from the panel's own inks (see
+     the block on the docked nav below). What is left here is the drawer's own
+     chrome, from the handle down, which VB-41 did not touch. */
   /* --primary measures 2.90:1 on this field, under the 3:1 floor for a
      non-text indicator, so the dark stage focuses with the ring the globe
      already uses (docs/GUARDRAILS.md: an equal replacement, never none). */
@@ -606,9 +600,10 @@
   --dock-pane: var(--surface);
 
   /* V1.6 VB-29 — the white margin the drawer's pane sits inside, from
-     core/drawer/chrome.ts via Flow.tsx. Read here as well as in the drawer,
-     because the ramp below has to be inset by the same number or the frame
-     stops in a notch at the drawer's top corners. */
+     core/drawer/chrome.ts via Flow.tsx. Read here as well as in the drawer
+     because the globe's stage size is derived from the same number; V1.7
+     VB-41 removed the third reader, the ramp, which had to be inset by it so
+     the frame did not stop in a notch at the drawer's top corners. */
   --dock-frame: 8px;
 
   /* The pane travels between the two grounds over the drawer's own settle
@@ -659,20 +654,40 @@
 
    `bottom` is the drawer's top edge and nothing else — one number, set by
    Flow.tsx from the same state the drawer's height comes from, so the bar
-   cannot drift a pixel away from the edge it is pegged to. `--canvas` and no
-   bottom border because the drawer's own `--border-i` rule is immediately
-   below and the grip straddles it: the seam between the two is the handle, not
-   a second line. `z-index: 1` puts it over the scrolling question but under
-   the drawer's own 2, so the grip's top half still paints across the bar and
-   the handle keeps every pixel of its grab target.
+   cannot drift a pixel away from the edge it is pegged to. `z-index: 1` puts
+   it over the scrolling question but under the drawer's own 2, so the grip's
+   top half still paints across the bar and the handle keeps every pixel of its
+   grab target.
 
-   The rule goes edge to edge like the drawer's, but the buttons keep the
-   question's own left margin — 26px, which is the panel's 8px body margin plus
-   the flow's 18px gutter, and is exactly where Back sat before this task moved
-   it. Written as one number rather than as that sum because a fixed element is
-   positioned against the viewport and has no access to either term: the
-   comment is what keeps them tied, and tests/e2e/nav-dock.spec.ts asserts the
-   column really does line up. */
+   ── V1.7 VB-41: A CLUSTER, NOT A BAR ────────────────────────────────────
+   Three changes, and the third is the complaint:
+
+     · no containers. The buttons are their words (and a chevron), on nothing.
+     · no fade. V1.4 VB-22's gradient is gone and this band is simply
+       `--canvas` — the panel's own colour, continuing down to the drawer's
+       edge, where the dark head band begins. That edge is now a plain seam,
+       which is what "colour alone makes the transition smooth enough" means:
+       the two surfaces are 15:1 apart, so nothing has to be blended to tell
+       them apart. core/drawer/chrome.ts is where the ramp used to live and
+       says what went with it.
+     · the cluster is CENTRED and sits at the top of the band, with
+       `--nav-clearance` of nothing underneath it. Before this, the buttons
+       ended eight pixels above the grab handle and the two read as one row of
+       furniture. They now end 29px above it (core/flow/dock.ts's
+       `navPaintGapAboveDrawer`), and 22px above the top of the grip.
+
+   THE PAINT IS OPAQUE AND THAT IS LOAD-BEARING, not decoration: the question
+   scrolls under this band, and a label with the question's own text passing
+   behind it has no contrast at all. It is the same `--canvas` the panel is, so
+   there is nothing to see — which is the point. It is also what axe reads as
+   the ground when it measures these labels, and what
+   tests/e2e/button-cluster.spec.ts samples from a real screenshot at three
+   drag heights in both modes.
+
+   Centring loses the 26px column Back used to stand in (V1.2 measured it
+   against the question's own gutter). That was a deliberate trade: a centred
+   cluster is the shape VB-41 asks for, and the column it lined up with is a
+   left margin nothing else in the bar was using. */
 .flowshell .flow-foot {
   position: fixed;
   left: 0;
@@ -680,141 +695,131 @@
   bottom: var(--drawer-h, 186px);
   z-index: 1;
   box-sizing: border-box;
-  height: var(--flow-nav-h, 60px);
+  height: var(--flow-nav-h, 64px);
   margin-top: 0;
-  padding: 0 26px;
+  /* The clearance is padding-BOTTOM, so the hit boxes sit at the top of the
+     band and the empty space is all between them and the drawer. */
+  padding: 0 8px var(--nav-clearance, 20px);
+  /* No rule across the top. The band is the panel continuing; a line would be
+     a container drawn around a cluster that just had its containers taken
+     away. */
+  border: 0;
+  justify-content: center;
+  gap: 10px;
+  background: var(--canvas);
 }
 
-/* THE FADE, AND WHY IT TRACKS THE HANDLE.
-   `bottom` is the drawer's top edge, so the bar begins exactly where it has
-   been dragged to; a gradient anchored to the bottom of it therefore starts at
-   the handle by construction and cannot drift a pixel from it. No second
-   number, no listener, no fixed height anywhere.
+/* ── THE CONTROLS: 26px painted, 44px pressable ──────────────────────────
+   V1.3 VB-15's split, applied to a control with no bubble left to shrink —
+   see components/NavButton.tsx and components/DeepDive.css, which did it
+   first. Every number arrives from core/flow/dock.ts through Flow.tsx:
 
-   The shape is core/drawer/chrome.ts's and arrives as custom properties: a
-   steep foot below the buttons (`--nav-ramp-foot`, lifting
-   `--nav-ramp-foot-mix` off the stage colour), then the long half running out
-   into --canvas exactly at this bar's top edge. That is not styling — it is
-   what gives Back / Next / Skip a background they can hold a boundary against
-   along their whole height, and chrome.test.ts proves no evenly spread ramp
-   can. It also stops at the top edge on purpose: a softer fade running on into
-   the question area would be painting over the save note, and
-   core/flow/composition.ts has no room to reserve for it.
+     --nav-hit-pad      the padding that makes the box 44px tall
+     --nav-paint-inset  the overhang, taken back out of the layout as a
+                        negative margin, so the cluster lays out at 26px
+     --nav-label-h      the label's line box, which both of the above are
+                        measured from
 
-   No border-top. The seam between this bar and the drawer's head IS the
-   surface continuing — a line across it is the thing V1.4 removed.
-
-   ── V1.6 VB-29: WHY THE PAINT MOVED OFF THE BAR AND ONTO A LAYER ─────────
-   The drawer's pane is now inset from the panel's edges by `--dock-frame`, and
-   the foot of this ramp IS that pane continuing upward — so it has to be inset
-   by the same number, or the frame stops dead in a notch at the drawer's top
-   two corners. What must NOT move is the buttons: Back sits in the question's
-   own 26px column (tests/e2e/nav-dock.spec.ts measures it), and insetting the
-   bar itself would carry that column in with it.
-
-   So the bar keeps its box and its padding, and a layer behind it takes the
-   paint. `z-index: -1` puts that layer behind the bar's own content and in
-   front of nothing else: `.flow-foot` is a stacking context of its own
-   (z-index: 1), so a negative child cannot escape it into the question above. */
-.flowshell .flow-foot::before {
-  content: '';
-  position: absolute;
-  inset: 0 var(--dock-frame);
-  z-index: -1;
-  background: linear-gradient(
-    to top,
-    var(--dock-stage) 0,
-    color-mix(in srgb, var(--dock-stage), var(--canvas) var(--nav-ramp-foot-mix, 45%))
-      var(--nav-ramp-foot, 8px),
-    color-mix(in srgb, var(--dock-stage), var(--canvas) var(--nav-ramp-knee-mix, 80%))
-      var(--nav-ramp-knee, 26px),
-    var(--canvas) var(--nav-ramp-h, 60px)
-  );
+   `border: 0` rather than a transparent border, because a 1px border top and
+   bottom would make the box 46 and the arithmetic in core a description of
+   something else. The floor is then kept by `min-height` AND by the padding,
+   which agree by construction (dock.test.ts). */
+.flowshell .flow-foot .navbtn {
+  display: inline-flex;
+  flex: none;
+  border-radius: var(--r-md);
 }
 
-/* THE BUTTONS, DESIGNED INTO THE GRADIENT RATHER THAN PASTED ON IT.
-   docs/V1.4-REFINEMENT.md offers two ways to survive a moving background:
-   give the buttons their own solid ground so the gradient passes behind them,
-   or interpolate their treatment with the variable driving the gradient. This
-   is the first with the second folded into it — the ground is not white, it is
-   cut from the dock's own stage — so a label is read against a colour that
-   never moves while the control still visibly belongs to the surface it grew
-   out of. Every ratio is asserted twice: against the tokens in
-   src/core/drawer/chrome.test.ts, and against the pixels a browser really
-   painted, at three drag heights in both modes, in
-   tests/e2e/dock-surface.spec.ts. */
-.flowshell .flow-foot .btn-secondary {
-  background: var(--dock-chip);
-  color: var(--dock-ink);
-  border-color: var(--dock-secondary-edge);
-}
-.flowshell .flow-foot .btn-secondary:hover {
-  background: var(--dock-chip-hover);
-}
-
-.flowshell .flow-foot .btn-primary {
-  border-color: var(--dock-primary-edge);
-}
-
-/* Skip. On the light stage it stays what it was — a word, on nothing, at
-   6.7:1 against every pixel of that ramp. On the dark stage a word on nothing
-   would be a word on a gradient, which is exactly the thing that cannot hold
-   4.5:1, so it takes the same chip Back has and stays subordinate by carrying
-   the quieter ink and no keyline. Its boundary is then the chip itself, at
-   3.6:1 against the ramp beside it. */
-.flowshell .flow-foot .btn-quiet {
-  background: var(--dock-quiet-bg);
-  color: var(--dock-ink-quiet);
-}
-.flowshell .flow-foot .btn-quiet:hover {
-  background: var(--dock-chip-hover);
-  color: var(--dock-ink);
-}
-
-/* THE CONTROLS THEMSELVES DO NOT CROSSFADE. `.btn` animates its background
-   over 120ms, which is right for a hover and wrong for a change of stage: a
-   light chip crossfading to a dark one passes through a frame where the label
-   has already flipped to the other stage's ink and cannot be read on the
-   ground underneath it. axe catches it, and it is a real 120ms of unreadable
-   button, not a test artefact. So the fade belongs to the surface and the
-   controls change with it in one frame — and the hover fade is kept by scoping
-   the transition to the state that wants it. */
 .flowshell .flow-foot .btn {
-  transition: none;
-}
-.flowshell .flow-foot .btn:hover {
-  transition: background var(--fast) var(--ease), border-color var(--fast) var(--ease);
-}
-
-/* The ring goes INSIDE. Drawn outside, its adjacent colour is the ramp — and a
-   ring on a ramp is the same unwinnable problem the buttons have: whatever
-   colour it is, the gradient passes through it somewhere and the indicator
-   disappears at that height. Inset, its neighbour is the button's own ground,
-   which never moves: 9.4:1 on the dark chip, 6.8:1 on the light one. The
-   primary takes the white ring instead of the accent for the same reason —
-   --primary on --primary is 1:1. Same 2px, same visibility, one direction
-   over (docs/GUARDRAILS.md asks for an equal replacement, and this is the
-   equal replacement). */
-.flowshell .flow-foot .btn:focus-visible {
-  outline: 2px solid var(--dock-accent);
-  outline-offset: -2px;
-}
-.flowshell .flow-foot .btn-primary:focus-visible {
-  outline-color: var(--ink-inv);
+  border: 0;
+  border-radius: 0;
+  background: none;
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  padding: var(--nav-hit-pad, 13px) 10px;
+  margin: calc(-1 * var(--nav-paint-inset, 9px)) 0;
+  font-size: 14px;
+  line-height: var(--nav-label-h, 18px);
+  gap: 6px;
+  /* 120ms, the system's own duration for a colour change
+     (docs/design-system.html §06). The V1.4 rule this replaces switched the
+     transition off entirely, because a chip crossfading between two stages
+     passed through a frame where the label was unreadable on it. There are no
+     chips and no two stages any more: the only thing that changes is the ink,
+     and it changes on hover. */
+  transition: color var(--fast) var(--ease);
 }
 
-/* Back at the left, the primary and its escape hatch at the right. Achieved by
-   pushing the primary rather than by reordering, so the visual order and the
-   focus order stay the same sequence (WCAG 2.4.3) — a bar whose Tab key jumps
-   right-to-left is worse than an unbalanced bar. */
+/* THE RING GOES ON THE WORD. On the button it would enclose the 44px box you
+   can press, which is 18px taller than anything visible inside it — a
+   rectangle near the control rather than around it (docs/GUARDRAILS.md asks
+   for a *visible* indicator). `:has()` puts it on the wrapper, whose box is
+   exactly the painted word plus its air, and core/flow/dock.ts holds the whole
+   ring inside the pressable box so it can never be drawn over the question
+   above or the drawer's handle below.
+
+   This is the panel's own ring — 2px --primary, 2px offset — rather than the
+   dock's `--globe-focus`, because the ground under it went back to being the
+   canvas, where --primary measures 6.82:1. On the drawer's dark stage it is
+   2.90:1, which is why the drawer itself still uses the other one.
+
+   THE SECOND RULE IS WHY THIS DEGRADES RATHER THAN BREAKS. The button's own
+   ring is turned off only inside the same `:has()` that turns the wrapper's
+   on, so a browser that does not understand the selector matches neither rule
+   and keeps components/Button.css's ring on the pressable box: bigger than the
+   word, still 2px, still --primary, still visible. Nothing is ever left with
+   no focus indicator at all (docs/GUARDRAILS.md). */
+.flowshell .flow-foot .navbtn:has(.btn:focus-visible) {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.flowshell .flow-foot .navbtn:has(.btn:focus-visible) .btn:focus-visible {
+  outline: none;
+}
+
+/* Back, and anything else secondary: the panel's own quiet ink, 6.96:1 on the
+   canvas. */
+.flowshell .flow-foot .btn-secondary {
+  color: var(--ink-2);
+}
+
+/* Next. The only coloured word in the cluster — and NOT the only signal it is
+   the primary: it also carries the heavier weight and the chevron
+   (components/NavButton.tsx), because docs/GUARDRAILS.md does not allow the
+   difference to be hue alone. 6.82:1 on the canvas. */
 .flowshell .flow-foot .btn-primary {
-  margin-left: auto;
+  color: var(--primary);
+  font-weight: 700;
+}
+
+/* Skip. The quietest thing in the bar, at --ink-3's 4.71:1 — over the floor,
+   and the same ink the save note above it uses, which is the register this
+   control belongs to. */
+.flowshell .flow-foot .btn-quiet {
+  color: var(--ink-3);
+  font-weight: 500;
+}
+
+/* Hover moves the ink AND underlines the word. Two signals, because on a
+   surface with no boxes a colour shift on its own is easy to miss — and
+   because the underline is the affordance the boxes used to be. */
+.flowshell .flow-foot .btn:hover .navbtn-label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+.flowshell .flow-foot .btn-secondary:hover,
+.flowshell .flow-foot .btn-quiet:hover {
+  color: var(--ink);
+}
+.flowshell .flow-foot .btn-primary:hover {
+  color: var(--primary-hover);
 }
 
 /* The reflect screen's own buttons are in the question, so its nav can hold
    nothing but Back — and on the rare position with no Back, nothing at all.
-   An empty 60px bar with a rule across it reads as a broken control; the
-   reservation stays, so nothing below moves. */
+   The band is painted, so an empty one would be a bare white strip sitting on
+   the drawer; the reservation stays, so nothing below moves. */
 .flowshell .flow-foot:empty {
   display: none;
 }
@@ -842,13 +847,11 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* V1.4 VB-22. The gradient does not go away — it is how the dock's edge is
-     drawn, not a cue — but the drawer's ground stops *travelling* between the
-     two modes when the mode changes. (V1.6 VB-30: the gradient itself no
-     longer moves at all, because the stage it runs from is the same in both
-     modes; what this cancels is `--dock-pane`.) The still equivalent carries
-     the same information for the same reason the morph's does: the information
-     is which mode the drawer is in, and it is in it from the first frame. */
+  /* V1.4 VB-22, now only about the drawer's own ground: it stops *travelling*
+     between the two modes when the mode changes. (The gradient this used to
+     also be about is gone — V1.7 VB-41.) The still equivalent carries the same
+     information for the same reason the morph's does: the information is which
+     mode the drawer is in, and it is in it from the first frame. */
   .flowshell {
     transition: none;
   }

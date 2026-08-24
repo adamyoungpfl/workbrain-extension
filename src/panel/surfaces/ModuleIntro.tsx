@@ -1,4 +1,4 @@
-import { Beats, Button, FlowProgress, NarratorToggle } from '../components';
+import { Beats, FlowProgress, NarratorToggle, NavButton } from '../components';
 import type { Module } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import { narrationFor } from '../../core/voice/narration';
@@ -128,16 +128,16 @@ export function ModuleIntro({
       </p>
       <footer className="flow-foot">
         {canGoBack && (
-          <Button type="button" variant="secondary" onClick={onBack}>
+          <NavButton type="button" variant="secondary" direction="back" onClick={onBack}>
             {S.back}
-          </Button>
+          </NavButton>
         )}
         {/* The existing, approved word for "carry on" — every other screen's
             primary button says it, and this screen is not doing anything
             different enough to deserve a word of its own. */}
-        <Button type="submit" variant="primary">
+        <NavButton type="submit" variant="primary" direction="next">
           {S.next}
-        </Button>
+        </NavButton>
       </footer>
     </form>
   );

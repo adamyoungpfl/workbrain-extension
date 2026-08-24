@@ -1,0 +1,27 @@
+/* V1.7 VB-41 — the wrapper that gives the focus ring a box to hug.
+
+   Read components/NavButton.tsx first: it holds the reasoning. This file holds
+   only what is true of the wrapper WHEREVER it renders. The docked cluster's
+   own treatment — the painted size, the inks, the ring itself — lives in
+   surfaces/Flow.css beside the rest of the dock, because that is the surface
+   that decides them, and because Flow.css has dressed the bar's buttons since
+   V1.4. */
+
+/* No box at all by default. In the proof loop's ordinary footer the button IS
+   the thing you can see, so the wrapper must not add a layout box that would
+   change the row's flex layout by a pixel; `contents` makes the button itself
+   the flex item, exactly as it was before this wrapper existed. */
+.navbtn {
+  display: contents;
+}
+
+/* The label needs to be an element rather than a bare text node so the painted
+   box can be measured, and so the underline on hover is drawn under the word
+   rather than under the word and the chevron together. */
+.navbtn-label {
+  min-width: 0;
+}
+
+.navbtn-chevron {
+  flex: none;
+}

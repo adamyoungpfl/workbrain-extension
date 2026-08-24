@@ -1,5 +1,5 @@
 import { test, expect, chromium } from '@playwright/test';
-import type { BrowserContext, Locator, Page, Worker } from '@playwright/test';
+import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
@@ -9,9 +9,8 @@ import {
   DOCK_BOUNDARY_MIN_CONTRAST,
   DOCK_FRAME,
   DOCK_TEXT_MIN_CONTRAST,
-  NAV_RAMP_HEIGHT,
-  navRampColorAt,
 } from '../../src/core/drawer/chrome';
+import { FLOW_NAV_HEIGHT } from '../../src/core/flow/dock';
 import { channelDistance, contrastRatio, isOpaque, parseCssColor } from '../../src/core/color/contrast';
 import type { Rgb } from '../../src/core/color/contrast';
 import { S } from '../../src/panel/strings';
@@ -19,26 +18,27 @@ import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 
 /**
- * V1.4 VB-22 accept criteria, driven in a real browser.
+ * V1.4 VB-22 accept criteria, driven in a real browser — what is left of them
+ * after V1.7 VB-41.
  *
- * The unit tests prove the arithmetic and prove the *palette* clears
- * docs/GUARDRAILS.md (src/core/drawer/chrome.test.ts). Neither can prove the
- * only thing this task actually is, which is what a screen ends up painted:
+ * VB-22 made the docked nav and the drawer read as one surface, with a fade
+ * above the handle. VB-41 unmakes exactly that half of it: the nav is text on
+ * the panel's own canvas now, deliberately NOT continuous with the drawer, and
+ * the gradient this file used to model pixel for pixel does not exist. Those
+ * two tests — "the fade begins wherever the bar has been dragged to" and "no
+ * line at the seam" — were deleted rather than loosened, because a loosened
+ * assertion about a fade that is gone would be a test that can only pass.
+ * tests/e2e/button-cluster.spec.ts is where the replacement lives, and it
+ * measures the same way: real pixels, three drag heights, both modes.
  *
- *  - that the bar is visually continuous with the stage in both modes — no
- *    line, no step, the same colour either side of the seam;
- *  - that the fade **begins wherever the bar has been dragged to**, at every
- *    height, rather than sitting at a fixed one;
- *  - that the gradient the browser drew is the gradient core/drawer/chrome.ts
- *    describes, pixel for pixel;
- *  - and that every control in that bar clears 4.5:1 on its text and 3:1 on
- *    its boundary **at three drag positions in both modes**, measured against
- *    the colours actually on screen rather than against the ones we intended.
+ * What is still VB-22's, and is still here: the drawer's own chrome from the
+ * handle down. The head band is the Brain field in both modes (V1.6 VB-30),
+ * its glyphs and its count are legible on it, and the two mode toggles are
+ * glyphs with names rather than words.
  *
  * EVERYTHING HERE IS MEASURED. Contrast is computed from real screenshot
- * pixels and real computed styles; a class name would prove nothing about a
- * gradient. The screenshots the last test writes are for a person to look at,
- * because "reads as one surface" is not an assertion.
+ * pixels and real computed styles. The screenshots the last test writes are
+ * for a person to look at, because "reads as one surface" is not an assertion.
  *
  * Self-contained launch helpers, per this repo's standalone-spec convention.
  */
@@ -138,23 +138,6 @@ async function pixels(page: Page, points: readonly { x: number; y: number }[]): 
   );
 }
 
-/** One token's value, resolved by the browser rather than restated here — a
- * probe element painted with it and read back. Keeps the spec honest about
- * measuring the product's colours instead of a copy of them. */
-async function tokenColor(page: Page, name: string): Promise<Rgb> {
-  const value = await page.evaluate((property) => {
-    const probe = document.createElement('div');
-    probe.style.backgroundColor = `var(${property})`;
-    document.body.append(probe);
-    const read = getComputedStyle(probe).backgroundColor;
-    probe.remove();
-    return read;
-  }, name);
-  const parsed = parseCssColor(value);
-  expect(parsed, `could not read ${name} (${value})`).not.toBeNull();
-  return parsed!;
-}
-
 interface Geometry {
   drawerTop: number;
   navTop: number;
@@ -228,77 +211,7 @@ function heightsFor(mode: 'brain' | 'list'): { name: string; height: number }[] 
   ];
 }
 
-test('the fade begins wherever the bar has been dragged to (VB-22)', async () => {
-  const { context, sw, id } = await launchExtension();
-  const page = await openQuestion(context, sw, id);
-  const canvas = await tokenColor(page, '--canvas');
-
-  for (const mode of ['list', 'brain'] as const) {
-    await chooseMode(page, mode);
-    for (const { name, height } of heightsFor(mode)) {
-      await setHeight(page, height);
-      const where = `${mode} at ${name}`;
-      const g = await geometry(page);
-      expect(Math.round(g.navBottom), where).toBe(Math.round(g.drawerTop));
-
-      // The stage colour, read from the drawer's own head band — not from a
-      // token, so this is genuinely "the bar and the drawer are the same
-      // colour" rather than "both were given the same variable".
-      const [stage] = await pixels(page, [{ x: g.emptyX, y: g.drawerTop + 20 }]);
-
-      // The whole ramp, sampled every 4px up from the drawer's edge, against
-      // the model in core/drawer/chrome.ts. The model is anchored at the
-      // drawer's top edge; if the fade sat at a fixed height instead of
-      // tracking the handle, this would fail at two of the three drag
-      // positions and pass at one.
-      const rows: { x: number; y: number }[] = [];
-      for (let up = 1; up < NAV_RAMP_HEIGHT; up += 4) {
-        rows.push({ x: g.emptyX, y: Math.round(g.drawerTop) - up });
-      }
-      const painted = await pixels(page, rows);
-      rows.forEach((row, index) => {
-        // A screenshot row is a sample of the CSS pixel's MIDDLE, so the ramp
-        // position it shows is half a pixel further from the edge than its
-        // index. Ignoring that reads as an 8-level error in the foot, where
-        // the ramp is climbing fastest — the model is right and the naive
-        // coordinate is wrong.
-        const up = g.drawerTop - (row.y + 0.5);
-        const predicted = navRampColorAt(up, stage!, canvas);
-        // Matched against the model within a pixel of where the model says it
-        // is. In the foot the ramp climbs about fourteen levels per pixel, so a
-        // colour tolerance alone would either have to be loose enough to hide a
-        // real mistake or tight enough to fail on sub-pixel rounding; a
-        // tolerance in POSITION says the thing actually being claimed — the
-        // fade is where core/drawer/chrome.ts puts it, to the pixel.
-        const off = [-1, -0.5, 0, 0.5, 1].map((dy) =>
-          channelDistance(painted[index]!, navRampColorAt(up + dy, stage!, canvas)),
-        );
-        expect(
-          Math.min(...off),
-          `${where}: ${up}px above the handle painted rgb(${painted[index]!.r}, ${painted[index]!.g}, ${painted[index]!.b}), model says rgb(${Math.round(predicted.r)}, ${Math.round(predicted.g)}, ${Math.round(predicted.b)})`,
-        ).toBeLessThanOrEqual(PAINT_TOLERANCE);
-      });
-
-      // Both ends stated plainly: the stage's own colour at the handle, the
-      // panel's own white by the top of the bar.
-      const [atHandle, atTop] = await pixels(page, [
-        { x: g.emptyX, y: g.drawerTop - 1 },
-        { x: g.emptyX, y: g.navTop + 1 },
-      ]);
-      // The bar's very first row is the stage's own colour — allowing for the
-      // half pixel of ramp it has already climbed by the middle of that row,
-      // which in the foot is worth about seven levels.
-      expect(channelDistance(atHandle!, stage!), `${where}: the fade does not begin at the handle`)
-        .toBeLessThanOrEqual(PAINT_TOLERANCE + 8);
-      expect(channelDistance(atTop!, canvas), `${where}: the fade does not reach the panel white`)
-        .toBeLessThanOrEqual(PAINT_TOLERANCE);
-    }
-  }
-
-  await context.close();
-});
-
-test('the bar and the stage are one surface, with no line at the seam (VB-22)', async () => {
+test('the head band is the same dark field in both modes (VB-22, VB-30)', async () => {
   const { context, sw, id } = await launchExtension();
   const page = await openQuestion(context, sw, id);
   const band: Rgb[] = [];
@@ -307,37 +220,16 @@ test('the bar and the stage are one surface, with no line at the seam (VB-22)', 
     await chooseMode(page, mode);
     await setHeight(page, BOUNDS.max);
     const g = await geometry(page);
-    // Rows straddling the seam: the last row of the bar, then four inside the
-    // drawer's head. V1.2 drew a --border-i rule across exactly here — the
-    // "strips stacked on the drawer" this task removes — and the head band
-    // above the stage was --canvas. Both would show up as a row that is not
-    // the stage's own colour.
-    //
-    // Measured against the stage rather than against each other, deliberately:
-    // the bar's foot is a gradient and its neighbouring rows differ by design.
-    // What "no line" means is that nothing here is a colour the surface does
-    // not have.
-    const top = Math.round(g.drawerTop);
-    const column = [-1, 0, 1, 2, 3].map((offset) => ({ x: g.emptyX, y: top + offset }));
-    const painted = await pixels(page, column);
-    const stage = painted[painted.length - 1]!;
-    painted.forEach((sample, index) => {
-      expect(
-        channelDistance(sample, stage),
-        `${mode}: a line at the seam, ${column[index]!.y - top}px from the drawer's edge`,
-      ).toBeLessThanOrEqual(PAINT_TOLERANCE + 4);
-    });
 
-    // V1.6 VB-30 CHANGES WHAT "ONE SURFACE" MEANS BELOW THE SEAM, and this is
-    // the half of this test that had to move with it. Until V1.6 the head band
-    // and the drawer's content were the same colour in both modes, because the
-    // band followed the mode. The band is the Brain visual's dark field in both
-    // modes now, so in List it deliberately sits ON a light pane — the bar
-    // belongs to the chrome, not to the view under it.
+    // V1.6 VB-30: the band is the Brain visual's dark field in BOTH modes, so
+    // in List it deliberately sits on a light pane — the band belongs to the
+    // drawer's chrome, not to the view under it.
     //
-    // What is still asserted, and is the whole of VB-30: the band is the SAME
-    // colour in both modes, and it is the colour the Brain visual's own field
-    // is (sampled from the stage in Brain, where band and pane still agree).
+    // V1.7 VB-41 removed what used to be asserted either side of this line.
+    // The bar above is the panel's own canvas now and the band is the stage,
+    // so there IS a hard edge at the seam, and it is the thing that separates
+    // the cluster from the handle. button-cluster.spec.ts measures it from the
+    // other side.
     const [head] = await pixels(page, [{ x: g.emptyX, y: g.drawerTop + 20 }]);
     band.push(head!);
     if (mode === 'brain') {
@@ -352,99 +244,6 @@ test('the bar and the stage are one surface, with no line at the seam (VB-22)', 
   expect(channelDistance(band[0]!, band[1]!), 'the mode bar is not the same field in both modes')
     .toBeLessThanOrEqual(PAINT_TOLERANCE);
 
-  await context.close();
-});
-
-/**
- * THE ASSERTION THIS WHOLE TASK IS MOST LIKELY TO SHIP A REGRESSION IN.
- *
- * Every control in the bar, at three drag heights, in both modes, measured:
- *
- *  - its label against the ground the label is actually on. If the control has
- *    an opaque background of its own, that is the ground — the gradient passes
- *    behind it, which is the whole reason the buttons have one. If it does not,
- *    the ground is the painted pixel behind the label, whatever the ramp
- *    happens to be there.
- *  - its boundary against the ramp beside it, at its bottom edge, its middle
- *    and its top edge. A control with neither a border nor an opaque ground
- *    claims no boundary and is identified by its text alone, so it is not held
- *    to 1.4.11 — and the text check above is then the one doing the work.
- */
-test('every nav control clears the floor at min, mid and max drag, in both modes (VB-22)', async () => {
-  const { context, sw, id } = await launchExtension();
-  const page = await openQuestion(context, sw, id);
-  const measured: string[] = [];
-
-  for (const mode of ['list', 'brain'] as const) {
-    await chooseMode(page, mode);
-    for (const { name, height } of heightsFor(mode)) {
-      await setHeight(page, height);
-      const g = await geometry(page);
-
-      for (const label of [S.back, S.next, S.skip]) {
-        const button: Locator = page.locator('.flow-foot').getByRole('button', { name: label, exact: true });
-        await expect(button).toHaveCount(1);
-        const where = `${mode} at ${name}: ${label}`;
-
-        const style = await button.evaluate((el) => {
-          const s = getComputedStyle(el);
-          const box = el.getBoundingClientRect();
-          return {
-            color: s.color,
-            background: s.backgroundColor,
-            border: s.borderTopColor,
-            borderWidth: parseFloat(s.borderTopWidth) || 0,
-            top: box.top,
-            bottom: box.bottom,
-            centreX: box.left + box.width / 2,
-            centreY: box.top + box.height / 2,
-          };
-        });
-
-        const ink = parseCssColor(style.color);
-        expect(ink, `${where}: unreadable text colour`).not.toBeNull();
-        const own = parseCssColor(style.background);
-
-        // The ground the label is read against.
-        let ground: Rgb;
-        if (isOpaque(own)) {
-          ground = own;
-        } else {
-          [ground] = (await pixels(page, [{ x: style.centreX, y: style.centreY }])) as [Rgb];
-        }
-        const text = contrastRatio(ink!, ground);
-        measured.push(`${where} — text ${text.toFixed(2)}:1`);
-        expect(text, `${where}: label on its ground`).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
-
-        // The outer edge, if it claims one: the border when it is drawn and
-        // opaque, otherwise the opaque ground itself.
-        const border = parseCssColor(style.border);
-        const edge = style.borderWidth > 0 && isOpaque(border) ? border : isOpaque(own) ? own : null;
-        if (!edge) {
-          measured.push(`${where} — no boundary claimed, identified by its text`);
-          continue;
-        }
-
-        // The ramp beside it, read from a column with no control on it, at the
-        // three heights the control's own edge passes through.
-        const beside = await pixels(
-          page,
-          [style.bottom - 1, style.centreY, style.top + 1].map((y) => ({ x: g.emptyX, y })),
-        );
-        for (const [index, sample] of beside.entries()) {
-          const at = ['bottom edge', 'middle', 'top edge'][index]!;
-          const ratio = contrastRatio(edge, sample);
-          measured.push(`${where} — boundary at its ${at} ${ratio.toFixed(2)}:1`);
-          expect(ratio, `${where}: boundary against the ramp at its ${at}`).toBeGreaterThanOrEqual(
-            DOCK_BOUNDARY_MIN_CONTRAST,
-          );
-        }
-      }
-    }
-  }
-
-  // Printed, so a run says what the numbers were and not only that they passed.
-  console.log(`\n  VB-22 measured contrast\n${measured.map((line) => `    ${line}`).join('\n')}\n`);
   await context.close();
 });
 
@@ -533,7 +332,7 @@ test('the drawer edge, at three heights in both modes — for a person to look a
       // And the edge itself, close up: the bar, the seam and the head band.
       await page.screenshot({
         path: path.join(SHOTS, `${mode}-${name}-edge.png`),
-        clip: { x: 0, y: g.navTop - 10, width: PANEL.width, height: NAV_RAMP_HEIGHT + 64 },
+        clip: { x: 0, y: g.navTop - 10, width: PANEL.width, height: FLOW_NAV_HEIGHT + 64 },
       });
     }
   }

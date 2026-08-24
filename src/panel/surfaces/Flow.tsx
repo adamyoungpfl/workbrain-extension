@@ -7,6 +7,7 @@ import {
   Field,
   FlowProgress,
   NarratorToggle,
+  NavButton,
   PillGroup,
   ReadOnlyBlock,
   TypedHeading,
@@ -16,17 +17,17 @@ import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
-import {
-  DOCK_FRAME,
-  NAV_RAMP_FOOT,
-  NAV_RAMP_FOOT_MIX,
-  NAV_RAMP_HEIGHT,
-  NAV_RAMP_KNEE,
-  NAV_RAMP_KNEE_MIX,
-} from '../../core/drawer/chrome';
+import { DOCK_FRAME } from '../../core/drawer/chrome';
 import { modeForHeight } from '../../core/drawer/mode';
 import type { DrawerMode } from '../../core/drawer/mode';
-import { FLOW_NAV_HEIGHT, flowBottomReserve } from '../../core/flow/dock';
+import {
+  FLOW_NAV_CLEARANCE,
+  FLOW_NAV_HEIGHT,
+  FLOW_NAV_LABEL,
+  flowBottomReserve,
+  navHitPadding,
+  navPaintOverhang,
+} from '../../core/flow/dock';
 import { questionAreaOffset } from '../../core/flow/composition';
 import {
   findPosition,
@@ -582,14 +583,17 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
             '--flow-nav-h': `${FLOW_NAV_HEIGHT}px`,
             '--flow-reserve': `${flowBottomReserve(drawerHeight)}px`,
             '--flow-area-offset': `${questionAreaOffset(drawerHeight)}px`,
-            // The fade's shape, from core/drawer/chrome.ts. The stylesheet
-            // draws the gradient; it does not decide where the steep half
-            // ends or how far it has lifted by the time it gets there.
-            '--nav-ramp-h': `${NAV_RAMP_HEIGHT}px`,
-            '--nav-ramp-foot': `${NAV_RAMP_FOOT}px`,
-            '--nav-ramp-foot-mix': `${NAV_RAMP_FOOT_MIX * 100}%`,
-            '--nav-ramp-knee': `${NAV_RAMP_KNEE}px`,
-            '--nav-ramp-knee-mix': `${NAV_RAMP_KNEE_MIX * 100}%`,
+            // V1.7 VB-41. The button cluster's two boxes, from
+            // core/flow/dock.ts: the padding that makes a control 44px tall,
+            // the overhang that takes the difference back out of the layout
+            // so it *paints* at 26, the label's own line box both are
+            // measured from, and the clear space left above the drawer. The
+            // stylesheet draws them; it does not work any of them out. These
+            // replace the five the fade needed — see chrome.ts's header.
+            '--nav-hit-pad': `${navHitPadding()}px`,
+            '--nav-paint-inset': `${navPaintOverhang()}px`,
+            '--nav-label-h': `${FLOW_NAV_LABEL}px`,
+            '--nav-clearance': `${FLOW_NAV_CLEARANCE}px`,
             // V1.6 VB-29. The white margin the drawer's pane sits inside —
             // published here rather than named in either stylesheet, because
             // the drawer's frame, the ramp's own inset and the globe's stage
@@ -1128,13 +1132,13 @@ function StepView({
         {saveNote}
         <footer className="flow-foot">
           {canGoBack && (
-            <Button type="button" variant="secondary" onClick={onBack}>
+            <NavButton type="button" variant="secondary" direction="back" onClick={onBack}>
               {S.back}
-            </Button>
+            </NavButton>
           )}
-          <Button type="submit" variant="primary">
+          <NavButton type="submit" variant="primary" direction="next">
             {S.next}
-          </Button>
+          </NavButton>
         </footer>
       </form>
     );
@@ -1209,12 +1213,12 @@ function StepView({
             </AnswerArea>
             {saveNote}
             <footer className="flow-foot">
-              <Button type="button" variant="secondary" onClick={backToView}>
+              <NavButton type="button" variant="secondary" direction="back" onClick={backToView}>
                 {S.back}
-              </Button>
-              <Button type="submit" variant="primary">
+              </NavButton>
+              <NavButton type="submit" variant="primary" direction="next">
                 {S.reflectUseThis}
-              </Button>
+              </NavButton>
             </footer>
           </form>
         </div>
@@ -1252,15 +1256,19 @@ function StepView({
           </AnswerArea>
           {saveNote}
           <footer className="flow-foot">
-            <Button type="button" variant="secondary" onClick={backToView}>
+            <NavButton type="button" variant="secondary" direction="back" onClick={backToView}>
               {S.back}
-            </Button>
-            <Button type="submit" variant="primary">
+            </NavButton>
+            <NavButton type="submit" variant="primary" direction="next">
               {S.next}
-            </Button>
-            <Button type="button" variant="quiet" onClick={() => onCommit(applySkip(answers, step, location))}>
+            </NavButton>
+            <NavButton
+              type="button"
+              variant="quiet"
+              onClick={() => onCommit(applySkip(answers, step, location))}
+            >
               {S.skip}
-            </Button>
+            </NavButton>
           </footer>
         </form>
       );
@@ -1289,9 +1297,9 @@ function StepView({
         {saveNote}
         <footer className="flow-foot">
           {canGoBack && (
-            <Button type="button" variant="secondary" onClick={onBack}>
+            <NavButton type="button" variant="secondary" direction="back" onClick={onBack}>
               {S.back}
-            </Button>
+            </NavButton>
           )}
         </footer>
       </div>
@@ -1557,17 +1565,17 @@ function StepView({
       {saveNote}
       <footer className="flow-foot">
         {canGoBack && (
-          <Button type="button" variant="secondary" onClick={onBack}>
+          <NavButton type="button" variant="secondary" direction="back" onClick={onBack}>
             {S.back}
-          </Button>
+          </NavButton>
         )}
-        <Button type="submit" variant="primary">
+        <NavButton type="submit" variant="primary" direction="next">
           {S.next}
-        </Button>
+        </NavButton>
         {showSkip && (
-          <Button type="button" variant="quiet" onClick={handleSkip}>
+          <NavButton type="button" variant="quiet" onClick={handleSkip}>
             {S.skip}
-          </Button>
+          </NavButton>
         )}
       </footer>
     </form>

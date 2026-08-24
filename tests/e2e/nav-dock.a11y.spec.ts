@@ -119,9 +119,16 @@ test('the docked bar is three named controls with rings that fit inside it (VB-1
     expect(b.width, name).toBeGreaterThanOrEqual(44);
 
     await button.focus();
+    // V1.7 VB-41: the ring moved off the button and onto the painted word —
+    // the button is 44px tall and the word is 26, so a ring on the button
+    // would be a rectangle around eighteen pixels of nothing
+    // (components/NavButton.tsx). Whichever element is actually drawing it is
+    // what has to fit inside the bar, so this reads the wrapper where there is
+    // one and the button itself where there is not.
     const ring = await button.evaluate((el) => {
-      const s = getComputedStyle(el);
-      const box = el.getBoundingClientRect();
+      const painted = (el.closest('.navbtn') as HTMLElement | null) ?? el;
+      const s = getComputedStyle(painted);
+      const box = painted.getBoundingClientRect();
       const width = parseFloat(s.outlineWidth) || 0;
       const offset = parseFloat(s.outlineOffset) || 0;
       const bar = el.closest('.flow-foot')!.getBoundingClientRect();

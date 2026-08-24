@@ -1,6 +1,11 @@
 export { Button } from './Button';
 export type { ButtonProps, ButtonVariant } from './Button';
 
+// V1.7 VB-41. The docked nav's controls: a Button with a wrapper the focus
+// ring can hug once the container is gone. See NavButton.tsx.
+export { NavButton } from './NavButton';
+export type { NavButtonProps, NavDirection } from './NavButton';
+
 export { Pill, PillGroup } from './Pill';
 export type { PillProps, PillOption, PillGroupProps } from './Pill';
 
