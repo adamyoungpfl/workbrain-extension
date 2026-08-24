@@ -17,6 +17,7 @@ import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
 import {
+  DOCK_FRAME,
   NAV_RAMP_FOOT,
   NAV_RAMP_FOOT_MIX,
   NAV_RAMP_HEIGHT,
@@ -589,6 +590,11 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
             '--nav-ramp-foot-mix': `${NAV_RAMP_FOOT_MIX * 100}%`,
             '--nav-ramp-knee': `${NAV_RAMP_KNEE}px`,
             '--nav-ramp-knee-mix': `${NAV_RAMP_KNEE_MIX * 100}%`,
+            // V1.6 VB-29. The white margin the drawer's pane sits inside —
+            // published here rather than named in either stylesheet, because
+            // the drawer's frame, the ramp's own inset and the globe's stage
+            // size all have to be the same number (core/drawer/chrome.ts).
+            '--dock-frame': `${DOCK_FRAME}px`,
           } as CSSProperties
         }
       >

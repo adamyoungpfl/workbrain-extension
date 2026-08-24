@@ -16,6 +16,7 @@ import {
   morphPoints,
   morphTransform,
 } from './mode';
+import { DOCK_FRAME } from './chrome';
 import { DRAWER_HANDLE_HEIGHT, DRAWER_MIN_HEIGHT, DRAWER_REST_HEIGHT, drawerBounds } from './height';
 
 /** The real side panel: 400px wide, about this tall on a laptop. */
@@ -101,10 +102,28 @@ describe('brainFitsIn', () => {
 });
 
 describe('brainStageSize', () => {
-  it('is the drawer minus its handle and padding, squared off by the narrower side', () => {
-    expect(brainStageSize(324, 400)).toBe(324 - DRAWER_HANDLE_HEIGHT - BRAIN_STAGE_PAD * 2);
+  it('is the drawer minus its handle, its padding and its frame, squared off by the narrower side', () => {
+    // V1.6 VB-29: the frame is along the bottom and down both sides, so it
+    // costs the height one of itself and the width two.
+    expect(brainStageSize(324, 400)).toBe(324 - DRAWER_HANDLE_HEIGHT - BRAIN_STAGE_PAD * 2 - DOCK_FRAME);
     // A panel narrower than the drawer is tall: width wins.
-    expect(brainStageSize(600, 400)).toBe(400 - BRAIN_STAGE_PAD * 2);
+    expect(brainStageSize(600, 400)).toBe(400 - BRAIN_STAGE_PAD * 2 - DOCK_FRAME * 2);
+  });
+
+  /**
+   * THE ASSERTION THE FRAME COULD HAVE BROKEN SILENTLY.
+   *
+   * The stage clips (FileDrawer.css), so a globe sized against the box the
+   * drawer had *before* the frame would simply lose its edge — and nothing
+   * would fail. This states the real box: the drawer's height less the frame
+   * along its bottom, less the head band, less the stage's own padding.
+   */
+  it('always fits the box the frame leaves, at every height a real panel allows', () => {
+    for (const height of [BRAIN_MIN_HEIGHT, 240, 320, BOUNDS.max]) {
+      const room = height - DOCK_FRAME - DRAWER_HANDLE_HEIGHT - BRAIN_STAGE_PAD * 2;
+      expect(brainStageSize(height, 400), `${height}px tall`).toBeLessThanOrEqual(Math.max(room, BRAIN_STAGE_MIN));
+      expect(brainStageSize(height, 400)).toBeLessThanOrEqual(400 - DOCK_FRAME * 2 - BRAIN_STAGE_PAD * 2);
+    }
   });
 
   it('never goes below the floor, whatever it is handed', () => {
@@ -138,12 +157,29 @@ describe('morphPoints', () => {
     const [point] = morphPoints(host, [{ id: 'sec1', brain, list }]);
     expect(point!.id).toBe('sec1');
     expect(point!.brain).toEqual({ x: 110, y: 60, r: 10 });
-    // Centred on the row's marker, and drawn small enough to settle inside it
-    // rather than cover it — see MORPH_LIST_SCALE.
+    // Centred on the row's marker, and — V1.6 VB-32 — drawn AT the marker's
+    // own size rather than as a bullet inside it. See MORPH_LIST_SCALE.
     expect(point!.list.x).toBe(26);
     expect(point!.list.y).toBe(286);
     expect(point!.list.r).toBeCloseTo(6 * MORPH_LIST_SCALE, 5);
-    expect(point!.list.r).toBeLessThan(point!.brain.r);
+  });
+
+  /**
+   * V1.6 VB-32 — the landing, stated as the thing the task asks for: the
+   * flight ends **on the row's own glyph, at its size and position**.
+   *
+   * Written against a real marker's box (FileTree.css's 26 x 18 tile) rather
+   * than against the square fixture above, because the marker is wider than it
+   * is tall and `endOf` takes the smaller side — which is what puts an orb the
+   * height of the tile dead centre on it instead of one wide enough to hang
+   * off both ends of the row.
+   */
+  it('lands a node on the row marker’s own box, centred and at its size', () => {
+    const glyph = { x: 22, y: 400, width: 26, height: 18 };
+    const [point] = morphPoints(host, [{ id: 'sec1', brain, list: glyph }]);
+    expect(point!.list.x).toBe(glyph.x - host.x + glyph.width / 2);
+    expect(point!.list.y).toBe(glyph.y - host.y + glyph.height / 2);
+    expect(point!.list.r * 2).toBe(Math.min(glyph.width, glyph.height));
   });
 
   it('drops a section that is missing either end rather than guessing one', () => {

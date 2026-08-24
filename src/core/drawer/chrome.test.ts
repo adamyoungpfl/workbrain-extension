@@ -6,6 +6,7 @@ import type { Rgb } from '../color/contrast';
 import { FLOW_NAV_HEIGHT, FLOW_NAV_INSET } from '../flow/dock';
 import {
   DOCK_BOUNDARY_MIN_CONTRAST,
+  DOCK_FRAME,
   DOCK_TEXT_MIN_CONTRAST,
   NAV_CONTROL_BOTTOM,
   NAV_CONTROL_TOP,
@@ -62,9 +63,21 @@ function token(name: string): Rgb {
 }
 
 const CANVAS = token('canvas');
-/** The two stages the dock takes its colour from — Brain's deep field and
- * List's own lighter surface. */
-const STAGE = { brain: token('globe.field'), list: token('surface') };
+/**
+ * The stage the dock takes its colour from, per mode.
+ *
+ * V1.6 VB-30 made those two the SAME colour: the bar takes the Brain visual's
+ * dark field in List as well, so the ramp's foot is that field in both modes
+ * and every control in the bar stands on it in both. Kept as a map rather than
+ * collapsed to one constant because the two modes are still two cases that
+ * have to be checked — the assertions below are the ones that would catch the
+ * day one of them drifts back.
+ */
+const STAGE = { brain: token('globe.field'), list: token('globe.field') };
+
+/** V1.6 VB-30. What is left of "List's own lighter stage": the ground the
+ * drawer's CONTENT sits on, which the bar above it no longer shares. */
+const PANE_LIST = token('surface');
 
 /** Where a control's edge meets the ramp: its bottom, its middle, its top. */
 const EDGES = [NAV_CONTROL_BOTTOM, (NAV_CONTROL_BOTTOM + NAV_CONTROL_TOP) / 2, NAV_CONTROL_TOP];
@@ -84,6 +97,21 @@ describe('the bar the buttons sit in', () => {
     // buttons begin.
     expect(NAV_CONTROL_BOTTOM).toBe(NAV_RAMP_FOOT);
     expect(NAV_CONTROL_TOP).toBe(FLOW_NAV_HEIGHT - FLOW_NAV_INSET);
+  });
+});
+
+describe('the frame the pane sits inside (VB-29)', () => {
+  it('is the panel’s own margin, and the first term of the bar’s gutter', () => {
+    // 8px is not a number somebody liked: it is the panel body's own margin,
+    // which is why the pane's sides land in the column the rest of the product
+    // already uses. Flow.css writes that gutter as one number (26) with the
+    // sum in a comment, so this is where the first term is pinned.
+    expect(DOCK_FRAME).toBe(8);
+    expect(DOCK_FRAME).toBeLessThan(NAV_RAMP_FOOT + DOCK_FRAME);
+    // Small enough that the bar's own inset still clears it — the ramp is
+    // inset by exactly this, and its steep foot is the same height, so the
+    // frame never reaches the buttons.
+    expect(DOCK_FRAME).toBeLessThanOrEqual(FLOW_NAV_INSET);
   });
 });
 
@@ -207,34 +235,83 @@ describe('Brain — every nav control on the dark stage', () => {
   });
 });
 
-describe('List — every nav control on the lighter stage', () => {
-  it('bounds each control against the ramp along its whole edge', () => {
-    expect(againstRamp(token('dock-edge'), STAGE.list)).toBeGreaterThanOrEqual(
-      DOCK_BOUNDARY_MIN_CONTRAST,
-    );
-    // The primary needs no keyline here: its own fill is the boundary.
-    expect(againstRamp(token('primary'), STAGE.list)).toBeGreaterThanOrEqual(
-      DOCK_BOUNDARY_MIN_CONTRAST,
-    );
+/**
+ * V1.6 VB-30 — THE MOST LIKELY WAY THIS BATCH SHIPS AN ACCESSIBILITY
+ * REGRESSION, and the reason these are extensions of VB-22's assertions rather
+ * than a new file.
+ *
+ * The bar is now the dark field in both modes, so the ramp above it ends dark
+ * in List — where it used to end within a few points of white. Every control
+ * in that bar therefore stands on a background it has never stood on before,
+ * and the honest way to say so is to run List's block against the same stage
+ * Brain's is run against and watch it hold.
+ */
+describe('List — the nav bar now stands on the same dark foot', () => {
+  it('is the same stage as Brain: one bar, not two dressed alike', () => {
+    expect(STAGE.list).toEqual(STAGE.brain);
+    // …and it really is dark, not merely equal to whatever Brain happens to
+    // be: a bar that reads as the globe's own field is the point of VB-30.
+    expect(contrastRatio(STAGE.list, CANVAS)).toBeGreaterThan(DOCK_TEXT_MIN_CONTRAST * 2);
   });
 
-  it('is why --dock-edge exists at all', () => {
-    // --border-i is the system's interactive boundary and is measured against
-    // --canvas. On the dock's own stage it drops under the floor, so the dock
-    // takes the next step up the same neutral ramp.
-    expect(contrastRatio(token('border-i'), STAGE.list)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
-    expect(contrastRatio(token('dock-edge'), STAGE.list)).toBeGreaterThanOrEqual(
+  it('bounds each control against the ramp along its whole edge', () => {
+    // The same chips and keyline Brain's block checks, now checked as List's
+    // too — Back and Skip on the dock's deep navy, every control keylined
+    // with the stage itself.
+    expect(againstRamp(token('globe.panel'), STAGE.list)).toBeGreaterThanOrEqual(
       DOCK_BOUNDARY_MIN_CONTRAST,
     );
+    expect(againstRamp(token('globe.field'), STAGE.list)).toBeGreaterThanOrEqual(
+      DOCK_BOUNDARY_MIN_CONTRAST,
+    );
+    // The treatment List used to carry would not survive this foot, which is
+    // why it did not keep it: --dock-edge held 3:1 against a near-white ramp
+    // and holds nothing against a dark one.
+    expect(againstRamp(token('dock-edge'), STAGE.list)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
+    // Nor would the primary's bare fill, which is why every control keeps the
+    // keyline in both modes now.
+    expect(againstRamp(token('primary'), STAGE.list)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
   });
 
   it('reads every label against a ground that clears the floor', () => {
-    expect(contrastRatio(token('ink'), CANVAS)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
-    // Skip keeps no ground of its own on this stage — it does not need one,
-    // because the whole ramp is within a few points of white.
-    expect(againstRamp(token('ink-2'), STAGE.list)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
-    // The section count moved off --ink-3 for exactly this reason.
-    expect(contrastRatio(token('ink-3'), STAGE.list)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
-    expect(contrastRatio(token('ink-2'), STAGE.list)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
+    // Back and Next on their own chips, and Skip on the quiet one — the dark
+    // set, in the mode that used to use the light one.
+    expect(contrastRatio(token('globe.label'), token('globe.panel'))).toBeGreaterThanOrEqual(
+      DOCK_TEXT_MIN_CONTRAST,
+    );
+    expect(contrastRatio(token('globe.detail-key'), token('globe.panel'))).toBeGreaterThanOrEqual(
+      DOCK_TEXT_MIN_CONTRAST,
+    );
+    expect(contrastRatio(token('ink-inv'), token('primary'))).toBeGreaterThanOrEqual(
+      DOCK_TEXT_MIN_CONTRAST,
+    );
+    // And the bar's own two: the mode toggles and the section count, which
+    // VB-30 says go light and STAY light.
+    expect(contrastRatio(token('globe.detail-key'), STAGE.list)).toBeGreaterThanOrEqual(
+      DOCK_TEXT_MIN_CONTRAST,
+    );
+    expect(contrastRatio(token('globe.label'), STAGE.list)).toBeGreaterThanOrEqual(
+      DOCK_TEXT_MIN_CONTRAST,
+    );
+    // The ink the light bar used to carry would now be unreadable — stated so
+    // a half-done revert fails here rather than on a screen.
+    expect(contrastRatio(token('ink-2'), STAGE.list)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
+  });
+
+  it('leaves the drawer’s own pane light, and --dock-edge with a job', () => {
+    // What VB-30 did NOT change: below the bar, List is still the panel's own
+    // light ground, and everything the drawer prints on it is measured there.
+    expect(contrastRatio(token('ink'), PANE_LIST)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
+    expect(contrastRatio(token('ink-2'), PANE_LIST)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
+    // --ink-3 is 4.71:1 on the canvas and 4.40:1 here, which is why the pane's
+    // quiet text steps up (FileDrawer.css).
+    expect(contrastRatio(token('ink-3'), PANE_LIST)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
+    // And why --dock-edge exists at all: --border-i is measured against
+    // --canvas and drops under the floor on this pane, where the drawer's own
+    // hollow pill still needs a 3:1 boundary.
+    expect(contrastRatio(token('border-i'), PANE_LIST)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
+    expect(contrastRatio(token('dock-edge'), PANE_LIST)).toBeGreaterThanOrEqual(
+      DOCK_BOUNDARY_MIN_CONTRAST,
+    );
   });
 });

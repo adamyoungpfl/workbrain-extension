@@ -551,59 +551,46 @@
    height, so the bar and the drawer cannot disagree about what colour they
    are), and everything below is a function of that.
 
-   The light set is the default and the `list` block restates it, deliberately:
-   a shell that somehow rendered without `data-stage` gets the panel's own
-   light chrome rather than a transparent bar. */
-.flowshell {
-  --dock-stage: var(--canvas);
-  --dock-chip: var(--canvas);
-  --dock-chip-hover: var(--sunken);
-  --dock-ink: var(--ink);
-  --dock-ink-quiet: var(--ink-2);
-  /* Every interactive edge inside the dock. --border-i is measured against
-     --canvas and drops to 2.92:1 on the drawer's own stage — under WCAG
-     1.4.11's 3:1 — which is the whole reason --dock-edge exists
-     (design/tokens.json). */
-  --dock-secondary-edge: var(--dock-edge);
-  /* The primary needs no keyline on a light stage: its own fill is 6.6:1
-     against every pixel of the ramp there. On the dark stage it measures 1.6:1
-     against the middle of the ramp and the keyline is the only boundary it
-     has. */
-  --dock-primary-edge: transparent;
-  --dock-quiet-bg: transparent;
-  --dock-accent: var(--primary);
-  --dock-accent-chip: var(--primary-tint);
-  /* The stage travels between the two ends over the drawer's own settle
-     duration (docs/design-system.html §06), so a mode change moves the whole
-     dock at one speed instead of flipping the bar dark above a list that is
-     still fading out. Only the gradient travels — see the note on the buttons
-     below, which change in one frame. */
-  transition: --dock-stage var(--slow) var(--ease);
-}
+   ── V1.6 VB-30: ONE STAGE, BOTH MODES ───────────────────────────────────
+   V1.4 made this palette a function of the mode: dark in Brain, light in List.
+   It is not any more. The bar takes the Brain visual's dark field in **both**
+   modes — light glyphs, light count — so the bar and the visual read as one
+   object rather than as a strip sitting on one.
 
-/* A custom property the browser has not been told the type of cannot be
-   transitioned at all, so without this the rule above means nothing and the
-   stage flips in one frame — leaving the bar dark over a list that is still
-   fading out (the drawer crossfades its two layers over --morph-ms,
-   core/drawer/mode.ts). The initial value is never used: every shell matches
-   one of the two blocks. */
-@property --dock-stage {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: transparent;
-}
+   That leaves exactly one thing still varying with the mode, and it is not the
+   chrome: `--dock-pane` is the ground the drawer's CONTENT sits on, which is
+   the globe's own field in Brain and the panel's light surface in List. Two
+   variables where V1.4 had one, because they are two different jobs — the
+   chrome's colour is now a constant and the pane's is what a mode change
+   changes.
 
-/* Brain — THE ONE SANCTIONED DARK SURFACE (docs/V1.2-REFINEMENT.md), which
-   this task extends from "the globe's stage" to "the drawer's whole chrome".
+   THE CONSEQUENCE WORTH KNOWING ABOUT: the nav ramp below runs from
+   `--dock-stage` into `--canvas`, so its foot is now dark in List too, and
+   Back / Next / Skip stand on a dark foot in a mode where they did not before.
+   Every one of them therefore keeps the dark stage's treatment at all times —
+   which is the whole reason the two sets collapsed into one here instead of
+   the bar being restyled on its own. src/core/drawer/chrome.test.ts holds the
+   palette to docs/GUARDRAILS.md and tests/e2e/dock-surface.spec.ts holds the
+   painted pixels to it, at three drag heights in both modes.
+
    Every value is from the globe's own palette rather than a second dark set
-   that would have to agree with it (design/tokens.json's `globe` group). */
-.flowshell[data-stage='brain'] {
+   that would have to agree with it (design/tokens.json's `globe` group) —
+   THE ONE SANCTIONED DARK SURFACE (docs/V1.2-REFINEMENT.md), which V1.4
+   extended from "the globe's stage" to "the drawer's whole chrome" and V1.6
+   extends again to "the drawer's chrome, in both of its modes". */
+.flowshell {
   --dock-stage: var(--globe-field);
   --dock-chip: var(--globe-panel);
   --dock-chip-hover: var(--globe-edge-far);
   --dock-ink: var(--globe-label);
   --dock-ink-quiet: var(--globe-detail-key);
+  /* Every interactive edge inside the dock. --border-i is measured against
+     --canvas and drops to 2.92:1 on the drawer's own light pane — under WCAG
+     1.4.11's 3:1 — which is the whole reason --dock-edge exists
+     (design/tokens.json). On this dark foot the edge is the stage itself. */
   --dock-secondary-edge: var(--globe-field);
+  /* The primary's own fill measures 1.6:1 against the middle of a dark ramp,
+     so the keyline is the only boundary it has. */
   --dock-primary-edge: var(--globe-field);
   --dock-quiet-bg: var(--globe-panel);
   /* --primary measures 2.90:1 on this field, under the 3:1 floor for a
@@ -611,20 +598,48 @@
      already uses (docs/GUARDRAILS.md: an equal replacement, never none). */
   --dock-accent: var(--globe-focus);
   --dock-accent-chip: var(--globe-panel);
+
+  /* The drawer's own content ground, and the only thing here the mode still
+     moves. The light set is the default and the `list` block restates it,
+     deliberately: a shell that somehow rendered without `data-stage` gets the
+     navigable mode's ground rather than a transparent pane. */
+  --dock-pane: var(--surface);
+
+  /* V1.6 VB-29 — the white margin the drawer's pane sits inside, from
+     core/drawer/chrome.ts via Flow.tsx. Read here as well as in the drawer,
+     because the ramp below has to be inset by the same number or the frame
+     stops in a notch at the drawer's top corners. */
+  --dock-frame: 8px;
+
+  /* The pane travels between the two grounds over the drawer's own settle
+     duration (docs/design-system.html §06), so a mode change moves the drawer
+     at one speed instead of flipping its ground under a layer that is still
+     fading out. Only the ground travels — see the note on the buttons below,
+     which change in one frame. */
+  transition: --dock-pane var(--slow) var(--ease);
 }
 
-/* List — the same structure on the drawer's own lighter stage. */
+/* A custom property the browser has not been told the type of cannot be
+   transitioned at all, so without this the rule above means nothing and the
+   ground flips in one frame — leaving the pane light under a globe that is
+   still fading out (the drawer crossfades its two layers over --morph-ms,
+   core/drawer/mode.ts). The initial value is never used: every shell matches
+   one of the two blocks. */
+@property --dock-pane {
+  syntax: '<color>';
+  inherits: true;
+  initial-value: transparent;
+}
+
+/* Brain — the globe's own field, so the pane under the bar is the picture's
+   own ground and the two are one surface from the handle down. */
+.flowshell[data-stage='brain'] {
+  --dock-pane: var(--globe-field);
+}
+
+/* List — the drawer's own lighter ground, under the same dark bar. */
 .flowshell[data-stage='list'] {
-  --dock-stage: var(--surface);
-  --dock-chip: var(--canvas);
-  --dock-chip-hover: var(--sunken);
-  --dock-ink: var(--ink);
-  --dock-ink-quiet: var(--ink-2);
-  --dock-secondary-edge: var(--dock-edge);
-  --dock-primary-edge: transparent;
-  --dock-quiet-bg: transparent;
-  --dock-accent: var(--primary);
-  --dock-accent-chip: var(--primary-tint);
+  --dock-pane: var(--surface);
 }
 
 /* ── V1.2 VB-11: the navigation, docked to the drawer ────────────────────
@@ -668,24 +683,44 @@
   height: var(--flow-nav-h, 60px);
   margin-top: 0;
   padding: 0 26px;
-  /* THE FADE, AND WHY IT TRACKS THE HANDLE.
-     `bottom` is the drawer's top edge, so this box begins exactly where the
-     bar has been dragged to; a gradient anchored to the bottom of it therefore
-     starts at the handle by construction and cannot drift a pixel from it. No
-     second number, no listener, no fixed height anywhere.
+}
 
-     The shape is core/drawer/chrome.ts's and arrives as custom properties: a
-     steep foot below the buttons (`--nav-ramp-foot`, lifting
-     `--nav-ramp-foot-mix` off the stage colour), then the long half running
-     out into --canvas exactly at this bar's top edge. That is not styling —
-     it is what gives Back / Next / Skip a background they can hold a boundary
-     against along their whole height, and chrome.test.ts proves no evenly
-     spread ramp can. It also stops at the top edge on purpose: a softer fade
-     running on into the question area would be painting over the save note,
-     and core/flow/composition.ts has no room to reserve for it.
+/* THE FADE, AND WHY IT TRACKS THE HANDLE.
+   `bottom` is the drawer's top edge, so the bar begins exactly where it has
+   been dragged to; a gradient anchored to the bottom of it therefore starts at
+   the handle by construction and cannot drift a pixel from it. No second
+   number, no listener, no fixed height anywhere.
 
-     No border-top. The seam between this bar and the drawer's head IS the
-     surface continuing — a line across it is the thing this task removes. */
+   The shape is core/drawer/chrome.ts's and arrives as custom properties: a
+   steep foot below the buttons (`--nav-ramp-foot`, lifting
+   `--nav-ramp-foot-mix` off the stage colour), then the long half running out
+   into --canvas exactly at this bar's top edge. That is not styling — it is
+   what gives Back / Next / Skip a background they can hold a boundary against
+   along their whole height, and chrome.test.ts proves no evenly spread ramp
+   can. It also stops at the top edge on purpose: a softer fade running on into
+   the question area would be painting over the save note, and
+   core/flow/composition.ts has no room to reserve for it.
+
+   No border-top. The seam between this bar and the drawer's head IS the
+   surface continuing — a line across it is the thing V1.4 removed.
+
+   ── V1.6 VB-29: WHY THE PAINT MOVED OFF THE BAR AND ONTO A LAYER ─────────
+   The drawer's pane is now inset from the panel's edges by `--dock-frame`, and
+   the foot of this ramp IS that pane continuing upward — so it has to be inset
+   by the same number, or the frame stops dead in a notch at the drawer's top
+   two corners. What must NOT move is the buttons: Back sits in the question's
+   own 26px column (tests/e2e/nav-dock.spec.ts measures it), and insetting the
+   bar itself would carry that column in with it.
+
+   So the bar keeps its box and its padding, and a layer behind it takes the
+   paint. `z-index: -1` puts that layer behind the bar's own content and in
+   front of nothing else: `.flow-foot` is a stacking context of its own
+   (z-index: 1), so a negative child cannot escape it into the question above. */
+.flowshell .flow-foot::before {
+  content: '';
+  position: absolute;
+  inset: 0 var(--dock-frame);
+  z-index: -1;
   background: linear-gradient(
     to top,
     var(--dock-stage) 0,
@@ -808,10 +843,12 @@
 
 @media (prefers-reduced-motion: reduce) {
   /* V1.4 VB-22. The gradient does not go away — it is how the dock's edge is
-     drawn, not a cue — but it stops *travelling* between the two stages when
-     the mode changes. The still equivalent carries the same information for
-     the same reason the morph's does: the information is which stage the dock
-     is in, and it is in it from the first frame. */
+     drawn, not a cue — but the drawer's ground stops *travelling* between the
+     two modes when the mode changes. (V1.6 VB-30: the gradient itself no
+     longer moves at all, because the stage it runs from is the same in both
+     modes; what this cancels is `--dock-pane`.) The still equivalent carries
+     the same information for the same reason the morph's does: the information
+     is which mode the drawer is in, and it is in it from the first frame. */
   .flowshell {
     transition: none;
   }

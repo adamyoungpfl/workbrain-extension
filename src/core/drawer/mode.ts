@@ -28,6 +28,7 @@
  * would spend a frame disagreeing with itself each time.
  */
 
+import { DOCK_FRAME } from './chrome';
 import { DRAWER_HANDLE_HEIGHT, clampDrawerHeight } from './height';
 import type { DrawerBounds } from './height';
 
@@ -96,6 +97,26 @@ export const MORPH_MS = 520;
  */
 export const MORPH_FADE_OUT_MS = 200;
 
+/**
+ * V1.6 VB-32 — how long the landed nodes take to hand over to the rows
+ * underneath them, in ms.
+ *
+ * The flight now ends ON the row's marker, at the marker's own size and
+ * position (see `MORPH_LIST_SCALE`), which leaves one frame where a lit orb
+ * and the mark it became are the same object in two colours. Unhandled, that
+ * frame is a blink. 120ms is docs/design-system.html §06's colour value — the
+ * shortest change in the system — and it is spent standing still: the node has
+ * already arrived, so nothing moves during it and the still-frame version of
+ * the cue is unchanged.
+ *
+ * It is a phase of the morph and not a fade attached to the flight, which is
+ * what makes it interruptible: changing mode mid-landing puts the layer back
+ * to `run`, and the opacity transition restarts from wherever it had got to
+ * rather than leaving a node that finished fading and then travelled
+ * invisibly.
+ */
+export const MORPH_LAND_MS = 120;
+
 /** The flying node's own box, in px, before its per-end scale. Its radius is
  * half of this, which is what `MorphEnd.r` is measured against. */
 export const MORPH_DOT_SIZE = 16;
@@ -146,11 +167,18 @@ export function heightForMode(mode: DrawerMode, height: number, bounds: DrawerBo
  * How big a square the globe gets, given the drawer's height and the panel's
  * width. Square because the solid is; the smaller of the two dimensions wins,
  * so it is never clipped by the drawer it is inside.
+ *
+ * V1.6 VB-29 subtracts the frame from both terms — once from the height (the
+ * frame is along the bottom) and twice from the width (it is down both sides).
+ * That is the whole of what the frame costs the globe, and it is not optional:
+ * the stage clips what will not fit (`overflow: hidden`, FileDrawer.css), so a
+ * size computed against a box eight pixels wider than the real one shows as a
+ * globe with its edge cut off rather than as a globe that is slightly too big.
  */
 export function brainStageSize(height: number, width: number): number {
   if (!Number.isFinite(height) || !Number.isFinite(width)) return BRAIN_STAGE_MIN;
-  const tall = height - DRAWER_HANDLE_HEIGHT - BRAIN_STAGE_PAD * 2;
-  const wide = width - BRAIN_STAGE_PAD * 2;
+  const tall = height - DRAWER_HANDLE_HEIGHT - BRAIN_STAGE_PAD * 2 - DOCK_FRAME;
+  const wide = width - BRAIN_STAGE_PAD * 2 - DOCK_FRAME * 2;
   return Math.max(BRAIN_STAGE_MIN, Math.round(Math.min(tall, wide)));
 }
 
@@ -211,19 +239,31 @@ export interface MorphMeasurement {
 /**
  * How much of the row marker's own size a node arriving in List is drawn at.
  *
- * A node lands on the `[x]` in its row, and at the marker's full size it
- * covers the marker — so the instant the flight layer unmounts, a 14px disc
- * blinks out of existence. Found by screenshotting the last frames of a
- * flight, which is the only way that kind of thing is ever found.
+ * ── V1.6 VB-32: 0.45 → 1, and why that is the fix ─────────────────────────
  *
- * At 0.45 the node settles *inside* the brackets as a small bullet and the
- * hand-off is six pixels wide instead of fourteen. Deliberately a size and not
- * a fade: an opacity ramp cannot be restarted when a morph is interrupted
- * mid-flight (the property does not change, so no new transition begins), and
- * a node that finished fading and then carried on travelling invisibly would
- * be a worse bug than the one it fixed.
+ * The flight never regressed. Sampled frame by frame it still leaves the
+ * sphere, still travels, and still ends on the marker's own centre to within a
+ * pixel. What it stopped doing is *reading as itself*: at 0.45 the orb spent
+ * the last third of its flight shrinking to an eight-pixel bullet and then
+ * winked out somewhere inside the row, which is a dot fading out near the
+ * marker rather than the orb becoming it.
+ *
+ * 0.45 was the right answer to the drawer VB-14b shipped into, where the
+ * marker was three characters of bare monospace and a disc at the marker's
+ * full size covered the text it was landing on. VB-19 gave the marker a box
+ * and V1.6 VB-33 made it a real tile at roughly orb size — so the thing the
+ * orb is flying at is now orb-shaped and orb-sized, and the honest landing is
+ * the full one: `endOf`'s `min(width, height) / 2` puts the arriving node dead
+ * centre on the tile at exactly the tile's height (FileTree.css keeps that
+ * height a contract for this reason).
+ *
+ * Still deliberately a SIZE and not a fade, for the reason 0.45 was: an
+ * opacity ramp cannot be restarted when a morph is interrupted mid-flight (the
+ * property does not change, so no new transition begins), and a node that
+ * finished fading and then carried on travelling invisibly would be a worse
+ * bug than the one it fixed.
  */
-export const MORPH_LIST_SCALE = 0.45;
+export const MORPH_LIST_SCALE = 1;
 
 /** A box's centre and half-width, in the layer's own coordinates. */
 function endOf(box: Box, host: Box, scale = 1): MorphEnd {

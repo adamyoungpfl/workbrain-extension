@@ -25,28 +25,55 @@
   display: flex;
   flex-direction: column;
   height: var(--filedrawer-h, 186px);
-  /* The rule below is part of the drawer, not an extra pixel on top of it —
-     otherwise the box on screen is one taller than the height the handle
-     announces, and the space `.flowshell` reserves is one short. */
+  /* The frame below is part of the drawer, not an extra eight pixels on top of
+     it — otherwise the box on screen is taller than the height the handle
+     announces, and the space `.flowshell` reserves is short by the difference.
+     The same reasoning kept V1.2's 1px top rule inside the box. */
   box-sizing: border-box;
   /* V1.4 VB-22. The drawer, its head band and the docked bar above it are ONE
-     SURFACE now, so the colour comes from the dock's palette — declared once,
-     in Flow.css, on the shell that wraps both — rather than from a token named
-     here. The fallback is the panel's own canvas, for any surface that somehow
-     renders this drawer outside that shell.
+     SURFACE, so the colour comes from the dock's palette — declared once, in
+     Flow.css, on the shell that wraps both — rather than from a token named
+     here. V1.6 VB-30 splits that palette in two: `--dock-stage` is the chrome,
+     now the same dark field in both modes, and `--dock-pane` is the ground the
+     drawer's own content sits on, which is what a mode change still moves. The
+     fallback is the panel's own canvas, for any surface that somehow renders
+     this drawer outside that shell.
 
-     The rule that used to be drawn here is gone with it. V1.2 gave this edge
-     --border-i because a control sat directly above it and WCAG 1.4.11 wants
-     3:1 on an interactive boundary; V1.4 VB-22 removes the boundary rather
-     than weakening it — the bar above is now the same colour, continuing down
-     into this box, and a line across the seam is precisely the "strips stacked
-     on the drawer" the task exists to fix. The handle keeps its own visible
-     representation (the grip) and its own focus ring, so nothing that was
-     identified by that rule is left unidentified. The 1px stays in the box
-     model, in the stage's own colour, so the drawer's height on screen is
-     still exactly the height the handle announces. */
-  background: var(--dock-stage, var(--canvas));
-  border-top: 1px solid var(--dock-stage, var(--canvas));
+     V1.2's rule across the top is long gone: the bar above is the same colour,
+     continuing down into this box, and a line across the seam is precisely the
+     "strips stacked on the drawer" VB-22 exists to fix. The handle keeps its
+     own visible representation (the grip) and its own focus ring, so nothing
+     that rule identified is left unidentified.
+
+     ── V1.6 VB-29: THE WHITE FRAME ────────────────────────────────────────
+     A border in --canvas down both sides and across the bottom, with the
+     background clipped to the padding box so the drawer's own colour stops
+     inside it. That is the whole frame: the pane reads as a framed object
+     inside the app rather than as a surface running off the edge.
+
+     Three things it is deliberately NOT:
+       · not a margin, not `left`/`right`/`bottom` insets — the frame lives
+         inside the announced height (see `box-sizing` above), so the dock's
+         arithmetic (core/flow/dock.ts) is untouched by it;
+       · not `overflow: hidden` — the grip straddles the drawer's top edge by
+         half its height (`.filedrawer-grip`), and clipping the box would cut
+         the control's own handle in half. What needs the rounding gets it: the
+         two content layers, which are the only children that reach the pane's
+         bottom corners;
+       · not a radius of its own invention. The pane's corners are the panel's
+         --r-lg card radius; the outer radius is that plus the frame's width,
+         because a border's inner radius is the outer one less its own
+         thickness — which is what makes the PANE 14px and not 6.
+
+     The frame's width comes from core/drawer/chrome.ts through Flow.tsx, so
+     the globe's stage size, the ramp above and this border are all one
+     number. */
+  border-style: solid;
+  border-width: 0 var(--dock-frame, 8px) var(--dock-frame, 8px);
+  border-color: var(--canvas);
+  border-radius: 0 0 calc(var(--r-lg) + var(--dock-frame, 8px)) calc(var(--r-lg) + var(--dock-frame, 8px));
+  background: var(--dock-pane, var(--canvas));
+  background-clip: padding-box;
 }
 
 /* Only a settled change animates. A drag must track the pointer to the pixel:
@@ -60,11 +87,20 @@
 }
 
 /* The 44px band at the top of the drawer, holding the two mode buttons, the
-   grip and the count. */
+   grip and the count.
+
+   V1.6 VB-30 — IT PAINTS ITSELF NOW, AND IT PAINTS ITSELF DARK. Until V1.6
+   this band was transparent and took whatever the drawer's own background was,
+   which is how it changed colour with the mode. The bar takes the Brain
+   visual's dark field in both modes now (Flow.css), so it names the chrome's
+   colour rather than the pane's — and in List that is a dark bar over a light
+   pane, which is the point: the bar belongs to the drawer's chrome, not to
+   whichever view is underneath it. */
 .filedrawer-head {
   position: relative;
   flex: none;
   height: var(--target-min);
+  background: var(--dock-stage, var(--canvas));
   /* Over both content layers, which are absolutely positioned from the bottom
      of this band down. Without it the globe's own stage would paint across the
      buttons that switch away from it. */
@@ -250,10 +286,9 @@
   align-items: center;
   margin: 0;
   font-size: 11.5px;
-  /* V1.4 VB-22: it goes light with the band. --ink-3 was 4.71:1 on the canvas
-     this used to sit on and is 4.40:1 on List's stage — under the floor — so
-     the count moved a step up the neutral ramp with the surface it sits on:
-     6.5:1 on List, 9.7:1 on Brain. */
+  /* V1.4 VB-22: it goes light with the band. V1.6 VB-30: it STAYS light, in
+     both modes, because the band is the same dark field in both — 9.7:1 on it,
+     and no longer a colour that has to be right on two different grounds. */
   color: var(--dock-ink-quiet, var(--ink-3));
   pointer-events: none;
 }
@@ -286,6 +321,12 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 14px 10px;
+  /* V1.6 VB-29. This box sits on the pane's bottom edge, so it takes the
+     pane's own bottom corners — otherwise the tree's full-bleed hairlines
+     (FileTree.css) would be drawn straight across the rounding. It already
+     clips (it scrolls), so this costs nothing that was not clipped anyway. */
+  border-bottom-left-radius: var(--r-lg);
+  border-bottom-right-radius: var(--r-lg);
 }
 
 /* ── V1.2 VB-14b: the two layers ─────────────────────────────────────────── */
@@ -324,14 +365,28 @@
      V1.4 VB-22 widens that argument by one band: the stage colour is now the
      drawer's own (Flow.css's --dock-stage, which resolves to --globe-field
      here), so the head above this box and the docked bar above that are the
-     same surface too, and the seam does not show there either. */
-  background: var(--dock-stage, var(--globe-field));
+     same surface too, and the seam does not show there either.
+
+     V1.6 VB-30 names the globe's field outright rather than reading the dock's
+     variable. The two are the same colour whenever this layer is the one on
+     screen, and naming the field is what makes the layer's colour a fact about
+     the picture instead of a fact about the mode: the crossfade out of Brain
+     would otherwise repaint the stage light while it is still visible.
+
+     V1.6 VB-29 gives it the pane's own bottom corners, for the same reason the
+     body above takes them — this layer reaches the frame and would square off
+     the rounding underneath it. */
+  background: var(--globe-field);
+  border-bottom-left-radius: var(--r-lg);
+  border-bottom-right-radius: var(--r-lg);
 }
 
 /* ── What tinting the ground costs, paid here ─────────────────────────────
-   V1.4 VB-22 gave List a stage of its own instead of the panel's canvas, and
-   everything inside the drawer was measured against that canvas. Four things
-   land differently on --surface, and all four are corrected in one place —
+   V1.4 VB-22 gave List a ground of its own instead of the panel's canvas
+   (V1.6 VB-30 renames it `--dock-pane`, since the chrome above it no longer
+   shares it), and everything inside the drawer was measured against that
+   canvas. Four things land differently on --surface, and all four are
+   corrected in one place —
    scoped to `.filedrawer`, because none of these components is wrong anywhere
    else and the drawer is the only place any of them sits on a stage:
 
@@ -371,7 +426,7 @@
   color: var(--ink-2);
 }
 .filedrawer .sectionhealth-summary {
-  background: var(--dock-stage, var(--canvas));
+  background: var(--dock-pane, var(--canvas));
 }
 
 /* Only one layer is on screen at a time, and the one that is not is
@@ -419,6 +474,18 @@
   overflow: hidden;
   pointer-events: none;
   z-index: 2;
+  /* V1.6 VB-32 — the hand-off. A flight now ends ON the row's own marker at
+     the marker's own size, so the last frame has a lit orb and the mark it
+     became occupying one box in two colours; this is the 120ms in which the
+     first gives way to the second. Nothing moves during it (core/drawer/mode.ts
+     explains why that matters for an interruption), and it is on the LAYER
+     rather than on the nodes so one property change covers all ten. */
+  opacity: 1;
+  transition: opacity var(--morph-land-ms, 120ms) var(--ease);
+}
+
+.filedrawer-morph[data-phase='land'] {
+  opacity: 0;
 }
 
 /* Positioned entirely by `transform` — set inline, per node, per phase, by
@@ -509,7 +576,11 @@
   .filedrawer-stage,
   .filedrawer-body,
   .filedrawer[data-mode='brain'] .filedrawer-body,
-  .filedrawer[data-mode='list'] .filedrawer-stage {
+  .filedrawer[data-mode='list'] .filedrawer-stage,
+  /* Nothing ever lands here under this preference — no node is mounted at all
+     — so this cancels a transition that has nothing to run on. It is written
+     down anyway so the rule is stated where the layer is styled. */
+  .filedrawer-morph {
     transition: none;
   }
   .filedrawer-mode {

@@ -15,6 +15,7 @@ import {
 import type { DrawerBounds, DrawerSettle } from '../../core/drawer/height';
 import {
   MORPH_FADE_OUT_MS,
+  MORPH_LAND_MS,
   MORPH_MS,
   brainDriftAllowed,
   brainFitsIn,
@@ -183,11 +184,16 @@ function viewportWidth(): number {
  * straight to `run` with the new targets, so the browser interpolates from
  * wherever each node has got to rather than snapping it back to an end it left
  * two hundred milliseconds ago.
+ *
+ * V1.6 VB-32 adds `land`: the flight is over and every node is sitting on the
+ * mark it became, so the layer hands over to the real thing underneath across
+ * `MORPH_LAND_MS`. Nothing moves in that phase — see core/drawer/mode.ts on
+ * why the hand-off is a phase rather than a fade hung off the flight.
  */
 interface Morph {
   readonly to: DrawerMode;
   readonly points: readonly MorphPoint[];
-  readonly phase: 'start' | 'run';
+  readonly phase: 'start' | 'run' | 'land';
 }
 
 /** A box, or nothing — the shape core/drawer/mode.ts's `morphPoints` expects
@@ -525,18 +531,32 @@ export function FileDrawer({
     setMorph((current) => (current && current.phase === 'start' ? { ...current, phase: 'run' } : current));
   }, [morph]);
 
-  /** The end of the flight. A timer rather than `transitionend`, because a
-   * morph interrupted at 90% has fewer transitions to end than it started
-   * with, and a layer left mounted forever would sit over the drawer's own
-   * content. Restarted on every phase change, so an interruption gets the full
-   * flight it was just given. */
+  /**
+   * The end of the flight, in two beats. A timer rather than `transitionend`,
+   * because a morph interrupted at 90% has fewer transitions to end than it
+   * started with, and a layer left mounted forever would sit over the drawer's
+   * own content. Restarted on every phase change, so an interruption gets the
+   * full flight it was just given.
+   *
+   * V1.6 VB-32's second beat: at `MORPH_MS` every node is sitting on the mark
+   * it became, and the layer spends `MORPH_LAND_MS` handing over to it before
+   * unmounting. Standing still, so an interruption during the hand-off is a
+   * node that fades back up and flies on rather than one that has to be caught
+   * mid-fade.
+   */
   useEffect(() => {
     if (!morph) return undefined;
-    const id = setTimeout(() => {
-      morphingRef.current = false;
-      setMorph(null);
+    if (morph.phase === 'land') {
+      const done = setTimeout(() => {
+        morphingRef.current = false;
+        setMorph(null);
+      }, MORPH_LAND_MS + 40);
+      return () => clearTimeout(done);
+    }
+    const landed = setTimeout(() => {
+      setMorph((current) => (current && current.phase === 'run' ? { ...current, phase: 'land' } : current));
     }, MORPH_MS + 40);
-    return () => clearTimeout(id);
+    return () => clearTimeout(landed);
   }, [morph]);
 
   function handleNavigate(questionId: string) {
@@ -583,6 +603,7 @@ export function FileDrawer({
           // agree with the component's.
           '--morph-ms': `${MORPH_MS}ms`,
           '--morph-out-ms': `${MORPH_FADE_OUT_MS}ms`,
+          '--morph-land-ms': `${MORPH_LAND_MS}ms`,
         } as CSSProperties
       }
     >

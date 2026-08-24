@@ -7,6 +7,7 @@ import { drawerBounds } from '../../src/core/drawer/height';
 import { BRAIN_MIN_HEIGHT } from '../../src/core/drawer/mode';
 import {
   DOCK_BOUNDARY_MIN_CONTRAST,
+  DOCK_FRAME,
   DOCK_TEXT_MIN_CONTRAST,
   NAV_RAMP_HEIGHT,
   navRampColorAt,
@@ -300,6 +301,7 @@ test('the fade begins wherever the bar has been dragged to (VB-22)', async () =>
 test('the bar and the stage are one surface, with no line at the seam (VB-22)', async () => {
   const { context, sw, id } = await launchExtension();
   const page = await openQuestion(context, sw, id);
+  const band: Rgb[] = [];
 
   for (const mode of ['list', 'brain'] as const) {
     await chooseMode(page, mode);
@@ -326,16 +328,29 @@ test('the bar and the stage are one surface, with no line at the seam (VB-22)', 
       ).toBeLessThanOrEqual(PAINT_TOLERANCE + 4);
     });
 
-    // And the head band really is the stage below it, not a lighter strip on
-    // top of it: sampled inside the band, and inside the drawer's own content
-    // area under it.
-    const [band, body] = await pixels(page, [
-      { x: g.emptyX, y: g.drawerTop + 20 },
-      { x: 6, y: g.drawerTop + 60 },
-    ]);
-    expect(channelDistance(band!, body!), `${mode}: the mode bar is not the stage's colour`)
-      .toBeLessThanOrEqual(12);
+    // V1.6 VB-30 CHANGES WHAT "ONE SURFACE" MEANS BELOW THE SEAM, and this is
+    // the half of this test that had to move with it. Until V1.6 the head band
+    // and the drawer's content were the same colour in both modes, because the
+    // band followed the mode. The band is the Brain visual's dark field in both
+    // modes now, so in List it deliberately sits ON a light pane — the bar
+    // belongs to the chrome, not to the view under it.
+    //
+    // What is still asserted, and is the whole of VB-30: the band is the SAME
+    // colour in both modes, and it is the colour the Brain visual's own field
+    // is (sampled from the stage in Brain, where band and pane still agree).
+    const [head] = await pixels(page, [{ x: g.emptyX, y: g.drawerTop + 20 }]);
+    band.push(head!);
+    if (mode === 'brain') {
+      // Inside the frame and inside the stage's own padding, which is the one
+      // column of the pane the globe's radial never reaches.
+      const [pane] = await pixels(page, [{ x: DOCK_FRAME + 4, y: g.drawerTop + 60 }]);
+      expect(channelDistance(head!, pane!), 'brain: the mode bar is not the stage’s colour')
+        .toBeLessThanOrEqual(12);
+    }
   }
+
+  expect(channelDistance(band[0]!, band[1]!), 'the mode bar is not the same field in both modes')
+    .toBeLessThanOrEqual(PAINT_TOLERANCE);
 
   await context.close();
 });
@@ -465,8 +480,10 @@ test('the mode toggles lose their words and keep their names (VB-22)', async () 
     expect(parseFloat(pressed.stroke), `${label} pressed stroke`).toBeGreaterThan(2);
   }
 
-  // And the count beside them goes light with the band: readable on the stage
-  // it is now on, in both modes.
+  // And the count beside them goes light with the band — V1.6 VB-30: it goes
+  // light and STAYS light, so this now also holds the two modes to one ink on
+  // one band rather than to two that each happen to clear the floor.
+  const counts: { ink: Rgb; band: Rgb }[] = [];
   for (const mode of ['brain', 'list'] as const) {
     await chooseMode(page, mode);
     const count = page.locator('.filedrawer-count');
@@ -476,7 +493,25 @@ test('the mode toggles lose their words and keep their names (VB-22)', async () 
     expect(contrastRatio(ink, band!), `${mode}: the section count on the band`).toBeGreaterThanOrEqual(
       DOCK_TEXT_MIN_CONTRAST,
     );
+    counts.push({ ink, band: band! });
+
+    // The glyphs beside it, on the same band and under the same rule (VB-30:
+    // light icons in both modes). A glyph is a non-text indicator, so the
+    // floor is 1.4.11's — measured against the band it is drawn on, not the
+    // one it used to be drawn on.
+    const glyph = parseCssColor(
+      await page
+        .getByRole('button', { name: mode === 'brain' ? S.drawerModeList : S.drawerModeBrain, exact: true })
+        .evaluate((el) => getComputedStyle(el).color),
+    )!;
+    expect(contrastRatio(glyph, band!), `${mode}: the unpressed mode glyph on the band`)
+      .toBeGreaterThanOrEqual(DOCK_BOUNDARY_MIN_CONTRAST);
   }
+  expect(channelDistance(counts[0]!.ink, counts[1]!.ink), 'the section count changes with the mode')
+    .toBeLessThanOrEqual(1);
+  // Light, said as the thing it means: nearer the panel's white than its ink.
+  expect(contrastRatio(counts[1]!.ink, counts[1]!.band), 'the count is not light on the band')
+    .toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
 
   await context.close();
 });

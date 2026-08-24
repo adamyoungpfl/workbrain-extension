@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules, contextOutline } from '../../src/core/flow/flow';
 import { DRAWER_REST_HEIGHT } from '../../src/core/drawer/height';
-import { BRAIN_MIN_HEIGHT, BRAIN_OPEN_HEIGHT, MORPH_MS } from '../../src/core/drawer/mode';
+import { BRAIN_MIN_HEIGHT, BRAIN_OPEN_HEIGHT, MORPH_LAND_MS, MORPH_MS } from '../../src/core/drawer/mode';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
@@ -183,16 +183,21 @@ async function dragHandleTo(page: Page, y: number): Promise<void> {
  * round trip per read would sample it four or five times at best. The sphere
  * is tracked alongside so the landing can be checked against where the target
  * actually was at the end, not where it was when the flight began.
+ *
+ * V1.6 VB-32 records each sample's SIZE as well as its centre — `[x, y, w, h]`
+ * — because "the flight ends on the row's own glyph" is a claim about how big
+ * the node is when it gets there as much as about where it is.
  */
 async function trackMorph(page: Page, sectionId: string): Promise<void> {
   await page.evaluate((id) => {
     const w = window as unknown as { __wbTrack: number[][]; __wbTarget: number[][] };
     w.__wbTrack = [];
     w.__wbTarget = [];
+    const round = (n: number) => Math.round(n * 10) / 10;
     const centre = (el: Element | null) => {
       if (!el) return null;
       const box = el.getBoundingClientRect();
-      return [Math.round((box.x + box.width / 2) * 10) / 10, Math.round((box.y + box.height / 2) * 10) / 10];
+      return [round(box.x + box.width / 2), round(box.y + box.height / 2), round(box.width), round(box.height)];
     };
     const tick = () => {
       const node = centre(document.querySelector(`.filedrawer-morph-node[data-node-id="${id}"]`));
@@ -291,7 +296,19 @@ test.describe('VB-14b — two modes in one drawer', () => {
     await context.close();
   });
 
-  test('the morph runs both ways, and the nodes land on their rows going back', async () => {
+  /**
+   * V1.6 VB-32 — THE ORB BECOMES THE ROW.
+   *
+   * The flight itself never regressed; what it stopped doing was reading as
+   * itself. This is the same test VB-14b wrote, with the landing tightened
+   * from "somewhere within fourteen pixels of the marker" — which a dot fading
+   * out beside it also passes — to the thing the task actually asks for: the
+   * node ends ON the row's own glyph, at the glyph's own size and position.
+   *
+   * The tolerance is one pixel because both numbers come from the same DOM on
+   * the same frame; anything looser would let the old behaviour back in.
+   */
+  test('the morph runs both ways, and an orb ends as its row’s own marker', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openMidInterview(context, sw, id);
 
@@ -306,11 +323,81 @@ test.describe('VB-14b — two modes in one drawer', () => {
     expect(node.length).toBeGreaterThan(8);
     expect(new Set(node.map((point) => point.join(','))).size).toBeGreaterThan(5);
 
-    // The row's own marker is where it ended up.
+    // The row's own marker is where it ended up — and what size it ended at.
     const glyph = (await page.locator('.filetree-row[data-node-id="sec1"] .filetree-glyph').boundingBox())!;
     const last = node[node.length - 1]!;
-    expect(Math.abs(last[0]! - (glyph.x + glyph.width / 2))).toBeLessThan(14);
-    expect(Math.abs(last[1]! - (glyph.y + glyph.height / 2))).toBeLessThan(14);
+    expect(Math.abs(last[0]! - (glyph.x + glyph.width / 2)), 'not on the marker’s x').toBeLessThanOrEqual(1);
+    expect(Math.abs(last[1]! - (glyph.y + glyph.height / 2)), 'not on the marker’s y').toBeLessThanOrEqual(1);
+    // At the marker's own size: the smaller side of a marker that is wider
+    // than it is tall, which is what puts an orb the height of the tile dead
+    // centre on it (core/drawer/mode.ts's `endOf`).
+    const marker = Math.min(glyph.width, glyph.height);
+    expect(last[2]!, 'the orb did not arrive at the marker’s size').toBeCloseTo(marker, 0);
+    expect(last[3]!, 'the orb did not arrive at the marker’s size').toBeCloseTo(marker, 0);
+    // It GREW into the marker rather than shrinking away inside it — the
+    // specific thing VB-32 is about.
+    expect(last[2]!, 'the orb shrank into a bullet on the way in').toBeGreaterThan(node[0]![2]! * 0.5);
+
+    await context.close();
+  });
+
+  /**
+   * V1.6 VB-32's other half: the hand-off. The flight lands ON the mark, which
+   * means the last frame has an orb and the mark it became in one box — so the
+   * layer stands still for `MORPH_LAND_MS` and gives way rather than blinking
+   * out. Asserted as a phase that really happens, with nothing moving in it.
+   */
+  test('the landed orbs hand over to the marks instead of blinking out', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openMidInterview(context, sw, id);
+
+    await brainButton(page).click();
+    await drawerSettled(page);
+
+    // Sampled every frame in the page: a 120ms phase is shorter than a poll
+    // over the wire can reliably catch, and what is being claimed is about
+    // frames anyway.
+    await page.evaluate(() => {
+      const w = window as unknown as { __wbLand: (string | number)[][] };
+      w.__wbLand = [];
+      const tick = () => {
+        const layer = document.querySelector('.filedrawer-morph');
+        const node = document.querySelector('.filedrawer-morph-node');
+        if (layer) {
+          const box = node?.getBoundingClientRect();
+          w.__wbLand.push([
+            layer.getAttribute('data-phase') ?? 'none',
+            Number(getComputedStyle(layer).opacity),
+            box ? Math.round((box.x + box.width / 2) * 10) / 10 : -1,
+            box ? Math.round(box.width * 10) / 10 : -1,
+            getComputedStyle(layer).transitionDuration,
+          ]);
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    });
+    await listButton(page).click();
+    await drawerSettled(page);
+    const frames = await page.evaluate(() => (window as unknown as { __wbLand: (string | number)[][] }).__wbLand);
+
+    // Caught in the hand-off: the layer says `land`, it is on its way out
+    // under its own 120ms, and the node it is handing over is still there at
+    // its landed size while it goes.
+    const landing = frames.filter((frame) => frame[0] === 'land' && frame[3] !== -1);
+    expect(landing.length, 'there was no hand-off — the orbs blinked out').toBeGreaterThan(2);
+    expect(landing[0]![4], 'the hand-off has no clock').toBe(`${MORPH_LAND_MS / 1000}s`);
+    // Nothing moves in it, and nothing resizes: it is a stand-still phase.
+    const still = new Set(landing.map((frame) => `${frame[2]},${frame[3]}`));
+    expect(still.size, 'the nodes kept moving during the hand-off').toBe(1);
+    // And it really does fade: full strength when it starts, gone by the end.
+    expect(Number(landing[0]![1])).toBeGreaterThan(0.5);
+    expect(Number(landing[landing.length - 1]![1])).toBeLessThan(0.5);
+
+    // …and then it is gone, leaving the row's own marker on screen.
+    await drawerSettled(page);
+    expect(await page.locator('.filedrawer-morph-node').count()).toBe(0);
+    await expect(page.locator('.filetree-row[data-node-id="sec1"] .filetree-glyph')).toBeVisible();
 
     await context.close();
   });

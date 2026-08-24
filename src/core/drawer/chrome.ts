@@ -113,6 +113,34 @@ export const NAV_RAMP_FOOT_MIX = 0.45;
 export const NAV_RAMP_KNEE = 26;
 export const NAV_RAMP_KNEE_MIX = 0.8;
 
+/**
+ * V1.6 VB-29 — the white margin the drawer's pane sits inside, in px.
+ *
+ * The complaint: the drawer bleeds edge to edge, so the panel reads as a
+ * surface running off the screen rather than as one app with a framed pane in
+ * it. The frame is the app's **own** margin, which is why this is 8 and not a
+ * number somebody liked: 8px is the panel body's margin, so the pane's sides
+ * land in the same column every screen in the product already uses (it is also
+ * the first term of the docked bar's 26px gutter — see Flow.css).
+ *
+ * **It is drawn INSIDE the drawer's own box**, as a border in `--canvas` with
+ * the background clipped to the padding box (FileDrawer.css). That is not a
+ * detail: the height the handle announces, the room `flowBottomReserve`
+ * reserves and the edge the nav bar is pegged to are all one number, and a
+ * frame added *outside* the box would make the drawer eight pixels taller than
+ * the number every one of those is computed from. The same reasoning the 1px
+ * top rule was kept in the box model for at V1.2.
+ *
+ * Everything positioned against the drawer's padding box therefore inherits
+ * the inset for free — the head band, both content layers and the flight layer
+ * — and the two things that do *not* are handled where they are drawn: the
+ * globe's stage size (core/drawer/mode.ts's `brainStageSize`, which has to know
+ * how much room is really left) and the nav ramp above (Flow.css, which insets
+ * its gradient by this so the frame runs on up the bar rather than stopping in
+ * a notch at the drawer's top corners).
+ */
+export const DOCK_FRAME = 8;
+
 /** docs/GUARDRAILS.md's text floor. Here so a test states the rule by name. */
 export const DOCK_TEXT_MIN_CONTRAST = 4.5;
 
