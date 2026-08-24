@@ -121,6 +121,59 @@ describe('initStorage', () => {
     expect(await getLocal('wb:meta', backend)).toEqual(result.data);
   });
 
+  /**
+   * V1.8 VB-47 — THE MIGRATION-SAFETY TEST, and the important one in this file.
+   *
+   * `wb:answers` gained two siblings (`wb:answers:skills`, `wb:answers:actions`)
+   * and did NOT change its own name, shape or meaning. So an install that has
+   * been running since R1-01 — one `wb:meta` at the current version, one
+   * `wb:answers` full of somebody's real words, and nothing else — must come
+   * through untouched, with no migration run and nothing written back.
+   *
+   * Seeded in the OLD shape deliberately: exactly the keys such an install has,
+   * and not one more. The assertion is that nothing is lost, nothing is
+   * rewritten, and the two new keys read as absent rather than as empty answers
+   * somebody has to be told about.
+   */
+  it('a pre-V1.8 install — only wb:answers — keeps every answer, runs no migration and writes nothing', async () => {
+    const meta = { schemaVersion: 1, installedAt: '2024-05-05T00:00:00.000Z' };
+    const existing = {
+      values: { preferred_name: 'Ada', voice: 'Plain and direct.' },
+      repeatables: { roles: [{ role_name: 'Founder' }] },
+      answeredAt: { preferred_name: '2024-05-05T00:00:00.000Z' },
+      reflectedAt: { voice: '2024-05-06T00:00:00.000Z' },
+    };
+    const backend = fakeBackend({ 'wb:meta': meta, 'wb:answers': existing });
+    const setSpy = vi.spyOn(backend, 'set');
+    const exportBeforeMigrate = vi.fn();
+
+    const result = await initStorage({ exportBeforeMigrate, backend });
+
+    expect(result).toEqual({ ok: true, data: meta });
+    expect(exportBeforeMigrate).not.toHaveBeenCalled();
+    expect(setSpy, 'an additive key change must not rewrite an existing install').not.toHaveBeenCalled();
+
+    // Nothing lost: the same object, field for field, under the same key.
+    expect(await getLocal('wb:answers', backend)).toEqual(existing);
+    // And the new keys are absent, which every reader already treats as
+    // "that file has nothing in it" (see core/files/answersKey.ts).
+    expect(await getLocal('wb:answers:skills', backend)).toBeUndefined();
+    expect(await getLocal('wb:answers:actions', backend)).toBeUndefined();
+  });
+
+  /** The other half of the same promise: the new keys are real keys, and
+   * writing one leaves Context's alone. */
+  it('each file’s answers are their own key — writing Skills does not touch Context', async () => {
+    const context = { values: { preferred_name: 'Ada' }, repeatables: {}, answeredAt: {}, reflectedAt: {} };
+    const backend = fakeBackend({ 'wb:answers': context });
+    const skills = { values: { how_i_work: 'In the morning.' }, repeatables: {}, answeredAt: {}, reflectedAt: {} };
+
+    expect(await setLocal('wb:answers:skills', skills, backend)).toEqual({ ok: true, data: undefined });
+
+    expect(await getLocal('wb:answers', backend)).toEqual(context);
+    expect(await getLocal('wb:answers:skills', backend)).toEqual(skills);
+  });
+
   it('a migration failure reports why and leaves existing storage untouched', async () => {
     const oldMeta = { schemaVersion: 0, installedAt: '2020-01-01T00:00:00.000Z' };
     const backend = fakeBackend({ 'wb:meta': oldMeta, 'wb:answers': { values: { name: 'old' } } });

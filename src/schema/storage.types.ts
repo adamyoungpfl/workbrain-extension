@@ -99,7 +99,42 @@ export interface Prefs {
 /** local */
 export interface LocalState {
   'wb:meta': Meta;
+  /**
+   * THE CONTEXT INTERVIEW'S ANSWERS, AND ONLY THOSE.
+   *
+   * V1.8 VB-47, settled by Adam on 2026-08-24: `wb:answers` gets ONE KEY PER
+   * FLOW rather than namespacing inside it. Every consumer — `core/flow/runner`,
+   * `core/freshness/sectionHealth`, `core/files/generate`, `core/files/parse`,
+   * `core/recommend/engine`, the drawer — already takes a whole `Answers`
+   * (`{values, repeatables, answeredAt, reflectedAt}`). Handing each flow its
+   * own `Answers` under its own key means NONE OF THEM CHANGE; namespacing
+   * inside would touch every key lookup in the product.
+   *
+   * The consequence that matters: this key keeps the name, the shape and the
+   * meaning it has had since R1-01, so **an install that predates V1.8 needs no
+   * migration at all** — the two keys below are simply absent, which reads as
+   * "that file has nothing in it", which is true. `SCHEMA_VERSION` therefore
+   * does not move, and `core/storage/migrations.ts` stays empty. That is
+   * asserted rather than assumed: see the pre-V1.8 install test in
+   * core/storage/client.test.ts and tests/e2e/file-toggle.spec.ts.
+   *
+   * Which key belongs to which file is `core/files/answersKey.ts`, so nothing
+   * outside it spells one of these out.
+   */
   'wb:answers': Answers;
+  /**
+   * V1.8 VB-47. The Skills interview's answers, in the same shape. Declared
+   * now, ahead of the flow data that will fill it, because VB-48's work brain
+   * shows the three files as peers and cannot be built honestly on a store that
+   * only represents one.
+   *
+   * Deliberately NOT `wb:skills` — that key is already the skill list
+   * (`Skill[]`, from packs and from what the person wrote), and it is a
+   * different thing entirely.
+   */
+  'wb:answers:skills': Answers;
+  /** V1.8 VB-47. The Actions interview's answers. Same story as the key above. */
+  'wb:answers:actions': Answers;
   'wb:skills': Skill[];
   'wb:packs': PackSubscription[];
   'wb:report': ReportState;

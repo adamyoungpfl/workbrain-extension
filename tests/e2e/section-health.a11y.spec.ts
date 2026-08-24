@@ -131,10 +131,16 @@ test('the health pills add no control, no tab stop and no live region (VB-19)', 
   // announce itself while somebody is trying to answer a question
   // (docs/GUARDRAILS.md — nothing steals focus, and no nudges).
   await expect(page.locator('.sectionhealth-pill [tabindex], .sectionhealth-pill button, .sectionhealth-pill a')).toHaveCount(0);
-  await expect(page.locator('.sectionhealth-summary [aria-live], .filetree [aria-live]')).toHaveCount(0);
+  // V1.8 VB-47 replaced the counts strip above the list with the file-type
+  // toggle, so the "no live region in the drawer" rule now runs over that
+  // strip: a toggle whose locked buttons announced themselves would be exactly
+  // the interruption this test exists to prevent. A locked button carries its
+  // whole sentence in its own name instead (components/FileTypeToggle.tsx).
+  await expect(page.locator('.filetypes [aria-live], .filetree [aria-live]')).toHaveCount(0);
 
-  // The counts group has a real name rather than being an unlabelled group.
-  await expect(page.locator('.sectionhealth-summary')).toHaveAttribute('aria-label', /\S/);
+  // The group above the list has a real name rather than being an unlabelled
+  // group — the same requirement, now the toggle's.
+  await expect(page.locator('.filetypes-row')).toHaveAttribute('aria-label', /\S/);
 
   await context.close();
 });

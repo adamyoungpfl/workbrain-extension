@@ -118,14 +118,25 @@ describe('FileTree', () => {
     for (const row of rows(container)) expect(row.dataset.nodeState).toBe('untouched');
   });
 
-  it('names the file, and puts the person in the name once they give one', () => {
-    const bare = renderTree(makeAnswers(), null, null);
-    expect(bare.container.querySelector('.filetree-root')?.textContent).toBe('Context.md');
-    bare.unmount();
-
-    const named = renderTree(makeAnswers({ values: { preferred_name: 'Ada' } }), null, null);
-    expect(named.container.querySelector('.filetree-root')?.textContent).toBe('Ada — Context.md');
-    named.unmount();
+  /**
+   * V1.8 VB-47 — THE TREE NO LONGER NAMES THE FILE, AND CARRIES NO SUMMARY.
+   *
+   * Both stood above the sections and both moved out: the file-type toggle in
+   * the drawer's own strip names the file now (its pressed segment IS the
+   * filename), and VB-46 put the counts inside the rows. What is left here is
+   * the list, which is what a tree of one file should be — so the tree starts
+   * at its first section, and nothing above it.
+   *
+   * `HealthSummary` is untouched and still renders on `FileView`, which has no
+   * right-hand column in its rows to bundle a count into; this asserts only
+   * that the DRAWER'S tree does not draw one.
+   */
+  it('is the list and nothing above it — no file name, no summary strip', () => {
+    const { container } = renderTree(makeAnswers({ values: { preferred_name: 'Ada' } }), null, null);
+    const tree = container.querySelector('.filetree') as HTMLElement;
+    expect(container.querySelector('.filetree-root')).toBe(null);
+    expect(container.querySelector('.sectionhealth-summary')).toBe(null);
+    expect(tree.firstElementChild!.classList.contains('filetree-list')).toBe(true);
   });
 
   /**
@@ -407,18 +418,24 @@ describe('FileTree — section health (VB-19)', () => {
     expect(row.querySelector('.filetree-counts button, .filetree-counts a')).toBe(null);
   });
 
-  it('prints the counts across the top, and they agree with the rows', () => {
+  /**
+   * V1.8 VB-47 removed the counts strip from this tree — VB-46 had already put
+   * the same three facts inside every row, at its right end, so the strip was
+   * the second telling and the drawer needed the space for the file-type
+   * toggle. What used to be asserted here is asserted where it still exists:
+   * `SectionHealth.test.tsx` for the component, and `FileView` for the surface
+   * that still draws it.
+   *
+   * The row-level counts it was checked against are unchanged and are two
+   * tests above this one.
+   */
+  it('carries no counts strip of its own — every count is on a row', () => {
     const { container } = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: YEAR_AGO } }), 'name', 'sec1');
-    const pills = Array.from(container.querySelectorAll('.sectionhealth-summary .sectionhealth-pill')) as HTMLElement[];
-    // sec1 is "here" and sec2 is "due", so only the due count prints.
-    expect(pills.map((p) => p.dataset.healthSummary)).toEqual(['due']);
-    expect(pills[0]!.textContent).toContain(S.badgeDue(1));
-  });
-
-  it('keeps the summary above the file name, so it reads as the list\'s own header', () => {
-    const { container } = renderTree(makeAnswers(), null, null);
-    const tree = container.querySelector('.filetree') as HTMLElement;
-    expect(tree.firstElementChild!.classList.contains('sectionhealth-summary')).toBe(true);
+    expect(container.querySelectorAll('.sectionhealth-summary')).toHaveLength(0);
+    // The pills that remain are the rows' own, one each, never a total.
+    const pills = Array.from(container.querySelectorAll('.sectionhealth-pill')) as HTMLElement[];
+    expect(pills).toHaveLength(rows(container).length);
+    for (const pill of pills) expect(pill.dataset.healthSummary).toBe(undefined);
   });
 });
 

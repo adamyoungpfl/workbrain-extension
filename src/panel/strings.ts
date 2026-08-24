@@ -24,6 +24,14 @@
  * carries its own reading-level test, since `npm run audit` only measures this one.
  */
 
+/**
+ * V1.7 VB-36's word for a file that is part of the story and not part of this
+ * release. Hoisted out of the object because V1.8 VB-47 says it in two places
+ * — the badge on Home's shelf and a locked button's name in the drawer's
+ * toggle — and a word said twice is a word that gets changed once.
+ */
+const LOCKED = 'Locked';
+
 export const S = {
   // ---------------------------------------------------------------- chrome
   appName: 'Workbrain',
@@ -250,7 +258,11 @@ export const S = {
    * reader on every row.
    */
   fileTreeHeading: 'Your file so far',
-  fileTreeRoot: (name: string) => (name ? `${name} — Context.md` : 'Context.md'),
+  /* V1.8 VB-47: `fileTreeRoot` — "Ada — Context.md", printed above the
+     sections — is gone. The file-type toggle in the strip above the list names
+     the file now, so the line was the same filename said twice. Deleted rather
+     than left here with no caller: a string nobody prints is a string the next
+     person has to go looking for a screen for. */
   fileTreeStateCurrent: 'Writing now',
   fileTreeStateReached: 'Written',
   fileTreeStateUntouched: 'Not yet',
@@ -578,7 +590,36 @@ export const S = {
    */
   lockedNeedsFirst: (file: string) => `Finish ${file} first`,
   lockedComingLater: 'Coming later',
-  badgeLocked: 'Locked',
+  badgeLocked: LOCKED,
+
+  /**
+   * V1.8 VB-47 — the file-type toggle, where the "not yet" tag used to be.
+   *
+   * THREE STRINGS, AND TWO OF THEM ARE THE SHELF'S OWN. The names on the
+   * buttons are `fileContext` / `fileSkills` / `fileActions` above, and what a
+   * locked one says is `lockedNeedsFirst` / `lockedComingLater` — the same
+   * sentences Home prints, because Adam's decision of 2026-08-24 is that the
+   * two surfaces are one navigation and they must agree about a locked file.
+   * Which of the two a file gets is decided in `core/files/toggle.ts`, not
+   * here.
+   *
+   * `fileToggleLabel` is the group's accessible name and is never printed: the
+   * three buttons are visible and say what they do, so a printed label above
+   * them would be a fourth piece of text in a strip that has to fit a drawer.
+   * "Which file" and not "File type" — a person picking between Context.md and
+   * Skills.md is choosing a file, and "type" is a noun they did not bring.
+   *
+   * `fileToggleLockedName` is a locked button's whole accessible name, so
+   * somebody who cannot see the padlock or the line under the strip hears the
+   * file, the lock and what unlocks it on focus, before pressing anything.
+   *
+   * `fileToggleLockedNote` is that same fact printed. It names the file
+   * because the line sits under three buttons and has to say which one it is
+   * about.
+   */
+  fileToggleLabel: 'Which file',
+  fileToggleLockedName: (file: string, reason: string) => `${file} — ${LOCKED}. ${reason}`,
+  fileToggleLockedNote: (file: string, reason: string) => `${file} · ${reason}`,
   notBuiltYet: 'Not built yet',
   updatedToday: 'Updated today',
   daysOld: (n: number) => (n === 1 ? '1 day old' : `${n} days old`),

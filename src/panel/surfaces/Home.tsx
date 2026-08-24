@@ -14,7 +14,12 @@ import { daysSince } from '../../core/freshness/clocks';
 import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { multipleRecordCount } from '../../core/flow/multiples';
 import { fileFinished, fileSlots } from '../../core/files/slots';
-import type { FileSlot, FileSlotId } from '../../core/files/slots';
+import type { FileSlot } from '../../core/files/slots';
+import { fileLock } from '../../core/files/toggle';
+// V1.8 VB-47. The file's name, the lock's sentence and the padlock itself,
+// shared with the drawer's toggle so the shelf and the switcher cannot say
+// different things about the same file — see components/FileTypeToggle.tsx.
+import { LockGlyph, fileName, lockLine } from '../components/FileTypeToggle';
 import { contextModules, contextOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
@@ -65,20 +70,6 @@ const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, re
 const CONTACT_URL = 'https://www.model-citizen.org/contact';
 
 /**
- * V1.7 VB-36 — what each slot on the shelf is called, and what it is for.
- *
- * The names live here rather than in `core/files/slots.ts` because a slot
- * reports an id and two booleans and nothing else: every word in this panel
- * lives in `strings.ts` (CLAUDE.md). Keyed by slot id so a locked row can name
- * the file it is waiting on without knowing anything about what that file is.
- */
-const SLOT_NAME: Record<FileSlotId, string> = {
-  context: S.fileContext,
-  skills: S.fileSkills,
-  actions: S.fileActions,
-};
-
-/**
  * What a locked slot says under its name.
  *
  * ONE LINE, AND IT IS THE LOCK. An earlier draft printed the file's own
@@ -92,10 +83,24 @@ const SLOT_NAME: Record<FileSlotId, string> = {
  * height again. What Skills.md and Actions.md will hold is carried by their
  * names and by the padlock, which is what makes them read as the rest of the
  * product rather than as decoration.
+ *
+ * ── V1.8 VB-47: THE FOLD MOVED TO core/, THE SENTENCE DID NOT CHANGE ──────
+ *
+ * The drawer now carries a toggle between the same three files, and Adam's
+ * decision of 2026-08-24 is that the two surfaces are one navigation: "both
+ * must agree about locked files". Which of the two sentences a locked file gets
+ * is `core/files/toggle.ts`'s `fileLock`, and turning that into words is
+ * `lockLine` — both shared with the toggle, so a file waiting on Context.md
+ * here is waiting on it in the same words there. What this function still owns
+ * is the ONE LINE rule above, which is a fact about this row and not about the
+ * lock.
  */
 function lockedReason(slot: FileSlot): string {
-  if (slot.after && !slot.afterFinished) return S.lockedNeedsFirst(SLOT_NAME[slot.after]);
-  return S.lockedComingLater;
+  const lock = fileLock(slot);
+  // Only ever called for a locked slot, which always has one. "Coming later"
+  // is the truthful fallback for a slot that somehow does not, rather than an
+  // empty subtitle where the lock should be.
+  return lock ? lockLine(lock) : S.lockedComingLater;
 }
 
 /** V1.7 VB-38's row — two cards, one behind the other: more than one of a
@@ -111,13 +116,12 @@ const STACK_ICON = (
 /** V1.7 VB-36's locked slots — a closed padlock, drawn to the same convention
  * as the two above. The row's badge and subtitle say "Locked" and what unlocks
  * it in words; this is the same fact as a picture, so it is `aria-hidden` and
- * nothing rests on it alone. */
-const LOCK_ICON = (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-    <rect x="4.5" y="10.5" width="15" height="10" rx="2.5" />
-    <path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" />
-  </svg>
-);
+ * nothing rests on it alone.
+ *
+ * V1.8 VB-47: the drawing moved to `components/FileTypeToggle.tsx`, where the
+ * toggle's own locked segments wear it at 12px. One padlock in the product, at
+ * two sizes, rather than two padlocks that drift. */
+const LOCK_ICON = <LockGlyph size={17} stroke={1.7} />;
 
 const PERSON_ICON = (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -372,7 +376,7 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           slot.state === 'open' ? (
             <FileRow
               key={slot.id}
-              name={SLOT_NAME[slot.id]}
+              name={fileName(slot.id)}
               subtitle={fileSubtitle}
               badge={fileBadge}
               onClick={onOpenFile}
@@ -380,7 +384,7 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           ) : (
             <FileRow
               key={slot.id}
-              name={SLOT_NAME[slot.id]}
+              name={fileName(slot.id)}
               subtitle={lockedReason(slot)}
               badge={{ label: S.badgeLocked }}
               icon={LOCK_ICON}

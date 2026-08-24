@@ -2,8 +2,12 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { BrainGlobe, FileTree } from '../components';
 import { sectionNodeGradient } from '../components/BrainGlobe';
+import { FileTypeToggle } from '../components/FileTypeToggle';
 import { contextFileDate, generateContextFileParts } from '../../core/files/generate';
 import type { ContextFileSection } from '../../core/files/generate';
+import { fileFinished } from '../../core/files/slots';
+import type { FileSlotId } from '../../core/files/slots';
+import { chooseFile, fileToggle } from '../../core/files/toggle';
 import {
   clampDrawerHeight,
   drawerBounds,
@@ -408,6 +412,43 @@ export function FileDrawer({
     return map;
   }, [outline, health, states]);
 
+  /**
+   * V1.8 VB-47 — WHICH FILE THE DRAWER IS SHOWING, and the switch between the
+   * three.
+   *
+   * Adam's decision of 2026-08-24: **the drawer toggle is the switcher; Home is
+   * a landing page.** V1.7's shelf stays as the overview somebody passes
+   * through on the way in, and this is what they come back to.
+   *
+   * Ephemeral, exactly like the drawer's height and its requested mode beside
+   * it (docs/ARCHITECTURE.md, "nothing derived is stored"): which file you are
+   * looking at is a fact about a glance at the panel, not about the person, and
+   * a reopen lands on whichever file the interview being run is.
+   *
+   * Context is the only file `core/files/slots.ts` reports as BUILT, so today
+   * this can only ever hold `'context'` — and that is the honest state of the
+   * product rather than a placeholder. The rule that keeps it honest is
+   * `chooseFile`'s: a locked file is not enterable, whatever gets pressed. The
+   * day Skills.md has flow data, this state starts moving and `Flow` hands the
+   * drawer that file's own `Answers` from its own key
+   * (core/files/answersKey.ts) — none of the derivations below change, which is
+   * the whole point of one key per flow.
+   */
+  const [shownFile, setShownFile] = useState<FileSlotId>('context');
+
+  /**
+   * The toggle itself: which files exist, which one is on screen, and what a
+   * locked one may truthfully say.
+   *
+   * `fileFinished` is the shelf's own fold over the very answers this drawer is
+   * already rendering — not a second count — so a locked segment stops saying
+   * "Finish Context.md first" at the same moment Home's locked row does.
+   */
+  const toggle = useMemo(
+    () => fileToggle(shownFile, { [shownFile]: fileFinished(outline, modules, answers, now) }),
+    [shownFile, outline, modules, answers, now],
+  );
+
   /** V1.4 VB-23. What each node holds, for the globe's sub-node split — the
    * same answers the file preview below is generated from, folded into cells
    * by core/flow/nodeDetails.ts. Derived per render like everything else here;
@@ -692,6 +733,23 @@ export function FileDrawer({
         />
       </div>
       <div className="filedrawer-body" id={BODY_ID} ref={bodyRef}>
+        {/* V1.8 VB-47 — the switch between Context, Skills and Actions, in the
+            strip that used to hold the `[ ] 9 not yet` summary tag.
+
+            HERE AND NOT INSIDE `FileTree`: the tree is a picture of ONE file
+            and choosing which file that is belongs to the drawer around it —
+            the same reasoning that keeps the mode buttons in the head band
+            rather than inside the globe. Sticky at the top of this scrolling
+            box (FileTypeToggle.css), exactly as the summary was, because a
+            switcher that scrolls away is one you have to go looking for.
+
+            The refusal lives in core: `chooseFile` returns the file already on
+            screen when a locked one is pressed, and the strip prints what
+            unlocks it. */}
+        <FileTypeToggle
+          items={toggle}
+          onPick={(id) => setShownFile((current) => chooseFile(current, id, toggle))}
+        />
         <FileTree
           outline={outline}
           modules={modules}

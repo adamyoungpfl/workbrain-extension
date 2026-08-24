@@ -442,57 +442,48 @@ test.describe('VB-19 — the list is still the file', () => {
   });
 });
 
-test.describe('VB-19 — the counts across the top', () => {
-  test('they agree with the rows underneath them', async () => {
+/**
+ * V1.8 VB-47 — WHAT USED TO BE ACROSS THE TOP.
+ *
+ * VB-19 put a counts strip above the list — `[!] 2 due  [~] 1 partly  [ ] 9
+ * not yet` — to do the "what needs attention" job that keeping the rows in
+ * FILE ORDER gives up. VB-46 then moved that job into the rows themselves:
+ * every row carries its own count, percentage and status bundled at its right
+ * end. VB-47 takes the strip away and puts the file-type toggle in its place.
+ *
+ * So the two tests that stood here have moved rather than gone:
+ *
+ *  · "they agree with the rows underneath them" → the per-row bundle, proved
+ *    in tests/e2e/file-accordion.spec.ts and tests/e2e/list-orbs.spec.ts, and
+ *    for the surface that still draws the strip (`FileView`, whose rows have no
+ *    right-hand column) in src/panel/components/SectionHealth.test.tsx.
+ *  · "they stay put while the list scrolls under them" → the toggle inherits
+ *    the strip's sticky position and the same assertion, in
+ *    tests/e2e/file-toggle.spec.ts.
+ *
+ * What is left here is the one thing this file is now the right place for: the
+ * tag really is gone from the drawer.
+ */
+test.describe('VB-47 — the counts strip is gone from the drawer', () => {
+  test('no summary strip, and the words "not yet" survive only on the rows', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    const counted: Record<string, number> = {};
-    for (const node of contextOutline) {
-      const state = (await page.locator(`.filetree-row[data-node-id="${node.id}"]`).getAttribute('data-health'))!;
-      counted[state] = (counted[state] ?? 0) + 1;
-    }
+    await expect(page.locator('.filedrawer .sectionhealth-summary')).toHaveCount(0);
+    await expect(page.locator('.filedrawer [data-health-summary]')).toHaveCount(0);
 
-    const summary = page.locator('.sectionhealth-summary');
-    await expect(summary).toBeVisible();
-    await expect(summary.locator('[data-health-summary="due"]')).toHaveText(new RegExp(`${counted.due}\\s*due`));
-    await expect(summary.locator('[data-health-summary="partly"]')).toHaveText(new RegExp(`${counted.partly}\\s*partly`));
-    await expect(summary.locator('[data-health-summary="not-yet"]')).toHaveText(new RegExp(`${counted['not-yet']}\\s*not yet`));
+    // The seed leaves sections nobody has touched, so "Not yet" is still on
+    // screen — as a per-row pill, never as a total. This is the tag VB-47
+    // names, and its shape was "9 not yet".
+    const notYetRows = await page.locator('.filetree-row[data-health="not-yet"]').count();
+    expect(notYetRows, 'the seed must really leave untouched sections').toBeGreaterThan(0);
+    await expect(page.locator('.filedrawer-body')).not.toContainText(new RegExp(`${notYetRows}\\s*not yet`, 'i'));
 
-    await context.close();
-  });
-
-  test('they stay put while the list scrolls under them', async () => {
-    const { context, sw, id } = await launchExtension();
-    await seedAnswers(sw, fiveStateAnswers());
-    const page = await openList(context, id);
-
-    const summary = page.locator('.sectionhealth-summary');
-    // From the top of the list. The drawer opens scrolled to whatever section
-    // is being written (FileDrawer.tsx), so "before" has to be a known place.
-    await page.locator('.filedrawer-body').evaluate((el) => {
-      el.scrollTop = 0;
-    });
-    await page.waitForTimeout(80);
-    const before = (await summary.boundingBox())!;
-
-    // Scrolled several rows down the tree — the range the summary is a
-    // summary OF. It is pinned within the tree, so it does travel out with
-    // the tree's own bottom edge once the file text below has taken the
-    // screen; that is exactly what a section-scoped sticky heading does.
-    const rowsMoved = await page.evaluate(() => {
-      const box = document.querySelector('.filedrawer-body') as HTMLElement;
-      const first = document.querySelector('.filetree-row[data-node-id]') as HTMLElement;
-      const before = first.getBoundingClientRect().top;
-      box.scrollTop += 160;
-      return before - first.getBoundingClientRect().top;
-    });
-    expect(rowsMoved, 'the rows really did move under it').toBeGreaterThan(100);
-    await page.waitForTimeout(120);
-    const after = (await summary.boundingBox())!;
-    expect(Math.abs(after.y - before.y)).toBeLessThanOrEqual(1);
-    await expect(summary).toBeVisible();
+    // And every remaining pill belongs to exactly one row.
+    const pills = await page.locator('.filedrawer .sectionhealth-pill').count();
+    const inRows = await page.locator('.filetree-row .sectionhealth-pill').count();
+    expect(pills).toBe(inRows);
 
     await context.close();
   });

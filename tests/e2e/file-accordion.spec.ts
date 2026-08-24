@@ -268,14 +268,14 @@ test.describe('VB-33 — a section row says all four things', () => {
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    // Every percentage on screen belongs to exactly one section row. The
-    // summary strip above the list still counts sections, as VB-19 wrote it —
-    // if a file-level figure ever appeared there, this is where it would show.
+    // Every percentage on screen belongs to exactly one section row. V1.8
+    // VB-47 put the file-type toggle in the strip above the list, where VB-19's
+    // counts used to be — if a file-level figure ever appeared in either, this
+    // is where it would show.
     const all = await page.locator('.filetree .filetree-percent').count();
     const inRows = await page.locator('.filetree-row[data-node-id] .filetree-percent').count();
     expect(all).toBe(inRows);
-    await expect(page.locator('.sectionhealth-summary')).not.toContainText('%');
-    await expect(page.locator('.filetree-root')).not.toContainText('%');
+    await expect(page.locator('.filetypes')).not.toContainText('%');
 
     await context.close();
   });

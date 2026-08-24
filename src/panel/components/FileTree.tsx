@@ -3,13 +3,13 @@ import type { FileOutlineNode, Module } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import { navigationTargetFor, outlineNodeState, repeatableBlocksForNode } from '../../core/flow/outline';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
-import { sectionCompletionPercent, sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
+import { sectionCompletionPercent, sectionHealthMap } from '../../core/freshness/sectionHealth';
 import type { SectionLife } from '../../core/freshness/sectionLife';
 import { sectionLife } from '../../core/freshness/sectionLife';
 import { splitRevealedSectionLabel } from '../../core/flow/sectionLabel';
 import { repeatableRecordTitle } from '../../core/files/generate';
 import { childNodeGradient, sectionNodeGradient } from './BrainGlobe';
-import { HealthPill, HealthSummary, healthFreshness } from './SectionHealth';
+import { HealthPill, healthFreshness } from './SectionHealth';
 import { prefersReducedMotion } from '../cues/verbs';
 import { S } from '../strings';
 import './FileTree.css';
@@ -573,7 +573,6 @@ export function FileTree({ outline, modules, answers, currentQuestionId, current
     () => sectionHealthMap(outline, modules, answers, currentQuestionId, now),
     [outline, modules, answers, currentQuestionId, now],
   );
-  const summary = useMemo(() => summariseSectionHealth(outline, health), [outline, health]);
   // Adjusting state during render, the documented React escape hatch for
   // "derive from props" — cheaper and less error-prone than an effect, which
   // would render one frame with the stale expansion first. The override is
@@ -587,14 +586,21 @@ export function FileTree({ outline, modules, answers, currentQuestionId, current
     setOverride({ against: currentSectionId, id: expandedId === id ? null : id });
   }
 
-  const name = typeof answers.values.preferred_name === 'string' ? answers.values.preferred_name.trim() : '';
-
   return (
     <div className="filetree">
-      {/* V1.3 VB-19 — the counts across the top, doing the "what needs
-          attention" job that keeping the rows in file order gives up. */}
-      <HealthSummary summary={summary} />
-      <p className="filetree-root">{S.fileTreeRoot(name)}</p>
+      {/* V1.8 VB-47 TOOK TWO THINGS OFF THE TOP OF THIS LIST.
+
+          The counts (`HealthSummary`) and the root line ("Ada — Context.md")
+          both stood here; the file-type toggle stands in their place now, one
+          level up in the drawer itself, because choosing a file is the
+          drawer's job and not the tree's (surfaces/FileDrawer.tsx).
+
+          Neither is missed. VB-46 moved the counts into the rows — every row
+          carries its own count, percentage and status at its right end — and
+          the toggle's pressed segment names the file, which is all the root
+          line ever said. `HealthSummary` itself is untouched and still
+          renders on `FileView`, where a row has no right-hand column to bundle
+          a count into (components/SectionHealth.tsx). */}
       <ul className="filetree-list">
         {outline.map((node, index) => (
           <FileTreeRow

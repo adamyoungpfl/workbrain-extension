@@ -1,7 +1,7 @@
 import type { LocalState, SessionState, SyncState } from '../../schema/storage.types';
 
 /**
- * The five wb:* keys, split by which chrome.storage area they live in.
+ * Every wb:* key, split by which chrome.storage area it lives in.
  * See docs/ARCHITECTURE.md's storage contract table. Typed against
  * LocalState/SyncState so a typo'd or renamed key is a compile error.
  */
@@ -9,6 +9,13 @@ import type { LocalState, SessionState, SyncState } from '../../schema/storage.t
 export const LOCAL_KEYS: readonly (keyof LocalState)[] = [
   'wb:meta',
   'wb:answers',
+  // V1.8 VB-47 — one answers key per file, not one store namespaced by flow.
+  // Additive in exactly the way `wb:recs` was: an install that predates V1.8
+  // has neither key, which reads as "that file has nothing in it", so there is
+  // nothing to migrate from and SCHEMA_VERSION does not move. `wb:answers`
+  // above is still Context's and is untouched — see schema/storage.types.ts.
+  'wb:answers:skills',
+  'wb:answers:actions',
   'wb:skills',
   'wb:packs',
   'wb:report',

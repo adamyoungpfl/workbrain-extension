@@ -46,18 +46,11 @@
   font-family: var(--font-sans);
 }
 
-/* The file's own name, above the sections. Still mono — it is a FILENAME, and
-   the one place in the list where the terminal register is telling the truth
-   rather than decorating. */
-.filetree-root {
-  margin: 0 0 2px;
-  padding: 8px 2px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--ink-2);
-}
+/* V1.8 VB-47: the file's own name used to print here, above the sections, in
+   mono. The file-type toggle names it now — its pressed segment IS the
+   filename — so the line went rather than printing "Context.md" twice, eight
+   pixels apart, in a drawer whose peek holds about a hundred and thirty pixels
+   of list. See components/FileTypeToggle.tsx. */
 
 .filetree-list {
   list-style: none;

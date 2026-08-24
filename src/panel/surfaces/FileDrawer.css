@@ -442,6 +442,30 @@
   background: var(--dock-pane, var(--canvas));
 }
 
+/* V1.8 VB-47 — the file-type toggle pays the same three taxes, for the same
+   three reasons, in the same place. It is a component of its own
+   (components/FileTypeToggle.css) drawn on the panel's canvas everywhere else;
+   this is what it costs to sit on the drawer's pane:
+
+     · the strip's own ground — a --canvas bar on a tinted pane is a white
+       strip laid over the drawer, which is what the summary above corrects for
+       and what this inherits along with its sticky position;
+     · the locked chip's dashed edge — it carries meaning (WCAG 1.4.11) and
+       --border-i measures 2.92:1 here, so it steps to --dock-edge, exactly as
+       the hollow pill and the dim orb do;
+     · the hover — --sunken on --surface is a 1.06 difference, a cue nobody
+       could see, so it lifts to the panel's white instead of sinking, exactly
+       as a tree row's hover does above. */
+.filedrawer .filetypes {
+  background: var(--dock-pane, var(--canvas));
+}
+.filedrawer .filetypes-item[aria-disabled='true'] .filetypes-chip {
+  border-color: var(--dock-edge);
+}
+.filedrawer .filetypes-item:hover:not([aria-disabled='true']) .filetypes-chip {
+  background: var(--canvas);
+}
+
 /* Only one layer is on screen at a time, and the one that is not is
    `visibility: hidden` rather than `display: none`. That is what keeps it out
    of the tab order and out of the accessibility tree while KEEPING ITS LAYOUT
