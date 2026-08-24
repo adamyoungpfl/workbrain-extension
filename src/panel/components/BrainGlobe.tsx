@@ -13,6 +13,23 @@ import type { SectionLife } from '../../core/freshness/sectionLife';
 import { sectionIsLit, sectionLife } from '../../core/freshness/sectionLife';
 import { detailBand } from '../../core/globe/detailBand';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
+import type { FileSlotId } from '../../core/files/slots';
+import { firstLocked } from '../../core/files/toggle';
+import type { FileToggleItem } from '../../core/files/toggle';
+import {
+  WORK_NODE_GONE,
+  WORK_NODE_R,
+  applyWorkCamera,
+  workCamera,
+  workEdges,
+  workNodeFade,
+  chooseNav,
+  pullBack,
+  workNodePosition,
+  workNodeState,
+} from '../../core/globe/workBrain';
+import type { BrainNav, BrainTier } from '../../core/globe/workBrain';
+import { LockGlyph, fileName, lockLine } from './FileTypeToggle';
 import {
   CAMERA,
   ICOSAHEDRON_EDGES,
@@ -221,6 +238,50 @@ import './BrainGlobe.css';
  * text travels with the orb across the split and arrives with it — one motion,
  * no keyframes, and already there under reduced motion because the split's
  * clock is already 1 (see `runSplit`).
+ *
+ * ── V1.8 VB-48: the tier above — the work brain ───────────────────────────
+ *
+ * "The Context brain becomes a CHILD of the WORK BRAIN, which carries each file
+ * as its own node." So this stage now has two tiers, and everything above
+ * describes the lower one.
+ *
+ *  - **WORK.** One node per file — Context, Skills, Actions, from
+ *    `core/files/slots.ts` by way of `core/files/toggle.ts`, which is the one
+ *    place in the product that knows what is locked. The file that has content
+ *    is drawn as ITS OWN SOLID, shrunk to node size: the context brain really is
+ *    a node of the work brain rather than a symbol standing in for one. The
+ *    files that do not exist yet are empty shells — a dashed rim, no fill, no
+ *    bloom — and they say what would unlock them, in words, in three places
+ *    (the node's name, the line under the stage, and the List beside it).
+ *  - **FILE.** Everything this component was before V1.8, unchanged.
+ *
+ * **THE EXISTING CAMERA DOES NOT GENERALISE TO THIS — IT COMPOSES WITH IT.**
+ * VB-48 asks for that to be confirmed rather than assumed, and the confirmation
+ * is written out in full in core/globe/workBrain.ts: `zoomClock` means "how far
+ * into one of twelve VERTICES", it drives a perspective push that only means
+ * something to the icosahedron, and it runs past 1 to carry the children's
+ * stagger. Three readings, none of which has a sensible extension upward. So
+ * the tier is its own clock (`tierClock`) and its own transform, wrapped
+ * AROUND the scene — which is precisely how V1.4's `splitClock` relates to the
+ * zoom it overlaps. At the file tier that transform is the exact identity, and
+ * that is what keeps the fly-in, the split, the summaries, the detail band and
+ * the drawer's morph measuring in the coordinates they were written in.
+ *
+ * **THE HTML OVERLAY GOES THROUGH THE SAME CAMERA.** The controls are real
+ * buttons positioned in percentages (decision 2 above), so they cannot inherit
+ * an SVG transform. `applyWorkCamera` maps their positions instead — one
+ * function, called by both layers, because two copies of that arithmetic is a
+ * globe whose orbs and whose hit targets drift apart mid-flight.
+ *
+ * **THE TIER IS CONTROLLED, NOT OWNED.** It arrives as a prop and changes are
+ * reported through `onTier`, because the List shows the very same tier and the
+ * very same file (surfaces/FileDrawer.tsx holds the one `BrainNav` both read).
+ * That state is ephemeral session state and is never stored, exactly like the
+ * pose, the split and the drawer's own height.
+ *
+ * **WITH NO `files` PROP THERE IS NO TIER AT ALL.** The globe is usable as a
+ * pure showcase of one file, which is what it was for six versions and what the
+ * harness still drives by default.
  */
 
 // ── Geometry constants ─────────────────────────────────────────────────────
@@ -300,6 +361,22 @@ const TURN_MS = 320;
 const ZOOM_MS = 620;
 const ZOOM_CAMERA_PUSH = 1.5;
 const ZOOM_SCALE = 0.85;
+
+/**
+ * V1.8 VB-48 — how long the tier above takes, in ms.
+ *
+ * The same 620 the fly-in takes, and deliberately the same number rather than a
+ * new one: this is the same gesture one level up — a camera moving between a
+ * thing and the thing inside it — and two different speeds for it would say the
+ * two levels work differently. The tail the fly-in needs for its stagger
+ * (`ZOOM_TAIL`) has no counterpart here, because nothing rings the file nodes.
+ */
+const TIER_MS = 620;
+
+/** The gap a joint keeps from each file node's rim, in view units. Its own
+ * number rather than the child links' zero, because these two ends are much
+ * further apart and a line touching a dashed shell reads as a leak out of it. */
+const WORK_LINK_GAP = 3;
 
 /**
  * The stagger clock runs slightly past 1, and it has to.
@@ -636,6 +713,34 @@ export interface BrainGlobeProps {
    * into, one of its children when a child is picked, null when the globe is
    * back to the whole file. The caller owns what to show for it. */
   onSelect?: (node: FileOutlineNode | null) => void;
+  /**
+   * V1.8 VB-48 — the files of the work brain, in shelf order:
+   * `fileToggle(...)` from core/files/toggle.ts, which is `core/files/slots.ts`
+   * with a lock folded onto each entry. The SAME call the drawer's toggle and
+   * Home's shelf are drawn from, so a file that is locked in one of the three
+   * surfaces is locked in all of them.
+   *
+   * ABSENT MEANS THERE IS NO TIER ABOVE. The globe then draws exactly the one
+   * file it is given, which is what it did for six versions and what the
+   * showcase harness still drives.
+   */
+  files?: readonly FileToggleItem[];
+  /** Which file the `sections` above belong to — the node the solid lives in.
+   * Only meaningful alongside `files`. */
+  file?: FileSlotId;
+  /**
+   * Which tier is showing. Controlled by the caller because the List shows the
+   * same one (VB-48's "shared navigation state"), and ephemeral there — nothing
+   * about where you are looking is ever stored.
+   */
+  tier?: BrainTier;
+  /**
+   * Asked to move: into a file, or back out to the work brain. The rules —
+   * which presses are real moves and which are refused — are
+   * core/globe/workBrain.ts's, and this reports the answer rather than the
+   * request, so a caller cannot accidentally implement "locked" a second way.
+   */
+  onTier?: (next: BrainNav) => void;
 }
 
 // ── A frame ────────────────────────────────────────────────────────────────
@@ -850,6 +955,10 @@ export function BrainGlobe({
   summaries,
   recommendations,
   onSelect,
+  files,
+  file = 'context',
+  tier = 'file',
+  onTier,
 }: BrainGlobeProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const pinRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -894,6 +1003,31 @@ export function BrainGlobe({
    * orb travels rather than teleports — and so it can travel back. */
   const [splitClock, setSplitClock] = useState(0);
 
+  /**
+   * V1.8 VB-48 — the tier above, and its own clock.
+   *
+   * `tierClock` runs 0 (the work brain, this file drawn as one node among the
+   * files) to 1 (inside the file, which is the identity transform and therefore
+   * every version of this stage that shipped before V1.8). Its own clock, not a
+   * range bolted onto `zoomClock`, for the three reasons written out in
+   * core/globe/workBrain.ts — and, like the split's, because the two can be
+   * running at once and one clock cannot be in two places.
+   *
+   * With no `files` there is no tier above at all, so the clock is pinned at 1
+   * and nothing below it can tell the difference.
+   */
+  const workFiles = files ?? [];
+  const workEnabled = workFiles.length > 0;
+  const tierShown: BrainTier = workEnabled ? tier : 'file';
+  /** Which node of the work brain this file's solid lives in. An id that is not
+   * on the shelf falls back to the first node rather than throwing — a picture
+   * must never be the thing that breaks a screen (docs/GUARDRAILS.md). */
+  const fileIndex = Math.max(
+    0,
+    workFiles.findIndex((item) => item.id === file),
+  );
+  const [tierClock, setTierClock] = useState(() => (tierShown === 'work' ? 0 : 1));
+
   // ── Animation plumbing. Refs, not state: these change every frame and no
   // render should depend on them directly.
   const rafRef = useRef(0);
@@ -907,6 +1041,9 @@ export function BrainGlobe({
   const splitRef = useRef<{ startedAt: number; from: number; to: number } | null>(null);
   const splitClockRef = useRef(0);
   splitClockRef.current = splitClock;
+  const tierRef = useRef<{ startedAt: number; from: number; to: number } | null>(null);
+  const tierClockRef = useRef(tierClock);
+  tierClockRef.current = tierClock;
   const draggingRef = useRef(false);
   const draggedRef = useRef(false);
   const reducedRef = useRef(reduced);
@@ -995,6 +1132,21 @@ export function BrainGlobe({
         splitClockRef.current = value;
         setSplitClock(value);
         if (p >= 1) splitRef.current = null;
+        else active = true;
+      }
+
+      // V1.8 VB-48's tier, run exactly like the two clocks above it and for the
+      // same reason they are separate: pulling back out of a file while its
+      // fly-in is still finishing is one stage doing two things, and a single
+      // clock cannot describe both.
+      const tierMove = tierRef.current;
+      if (tierMove) {
+        const span = Math.abs(tierMove.to - tierMove.from) || 1;
+        const p = clamp01((now - tierMove.startedAt) / (TIER_MS * span));
+        const value = tierMove.from + (tierMove.to - tierMove.from) * p;
+        tierClockRef.current = value;
+        setTierClock(value);
+        if (p >= 1) tierRef.current = null;
         else active = true;
       }
 
@@ -1091,6 +1243,12 @@ export function BrainGlobe({
         splitClockRef.current = split.to;
         setSplitClock(split.to);
       }
+      const tierMove = tierRef.current;
+      if (tierMove) {
+        tierRef.current = null;
+        tierClockRef.current = tierMove.to;
+        setTierClock(tierMove.to);
+      }
       setMovingOnce(false);
     };
     document.addEventListener('visibilitychange', onVisibility);
@@ -1153,6 +1311,27 @@ export function BrainGlobe({
         return;
       }
       splitRef.current = { startedAt: performance.now(), from: splitClockRef.current, to };
+      startLoop();
+    },
+    [startLoop],
+  );
+
+  /**
+   * V1.8 VB-48 — the tier's clock, driven exactly like the two above it.
+   *
+   * Instant under reduced motion, which is what "reduced motion reaches the
+   * same states without animating into them" means here: the work brain is
+   * simply the picture, or the file is, with no trip between them.
+   */
+  const runTier = useCallback(
+    (to: number) => {
+      if (reducedRef.current) {
+        tierRef.current = null;
+        tierClockRef.current = to;
+        setTierClock(to);
+        return;
+      }
+      tierRef.current = { startedAt: performance.now(), from: tierClockRef.current, to };
       startLoop();
     },
     [startLoop],
@@ -1268,6 +1447,95 @@ export function BrainGlobe({
     setPickedChildId(null);
     runSplit(0);
   }, [closeSummary, runSplit]);
+
+  // ── V1.8 VB-48: between the tiers ────────────────────────────────────────
+
+  /** The file-node buttons, by file id — the tier above's counterpart of
+   * `pinRefs`. Keyed, because focus has to land on one particular file. */
+  const fileRefs = useRef(new Map<string, HTMLButtonElement>());
+  /**
+   * Which locked file the line under the stage is explaining, if one has been
+   * pressed. Ephemeral, and the same rule the drawer's toggle follows
+   * (components/FileTypeToggle.tsx): the line is always there, explaining the
+   * next locked file, and swaps to whichever locked node was last pressed.
+   */
+  const [lockPressed, setLockPressed] = useState<FileSlotId | null>(null);
+  /**
+   * A focus move THIS COMPONENT owes itself after the tier changes.
+   *
+   * Set only by this component's own handlers, and that is the whole point:
+   * when the List changes the tier, focus is over there and moving it would be
+   * the product taking somebody's cursor away (docs/GUARDRAILS.md — nothing
+   * steals focus). When the press happened here, the control that was pressed
+   * is about to be hidden, and focus has to be put somewhere real.
+   */
+  const wantFocusRef = useRef<'file' | 'section' | null>(null);
+  const tierWasRef = useRef(tierShown);
+
+  /**
+   * The tier, FOLLOWED rather than owned.
+   *
+   * The caller holds it (the List shows the same one), so this reacts to the
+   * prop rather than to the press — which means a change made in either view
+   * runs exactly the same code here.
+   *
+   * Pulling back closes everything the file tier had open. A section flown into
+   * and a sub-node picked are both descriptions of somewhere inside a file, and
+   * leaving the file with them still set would put the camera back on a stage
+   * that had rearranged itself while nobody was looking at it. They fly out
+   * rather than snapping, so pulling back is one continuous movement.
+   */
+  useEffect(() => {
+    if (tierWasRef.current === tierShown) return;
+    tierWasRef.current = tierShown;
+    closeSummary();
+    if (tierShown === 'work') {
+      setFlownIndex(null);
+      setPickedChildId(null);
+      runSplit(0);
+      runZoom(0);
+    }
+    runTier(tierShown === 'work' ? 0 : 1);
+    const want = wantFocusRef.current;
+    wantFocusRef.current = null;
+    // After the commit, so whatever was hidden a moment ago is on screen and
+    // focusable now.
+    if (want === 'file') fileRefs.current.get(file)?.focus();
+    else if (want === 'section') pinRefs.current[activeIndex]?.focus();
+    // `file` and `activeIndex` are read, never watched: this reacts to the tier
+    // moving and to nothing else.
+  }, [tierShown, closeSummary, runSplit, runZoom, runTier]);
+
+  /**
+   * Pressing a file node. The rule is core's — `chooseNav` is `chooseFile` plus
+   * a tier — so a locked file refuses the move here for the same reason and in
+   * the same code as it refuses it on the drawer's toggle and on Home's shelf.
+   *
+   * A refused press is not silence: the node keeps its name, and the line under
+   * the stage swaps to explaining THAT file, which is what somebody pressing a
+   * padlock is asking about.
+   */
+  const pressFile = useCallback(
+    (id: FileSlotId) => {
+      const next = chooseNav({ tier: tierShown, file }, id, workFiles);
+      if (next.tier === tierShown && next.file === file) {
+        setLockPressed(id);
+        return;
+      }
+      wantFocusRef.current = 'section';
+      onTier?.(next);
+    },
+    // `workFiles` is rebuilt every render from the `files` prop; listing what it
+    // is BUILT FROM is what keeps this callback stable between frames.
+    [tierShown, file, files, onTier],
+  );
+
+  /** Back out to the work brain — the button, and Escape's last rung. */
+  const goWork = useCallback(() => {
+    if (!workEnabled || tierShown !== 'file') return;
+    wantFocusRef.current = 'file';
+    onTier?.(pullBack({ tier: tierShown, file }));
+  }, [file, onTier, tierShown, workEnabled]);
 
   // ── Pointer: drag to rotate ──────────────────────────────────────────────
 
@@ -1437,6 +1705,21 @@ export function BrainGlobe({
   );
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
+    /**
+     * V1.8 VB-48 — THE ARROWS BELONG TO THE SOLID, and at the work tier there
+     * is no solid to step around.
+     *
+     * The roving tabindex below exists because ten nodes that each spin a globe
+     * would make tabbing past the drawer intolerable (decision 3 in the header).
+     * Three file nodes are not that problem: they are three ordinary tab stops
+     * that move nothing when they are reached. So the arrows simply do not
+     * apply up here, and stepping a hidden node — turning a solid nobody can
+     * see — is exactly what this returns before doing.
+     */
+    if (tierShown === 'work') {
+      if (event.key !== 'Escape') return;
+      return;
+    }
     switch (event.key) {
       case 'ArrowRight':
       case 'ArrowDown':
@@ -1487,7 +1770,14 @@ export function BrainGlobe({
           childPinRefs.current.get(pickedChildId)?.focus();
           return;
         }
-        if (flownIndex === null) return;
+        if (flownIndex === null) {
+          // V1.8 VB-48 — the ladder's last rung, and it only exists where there
+          // is a tier above: summary → split → section → the work brain.
+          if (!workEnabled) return;
+          event.preventDefault();
+          goWork();
+          return;
+        }
         event.preventDefault();
         flyOut();
         pinRefs.current[activeIndex]?.focus();
@@ -1503,6 +1793,21 @@ export function BrainGlobe({
     () => computeFrame(pose.rx, pose.ry, zoomClock, flownVertex),
     [pose.rx, pose.ry, zoomClock, flownVertex],
   );
+
+  /**
+   * V1.8 VB-48 — the tier's camera this frame, and the two folds over it.
+   *
+   * `et` is the tier clock eased on the fly-in's own curve, so the two levels
+   * of camera read as one kind of movement. `camera` is the transform the SVG
+   * wears and the overlay maps through; at the file tier it is exactly the
+   * identity (asserted in core/globe/workBrain.test.ts), which is what makes
+   * every behaviour below this line the behaviour it was before V1.8.
+   */
+  const et = easeOutCubic(clamp01(tierClock));
+  const camera = workCamera(et, workNodePosition(fileIndex, workFiles.length));
+  const onStage = (x: number, y: number) => applyWorkCamera(camera, x, y);
+  /** How present the OTHER files are: 1 out here, 0 once we are inside one. */
+  const workFade = workNodeFade(et);
 
   const sectionByVertex = useMemo(() => {
     const map = new Map<number, { section: FileOutlineNode; index: number }>();
@@ -1689,6 +1994,31 @@ export function BrainGlobe({
     setDetailScrolls((was) => (was === scrolls ? was : scrolls));
   });
 
+  /**
+   * V1.8 VB-48 — how big the solid actually is on the stage this frame, in view
+   * units, before the tier camera.
+   *
+   * Measured off the frame rather than hard-coded from the circumradius,
+   * because the silhouette breathes: the pose changes which vertex is nearest,
+   * and the fly-in's own camera push changes the projection. The file node's
+   * hit target and its label are placed against this, so they fit the mini
+   * solid at whatever angle it happens to be turned to.
+   */
+  const solidR = frame.nodes.reduce(
+    (widest, node) => Math.max(widest, Math.hypot(node.lx, node.ly) + node.radius * frame.sceneScale),
+    0,
+  );
+
+  /**
+   * V1.8 VB-48 — which locked file the line under the stage explains.
+   *
+   * The drawer's toggle rule exactly (core/files/toggle.ts's `firstLocked`):
+   * the next locked file by default, or whichever locked node was last pressed.
+   * One line and not three — three sentences do not fit a 260px stage — and it
+   * is always there, so it is never a tooltip you have to find.
+   */
+  const explaining = workFiles.find((item) => item.id === lockPressed && item.lock) ?? firstLocked(workFiles);
+
   const rootStyle = { '--brainglobe-size': `${size}px` } as CSSProperties;
 
   return (
@@ -1706,6 +2036,13 @@ export function BrainGlobe({
       data-zoom={frame.ez.toFixed(3)}
       data-split={es.toFixed(3)}
       data-picked={pickedChildId ?? ''}
+      /* V1.8 VB-48. Which tier is showing, which file's solid is on the stage,
+         and how far between the two the camera has got. Published for the same
+         reason the zoom and the split are: the stylesheet reads it, and so does
+         a test that has to know what it is looking at. */
+      data-tier={tierShown}
+      data-file={workEnabled ? file : ''}
+      data-tier-clock={et.toFixed(3)}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={endDrag}
@@ -1746,218 +2083,344 @@ export function BrainGlobe({
 
         <rect className="brainglobe-field" x="-100" y="-100" width="200" height="200" fill={`url(#${uid}-field)`} />
 
-        <g className="brainglobe-scene" transform={frame.transform}>
-          {/* Edges first, whole. Two lines each, and V1.5 VB-25 is the reason
-              they are two rather than one: the base is the STRUCT — drawn at
-              full weight whatever its ends are doing, because the model is a
-              real object from question one — and the near line is the LIGHT,
-              whose opacity is depth multiplied by what core/globe/illumination
-              says both endpoints are worth. Illumination therefore spreads
-              along the structure as sections fill in, instead of appearing
-              node by node. */}
-          <g className="brainglobe-edges" opacity={(1 - frame.ez * 0.92).toFixed(3)}>
-            {ICOSAHEDRON_EDGES.map(([a, b], i) => {
-              const na = frame.nodes[a]!;
-              const nb = frame.nodes[b]!;
-              const t = (na.t + nb.t) / 2;
-              const width = EDGE_W_MIN + t * EDGE_W_SPAN;
-              const light = edgeLight(lightByVertex.get(a)!, lightByVertex.get(b)!);
-              const level = EDGE_LIGHT_LEVEL[light];
-              return (
-                <g key={i} data-edge={`${a}-${b}`} data-edge-light={light}>
-                  <line
-                    className="brainglobe-edge-far"
-                    x1={na.x}
-                    y1={na.y}
-                    x2={nb.x}
-                    y2={nb.y}
-                    strokeWidth={width.toFixed(2)}
-                    strokeOpacity={(EDGE_BASE_OPACITY_MIN + t * EDGE_BASE_OPACITY_SPAN).toFixed(3)}
-                    strokeLinecap="round"
-                  />
-                  <line
-                    className="brainglobe-edge-near"
-                    x1={na.x}
-                    y1={na.y}
-                    x2={nb.x}
-                    y2={nb.y}
-                    strokeWidth={width.toFixed(2)}
-                    strokeOpacity={(t ** 1.6 * EDGE_LIT_OPACITY * level).toFixed(3)}
-                    strokeLinecap="round"
-                  />
-                </g>
-              );
-            })}
-          </g>
+        {/*
+          V1.8 VB-48 — THE WORK BRAIN: the files, as a network of their own.
 
-          {/* Painter's algorithm: back to front, so a near sphere and its
-              bloom cover the far ones rather than the other way round. */}
-          <g className="brainglobe-nodes">
-            {frame.order.map((vertexIndex) => {
-              const node = frame.nodes[vertexIndex]!;
-              const entry = sectionByVertex.get(vertexIndex);
-              const gradient = gradientFor(vertexIndex);
-              const state = entry ? stateOf(entry.section) : 'reached';
-              const structural = !entry;
-              // V1.8 VB-46: what makes an orb lit is `sectionLife`, the rule
-              // the List's rows read too — never a second test here.
-              const life = entry ? lifeOf(entry.section) : 'lit';
-              const lit = !structural && sectionIsLit(life);
-              /**
-               * V1.5 VB-24. Not "no orb" — a turned-down one.
-               *
-               * The two structural vertices are muted always. They carry no
-               * section, so they can never be answered, and drawing them at
-               * full saturation made the poles the brightest things on an empty
-               * stage — the picture claiming progress where there is none. They
-               * still join the unified glow, because at that point the whole
-               * solid is one object and they are part of it.
-               */
-              const muted = !lit;
-              const isCentre = flownIndex !== null && entry?.index === flownIndex;
-              const fade = flownIndex !== null && !isCentre ? 1 - frame.ez * 0.86 : 1;
-              // The centre orb is the cluster's parent, so it leaves with the
-              // rest of the cluster when a sub-node takes the stage.
-              const splitFade = isCentre ? 1 - es : 1;
-              /** V1.4 VB-23: hierarchy by size. The section flown into grows to
-               * a fixed on-screen CENTRE_R rather than keeping whatever radius
-               * its own depth gave it — see CENTRE_R. Divided by the scene
-               * scale because this radius is drawn inside the scene group. */
-              const radius = structural
-                ? node.radius * 0.62
-                : isCentre
-                  ? centreR / frame.sceneScale
-                  : muted
-                    ? node.radius * MUTED_R_SCALE
-                    : node.radius;
+          Drawn first, so the solid that grows out of one of them paints over
+          the joints rather than under them. It is the same object language one
+          level up — orbs and edges, lit by the same rule
+          (core/globe/illumination.ts) — because the work brain IS a brain, and
+          a different vocabulary here would make the two tiers look like two
+          pictures rather than one thing at two distances.
 
-              return (
-                <g
-                  key={vertexIndex}
-                  className="brainglobe-node"
-                  data-node-index={vertexIndex}
-                  data-section-id={entry?.section.id ?? ''}
-                  data-node-state={structural ? 'structural' : state}
-                  data-node-life={structural ? 'structural' : life}
-                  data-depth={node.t.toFixed(3)}
-                  opacity={((structural ? 0.34 : 0.62 + node.t * 0.38) * fade * splitFade).toFixed(3)}
-                >
-                  {lit && (
-                    <circle
-                      className="brainglobe-bloom"
-                      cx={node.x}
-                      cy={node.y}
-                      r={(radius * BLOOM_SCALE).toFixed(2)}
-                      fill={`url(#${uid}-b${gradient})`}
-                      opacity={(0.25 + node.t * 0.75).toFixed(3)}
+          The file that has content is not in this loop: it is the solid itself,
+          shrunk into its node by the camera below. That is the whole idea of
+          VB-48 rather than a drawing of it.
+        */}
+        {workEnabled && workFade > WORK_NODE_GONE && (
+          <g className="brainglobe-work" opacity={workFade.toFixed(3)}>
+            <g className="brainglobe-work-edges">
+              {workEdges(workFiles.length).map(([a, b]) => {
+                const from = workNodePosition(a, workFiles.length);
+                const to = workNodePosition(b, workFiles.length);
+                const light = edgeLight(workNodeState(workFiles[a]!), workNodeState(workFiles[b]!));
+                /* TRIMMED TO BOTH RIMS, exactly as V1.4's joints are, and for
+                   the same reason: a line that runs to a node's centre crosses
+                   the node, and three lines crossing three files read as a
+                   triangle drawn over them rather than as three things joined.
+                   The Context end is trimmed by the SOLID's own radius, so the
+                   joint meets the mini brain's silhouette however it is turned.
+                   Found by screenshot — the untrimmed version cut straight
+                   through both dashed shells. */
+                const radiusOf = (index: number) =>
+                  (index === fileIndex ? solidR * camera.scale : WORK_NODE_R) + WORK_LINK_GAP;
+                const dx = to.x - from.x;
+                const dy = to.y - from.y;
+                const length = Math.hypot(dx, dy) || 1;
+                const ux = dx / length;
+                const uy = dy / length;
+                const x1 = from.x + ux * radiusOf(a);
+                const y1 = from.y + uy * radiusOf(a);
+                const x2 = to.x - ux * radiusOf(b);
+                const y2 = to.y - uy * radiusOf(b);
+                // Two nodes so close that the trim would invert simply have no
+                // gap to draw a joint in.
+                if (radiusOf(a) + radiusOf(b) >= length) return null;
+                return (
+                  <g key={`${a}-${b}`} data-edge={`${a}-${b}`} data-edge-light={light}>
+                    <line
+                      className="brainglobe-edge-far"
+                      x1={x1.toFixed(2)}
+                      y1={y1.toFixed(2)}
+                      x2={x2.toFixed(2)}
+                      y2={y2.toFixed(2)}
+                      strokeWidth="1.6"
+                      strokeOpacity="0.3"
+                      strokeLinecap="round"
                     />
-                  )}
-                  {life === 'live' && !structural && (
-                    // VB-23: the halo goes on the way in. Hierarchy inside a
-                    // section comes from size, and a ring around the largest
-                    // thing on the stage repeats what the size already said.
-                    // Out here, among ten equal siblings, it is still the only
-                    // shape that marks the section being written now.
-                    <circle
-                      className="brainglobe-halo"
-                      cx={node.x}
-                      cy={node.y}
-                      r={(radius + 3.4).toFixed(2)}
-                      fill="none"
-                      strokeWidth={(0.8 + node.t * 0.9).toFixed(2)}
-                      opacity={(isCentre ? 1 - frame.ez : 1).toFixed(3)}
-                    />
-                  )}
-                  {/* One flat fill — a solid orb, not a shaded bead (VB-23) —
-                      and V1.5 VB-24: EVERY node is one, answered or not. The
-                      unanswered one is the same object turned down: its own
-                      hue at `node-N-muted`, no bloom behind it, the hollow
-                      ring's old footprint. Depth is carried by the radius
-                      above, by the group's opacity, and by the shade below,
-                      which sinks a muted orb less far so it stays an object at
-                      the back of the solid. */}
-                  <g className="brainglobe-orb" data-lit={muted ? 'muted' : 'lit'}>
-                    <circle
-                      className={`brainglobe-sphere ${muted ? `brainglobe-muted-${gradient}` : `brainglobe-solid-${gradient}`}`}
-                      cx={node.x}
-                      cy={node.y}
-                      r={radius.toFixed(2)}
-                    />
-                    <circle
-                      className={`brainglobe-shade brainglobe-deep-${gradient}`}
-                      cx={node.x}
-                      cy={node.y}
-                      r={radius.toFixed(2)}
-                      opacity={((1 - node.t) * (muted ? MUTED_SHADE_DEPTH : SHADE_DEPTH)).toFixed(3)}
+                    <line
+                      className="brainglobe-edge-near"
+                      x1={x1.toFixed(2)}
+                      y1={y1.toFixed(2)}
+                      x2={x2.toFixed(2)}
+                      y2={y2.toFixed(2)}
+                      strokeWidth="1.6"
+                      strokeOpacity={(EDGE_LIT_OPACITY * EDGE_LIGHT_LEVEL[light]).toFixed(3)}
+                      strokeLinecap="round"
                     />
                   </g>
+                );
+              })}
+            </g>
+            {workFiles.map((item, index) => {
+              if (index === fileIndex) return null;
+              const at = workNodePosition(index, workFiles.length);
+              const gradient = childNodeGradient(index);
+              const locked = !!item.lock;
+              return (
+                <g
+                  className="brainglobe-file-node"
+                  key={item.id}
+                  data-file-id={item.id}
+                  data-locked={locked ? 'true' : 'false'}
+                >
+                  {!locked && (
+                    <circle
+                      className="brainglobe-bloom"
+                      cx={at.x.toFixed(2)}
+                      cy={at.y.toFixed(2)}
+                      r={(WORK_NODE_R * BLOOM_SCALE).toFixed(2)}
+                      fill={`url(#${uid}-b${gradient})`}
+                      opacity="0.5"
+                    />
+                  )}
+                  {/* AN EMPTY FILE IS AN EMPTY SHELL, and that is a SHAPE. A
+                      locked node is an open dashed rim with nothing inside it;
+                      a built one is a filled orb. Brightness is the third cue
+                      and never the only one — the node also carries a padlock
+                      in the overlay and says "Locked" plus what unlocks it in
+                      its own name (docs/GUARDRAILS.md: nothing by colour
+                      alone). */}
+                  <circle
+                    className={locked ? 'brainglobe-file-shell' : `brainglobe-sphere brainglobe-solid-${gradient}`}
+                    cx={at.x.toFixed(2)}
+                    cy={at.y.toFixed(2)}
+                    r={WORK_NODE_R}
+                  />
                 </g>
               );
             })}
           </g>
-        </g>
+        )}
 
-        {/* Children live outside the scene transform: the section they belong
-            to has already been walked to the origin, so they ring the origin
-            and never inherit the camera push twice. */}
-        <g className="brainglobe-children-layer">
-          {/* V1.4 VB-23 — the joints. Drawn before the orbs and trimmed to
-              both rims by the real radii, so a line is the gap between two
-              orbs rather than a spoke crossing them. They fade out with the
-              rest of the cluster when the stage splits. */}
-          <g className="brainglobe-links">
-            {childLayout.map(({ child, progress, ringX, ringY, ringR, fade }) => {
-              if (progress <= 0) return null;
-              const dx = ringX - originX;
-              const dy = ringY - originY;
-              const length = Math.hypot(dx, dy);
-              // Still inside the centre orb: there is no gap to draw yet.
-              if (length <= centreR + ringR) return null;
-              const ux = dx / length;
-              const uy = dy / length;
-              return (
-                <line
-                  key={child.id}
-                  className="brainglobe-link"
-                  data-link-id={child.id}
-                  x1={(originX + ux * centreR).toFixed(2)}
-                  y1={(originY + uy * centreR).toFixed(2)}
-                  x2={(ringX - ux * ringR).toFixed(2)}
-                  y2={(ringY - uy * ringR).toFixed(2)}
-                  strokeWidth={LINK_WIDTH}
-                  strokeOpacity={(progress * LINK_OPACITY * (1 - es)).toFixed(3)}
-                  strokeLinecap="round"
-                  opacity={fade.toFixed(3)}
-                />
-              );
-            })}
+        {/*
+          V1.8 VB-48 — the tier camera, and everything below it is untouched.
+
+          `translate(x y) scale(k)`, which maps a point p to `x + k·p`: at the
+          work tier the whole file is drawn at a third of its size, centred on
+          its own node; at the file tier it is `translate(0 0) scale(1)`, the
+          identity. Wrapped around the scene rather than folded into it, so the
+          fly-in's camera, the split, the summaries, the detail band and the
+          drawer's morph all keep measuring in the coordinates they were written
+          in (see this file's header, and core/globe/workBrain.ts).
+        */}
+        <g
+          className="brainglobe-tier"
+          transform={`translate(${camera.x.toFixed(3)} ${camera.y.toFixed(3)}) scale(${camera.scale.toFixed(4)})`}
+        >
+          <g className="brainglobe-scene" transform={frame.transform}>
+            {/* Edges first, whole. Two lines each, and V1.5 VB-25 is the reason
+                they are two rather than one: the base is the STRUCT — drawn at
+                full weight whatever its ends are doing, because the model is a
+                real object from question one — and the near line is the LIGHT,
+                whose opacity is depth multiplied by what core/globe/illumination
+                says both endpoints are worth. Illumination therefore spreads
+                along the structure as sections fill in, instead of appearing
+                node by node. */}
+            <g className="brainglobe-edges" opacity={(1 - frame.ez * 0.92).toFixed(3)}>
+              {ICOSAHEDRON_EDGES.map(([a, b], i) => {
+                const na = frame.nodes[a]!;
+                const nb = frame.nodes[b]!;
+                const t = (na.t + nb.t) / 2;
+                const width = EDGE_W_MIN + t * EDGE_W_SPAN;
+                const light = edgeLight(lightByVertex.get(a)!, lightByVertex.get(b)!);
+                const level = EDGE_LIGHT_LEVEL[light];
+                return (
+                  <g key={i} data-edge={`${a}-${b}`} data-edge-light={light}>
+                    <line
+                      className="brainglobe-edge-far"
+                      x1={na.x}
+                      y1={na.y}
+                      x2={nb.x}
+                      y2={nb.y}
+                      strokeWidth={width.toFixed(2)}
+                      strokeOpacity={(EDGE_BASE_OPACITY_MIN + t * EDGE_BASE_OPACITY_SPAN).toFixed(3)}
+                      strokeLinecap="round"
+                    />
+                    <line
+                      className="brainglobe-edge-near"
+                      x1={na.x}
+                      y1={na.y}
+                      x2={nb.x}
+                      y2={nb.y}
+                      strokeWidth={width.toFixed(2)}
+                      strokeOpacity={(t ** 1.6 * EDGE_LIT_OPACITY * level).toFixed(3)}
+                      strokeLinecap="round"
+                    />
+                  </g>
+                );
+              })}
+            </g>
+
+            {/* Painter's algorithm: back to front, so a near sphere and its
+                bloom cover the far ones rather than the other way round. */}
+            <g className="brainglobe-nodes">
+              {frame.order.map((vertexIndex) => {
+                const node = frame.nodes[vertexIndex]!;
+                const entry = sectionByVertex.get(vertexIndex);
+                const gradient = gradientFor(vertexIndex);
+                const state = entry ? stateOf(entry.section) : 'reached';
+                const structural = !entry;
+                // V1.8 VB-46: what makes an orb lit is `sectionLife`, the rule
+                // the List's rows read too — never a second test here.
+                const life = entry ? lifeOf(entry.section) : 'lit';
+                const lit = !structural && sectionIsLit(life);
+                /**
+                 * V1.5 VB-24. Not "no orb" — a turned-down one.
+                 *
+                 * The two structural vertices are muted always. They carry no
+                 * section, so they can never be answered, and drawing them at
+                 * full saturation made the poles the brightest things on an empty
+                 * stage — the picture claiming progress where there is none. They
+                 * still join the unified glow, because at that point the whole
+                 * solid is one object and they are part of it.
+                 */
+                const muted = !lit;
+                const isCentre = flownIndex !== null && entry?.index === flownIndex;
+                const fade = flownIndex !== null && !isCentre ? 1 - frame.ez * 0.86 : 1;
+                // The centre orb is the cluster's parent, so it leaves with the
+                // rest of the cluster when a sub-node takes the stage.
+                const splitFade = isCentre ? 1 - es : 1;
+                /** V1.4 VB-23: hierarchy by size. The section flown into grows to
+                 * a fixed on-screen CENTRE_R rather than keeping whatever radius
+                 * its own depth gave it — see CENTRE_R. Divided by the scene
+                 * scale because this radius is drawn inside the scene group. */
+                const radius = structural
+                  ? node.radius * 0.62
+                  : isCentre
+                    ? centreR / frame.sceneScale
+                    : muted
+                      ? node.radius * MUTED_R_SCALE
+                      : node.radius;
+
+                return (
+                  <g
+                    key={vertexIndex}
+                    className="brainglobe-node"
+                    data-node-index={vertexIndex}
+                    data-section-id={entry?.section.id ?? ''}
+                    data-node-state={structural ? 'structural' : state}
+                    data-node-life={structural ? 'structural' : life}
+                    data-depth={node.t.toFixed(3)}
+                    opacity={((structural ? 0.34 : 0.62 + node.t * 0.38) * fade * splitFade).toFixed(3)}
+                  >
+                    {lit && (
+                      <circle
+                        className="brainglobe-bloom"
+                        cx={node.x}
+                        cy={node.y}
+                        r={(radius * BLOOM_SCALE).toFixed(2)}
+                        fill={`url(#${uid}-b${gradient})`}
+                        opacity={(0.25 + node.t * 0.75).toFixed(3)}
+                      />
+                    )}
+                    {life === 'live' && !structural && (
+                      // VB-23: the halo goes on the way in. Hierarchy inside a
+                      // section comes from size, and a ring around the largest
+                      // thing on the stage repeats what the size already said.
+                      // Out here, among ten equal siblings, it is still the only
+                      // shape that marks the section being written now.
+                      <circle
+                        className="brainglobe-halo"
+                        cx={node.x}
+                        cy={node.y}
+                        r={(radius + 3.4).toFixed(2)}
+                        fill="none"
+                        strokeWidth={(0.8 + node.t * 0.9).toFixed(2)}
+                        opacity={(isCentre ? 1 - frame.ez : 1).toFixed(3)}
+                      />
+                    )}
+                    {/* One flat fill — a solid orb, not a shaded bead (VB-23) —
+                        and V1.5 VB-24: EVERY node is one, answered or not. The
+                        unanswered one is the same object turned down: its own
+                        hue at `node-N-muted`, no bloom behind it, the hollow
+                        ring's old footprint. Depth is carried by the radius
+                        above, by the group's opacity, and by the shade below,
+                        which sinks a muted orb less far so it stays an object at
+                        the back of the solid. */}
+                    <g className="brainglobe-orb" data-lit={muted ? 'muted' : 'lit'}>
+                      <circle
+                        className={`brainglobe-sphere ${muted ? `brainglobe-muted-${gradient}` : `brainglobe-solid-${gradient}`}`}
+                        cx={node.x}
+                        cy={node.y}
+                        r={radius.toFixed(2)}
+                      />
+                      <circle
+                        className={`brainglobe-shade brainglobe-deep-${gradient}`}
+                        cx={node.x}
+                        cy={node.y}
+                        r={radius.toFixed(2)}
+                        opacity={((1 - node.t) * (muted ? MUTED_SHADE_DEPTH : SHADE_DEPTH)).toFixed(3)}
+                      />
+                    </g>
+                  </g>
+                );
+              })}
+            </g>
           </g>
-          {childLayout.map(({ child, progress, x, y, radius, gradient, fade, picked }) =>
-            progress <= 0 ? null : (
-              <g
-                key={child.id}
-                className="brainglobe-child-node"
-                data-child-id={child.id}
-                data-picked={picked ? 'true' : 'false'}
-                opacity={(progress * fade).toFixed(3)}
-              >
-                <circle
-                  className="brainglobe-bloom"
-                  cx={x}
-                  cy={y}
-                  r={(radius * BLOOM_SCALE).toFixed(2)}
-                  fill={`url(#${uid}-b${gradient})`}
-                  opacity={(progress * 0.8).toFixed(3)}
-                />
-                <circle
-                  className={`brainglobe-sphere brainglobe-solid-${gradient}`}
-                  cx={x}
-                  cy={y}
-                  r={radius.toFixed(2)}
-                />
-              </g>
-            ),
-          )}
+
+          {/* Children live outside the scene transform: the section they belong
+              to has already been walked to the origin, so they ring the origin
+              and never inherit the camera push twice. */}
+          <g className="brainglobe-children-layer">
+            {/* V1.4 VB-23 — the joints. Drawn before the orbs and trimmed to
+                both rims by the real radii, so a line is the gap between two
+                orbs rather than a spoke crossing them. They fade out with the
+                rest of the cluster when the stage splits. */}
+            <g className="brainglobe-links">
+              {childLayout.map(({ child, progress, ringX, ringY, ringR, fade }) => {
+                if (progress <= 0) return null;
+                const dx = ringX - originX;
+                const dy = ringY - originY;
+                const length = Math.hypot(dx, dy);
+                // Still inside the centre orb: there is no gap to draw yet.
+                if (length <= centreR + ringR) return null;
+                const ux = dx / length;
+                const uy = dy / length;
+                return (
+                  <line
+                    key={child.id}
+                    className="brainglobe-link"
+                    data-link-id={child.id}
+                    x1={(originX + ux * centreR).toFixed(2)}
+                    y1={(originY + uy * centreR).toFixed(2)}
+                    x2={(ringX - ux * ringR).toFixed(2)}
+                    y2={(ringY - uy * ringR).toFixed(2)}
+                    strokeWidth={LINK_WIDTH}
+                    strokeOpacity={(progress * LINK_OPACITY * (1 - es)).toFixed(3)}
+                    strokeLinecap="round"
+                    opacity={fade.toFixed(3)}
+                  />
+                );
+              })}
+            </g>
+            {childLayout.map(({ child, progress, x, y, radius, gradient, fade, picked }) =>
+              progress <= 0 ? null : (
+                <g
+                  key={child.id}
+                  className="brainglobe-child-node"
+                  data-child-id={child.id}
+                  data-picked={picked ? 'true' : 'false'}
+                  opacity={(progress * fade).toFixed(3)}
+                >
+                  <circle
+                    className="brainglobe-bloom"
+                    cx={x}
+                    cy={y}
+                    r={(radius * BLOOM_SCALE).toFixed(2)}
+                    fill={`url(#${uid}-b${gradient})`}
+                    opacity={(progress * 0.8).toFixed(3)}
+                  />
+                  <circle
+                    className={`brainglobe-sphere brainglobe-solid-${gradient}`}
+                    cx={x}
+                    cy={y}
+                    r={radius.toFixed(2)}
+                  />
+                </g>
+              ),
+            )}
+          </g>
         </g>
       </svg>
 
@@ -1966,7 +2429,11 @@ export function BrainGlobe({
       <div
         className="brainglobe-pins"
         role="group"
-        aria-label={S.brainGlobeStage}
+        /* V1.8 VB-48. The stage is a different thing at each tier and says so:
+           the files, or one file. The words are `strings.ts`'s and the pair is
+           deliberate — "Your work brain" is the product's own phrase for the
+           set of files, and it is what Home calls the same thing. */
+        aria-label={tierShown === 'work' ? S.workBrainStage : S.brainGlobeStage}
         // V1.5 VB-25. The unified glow is a colour, and a colour says nothing
         // to a screen reader — so when it is true, the same fact is said in one
         // plain sentence below. A description and never a live announcement:
@@ -1986,16 +2453,28 @@ export function BrainGlobe({
             // the other nine's names down with their spheres, so the one you
             // are inside is the only thing left to read.
             const labelFade = flownIndex !== null && !isFlown ? 1 - frame.ez * 0.95 : 1;
-            const labelOpacity = (LABEL_OPACITY_MIN + node.t * (1 - LABEL_OPACITY_MIN)) * labelFade * (isFlown ? 1 - es : 1);
-            const left = pct(node.lx);
+            // V1.8 VB-48. The names of ten sections crammed over a solid drawn
+            // at a third of its size is a smudge, so they arrive with the
+            // camera: the tier's own clock is a multiplier here, and at the
+            // file tier it is 1 and changes nothing. SQUARED, because linear
+            // put them at three-quarters opacity a third of the way in, where
+            // the solid is still small enough for two of them to collide —
+            // seen in a screenshot of the transition, not reasoned about.
+            const labelOpacity =
+              (LABEL_OPACITY_MIN + node.t * (1 - LABEL_OPACITY_MIN)) * labelFade * (isFlown ? 1 - es : 1) * et * et;
+            // V1.8 VB-48. The overlay cannot inherit an SVG transform, so it
+            // goes through the same camera the picture does — one function,
+            // core/globe/workBrain.ts's, called by both layers.
+            const at = onStage(node.lx, node.ly);
+            const left = pct(at.x);
             // The hit target — and therefore where the label sits — follows the
             // orb whenever the orb is bigger than the 44px floor. Without this
             // the centre orb grew to 93px at VB-23's CENTRE_R and its own name
             // was printed across the middle of it.
-            const orbPx = ((isFlown ? centreR : node.radius * frame.sceneScale) * size) / 100;
+            const orbPx = ((isFlown ? centreR : node.radius * frame.sceneScale) * camera.scale * size) / 100;
             const style = {
               left: `${left}%`,
-              top: `${pct(node.ly)}%`,
+              top: `${pct(at.y)}%`,
               '--brainglobe-hit-size': `${orbPx.toFixed(1)}px`,
               '--brainglobe-label-opacity': visible ? labelOpacity.toFixed(3) : '0',
               '--brainglobe-label-size': `${(LABEL_SIZE_MIN + node.t * LABEL_SIZE_SPAN).toFixed(1)}px`,
@@ -2023,7 +2502,14 @@ export function BrainGlobe({
                 // the stage: its orb has faded out, and a control nobody can
                 // see is not a control. The way back is the sub-node itself,
                 // Escape, or the button below that says so in words.
-                hidden={inside && (!isFlown || pickedChildId !== null)}
+                //
+                // V1.8 VB-48: and the whole set goes at the work tier, where
+                // the solid is one node among the files. It is keyed to the
+                // TIER and not to the tier's clock, so the sections are
+                // reachable the moment the camera starts moving in — which is
+                // what lets focus land on one instead of falling to the body
+                // when the file node that was pressed disappears.
+                hidden={tierShown === 'work' || (inside && (!isFlown || pickedChildId !== null))}
                 tabIndex={entry.index === activeIndex ? 0 : -1}
                 aria-pressed={isFlown}
                 // V1.5 VB-26. The name is the SHORT one — the words actually
@@ -2128,18 +2614,21 @@ export function BrainGlobe({
               title={child.label}
               style={
                 {
-                  left: `${pct(x)}%`,
-                  top: `${pct(y)}%`,
+                  // Through the tier camera, like every other control on this
+                  // stage (V1.8 VB-48). At the file tier — the only tier a
+                  // sub-node can be on screen at — that is the identity.
+                  left: `${pct(onStage(x, y).x)}%`,
+                  top: `${pct(onStage(x, y).y)}%`,
                   // The hit target grows with the orb once it is featured, so
                   // the whole of a 60px circle answers a click rather than a
                   // 44px square in the middle of it. `max()` in the stylesheet
                   // keeps the 44px floor whatever this says.
-                  '--brainglobe-hit-size': `${((radius * size) / 100).toFixed(1)}px`,
+                  '--brainglobe-hit-size': `${((radius * camera.scale * size) / 100).toFixed(1)}px`,
                   '--brainglobe-label-opacity': (progress * (picked ? 1 - es : 1)).toFixed(3),
                   '--brainglobe-label-size': `${LABEL_SIZE_MIN - 0.5}px`,
                   '--brainglobe-label-weight': '550',
-                  '--brainglobe-label-shift': labelPlacement(pct(x)).shift,
-                  '--brainglobe-label-room': labelPlacement(pct(x)).room,
+                  '--brainglobe-label-shift': labelPlacement(pct(onStage(x, y).x)).shift,
+                  '--brainglobe-label-room': labelPlacement(pct(onStage(x, y).x)).room,
                 } as CSSProperties
               }
               onClick={(event) => {
@@ -2177,6 +2666,95 @@ export function BrainGlobe({
             </button>
           ),
         )}
+
+        {/*
+          V1.8 VB-48 — THE FILE NODES, as real controls.
+
+          Three ordinary tab stops rather than the roving tabindex the ten
+          section pins use, and that difference is deliberate: the roving one
+          exists because ten nodes that each spin a globe make tabbing past the
+          drawer intolerable (decision 3 in the header). Three stops that move
+          nothing when they are reached are not that problem, and a plain tab
+          order is what somebody expects of three files side by side.
+
+          NOT MOUNTED AT THE FILE TIER AT ALL, rather than mounted and hidden.
+          The sections you have flown away from can afford `hidden` — they come
+          back within one gesture and the pins are measured by the morph — but
+          a control that is out of reach for as long as somebody is inside a
+          file is a control that should not be in the drawer's markup. It is
+          also what tests/e2e/file-tree.a11y.spec.ts asks for in as many words:
+          every button the drawer adds has a box and clears 44×44.
+        */}
+        {workEnabled &&
+          tierShown === 'work' &&
+          workFiles.map((item, index) => {
+            const home = workNodePosition(index, workFiles.length);
+            const isSolid = index === fileIndex;
+            const locked = !!item.lock;
+            // The file that holds the solid is as big as the solid is; the rest
+            // are their own radius. Both go through the camera, so the hit
+            // target sits on the node at every frame of the flight.
+            const at = onStage(0, 0);
+            const centre = isSolid ? { x: at.x, y: at.y } : home;
+            const radius = isSolid ? solidR * camera.scale : WORK_NODE_R;
+            const left = pct(centre.x);
+            return (
+              <button
+                key={item.id}
+                type="button"
+                ref={(el) => {
+                  if (el) fileRefs.current.set(item.id, el);
+                  else fileRefs.current.delete(item.id);
+                }}
+                className="brainglobe-pin is-file"
+                data-file-id={item.id}
+                data-locked={locked ? 'true' : 'false'}
+                data-solid={isSolid ? 'true' : 'false'}
+                aria-pressed={isSolid}
+                // Not `disabled`: a locked file still has something to say, and
+                // a disabled control is unreachable by keyboard, so its sentence
+                // would be too. `aria-disabled` says the same to assistive tech
+                // while leaving it focusable — and pressing it moves nothing,
+                // because `chooseNav` refuses. Identical to the drawer's toggle,
+                // on purpose (components/FileTypeToggle.tsx).
+                {...(locked ? { 'aria-disabled': true } : {})}
+                // The whole truth, spoken on focus: the file, that it is locked,
+                // and what unlocks it — the same sentence the toggle and the
+                // shelf say, from the same fold.
+                aria-label={
+                  item.lock
+                    ? S.fileToggleLockedName(fileName(item.id), lockLine(item.lock))
+                    : S.brainGlobeNode(fileName(item.id), S.workBrainOpen)
+                }
+                title={fileName(item.id)}
+                style={
+                  {
+                    left: `${left}%`,
+                    top: `${pct(centre.y)}%`,
+                    '--brainglobe-hit-size': `${((radius * size) / 100).toFixed(1)}px`,
+                    '--brainglobe-label-opacity': (isSolid ? 1 : workFade).toFixed(3),
+                    '--brainglobe-label-size': `${LABEL_SIZE_MIN + LABEL_SIZE_SPAN / 2}px`,
+                    '--brainglobe-label-weight': '650',
+                    '--brainglobe-label-shift': labelPlacement(left).shift,
+                    '--brainglobe-label-room': labelPlacement(left).room,
+                  } as CSSProperties
+                }
+                onClick={() => {
+                  if (draggedRef.current) return;
+                  pressFile(item.id);
+                }}
+              >
+                <span className="brainglobe-hit" aria-hidden="true" />
+                <span className="brainglobe-label" aria-hidden="true">
+                  {/* The padlock, at the same 12px the toggle's segments draw
+                      it — one glyph, one place (components/FileTypeToggle.tsx),
+                      so the two surfaces cannot end up with two padlocks. */}
+                  {locked && <LockGlyph />}
+                  {fileName(item.id)}
+                </span>
+              </button>
+            );
+          })}
       </div>
 
       {/*
@@ -2259,9 +2837,40 @@ export function BrainGlobe({
         </button>
       )}
 
-      {/* Said once, to whoever needs it, and never printed on the picture. */}
+      {/*
+        V1.8 VB-48 — the way back out of the file.
+
+        In the same corner as `Back to the whole file` and never on screen at
+        the same time as it: the two are rungs of one ladder, and the one being
+        offered is always the next step out from where you are. Escape does the
+        same thing, in the same order, for anyone who never reaches for it.
+      */}
+      {workEnabled && tierShown === 'file' && !inside && (
+        <button type="button" className="brainglobe-back is-out" onClick={goWork}>
+          {S.workBrainBack}
+        </button>
+      )}
+
+      {/*
+        V1.8 VB-48 — what a locked file is waiting for, printed.
+
+        The drawer's toggle prints this line under its strip and Home prints it
+        in the row; the globe prints it under the stage. One sentence, from one
+        fold (core/files/toggle.ts), on all three surfaces — a locked file that
+        said three different things would be three different products.
+      */}
+      {workEnabled && explaining?.lock && tierShown === 'work' && (
+        <p className="brainglobe-locknote">
+          {S.fileToggleLockedNote(fileName(explaining.id), lockLine(explaining.lock))}
+        </p>
+      )}
+
+      {/* Said once, to whoever needs it, and never printed on the picture.
+          V1.8 VB-48: what there is to do differs by tier, so what it says does
+          — the arrows step between sections down there and there is nothing to
+          step between up here. */}
       <p className="brainglobe-sr" id={`${uid}-help`}>
-        {S.brainGlobeHelp}
+        {tierShown === 'work' ? S.workBrainHelp : S.brainGlobeHelp}
       </p>
       {unified && (
         <p className="brainglobe-sr" id={`${uid}-state`}>

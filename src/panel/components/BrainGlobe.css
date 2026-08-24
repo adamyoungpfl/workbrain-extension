@@ -536,6 +536,17 @@
   cursor: pointer;
 }
 
+/* `display: inline-flex` above out-specifies the UA stylesheet's
+   `[hidden] { display: none }` — an author rule beats a UA rule at equal
+   specificity — so without this line the `hidden` attribute on these buttons
+   would draw nothing at all. Exactly the bug `.brainglobe-pin[hidden]` fixes a
+   few rules up, found again by V1.8 VB-48, whose way out of a file is hidden
+   for as long as somebody is at the work tier rather than for a frame of a
+   transition. */
+.brainglobe-back[hidden] {
+  display: none;
+}
+
 .brainglobe-back:hover {
   border-color: var(--globe-focus);
 }
@@ -543,6 +554,74 @@
 .brainglobe-back:focus-visible {
   outline: 2px solid var(--globe-focus);
   outline-offset: 2px;
+}
+
+/* ── V1.8 VB-48 — the work brain, one level above a file ─────────────────── */
+
+/* AN EMPTY FILE IS AN EMPTY SHELL. A file that does not exist yet is an open
+   dashed rim with nothing inside it, against the filled orb a built file wears.
+   That is a SHAPE, which is the point: it survives greyscale, it survives a
+   screenshot, and it is the same "outline means not yet, fill means real"
+   convention the panel's own locked rows use (components/FileRow.css). The
+   padlock in the label and the sentence under the stage are the second and
+   third signals — nothing here is distinguished by colour alone
+   (docs/GUARDRAILS.md).
+
+   `--globe-edge` rather than a node colour: an empty file has no hue of its
+   own, because it has nothing in it to be lit by. */
+.brainglobe-file-shell {
+  fill: none;
+  stroke: var(--globe-edge);
+  stroke-width: 1.6;
+  stroke-dasharray: 4 3.4;
+  stroke-linecap: round;
+}
+
+/* The file nodes' labels are FILE NAMES, so they keep their own capitals.
+   Everything else about the treatment is the globe's (`type.label`, scaled) —
+   this is one exception for one reason: "CONTEXT.MD" is not what the file is
+   called, and a name the person has to translate back is not a name. */
+.brainglobe-pin.is-file .brainglobe-label {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  text-transform: none;
+  letter-spacing: 0.01em;
+  padding-left: 0;
+  /* The hit box ends exactly on the node's rim, so without this the name sits
+     against the shell it belongs to. 4px is the smallest gap that reads as
+     "under it" rather than "attached to it" at 260px. */
+  margin-top: 4px;
+}
+
+/* A locked file's own label is turned down to match the shell it sits under —
+   and carries the padlock, which is what actually says it. */
+.brainglobe-pin.is-file[data-locked='true'] .brainglobe-label {
+  color: var(--globe-detail-key);
+}
+
+.brainglobe-pin.is-file .filetypes-lock {
+  flex: none;
+  opacity: 0.9;
+}
+
+/* What a locked file is waiting for, printed under the stage. The same sentence
+   the drawer's toggle prints and the same one Home's shelf prints — one fold,
+   three surfaces (core/files/toggle.ts). */
+.brainglobe-locknote {
+  position: absolute;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  margin: 0;
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.4;
+  text-align: center;
+  color: var(--globe-detail-key);
+  pointer-events: none;
+  text-shadow: 0 1px 3px var(--globe-field), 0 0 8px var(--globe-field);
 }
 
 /* ── Said, never printed ─────────────────────────────────────────────────── */

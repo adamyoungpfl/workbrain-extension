@@ -1,0 +1,132 @@
+/* V1.8 VB-48 — the work brain as a list.
+
+   The same three files the globe draws as nodes, in the shape a list draws
+   them. Deliberately quieter than Home's shelf: this sits inside a drawer that
+   may be 130px tall, so the rows are compact rather than the 16px-padded cards
+   Home can afford. */
+
+.workshelf {
+  list-style: none;
+  margin: 0;
+  padding: 8px 0 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.workshelf-item {
+  margin: 0;
+}
+
+.workshelf-row {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: var(--target-min);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  background: var(--canvas);
+  text-align: left;
+  font-family: inherit;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.workshelf-row:hover {
+  border-color: var(--border-i);
+  box-shadow: var(--e-1);
+}
+
+.workshelf-row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* A file that is not built yet. IT DOES NOT DIM — the same finding
+   components/FileRow.css records: an opacity on the row drops the sentence
+   carrying "Finish Context.md first" below the contrast floor. So the locked
+   reading is carried by a dashed edge, a padlock and the sentence itself, and
+   the ink stays a real token (docs/GUARDRAILS.md — 4.5:1, and nothing by
+   colour alone). */
+.workshelf-row[data-locked='true'] {
+  border-style: dashed;
+  border-color: var(--border-i);
+  background: var(--surface);
+  cursor: default;
+}
+
+.workshelf-row[data-locked='true']:hover {
+  box-shadow: none;
+}
+
+.workshelf-icon {
+  flex: none;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: var(--r-sm);
+  background: var(--sunken);
+  color: var(--ink-2);
+}
+
+.workshelf-text {
+  display: block;
+  min-width: 0;
+}
+
+.workshelf-name {
+  display: block;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+}
+
+.workshelf-note {
+  display: block;
+  margin-top: 1px;
+  font-size: 12px;
+  color: var(--ink-2);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The way up: a 44px glyph at the left of the file strip, in the shape the
+   drawer's mode buttons already take (FileDrawer.css's `.filedrawer-mode`).
+   Its name is on the button, not printed — see WorkShelf.tsx for the
+   measurement that settled that, and note that the words themselves are the
+   globe's, so the two views say the same sentence. */
+.workshelf-up {
+  box-sizing: border-box;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--target-min);
+  height: var(--target-min);
+  padding: 0;
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  font-family: inherit;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+
+.workshelf-up:hover {
+  color: var(--ink);
+  background: var(--sunken);
+}
+
+.workshelf-up:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.workshelf-arrow {
+  flex: none;
+}

@@ -620,6 +620,39 @@ export const S = {
   fileToggleLabel: 'Which file',
   fileToggleLockedName: (file: string, reason: string) => `${file} — ${LOCKED}. ${reason}`,
   fileToggleLockedNote: (file: string, reason: string) => `${file} · ${reason}`,
+
+  /**
+   * V1.8 VB-48 — the work brain, one level above a file.
+   *
+   * SIX STRINGS, AND FOUR OF THEM ARE BORROWED. A file node is named with
+   * `fileContext` / `fileSkills` / `fileActions`; a locked one says
+   * `fileToggleLockedName`, the very sentence the toggle and the shelf print,
+   * because all three surfaces are one navigation and must agree about a locked
+   * file. Nothing here is a second vocabulary for a fact that already has one.
+   *
+   * `workBrainStage` names the stage while it is showing the files rather than
+   * a file — the counterpart of `brainGlobeStage` above, which stays exactly as
+   * it is for the tier below. "Your work brain" is the product's own phrase for
+   * the set of files (docs/workbrain-spec.html) and is already on Home.
+   *
+   * `workBrainBack` is one string used by BOTH views: the button on the globe
+   * and the row above the List. Same words for the same move, in the same
+   * shape as `brainGlobeBack` a few lines up — "Back to ...", the way out that
+   * says where it goes.
+   *
+   * `workBrainOpen` is the state word on an open file node, and it is the
+   * counterpart of `badgeLocked`: what a node says out loud when it is not
+   * locked. `brainGlobeNode` pairs it with the file's name, exactly as it pairs
+   * a section with its state, so the two tiers say their states the same way.
+   *
+   * `workBrainInside` is said, never printed — the same job `brainGlobeInside`
+   * does one level down.
+   */
+  workBrainStage: 'Your work brain',
+  workBrainHelp: 'Open a file to see what is in it.',
+  workBrainBack: 'Back to your work brain',
+  workBrainOpen: 'Open',
+  workBrainInside: (file: string) => `Inside ${file}`,
   notBuiltYet: 'Not built yet',
   updatedToday: 'Updated today',
   daysOld: (n: number) => (n === 1 ? '1 day old' : `${n} days old`),

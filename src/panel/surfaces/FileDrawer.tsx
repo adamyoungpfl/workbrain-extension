@@ -3,11 +3,14 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent a
 import { BrainGlobe, FileTree } from '../components';
 import { sectionNodeGradient } from '../components/BrainGlobe';
 import { FileTypeToggle } from '../components/FileTypeToggle';
+import { WorkBrainBack, WorkShelf } from '../components/WorkShelf';
+import { BRAIN_NAV_HOME, chooseNav, pullBack } from '../../core/globe/workBrain';
+import type { BrainNav } from '../../core/globe/workBrain';
 import { contextFileDate, generateContextFileParts } from '../../core/files/generate';
 import type { ContextFileSection } from '../../core/files/generate';
 import { fileFinished } from '../../core/files/slots';
 import type { FileSlotId } from '../../core/files/slots';
-import { chooseFile, fileToggle } from '../../core/files/toggle';
+import { fileToggle } from '../../core/files/toggle';
 import {
   clampDrawerHeight,
   drawerBounds,
@@ -434,7 +437,26 @@ export function FileDrawer({
    * (core/files/answersKey.ts) — none of the derivations below change, which is
    * the whole point of one key per flow.
    */
-  const [shownFile, setShownFile] = useState<FileSlotId>('context');
+  /**
+   * ── V1.8 VB-48: AND WHICH LEVEL — one value, read by both views ──────────
+   *
+   * VB-48 asks for "shared navigation state with List, so switching file or
+   * zoom level in one view is reflected in the other". This is that state, and
+   * it is held ONCE, here, above both: the globe is handed it as props and
+   * reports changes back, and the List is drawn from the same value. Neither
+   * view holds a copy, so there is nothing for them to disagree about.
+   *
+   * `BRAIN_NAV_HOME` is `{ tier: 'file', file: 'context' }` — the drawer opens
+   * exactly where it opened before V1.8. The work brain is a level somebody
+   * pulls back to, not a shelf between them and the file they are answering.
+   *
+   * Still ephemeral, exactly as `shownFile` was and for the same reason: where
+   * you are looking is a fact about a glance at the panel, not about the person
+   * (docs/ARCHITECTURE.md, "nothing derived is stored"). There is no `wb:tier`
+   * key and there must never be one.
+   */
+  const [nav, setNav] = useState<BrainNav>(BRAIN_NAV_HOME);
+  const shownFile: FileSlotId = nav.file;
 
   /**
    * The toggle itself: which files exist, which one is on screen, and what a
@@ -730,6 +752,14 @@ export function FileDrawer({
           summaries={summaries}
           recommendations={recommendations}
           onSelect={handleGlobeSelect}
+          /* V1.8 VB-48 — the tier above, and the one state both views read.
+             The globe is handed the same `toggle` the List's strip is drawn
+             from, so "what is locked" is one answer on this screen rather than
+             two that happen to agree today. */
+          files={toggle}
+          file={nav.file}
+          tier={nav.tier}
+          onTier={setNav}
         />
       </div>
       <div className="filedrawer-body" id={BODY_ID} ref={bodyRef}>
@@ -746,19 +776,54 @@ export function FileDrawer({
             The refusal lives in core: `chooseFile` returns the file already on
             screen when a locked one is pressed, and the strip prints what
             unlocks it. */}
-        <FileTypeToggle
-          items={toggle}
-          onPick={(id) => setShownFile((current) => chooseFile(current, id, toggle))}
-        />
-        <FileTree
-          outline={outline}
-          modules={modules}
-          answers={answers}
-          currentQuestionId={currentQuestionId}
-          currentSectionId={currentSectionId}
-          onNavigate={handleNavigate}
-        />
-        <FilePreview sections={parts.sections} />
+        {/* V1.8 VB-48 — THE LIST HAS THE SAME TWO TIERS THE BRAIN HAS.
+
+            Out at the work brain, the List is the files; inside one, it is that
+            file's outline with the way back up above it. Same state, same rule,
+            same words as the globe beside it — a tier that existed in only one
+            of the two views would be a second navigation rather than a shared
+            one, which is the thing VB-48 asks for by name.
+
+            The toggle strip belongs to the file tier: out here the shelf IS the
+            switcher, and printing both would be two controls doing one job in
+            one drawer (the exact conflict Adam's decision of 2026-08-24
+            settled). */}
+        {nav.tier === 'work' ? (
+          <WorkShelf
+            items={toggle}
+            note={{ [nav.file]: S.sectionsOf(reached, outline.length) }}
+            onOpen={(id) => setNav((current) => chooseNav(current, id, toggle))}
+          />
+        ) : (
+          <>
+            {/* The "where am I" cluster, pinned together at the top of the
+                scrolling list.
+
+                THE WAY UP HAS TO BE STUCK TO THE STRIP, not merely above it.
+                The drawer scrolls itself to keep the section being written in
+                view, so a row left in the flow scrolls under the sticky toggle
+                and is half covered by it — which axe reports as a target that
+                is partially obscured (WCAG 2.5.8), and which a person would
+                experience as a control that goes missing while they answer
+                questions. Found by `npm run check`, not by reading. */}
+            <div className="filedrawer-nav">
+              <WorkBrainBack onClick={() => setNav(pullBack)} />
+              <FileTypeToggle
+                items={toggle}
+                onPick={(id) => setNav((current) => chooseNav(current, id, toggle))}
+              />
+            </div>
+            <FileTree
+              outline={outline}
+              modules={modules}
+              answers={answers}
+              currentQuestionId={currentQuestionId}
+              currentSectionId={currentSectionId}
+              onNavigate={handleNavigate}
+            />
+            <FilePreview sections={parts.sections} />
+          </>
+        )}
       </div>
       {/* The flight path. Always mounted, so there is always a box to measure
           against; empty except during a morph. `aria-hidden` because every

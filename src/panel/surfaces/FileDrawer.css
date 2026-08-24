@@ -312,6 +312,64 @@
    below stays mounted and merely scrolls — which is what lets the tree's
    typewriter keep its per-row memory instead of remounting rows in and out of
    a window. */
+/* V1.8 VB-48 — the "where am I" cluster: the way up, then which file.
+
+   ONE ROW, AND IT HAS TO BE. Two things forced it:
+
+   1. **The peek.** A separate 44px row above the strip — 44 is the floor, not a
+      preference — costs a third of everything the drawer's peek can show, and
+      what the peek is for is the section being written. Beside the strip it
+      costs seven pixels (the strip lays out at the chip's height and the button
+      at the floor).
+   2. **The sticky strip.** The drawer scrolls itself to keep the live section
+      in view, so anything left in the flow slides under the toggle and is half
+      covered by it within a question or two — a control that goes missing while
+      somebody works, and one axe reports as a partially obscured target (WCAG
+      2.5.8). Found by `npm run check`, not by reading.
+
+   Sticky as ONE box rather than two, because the toggle inside it is sticky
+   already (FileTypeToggle.css) and a second sticky sibling at the same `top`
+   would slide under it. The wrapper carries the same bleed and ground, so the
+   left 44px is as opaque as the strip beside it and the hairline runs the whole
+   width; the strip's own background is untouched (tests/e2e/file-toggle.spec.ts
+   measures it). */
+.filedrawer-nav {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  margin: 0 -14px;
+  padding: 0 14px;
+  /* THE PANE'S GROUND, NOT THE PANEL'S. `--canvas` here is a white bar laid
+     over a tinted pane — the same tax the strip inside it already pays a
+     hundred lines down, and the same one the counts summary paid before it.
+     It is also what `tests/e2e/drawer-frame.spec.ts` reads: that spec finds the
+     frame by walking in from the panel's edge until the colour stops being
+     `--canvas`, so a white band across the pane at that height is a drawer with
+     no frame as far as it can tell. Found by `npm run check`. */
+  background: var(--dock-pane, var(--canvas));
+}
+
+/* The strip takes what is left of the row and keeps its own bleed on the right
+   only — its left edge now meets the button rather than the panel's. It brings
+   its own ground and its own hairline with it (FileTypeToggle.css, and the dock
+   override below), so the wrapper adds neither. */
+.filedrawer-nav .filetypes {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin-left: 0;
+  /* The hairline moves up to the wrapper, so it runs the whole width of the
+     strip instead of stopping where the button starts. A rule with a notch cut
+     out of one end reads as a mistake. */
+  border-bottom: 0;
+}
+
+.filedrawer-nav {
+  border-bottom: 1px solid var(--divider);
+}
+
 .filedrawer-body {
   position: relative;
   flex: 1 1 auto;

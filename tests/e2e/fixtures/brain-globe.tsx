@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import '../../../src/panel/tokens.css';
 import { BrainGlobe } from '../../../src/panel/components/BrainGlobe';
+import { fileToggle } from '../../../src/core/files/toggle';
+import { BRAIN_NAV_HOME } from '../../../src/core/globe/workBrain';
+import type { BrainNav } from '../../../src/core/globe/workBrain';
 import { contextModules, contextOutline } from '../../../src/core/flow/flow';
 import { nodeDetailsByNode } from '../../../src/core/flow/nodeDetails';
 import { nodeSummaries } from '../../../src/core/flow/nodeSummary';
@@ -239,8 +242,28 @@ const MODEL_STATES: Record<string, OutlineNodeState> =
     ? STATES
     : Object.fromEntries(contextOutline.map((node) => [node.id, outlineNodeState(node, answers.values, null)]));
 
+/**
+ * V1.8 VB-48 — the tier above, with `?work=1`.
+ *
+ * Behind a flag on purpose. Without it the globe gets no `files` prop at all,
+ * which is the showcase-of-one-file it has been since V1.2 and is what every
+ * spec written before V1.8 drives — so this page proves the new tier without
+ * moving the ground under twelve existing tests.
+ *
+ * `?work=1` opens at the work brain; `?work=file` mounts at the file tier with
+ * the tier above available, which is how the drawer really opens.
+ */
+const WORK = ((): 'off' | 'work' | 'file' => {
+  const asked = new URLSearchParams(window.location.search).get('work');
+  return asked === '1' || asked === 'work' ? 'work' : asked === 'file' ? 'file' : 'off';
+})();
+
 function Harness() {
   const [selected, setSelected] = useState<FileOutlineNode | null>(null);
+  /** The one piece of shared navigation state, exactly as `FileDrawer` holds
+   * it: which tier, and which file. Ephemeral, never stored. */
+  const [nav, setNav] = useState<BrainNav>(WORK === 'work' ? { tier: 'work', file: 'context' } : BRAIN_NAV_HOME);
+  const files = fileToggle(nav.file, {});
 
   return (
     <main style={{ width: 400, margin: '0 auto', padding: 20, boxSizing: 'border-box' }}>
@@ -254,12 +277,19 @@ function Harness() {
         summaries={SUMMARIES}
         recommendations={RECOMMENDATIONS}
         onSelect={setSelected}
+        {...(WORK === 'off' ? {} : { files, file: nav.file, tier: nav.tier, onTier: setNav })}
       />
       {/* Where the drawer's own detail panel will go. Here it exists only so a
           test can read back what the globe reported without reaching into
           React's internals. */}
       <p data-testid="selected" style={{ fontFamily: 'var(--font-sans)', fontSize: 13 }}>
         {selected ? selected.id : 'none'}
+      </p>
+      {/* V1.8 VB-48. What the shared navigation state holds right now — the
+          value the drawer hands to BOTH views. Printed so a test can read the
+          state back without reaching into React. */}
+      <p data-testid="nav" style={{ fontFamily: 'var(--font-sans)', fontSize: 13 }}>
+        {`${nav.tier}:${nav.file}`}
       </p>
     </main>
   );
