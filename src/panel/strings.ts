@@ -481,6 +481,10 @@ export const S = {
 
   // ---------------------------------------------------------------- home
   homeFilesLabel: 'Your files',
+  /** V1.7 VB-38's row. Not "Your files" — these are parts of Context.md, not
+   * a file of their own, and saying so is what keeps the shelf above it
+   * meaning one thing. */
+  homeMultiplesLabel: 'Also in your file',
   homeHelpLabel: 'If you want a hand',
   homeHelpTitle: 'Talk to a person',
   homeHelpSub: 'Coaching, or help for your team',
@@ -498,6 +502,34 @@ export const S = {
   // failure right on the last question falls back to, and what the proof
   // loop's own finished screen offers as its only way onward.
   backToFiles: 'Back to your files',
+
+  // ---------------------------------------------------------------- more than one
+  /**
+   * V1.7 VB-38 — the screen for the things that come in numbers: roles,
+   * people, teams, tools, initiatives.
+   *
+   * NAMED BY WHAT IS IN IT, never by what it is. "Multiples", "records" and
+   * "entries" are all product nouns nobody brought with them (see this file's
+   * rules); the three things this screen actually lists are the three words it
+   * is called. The group headings under it are the file's own section names,
+   * read straight off the outline — see core/flow/multiples.ts, which is why
+   * none of them are written here.
+   */
+  multiplesTitle: 'Roles, people and projects',
+  multiplesSub: 'Open one to change it. Or add a new one.',
+  multiplesCount: (n: number) => (n === 1 ? 'One on your list' : `${wordFor(n)} on your list`),
+  /** What one record's row says under its name. Same shape as `sectionsOf`. */
+  multipleAnswered: (done: number, total: number) => `${done} of ${total} answered`,
+  /** A record whose name question has not been answered yet. States the fact;
+   * the row still opens, and the first thing it asks is the name. */
+  multipleUnnamed: 'Not named yet',
+  multipleAdd: 'Add another',
+  /** The same button, told apart from the other groups' — three "Add another"
+   * buttons on one screen need three names for anyone listing them. */
+  multipleAddTo: (group: string) => `Add another to ${group}`,
+  multipleAddConfirm: 'Add it',
+  multiplesEmptyGroup: 'None yet.',
+  multiplesNothing: 'Nothing here yet. Answer a few more questions first.',
 
   // ---------------------------------------------------------------- freshness
   // Always says WHY, in the person's own words. Never "your data is stale".
@@ -639,6 +671,9 @@ export const S = {
    * already made that needs one more word.
    */
   errNeedItsName: 'Give it a name to keep going, or pick No.',
+  /** V1.7 VB-38's version of the same refusal, on a screen with no "No" to
+   * pick — the way out here is to leave the field alone. */
+  errNeedAName: 'Type a name to add it.',
   /**
    * The name is how this record is found again (core/flow/runner.ts's
    * `seededNameTaken` explains what breaks otherwise), so two of them cannot

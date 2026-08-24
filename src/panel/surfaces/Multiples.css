@@ -1,0 +1,104 @@
+/* V1.7 VB-38 — the screen for roles, people and projects.
+
+   Built out of Home's own rhythm rather than a second one: the same 20px
+   column gap, the same 20/18 padding, the same uppercase section label. This
+   screen is reached from Home and returns to it, so a different measure would
+   read as a different product. Every colour is a token — there is no hex in
+   this file, per docs/GUARDRAILS.md and `npm run audit`. */
+
+.multiples {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px 18px;
+}
+
+.multiples-title {
+  font-size: 17px;
+  line-height: 1.4;
+  font-weight: 650;
+  color: var(--ink);
+  margin: 0;
+}
+
+/* Pulled up under the heading: the two lines are one block, and `.multiples`'
+   own 20px gap between them would read as two separate statements. */
+.multiples-sub {
+  font-size: 15px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  margin: -14px 0 0;
+}
+
+/* One block's records, its heading and its add control — a group, spaced
+   tighter inside than the page is between groups, so the heading belongs to
+   the rows under it rather than floating between two sets. */
+.multiples-group {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+/* The file's own section name, set exactly like Home's "Your files" label
+   (.home-section-label) — same size, weight, tracking and colour. Repeated
+   rather than shared because a stylesheet importing another surface's
+   stylesheet is a dependency neither one declares. --ink-3 on --canvas is
+   5.3:1. */
+.multiples-group-title {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+.multiples-list {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.multiples-empty {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+  margin: 0;
+}
+
+/* The add control sits left, not stretched: it is one option among the rows
+   above it, not the screen's conclusion. */
+.multiples-add-open {
+  align-self: flex-start;
+}
+
+/* The name field and its confirm, as one form. 12px between the field and the
+   button — the same step VB-20's `.flow-add-name` puts between the pills and
+   the name field it reveals. */
+.multiples-add {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  /* Stretch, so the field is as wide as the rows above it — a name box half
+     the panel's width reads as wanting one word. The confirm takes itself
+     back out of that below. */
+  align-items: stretch;
+}
+
+.multiples-add .field {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Sized to its label, under the field it commits — the same shape as the
+   "+ add your own" confirm on a question (Flow.css's `.flow-custom`). */
+.multiples-add .btn {
+  align-self: flex-start;
+}
+
+.multiples-error {
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--danger);
+  margin: 0;
+}

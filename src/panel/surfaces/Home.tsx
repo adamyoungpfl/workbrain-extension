@@ -12,6 +12,8 @@ import { getLocal, setLocal } from '../../core/storage/client';
 import { computeNextMove, mostRecentAnsweredAt } from '../../core/freshness/nextMove';
 import { daysSince } from '../../core/freshness/clocks';
 import { recommend, topRecommendations } from '../../core/recommend/engine';
+import { multipleRecordCount } from '../../core/flow/multiples';
+import { contextModules, contextOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
 import { FileActions } from './FileActions';
@@ -36,10 +38,26 @@ export interface HomeProps {
    */
   onOpenTarget: (target: RecommendationTarget) => void;
   onOpenProof: () => void;
+  /**
+   * V1.7 VB-38: opens the list of roles, people and projects — the things the
+   * file holds several of. Shown only when there is at least one of them, so
+   * the row never offers an empty screen.
+   */
+  onOpenMultiples: () => void;
 }
 
 const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
 const CONTACT_URL = 'https://www.model-citizen.org/contact';
+
+/** V1.7 VB-38's row — two cards, one behind the other: more than one of a
+ * thing. Same convention as PERSON_ICON below (stroke, `currentColor`,
+ * `aria-hidden`; the row carries the name). */
+const STACK_ICON = (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
+    <rect x="3.5" y="7.5" width="13" height="13" rx="2.5" />
+    <path d="M7.5 4.5h10a2.5 2.5 0 0 1 2.5 2.5v10" />
+  </svg>
+);
 
 const PERSON_ICON = (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -108,7 +126,7 @@ const PERSON_ICON = (
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenTarget, onOpenProof }: HomeProps) {
+export function Home({ onStart, onOpenTarget, onOpenProof, onOpenMultiples }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
   /**
@@ -179,6 +197,7 @@ export function Home({ onStart, onOpenTarget, onOpenProof }: HomeProps) {
         : undefined;
 
   const topCopy = top ? recommendationCopy(top) : null;
+  const multipleCount = multipleRecordCount(contextModules, contextOutline, answers);
 
   return (
     <div className="home">
@@ -271,6 +290,25 @@ export function Home({ onStart, onOpenTarget, onOpenProof }: HomeProps) {
       <div className="home-filelist">
         <FileRow name={S.fileContext} subtitle={fileSubtitle} badge={fileBadge} onClick={onStart} />
       </div>
+
+      {/* V1.7 VB-38 — the parts of the file there are several of. Derived like
+          everything else here: the count comes back from the same fold the
+          screen behind this row renders (core/flow/multiples.ts), so a row
+          that says "three on your list" opens a screen holding three. No
+          records, no row — an empty screen is not worth a door. */}
+      {multipleCount > 0 && (
+        <>
+          <p className="home-section-label">{S.homeMultiplesLabel}</p>
+          <div className="home-filelist">
+            <FileRow
+              name={S.multiplesTitle}
+              subtitle={S.multiplesCount(multipleCount)}
+              icon={STACK_ICON}
+              onClick={onOpenMultiples}
+            />
+          </div>
+        </>
+      )}
 
       {hasStarted && (
         <Button type="button" variant="secondary" onClick={onOpenProof}>

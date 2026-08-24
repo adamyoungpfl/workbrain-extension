@@ -17,6 +17,8 @@ import {
   existingValue,
   topLevelIndex,
   moduleFor,
+  positionForRecord,
+  positionForNewRecord,
 } from './runner';
 
 function makeAnswers(overrides: Partial<Answers> = {}): Answers {
@@ -530,6 +532,44 @@ describe('findSeedTarget', () => {
 
   it('returns undefined when nothing is seeded from that question', () => {
     expect(findSeedTarget(seedModules, 'nothing')).toBeUndefined();
+  });
+});
+
+describe('positionForRecord / positionForNewRecord (VB-38)', () => {
+  const firstField = openBlock.fields[0]!;
+  const secondField = openBlock.fields[1]!;
+
+  it('opens a chosen record at its first question, even when that record is complete', () => {
+    // Editing means reviewing from the top: the second record here has every
+    // answer, and still opens at its first question rather than past it.
+    expect(positionForRecord(modules, 'items', 1)).toEqual({
+      kind: 'step',
+      step: firstField,
+      location: { in: 'repeatable', blockId: 'items', recordIndex: 1 },
+    });
+  });
+
+  it('opens a just-added record at the first question it has not answered', () => {
+    const answers = makeAnswers({ repeatables: { items: [{}, { item_name: 'Two' }] } });
+    expect(positionForNewRecord(modules, answers, 'items', 1)).toEqual({
+      kind: 'step',
+      step: secondField,
+      location: { in: 'repeatable', blockId: 'items', recordIndex: 1 },
+    });
+  });
+
+  it('falls back to the first question when a record is already complete', () => {
+    const answers = makeAnswers({ repeatables: { items: [{ item_name: 'One', item_type: 'x' }] } });
+    expect(positionForNewRecord(modules, answers, 'items', 0)).toEqual({
+      kind: 'step',
+      step: firstField,
+      location: { in: 'repeatable', blockId: 'items', recordIndex: 0 },
+    });
+  });
+
+  it('degrades to undefined for a block the flow no longer holds', () => {
+    expect(positionForRecord(modules, 'gone', 0)).toBeUndefined();
+    expect(positionForNewRecord(modules, makeAnswers(), 'gone', 0)).toBeUndefined();
   });
 });
 

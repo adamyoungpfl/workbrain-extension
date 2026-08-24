@@ -239,6 +239,76 @@ export function moduleFor(modules: Module[], position: Position): Module | undef
   return modules.find((m) => m.nodes.some((node) => node.id === targetId));
 }
 
+/** The block with this id, wherever it sits in the flow. */
+function blockById(modules: Module[], blockId: string): RepeatableBlock | undefined {
+  for (const module of modules) {
+    for (const node of module.nodes) {
+      if ('fields' in node && node.id === blockId) return node;
+    }
+  }
+  return undefined;
+}
+
+/**
+ * V1.7 VB-38 — open ONE record of a repeatable block for editing, at its
+ * first question.
+ *
+ * `core/flow/outline.ts`'s `positionForQuestionId` already resolves a
+ * repeatable's field to `recordIndex: 0` — "there is no 'resume a specific
+ * past record' screen", as its own comment says, because until now nothing
+ * offered one. This is that screen's resolver, and it is the whole of the
+ * "edit an existing one" half of VB-38: the same `{ kind: 'step' }` position
+ * `Flow`'s `initialPosition` has accepted since R1-12, pointed at a record
+ * the person picked instead of at the first one.
+ *
+ * The FIRST field, always, even when it is already answered — editing means
+ * reviewing the record from the top, and `existingValue` re-populates each
+ * field as it is reached, so nothing is retyped that was not changed. (An
+ * unfinished record wants the opposite: see `positionForNewRecord`.)
+ *
+ * `undefined`, never a throw, when the block or its fields have gone — the
+ * same degradation `positionForTarget` documents: the row does nothing new
+ * rather than the panel breaking.
+ */
+export function positionForRecord(modules: Module[], blockId: string, recordIndex: number): Position | undefined {
+  const step = blockById(modules, blockId)?.fields[0];
+  if (!step) return undefined;
+  return { kind: 'step', step, location: { in: 'repeatable', blockId, recordIndex } };
+}
+
+/**
+ * V1.7 VB-38 — the same, for a record that was just added: its first
+ * UNANSWERED field.
+ *
+ * A record added from the multiples screen is born holding its name (see
+ * core/flow/multiples.ts's `applyAddRecord`), and for an open-ended block that
+ * name is a real answer to a real question — `entity_name`, `initiative_name`.
+ * Landing on a question that was just answered on the previous screen reads as
+ * the panel not having heard, so the walk starts at the first thing genuinely
+ * still to say.
+ *
+ * Falls back to the first field when everything is answered, which is what
+ * makes this safe to call on any record: worst case it behaves exactly like
+ * `positionForRecord`.
+ *
+ * Deliberately NOT `findPosition`. That derives the first thing left to do in
+ * the WHOLE flow, which for a record added out of order would be some earlier
+ * unanswered question in a different module entirely.
+ */
+export function positionForNewRecord(
+  modules: Module[],
+  answers: Answers,
+  blockId: string,
+  recordIndex: number,
+): Position | undefined {
+  const block = blockById(modules, blockId);
+  const first = block?.fields[0];
+  if (!block || !first) return undefined;
+  const record = answers.repeatables[blockId]?.[recordIndex] ?? {};
+  const step = block.fields.find((field) => !(storageKeyFor(field) in record)) ?? first;
+  return { kind: 'step', step, location: { in: 'repeatable', blockId, recordIndex } };
+}
+
 /** Reads whatever is already stored for a position — used to re-populate a
  * field when navigating Back to a question already answered this session. */
 export function existingValue(answers: Answers, step: Step, location: StepLocation): AnswerValue | undefined {

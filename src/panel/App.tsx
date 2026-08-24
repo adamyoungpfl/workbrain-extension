@@ -2,6 +2,7 @@ import './tokens.css';
 import { useCallback, useEffect, useState } from 'react';
 import { Flow } from './surfaces/Flow';
 import { Home } from './surfaces/Home';
+import { Multiples } from './surfaces/Multiples';
 import { Splash } from './surfaces/Splash';
 import { getSession, setSession } from '../core/storage/client';
 import { Button } from './components';
@@ -27,7 +28,11 @@ const proofModules = buildProofModules({
   doneQ: S.proofDone,
 });
 
-type Surface = 'home' | 'flow';
+/** V1.7 VB-38 adds `multiples`: the list of roles, people and projects, which
+ * is reached from Home and hands a record back to `flow` as a deep link. It is
+ * a third surface rather than a screen inside `flow` because nothing on it
+ * asks a question — see Multiples.tsx's header. */
+type Surface = 'home' | 'flow' | 'multiples';
 type FlowKind = 'context' | 'proof';
 
 /**
@@ -124,6 +129,19 @@ export default function App() {
   }
 
   /**
+   * V1.7 VB-38. Opening a record — one role, one person, one initiative — is
+   * the same deep link a recommendation makes: a `Position` into the Context
+   * flow. The multiples screen resolves it (core/flow/runner.ts's
+   * `positionForRecord` / `positionForNewRecord`, both pure and tested); this
+   * only routes it, exactly as `openContext` does above.
+   */
+  function openContextAt(position: Position) {
+    setFlowKind('context');
+    setJumpTo(position);
+    setSurface('flow');
+  }
+
+  /**
    * The router, unchanged. It is a function now only so the splash can be
    * laid over whatever it returns without every branch below repeating the
    * overlay — the splash is on top of the panel, not one more surface the
@@ -131,7 +149,25 @@ export default function App() {
    */
   function currentSurface() {
     if (surface === 'home') {
-      return <Home onStart={() => openContext()} onOpenTarget={(target) => openContext(target)} onOpenProof={openProof} />;
+      return (
+        <Home
+          onStart={() => openContext()}
+          onOpenTarget={(target) => openContext(target)}
+          onOpenProof={openProof}
+          onOpenMultiples={() => setSurface('multiples')}
+        />
+      );
+    }
+
+    if (surface === 'multiples') {
+      return (
+        <Multiples
+          modules={contextModules}
+          outline={contextOutline}
+          onBack={goHome}
+          onOpen={openContextAt}
+        />
+      );
     }
 
     if (flowKind === 'proof') {

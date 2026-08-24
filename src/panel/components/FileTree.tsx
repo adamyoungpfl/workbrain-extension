@@ -366,10 +366,12 @@ function FileTreeRow({
       {records.length > 0 && (
         <ul className="filetree-list is-records">
           {records.map((title, i) => (
-            // Not independently clickable: there is no per-record jump target
-            // in the flow — the only sensible destination is the block's own
-            // start, which is already this row's parent. Making them look
-            // clickable would promise an edit path that does not exist.
+            // Not independently clickable. V1.7 VB-38 built the per-record
+            // jump this once said did not exist (core/flow/runner.ts's
+            // `positionForRecord`), but it put it on a screen whose whole job
+            // is choosing between records — and the tree stays what it has
+            // always been, a picture of the file. Two places offering the same
+            // edit would be two places to keep in step.
             <li className="filetree-item is-nested" key={`${node.id}-record-${i}`}>
               <div className="filetree-row is-record" data-depth={depth + 1}>
                 <span className="filetree-glyph" aria-hidden="true">
