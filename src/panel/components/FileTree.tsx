@@ -4,7 +4,8 @@ import type { Answers } from '../../schema/storage.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
 import { navigationTargetFor, outlineNodeState, repeatableBlocksForNode } from '../../core/flow/outline';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
-import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
+import { sectionCompletionPercent, sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
+import { splitRevealedSectionLabel } from '../../core/flow/sectionLabel';
 import { repeatableRecordTitle } from '../../core/files/generate';
 import { HealthPill, HealthSummary, healthDetail } from './SectionHealth';
 import { prefersReducedMotion } from '../cues/verbs';
@@ -41,6 +42,34 @@ import './FileTree.css';
  *    panel's font stack (a real finding, see components/DeepDive.tsx), which
  *    would put the whole signal back on colour.
  * 3. **The disclosure chevron is drawn, not typed**, for the same reason.
+ *
+ * ── V1.6 VB-33 — the same tree, in a different register ───────────────────
+ *
+ * VB-33 restyles List from the terminal listing it was into a set of
+ * collapsible section rows. **No derivation is new and no behaviour is new**:
+ * `core/freshness/sectionHealth` (VB-19) already computed the five states, the
+ * counts and the staleness, and the accordion below — one section open at a
+ * time, following whichever section is being answered — already worked. What
+ * changed is the layout, the type and one genuinely new number:
+ *
+ *   · **The percentage.** `sectionCompletionPercent`, one real ratio of the
+ *     two counts already printed beside it. The long note over that function
+ *     says why that is not the composite score docs/GUARDRAILS.md bans, and
+ *     that note is the one to read before touching this.
+ *   · **The chevron moved to the far edge** and the state marker took the row's
+ *     left, which is where VB-33's reference puts it and where VB-32 wants a
+ *     flying orb to land. `core/drawer/mode.ts`'s `endOf` still measures that
+ *     marker's box, so it is still deliberately small — see FileTree.css.
+ *   · **The number left the name's weight.** A section's label still prints
+ *     whole ("1. About This Context"); `splitSectionLabel` only lets the "1."
+ *     be set quietly so the name is the loud thing.
+ *
+ * **Colour is still never the only signal.** A row now carries five: the ASCII
+ * marker, the hidden word, the marker's FILL (hollow / tinted / solid, one per
+ * tree state), the pill's own word and glyph, and the percentage. Colour is the
+ * sixth and the only removable one — tests/e2e/section-health.spec.ts strips it
+ * and re-reads every row, and VB-33 extended that pass to the new treatment
+ * rather than replacing it.
  */
 
 /**
@@ -158,7 +187,7 @@ function FileTreeRow({
 }: RowProps) {
   const state = outlineNodeState(node, answers.values, currentQuestionId);
   const typedLabel = useTypewriterOnChange(node.label, `${node.id}:${state}`);
-  const detailId = useId();
+  const metaId = useId();
 
   // Records the generated file gives their own titled block — role names,
   // entity names, initiative names. Shown as sub-items so the tree has the
@@ -179,9 +208,21 @@ function FileTreeRow({
   const target = navigationTargetFor(node);
   const clickable = state !== 'untouched' && !!target;
 
+  /**
+   * V1.6 VB-33 — the label prints WHOLE, and only its two halves are set
+   * differently: the file's own numbering quiet, the section's name loud.
+   *
+   * Split from the full label rather than from what has been typed so far
+   * (core/flow/sectionLabel.ts), because the typewriter above renders a prefix
+   * and a half-printed "1." would otherwise be filed as the start of a name.
+   * `numeral + title` is byte-identical to `typedLabel`, so every assertion
+   * that a resumed session shows a whole label still reads one.
+   */
+  const { numeral, title } = splitRevealedSectionLabel(node.label, typedLabel);
   const label = (
     <span className="filetree-label">
-      {typedLabel}
+      {numeral && <span className="filetree-num">{numeral}</span>}
+      {title}
       {state === 'current' && (
         <span className="filetree-cursor" aria-hidden="true">
           ▋
@@ -199,6 +240,12 @@ function FileTreeRow({
    * from the accessibility tree.
    *
    * - The PILL sits OUTSIDE it, so its word is read as the row's own text.
+   *   V1.6 VB-33 moved it visually — it now sits ON the name's line, over the
+   *   control's top right corner, so the meta line under it can have the whole
+   *   row's width (FileTree.css's `.filetree-main`) — but it is still a
+   *   SIBLING and not a child, precisely so this stays true. A state word
+   *   demoted to a description is the one signal in the drawer that cannot
+   *   afford to be optional.
    * - The DETAIL sits INSIDE it, bound back as `aria-describedby`. Inside is
    *   what lets the control be one 44px box holding both lines instead of a
    *   44px box with a line hanging under it — which would push every answered
@@ -206,37 +253,71 @@ function FileTreeRow({
    *   show. `aria-describedby` is what stops that costing a screen reader the
    *   line: a description is computed from the referenced element wherever it
    *   lives, including inside the thing it describes.
+   *
+   * V1.6 VB-33 ADDS THE PERCENTAGE AS A THIRD THING ON THAT SAME LINE, hard
+   * right. Two reasons it is its own element rather than another clause in
+   * `healthDetail`'s string:
+   *
+   *   1. Room. "13 of 13 · 100% · answered 11 months ago" is forty characters
+   *      in a column about two hundred pixels wide, and a meta line that wraps
+   *      takes the row past the 44px band every other row keeps. Setting the
+   *      figure apart at the right of the line costs nothing and reads as the
+   *      headline number it is. (What actually bought the room is the layout
+   *      change in FileTree.css; this is what made the room usable.)
+   *   2. It can carry its own word. "54%" alone, met without the count beside
+   *      it, is a percentage of nothing named — so the element says "complete"
+   *      out loud for a screen reader while the eye reads it off the count.
+   *
+   * The describedby id moved from the detail line to the wrapper around both,
+   * so the description a screen reader gets is still the WHOLE meta line.
    */
   const sectionHealth = health[node.id];
   const detail = sectionHealth ? healthDetail(sectionHealth) : null;
-  const detailLine = detail ? (
-    <span className="filetree-detail" id={detailId}>
-      {detail}
+  // Null wherever the detail is: a section nobody has touched says nothing
+  // beyond its pill, and "0%" would be the second thing on a row that has
+  // nothing to report (see `healthDetail`).
+  const percent = detail && sectionHealth ? sectionCompletionPercent(sectionHealth) : null;
+  const metaLine = detail ? (
+    <span className="filetree-meta" id={metaId}>
+      <span className="filetree-detail">{detail}</span>
+      {percent !== null && (
+        <span className="filetree-percent">
+          {S.sectionPercent(percent)}
+          <span className="filetree-sr"> {S.sectionPercentComplete}</span>
+        </span>
+      )}
     </span>
   ) : null;
 
+  /**
+   * V1.6 VB-33 — the row, left to right.
+   *
+   * THE MARKER LEADS AND THE CHEVRON TRAILS, which is the reverse of what
+   * V1.1 shipped. Both moves come from VB-33's reference and both are load
+   * bearing beyond taste:
+   *
+   *   · The marker at the row's left edge is where a section's orb lands when
+   *     the Brain visual becomes the list — `core/drawer/mode.ts` measures
+   *     `.filetree-glyph`'s own box, so the mark is what the orb turns into
+   *     rather than something it fades out beside (VB-32).
+   *   · The chevron at the far edge stops a 44px control standing between the
+   *     panel edge and every section name, which is what made the old list
+   *     read as a tree rather than as a list of sections.
+   *
+   * The tab order follows the same order: go to the section, then open it.
+   */
   return (
-    <li className="filetree-item">
+    <li className={depth === 0 ? 'filetree-item' : 'filetree-item is-nested'}>
       <div
-        className={`filetree-row is-${state}`}
+        // `has-meta` is CSS's only way to know a row has a second line: it
+        // moves the pill onto the name's line so the meta line can have the
+        // pill's width back (FileTree.css's `.filetree-main`).
+        className={`filetree-row is-${state}${depth > 0 ? ' is-child' : ''}${metaLine ? ' has-meta' : ''}`}
         data-node-id={node.id}
         data-node-state={state}
         data-health={sectionHealth?.state}
-        style={{ paddingLeft: `${depth * 14}px` }}
+        data-depth={depth}
       >
-        {hasChildren ? (
-          <button
-            type="button"
-            className="filetree-toggle"
-            aria-expanded={expanded}
-            aria-label={expanded ? S.fileTreeCollapse(node.label) : S.fileTreeExpand(node.label)}
-            onClick={() => onToggleExpand(node.id)}
-          >
-            <Chevron open={expanded} />
-          </button>
-        ) : (
-          <span className="filetree-toggle-spacer" aria-hidden="true" />
-        )}
         <span className="filetree-glyph" aria-hidden="true">
           {STATE_GLYPH[state]}
         </span>
@@ -250,35 +331,47 @@ function FileTreeRow({
               type="button"
               className="filetree-nav"
               aria-label={S.fileTreeGoTo(node.label)}
-              aria-describedby={detail ? detailId : undefined}
+              aria-describedby={detail ? metaId : undefined}
               onClick={() => onNavigate(target)}
             >
               {label}
-              {detailLine}
+              {metaLine}
             </button>
           ) : (
             <span className="filetree-static">
               {label}
-              {detailLine}
+              {metaLine}
             </span>
           )}
           {sectionHealth && <HealthPill state={sectionHealth.state} />}
         </span>
+        {hasChildren ? (
+          <button
+            type="button"
+            className="filetree-toggle"
+            aria-expanded={expanded}
+            aria-label={expanded ? S.fileTreeCollapse(node.label) : S.fileTreeExpand(node.label)}
+            onClick={() => onToggleExpand(node.id)}
+          >
+            <Chevron open={expanded} />
+          </button>
+        ) : (
+          <span className="filetree-toggle-spacer" aria-hidden="true" />
+        )}
       </div>
       {/* Records are not behind the disclosure — they follow their own row
           wherever it renders, exactly as the source does. The accordion holds
           one id at a time, so gating them on it would mean a record under a
           CHILD section could never be shown at all. */}
       {records.length > 0 && (
-        <ul className="filetree-list">
+        <ul className="filetree-list is-records">
           {records.map((title, i) => (
             // Not independently clickable: there is no per-record jump target
             // in the flow — the only sensible destination is the block's own
             // start, which is already this row's parent. Making them look
             // clickable would promise an edit path that does not exist.
-            <li className="filetree-item" key={`${node.id}-record-${i}`}>
-              <div className="filetree-row is-record" style={{ paddingLeft: `${(depth + 1) * 14}px` }}>
-                <span className="filetree-toggle-spacer" aria-hidden="true" />
+            <li className="filetree-item is-nested" key={`${node.id}-record-${i}`}>
+              <div className="filetree-row is-record" data-depth={depth + 1}>
                 <span className="filetree-glyph" aria-hidden="true">
                   {STATE_GLYPH.reached}
                 </span>
@@ -289,7 +382,7 @@ function FileTreeRow({
         </ul>
       )}
       {expanded && (
-        <ul className="filetree-list">
+        <ul className="filetree-list is-children">
           {childNodes.map((child) => (
             <FileTreeRow
               key={child.id}

@@ -243,10 +243,18 @@ export const S = {
    *
    * The detail line is the part the pill cannot carry: how much of the
    * section is answered, and either what was passed on or how long ago it was
-   * written. Both halves are plain counts — never a percentage and never a
-   * score (docs/GUARDRAILS.md rules out a composite score out of 100), and
-   * never a congratulation, which is the line VB-19 flags as easy to cross by
-   * accident once a list has pills on it.
+   * written. Both halves are plain counts, and never a congratulation, which
+   * is the line VB-19 flags as easy to cross by accident once a list has pills
+   * on it.
+   *
+   * V1.6 VB-33 ADDED THE ONE PERCENTAGE. VB-19 wrote "never a percentage"
+   * here, reading docs/GUARDRAILS.md's "no composite score out of 100" as
+   * covering any number out of a hundred. VB-33 draws the line where the
+   * guardrail actually draws it: what is banned is rolling several unlike
+   * dimensions into one invented index. `sectionPercent` is one real ratio of
+   * two counts printed beside it — answered over total — and nothing else. See
+   * the long note over `sectionCompletionPercent` in
+   * src/core/freshness/sectionHealth.ts, which is where the reasoning lives.
    */
   sectionStateHere: 'Here',
   sectionStateDone: 'Done',
@@ -257,6 +265,15 @@ export const S = {
   /** `ago` arrives already worded by `agoLabel` — "7 months", "3 days". */
   sectionAnsweredAgo: (ago: string) => `answered ${ago} ago`,
   sectionAnsweredToday: 'answered today',
+  /**
+   * V1.6 VB-33. The row shows the figure alone, because "7 of 13" is printed
+   * an inch to its left and together they can only mean one thing. The word is
+   * said out loud beside it, for anyone who meets the number without the count
+   * — a screen reader reading the row's description, where "54%" on its own
+   * would be a percentage of nothing named.
+   */
+  sectionPercent: (n: number) => `${n}%`,
+  sectionPercentComplete: 'complete',
   /** The counts across the top of the list. VB-19 fixes the rows in FILE
    * ORDER — the list is the file — so these do the "what needs attention"
    * job that sorting by status would otherwise have to. */

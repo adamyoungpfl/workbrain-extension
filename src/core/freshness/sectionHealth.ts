@@ -319,6 +319,53 @@ export function sectionHealthFor(
   return map[node.id] as SectionHealth;
 }
 
+/**
+ * V1.6 VB-33 — how much of one section is answered, as a percentage.
+ *
+ * ── WHY THIS IS NOT THE BANNED SCORE ──────────────────────────────────────
+ *
+ * `docs/GUARDRAILS.md` rules out "a composite score out of 100. Real metrics
+ * only." THIS IS A REAL METRIC AND NOT THAT SCORE, and the difference is worth
+ * writing down so a later reader does not delete it as drift:
+ *
+ *   · It is ONE RATIO OF TWO REAL COUNTS — `answered / total`, both of which
+ *     this file already derives and the row already prints as "7 of 13". The
+ *     percentage says the same fact in a second shape; it invents nothing.
+ *   · It rolls NOTHING together. What the guardrail forbids is folding several
+ *     unlike dimensions — freshness, depth, coverage — into one invented index
+ *     whose number nobody can check. There is no weighting here, no second
+ *     dimension, and no arithmetic a person could not do from the two numbers
+ *     printed beside it.
+ *   · `docs/design-system.html` already sanctions exactly this shape of number
+ *     in "60% of your AI use, set up".
+ *   · It is never summed across sections and never becomes a file-level figure.
+ *     `summariseSectionHealth` below still counts sections, deliberately.
+ *
+ * ── THE TWO EDGES, AND WHY THEY ARE CLAMPED ───────────────────────────────
+ *
+ * Rounding is allowed to make a percentage lie at exactly the two places it
+ * matters most, so it does not:
+ *
+ *   · 99.6% must not print as "100%" while a question is still unanswered.
+ *   · 0.4% must not print as "0%" when something really was answered.
+ *
+ * So a finished section is the ONLY one that reads 100, an untouched one is the
+ * only one that reads 0, and everything between is clamped into 1–99.
+ *
+ * A skipped question is deliberately NOT counted as answered — it is not in the
+ * file — which is the same rule `answered` itself follows, so "5 of 8 · 63%"
+ * agrees with the count printed next to it rather than telling a kinder story.
+ *
+ * Null, not 0, when a section asks nothing at all: 0% of nothing is not a fact
+ * about the file, and the row prints no detail line there anyway.
+ */
+export function sectionCompletionPercent(health: Pick<SectionHealth, 'answered' | 'total'>): number | null {
+  if (health.total <= 0) return null;
+  if (health.answered <= 0) return 0;
+  if (health.answered >= health.total) return 100;
+  return Math.min(99, Math.max(1, Math.round((health.answered / health.total) * 100)));
+}
+
 export interface SectionHealthSummary {
   here: number;
   done: number;

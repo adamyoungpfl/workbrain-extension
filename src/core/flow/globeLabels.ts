@@ -1,4 +1,5 @@
 import type { FileOutlineNode } from '../../schema/flow.types';
+import { splitSectionLabel } from './sectionLabel';
 
 /**
  * V1.5 VB-26 — short display names for the globe, beside the outline data.
@@ -66,8 +67,12 @@ export const GLOBE_SHORT_LABELS: Readonly<Record<string, string>> = {
 /** "1. About This Context" → "About This Context". The number is the file's
  * ordering and the globe has its own — sections run top to bottom in file order
  * (BrainGlobe.tsx's `SECTION_VERTICES`) — so printing it twice spends four of a
- * label's ten characters saying what the position already says. */
-const LEADING_NUMBER = /^\d+(?:\.\d+)?\.?\s+/;
+ * label's ten characters saying what the position already says.
+ *
+ * V1.6 VB-33 gave the same boundary a second reader — the list row sets the
+ * numeral quiet and the name loud — so the rule moved to `sectionLabel.ts` and
+ * both callers share it. Two copies of one regex is exactly how the globe and
+ * the list end up disagreeing about where a section's name begins. */
 
 /**
  * The name this node wears on the globe.
@@ -81,5 +86,5 @@ const LEADING_NUMBER = /^\d+(?:\.\d+)?\.?\s+/;
  * policy — the same guard `halfLives.ts` keeps over its own table.
  */
 export function globeLabelFor(node: FileOutlineNode): string {
-  return GLOBE_SHORT_LABELS[node.id] ?? node.label.replace(LEADING_NUMBER, '');
+  return GLOBE_SHORT_LABELS[node.id] ?? splitSectionLabel(node.label).title;
 }

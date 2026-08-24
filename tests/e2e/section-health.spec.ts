@@ -19,6 +19,10 @@ import type { Answers } from '../../src/schema/storage.types';
  *   Asserted twice — once by checking each row carries a non-colour signal,
  *   and once by really stripping colour from the page and re-reading it, so a
  *   future change that moves the distinction into a tint fails here.
+ *   **V1.6 VB-33 EXTENDED THAT PASS RATHER THAN REPLACING IT.** The restyle
+ *   turned the row's state marker from bare text into a tile, so the greyscale
+ *   read-back now checks the tile's FILL — hollow and dashed, tinted, or solid
+ *   — as well as the ASCII mark inside it and the pill's own word and glyph.
  * - That the row still navigates, and that an empty section is still not a
  *   control at all.
  * - That the rows stay in FILE ORDER whatever their status.
@@ -119,6 +123,16 @@ async function openList(context: BrowserContext, id: string): Promise<Page> {
   return page;
 }
 
+/** V1.6 VB-33 — the mark the row's own marker prints, per TREE state (which is
+ * VB-07's three-way written / writing / untouched, not the five health ones
+ * beside it). Kept here so the greyscale pass can read the marker as well as
+ * the pill. */
+const TREE_GLYPH: Record<string, string> = {
+  untouched: '[ ]',
+  reached: '[x]',
+  current: '[>]',
+};
+
 /** The word and the glyph a state must print, with no colour involved. */
 const EXPECTED: Record<string, { glyph: string; word: string }> = {
   here: { glyph: '[>]', word: S.sectionStateHere },
@@ -167,25 +181,56 @@ test.describe('VB-19 — five states, derived', () => {
     // between two states were a hue, this is where it would vanish.
     await page.addStyleTag({ content: 'html { filter: grayscale(1) !important; }' });
     const readBack = await page.locator('.filetree-row[data-node-id]').evaluateAll((els) =>
-      els.map((el) => ({
-        id: (el as HTMLElement).dataset.nodeId,
-        state: (el as HTMLElement).dataset.health,
-        text: el.querySelector('.sectionhealth-pill')?.textContent ?? '',
-        // Whether the pill is filled or hollow is a third, non-colour signal.
-        hollow: (el.querySelector('.sectionhealth-pill') as HTMLElement | null)?.classList.contains('is-hollow') ?? false,
-      })),
+      els.map((el) => {
+        const marker = el.querySelector('.filetree-glyph') as HTMLElement;
+        const markerStyle = getComputedStyle(marker);
+        return {
+          id: (el as HTMLElement).dataset.nodeId,
+          state: (el as HTMLElement).dataset.health,
+          treeState: (el as HTMLElement).dataset.nodeState,
+          text: el.querySelector('.sectionhealth-pill')?.textContent ?? '',
+          // Whether the pill is filled or hollow is a third, non-colour signal.
+          hollow: (el.querySelector('.sectionhealth-pill') as HTMLElement | null)?.classList.contains('is-hollow') ?? false,
+          // V1.6 VB-33 — the row's own marker, which the restyle turned from
+          // bare text into a tile. Its FILL is a fourth signal: hollow with a
+          // dashed edge, tinted, or solid. Read as computed style rather than
+          // as a class, so a rule that stops applying fails here.
+          markerText: marker.textContent,
+          markerBorderStyle: markerStyle.borderTopStyle,
+          markerFilled: markerStyle.backgroundColor !== 'rgba(0, 0, 0, 0)',
+        };
+      }),
     );
     for (const row of readBack) {
       const expected = EXPECTED[row.state!]!;
       expect(row.text, row.id).toContain(expected.glyph);
       expect(row.text, row.id).toContain(expected.word);
       expect(row.hollow, row.id).toBe(row.state === 'not-yet');
+
+      // ── V1.6 VB-33, extending the same proof to the new treatment ──
+      // The marker still prints the tree's own ASCII mark, and its fill still
+      // tells the three states apart with every hue gone: an untouched section
+      // is the only hollow, dashed one; the one being written is the only
+      // solid one; a written one is tinted and closed.
+      expect(row.markerText, row.id).toBe(TREE_GLYPH[row.treeState!]);
+      expect(row.markerBorderStyle === 'dashed', `${row.id} marker outline`).toBe(row.treeState === 'untouched');
+      expect(row.markerFilled, `${row.id} marker fill`).toBe(row.treeState !== 'untouched');
     }
+    // All three treatments really are on screen — otherwise the assertions
+    // above are vacuously true on a file where every row is the same state.
+    expect(new Set(readBack.map((row) => row.treeState)).size).toBeGreaterThan(2);
 
     // Every pill is still legible after the filter — none of them went
     // transparent-on-transparent.
     for (const pill of await page.locator('.filetree-row .sectionhealth-pill').all()) {
       await expect(pill).toBeVisible();
+    }
+
+    // And so is every percentage: VB-33's one new number must not be the thing
+    // that only reads in colour either.
+    for (const percent of await page.locator('.filetree-row .filetree-percent').all()) {
+      await expect(percent).toBeVisible();
+      await expect(percent).toHaveText(/^\d+% /);
     }
 
     await context.close();
@@ -205,14 +250,16 @@ test.describe('VB-19 — five states, derived', () => {
     await expect(partly.locator('.filetree-detail')).toHaveText(/^\d+ of \d+ · \d+ skipped$/);
 
     // A section nobody has touched says nothing beyond its pill — its row
-    // stays one line, which is what keeps the peek dense.
+    // stays one line, which is what keeps the peek dense. V1.6 VB-33 holds the
+    // same line for the percentage: "0%" beside nothing is not a fact.
     const notYet = page.locator('.filetree-row[data-health="not-yet"]').first();
     await expect(notYet.locator('.filetree-detail')).toHaveCount(0);
+    await expect(notYet.locator('.filetree-percent')).toHaveCount(0);
 
     await context.close();
   });
 
-  test('the detail line reaches a screen reader — it is the row control\'s description', async () => {
+  test('the whole meta line reaches a screen reader — it is the row control\'s description', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
@@ -221,10 +268,18 @@ test.describe('VB-19 — five states, derived', () => {
     const nav = row.locator('.filetree-nav');
     const describedBy = await nav.getAttribute('aria-describedby');
     expect(describedBy, 'a row with a detail line must describe its control with it').toBeTruthy();
-    const detailText = await row.locator('.filetree-detail').textContent();
-    // An attribute selector, not `#id`: React's `useId` mints ids like `:r1:`,
-    // which are legal HTML ids and illegal CSS selectors.
-    await expect(page.locator(`[id="${describedBy}"]`)).toHaveText(detailText!);
+    // V1.6 VB-33 put a second fact on this line — the percentage — so the
+    // description is the WRAPPER around both, not the count alone. Bound to
+    // half the line, the new number would reach the screen and not the screen
+    // reader. An attribute selector, not `#id`: React's `useId` mints ids like
+    // `:r1:`, which are legal HTML ids and illegal CSS selectors.
+    const described = page.locator(`[id="${describedBy}"]`);
+    await expect(described).toHaveClass(/filetree-meta/);
+    const detailText = (await row.locator('.filetree-detail').textContent())!;
+    const percentText = (await row.locator('.filetree-percent').textContent())!;
+    await expect(described).toHaveText(detailText + percentText);
+    // And the figure names itself, for anyone who meets it without the count.
+    expect(percentText).toMatch(new RegExp(`^\\d+% ${S.sectionPercentComplete}$`));
 
     await context.close();
   });

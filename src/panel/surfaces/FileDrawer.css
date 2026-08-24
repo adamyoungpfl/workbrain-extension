@@ -338,21 +338,33 @@
      · the hover on a tree row: --sunken on --surface is a 1.06 difference, a
        cue nobody could see. It lifts to the panel's white instead of sinking,
        which is exactly the strength it had before.
-     · the detail line and an untouched row: --ink-3 is 4.71:1 on the canvas
-       and 4.40:1 here — under the floor (docs/GUARDRAILS.md) — so both take
-       the next step up, at 6.5:1, and stay quieter than the label beside them.
+     · the detail line and the chevron: --ink-3 is 4.71:1 on the canvas and
+       4.40:1 here — under the floor (docs/GUARDRAILS.md) — so both take the
+       next step up, at 6.5:1, and stay quieter than the label beside them.
+       V1.6 VB-33 moved the other two --ink-3 users out of reach of this
+       correction by giving them --ink-2 outright (FileTree.css's
+       `.filetree-num`, and `--row-accent` on an untouched row): a variable
+       read by several rules is not a place to be paying a stage's tax from a
+       different file.
      · the hollow "not yet" pill: --border-i carries meaning on it (WCAG
        1.4.11) and measures 2.92:1 on this stage, so it takes --dock-edge,
        which exists for exactly this (design/tokens.json).
      · the sticky summary: a --canvas bar on a tinted stage is a white strip
        laid over the drawer, which is the thing this whole task is about. */
-.filedrawer .filetree-nav:hover,
-.filedrawer .filetree-toggle:hover {
+.filedrawer .filetree-nav:hover {
+  background: var(--canvas);
+}
+/* The chevron paints its hover on a 30px pseudo-element inside a 44px target
+   (FileTree.css), so the correction has to land there and not on the button. */
+.filedrawer .filetree-toggle:hover::before {
   background: var(--canvas);
 }
 .filedrawer .filetree-detail,
-.filedrawer .filetree-row.is-untouched {
+.filedrawer .filetree-toggle {
   color: var(--ink-2);
+}
+.filedrawer .filetree-toggle:hover {
+  color: var(--ink);
 }
 .filedrawer .sectionhealth-pill.is-hollow {
   border-color: var(--dock-edge);

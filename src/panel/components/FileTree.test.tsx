@@ -3,6 +3,8 @@ import { act } from 'react';
 import { FileTree } from './FileTree';
 import { mount } from './testUtils';
 import { S } from '../strings';
+import { sectionCompletionPercent, sectionHealthFor } from '../../core/freshness/sectionHealth';
+import { splitSectionLabel } from '../../core/flow/sectionLabel';
 import type { FileOutlineNode, Module, RepeatableBlock } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 
@@ -295,14 +297,44 @@ describe('FileTree — section health (VB-19)', () => {
     stale.unmount();
   });
 
-  it('binds the detail line to the row\'s own control, so it is not lost behind an aria-label', () => {
+  it('binds the WHOLE meta line to the row\'s own control, so it is not lost behind an aria-label', () => {
     const { container } = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: TODAY } }), 'name', 'sec1');
     const row = rowFor(container, 'sec2');
     const nav = row.querySelector('.filetree-nav') as HTMLElement;
-    const detail = row.querySelector('.filetree-detail') as HTMLElement;
-    expect(detail).not.toBe(null);
-    expect(nav.getAttribute('aria-describedby')).toBe(detail.id);
-    expect(detail.id.length).toBeGreaterThan(0);
+    // V1.6 VB-33 put a second thing on this line — the percentage — so the
+    // description is now the wrapper around both, not the count alone. A
+    // description bound to half the line is how the new number would reach the
+    // screen and not the screen reader.
+    const meta = row.querySelector('.filetree-meta') as HTMLElement;
+    expect(meta).not.toBe(null);
+    expect(nav.getAttribute('aria-describedby')).toBe(meta.id);
+    expect(meta.id.length).toBeGreaterThan(0);
+    expect(meta.querySelector('.filetree-detail')).not.toBe(null);
+    expect(meta.querySelector('.filetree-percent')).not.toBe(null);
+  });
+
+  /**
+   * V1.6 VB-33 — the percentage. One real ratio of the two counts printed
+   * beside it, never a composite score: the reasoning is written out over
+   * `sectionCompletionPercent` in src/core/freshness/sectionHealth.ts, and the
+   * arithmetic itself is proved there. What is left for the tree is that the
+   * figure it prints is the one that function returns, and that it says
+   * "complete" out loud for anyone meeting it without the count.
+   */
+  it('prints the section\'s own completion percentage, with the word said out loud', () => {
+    const { container } = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: TODAY } }), 'name', 'sec1');
+    const row = rowFor(container, 'sec2');
+    const health = sectionHealthFor(outline[1]!, modules, makeAnswers({ values: { later: 'x' } }), null, new Date());
+    const percent = row.querySelector('.filetree-percent') as HTMLElement;
+    expect(percent.textContent).toBe(`${S.sectionPercent(sectionCompletionPercent(health)!)} ${S.sectionPercentComplete}`);
+    expect(percent.querySelector('.filetree-sr')!.textContent!.trim()).toBe(S.sectionPercentComplete);
+  });
+
+  it('says nothing about percentage on a section nobody has touched', () => {
+    const { container } = renderTree(makeAnswers(), 'name', 'sec1');
+    // No count, so no figure either: "0%" beside nothing is not a fact worth a
+    // second line on nine-tenths of the first screen anybody sees.
+    expect(rowFor(container, 'sec2').querySelector('.filetree-percent')).toBe(null);
   });
 
   it('keeps an empty section inert — a pill is not a control', () => {
@@ -325,5 +357,53 @@ describe('FileTree — section health (VB-19)', () => {
     const { container } = renderTree(makeAnswers(), null, null);
     const tree = container.querySelector('.filetree') as HTMLElement;
     expect(tree.firstElementChild!.classList.contains('sectionhealth-summary')).toBe(true);
+  });
+});
+
+/**
+ * V1.6 VB-33 — the accordion's new shape. The look itself is measured in a
+ * real browser (tests/e2e/file-accordion.spec.ts); what only the component can
+ * be wrong about is the structure that look is hung on.
+ */
+describe('FileTree — the accordion (VB-33)', () => {
+  it('prints a section\'s label whole, with only its numbering set apart', () => {
+    const { container } = renderTree(makeAnswers(), null, null);
+    for (const node of outline) {
+      const label = rowFor(container, node.id).querySelector('.filetree-label') as HTMLElement;
+      // The whole title, unchanged — the number is styled, never dropped.
+      expect(label.textContent, node.id).toBe(node.label);
+      expect(label.querySelector('.filetree-num')!.textContent, node.id).toBe(splitSectionLabel(node.label).numeral);
+    }
+  });
+
+  it('leads with the state marker and trails with the disclosure', () => {
+    const { container } = renderTree(makeAnswers(), null, null);
+    const row = rowFor(container, 'sec1');
+    // The marker at the left is where a flying orb lands (core/drawer/mode.ts
+    // measures this element), and the chevron at the far edge is what stops a
+    // 44px control standing between the panel edge and every section name.
+    expect(row.firstElementChild!.classList.contains('filetree-glyph')).toBe(true);
+    expect(row.lastElementChild!.classList.contains('filetree-toggle')).toBe(true);
+    // A childless section keeps the column, so the pills stay in one line.
+    expect(rowFor(container, 'sec2').lastElementChild!.classList.contains('filetree-toggle-spacer')).toBe(true);
+  });
+
+  it('marks a child row as a card and a top-level row as a plain band', () => {
+    const { container } = renderTree(makeAnswers({ values: { name: 'Ada' } }), 'role_names', 'sec1');
+    expect(rowFor(container, 'sec1').classList.contains('is-child')).toBe(false);
+    expect(rowFor(container, 'sec1').dataset.depth).toBe('0');
+    // The accordion follows the active section, so 1.1 Roles is on screen.
+    expect(rowFor(container, 'sec1-1').classList.contains('is-child')).toBe(true);
+    expect(rowFor(container, 'sec1-1').dataset.depth).toBe('1');
+  });
+
+  it('still opens one section at a time and still follows the active one', () => {
+    // Unchanged by VB-33 and asserted again here on purpose: the restyle sits
+    // over VB-07's accordion rather than replacing it.
+    const { container } = renderTree(makeAnswers({ values: { name: 'Ada' } }), 'role_names', 'sec1');
+    expect(rowFor(container, 'sec1').querySelector('.filetree-toggle')!.getAttribute('aria-expanded')).toBe('true');
+    click(rowFor(container, 'sec1').querySelector('.filetree-toggle') as HTMLElement);
+    expect(rowFor(container, 'sec1').querySelector('.filetree-toggle')!.getAttribute('aria-expanded')).toBe('false');
+    expect(rowFor(container, 'sec1-1')).toBe(null);
   });
 });

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { sectionHealthFor, sectionHealthMap, summariseSectionHealth } from './sectionHealth';
+import { sectionCompletionPercent, sectionHealthFor, sectionHealthMap, summariseSectionHealth } from './sectionHealth';
 import { halfLifeFor } from './halfLives';
 import { contextModules, contextOutline } from '../flow/flow';
 import type { FileOutlineNode, Module, RepeatableBlock, Step } from '../../schema/flow.types';
@@ -354,6 +354,61 @@ describe('the summary across the top', () => {
     const summary = summariseSectionHealth(outline, map);
     expect(summary.notYet).toBe(outline.length);
     expect(summary.needsAttention).toBe(0);
+  });
+});
+
+/**
+ * V1.6 VB-33. One ratio of two counts the row already prints — see the long
+ * note over `sectionCompletionPercent` for why that is a real metric and not
+ * the composite score docs/GUARDRAILS.md rules out.
+ */
+describe('the completion percentage', () => {
+  const at = (answered: number, total: number) => sectionCompletionPercent({ answered, total });
+
+  it('is the plain ratio of answered to total', () => {
+    expect(at(1, 2)).toBe(50);
+    expect(at(3, 4)).toBe(75);
+    expect(at(7, 13)).toBe(54);
+  });
+
+  it('reads 100 only when the section is genuinely finished', () => {
+    expect(at(8, 8)).toBe(100);
+    // 299 of 300 rounds to 100 and must not: one question is still unanswered.
+    expect(at(299, 300)).toBe(99);
+  });
+
+  it('reads 0 only when nothing at all is answered', () => {
+    expect(at(0, 6)).toBe(0);
+    // 1 of 300 rounds to 0 and must not: something really was answered.
+    expect(at(1, 300)).toBe(1);
+  });
+
+  it('is null when the section asks nothing — 0% of nothing is not a fact', () => {
+    expect(at(0, 0)).toBeNull();
+  });
+
+  it('agrees with the count printed beside it, and a skip is not an answer', () => {
+    // 3. My World asks its gate plus the two fields the open block holds once
+    // the gate says yes. One answered, one skipped, one never reached.
+    const a = answers({
+      values: { things_gate: 'yes' },
+      repeatables: { things: [{ thing_name: null }] },
+      answeredAt: { things_gate: daysAgo(1), 'things#0#thing_name': daysAgo(1) },
+    });
+    const h = healthOf(sec3, a);
+    expect(h.total).toBe(3);
+    expect(h.answered).toBe(1);
+    expect(h.skipped).toBe(1);
+    // 1 of 3 — the skipped one is not in the file, so it is not in the number.
+    expect(sectionCompletionPercent(h)).toBe(33);
+  });
+
+  it('is never rolled up into a file-level number — sections stay counted, not scored', () => {
+    const map = sectionHealthMap(contextOutline, contextModules, answers(), null, NOW);
+    const summary = summariseSectionHealth(contextOutline, map);
+    // The summary is counts of sections. Nothing in it is a percentage.
+    for (const value of Object.values(summary)) expect(Number.isInteger(value)).toBe(true);
+    expect(summary.notYet).toBe(contextOutline.length);
   });
 });
 

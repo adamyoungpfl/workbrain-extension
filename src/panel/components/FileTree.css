@@ -2,27 +2,58 @@
    ../modelcitizen/src/app/globals.css's `.wbci-filetree` block (~5788-5860);
    the layout is re-authored for a 400px panel, see FileDrawer.css.
 
-   Colour, deliberately different from the source: there, unreached rows are
-   sub-threshold on purpose. docs/GUARDRAILS.md has no such exemption, so here
-   the three states are one legible neutral plus TWO STRENGTHS OF ONE FAMILY —
-   --green ("done, current, healthy") for a written section, --green-strong for
-   the one being written. On a light canvas stronger means deeper; the source
-   mixes toward white because it sits on a dark surface. And colour is never
-   the only signal: every row also carries an ASCII state marker and a
-   visually hidden word (see FileTree.tsx). */
+   ── V1.6 VB-33: the same tree, in a different register ──────────────────
+   VB-07 shipped this as a terminal listing — mono everywhere, brackets, a
+   disclosure arrow leading every row. VB-33 restyles it into a set of
+   collapsible section rows: near-white ground, hairline dividers, no cards on
+   the top level, the section's name in sans as the loud thing, its numbering
+   and its counts quiet beside it, the status marker at the row's left edge and
+   the chevron at the far right.
+
+   THREE THINGS THAT LOOK LIKE TASTE AND ARE NOT:
+
+   1. **The row is still exactly one 44px band.** The name and the meta line
+      share the navigate control's own box rather than stacking under it — see
+      `.filetree-main`. Losing that puts every answered row near sixty pixels
+      and halves what the drawer's default peek can show.
+   2. **The glyph's box stays small.** `core/drawer/mode.ts`'s `endOf` sizes
+      every flying node from `min(width, height) / 2` of `.filetree-glyph`, so
+      letting it grow to the row's height would silently change where and how
+      big each node lands. VB-33 grew it from bare text to a marker tile on
+      purpose and stopped at 18px, which is roughly an orb — the landing point
+      VB-32 wants — and still inside the ceiling
+      tests/e2e/section-health.spec.ts asserts.
+   3. **Colour is never the only signal.** The marker's FILL carries the tree's
+      three states on its own: hollow with a dashed edge when untouched, tinted
+      when written, solid when it is the one being written. The ASCII mark
+      inside it, the hidden word beside it, and the pill's own word and glyph
+      all say the same thing again. Colour is the sixth signal and the only
+      removable one — tests/e2e/section-health.spec.ts takes it away and
+      re-reads every row.
+
+   Colour itself, unchanged in meaning since VB-07 and now driven by the row's
+   HEALTH rather than by its position: `--row-accent` is amber where a section
+   has aged past its clock, green where it is finished and current, the panel's
+   primary where the interview is standing, and plain ink where it is merely
+   part-done or untouched. That is VB-33's "a colour indicating incomplete or
+   stale", said with the palette the pills already use so a section that is due
+   in the drawer is due in the same colour on Home. */
 
 .filetree {
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
 }
 
+/* The file's own name, above the sections. Still mono — it is a FILENAME, and
+   the one place in the list where the terminal register is telling the truth
+   rather than decorating. */
 .filetree-root {
-  margin: 0 0 6px;
-  padding: 0 2px 8px;
-  border-bottom: 1px solid var(--divider);
+  margin: 0 0 2px;
+  padding: 8px 2px;
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  color: var(--ink);
+  letter-spacing: -0.01em;
+  color: var(--ink-2);
 }
 
 .filetree-list {
@@ -35,70 +66,108 @@
   margin: 0;
 }
 
+/* THE HAIRLINE UNDER EACH SECTION, and nothing else doing the separating: no
+   card, no box, no border around the top-level rows (VB-33's reference calls
+   this out explicitly). Bled to the drawer body's own padding so the rule runs
+   the full width of the pane rather than stopping short of it, which is what
+   makes a list of rows read as one object.
+
+   On the ITEM, not the row, so an expanded section's children sit inside their
+   own section's band instead of below a rule that has already closed it. */
+.filetree > .filetree-list > .filetree-item {
+  margin: 0 -14px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--divider);
+}
+.filetree > .filetree-list > .filetree-item:last-child {
+  border-bottom: none;
+}
+
 /* V1.3 VB-19 gave a row a second line, and deliberately did NOT change this:
    the detail line lives inside the row's own 44px control (see
    `.filetree-main`), so a row is still exactly one 44px band and everything in
-   it still centres against that band. That matters beyond tidiness — the mode
-   morph flies each section's node to `.filetree-glyph`, and sizes it from that
-   box, so growing the glyph's box would silently change where and how big
-   every node lands (core/drawer/mode.ts's `endOf`). */
+   it still centres against that band. */
 .filetree-row {
   display: flex;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
   min-height: var(--target-min);
+
+  /* The row's accent, set once here and read by the marker and the
+     percentage. Default is the quiet one: a section that is merely part-done
+     or untouched is not asking for anything. */
+  --row-accent: var(--ink-2);
+  --row-accent-tint: var(--sunken);
 }
 
-/* Both controls clear the 44x44 floor (docs/GUARDRAILS.md) — the disclosure
-   is icon-only, so its box has to supply the whole target, and the navigate
-   control takes the rest of the row at the same height. */
-.filetree-toggle,
-.filetree-toggle-spacer {
-  flex: none;
-  width: var(--target-min);
-  height: var(--target-min);
+/* Health, not position, decides the colour (VB-33). The five states are
+   core/freshness/sectionHealth.ts's, and the tints are the ones FileRow.css's
+   badge already uses for the same three meanings. */
+.filetree-row[data-health='here'] {
+  --row-accent: var(--primary);
+  --row-accent-tint: var(--primary-tint);
+}
+.filetree-row[data-health='done'] {
+  --row-accent: var(--green);
+  --row-accent-tint: var(--green-tint);
+}
+.filetree-row[data-health='due'] {
+  --row-accent: var(--amber);
+  --row-accent-tint: var(--amber-tint);
+}
+/* Not `--ink-3`, which is 4.71:1 on the canvas but 4.40:1 on the stage the
+   drawer's List mode actually sits on (FileDrawer.css) — under the floor
+   docs/GUARDRAILS.md sets, and this variable colours real text. The two quiet
+   states share one ink and are told apart by the marker's fill instead. */
+.filetree-row[data-health='not-yet'] {
+  --row-accent: var(--ink-2);
+  --row-accent-tint: var(--sunken);
 }
 
-.filetree-toggle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  appearance: none;
-  background: none;
-  border: none;
-  padding: 0;
-  margin: 0;
-  color: var(--ink-2);
-  cursor: pointer;
-  border-radius: var(--r-sm);
-}
-.filetree-toggle:hover {
-  background: var(--sunken);
-}
-.filetree-toggle:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-.filetree-chevron {
-  transition: transform var(--fast) var(--ease);
-}
-.filetree-chevron.is-open {
-  transform: rotate(90deg);
-}
-
+/* ── The status marker ────────────────────────────────────────────────────
+   The row's left edge, at roughly orb size. This is the box the mode morph
+   measures (see the file header, point 2) and the point VB-32 wants a flying
+   orb to become, so its size is a contract and not a look. */
 .filetree-glyph {
   flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: 26px;
+  height: 18px;
+  border-radius: var(--r-sm);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 10px;
   line-height: 1;
   letter-spacing: -0.04em;
-  color: inherit;
+  background: var(--row-accent-tint);
+  color: var(--row-accent);
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+
+/* THE FILL IS THE SIGNAL, and it tracks the TREE's three states rather than
+   the five health ones, so it always agrees with the ASCII mark printed inside
+   it. Hollow / tinted / solid are three treatments a greyscale screen keeps. */
+.filetree-row.is-untouched .filetree-glyph {
+  background: none;
+  /* --border-i, never --divider: this edge carries meaning, and WCAG 1.4.11
+     asks 3:1 of one that does. */
+  border: 1px dashed var(--border-i);
+}
+.filetree-row.is-current .filetree-glyph {
+  background: var(--row-accent);
+  color: var(--ink-inv);
 }
 
 /* The state word, for assistive tech only. Standard sr-only, same values as
-   Flow.css's `.flow-field-sr-label .field-label`. */
-.filetree-srstate {
+   Flow.css's `.flow-field-sr-label .field-label`. `.filetree-sr` is the same
+   rule under a name that is not about state — V1.6 VB-33 needed a second
+   hidden word ("complete", after the percentage) and reusing `-srstate` would
+   have put two of them in a row, which every test that reads a row's state
+   word by class would then have found ambiguous. */
+.filetree-srstate,
+.filetree-sr {
   position: absolute;
   width: 1px;
   height: 1px;
@@ -110,58 +179,139 @@
   margin: -1px;
 }
 
-/* V1.3 VB-19 — everything to the right of the glyph column: the name with its
-   detail line under it, and the status pill pinned to the right of both.
+/* V1.3 VB-19 — everything to the right of the marker: the name with its meta
+   line under it, and the status pill pinned to the right of both.
 
-   THE NAME AND THE DETAIL SHARE ONE 44px BOX rather than stacking two. The
+   THE NAME AND THE META SHARE ONE 44px BOX rather than stacking two. The
    navigate control has to clear 44x44 whatever is in it (docs/GUARDRAILS.md),
-   so a detail line hung *underneath* a 44px control would put every answered
-   row near sixty pixels and halve what the drawer's default peek can show.
-   Two lines inside the one control cost nothing: a 12px name over a 10.5px
-   detail is still under 44, so a row that reports its health is exactly as
-   tall as one that has nothing to report. */
+   so a meta line hung *underneath* a 44px control would put every answered row
+   near sixty pixels and halve what the drawer's default peek can show. Two
+   lines inside the one control cost nothing: a 13px name over a 10.5px meta
+   line is still under 44, so a row that reports its health is exactly as tall
+   as one that has nothing to report.
+
+   ── V1.6 VB-33: A GRID, SO THE TWO LINES CAN BE DIFFERENT WIDTHS ─────────
+   VB-19 laid this out as a flex row — control, then pill — which gave BOTH
+   lines inside the control the same narrow column, because the pill's width
+   came off the end of each of them. That was affordable while the meta line
+   was "8 of 8 · answered 7 months ago"; VB-33 adds the percentage to it, and
+   at 400px the widest real row ("29 of 29 · answered 11 months ago", a file
+   with five roles in it, written a year ago) then missed by two pixels.
+
+   The fix is not a smaller font. The pill only ever needs the NAME's line —
+   the reference puts it there too, hard right of the title — so the control
+   takes the full width and the pill overlaps its top right corner. The name
+   reserves the pill's room (`--pill-reserve`) and the meta line does not,
+   which hands the meta line the pill's width back: about seventy pixels, or
+   the difference between two pixels of headroom and a hundred.
+
+   Two consequences, both handled:
+     · The pill now sits over the control, so it takes `pointer-events: none`
+       — otherwise a strip of row that highlights on hover would swallow the
+       click that the highlight promised.
+     · The pill is aligned to the NAME's line rather than to the middle of the
+       row, which is what keeps it clear of the meta line underneath.
+       `.has-meta` rather than `:has()`, because the component already knows
+       which rows have a meta line and a computed class cannot get it wrong.
+   `tests/e2e/file-accordion.spec.ts` measures both — that the pill's box ends
+   above the meta line's, and that the meta line is never truncated. */
 .filetree-main {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  gap: 8px;
   flex: 1;
   min-width: 0;
   min-height: var(--target-min);
+
+  /* The room the name leaves for the pill on its own line. Bigger than the
+     widest pill the five states produce ("[ ] Not yet"); the assertion that it
+     really is bigger lives in tests/e2e/section-health.spec.ts, which measures
+     the longest real section name ending before its pill begins. */
+  --pill-reserve: 72px;
 }
 
-/* What the pill cannot carry: how much is written, and either what was passed
-   on or how long ago. --ink-3 is 4.71:1 on the canvas, above the 4.5:1 floor
-   (docs/GUARDRAILS.md) — quiet, never sub-threshold. */
+.filetree-main > .filetree-nav,
+.filetree-main > .filetree-static {
+  grid-area: 1 / 1 / 2 / 3;
+}
+
+.filetree-main > .sectionhealth-pill {
+  grid-area: 1 / 2 / 2 / 3;
+  pointer-events: none;
+}
+
+/* Centred on the name's line, not on the row: a two-line row puts its name in
+   the top seventeen pixels and its meta line under that, and a pill floating
+   in the middle would sit across both. */
+.filetree-row.has-meta .filetree-main > .sectionhealth-pill {
+  align-self: start;
+  margin-top: 5px;
+}
+
+/* ── The meta line: what the pill cannot carry ────────────────────────────
+   How much of the section is written, either what was passed on or how long
+   ago, and — V1.6 VB-33 — the percentage, hard right.
+
+   The percentage is ONE REAL RATIO of the two counts printed to its left, not
+   a score: see the long note over `sectionCompletionPercent` in
+   src/core/freshness/sectionHealth.ts, which is where the guardrail reasoning
+   lives. Nothing here is ever summed across sections.
+
+   --ink-3 is 4.71:1 on the canvas, above the 4.5:1 floor
+   (docs/GUARDRAILS.md) — quiet, never sub-threshold. On the drawer's own
+   stage it steps up again, see FileDrawer.css. */
+.filetree-meta {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 2px;
+  min-width: 0;
+}
+
 .filetree-detail {
-  display: block;
-  margin-top: 1px;
-  font-family: var(--font-mono);
+  flex: 1 1 auto;
+  min-width: 0;
   font-size: 10.5px;
   line-height: 1.3;
   color: var(--ink-3);
-  overflow-wrap: anywhere;
+  /* One line, always. The row is a 44px band and a meta line that wraps takes
+     it out of that band — so a meta line too long for the column ends in an
+     ellipsis rather than pushing the row taller. In the shipped flow it never
+     reaches that point; this is the guard, not the plan. */
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The headline number, set apart at the right of the meta line so it reads as
+   a figure rather than as another clause. Tabular figures so a column of them
+   does not jitter between 9% and 100%. */
+.filetree-percent {
+  flex: none;
+  font-size: 10.5px;
+  line-height: 1.3;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--row-accent);
 }
 
 /* A section nobody has reached is not a button, so its name is a bare span —
    given the same box the button form gets, so the two forms are
-   pixel-identical at rest. That is the existing rule (see `.filetree-nav`
-   below) and VB-19 does not change it: an empty section is still not
-   clickable, and still not a tab stop. */
+   pixel-identical at rest. */
 .filetree-static {
-  display: block;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
   flex: 1;
   min-width: 0;
-  padding: 0 4px;
+  padding: 0 2px;
 }
 
 /* A clickable row looks IDENTICAL to a non-clickable one at rest — every
    browser button default is reset — with hover and focus as the only visible
-   sign it is interactive. That keeps the tree reading as a file listing
-   rather than a stack of buttons. */
+   sign it is interactive. That keeps the list reading as a file listing rather
+   than as a stack of buttons. */
 .filetree-nav {
-  /* A column, since V1.3 VB-19 put the detail line inside this control (see
-     `.filetree-main`), centred so a row with no detail sits exactly where it
-     always did. */
   display: flex;
   flex-direction: column;
   justify-content: center;
@@ -172,7 +322,7 @@
   appearance: none;
   background: none;
   border: none;
-  padding: 0 4px;
+  padding: 0 2px;
   margin: 0;
   text-align: left;
   color: inherit;
@@ -188,25 +338,169 @@
   outline-offset: 2px;
 }
 
+/* The section's name is the loud thing on the row (VB-33's "modern and sleek"
+   register). Neutral ink at every state, because the state is already carried
+   by the marker, the pill and the cursor — a name that changes colour as well
+   would be a fourth telling of the same fact and would stop the list reading
+   as one object. */
 .filetree-label {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  line-height: 1.4;
+  display: block;
+  /* The pill's room, left on the NAME's line only — see `.filetree-main`.
+     Reserved as a MAX-WIDTH over a box that hugs its text, not as padding on a
+     box that fills the line: a name whose box ran on under the pill would make
+     "the name ends before the pill starts" unmeasurable, and that measurement
+     is the one that proves the reserve is big enough
+     (tests/e2e/section-health.spec.ts). */
+  align-self: flex-start;
+  max-width: calc(100% - var(--pill-reserve, 0px));
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+  color: var(--ink);
   overflow-wrap: anywhere;
 }
 
-.filetree-row.is-untouched {
-  color: var(--ink-3);
+/* The file's own numbering, kept in the name and set quietly — VB-33's
+   reference gives it a badge of its own; here it stays inside the label so the
+   row still prints the section's real title, whole, exactly as the generated
+   file writes it. */
+.filetree-num {
+  font-weight: 500;
+  /* --ink-2, not --ink-3: this is real text and the drawer's stage takes
+     --ink-3 under 4.5:1 (FileDrawer.css). Weight does the quietening that a
+     lighter ink is not allowed to. */
+  color: var(--ink-2);
 }
-.filetree-row.is-reached,
-.filetree-row.is-record {
-  color: var(--green);
-}
-.filetree-row.is-current {
-  color: var(--green-strong);
+
+/* An untouched section is legible, never sub-threshold: docs/GUARDRAILS.md
+   writes no disabled-control exemption. It is quieter, not hidden. */
+.filetree-row.is-untouched .filetree-label {
+  font-weight: 550;
+  color: var(--ink-2);
 }
 .filetree-row.is-current .filetree-label {
   font-weight: 700;
+}
+
+/* ── The disclosure, at the far edge ──────────────────────────────────────
+   44x44 whatever is drawn in it (docs/GUARDRAILS.md), and the spacer keeps a
+   childless row's pill in the same column as one that has a chevron. */
+.filetree-toggle,
+.filetree-toggle-spacer {
+  flex: none;
+  width: var(--target-min);
+  height: var(--target-min);
+}
+
+.filetree-toggle {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  appearance: none;
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-radius: var(--r-pill);
+}
+
+/* THE TARGET IS 44x44 AND THE PAINT IS 30x30. The control has to be 44 square
+   (docs/GUARDRAILS.md) but a 44px block of hover behind a 10px chevron reads
+   as a tile someone dropped on the row. The pseudo-element takes the paint and
+   the button keeps the target, so nothing is traded away. */
+.filetree-toggle::before {
+  content: '';
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--r-pill);
+  background: none;
+  transition: background var(--fast) var(--ease);
+}
+.filetree-toggle:hover {
+  color: var(--ink);
+}
+.filetree-toggle:hover::before {
+  background: var(--sunken);
+}
+.filetree-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Points down when closed, up when open — the chevron sits at the right of a
+   row it opens downward, so it turns through the same 180° a select does
+   rather than the 90° a tree arrow does. */
+.filetree-chevron {
+  transition: transform var(--base) var(--ease);
+  transform: rotate(90deg);
+}
+.filetree-chevron.is-open {
+  transform: rotate(-90deg);
+}
+
+/* ── What an open section reveals ─────────────────────────────────────────
+   VB-33's reference shows the children as light rounded cards on the
+   near-white ground, and that is the one place a box earns its keep: it says
+   "these belong to the row above" without a second rule competing with the
+   hairlines that separate the sections themselves. */
+.filetree-list.is-children,
+.filetree-list.is-records {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 2px 0 8px;
+}
+
+.filetree-row.is-child {
+  background: var(--sunken);
+  border-radius: var(--r-md);
+  padding: 0 8px;
+}
+
+/* A card has no disclosure of its own — nothing in the outline nests three
+   deep — so it does not keep the 44px column that holds one. Reserving it
+   would cost the card an eighth of its width and truncate the very meta line
+   the card exists to show; the reference right-aligns a child's values to the
+   CARD's edge for the same reason. */
+.filetree-row.is-child > .filetree-toggle-spacer {
+  display: none;
+}
+.filetree-row[data-depth='1'] {
+  margin-left: 12px;
+}
+.filetree-row[data-depth='2'] {
+  margin-left: 24px;
+}
+
+/* Inside a card the ground is already grey, so the hover has to lift rather
+   than sink — the same correction FileDrawer.css makes for the stage. */
+.filetree-row.is-child .filetree-nav:hover,
+.filetree-row.is-child .filetree-toggle:hover {
+  background: var(--canvas);
+}
+
+/* A record is one entry the file holds under a section — a role's name, an
+   entity's. Quieter than a section and never a control. */
+.filetree-row.is-record {
+  min-height: 28px;
+  gap: 8px;
+}
+.filetree-row.is-record .filetree-glyph {
+  height: 14px;
+  width: 22px;
+  font-size: 9px;
+  background: var(--sunken);
+  color: var(--ink-2);
+}
+.filetree-row.is-record .filetree-label {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: var(--ink-2);
 }
 
 /* A slow blinking terminal cursor on the section being written — ported
@@ -216,6 +510,7 @@
 .filetree-cursor {
   display: inline-block;
   margin-left: 3px;
+  color: var(--row-accent);
   animation: filetreeBlink 2.2s steps(1) infinite;
 }
 
@@ -238,7 +533,8 @@
     animation: none;
     opacity: 1;
   }
-  .filetree-chevron {
+  .filetree-chevron,
+  .filetree-glyph {
     transition: none;
   }
 }
