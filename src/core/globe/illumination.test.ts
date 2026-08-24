@@ -79,10 +79,12 @@ describe('VB-25 — an edge is a function of both its endpoints', () => {
     for (const a of STATES) for (const b of STATES) expect(edgeBrightness(a, b)).toBe(EDGE_LIGHT_LEVEL[edgeLight(a, b)]);
   });
 
-  it('reads the tree\'s own three states, and calls a vertex with no section structural', () => {
-    expect(globeNodeState('current')).toBe('active');
-    expect(globeNodeState('reached')).toBe('active');
-    expect(globeNodeState('untouched')).toBe('inactive');
+  // V1.8 VB-46: the input is now `sectionLife`'s three-way answer rather than
+  // the tree's, so the edges and the orbs are lit by one rule.
+  it('reads a section\'s own life, and calls a vertex with no section structural', () => {
+    expect(globeNodeState('live')).toBe('active');
+    expect(globeNodeState('lit')).toBe('active');
+    expect(globeNodeState('dim')).toBe('inactive');
     expect(globeNodeState(null)).toBe('structural');
     expect(globeNodeState(undefined)).toBe('structural');
   });

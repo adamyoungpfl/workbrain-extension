@@ -140,19 +140,29 @@ test.describe('VB-07 — the living file tree', () => {
     // does too, so this counts one-or-more rather than exactly one.
     const current = page.locator('.filetree-row[data-node-state="current"]').first();
     expect(await page.locator('.filetree-row[data-node-state="current"]').count()).toBeGreaterThanOrEqual(1);
-    // A glyph, a word for assistive tech, and a terminal cursor — none of them
-    // colour (docs/GUARDRAILS.md: nothing distinguished by colour alone).
-    await expect(current.locator('.filetree-glyph')).toHaveText('[>]');
+    // An orb wearing a ring nothing else has, a mark drawn inside it, a word
+    // for assistive tech, and a terminal cursor — none of them colour
+    // (docs/GUARDRAILS.md: nothing distinguished by colour alone).
+    //
+    // V1.8 VB-45 replaced the ASCII tile with the section's own orb from the
+    // Brain visual. The three states still differ in three non-colour ways;
+    // what carries them changed, and the greyscale read-back that proves it
+    // lives in tests/e2e/section-health.spec.ts.
+    await expect(current.locator('.filetree-glyph')).toHaveAttribute('data-life', 'live');
+    await expect(current.locator('.filetree-mark')).toHaveCount(1);
     await expect(current.locator('.filetree-srstate')).toHaveText(S.fileTreeStateCurrent);
     await expect(current.locator('.filetree-cursor')).toHaveCount(1);
 
-    const reached = page.locator('.filetree-row[data-node-state="reached"]').first();
-    await expect(reached.locator('.filetree-glyph')).toHaveText('[x]');
+    const reached = page.locator('.filetree-row[data-life="lit"]').first();
+    await expect(reached.locator('.filetree-glyph')).toHaveAttribute('data-life', 'lit');
+    await expect(reached.locator('.filetree-mark')).toHaveCount(1);
     await expect(reached.locator('.filetree-srstate')).toHaveText(S.fileTreeStateReached);
     await expect(reached.locator('.filetree-cursor')).toHaveCount(0);
 
+    // The greyed one is the only one with nothing drawn inside its orb.
     const untouched = page.locator('.filetree-row[data-node-state="untouched"]').first();
-    await expect(untouched.locator('.filetree-glyph')).toHaveText('[ ]');
+    await expect(untouched.locator('.filetree-glyph')).toHaveAttribute('data-life', 'dim');
+    await expect(untouched.locator('.filetree-mark')).toHaveCount(0);
     await expect(untouched.locator('.filetree-srstate')).toHaveText(S.fileTreeStateUntouched);
 
     await context.close();
@@ -504,16 +514,30 @@ test.describe('VB-07 — the terminal aesthetic', () => {
     expect(cursorStyle.animationName).toBe('none');
     expect(Number(cursorStyle.opacity)).toBe(1);
 
-    // All three states still say what they are, in words and in glyphs.
-    for (const [state, glyph, word] of [
-      ['current', '[>]', S.fileTreeStateCurrent],
-      ['reached', '[x]', S.fileTreeStateReached],
-      ['untouched', '[ ]', S.fileTreeStateUntouched],
+    // All three states still say what they are, in words and in marks.
+    for (const [life, marks, word] of [
+      ['live', 1, S.fileTreeStateCurrent],
+      ['lit', 1, S.fileTreeStateReached],
+      ['dim', 0, S.fileTreeStateUntouched],
     ] as const) {
-      const row = page.locator(`.filetree-row[data-node-state="${state}"]`).first();
-      await expect(row.locator('.filetree-glyph')).toHaveText(glyph);
+      const row = page.locator(`.filetree-row[data-life="${life}"]`).first();
+      await expect(row.locator('.filetree-mark')).toHaveCount(marks);
       await expect(row.locator('.filetree-srstate')).toHaveText(word);
     }
+
+    // V1.8 VB-46 — THE LIVE ROW WITHOUT ITS PULSE. The ring stays, still and
+    // at full strength, so the live area is still marked by a shape nothing
+    // else on the list wears. The instruction survives the animation being
+    // removed, which is what docs/GUARDRAILS.md asks for.
+    const live = page.locator('.filetree-row[data-life="live"] .filetree-glyph').first();
+    const ring = await live.evaluate((el) => {
+      const after = getComputedStyle(el, '::after');
+      return { animationName: after.animationName, opacity: after.opacity, width: after.width, shadow: getComputedStyle(el).boxShadow };
+    });
+    expect(ring.animationName).toBe('none');
+    expect(Number(ring.opacity)).toBe(1);
+    expect(parseFloat(ring.width)).toBeGreaterThan(0);
+    expect(ring.shadow).not.toBe('none');
 
     // Labels are whole, not mid-print, and no preview section is animating.
     const labels = await page.locator('.filetree-row[data-node-id] .filetree-label').allTextContents();

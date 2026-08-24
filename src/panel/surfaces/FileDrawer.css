@@ -414,9 +414,22 @@
 .filedrawer .filetree-toggle:hover::before {
   background: var(--canvas);
 }
+/* V1.8 VB-46 adds two more --ink-3 users to this correction — the count and,
+   on a greyed row, the percentage beside it. Same reasoning, same step up:
+   --ink-3 measures 4.40:1 on this stage, under the floor, and both of these are
+   real text. */
 .filedrawer .filetree-detail,
+.filedrawer .filetree-count,
+.filedrawer .filetree-row[data-life='dim'] .filetree-percent,
 .filedrawer .filetree-toggle {
   color: var(--ink-2);
+}
+
+/* V1.8 VB-45 — the hollow orb's dashed edge carries meaning (WCAG 1.4.11), and
+   --border-i measures 2.92:1 on this stage, so it takes --dock-edge for exactly
+   the reason the hollow "not yet" pill above does. */
+.filedrawer .filetree-glyph[data-life='dim'] {
+  border-color: var(--dock-edge);
 }
 .filedrawer .filetree-toggle:hover {
   color: var(--ink);
@@ -512,6 +525,18 @@
 .filedrawer-morph-node[data-gradient='3'] { background: var(--globe-node-3-mid); }
 .filedrawer-morph-node[data-gradient='4'] { background: var(--globe-node-4-mid); }
 .filedrawer-morph-node[data-gradient='5'] { background: var(--globe-node-5-mid); }
+
+/* V1.8 VB-45. A section with nothing answered in it is a TURNED-DOWN orb at
+   both ends — a muted sphere in the globe (BrainGlobe.css) and a hollow ring in
+   the list (FileTree.css) — so it flies turned down too. Flying it at full
+   saturation was the one place the morph still read as two objects swapping
+   rather than one moving. Which sections those are is `sectionLife`, the same
+   rule both ends are drawn from. */
+.filedrawer-morph-node[data-life='dim'][data-gradient='1'] { background: var(--globe-node-1-muted); }
+.filedrawer-morph-node[data-life='dim'][data-gradient='2'] { background: var(--globe-node-2-muted); }
+.filedrawer-morph-node[data-life='dim'][data-gradient='3'] { background: var(--globe-node-3-muted); }
+.filedrawer-morph-node[data-life='dim'][data-gradient='4'] { background: var(--globe-node-4-muted); }
+.filedrawer-morph-node[data-life='dim'][data-gradient='5'] { background: var(--globe-node-5-muted); }
 
 .filepreview {
   margin-top: 14px;

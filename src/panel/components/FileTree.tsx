@@ -1,13 +1,15 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { FileOutlineNode, Module } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
-import type { OutlineNodeState } from '../../core/flow/outline';
 import { navigationTargetFor, outlineNodeState, repeatableBlocksForNode } from '../../core/flow/outline';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
 import { sectionCompletionPercent, sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
+import type { SectionLife } from '../../core/freshness/sectionLife';
+import { sectionLife } from '../../core/freshness/sectionLife';
 import { splitRevealedSectionLabel } from '../../core/flow/sectionLabel';
 import { repeatableRecordTitle } from '../../core/files/generate';
-import { HealthPill, HealthSummary, healthDetail } from './SectionHealth';
+import { childNodeGradient, sectionNodeGradient } from './BrainGlobe';
+import { HealthPill, HealthSummary, healthFreshness } from './SectionHealth';
 import { prefersReducedMotion } from '../cues/verbs';
 import { S } from '../strings';
 import './FileTree.css';
@@ -70,6 +72,45 @@ import './FileTree.css';
  * sixth and the only removable one — tests/e2e/section-health.spec.ts strips it
  * and re-reads every row, and VB-33 extended that pass to the new treatment
  * rather than replacing it.
+ *
+ * ── V1.8 VB-45 + VB-46 — the row carries the brain's orb ──────────────────
+ *
+ * VB-45: "The icons left of each section label in List become **the coloured
+ * orbs from the Brain visual**, so an orb stays the same object across both
+ * views and the morph reads as one thing moving rather than two things
+ * swapping." So the marker tile is now a real orb, in the section's OWN colour
+ * from the globe — `sectionNodeGradient` is the one place that knows which
+ * sphere a section wears, and the flying node of VB-32's morph already wore it
+ * (FileDrawer.css). The three objects — sphere, flying node, row marker — are
+ * now one object in three places.
+ *
+ * **THE GREYSCALE GUARANTEE IS NOT TRADED AWAY FOR THAT.** VB-33 kept the
+ * ASCII tile precisely because state has to survive colour being removed, and
+ * VB-45 says so in the same breath: "the orb must carry state without colour
+ * too: shape, fill, or a mark." It carries all three, one per state, and any
+ * one of them is enough on its own:
+ *
+ *   · dim  — hollow. No fill at all, a dashed edge, and no mark inside it.
+ *   · lit  — solid fill, with a TICK drawn in it.
+ *   · live — solid fill, with a CARET (the old `[>]`, drawn), inside a RING
+ *            that the dim and lit orbs do not have.
+ *
+ * Plus the hidden word beside it, the pill's own word and glyph, and the count
+ * and percentage at the right end. Colour remains the removable signal, and
+ * tests/e2e/section-health.spec.ts strips it and re-reads all of it.
+ *
+ * **The orb's box is still the morph's landing target.** `core/drawer/mode.ts`'s
+ * `endOf` sizes every flying node from `min(width, height) / 2` of
+ * `.filetree-glyph`; VB-19 already had to repair that once. The tile was 26x18
+ * and the orb is 18x18, so the size a node lands at is unchanged and only the
+ * centre moves — which is measured from the live DOM on every morph, never
+ * computed. tests/e2e/drawer-modes.spec.ts pins the landing to a pixel.
+ *
+ * VB-46 bundles the COUNT, the PERCENTAGE and the STATUS at the row's right
+ * end, and greys a row at 0 of X. Which rows are lit is
+ * `core/freshness/sectionLife.ts` — ONE pure function, which BrainGlobe reads
+ * too, because implementing "which row is live" twice is how the two views
+ * drift apart.
  */
 
 /**
@@ -116,20 +157,58 @@ function useTypewriterOnChange(text: string, stateKey: string, speedMs = 15): st
   return text.slice(0, revealed);
 }
 
-/** The state marker in the glyph column. ASCII on purpose — see the module
- * comment. `aria-hidden`, because the same distinction reaches assistive tech
- * as a real word (`STATE_WORD`) instead. */
-const STATE_GLYPH: Record<OutlineNodeState, string> = {
-  untouched: '[ ]',
-  reached: '[x]',
-  current: '[>]',
+/**
+ * V1.8 VB-45 — the mark inside the orb, one per state, DRAWN rather than
+ * typed.
+ *
+ * The tile these replace printed `[x]` / `[>]` / `[ ]` in mono, which was the
+ * right answer while the marker was three characters wide. Inside an 18px orb
+ * there is no room for three characters, so the same distinction is drawn: a
+ * tick where the old `[x]` was, a caret where the old `[>]` was, and nothing
+ * at all inside a hollow orb where the old `[ ]` was empty too.
+ *
+ * Still not a font glyph, for the reason components/DeepDive.tsx first found:
+ * `▸` renders as an all-but-invisible dot in this panel's font stack, which
+ * would put the whole signal back on colour.
+ */
+const LIFE_MARK: Record<SectionLife, string | null> = {
+  dim: null,
+  lit: 'M2.9 6.2 L5.1 8.4 L9.1 3.9',
+  live: 'M4.7 3.3 L7.4 6 L4.7 8.7',
 };
 
-const STATE_WORD: Record<OutlineNodeState, string> = {
-  untouched: S.fileTreeStateUntouched,
-  reached: S.fileTreeStateReached,
-  current: S.fileTreeStateCurrent,
+/** The same three words the tile said, keyed by the same rule the orb is drawn
+ * from. `aria-hidden` on the orb, because this is where the distinction
+ * reaches assistive tech. */
+const LIFE_WORD: Record<SectionLife, string> = {
+  dim: S.fileTreeStateUntouched,
+  lit: S.fileTreeStateReached,
+  live: S.fileTreeStateCurrent,
 };
+
+/**
+ * The section's orb, at the row's left edge.
+ *
+ * `gradient` is the section's own colour in the Brain visual — the whole point
+ * of VB-45 — and it is `sectionNodeGradient`'s answer rather than a second
+ * cycle, so the row's orb, the sphere it comes from and the node that flies
+ * between them cannot pick different colours.
+ *
+ * The class name is unchanged on purpose: `.filetree-glyph` is what
+ * `core/drawer/mode.ts`'s morph measures and what four specs find this by.
+ */
+function SectionOrb({ life, gradient }: { life: SectionLife; gradient: number }) {
+  const mark = LIFE_MARK[life];
+  return (
+    <span className="filetree-glyph" data-life={life} data-gradient={gradient} aria-hidden="true">
+      {mark && (
+        <svg className="filetree-mark" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+          <path d={mark} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      )}
+    </span>
+  );
+}
 
 /** Points right when closed, down when open. Drawn rather than typed, same
  * convention and same reason as components/DeepDive.tsx's `Chevron`. */
@@ -151,6 +230,11 @@ function Chevron({ open }: { open: boolean }) {
 interface RowProps {
   node: FileOutlineNode;
   depth: number;
+  /** V1.8 VB-45. Which of the globe's five colours this section's orb wears —
+   * decided by `sectionNodeGradient` from the node's position in the file, and
+   * passed down rather than derived here so a child row can be handed its own
+   * place in its parent's cluster instead of a top-level one. */
+  gradient: number;
   modules: Module[];
   answers: Answers;
   currentQuestionId: string | null;
@@ -177,6 +261,7 @@ interface RowProps {
 function FileTreeRow({
   node,
   depth,
+  gradient,
   modules,
   answers,
   currentQuestionId,
@@ -270,24 +355,49 @@ function FileTreeRow({
    *
    * The describedby id moved from the detail line to the wrapper around both,
    * so the description a screen reader gets is still the WHOLE meta line.
+   *
+   * ── V1.8 VB-46: THE COUNT JOINS THE PERCENTAGE AT THE RIGHT END ──────────
+   *
+   * "Per row, bundle **X of Y**, **%**, and the status pairing at the **right
+   * end** of the row." So the count leaves the freshness clause it used to lead
+   * (`healthDetail`) and stands with the figure it is the numerator of, hard
+   * right, directly under the pill. The three of them are one column at the
+   * row's right edge; what is left of the meta line is the one clause the pill
+   * cannot carry — how long ago, or what was passed on.
+   *
+   * `healthDetail` itself is UNTOUCHED, because `FileView` (V1.7) still prints
+   * it whole and a row there has no right-hand column to bundle into.
+   * `healthFreshness` is that same function's second half, exported so the two
+   * surfaces cannot word the same clause differently.
+   *
+   * AND THE 0-STATE NOW PRINTS. VB-19 suppressed the count on a section nobody
+   * had touched, on the grounds that "0 of 6" was a second line about nothing.
+   * VB-46 overrules that outright — "A row at **0 of X** is **greyed out**,
+   * showing **0%**" — and the row can afford it now: the count sits in a column
+   * that already exists rather than opening a line of its own.
    */
   const sectionHealth = health[node.id];
-  const detail = sectionHealth ? healthDetail(sectionHealth) : null;
-  // Null wherever the detail is: a section nobody has touched says nothing
-  // beyond its pill, and "0%" would be the second thing on a row that has
-  // nothing to report (see `healthDetail`).
-  const percent = detail && sectionHealth ? sectionCompletionPercent(sectionHealth) : null;
-  const metaLine = detail ? (
-    <span className="filetree-meta" id={metaId}>
-      <span className="filetree-detail">{detail}</span>
-      {percent !== null && (
+  const freshness = sectionHealth ? healthFreshness(sectionHealth) : null;
+  // Null only where the section genuinely asks nothing: 0% of no questions is
+  // not a fact about the file (see `sectionCompletionPercent`).
+  const percent = sectionHealth ? sectionCompletionPercent(sectionHealth) : null;
+  const counts =
+    sectionHealth && percent !== null ? (
+      <span className="filetree-counts">
+        <span className="filetree-count">{S.sectionAnsweredOf(sectionHealth.answered, sectionHealth.total)}</span>
         <span className="filetree-percent">
           {S.sectionPercent(percent)}
           <span className="filetree-sr"> {S.sectionPercentComplete}</span>
         </span>
-      )}
-    </span>
-  ) : null;
+      </span>
+    ) : null;
+  const metaLine =
+    freshness || counts ? (
+      <span className="filetree-meta" id={metaId}>
+        {freshness && <span className="filetree-detail">{freshness}</span>}
+        {counts}
+      </span>
+    ) : null;
 
   /**
    * V1.6 VB-33 — the row, left to right.
@@ -305,7 +415,17 @@ function FileTreeRow({
    *     read as a tree rather than as a list of sections.
    *
    * The tab order follows the same order: go to the section, then open it.
+   *
+   * V1.8 VB-46 hangs `data-life` off the row as well as off the orb, because
+   * the greying is the whole row's — the count, the figure and the name all
+   * step back together on a section at 0 of X — and one attribute is what lets
+   * the stylesheet say that once (FileTree.css).
    */
+  const life = sectionLife({
+    health: sectionHealth,
+    current: state === 'current',
+    reached: state === 'reached',
+  });
   return (
     <li className={depth === 0 ? 'filetree-item' : 'filetree-item is-nested'}>
       <div
@@ -315,23 +435,22 @@ function FileTreeRow({
         className={`filetree-row is-${state}${depth > 0 ? ' is-child' : ''}${metaLine ? ' has-meta' : ''}`}
         data-node-id={node.id}
         data-node-state={state}
+        data-life={life}
         data-health={sectionHealth?.state}
         data-depth={depth}
       >
-        <span className="filetree-glyph" aria-hidden="true">
-          {STATE_GLYPH[state]}
-        </span>
+        <SectionOrb life={life} gradient={gradient} />
         {/* Said out loud for a screen reader, outside the button so it never
-            competes with the button's own name. The glyph beside it says the
+            competes with the button's own name. The orb beside it says the
             same thing visually. */}
-        <span className="filetree-srstate">{STATE_WORD[state]}</span>
+        <span className="filetree-srstate">{LIFE_WORD[life]}</span>
         <span className="filetree-main">
           {clickable ? (
             <button
               type="button"
               className="filetree-nav"
               aria-label={S.fileTreeGoTo(node.label)}
-              aria-describedby={detail ? metaId : undefined}
+              aria-describedby={metaLine ? metaId : undefined}
               onClick={() => onNavigate(target)}
             >
               {label}
@@ -374,9 +493,11 @@ function FileTreeRow({
             // edit would be two places to keep in step.
             <li className="filetree-item is-nested" key={`${node.id}-record-${i}`}>
               <div className="filetree-row is-record" data-depth={depth + 1}>
-                <span className="filetree-glyph" aria-hidden="true">
-                  {STATE_GLYPH.reached}
-                </span>
+                {/* A record is a thing the file HOLDS, not a section of it, so
+                    it gets the orb's shape at a smaller size and none of its
+                    colour — it has no sphere in the globe to be the same
+                    object as (FileTree.css). */}
+                <span className="filetree-glyph" data-life="lit" aria-hidden="true" />
                 <span className="filetree-label">{title}</span>
               </div>
             </li>
@@ -385,11 +506,15 @@ function FileTreeRow({
       )}
       {expanded && (
         <ul className="filetree-list is-children">
-          {childNodes.map((child) => (
+          {childNodes.map((child, childIndex) => (
             <FileTreeRow
               key={child.id}
               node={child}
               depth={depth + 1}
+              // Its place in its parent's own cluster, which is the colour the
+              // globe gives it when the camera flies into this section
+              // (BrainGlobe.tsx's `childLayout`).
+              gradient={childNodeGradient(childIndex)}
               modules={modules}
               answers={answers}
               currentQuestionId={currentQuestionId}
@@ -471,11 +596,14 @@ export function FileTree({ outline, modules, answers, currentQuestionId, current
       <HealthSummary summary={summary} />
       <p className="filetree-root">{S.fileTreeRoot(name)}</p>
       <ul className="filetree-list">
-        {outline.map((node) => (
+        {outline.map((node, index) => (
           <FileTreeRow
             key={node.id}
             node={node}
             depth={0}
+            // V1.8 VB-45 — the colour this section's orb wears in the Brain
+            // visual, from the one place that knows (BrainGlobe.tsx).
+            gradient={sectionNodeGradient(index)}
             modules={modules}
             answers={answers}
             currentQuestionId={currentQuestionId}

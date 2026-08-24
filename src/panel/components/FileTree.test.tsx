@@ -5,6 +5,7 @@ import { mount } from './testUtils';
 import { S } from '../strings';
 import { sectionCompletionPercent, sectionHealthFor } from '../../core/freshness/sectionHealth';
 import { splitSectionLabel } from '../../core/flow/sectionLabel';
+import { sectionNodeGradient } from './BrainGlobe';
 import type { FileOutlineNode, Module, RepeatableBlock } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 
@@ -127,15 +128,49 @@ describe('FileTree', () => {
     named.unmount();
   });
 
-  it('marks state with a glyph AND a word, never colour alone', () => {
+  /**
+   * V1.8 VB-45 replaced the ASCII tile with the section's own orb from the
+   * Brain visual — and had to keep the guarantee the tile was kept for. The
+   * three states are told apart by the orb's FILL and by the MARK drawn in it,
+   * neither of which is a colour, plus the hidden word beside it. The proof
+   * that this survives colour actually being stripped from a real browser is
+   * tests/e2e/section-health.spec.ts; this is the structural half.
+   */
+  it('marks state with a mark AND a word, never colour alone', () => {
     const { container } = renderTree(makeAnswers({ values: { later: 'x' } }), 'name', 'sec1');
-    const current = rowFor(container, 'sec1');
-    const reached = rowFor(container, 'sec2');
+    const live = rowFor(container, 'sec1');
+    const lit = rowFor(container, 'sec2');
+    const dim = rowFor(container, 'sec1-1');
 
-    expect(current.querySelector('.filetree-glyph')?.textContent).toBe('[>]');
-    expect(current.querySelector('.filetree-srstate')?.textContent).toBe(S.fileTreeStateCurrent);
-    expect(reached.querySelector('.filetree-glyph')?.textContent).toBe('[x]');
-    expect(reached.querySelector('.filetree-srstate')?.textContent).toBe(S.fileTreeStateReached);
+    // Each of the three wears its own life, and no two share a mark.
+    expect(live.querySelector('.filetree-glyph')?.getAttribute('data-life')).toBe('live');
+    expect(live.querySelector('.filetree-srstate')?.textContent).toBe(S.fileTreeStateCurrent);
+    expect(lit.querySelector('.filetree-glyph')?.getAttribute('data-life')).toBe('lit');
+    expect(lit.querySelector('.filetree-srstate')?.textContent).toBe(S.fileTreeStateReached);
+
+    const markOf = (row: HTMLElement) => row.querySelector('.filetree-mark path')?.getAttribute('d') ?? null;
+    expect(markOf(live)).not.toBe(null);
+    expect(markOf(lit)).not.toBe(null);
+    expect(markOf(live)).not.toBe(markOf(lit));
+    // The greyed one is hollow AND empty — the two signals the other two have.
+    if (dim) {
+      expect(dim.querySelector('.filetree-glyph')?.getAttribute('data-life')).toBe('dim');
+      expect(markOf(dim)).toBe(null);
+      expect(dim.querySelector('.filetree-srstate')?.textContent).toBe(S.fileTreeStateUntouched);
+    }
+  });
+
+  /**
+   * V1.8 VB-45 — the orb wears the colour its own sphere wears in the globe.
+   * Asserted as the same call the globe makes, so the two cannot drift.
+   */
+  it('gives each section the orb its sphere wears in the Brain visual', () => {
+    const { container } = renderTree(makeAnswers({ values: { later: 'x' } }), 'name', 'sec1');
+    for (const [index, node] of outline.entries()) {
+      expect(rowFor(container, node.id).querySelector('.filetree-glyph')?.getAttribute('data-gradient')).toBe(
+        String(sectionNodeGradient(index)),
+      );
+    }
   });
 
   it('gives the section being written a terminal cursor, and nothing else one', () => {
@@ -330,11 +365,36 @@ describe('FileTree — section health (VB-19)', () => {
     expect(percent.querySelector('.filetree-sr')!.textContent!.trim()).toBe(S.sectionPercentComplete);
   });
 
-  it('says nothing about percentage on a section nobody has touched', () => {
+  /**
+   * V1.8 VB-46 REVERSED VB-19's rule here, deliberately: "A row at **0 of X**
+   * is **greyed out**, showing **0%**." It can afford to now — the count and
+   * the figure sit in a column that already exists at the row's right end
+   * rather than opening a second line of their own.
+   */
+  it('prints 0 of X and 0% on a section nobody has touched, greyed', () => {
     const { container } = renderTree(makeAnswers(), 'name', 'sec1');
-    // No count, so no figure either: "0%" beside nothing is not a fact worth a
-    // second line on nine-tenths of the first screen anybody sees.
-    expect(rowFor(container, 'sec2').querySelector('.filetree-percent')).toBe(null);
+    const row = rowFor(container, 'sec2');
+    expect(row.dataset.life).toBe('dim');
+    expect(row.querySelector('.filetree-count')!.textContent).toBe(S.sectionAnsweredOf(0, 1));
+    expect(row.querySelector('.filetree-percent')!.textContent).toBe(`${S.sectionPercent(0)} ${S.sectionPercentComplete}`);
+    // …and no freshness clause: there is nothing to date.
+    expect(row.querySelector('.filetree-detail')).toBe(null);
+  });
+
+  /**
+   * V1.8 VB-46 — one rule decides which rows are illuminated, and it is
+   * `core/freshness/sectionLife.ts`, which the Brain visual reads too.
+   */
+  it('lights a row from its first answer and greys it at 0 of X', () => {
+    const { container } = renderTree(makeAnswers({ values: { later: 'x' } }), 'name', 'sec1');
+    // The one being worked on, whatever its count.
+    expect(rowFor(container, 'sec1').dataset.life).toBe('live');
+    // One answer in, so illuminated.
+    expect(rowFor(container, 'sec2').dataset.life).toBe('lit');
+    const empty = renderTree(makeAnswers(), null, null);
+    expect(rowFor(empty.container, 'sec1').dataset.life).toBe('dim');
+    expect(rowFor(empty.container, 'sec2').dataset.life).toBe('dim');
+    empty.unmount();
   });
 
   it('keeps an empty section inert — a pill is not a control', () => {
@@ -343,6 +403,8 @@ describe('FileTree — section health (VB-19)', () => {
     expect(row.dataset.health).toBe('not-yet');
     expect(row.querySelector('button')).toBe(null);
     expect(row.querySelector('.filetree-detail')).toBe(null);
+    // Its counts are text on the row, not a control either.
+    expect(row.querySelector('.filetree-counts button, .filetree-counts a')).toBe(null);
   });
 
   it('prints the counts across the top, and they agree with the rows', () => {

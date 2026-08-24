@@ -184,9 +184,39 @@ function rich(): Answers {
   return answers;
 }
 
+/**
+ * The mid-interview file — and V1.8 VB-46 made it have to be a REAL one.
+ *
+ * `STATES` above hand-writes sec1–sec3 as `reached`, and until VB-46 that was
+ * the whole of what lit an orb. It is not any more: an orb is lit from the
+ * COUNT now (core/freshness/sectionLife.ts, the one rule List and Brain both
+ * read), so a fixture that claimed "reached" with nothing recorded would draw
+ * three muted orbs under three lit labels — the page would be lying about the
+ * thing every spec below measures.
+ *
+ * So the three sections those states name really do hold answers: their OWN
+ * questions, answered. Deliberately NOT their children's — `2.1 Roles` keeps
+ * exactly the three real roles above and 2.2–2.5 keep nothing, because that is
+ * the shape VB-23's detail panel and VB-27's summaries were laid out against
+ * and several specs measure it directly.
+ */
+function half(): Answers {
+  const values: Record<string, AnswerValue> = { ...ANSWERS.values };
+  const mine = new Set(['sec1', 'sec2', 'sec3'].flatMap((id) => contextOutline.find((n) => n.id === id)!.questionIds));
+  for (const module of contextModules) {
+    for (const node of module.nodes) {
+      if ('fields' in node || node.kind === 'intro' || !mine.has(node.id)) continue;
+      const key = node.outKey ?? node.key ?? node.id;
+      if (values[key] !== undefined) continue;
+      values[key] = node.kind === 'yesno' ? 'no' : node.kind === 'multi' ? ['Answered'] : 'Answered';
+    }
+  }
+  return { values, repeatables: { ...ANSWERS.repeatables }, answeredAt: {}, reflectedAt: {} };
+}
+
 const MODEL_ANSWERS: Record<Model, Answers> = {
   empty: empty(),
-  half: { ...ANSWERS, answeredAt: {}, reflectedAt: {} },
+  half: half(),
   complete: complete(),
   stale: stale(),
   rich: rich(),

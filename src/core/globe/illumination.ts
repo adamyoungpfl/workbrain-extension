@@ -1,6 +1,7 @@
 import type { FileOutlineNode } from '../../schema/flow.types';
-import type { OutlineNodeState } from '../flow/outline';
 import type { SectionHealth } from '../freshness/sectionHealth';
+import type { SectionLife } from '../freshness/sectionLife';
+import { sectionIsLit } from '../freshness/sectionLife';
 
 /**
  * V1.5 VB-24 / VB-25 — how lit the globe is, as arithmetic.
@@ -53,15 +54,27 @@ export type GlobeNodeState = 'active' | 'inactive' | 'structural';
 export type EdgeLight = 'bright' | 'mid' | 'dim';
 
 /**
- * A section's own three-way tree state (core/flow/outline.ts), as the two-way
- * question the edges ask. `null` is a vertex with no section on it.
+ * A section's own life (core/freshness/sectionLife.ts), as the two-way question
+ * the edges ask. `null` is a vertex with no section on it.
  *
- * `current` counts as active: the section being answered right now plainly has
- * something in it — it is the one thing on the stage that is being worked on.
+ * `live` counts as active: the section being answered right now is the one
+ * thing on the stage being worked on.
+ *
+ * ── V1.8 VB-46: this used to read the TREE's state, and now reads the life ──
+ *
+ * VB-46 requires one rule to decide what is illuminated in BOTH views — "the
+ * same rule drives the Brain visual, so both views agree about what is live".
+ * The edges are part of that picture: an edge that brightened on a section the
+ * List greys out would put the two views back into disagreement one level down
+ * from the orbs. `sectionLife` is that rule, and this maps its answer onto the
+ * two-way question an edge asks. The mapping is exactly what was here before
+ * for every section with a real count behind it; what changed is that a section
+ * whose only records are skips now reads `0 of X` and goes dim in both views
+ * instead of being lit in one of them.
  */
-export function globeNodeState(state: OutlineNodeState | null | undefined): GlobeNodeState {
-  if (state === null || state === undefined) return 'structural';
-  return state === 'untouched' ? 'inactive' : 'active';
+export function globeNodeState(life: SectionLife | null | undefined): GlobeNodeState {
+  if (life === null || life === undefined) return 'structural';
+  return sectionIsLit(life) ? 'active' : 'inactive';
 }
 
 /** Whether this end of an edge is carrying light. A structural vertex carries

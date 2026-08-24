@@ -35,6 +35,8 @@ import {
 import { nodeDetailsByNode } from '../../core/flow/nodeDetails';
 import { nodeSummaries } from '../../core/flow/nodeSummary';
 import { sectionHealthMap } from '../../core/freshness/sectionHealth';
+import { sectionLife } from '../../core/freshness/sectionLife';
+import type { SectionLife } from '../../core/freshness/sectionLife';
 import { recommend, recommendationsByNode } from '../../core/recommend/engine';
 import { NO_DISMISSALS, readDismissals } from '../../core/recommend/dismissals';
 import { getLocal } from '../../core/storage/client';
@@ -385,6 +387,27 @@ export function FileDrawer({
     [outline, modules, answers, currentQuestionId, now],
   );
 
+  /**
+   * V1.8 VB-45/VB-46 — how lit each section is, for the flight itself.
+   *
+   * The same `sectionLife` call the globe makes and the List's rows make, so
+   * the node that leaves a muted sphere arrives as the hollow orb its row
+   * draws rather than travelling at full saturation between two turned-down
+   * ends. That is the difference between one thing moving and two things
+   * swapping, which is the whole of what VB-45 is about.
+   */
+  const lives = useMemo(() => {
+    const map: Record<string, SectionLife> = {};
+    for (const node of outline) {
+      map[node.id] = sectionLife({
+        health: health[node.id],
+        current: states[node.id] === 'current',
+        reached: states[node.id] === 'reached',
+      });
+    }
+    return map;
+  }, [outline, health, states]);
+
   /** V1.4 VB-23. What each node holds, for the globe's sub-node split — the
    * same answers the file preview below is generated from, folded into cells
    * by core/flow/nodeDetails.ts. Derived per render like everything else here;
@@ -693,8 +716,11 @@ export function FileDrawer({
               className="filedrawer-morph-node"
               data-node-id={point.id}
               // The colour of the sphere it left, so the same object is
-              // visibly the same object in both modes.
+              // visibly the same object in both modes — and V1.8 VB-45's other
+              // half: how lit that sphere is, so a section with nothing in it
+              // does not fly bright and land hollow.
               data-gradient={sectionNodeGradient(index)}
+              data-life={lives[point.id] ?? 'lit'}
               style={{ transform: morphTransform(morph.phase === 'start' ? leaving : arriving) }}
             />
           );

@@ -22,12 +22,15 @@
       big each node lands. VB-33 grew it from bare text to a marker tile on
       purpose and stopped at 18px, which is roughly an orb — the landing point
       VB-32 wants — and still inside the ceiling
-      tests/e2e/section-health.spec.ts asserts.
-   3. **Colour is never the only signal.** The marker's FILL carries the tree's
-      three states on its own: hollow with a dashed edge when untouched, tinted
-      when written, solid when it is the one being written. The ASCII mark
-      inside it, the hidden word beside it, and the pill's own word and glyph
-      all say the same thing again. Colour is the sixth signal and the only
+      tests/e2e/section-health.spec.ts asserts. **V1.8 VB-45 turned that tile
+      into the orb itself and kept the 18px**, so the size a node lands at has
+      never moved.
+   3. **Colour is never the only signal.** The marker's FILL and the MARK inside
+      it carry the three states on their own: hollow and empty with a dashed
+      edge when nothing is answered, filled with a tick when something is,
+      filled with a caret inside a ring when it is the section being written.
+      The hidden word beside it, the pill's own word and glyph, and the printed
+      count all say the same thing again. Colour is the last signal and the only
       removable one — tests/e2e/section-health.spec.ts takes it away and
       re-reads every row.
 
@@ -124,40 +127,150 @@
   --row-accent-tint: var(--sunken);
 }
 
-/* ── The status marker ────────────────────────────────────────────────────
-   The row's left edge, at roughly orb size. This is the box the mode morph
-   measures (see the file header, point 2) and the point VB-32 wants a flying
-   orb to become, so its size is a contract and not a look. */
+/* ── The orb ──────────────────────────────────────────────────────────────
+   V1.8 VB-45. The row's left edge carries THE SECTION'S OWN ORB FROM THE BRAIN
+   VISUAL, in the same colour its sphere wears there and the same colour the
+   node that flies between the two modes wears in flight (FileDrawer.css). One
+   object in three places, which is the whole of VB-45.
+
+   THE BOX IS STILL A CONTRACT. `core/drawer/mode.ts`'s `endOf` sizes every
+   flying node from `min(width, height) / 2` of this element, so a node lands at
+   18px whether the marker is the 26x18 tile VB-33 shipped or the 18x18 orb that
+   replaced it — the smaller side is unchanged on purpose. Growing it to the
+   row's height would silently double every landing dot; VB-19 had to repair
+   exactly that once. tests/e2e/drawer-modes.spec.ts pins the landing to a
+   pixel and tests/e2e/file-accordion.spec.ts pins the box.
+
+   THE HAIRLINE IS NOT DECORATION. The globe's colours were chosen against its
+   near-black field; on this near-white pane the lightest of them measures about
+   2.7:1, under the 3:1 WCAG 1.4.11 asks of a graphic that carries meaning. The
+   inset ring is the orb's own deep colour — the same colour the globe sinks a
+   far orb toward — so the SHAPE always reads at better than 12:1 whatever the
+   fill is doing. */
 .filetree-glyph {
+  position: relative;
   flex: none;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
-  width: 26px;
+  width: 18px;
   height: 18px;
-  border-radius: var(--r-sm);
-  font-family: var(--font-mono);
-  font-size: 10px;
-  line-height: 1;
-  letter-spacing: -0.04em;
-  background: var(--row-accent-tint);
-  color: var(--row-accent);
-  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+  border-radius: var(--r-pill);
+  /* 120ms, docs/design-system.html §06's colour value: a row lighting up as its
+     first answer lands is a colour change, and the ring the live row wears
+     arrives on the same clock rather than snapping in. */
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
 }
 
-/* THE FILL IS THE SIGNAL, and it tracks the TREE's three states rather than
-   the five health ones, so it always agrees with the ASCII mark printed inside
-   it. Hollow / tinted / solid are three treatments a greyscale screen keeps. */
-.filetree-row.is-untouched .filetree-glyph {
+/* The five orb colours, from design/tokens.json's `color.globe` group — the
+   `mid` step, which is the one the globe's own bloom and the morph's flying
+   node use, and the one that reads on a light ground. Which section wears
+   which is `sectionNodeGradient`'s answer (BrainGlobe.tsx), never a second
+   cycle. */
+.filetree-glyph[data-gradient='1'] {
+  background: var(--globe-node-1-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-1-deep);
+  color: var(--globe-node-1-deep);
+}
+.filetree-glyph[data-gradient='2'] {
+  background: var(--globe-node-2-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-2-deep);
+  color: var(--globe-node-2-deep);
+}
+.filetree-glyph[data-gradient='3'] {
+  background: var(--globe-node-3-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-3-deep);
+  color: var(--globe-node-3-deep);
+}
+.filetree-glyph[data-gradient='4'] {
+  background: var(--globe-node-4-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-4-deep);
+  color: var(--globe-node-4-deep);
+}
+.filetree-glyph[data-gradient='5'] {
+  background: var(--globe-node-5-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-5-deep);
+  color: var(--globe-node-5-deep);
+}
+
+/* THE FILL AND THE MARK ARE THE SIGNAL, and both track `sectionLife` — the one
+   rule the globe reads too (core/freshness/sectionLife.ts). Three treatments a
+   greyscale screen keeps whole:
+
+     dim  — hollow. No fill, a dashed edge, nothing inside it.
+     lit  — filled, with a tick in it.
+     live — filled, with a caret in it, inside a ring nothing else has.
+
+   VB-33 kept an ASCII tile here precisely so state survived colour being
+   removed; VB-45 replaces the tile and keeps the guarantee, which is what
+   tests/e2e/section-health.spec.ts re-reads with every hue stripped out. */
+.filetree-glyph[data-life='dim'] {
   background: none;
   /* --border-i, never --divider: this edge carries meaning, and WCAG 1.4.11
-     asks 3:1 of one that does. */
+     asks 3:1 of one that does. The drawer's own stage steps it up again —
+     see FileDrawer.css. */
+  box-shadow: none;
   border: 1px dashed var(--border-i);
+  color: var(--ink-2);
 }
-.filetree-row.is-current .filetree-glyph {
-  background: var(--row-accent);
-  color: var(--ink-inv);
+
+.filetree-mark {
+  display: block;
+  /* Drawn at the orb's own deep colour (set with `color` above), which clears
+     4:1 on every one of the five fills — a white mark would drop to 2.9:1 on
+     the lightest of them. */
+  overflow: visible;
+}
+
+/* ── The live orb ─────────────────────────────────────────────────────────
+   V1.8 VB-46: "The row **actively being worked on** gets a **pulse or glow**,
+   marking it as the live area."
+
+   TWO LAYERS, AND ONLY ONE OF THEM MOVES. The static ring is a real ring drawn
+   with a spread shadow and it is what marks the live row; the pulse is a second
+   ring on a pseudo-element travelling outward from it. Reduced motion drops the
+   pseudo-element's animation and keeps it still at full size, so the live state
+   is a ring either way and the instruction survives the animation being removed
+   (docs/GUARDRAILS.md).
+
+   The ring is `--row-accent`, which on a `here` row is the panel's primary —
+   the same colour the pill beside it wears for the same state. The globe's own
+   halo is its mint `--globe-ring`, which is right on a near-black field and
+   invisible on this one; what the two views share is the SHAPE, which is the
+   part that carries the meaning. */
+.filetree-glyph[data-life='live'] {
+  box-shadow:
+    inset 0 0 0 1px var(--row-accent),
+    0 0 0 2px var(--row-accent-tint),
+    0 0 0 3px var(--row-accent);
+}
+
+.filetree-glyph[data-life='live']::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--row-accent);
+  /* Slow, and slower than anything else in the panel. This is perpetual motion
+     on the busiest screen in the product, and the reason the deep-dive shimmer
+     ships as a one-time attract is that the screen cannot afford two things
+     competing with the question. 2.8s with two thirds of it spent invisible is
+     a breath at the edge of vision rather than a beacon. */
+  animation: filetreeLive 2.8s var(--ease) infinite;
+  pointer-events: none;
+}
+
+@keyframes filetreeLive {
+  0% {
+    transform: scale(1);
+    opacity: 0.55;
+  }
+  60%,
+  100% {
+    transform: scale(2);
+    opacity: 0;
+  }
 }
 
 /* The state word, for assistive tech only. Standard sr-only, same values as
@@ -248,12 +361,17 @@
   margin-top: 5px;
 }
 
-/* ── The meta line: what the pill cannot carry ────────────────────────────
-   How much of the section is written, either what was passed on or how long
-   ago, and — V1.6 VB-33 — the percentage, hard right.
+/* ── The meta line ────────────────────────────────────────────────────────
+   V1.8 VB-46: "Per row, bundle **X of Y**, **%**, and the status pairing at the
+   **right end** of the row."
 
-   The percentage is ONE REAL RATIO of the two counts printed to its left, not
-   a score: see the long note over `sectionCompletionPercent` in
+   So the right end of a row is one column of three facts: the pill on the
+   name's line, and the count and the percentage directly under it. What is left
+   at the LEFT of the meta line is the one clause the bundle cannot carry —
+   what was passed on, or how long ago this was written.
+
+   The percentage is ONE REAL RATIO of the count printed beside it, not a
+   score: see the long note over `sectionCompletionPercent` in
    src/core/freshness/sectionHealth.ts, which is where the guardrail reasoning
    lives. Nothing here is ever summed across sections.
 
@@ -266,6 +384,27 @@
   gap: 8px;
   margin-top: 2px;
   min-width: 0;
+}
+
+/* The bundle. Pushed hard right whether or not there is a clause to its left,
+   so the figures line up down the list as a column rather than drifting with
+   the length of the sentence beside them. */
+.filetree-counts {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-left: auto;
+}
+
+/* Tabular figures so a column of them does not jitter between "9 of 13" and
+   "13 of 13". */
+.filetree-count {
+  font-size: 10.5px;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  white-space: nowrap;
 }
 
 .filetree-detail {
@@ -283,9 +422,9 @@
   text-overflow: ellipsis;
 }
 
-/* The headline number, set apart at the right of the meta line so it reads as
-   a figure rather than as another clause. Tabular figures so a column of them
-   does not jitter between 9% and 100%. */
+/* The headline number, at the right end of the bundle so it reads as a figure
+   rather than as another clause. Tabular figures so a column of them does not
+   jitter between 9% and 100%. */
 .filetree-percent {
   flex: none;
   font-size: 10.5px;
@@ -293,6 +432,25 @@
   font-weight: 700;
   font-variant-numeric: tabular-nums;
   color: var(--row-accent);
+}
+
+/* ── Greyed at 0 of X, illuminated from the first answer ──────────────────
+   V1.8 VB-46, verbatim: "A row at **0 of X** is **greyed out**, showing **0%**.
+   A row that is **active in the flow**, or has **at least one of X complete**,
+   is **illuminated**."
+
+   The rule is `core/freshness/sectionLife.ts` and the row wears its answer as
+   `data-life`, so the greying is stated once for the whole row instead of five
+   times for its parts. It is a REDUNDANCY, never the signal: the orb's fill and
+   mark, the pill's word and glyph and the printed "0 of 13" all say the same
+   thing without any colour at all. */
+.filetree-row[data-life='dim'] {
+  --row-accent: var(--ink-2);
+  --row-accent-tint: var(--sunken);
+}
+.filetree-row[data-life='dim'] .filetree-percent {
+  font-weight: 600;
+  color: var(--ink-3);
 }
 
 /* A section nobody has reached is not a button, so its name is a bare span —
@@ -373,13 +531,17 @@
   color: var(--ink-2);
 }
 
-/* An untouched section is legible, never sub-threshold: docs/GUARDRAILS.md
-   writes no disabled-control exemption. It is quieter, not hidden. */
-.filetree-row.is-untouched .filetree-label {
+/* A greyed section is legible, never sub-threshold: docs/GUARDRAILS.md writes
+   no disabled-control exemption. It is quieter, not hidden.
+
+   V1.8 VB-46 moves these two off the TREE's state and onto the row's life, so
+   the name steps back with the count, the figure and the orb rather than
+   against them — one rule, one appearance. */
+.filetree-row[data-life='dim'] .filetree-label {
   font-weight: 550;
   color: var(--ink-2);
 }
-.filetree-row.is-current .filetree-label {
+.filetree-row[data-life='live'] .filetree-label {
   font-weight: 700;
 }
 
@@ -485,17 +647,29 @@
 }
 
 /* A record is one entry the file holds under a section — a role's name, an
-   entity's. Quieter than a section and never a control. */
+   entity's. Quieter than a section and never a control.
+
+   V1.8 VB-45: it keeps the orb's SHAPE at a smaller size and takes none of its
+   colour. A record has no sphere in the globe, so an orb in one of the five
+   section colours would claim a relationship that does not exist — the dot is
+   the same object seen from further away, which is what a record is. */
 .filetree-row.is-record {
   min-height: 28px;
   gap: 8px;
 }
 .filetree-row.is-record .filetree-glyph {
-  height: 14px;
-  width: 22px;
-  font-size: 9px;
-  background: var(--sunken);
-  color: var(--ink-2);
+  width: 18px;
+  height: 18px;
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+.filetree-row.is-record .filetree-glyph::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-radius: var(--r-pill);
+  background: var(--border-i);
 }
 .filetree-row.is-record .filetree-label {
   font-size: 11.5px;
@@ -536,5 +710,15 @@
   .filetree-chevron,
   .filetree-glyph {
     transition: none;
+  }
+  /* V1.8 VB-46 — THE LIVE STATE WITHOUT THE PULSE. The ring stops travelling
+     and stays where it starts, at full strength: the live row is still the
+     only row wearing a ring, so the thing the cue was saying is still said.
+     The static ring on the orb itself is untouched by this block — it was
+     never an animation. */
+  .filetree-glyph[data-life='live']::after {
+    animation: none;
+    transform: none;
+    opacity: 1;
   }
 }

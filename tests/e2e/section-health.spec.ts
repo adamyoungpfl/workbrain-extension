@@ -19,10 +19,12 @@ import type { Answers } from '../../src/schema/storage.types';
  *   Asserted twice — once by checking each row carries a non-colour signal,
  *   and once by really stripping colour from the page and re-reading it, so a
  *   future change that moves the distinction into a tint fails here.
- *   **V1.6 VB-33 EXTENDED THAT PASS RATHER THAN REPLACING IT.** The restyle
- *   turned the row's state marker from bare text into a tile, so the greyscale
- *   read-back now checks the tile's FILL — hollow and dashed, tinted, or solid
- *   — as well as the ASCII mark inside it and the pill's own word and glyph.
+ *   **V1.6 VB-33 AND V1.8 VB-45 EACH EXTENDED THAT PASS RATHER THAN REPLACING
+ *   IT.** VB-33 turned the row's state marker from bare text into a tile and
+ *   the read-back started checking the tile's fill; VB-45 turned the tile into
+ *   the Brain visual's own orb, and the read-back now checks the orb's FILL,
+ *   the MARK drawn inside it and the RING only the live one wears — as well as
+ *   the pill's own word and glyph, and the count VB-46 prints beside them.
  * - That the row still navigates, and that an empty section is still not a
  *   control at all.
  * - That the rows stay in FILE ORDER whatever their status.
@@ -126,14 +128,26 @@ async function openList(context: BrowserContext, id: string): Promise<Page> {
   return page;
 }
 
-/** V1.6 VB-33 — the mark the row's own marker prints, per TREE state (which is
- * VB-07's three-way written / writing / untouched, not the five health ones
- * beside it). Kept here so the greyscale pass can read the marker as well as
- * the pill. */
-const TREE_GLYPH: Record<string, string> = {
-  untouched: '[ ]',
-  reached: '[x]',
-  current: '[>]',
+/**
+ * V1.8 VB-45 — what the row's ORB has to say without any colour at all, per
+ * `sectionLife` state (core/freshness/sectionLife.ts, the same rule the Brain
+ * visual reads).
+ *
+ * VB-33 kept an ASCII tile here precisely because state must survive
+ * greyscale; VB-45 replaces the tile with the section's own orb and has to keep
+ * that guarantee. Three signals, none of them a hue, and no two states sharing
+ * a combination:
+ *
+ *   ·  FILL — hollow only when nothing is answered.
+ *   ·  MARK — a tick when something is, a caret on the one being written,
+ *             nothing at all in a hollow one. Drawn, so it is a shape and not
+ *             a colour.
+ *   ·  RING — only the live one wears one (a spread shadow, not an inset).
+ */
+const ORB: Record<string, { filled: boolean; mark: 'tick' | 'caret' | null; ring: boolean }> = {
+  dim: { filled: false, mark: null, ring: false },
+  lit: { filled: true, mark: 'tick', ring: false },
+  live: { filled: true, mark: 'caret', ring: true },
 };
 
 /** The word and the glyph a state must print, with no colour involved. */
@@ -163,7 +177,7 @@ test.describe('VB-19 — five states, derived', () => {
     await context.close();
   });
 
-  test('every row is distinguishable with no colour at all — the glyph and the word carry it', async () => {
+  test('every row is distinguishable with no colour at all — the orb and the word carry it', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
@@ -185,43 +199,68 @@ test.describe('VB-19 — five states, derived', () => {
     await page.addStyleTag({ content: 'html { filter: grayscale(1) !important; }' });
     const readBack = await page.locator('.filetree-row[data-node-id]').evaluateAll((els) =>
       els.map((el) => {
-        const marker = el.querySelector('.filetree-glyph') as HTMLElement;
-        const markerStyle = getComputedStyle(marker);
+        const orb = el.querySelector('.filetree-glyph') as HTMLElement;
+        const orbStyle = getComputedStyle(orb);
+        const mark = orb.querySelector('.filetree-mark path');
         return {
           id: (el as HTMLElement).dataset.nodeId,
           state: (el as HTMLElement).dataset.health,
-          treeState: (el as HTMLElement).dataset.nodeState,
+          life: (el as HTMLElement).dataset.life,
           text: el.querySelector('.sectionhealth-pill')?.textContent ?? '',
           // Whether the pill is filled or hollow is a third, non-colour signal.
           hollow: (el.querySelector('.sectionhealth-pill') as HTMLElement | null)?.classList.contains('is-hollow') ?? false,
-          // V1.6 VB-33 — the row's own marker, which the restyle turned from
-          // bare text into a tile. Its FILL is a fourth signal: hollow with a
-          // dashed edge, tinted, or solid. Read as computed style rather than
-          // as a class, so a rule that stops applying fails here.
-          markerText: marker.textContent,
-          markerBorderStyle: markerStyle.borderTopStyle,
-          markerFilled: markerStyle.backgroundColor !== 'rgba(0, 0, 0, 0)',
+          // ── V1.8 VB-45 — the row's own ORB, which replaced VB-33's ASCII
+          // tile. Read as computed style and real geometry rather than as
+          // classes, so a rule that stops applying fails here.
+          orbBorderStyle: orbStyle.borderTopStyle,
+          orbFilled: orbStyle.backgroundColor !== 'rgba(0, 0, 0, 0)',
+          // The mark's PATH, so two states sharing one shape is a failure.
+          orbMark: mark ? mark.getAttribute('d') : null,
+          // A ring around the orb — a spread shadow, told apart from the
+          // hairline INSIDE the orb that every filled one carries. The colours
+          // are folded out first: `rgb(12, 28, 85)` carries commas of its own,
+          // and splitting on those cuts one shadow into three.
+          orbRing: orbStyle.boxShadow
+            .replace(/rgba?\([^)]*\)/g, 'C')
+            .split(',')
+            .some((part) => part.trim() !== 'none' && part.trim() !== '' && !part.includes('inset')),
+          // And the count and figure the greying is a redundancy for (VB-46).
+          count: el.querySelector('.filetree-count')?.textContent ?? '',
+          percent: el.querySelector('.filetree-percent')?.textContent ?? '',
         };
       }),
     );
+    const marks = new Map<string, string | null>();
     for (const row of readBack) {
       const expected = EXPECTED[row.state!]!;
       expect(row.text, row.id).toContain(expected.glyph);
       expect(row.text, row.id).toContain(expected.word);
       expect(row.hollow, row.id).toBe(row.state === 'not-yet');
 
-      // ── V1.6 VB-33, extending the same proof to the new treatment ──
-      // The marker still prints the tree's own ASCII mark, and its fill still
-      // tells the three states apart with every hue gone: an untouched section
-      // is the only hollow, dashed one; the one being written is the only
-      // solid one; a written one is tinted and closed.
-      expect(row.markerText, row.id).toBe(TREE_GLYPH[row.treeState!]);
-      expect(row.markerBorderStyle === 'dashed', `${row.id} marker outline`).toBe(row.treeState === 'untouched');
-      expect(row.markerFilled, `${row.id} marker fill`).toBe(row.treeState !== 'untouched');
+      // ── V1.8 VB-45, extending the same proof to the orb that replaced the
+      // tile. Fill, mark and ring tell the three states apart with every hue
+      // gone: a section with nothing in it is the only hollow, dashed, empty
+      // one; the one being written is the only one wearing a ring; and no two
+      // states draw the same mark.
+      const orb = ORB[row.life!]!;
+      expect(Object.keys(ORB), `${row.id} reported life "${row.life}"`).toContain(row.life);
+      expect(row.orbFilled, `${row.id} orb fill`).toBe(orb.filled);
+      expect(row.orbBorderStyle === 'dashed', `${row.id} orb outline`).toBe(!orb.filled);
+      expect(row.orbMark === null, `${row.id} orb mark`).toBe(orb.mark === null);
+      expect(row.orbRing, `${row.id} orb ring`).toBe(orb.ring);
+      if (marks.has(row.life!)) expect(row.orbMark, `${row.id} mark`).toBe(marks.get(row.life!));
+      marks.set(row.life!, row.orbMark);
+
+      // VB-46: the greying is never the only way to know a row is at zero —
+      // the count says it in figures too.
+      expect(row.count, row.id).toMatch(/^\d+ of \d+$/);
+      if (row.life === 'dim') expect(row.count, row.id).toMatch(/^0 of /);
     }
     // All three treatments really are on screen — otherwise the assertions
     // above are vacuously true on a file where every row is the same state.
-    expect(new Set(readBack.map((row) => row.treeState)).size).toBeGreaterThan(2);
+    expect(new Set(readBack.map((row) => row.life)).size).toBe(3);
+    // …and the three marks really are three different shapes.
+    expect(new Set([...marks.values()]).size).toBe(3);
 
     // Every pill is still legible after the filter — none of them went
     // transparent-on-transparent.
@@ -239,25 +278,33 @@ test.describe('VB-19 — five states, derived', () => {
     await context.close();
   });
 
-  test('the detail line says what the pill cannot', async () => {
+  /**
+   * V1.8 VB-46 moved the count out of this line and into the bundle at the
+   * row's right end, so what is left of the line is the one clause neither the
+   * pill nor the figures can carry.
+   */
+  test('the detail line says what the pill and the figures cannot', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    // A finished, aged section reports how much and how long ago.
+    // A finished, aged section reports how long ago, and counts at the right.
     const due = page.locator('.filetree-row[data-health="due"]').first();
-    await expect(due.locator('.filetree-detail')).toHaveText(/^\d+ of \d+ · answered .+ ago$/);
+    await expect(due.locator('.filetree-detail')).toHaveText(/^answered .+ ago$/);
+    await expect(due.locator('.filetree-count')).toHaveText(/^\d+ of \d+$/);
 
     // A part-done one reports what was passed on instead.
     const partly = page.locator('.filetree-row[data-health="partly"]').first();
-    await expect(partly.locator('.filetree-detail')).toHaveText(/^\d+ of \d+ · \d+ skipped$/);
+    await expect(partly.locator('.filetree-detail')).toHaveText(/^\d+ skipped$/);
 
-    // A section nobody has touched says nothing beyond its pill — its row
-    // stays one line, which is what keeps the peek dense. V1.6 VB-33 holds the
-    // same line for the percentage: "0%" beside nothing is not a fact.
+    // A section nobody has touched has nothing to date — and now says so in
+    // figures, which is VB-46 overruling VB-19's suppression of the 0-state:
+    // "A row at 0 of X is greyed out, showing 0%."
     const notYet = page.locator('.filetree-row[data-health="not-yet"]').first();
     await expect(notYet.locator('.filetree-detail')).toHaveCount(0);
-    await expect(notYet.locator('.filetree-percent')).toHaveCount(0);
+    await expect(notYet.locator('.filetree-count')).toHaveText(/^0 of \d+$/);
+    await expect(notYet.locator('.filetree-percent')).toHaveText(`0% ${S.sectionPercentComplete}`);
+    await expect(notYet).toHaveAttribute('data-life', 'dim');
 
     await context.close();
   });
@@ -279,8 +326,12 @@ test.describe('VB-19 — five states, derived', () => {
     const described = page.locator(`[id="${describedBy}"]`);
     await expect(described).toHaveClass(/filetree-meta/);
     const detailText = (await row.locator('.filetree-detail').textContent())!;
+    const countText = (await row.locator('.filetree-count').textContent())!;
     const percentText = (await row.locator('.filetree-percent').textContent())!;
-    await expect(described).toHaveText(detailText + percentText);
+    // V1.8 VB-46 put a third fact on the line — the count, moved out of the
+    // clause and into the bundle — and the description is still the WHOLE of
+    // it rather than any one part.
+    await expect(described).toHaveText(detailText + countText + percentText);
     // And the figure names itself, for anyone who meets it without the count.
     expect(percentText).toMatch(new RegExp(`^\\d+% ${S.sectionPercentComplete}$`));
 
@@ -310,7 +361,10 @@ test.describe('VB-19 — five states, derived', () => {
     // 4. Initiatives is where the interview is, and its gate is on screen.
     const initiatives = page.locator('.filetree-row[data-node-id="sec4"]');
     await expect(initiatives).toHaveAttribute('data-health', 'here');
-    await expect(initiatives.locator('.filetree-detail')).toHaveText(S.sectionAnsweredOf(0, 1));
+    // V1.8 VB-46: the count lives in the bundle at the right end now, and the
+    // section being worked on is live whatever it reads.
+    await expect(initiatives.locator('.filetree-count')).toHaveText(S.sectionAnsweredOf(0, 1));
+    await expect(initiatives).toHaveAttribute('data-life', 'live');
 
     // Answering "no" finishes the section outright: the gate is the only
     // question it asks once the block behind it is closed. Picking and then

@@ -9,6 +9,8 @@ import { NodeSummaryCard } from './NodeSummary';
 import { globeLabelFor } from '../../core/flow/globeLabels';
 import { EDGE_LIGHT_LEVEL, edgeLight, globeNodeState, isUnifiedGlow } from '../../core/globe/illumination';
 import type { GlobeNodeState } from '../../core/globe/illumination';
+import type { SectionLife } from '../../core/freshness/sectionLife';
+import { sectionIsLit, sectionLife } from '../../core/freshness/sectionLife';
 import { detailBand } from '../../core/globe/detailBand';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
 import {
@@ -535,6 +537,18 @@ const gradientFor = (vertexIndex: number) => GRADIENTS[vertexIndex % GRADIENTS.l
 export function sectionNodeGradient(sectionIndex: number): number {
   const vertex = SECTION_VERTICES[sectionIndex % SECTION_VERTICES.length];
   return vertex === undefined ? GRADIENTS[0] : gradientFor(vertex);
+}
+
+/**
+ * Which gradient the n-th SUB-node of a section wears — the cluster that rings
+ * the centre orb once the camera has flown in (`childLayout` below).
+ *
+ * Exported for V1.8 VB-45, for the same reason `sectionNodeGradient` is: the
+ * List's rows now carry these orbs, and a child row must wear the colour its
+ * own sub-node wears rather than a second cycle that happens to look similar.
+ */
+export function childNodeGradient(childIndex: number): number {
+  return GRADIENTS[childIndex % GRADIENTS.length]!;
 }
 
 // ── Props ──────────────────────────────────────────────────────────────────
@@ -1504,6 +1518,25 @@ export function BrainGlobe({
   const stateOf = (section: FileOutlineNode): OutlineNodeState => states?.[section.id] ?? 'reached';
 
   /**
+   * V1.8 VB-46 — WHETHER A SECTION IS LIVE, LIT OR DIM, DECIDED IN core/.
+   *
+   * "The same rule drives the Brain visual, so both views agree about what is
+   * live." So this is `core/freshness/sectionLife.ts`, the same call the List's
+   * rows make (components/FileTree.tsx), and neither view decides for itself.
+   * An orb that flew out of a lit sphere cannot land on a greyed row.
+   *
+   * Both inputs are handed over rather than one: the health carries the counts
+   * ("at least one of X complete"), and the tree's state carries where the flow
+   * is standing. With no health at all — this component is usable as a pure
+   * showcase — the rule falls back to the tree alone, which is the picture this
+   * globe drew before VB-46 and never a second definition of live.
+   */
+  const lifeOf = (section: FileOutlineNode): SectionLife => {
+    const state = stateOf(section);
+    return sectionLife({ health: health?.[section.id], current: state === 'current', reached: state === 'reached' });
+  };
+
+  /**
    * V1.5 VB-25 — the whole model as one lit object, or not.
    *
    * Derived here, on every render, from the health the caller derived from
@@ -1523,10 +1556,13 @@ export function BrainGlobe({
     const map = new Map<number, GlobeNodeState>();
     ICOSAHEDRON_VERTICES.forEach((_, vertexIndex) => map.set(vertexIndex, 'structural'));
     shown.forEach((section, index) => {
-      map.set(SECTION_VERTICES[index]!, globeNodeState(states?.[section.id] ?? 'reached'));
+      map.set(SECTION_VERTICES[index]!, globeNodeState(lifeOf(section)));
     });
     return map;
-  }, [shown, states]);
+    // `lifeOf` is redeclared every render and closes over exactly these three;
+    // listing what it READS rather than the closure itself is what keeps the
+    // memo hitting between frames of the drift loop.
+  }, [shown, states, health]);
 
   /** Past this the fly-in has committed, and the sections left behind stop
    * being controls — they are not on screen to be pressed. */
@@ -1567,7 +1603,7 @@ export function BrainGlobe({
       y: ringY + (FEATURE_Y - ringY) * t,
       radius: ringR + (FEATURE_R - ringR) * t,
       fade: picked ? 1 : 1 - es,
-      gradient: GRADIENTS[i % GRADIENTS.length]!,
+      gradient: childNodeGradient(i),
     };
   });
 
@@ -1763,7 +1799,10 @@ export function BrainGlobe({
               const gradient = gradientFor(vertexIndex);
               const state = entry ? stateOf(entry.section) : 'reached';
               const structural = !entry;
-              const lit = !structural && state !== 'untouched';
+              // V1.8 VB-46: what makes an orb lit is `sectionLife`, the rule
+              // the List's rows read too — never a second test here.
+              const life = entry ? lifeOf(entry.section) : 'lit';
+              const lit = !structural && sectionIsLit(life);
               /**
                * V1.5 VB-24. Not "no orb" — a turned-down one.
                *
@@ -1774,7 +1813,7 @@ export function BrainGlobe({
                * still join the unified glow, because at that point the whole
                * solid is one object and they are part of it.
                */
-              const muted = structural || state === 'untouched';
+              const muted = !lit;
               const isCentre = flownIndex !== null && entry?.index === flownIndex;
               const fade = flownIndex !== null && !isCentre ? 1 - frame.ez * 0.86 : 1;
               // The centre orb is the cluster's parent, so it leaves with the
@@ -1799,6 +1838,7 @@ export function BrainGlobe({
                   data-node-index={vertexIndex}
                   data-section-id={entry?.section.id ?? ''}
                   data-node-state={structural ? 'structural' : state}
+                  data-node-life={structural ? 'structural' : life}
                   data-depth={node.t.toFixed(3)}
                   opacity={((structural ? 0.34 : 0.62 + node.t * 0.38) * fade * splitFade).toFixed(3)}
                 >
@@ -1812,7 +1852,7 @@ export function BrainGlobe({
                       opacity={(0.25 + node.t * 0.75).toFixed(3)}
                     />
                   )}
-                  {state === 'current' && !structural && (
+                  {life === 'live' && !structural && (
                     // VB-23: the halo goes on the way in. Hierarchy inside a
                     // section comes from size, and a ring around the largest
                     // thing on the stage repeats what the size already said.

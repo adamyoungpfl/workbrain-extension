@@ -203,16 +203,11 @@ test.describe('VB-33 — a section row says all four things', () => {
       // STATE — always, as a word in the pill, whatever else the row says.
       await expect(row.locator('.sectionhealth-pill'), node.id).toHaveCount(1);
 
-      if (state === 'not-yet') {
-        // Nothing to count and nothing to date. The pill has already said
-        // everything true about this section.
-        await expect(row.locator('.filetree-meta'), node.id).toHaveCount(0);
-        continue;
-      }
-
-      // COUNT — VB-19's, unchanged.
-      const detail = (await row.locator('.filetree-detail').textContent())!;
-      expect(detail, node.id).toContain(S.sectionAnsweredOf(expected.answered, expected.total));
+      // COUNT — VB-19's, moved to the bundle at the right end by V1.8 VB-46,
+      // and now printed on EVERY row including the ones at zero.
+      await expect(row.locator('.filetree-count'), node.id).toHaveText(
+        S.sectionAnsweredOf(expected.answered, expected.total),
+      );
 
       // PERCENTAGE — VB-33's one new number, and it is the ratio of the two
       // counts printed beside it and nothing else.
@@ -221,8 +216,16 @@ test.describe('VB-33 — a section row says all four things', () => {
         `${S.sectionPercent(percent)} ${S.sectionPercentComplete}`,
       );
 
-      // FRESHNESS — where there is any. A part-done section reports what was
-      // passed on instead, which is VB-19's "one clause after the count".
+      // FRESHNESS — the one clause the bundle cannot carry, and only where
+      // there is one. A section with nothing recorded in it has nothing to
+      // date, and a part-done one reports what was passed on instead, which is
+      // VB-19's "one clause after the count".
+      if (state === 'not-yet') {
+        await expect(row.locator('.filetree-detail'), node.id).toHaveCount(0);
+        continue;
+      }
+      if ((await row.locator('.filetree-detail').count()) === 0) continue;
+      const detail = (await row.locator('.filetree-detail').textContent())!;
       if (/answered/.test(detail)) withFreshness++;
     }
     expect(withFreshness, 'at least one row reports how long ago it was written').toBeGreaterThan(0);
@@ -243,15 +246,15 @@ test.describe('VB-33 — a section row says all four things', () => {
         .filter((el) => el.querySelector('.filetree-percent'))
         .map((el) => ({
           id: (el as HTMLElement).dataset.nodeId,
-          detail: el.querySelector('.filetree-detail')!.textContent ?? '',
+          count: el.querySelector('.filetree-count')!.textContent ?? '',
           percent: el.querySelector('.filetree-percent')!.textContent ?? '',
         })),
     );
     expect(rows.length).toBeGreaterThan(2);
     for (const row of rows) {
-      const [answered, total] = row.detail.match(/^(\d+) of (\d+)/)!.slice(1).map(Number) as [number, number];
+      const [answered, total] = row.count.match(/^(\d+) of (\d+)/)!.slice(1).map(Number) as [number, number];
       const shown = Number(row.percent.match(/^(\d+)%/)![1]);
-      expect(shown, `${row.id}: ${row.detail} / ${row.percent}`).toBe(sectionCompletionPercent({ answered, total }));
+      expect(shown, `${row.id}: ${row.count} / ${row.percent}`).toBe(sectionCompletionPercent({ answered, total }));
       // The two honest edges: 100 only when finished, 0 only when empty.
       if (shown === 100) expect(answered, row.id).toBe(total);
       if (shown === 0) expect(answered, row.id).toBe(0);
@@ -543,14 +546,16 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
         els
           .map((el) => {
             const detail = el.querySelector('.filetree-detail') as HTMLElement | null;
+            const count = el.querySelector('.filetree-count') as HTMLElement | null;
             const percent = el.querySelector('.filetree-percent') as HTMLElement | null;
-            if (!detail || !percent) return null;
+            if (!detail || !count || !percent) return null;
+            const over = (node: HTMLElement) => node.scrollWidth > node.clientWidth + 1;
             return {
               id: (el as HTMLElement).dataset.nodeId!,
-              text: `${detail.textContent} ${percent.textContent}`,
+              text: `${detail.textContent} ${count.textContent} ${percent.textContent}`,
               width: detail.scrollWidth,
               height: Math.round(el.getBoundingClientRect().height),
-              clipped: detail.scrollWidth > detail.clientWidth + 1 || percent.scrollWidth > percent.clientWidth + 1,
+              clipped: over(detail) || over(count) || over(percent),
             };
           })
           .filter((row): row is NonNullable<typeof row> => row !== null),

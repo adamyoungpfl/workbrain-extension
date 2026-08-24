@@ -111,12 +111,37 @@ export function healthDetail(health: SectionHealth): string | null {
   if (health.total === 0) return null;
   if (health.answered + health.skipped === 0 && health.state !== 'here') return null;
   const count = S.sectionAnsweredOf(health.answered, health.total);
-  if (health.skipped > 0) return `${count} · ${S.sectionSkipped(health.skipped)}`;
+  const clause = healthFreshness(health);
+  return clause ? `${count} · ${clause}` : count;
+}
+
+/**
+ * V1.8 VB-46 — the clause after the count, on its own.
+ *
+ * VB-46 moves the count out of this line and into the bundle at the row's
+ * right end (components/FileTree.tsx), which leaves the line as the one fact
+ * the pill and the counts cannot carry: what was passed on, or how long ago
+ * this was written.
+ *
+ * Split out of `healthDetail` rather than duplicated, and `healthDetail` still
+ * calls it: `FileView` (V1.7) prints the whole line, because a row there has no
+ * right-hand column to bundle a count into, and the two surfaces must not word
+ * the same clause differently.
+ *
+ * ONE CLAUSE, NEVER TWO — VB-19's rule, unmoved. A skip is the more actionable
+ * fact and wins when both are true; stacking them produces a line that wraps in
+ * a 400px panel and reads as a paragraph rather than a detail.
+ */
+export function healthFreshness(health: SectionHealth): string | null {
+  if (health.total === 0) return null;
+  if (health.answered + health.skipped === 0 && health.state !== 'here') return null;
+  if (health.skipped > 0) return S.sectionSkipped(health.skipped);
   if (health.elapsed) {
-    const ago = health.ageDays === 0 ? S.sectionAnsweredToday : S.sectionAnsweredAgo(S.agoLabel(health.elapsed.value, health.elapsed.unit));
-    return `${count} · ${ago}`;
+    return health.ageDays === 0
+      ? S.sectionAnsweredToday
+      : S.sectionAnsweredAgo(S.agoLabel(health.elapsed.value, health.elapsed.unit));
   }
-  return count;
+  return null;
 }
 
 export interface HealthSummaryProps {

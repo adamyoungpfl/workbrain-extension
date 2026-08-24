@@ -336,9 +336,11 @@ test.describe('VB-14b — two modes in one drawer', () => {
     const last = node[node.length - 1]!;
     expect(Math.abs(last[0]! - (glyph.x + glyph.width / 2)), 'not on the marker’s x').toBeLessThanOrEqual(1);
     expect(Math.abs(last[1]! - (glyph.y + glyph.height / 2)), 'not on the marker’s y').toBeLessThanOrEqual(1);
-    // At the marker's own size: the smaller side of a marker that is wider
-    // than it is tall, which is what puts an orb the height of the tile dead
-    // centre on it (core/drawer/mode.ts's `endOf`).
+    // At the marker's own size: `endOf`'s `min(width, height)`, which puts the
+    // arriving node dead centre on the mark at exactly the mark's own height
+    // (core/drawer/mode.ts). V1.8 VB-45 turned that mark from a 26x18 tile into
+    // an 18x18 orb and the smaller side did not move, which is why this number
+    // is the same one VB-32 pinned.
     const marker = Math.min(glyph.width, glyph.height);
     expect(last[2]!, 'the orb did not arrive at the marker’s size').toBeCloseTo(marker, 0);
     expect(last[3]!, 'the orb did not arrive at the marker’s size').toBeCloseTo(marker, 0);

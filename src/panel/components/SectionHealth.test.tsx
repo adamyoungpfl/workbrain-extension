@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { HealthPill, HealthSummary, healthDetail } from './SectionHealth';
+import { HealthPill, HealthSummary, healthDetail, healthFreshness } from './SectionHealth';
 import { mount } from './testUtils';
 import { S } from '../strings';
 import type { SectionHealth, SectionHealthState, SectionHealthSummary } from '../../core/freshness/sectionHealth';
@@ -108,6 +108,41 @@ describe('healthDetail', () => {
     expect(healthDetail(health({ state: 'here', answered: 0, skipped: 0, left: 6, total: 6, ageDays: null, elapsed: null, lastAnsweredAt: null }))).toBe(
       S.sectionAnsweredOf(0, 6),
     );
+  });
+});
+
+/**
+ * V1.8 VB-46 — the clause on its own, for the row that bundles the count at
+ * its right end instead of leading the line with it (components/FileTree.tsx).
+ * `healthDetail` above is unchanged and still calls this, so the two surfaces
+ * cannot word the same clause differently.
+ */
+describe('healthFreshness', () => {
+  it('is the clause `healthDetail` prints after the count, and nothing else', () => {
+    for (const state of [
+      health(),
+      health({ state: 'partly', answered: 3, skipped: 2, left: 1, total: 6 }),
+      health({ ageDays: 0, elapsed: { value: 0, unit: 'day' } }),
+    ]) {
+      const clause = healthFreshness(state)!;
+      expect(clause).not.toContain(' of ');
+      expect(healthDetail(state)).toBe(`${S.sectionAnsweredOf(state.answered, state.total)} · ${clause}`);
+    }
+  });
+
+  it('says what was passed on rather than how long ago — one clause, never two', () => {
+    expect(healthFreshness(health({ state: 'partly', answered: 3, skipped: 2, left: 1, total: 6 }))).toBe(
+      S.sectionSkipped(2),
+    );
+  });
+
+  it('is null wherever there is nothing to date', () => {
+    const bare = { ageDays: null, elapsed: null, lastAnsweredAt: null } as const;
+    // The section being answered, before its first answer — the count and the
+    // figure at the row's right end carry it on their own now.
+    expect(healthFreshness(health({ state: 'here', answered: 0, skipped: 0, left: 6, total: 6, ...bare }))).toBe(null);
+    expect(healthFreshness(health({ state: 'not-yet', answered: 0, skipped: 0, left: 6, total: 6, ...bare }))).toBe(null);
+    expect(healthFreshness(health({ total: 0, answered: 0, skipped: 0, left: 0, ...bare }))).toBe(null);
   });
 });
 
