@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
 import type { DeepDiveEntry } from '../../schema/flow.types';
 import {
   CLOSED,
@@ -18,7 +18,17 @@ import {
   shimmerState,
   type ShimmerTrigger,
 } from '../../core/motion/shimmer';
+import {
+  ROTATE_MS,
+  isRunning,
+  nextIndex,
+  offersStop,
+  viewFor,
+  type RotationHold,
+  type RotationInput,
+} from '../../core/motion/rotation';
 import { prefersReducedMotion } from '../cues/verbs';
+import { S } from '../strings';
 import './DeepDive.css';
 
 /**
@@ -117,10 +127,63 @@ function itemClass(role: ItemRole): string {
   }
 }
 
+/**
+ * `prefers-reduced-motion`, live.
+ *
+ * V1.3 read it inside the press handler, which was enough when the only
+ * question was "animate this click or not". V1.8 VB-42 asks it a standing
+ * question instead — whether a five-second rotation is scheduled at all — and
+ * that has to change when the person changes the setting, not the next time
+ * they press something. Same source of truth as `prefersReducedMotion()`, kept
+ * in state and subscribed.
+ */
+function useReducedMotion(): boolean {
+  const [reduced, setReduced] = useState(prefersReducedMotion);
+  useEffect(() => {
+    const query =
+      typeof window !== 'undefined' && typeof window.matchMedia === 'function'
+        ? window.matchMedia('(prefers-reduced-motion: reduce)')
+        : null;
+    if (!query?.addEventListener) return;
+    const onChange = () => setReduced(query.matches);
+    query.addEventListener('change', onChange);
+    return () => query.removeEventListener('change', onChange);
+  }, []);
+  return reduced;
+}
+
 export interface DeepDiveProps {
   /** Namespaces the generated answer element ids — must be unique on screen. */
   idPrefix: string;
   entries: DeepDiveEntry[];
+  /**
+   * V1.8 VB-42 — the collapsed presentation, and nothing else.
+   *
+   * `'one'` shows a single follow-up as a text link, rotating every five
+   * seconds; `'all'` is V1.3's row, every follow-up at once. Whichever is on
+   * screen, pressing one runs exactly the same expand-in-place disclosure
+   * (docs/V1.8-REFINEMENT.md, DECISIONS 1).
+   *
+   * The default is `'all'`, deliberately: the plain list is the base
+   * presentation this component falls back to from every direction — reduced
+   * motion, a single follow-up, and the person pressing the stop — and a
+   * default that is the quiet one cannot surprise a caller into motion it did
+   * not ask for.
+   */
+  mode?: 'one' | 'all' | undefined;
+  /**
+   * V1.8 VB-42 — WCAG 2.2.2's required mechanism, pressed. The surface owns
+   * what happens next, because "stop" outlives this component: it is
+   * remembered in `wb:prefs`, so the next question is already still (see
+   * panel/voice/prefs.ts's `useFollowUpsPref`).
+   */
+  onShowAll?: (() => void) | undefined;
+  /**
+   * V1.8 VB-42 — they have started answering, so the rotation stops. Adam's
+   * own rule: the list renews "until the person clicks Next or starts typing
+   * an answer". Next unmounts the whole question, so it needs no signal.
+   */
+  answering?: boolean | undefined;
   /**
    * V1.3 VB-18: which follow-up is open, for anything outside this component
    * that has to follow it — today, the narrator, whose `followUp` voice role
@@ -195,12 +258,115 @@ export interface DeepDiveProps {
  * so `aria-controls` always resolves; open is never signalled by colour alone
  * (chevron turns, label goes bold, fill changes); and the copy is not here —
  * these are per-question strings from core/flow/deepDive.ts.
+ *
+ * WHAT V1.8 VB-42 CHANGED: THE COLLAPSED PRESENTATION, AND ONLY THAT
+ *
+ * The row of chips becomes **one follow-up at a time, as a text link, changing
+ * every five seconds**. Everything above still runs: pressing the link expands
+ * it in place through the same `core/motion/disclosure.ts` state machine, the
+ * same FLIP, the same focus rescue, the same live region
+ * (docs/V1.8-REFINEMENT.md, DECISIONS 1 — the rotation *wraps* VB-16, it does
+ * not replace it). What is different is that in `mode="one"` exactly one item
+ * is rendered, and it is painted as a sentence rather than a tag.
+ *
+ * The rotation is confined to the follow-ups, deliberately and by Adam's own
+ * words (DECISIONS 3): the question above never auto-changes, and the status
+ * bar is untouched. Neither is reachable from this file.
+ *
+ * **WCAG 2.2.2 (Pause, Stop, Hide) IS THE DESIGN, NOT A CHECK AFTERWARDS.**
+ * This auto-updates, starts on its own, lasts longer than five seconds and
+ * sits beside content someone is reading, so it needs a way to stop. It has
+ * five, and `core/motion/rotation.ts` holds the reasoning for each: hover,
+ * focus, typing an answer, opening a follow-up, and a visible control that
+ * stops it for good and shows the whole list. Under `prefers-reduced-motion`
+ * no clock is ever scheduled and the static list is what renders — the still
+ * equivalent carries *more* than the moving one, not less.
+ *
+ * Nothing here ever moves focus. The rotation swaps a link that nobody is
+ * touching; the moment it is hovered or focused it stops, so it cannot change
+ * identity between the decision to click and the click.
  */
-export function DeepDive({ idPrefix, entries, onDisclose }: DeepDiveProps) {
+export function DeepDive({
+  idPrefix,
+  entries,
+  onDisclose,
+  mode = 'all',
+  onShowAll,
+  answering = false,
+}: DeepDiveProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<ExpandPhase>(CLOSED);
   const [ghosts, setGhosts] = useState<ReadonlyMap<number, Box>>(() => new Map());
   const [attracted, setAttracted] = useState(false);
+
+  // ── V1.8 VB-42 — the rotation, which is presentation and nothing else ──
+  const reduced = useReducedMotion();
+  const [turn, setTurn] = useState(0);
+  const [hovered, setHovered] = useState(false);
+  const [focused, setFocused] = useState(false);
+  /** The tallest the link has been, so a longer follow-up rotating in does not
+   * push the field down under someone's hands. Only ever grows, and only
+   * within one question — see `.deepdive.is-one` in DeepDive.css. */
+  const [reserved, setReserved] = useState(0);
+
+  const holds: RotationHold[] = [];
+  if (hovered) holds.push('hover');
+  if (focused) holds.push('focus');
+  if (answering) holds.push('answering');
+  if (phase.kind !== 'closed') holds.push('open');
+  const rotation: RotationInput = { count: entries.length, mode, reduced, holds };
+  const view = viewFor(rotation, turn);
+  const running = isRunning(rotation);
+  const showsStop = offersStop(rotation) && phase.kind === 'closed';
+
+  /**
+   * The five seconds.
+   *
+   * An interval rather than a chain of timeouts, and torn down whenever
+   * `running` goes false — which is every hold, so a hovered link is not
+   * merely ignoring a clock that is still ticking under it. Letting go starts
+   * a fresh five seconds rather than resuming a stale one: a link that changed
+   * a fifth of a second after the pointer left would be exactly the swap
+   * WCAG 2.2.2 is about.
+   */
+  useEffect(() => {
+    if (!running) return;
+    const timer = window.setInterval(() => {
+      setTurn((current) => nextIndex(current, entries.length));
+    }, ROTATE_MS);
+    return () => window.clearInterval(timer);
+  }, [running, entries.length]);
+
+  /**
+   * The stop control removes itself when it is pressed — there is nothing left
+   * to stop — so the focus it was holding has to be put somewhere on purpose.
+   * It goes to the first follow-up, which is what the press just revealed.
+   *
+   * This is not the thing docs/GUARDRAILS.md forbids. Nothing *steals* focus
+   * here: the person pressed a control, that control is gone, and a keyboard
+   * user who is not given somewhere to land is dropped on `<body>` and has to
+   * tab back through the screen. The same `!== document.body` guard as VB-16's
+   * rescue below keeps it honest — focus that moved somewhere else in between
+   * stays where the person put it.
+   */
+  const showAllPressed = useRef(false);
+  useLayoutEffect(() => {
+    if (!showAllPressed.current || view.kind !== 'all') return;
+    showAllPressed.current = false;
+    const active = document.activeElement;
+    if (active && active !== document.body) return;
+    rootRef.current?.querySelector<HTMLButtonElement>('[data-dd-chip]')?.focus();
+  }, [view.kind]);
+
+  /** Hold the room the tallest link so far needed. Measured after paint, on
+   * the item rather than the row, so the open card is free to be any size. */
+  useLayoutEffect(() => {
+    if (view.kind !== 'one' || phase.kind !== 'closed') return;
+    const item = rootRef.current?.querySelector<HTMLElement>('[data-dd-item]');
+    if (!item) return;
+    const height = item.getBoundingClientRect().height;
+    setReserved((most) => (height > most ? height : most));
+  }, [view.kind, phase.kind, turn, entries]);
 
   /** Where each chip sits when nothing is open, and how tall the row is then.
    * Captured once, on the way in, and reused on the way out: closing has to
@@ -360,13 +526,33 @@ export function DeepDive({ idPrefix, entries, onDisclose }: DeepDiveProps) {
     rootRef.current?.querySelector<HTMLButtonElement>(`[data-dd-chip="${phase.index}"]`)?.focus();
   }, [phase]);
 
-  const shimmer = shimmerState(CHIP_SHIMMER, attracted);
+  /**
+   * The attract belongs to the list and not to the rotation.
+   *
+   * A coloured sweep exists to stop three small tags going unnoticed in a row
+   * of them (see CHIP_SHIMMER above). One blue underlined sentence on its own
+   * has no such problem, and sweeping it every five seconds would turn a
+   * one-time cue into the permanent peripheral motion V1.2 and V1.3 both
+   * decided against — the exact concern docs/V1.8-REFINEMENT.md's fourth
+   * conflict raises about this feature. So the rotating presentation ships
+   * `none`, and the static list keeps the attract it has always had.
+   */
+  const shimmer = view.kind === 'all' ? shimmerState(CHIP_SHIMMER, attracted) : 'none';
 
   return (
     <div
-      className="deepdive"
+      className={view.kind === 'one' ? 'deepdive is-one' : 'deepdive'}
       ref={rootRef}
+      role="group"
+      aria-label={S.followUpsLabel}
       data-shimmer={shimmer}
+      // Hover and focus hold the rotation. Both are on the row rather than on
+      // the link, so reaching for the stop control does not let the link move
+      // out from under the pointer on the way.
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      onFocus={() => setFocused(true)}
+      onBlur={() => setFocused(false)}
       onAnimationEnd={(event) => {
         const owner = (event.target as HTMLElement).closest?.('[data-dd-item]');
         const index = owner instanceof HTMLElement ? Number(owner.dataset.ddItem) : -1;
@@ -378,6 +564,10 @@ export function DeepDive({ idPrefix, entries, onDisclose }: DeepDiveProps) {
       {entries.map((entry, index) => {
         const role = roleOf(phase, index);
         if (!isRendered(role)) return null;
+        // VB-42: one at a time. The others are not hidden, they are not
+        // rendered — a hidden link is still a tab stop and still something a
+        // screen reader can be told about.
+        if (view.kind === 'one' && index !== view.index) return null;
         const answerId = `${idPrefix}-deepdive-${index}`;
         const open = isExpanded(phase, index);
         const ghost = role === 'leaving' || role === 'entering' ? ghosts.get(index) : undefined;
@@ -385,6 +575,10 @@ export function DeepDive({ idPrefix, entries, onDisclose }: DeepDiveProps) {
         // it is the one thing set inline here.
         const style = {
           '--dd-index': index,
+          // VB-42: the room the tallest follow-up needed, held for all of
+          // them. Measured, because the wording is content and a follow-up
+          // that wraps to two lines must not shove the answer field down.
+          ...(view.kind === 'one' && reserved > 0 ? { '--dd-reserve': `${reserved}px` } : null),
           ...(ghost ? { top: ghost.top, left: ghost.left, width: ghost.width, height: ghost.height } : null),
         } as CSSProperties;
 
@@ -414,6 +608,28 @@ export function DeepDive({ idPrefix, entries, onDisclose }: DeepDiveProps) {
           </div>
         );
       })}
+      {/* WCAG 2.2.2's mechanism, and it is a real control rather than a
+          gesture: visible, in the tab order right after the link it stops,
+          and labelled with what pressing it leaves on screen. Pressing it
+          both stops the motion and gives back every follow-up the rotation
+          was taking turns showing, so nobody trades one for the other.
+
+          Only while nothing is open: with a follow-up expanded there is no
+          rotation to stop (its siblings are unmounted, and `open` holds the
+          clock), and a stop control under an answer would be an offer to
+          undo something that is not happening. */}
+      {showsStop && (
+        <button
+          type="button"
+          className="deepdive-stop"
+          onClick={() => {
+            showAllPressed.current = true;
+            onShowAll?.();
+          }}
+        >
+          {S.followUpsShowAll}
+        </button>
+      )}
     </div>
   );
 }

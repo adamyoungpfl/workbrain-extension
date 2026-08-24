@@ -73,6 +73,11 @@ describe('loadPrefs', () => {
       reducedMotion: 'system',
       handoff: 'manual',
       packUrls: [],
+      // V1.8: the two fields VB-42 and VB-49 added. Both default to the
+      // state an install that predates them has always had — the follow-ups
+      // rotate, the dictation line has not been seen off — so no migration.
+      followUps: 'rotate',
+      dictationHint: true,
     });
   });
 
@@ -98,6 +103,8 @@ describe('setNarrator', () => {
           reducedMotion: 'on',
           handoff: 'fill',
           packUrls: ['a'],
+          followUps: 'rotate',
+          dictationHint: true,
         },
       },
     ]);

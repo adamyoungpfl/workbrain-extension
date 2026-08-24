@@ -65,6 +65,43 @@ export const S = {
    */
   giveExample: 'Give me an example',
   /**
+   * V1.8 VB-42 — the follow-up links under a question.
+   *
+   * `followUpsLabel` names the group. It is never printed: the links are read
+   * as part of the question they sit under, and a heading above them would be
+   * chrome. It exists so someone hearing the panel is told what the thing they
+   * have landed in is, which matters more now that it holds one link at a time
+   * instead of a visible row.
+   *
+   * `followUpsShowAll` is WCAG 2.2.2's required stop, and it is deliberately
+   * named for what it leaves behind rather than for the motion it ends.
+   * "Stop" would ask the person to think about a rotation they never asked
+   * about; "Show all" says what they get, and stopping is how they get it.
+   * Pressing it is remembered, so it is one press and not one per question.
+   */
+  followUpsLabel: 'More about this question',
+  followUpsShowAll: 'Show all',
+  /**
+   * V1.8 VB-49 — the OS dictation hint, on the first question with a real
+   * paragraph to write.
+   *
+   * THERE IS NO MICROPHONE IN THIS PRODUCT AND THIS COPY MUST NEVER IMPLY
+   * ONE. It points at the dictation the person's own computer already has,
+   * which types into this field the same way it types into any other. Nothing
+   * is recorded here, nothing is sent anywhere, and no permission is asked
+   * for — see core/flow/dictation.ts for the four reasons a microphone is not
+   * viable in a side panel.
+   *
+   * So the sentence starts with the person's own machine ("Your Mac can type
+   * what you say"), not with the panel offering a feature. The shortcut is
+   * named exactly, because a hint you have to go and look up is not a hint.
+   * "Got it" dismisses it for good — it is what someone says, and it does not
+   * pretend to be a choice with two sides.
+   */
+  dictationMac: 'Your Mac can type what you say. Press the Fn key twice, then talk.',
+  dictationWindows: 'Windows can type what you say. Press the Windows key and H, then talk.',
+  dictationDismiss: 'Got it',
+  /**
    * V1.3 VB-18 — the narrator toggle's accessible name, in both states.
    *
    * Never printed: the control is an icon in the top-right corner, and a label

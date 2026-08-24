@@ -1,6 +1,9 @@
 /* V1.1 VB-03 — the deeper-dive disclosure.
    V1.3 VB-15 — thinner: the bubble is 30px, the hit target is still 44.
    V1.3 VB-16 — a one-time coloured shimmer, and expand-in-place.
+   V1.8 VB-42 — one at a time, as a text link, rotating. See `.deepdive.is-one`
+   at the foot of this file; everything above it is the list that presentation
+   falls back to, and the card both of them open into.
 
    Read components/DeepDive.tsx first: it holds the reasoning. This file holds
    the numbers, and two of them are load-bearing.
@@ -290,5 +293,146 @@
   }
   .deepdive[data-shimmer] .deepdive-item.is-open::after {
     background-color: transparent;
+  }
+}
+
+/* ── V1.8 VB-42 — one follow-up at a time, as a text link ───────────────
+   The whole of the change is here: one item is rendered instead of the row
+   (DeepDive.tsx), and in this mode it is painted as a sentence rather than as
+   a tag. Open is untouched — `.is-open` above still owns the card, so the link
+   grows into exactly the same answer the chip did, through exactly the same
+   FLIP.
+
+   THE COLOUR. VB-42 asks for "blue, or a dark aqua green". This is --primary,
+   the system's one interactive blue: it already means "Workbrain is asking you
+   to act" (design/tokens.json), it is the colour of every focus ring on the
+   screen, and it measures 6.82:1 on --canvas. The green in this palette is
+   --green at 6.25:1, which also clears the 4.5:1 floor — tests/e2e/
+   follow-up-rotation.spec.ts measures both against the real background rather
+   than trusting either number — but --green means "done, current, healthy"
+   here, and a link that says "finished" while asking to be pressed is a
+   sentence the interface does not mean. One line to change if that is ever
+   settled the other way. */
+.deepdive.is-one {
+  flex-direction: column;
+  align-items: flex-start;
+  /* The base row-gap, unchanged and for the same reason: the link's hit target
+     overhangs its text by 8px top and bottom, so 16px is what keeps it clear
+     of the stop control's own 44px box below it. */
+}
+
+/* No bubble in this mode: a border and a fill around one sentence would make
+   it a button again, and the point is that it reads like the question. */
+.deepdive.is-one .deepdive-item:not(.is-open) {
+  border-color: transparent;
+  background: none;
+  /* Held at the tallest this question's follow-ups have needed, so a longer
+     one rotating in does not push the answer field down under someone's
+     hands. The value is measured in DeepDive.tsx; 0 until it is. */
+  min-height: var(--dd-reserve, 0);
+  justify-content: center;
+}
+.deepdive.is-one .deepdive-item:not(.is-open):hover {
+  border-color: transparent;
+  background: none;
+}
+/* Nothing sweeps in this mode. One blue sentence is not hard to notice, and a
+   coloured pass every five seconds is the perpetual motion V1.2 and V1.3 both
+   ruled out. `data-shimmer` is already "none" here; this is the paint. */
+.deepdive.is-one .deepdive-item:not(.is-open)::after {
+  background-image: none;
+}
+
+/* The link itself. Same family as the question above it, one step down and
+   underlined — never colour alone (docs/GUARDRAILS.md), and the chevron is a
+   third signal on top of that. The 13px padding and -8px margin are inherited
+   from `.deepdive-chip`: the text is 16px but the box you can press is still
+   44, exactly as VB-15 built it. */
+.deepdive.is-one .deepdive-chip {
+  font-size: 16px;
+  line-height: 1.35;
+  letter-spacing: -0.012em;
+  font-weight: 560;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1px;
+  align-items: baseline;
+}
+.deepdive.is-one .deepdive-chip:hover {
+  color: var(--primary-hover);
+}
+/* Open drops the underline and gains weight. Both are deliberate: an expanded
+   follow-up is no longer an invitation to read further, so it stops being
+   painted as one, and the state is carried by two things that survive colour
+   being removed entirely — on top of the card's own border, fill and radius,
+   and the chevron turning (docs/GUARDRAILS.md). */
+.deepdive.is-one .deepdive-item.is-open .deepdive-chip {
+  font-weight: 640;
+  text-decoration: none;
+}
+.deepdive.is-one .deepdive-mark {
+  color: currentColor;
+  align-self: center;
+}
+
+/* The turn. 200ms — §06's default for anything that moves — and a fade with
+   3px of travel rather than a scale: this is text, and text that grows into
+   place is harder to read than text that arrives. Only the collapsed link
+   animates; a link that has been opened keeps its key, so nothing re-runs
+   under the answer. */
+.deepdive.is-one .deepdive-item:not(.is-open) {
+  animation: wb-dd-turn var(--base) var(--ease) both;
+}
+@keyframes wb-dd-turn {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* WCAG 2.2.2's stop. Quiet — it is not the point of the screen — but a real
+   control: 44px tall, underlined so it is not a colour, and with the same ring
+   as everything else. It sits after the link in the tab order, which is where
+   somebody who wants to stop the thing they just read will look for it. */
+.deepdive-stop {
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 13px;
+  line-height: 18px;
+  min-height: var(--target-min);
+  padding: 13px 2px;
+  margin: -8px 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+.deepdive-stop:hover {
+  color: var(--ink);
+}
+.deepdive-stop:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* Reduced motion never reaches this mode — DeepDive.tsx renders the static
+   list instead, which is the still equivalent and carries more than the
+   moving one, not less. This is belt to that braces, for a preference that
+   changed while a question was on screen. */
+@media (prefers-reduced-motion: reduce) {
+  .deepdive.is-one .deepdive-item:not(.is-open) {
+    animation: none;
+  }
+  .deepdive-stop {
+    transition: none;
   }
 }

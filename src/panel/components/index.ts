@@ -38,6 +38,11 @@ export type { SheetProps } from './Sheet';
 export { DeepDive, CHIP_SHIMMER } from './DeepDive';
 export type { DeepDiveProps } from './DeepDive';
 
+// V1.8 VB-49. One line pointing at the dictation the person's own computer
+// already has. There is no microphone in this product — see DictationHint.tsx.
+export { DictationHint } from './DictationHint';
+export type { DictationHintProps } from './DictationHint';
+
 export { BrandMark } from './BrandMark';
 export type { BrandMarkProps, BrandMarkSpin, BrandMarkVariant } from './BrandMark';
 

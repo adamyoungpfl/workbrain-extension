@@ -4,6 +4,7 @@ import {
   Beats,
   Button,
   DeepDive,
+  DictationHint,
   Field,
   FlowProgress,
   NarratorToggle,
@@ -62,7 +63,7 @@ import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scori
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
 import { NARRATION_COPY } from '../voice/copy';
 import { useNarration } from '../voice/useNarration';
-import { useNarratorPref } from '../voice/prefs';
+import { useFollowUpsPref, useNarratorPref } from '../voice/prefs';
 import { speak, stopSpeaking } from '../voice/speech';
 import type { AnswerValue, DeepDiveEntry, FileOutlineNode, FlowContext, Module, Option, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
@@ -343,19 +344,39 @@ function AnswerArea({ children }: { children: ReactNode }) {
  *
  * V1.3 VB-18: `onDisclose` is how a follow-up reaches the narrator — the
  * `followUp` voice role is the one whose content only exists here. It fires
- * with the entry that just opened, or `null` when the open one closes. */
+ * with the entry that just opened, or `null` when the open one closes.
+ *
+ * V1.8 VB-42: the follow-ups are one rotating text link rather than a row of
+ * tags, so this is where the two things the rotation needs from outside the
+ * component are joined up — the person's standing answer to "stop it" (a
+ * stated preference, so the next question is already still) and whether they
+ * have started answering this one. The rotation itself, its five seconds and
+ * every reason it stops live in `core/motion/rotation.ts` and
+ * `components/DeepDive.tsx`; the primary question and the status bar above are
+ * untouched by any of it, which is docs/V1.8-REFINEMENT.md's DECISIONS 3 in
+ * one sentence. */
 function QuestionHelp({
   step,
   onDisclose,
+  answering = false,
 }: {
   step: Step;
   onDisclose?: ((entry: DeepDiveEntry | null) => void) | undefined;
+  answering?: boolean;
 }) {
+  const { mode, showAll } = useFollowUpsPref();
   return (
     <>
       {showsHint(step) && <p className="flow-hint">{step.hint}</p>}
       {step.deepDive && step.deepDive.length > 0 && (
-        <DeepDive idPrefix={`flow-${step.id}`} entries={step.deepDive} onDisclose={onDisclose} />
+        <DeepDive
+          idPrefix={`flow-${step.id}`}
+          entries={step.deepDive}
+          onDisclose={onDisclose}
+          mode={mode === 'all' ? 'all' : 'one'}
+          onShowAll={showAll}
+          answering={answering}
+        />
       )}
     </>
   );
@@ -806,6 +827,29 @@ function StepView({
     return typeof existing === 'string' ? existing : '';
   });
   const [rephraseIndex, setRephraseIndex] = useState(0);
+  /**
+   * V1.8 VB-42 — they have started answering this question.
+   *
+   * The one signal the rotating follow-ups need from outside themselves, and
+   * Adam's own rule for it: the list renews "until the person clicks Next or
+   * starts typing an answer". Next is not a signal, because Next unmounts the
+   * whole question.
+   *
+   * Set by the act, not derived from the draft: a question they answered
+   * earlier arrives with its draft already full, and treating that as "they
+   * are typing right now" would silently kill the rotation on every question
+   * anybody ever goes Back to. Picking an option counts too — it is answering,
+   * and it is the same reason.
+   */
+  const [answering, setAnswering] = useState(false);
+  function answerText(next: string) {
+    setAnswering(true);
+    setDraftText(next);
+  }
+  function answerValues(next: string[]) {
+    setAnswering(true);
+    setDraftValues(next);
+  }
   // V1.1 VB-08: how many times "give me an example" has been pressed on this
   // question. A count, not an index — core/flow/ideas.ts owns the wrap, so
   // nothing here has to know how many ideas the question carries. Reset by the
@@ -1421,7 +1465,7 @@ function StepView({
           )}
         </div>
       )}
-      <QuestionHelp step={step} onDisclose={narrateFollowUp} />
+      <QuestionHelp step={step} onDisclose={narrateFollowUp} answering={answering} />
 
       {/* V1.3 VB-17: every kind's controls in one band, so the room the
           question surface now fills has somewhere deliberate to put its
@@ -1435,11 +1479,18 @@ function StepView({
                 label={questionText}
                 as={step.multiline ? 'textarea' : 'input'}
                 value={draftText}
-                onChange={setDraftText}
+                onChange={answerText}
                 placeholder={step.ph}
                 error={pendingError ?? undefined}
               />
             </div>
+            {/* V1.8 VB-49. Under the box, because it is about the box: the
+                dictation the person's own computer already has types into
+                this field, and nobody knows it. One question, one line, gone
+                for good on the dismiss or on the first thing they type.
+                There is no microphone here and there is no permission — see
+                components/DictationHint.tsx for the four reasons why. */}
+            <DictationHint stepId={step.id} typed={draftText.trim() !== ''} />
             {/* V1.1 VB-08. Under the field, not beside the question: this
                 control writes into the box, so it belongs with the box, and
                 the sibling app puts it in the same place. Rendered only where
@@ -1533,7 +1584,7 @@ function StepView({
               mode={step.kind === 'multi' ? 'multi' : 'single'}
               options={pillOptions}
               value={draftValues}
-              onChange={setDraftValues}
+              onChange={answerValues}
               onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
             />
             {customOpen && (

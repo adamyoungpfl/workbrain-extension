@@ -79,6 +79,21 @@ export interface Prefs {
   reducedMotion: 'system' | 'on' | 'off';
   handoff: 'manual' | 'fill' | 'auto';
   packUrls: string[];
+  /**
+   * V1.8 VB-42. `'all'` once the person has pressed the follow-ups' visible
+   * stop; `'rotate'` until then. WCAG 2.2.2 requires the stop to exist, and
+   * remembering it is what keeps it from being 26 separate presses — one per
+   * question carrying follow-ups. A stated preference, like `narrator`, which
+   * is the one category of thing this product does store.
+   */
+  followUps: 'rotate' | 'all';
+  /**
+   * V1.8 VB-49. False once the OS-dictation hint has been dismissed, or once
+   * the person has typed into the question that carries it — either way it
+   * never appears again. Not a microphone and not a capability: there is no
+   * mic in this product (see core/flow/dictation.ts).
+   */
+  dictationHint: boolean;
 }
 
 /** local */

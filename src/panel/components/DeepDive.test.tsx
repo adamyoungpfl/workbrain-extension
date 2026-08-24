@@ -1,9 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { act } from 'react';
-import { CHIP_SHIMMER, DeepDive } from './DeepDive';
+import { CHIP_SHIMMER, DeepDive, type DeepDiveProps } from './DeepDive';
 import { mount } from './testUtils';
 import { EXPAND_MS } from '../../core/motion/disclosure';
 import { SHIMMER_KEYFRAME, shimmerState } from '../../core/motion/shimmer';
+import { ROTATE_MS } from '../../core/motion/rotation';
 import type { DeepDiveEntry } from '../../schema/flow.types';
 
 const ENTRIES: DeepDiveEntry[] = [
@@ -300,5 +301,207 @@ describe('DeepDive', () => {
     const row = container.querySelector('.deepdive') as HTMLElement;
     endAnimation(itemsOf(container)[1]!, 'wb-dd-out');
     expect(row.dataset.shimmer).toBe('once');
+  });
+});
+
+// ── V1.8 VB-42 — one at a time, rotating ────────────────────────────────
+
+/**
+ * The presentation, and only the presentation. What these hold is that the
+ * rotation runs on the five seconds, that every reason it must stop actually
+ * stops it, that the stop control exists exactly where WCAG 2.2.2 needs it,
+ * and — the point of DECISIONS 1 — that a rotating link still runs the whole
+ * of V1.3 VB-16 when it is pressed.
+ *
+ * The paint is not here: `tests/e2e/follow-up-rotation.spec.ts` measures the
+ * link's colour against its real background and takes the screenshots. jsdom
+ * has no layout, so a test that "measured" contrast here would be measuring a
+ * stylesheet it never applied.
+ */
+const THREE: DeepDiveEntry[] = [
+  ...ENTRIES,
+  { q: 'What if it changes later?', a: 'Then you change it. Nothing here is locked.' },
+];
+
+function rotating(entries: DeepDiveEntry[] = THREE, props: Partial<DeepDiveProps> = {}) {
+  return mount(<DeepDive idPrefix="flow-role_names" entries={entries} mode="one" {...props} />);
+}
+
+function labels(container: Element) {
+  return chipsOf(container).map((c) => c.textContent);
+}
+
+function tick(times = 1) {
+  act(() => {
+    vi.advanceTimersByTime(ROTATE_MS * times);
+  });
+}
+
+/** React listens for `mouseover`/`mouseout` and `focusin`/`focusout`. */
+function fire(el: Element, type: string) {
+  act(() => {
+    el.dispatchEvent(new Event(type, { bubbles: true }));
+  });
+}
+
+describe('DeepDive — VB-42, one follow-up at a time', () => {
+  it('shows one link, not the row', () => {
+    const { container } = rotating();
+    expect(itemsOf(container)).toHaveLength(1);
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+    expect(container.querySelector('.deepdive')?.className).toContain('is-one');
+  });
+
+  it('changes every five seconds, and keeps renewing', () => {
+    const { container } = rotating();
+    tick();
+    expect(labels(container)[0]).toContain(THREE[1]!.q);
+    tick();
+    expect(labels(container)[0]).toContain(THREE[2]!.q);
+    tick();
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+  });
+
+  it('does not change before the five seconds are up', () => {
+    const { container } = rotating();
+    act(() => {
+      vi.advanceTimersByTime(ROTATE_MS - 50);
+    });
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+  });
+
+  it('stops while the pointer is over it, and starts again when it leaves', () => {
+    const { container } = rotating();
+    const row = container.querySelector('.deepdive')!;
+    fire(row, 'mouseover');
+    tick(3);
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+    fire(row, 'mouseout');
+    tick();
+    expect(labels(container)[0]).toContain(THREE[1]!.q);
+  });
+
+  it('stops while something inside it has focus', () => {
+    const { container } = rotating();
+    fire(chipsOf(container)[0]!, 'focusin');
+    tick(3);
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+    fire(chipsOf(container)[0]!, 'focusout');
+    tick();
+    expect(labels(container)[0]).toContain(THREE[1]!.q);
+  });
+
+  it('stops for good once they start answering', () => {
+    const { container, rerender } = rotating();
+    rerender(<DeepDive idPrefix="flow-role_names" entries={THREE} mode="one" answering />);
+    tick(4);
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+  });
+
+  it('does not move the link out from under an open answer', () => {
+    const { container } = rotating();
+    press(chipsOf(container)[0]!);
+    expect(chipsOf(container)[0]?.getAttribute('aria-expanded')).toBe('true');
+    tick(3);
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+    expect(answersOf(container)[0]?.textContent).toBe(THREE[0]!.a);
+  });
+
+  it('still expands in place, through the same VB-16 machinery', () => {
+    // DECISIONS 1: the rotation wraps VB-16, it does not replace it. Same
+    // transitional states, same 200ms, same end state.
+    const { container } = rotating();
+    const [link] = chipsOf(container);
+    act(() => link!.focus());
+    click(link!);
+    expect(container.querySelector('.deepdive-item')?.className).toContain('is-open');
+    act(() => {
+      vi.advanceTimersByTime(EXPAND_MS);
+    });
+    expect(answersOf(container)[0]?.hidden).toBe(false);
+    expect(document.activeElement).toBe(link);
+    // ...and closing puts it back to one rotating link, not to a row.
+    press(chipsOf(container)[0]!);
+    expect(itemsOf(container)).toHaveLength(1);
+    expect(answersOf(container)[0]?.hidden).toBe(true);
+  });
+
+  it('never sweeps: the attract belongs to the list', () => {
+    const { container } = rotating();
+    expect((container.querySelector('.deepdive') as HTMLElement).dataset.shimmer).toBe('none');
+  });
+
+  // ── WCAG 2.2.2 ────────────────────────────────────────────────────────
+
+  it('offers a visible stop, in the tab order, that says what it does', () => {
+    const { container } = rotating();
+    const stop = container.querySelector('.deepdive-stop') as HTMLButtonElement;
+    expect(stop).not.toBeNull();
+    expect(stop.tagName).toBe('BUTTON');
+    expect(stop.textContent).toBe('Show all');
+    expect(stop.hasAttribute('hidden')).toBe(false);
+    // After the link it stops, so somebody who just read it looks forward.
+    expect(chipsOf(container)[0]!.compareDocumentPosition(stop)).toBe(
+      Node.DOCUMENT_POSITION_FOLLOWING,
+    );
+  });
+
+  it('tells the surface when the stop is pressed, and lands focus on the list', () => {
+    const seen: number[] = [];
+    const { container, rerender } = rotating(THREE, { onShowAll: () => seen.push(1) });
+    const stop = container.querySelector('.deepdive-stop') as HTMLButtonElement;
+    act(() => stop.focus());
+    click(stop);
+    expect(seen).toHaveLength(1);
+    // The surface is what remembers it — this is what it renders back.
+    rerender(<DeepDive idPrefix="flow-role_names" entries={THREE} mode="all" />);
+    expect(itemsOf(container)).toHaveLength(3);
+    expect(container.querySelector('.deepdive-stop')).toBeNull();
+    // The control that was pressed has gone; focus did not fall to the body.
+    expect(document.activeElement).toBe(chipsOf(container)[0]);
+  });
+
+  it('offers no stop while a follow-up is open — nothing is moving to stop', () => {
+    const { container } = rotating();
+    press(chipsOf(container)[0]!);
+    expect(container.querySelector('.deepdive-stop')).toBeNull();
+  });
+
+  it('offers no stop, and no rotation, for a question with one follow-up', () => {
+    const { container } = rotating([ENTRIES[0]!]);
+    expect(container.querySelector('.deepdive-stop')).toBeNull();
+    expect(container.querySelector('.deepdive')?.className).not.toContain('is-one');
+    tick(3);
+    expect(labels(container)[0]).toContain(ENTRIES[0]!.q);
+  });
+
+  it('names the group, so the thing holding one link at a time has a name', () => {
+    const { container } = rotating();
+    const row = container.querySelector('.deepdive')!;
+    expect(row.getAttribute('role')).toBe('group');
+    expect(row.getAttribute('aria-label')).toBe('More about this question');
+  });
+
+  it('never announces the change: the link is not in a live region', () => {
+    // The rotation is decoration for anyone reading with their ears — the
+    // answer inside it is what announces, and only when it is opened.
+    const { container } = rotating();
+    const chip = chipsOf(container)[0]!;
+    expect(chip.closest('[aria-live]')).toBeNull();
+  });
+
+  // ── reduced motion ────────────────────────────────────────────────────
+
+  it('shows the static list under reduced motion, and schedules no clock', () => {
+    setMatchMedia(true);
+    const scheduled = vi.spyOn(window, 'setInterval');
+    const { container } = rotating();
+    expect(itemsOf(container)).toHaveLength(3);
+    expect(container.querySelector('.deepdive')?.className).not.toContain('is-one');
+    expect(container.querySelector('.deepdive-stop')).toBeNull();
+    expect(scheduled.mock.calls.filter(([, ms]) => ms === ROTATE_MS)).toHaveLength(0);
+    tick(3);
+    expect(itemsOf(container)).toHaveLength(3);
+    scheduled.mockRestore();
   });
 });

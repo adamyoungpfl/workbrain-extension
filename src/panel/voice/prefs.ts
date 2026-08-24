@@ -30,6 +30,23 @@ import type { Prefs } from '../../schema/storage.types';
  * its own permission decision (VB-18, "DECIDED — narrator first, mic
  * deferred"). When it arrives it extends this store; `Prefs.mic` already
  * exists and is already preserved by every write here.
+ *
+ * V1.8: IT IS NO LONGER ONLY THE NARRATOR'S STORE. `wb:prefs` is one key and
+ * one read, so it gets one store — two things that are not voice now live
+ * here rather than in a second module that would read the same key a second
+ * time and disagree with this one for as long as a write took:
+ *
+ * - **VB-42's `followUps`** — the follow-up links' visible stop (WCAG 2.2.2),
+ *   remembered so it is one press rather than one per question.
+ * - **VB-49's `dictationHint`** — whether the OS-dictation line has been seen
+ *   off. There is still no microphone anywhere in this product; that hint
+ *   points at the dictation the operating system already has (see
+ *   core/flow/dictation.ts).
+ *
+ * `loaded` exists for VB-49 only, and for one frame of it: the hint's default
+ * is "show", so a component that rendered before the stored answer arrived
+ * would flash a hint at someone who dismissed it months ago. Anything whose
+ * default is the quiet one — the narrator, the rotation — can ignore it.
  */
 
 const DEFAULT_PREFS: Prefs = {
@@ -38,9 +55,12 @@ const DEFAULT_PREFS: Prefs = {
   reducedMotion: 'system',
   handoff: 'manual',
   packUrls: [],
+  followUps: 'rotate',
+  dictationHint: true,
 };
 
 let prefs: Prefs = DEFAULT_PREFS;
+let loaded = false;
 let loading: Promise<void> | null = null;
 const listeners = new Set<() => void>();
 
@@ -69,10 +89,14 @@ export function loadPrefs(): Promise<void> {
   loading = (async () => {
     try {
       const stored = await getSync('wb:prefs');
-      if (stored) publish({ ...DEFAULT_PREFS, ...stored });
+      loaded = true;
+      publish(stored ? { ...DEFAULT_PREFS, ...stored } : prefs);
     } catch {
       // No storage, or storage refused: the defaults are already in memory and
-      // the panel carries on with them. Never surfaced.
+      // the panel carries on with them. Never surfaced. `loaded` still turns
+      // true — the answer is "there is nothing stored", which is an answer.
+      loaded = true;
+      publish(prefs);
     }
   })();
   return loading;
@@ -86,8 +110,22 @@ export function loadPrefs(): Promise<void> {
  * exactly where the person put it.
  */
 export async function setNarrator(on: boolean): Promise<void> {
-  if (prefs.narrator === on) return;
-  const next: Prefs = { ...prefs, narrator: on };
+  await setPref('narrator', on);
+}
+
+/**
+ * Set one preference and write the whole object back.
+ *
+ * The whole object because `wb:prefs` is one item and every other field has to
+ * survive the write — `setNarrator` has always done this, and V1.8 gave the
+ * key two more fields to lose. Same order as before, for the same reason: in
+ * memory first so the interface changes on the press, storage second so a
+ * refused write costs the person nothing they can see (docs/GUARDRAILS.md's
+ * degradation rule).
+ */
+export async function setPref<K extends keyof Prefs>(key: K, value: Prefs[K]): Promise<void> {
+  if (prefs[key] === value) return;
+  const next: Prefs = { ...prefs, [key]: value };
   publish(next);
   try {
     await setSync('wb:prefs', next);
@@ -100,6 +138,7 @@ export async function setNarrator(on: boolean): Promise<void> {
  * tests, which need a store that has not already read a fake storage. */
 export function resetPrefsMemory(): void {
   prefs = DEFAULT_PREFS;
+  loaded = false;
   loading = null;
   listeners.clear();
 }
@@ -115,4 +154,30 @@ export function resetPrefsMemory(): void {
 export function useNarratorPref(): { on: boolean; setOn: (on: boolean) => void } {
   const on = useSyncExternalStore(subscribe, () => prefs.narrator);
   return { on, setOn: (next) => void setNarrator(next) };
+}
+
+/**
+ * V1.8 VB-42 — whether the follow-ups still rotate, and the press that stops
+ * them for good. Same store, same live read as the narrator: the control that
+ * stops the rotation is inside the thing that is rotating, and the next
+ * question's copy of that thing has to already know.
+ */
+export function useFollowUpsPref(): { mode: Prefs['followUps']; showAll: () => void } {
+  const mode = useSyncExternalStore(subscribe, () => prefs.followUps);
+  return { mode, showAll: () => void setPref('followUps', 'all') };
+}
+
+/**
+ * V1.8 VB-49 — whether the OS-dictation hint is still to be shown, and the
+ * one call that retires it.
+ *
+ * `loaded` is handed back with it because this is the one preference whose
+ * default is the *louder* state: rendering before the stored answer arrives
+ * would show a dismissed hint again for a frame. Nothing here touches a
+ * microphone, a permission or a capability.
+ */
+export function useDictationHintPref(): { show: boolean; loaded: boolean; dismiss: () => void } {
+  const show = useSyncExternalStore(subscribe, () => prefs.dictationHint);
+  const ready = useSyncExternalStore(subscribe, () => loaded);
+  return { show, loaded: ready, dismiss: () => void setPref('dictationHint', false) };
 }

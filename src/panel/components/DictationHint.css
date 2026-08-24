@@ -1,0 +1,64 @@
+/* V1.8 VB-49 — the OS-dictation hint. Read DictationHint.tsx first: it holds
+   the reasoning, including why there is no microphone anywhere near it.
+
+   QUIET IS THE WHOLE SPECIFICATION. It sits under the answer box on one
+   question, it is an aside rather than an instruction, and it must not compete
+   with either the question above it or Next below it. So: the panel's own
+   --surface, no border, no accent, no icon — an icon here would be a small
+   picture of a microphone, and there is no microphone. 13px --ink-2 measures
+   6.96:1, comfortably over the 4.5:1 floor, so quiet never means faint. */
+
+.dictation {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 0;
+  padding: 6px 6px 6px 12px;
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+
+.dictation-line {
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--ink-2);
+}
+
+/* The same shrink-the-paint trick as the follow-up chips (DeepDive.css): the
+   text reads as a small quiet word, the box you can press is the full 44. */
+.dictation-dismiss {
+  box-sizing: border-box;
+  flex: none;
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 560;
+  line-height: 18px;
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+  padding: 13px 8px;
+  margin: -8px 0;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  color: var(--ink-2);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+.dictation-dismiss:hover {
+  color: var(--ink);
+}
+.dictation-dismiss:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dictation-dismiss {
+    transition: none;
+  }
+}

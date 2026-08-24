@@ -208,6 +208,25 @@ function buildAnswersExcept(modules: Module[], leaveUnanswered: string): Answers
   return { values, repeatables, answeredAt, reflectedAt };
 }
 
+/**
+ * V1.8 VB-42 — press the follow-ups' visible stop, so the tests below see the
+ * list they were written about.
+ *
+ * The chips did not go anywhere: a question now shows **one** follow-up at a
+ * time as a rotating text link, and "Show all" is WCAG 2.2.2's required stop,
+ * which both ends the rotation and puts every follow-up back on screen. That
+ * static list is the same row V1.1 and V1.3 built, and everything they proved
+ * about it — the 30px bubble inside a 44px target, the one-time shimmer, the
+ * siblings leaving and coming back — is still true of it, so those tests are
+ * unchanged apart from this line. The rotation itself has its own spec:
+ * tests/e2e/follow-up-rotation.spec.ts.
+ */
+async function showAllFollowUps(page: Page): Promise<void> {
+  const stop = page.locator('.flow .deepdive-stop');
+  await stop.click();
+  await expect(stop).toHaveCount(0);
+}
+
 /** The approved copy, read from the data rather than retyped — a drift here
  * should fail as a copy change, not as a stale string in a test. */
 const ORIENTATION = DEEP_DIVE.orientation_ready!;
@@ -218,6 +237,7 @@ test.describe('the deeper-dive follow-ups', () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
     await enterInterview(page);
+    await showAllFollowUps(page);
 
     // Question one, `orientation_ready` — two authored follow-ups.
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
@@ -270,6 +290,7 @@ test.describe('the deeper-dive follow-ups', () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
     await enterInterview(page);
+    await showAllFollowUps(page);
 
     const measured = await page.evaluate(() =>
       Array.from(document.querySelectorAll('.flow .deepdive-item')).map((item) => {
@@ -372,6 +393,7 @@ test.describe('the deeper-dive follow-ups', () => {
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
     await enterInterview(page);
+    await showAllFollowUps(page);
     await expect(page.locator('.flow .deepdive-item')).toHaveCount(2);
     await waitForShimmers(page, 2);
 
@@ -417,6 +439,7 @@ test.describe('the deeper-dive follow-ups', () => {
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
     await enterInterview(page);
+    await showAllFollowUps(page);
     await waitForShimmers(page, 1);
 
     // Held on its first frame by the tracer, so it can be seeked and read.
@@ -493,6 +516,7 @@ test.describe('the deeper-dive follow-ups', () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
     await enterInterview(page);
+    await showAllFollowUps(page);
     await expect(page.locator('.flow .deepdive-item')).toHaveCount(2);
 
     // Press it from the keyboard, then watch every frame for 400ms: the row's
@@ -552,6 +576,7 @@ test.describe('the deeper-dive follow-ups', () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
     await enterInterview(page);
+    await showAllFollowUps(page);
 
     const boxesAt = () =>
       page.evaluate(() =>
