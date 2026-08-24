@@ -143,6 +143,56 @@ export function navPaintGapAboveDrawer(): number {
  */
 export const FLOW_NAV_GAP = 8;
 
+/* ── V1.8 VB-44: the foot under the save note ────────────────────────────
+ *
+ * The complaint: "Saved on this device · Nothing leaves your browser" sat too
+ * far off the bottom of the question area. It rides on VB-17's slack — the one
+ * seam the leftover room falls into — so it is always the last row on the
+ * screen, and the space beneath it was the flow surface's own 20px vertical
+ * frame. On top of `FLOW_NAV_GAP` and the overhang the hit box gives back,
+ * that put 37px between the note and the word "Next" — more air under the
+ * footnote than VB-41 deliberately left under the buttons.
+ *
+ * Which is the thing that was actually wrong, and it is a proximity bug rather
+ * than a taste: the button cluster has to read as belonging to the question
+ * above it and NOT to the drawer below it (that is the whole of VB-41). With
+ * more space above the cluster than below it, the grouping said the opposite.
+ *
+ * So the number below is not a new opinion about spacing — it is the old one,
+ * bounded by VB-41's. `saveNotePaintGapAboveNav()` must stay under
+ * `navPaintGapAboveDrawer()`, and dock.test.ts is what holds it there: shrink
+ * VB-41's clearance and this fails rather than quietly inverting the grouping
+ * again.
+ */
+
+/**
+ * The space left under the save note at the foot of the question area, in px.
+ *
+ * One gutter — the same 8 as `FLOW_NAV_GAP` above, the drawer's own frame
+ * (core/drawer/chrome.ts) and the nav band's side padding — rather than the
+ * surface's full 20px frame. A footnote sits at the foot of its page; it does
+ * not get a margin of its own on top of the one the dock already leaves.
+ *
+ * It is not zero: at zero the only thing between the note and the cluster is
+ * the dock's gap and the overhang, and 17px is close enough that the note
+ * starts reading as the first row of the button cluster rather than the last
+ * row of the question.
+ */
+export const FLOW_SAVE_NOTE_FOOT = 8;
+
+/**
+ * What a person actually sees between the last pixel of the save note and the
+ * first painted pixel of Back / Next / Skip.
+ *
+ * The note's foot, the dock's own gap, and the overhang that sits between the
+ * top of the nav band and the top of the painted word (`navPaintOverhang`) —
+ * the same three-term sum as `navPaintGapAboveDrawer()` on the other side of
+ * the cluster, and the reason this file computes it rather than the stylesheet.
+ */
+export function saveNotePaintGapAboveNav(): number {
+  return FLOW_SAVE_NOTE_FOOT + FLOW_NAV_GAP + navPaintOverhang();
+}
+
 /** A height the DOM could not give us is worth zero, never NaN — a NaN here
  * would reach `padding-bottom` as an invalid value and silently drop the whole
  * reservation, putting the drawer over the question. */

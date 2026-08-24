@@ -64,6 +64,29 @@
   min-height: calc(100dvh - var(--flow-area-offset, 262px));
 }
 
+/* ── V1.8 VB-44: the foot under the save note ────────────────────────────
+   The note is the last row of the cluster's slack (see `.flow-answer` below),
+   so the space under it is this surface's own bottom frame — 20px, on top of
+   the dock's 8px gap and the 9px the nav band leaves above its painted words.
+   37px between a footnote and the word "Next", where VB-41 deliberately left
+   29 between "Next" and the drawer. More air above the buttons than below them
+   groups them with the drawer, which is the confusion VB-41 exists to remove.
+
+   One gutter instead, from core/flow/dock.ts's `FLOW_SAVE_NOTE_FOOT` — 25px to
+   the painted cluster, under VB-41's 29 — and the arithmetic that says why is
+   `saveNotePaintGapAboveNav()`, held to `navPaintGapAboveDrawer()` in
+   dock.test.ts. This file draws it; it does not work it out.
+
+   Scoped to `.flowshell` and to the bottom edge only. The proof loop has no
+   dock, and its note is followed by an ordinary footer rather than by the
+   docked cluster, so it keeps the surface's full frame. Nothing above moves:
+   the top and side gutters are untouched, and this padding is inside the room
+   the question already owns, so the dock's reservation, the bar's height and
+   the drawer's ceiling are all exactly what they were. */
+.flowshell .flow {
+  padding-bottom: var(--flow-note-foot, 8px);
+}
+
 /* The room has to change at exactly the speed the drawer's edge moves.
    Unlike `.flowshell`'s reservation above — which only changes how far the
    page can scroll and so is deliberately not animated — this number decides

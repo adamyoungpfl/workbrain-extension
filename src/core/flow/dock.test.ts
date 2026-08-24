@@ -7,12 +7,14 @@ import {
   FLOW_NAV_PAINT_PAD,
   FLOW_NAV_RING_REACH,
   FLOW_NAV_TARGET,
+  FLOW_SAVE_NOTE_FOOT,
   dockedChromeHeight,
   flowBottomReserve,
   navHitPadding,
   navPaintGapAboveDrawer,
   navPaintHeight,
   navPaintOverhang,
+  saveNotePaintGapAboveNav,
 } from './dock';
 import {
   DRAWER_MIN_HEIGHT,
@@ -95,6 +97,50 @@ describe('the button cluster’s two boxes (VB-41)', () => {
     // Stated as a ceiling so a later "make it roomier" is a conversation with
     // composition.test.ts rather than a silent squeeze on a 600px panel.
     expect(FLOW_NAV_HEIGHT).toBeLessThanOrEqual(64);
+  });
+});
+
+/**
+ * V1.8 VB-44 — the foot under the save note, and the rule that decides it.
+ *
+ * The note is the last row of the question area and rides on VB-17's single
+ * seam, so "how much padding is under it" is really "how much air is between
+ * the footnote and the button cluster". The answer is bounded by VB-41 rather
+ * than chosen: less than the clearance under the cluster, so the buttons group
+ * upward with the question and not downward with the drawer.
+ */
+describe('the save note’s foot (VB-44)', () => {
+  it('is one gutter, and the gap it produces is the sum of three terms', () => {
+    expect(FLOW_SAVE_NOTE_FOOT).toBe(FLOW_NAV_GAP);
+    expect(saveNotePaintGapAboveNav()).toBe(FLOW_SAVE_NOTE_FOOT + FLOW_NAV_GAP + navPaintOverhang());
+    expect(saveNotePaintGapAboveNav()).toBe(25);
+    // Whole pixels, for the same reason the cluster's own boxes are: this is a
+    // painted seam on a 1x screen.
+    expect(Number.isInteger(FLOW_SAVE_NOTE_FOOT)).toBe(true);
+    expect(Number.isInteger(saveNotePaintGapAboveNav())).toBe(true);
+  });
+
+  it('leaves less air above the cluster than VB-41 leaves below it', () => {
+    // THE RULE. The cluster belongs to the question, not to the drawer, so it
+    // has to sit nearer the thing it belongs to. Before VB-44 this was 37px
+    // against 29px — the grouping said the opposite of what VB-41 built.
+    expect(saveNotePaintGapAboveNav()).toBeLessThan(navPaintGapAboveDrawer());
+  });
+
+  it('is still a real gap, so the note never joins the cluster', () => {
+    // The other end of the same rule. A footnote pressed up against Back /
+    // Next / Skip reads as part of the bar, which is how a reassurance that
+    // never changes turns into permanent chrome (Flow.tsx's `saveNote`).
+    expect(saveNotePaintGapAboveNav()).toBeGreaterThanOrEqual(2 * FLOW_NAV_GAP);
+    expect(FLOW_SAVE_NOTE_FOOT).toBeGreaterThan(0);
+  });
+
+  it('costs the question nothing', () => {
+    // It is padding inside the surface the question already owns, so it is not
+    // in the reserve, not in the bar's height, and not taken off the drawer's
+    // ceiling. Tightening it moves the note down; it does not move the dock.
+    expect(flowBottomReserve(DRAWER_REST_HEIGHT)).toBe(DRAWER_REST_HEIGHT + FLOW_NAV_HEIGHT + FLOW_NAV_GAP);
+    expect(FLOW_NAV_HEIGHT).toBe(FLOW_NAV_TARGET + FLOW_NAV_CLEARANCE);
   });
 });
 

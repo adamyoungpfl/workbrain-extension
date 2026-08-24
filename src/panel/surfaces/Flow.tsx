@@ -25,6 +25,7 @@ import {
   FLOW_NAV_CLEARANCE,
   FLOW_NAV_HEIGHT,
   FLOW_NAV_LABEL,
+  FLOW_SAVE_NOTE_FOOT,
   flowBottomReserve,
   navHitPadding,
   navPaintOverhang,
@@ -615,6 +616,12 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
             '--nav-paint-inset': `${navPaintOverhang()}px`,
             '--nav-label-h': `${FLOW_NAV_LABEL}px`,
             '--nav-clearance': `${FLOW_NAV_CLEARANCE}px`,
+            // V1.8 VB-44. The foot under the save note — one gutter, not the
+            // surface's whole 20px frame, and held under the clearance above
+            // by core/flow/dock.ts. Published from the same file for the same
+            // reason as the four above: the two gaps either side of the button
+            // cluster are one decision and the stylesheet makes neither of them.
+            '--flow-note-foot': `${FLOW_SAVE_NOTE_FOOT}px`,
             // V1.6 VB-29. The white margin the drawer's pane sits inside —
             // published here rather than named in either stylesheet, because
             // the drawer's frame, the ramp's own inset and the globe's stage
