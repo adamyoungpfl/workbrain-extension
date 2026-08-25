@@ -6,6 +6,18 @@ export type { ButtonProps, ButtonVariant } from './Button';
 export { NavButton } from './NavButton';
 export type { NavButtonProps, NavDirection } from './NavButton';
 
+// V1.9 VB-53. The band those controls stand in, and the melt it plays when a
+// question is replaced. See NavCluster.tsx.
+export {
+  NavCluster,
+  NAV_MELT_LAYER_CLASS,
+  NAV_MELT_CLASS,
+  NAV_RISE_CLASS,
+  NAV_CONTROL_ATTR,
+  NAV_FATE_ATTR,
+} from './NavCluster';
+export type { NavClusterProps } from './NavCluster';
+
 export { Pill, PillGroup } from './Pill';
 export type { PillProps, PillOption, PillGroupProps } from './Pill';
 

@@ -9,6 +9,8 @@ import {
   FlowProgress,
   NarratorToggle,
   NavButton,
+  NavCluster,
+  NAV_MELT_LAYER_CLASS,
   PillGroup,
   ReadOnlyBlock,
   TypedHeading,
@@ -29,6 +31,7 @@ import {
   navHitPadding,
   navPaintOverhang,
 } from '../../core/flow/dock';
+import { NAV_MELT_DROP, NAV_RISE_DELAY_MS } from '../../core/flow/navMelt';
 import { questionAreaOffset } from '../../core/flow/composition';
 import {
   findPosition,
@@ -621,6 +624,17 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
             // reason as the four above: the two gaps either side of the button
             // cluster are one decision and the stylesheet makes neither of them.
             '--flow-note-foot': `${FLOW_SAVE_NOTE_FOOT}px`,
+            // V1.9 VB-53. The melt's two numbers, on the same terms as the
+            // five above: how far a control's ink travels into the bar, and
+            // how far the rise is laid over the melt so the two read as one
+            // gesture rather than as two animations. The durations either side
+            // of that delay are the design system's own tokens and are read
+            // straight from the stylesheet (`--fast`); the delay is the only
+            // one that is a sum, and core/flow/navMelt.ts is where it is held
+            // to 200ms in total and to a travel that never carries the ink out
+            // of the 44px box it belongs to.
+            '--nav-melt-drop': `${NAV_MELT_DROP}px`,
+            '--nav-rise-delay': `${NAV_RISE_DELAY_MS}ms`,
             // V1.9 VB-50: `--dock-frame` was published here for V1.6 VB-29's
             // white border down the drawer's sides. The frame is gone — one
             // colour edge to edge is a frame's opposite — so the constant went
@@ -647,6 +661,20 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
             setViewing(next);
           }}
         />
+        {/* V1.9 VB-53 — where the outgoing buttons go.
+            One layer, mounted for the whole interview rather than per
+            question, because that is the entire point: the cluster it holds
+            copies of has already left the document by the time anyone could
+            see it leave (`StepView` is keyed by position). Empty at rest, and
+            `.flow-foot:empty`'s twin in Flow.css takes it out of the layout
+            entirely when it is — so at every moment except the 120ms after an
+            answer, this is nothing at all.
+            Last child, so it paints over the band it shares a position with
+            and under the drawer, whose z-index is higher. Not given the
+            `.flow-foot` class on purpose: several specs resolve that as a
+            single locator, and a second one would break them.
+            See components/NavCluster.tsx for the whole mechanism. */}
+        <div className={NAV_MELT_LAYER_CLASS} aria-hidden="true" />
       </div>
     );
   }
@@ -1180,16 +1208,16 @@ function StepView({
           )}
         </AnswerArea>
         {saveNote}
-        <footer className="flow-foot">
+        <NavCluster>
           {canGoBack && (
-            <NavButton type="button" variant="secondary" direction="back" onClick={onBack}>
+            <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
               {S.back}
             </NavButton>
           )}
-          <NavButton type="submit" variant="primary" direction="next">
+          <NavButton type="submit" variant="primary" direction="next" control="next">
             {S.next}
           </NavButton>
-        </footer>
+        </NavCluster>
       </form>
     );
   }
@@ -1262,14 +1290,14 @@ function StepView({
               </div>
             </AnswerArea>
             {saveNote}
-            <footer className="flow-foot">
-              <NavButton type="button" variant="secondary" direction="back" onClick={backToView}>
+            <NavCluster>
+              <NavButton type="button" variant="secondary" direction="back" control="back" onClick={backToView}>
                 {S.back}
               </NavButton>
-              <NavButton type="submit" variant="primary" direction="next">
+              <NavButton type="submit" variant="primary" direction="next" control="next">
                 {S.reflectUseThis}
               </NavButton>
-            </footer>
+            </NavCluster>
           </form>
         </div>
       );
@@ -1305,21 +1333,22 @@ function StepView({
             </div>
           </AnswerArea>
           {saveNote}
-          <footer className="flow-foot">
-            <NavButton type="button" variant="secondary" direction="back" onClick={backToView}>
+          <NavCluster>
+            <NavButton type="button" variant="secondary" direction="back" control="back" onClick={backToView}>
               {S.back}
             </NavButton>
-            <NavButton type="submit" variant="primary" direction="next">
+            <NavButton type="submit" variant="primary" direction="next" control="next">
               {S.next}
             </NavButton>
             <NavButton
               type="button"
               variant="quiet"
+              control="skip"
               onClick={() => onCommit(applySkip(answers, step, location))}
             >
               {S.skip}
             </NavButton>
-          </footer>
+          </NavCluster>
         </form>
       );
     }
@@ -1345,13 +1374,13 @@ function StepView({
           </div>
         </AnswerArea>
         {saveNote}
-        <footer className="flow-foot">
+        <NavCluster>
           {canGoBack && (
-            <NavButton type="button" variant="secondary" direction="back" onClick={onBack}>
+            <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
               {S.back}
             </NavButton>
           )}
-        </footer>
+        </NavCluster>
       </div>
     );
   }
@@ -1620,21 +1649,21 @@ function StepView({
       </AnswerArea>
 
       {saveNote}
-      <footer className="flow-foot">
+      <NavCluster>
         {canGoBack && (
-          <NavButton type="button" variant="secondary" direction="back" onClick={onBack}>
+          <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
             {S.back}
           </NavButton>
         )}
-        <NavButton type="submit" variant="primary" direction="next">
+        <NavButton type="submit" variant="primary" direction="next" control="next">
           {S.next}
         </NavButton>
         {showSkip && (
-          <NavButton type="button" variant="quiet" onClick={handleSkip}>
+          <NavButton type="button" variant="quiet" control="skip" onClick={handleSkip}>
             {S.skip}
           </NavButton>
         )}
-      </footer>
+      </NavCluster>
     </form>
   );
 }

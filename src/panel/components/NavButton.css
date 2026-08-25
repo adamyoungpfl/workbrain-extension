@@ -15,6 +15,22 @@
   display: contents;
 }
 
+/* V1.9 VB-53 — the control's ink, in one box. See NavButton.tsx for why it
+   exists; this is only what keeps it invisible in the layout.
+
+   The row was already `.btn`'s flex line with the button's own gap between the
+   word and the chevron, and this is that same line one level down. `inherit`
+   rather than a number because the two contexts set different gaps (8px from
+   components/Button.css, 6px for the docked cluster in surfaces/Flow.css) and
+   a third number here would be a third opinion about a spacing neither of them
+   asked this element about. */
+.navbtn-face {
+  display: inline-flex;
+  align-items: center;
+  gap: inherit;
+  min-width: 0;
+}
+
 /* The label needs to be an element rather than a bare text node so the painted
    box can be measured, and so the underline on hover is drawn under the word
    rather than under the word and the chevron together. */

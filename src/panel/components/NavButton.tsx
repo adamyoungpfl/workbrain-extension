@@ -8,6 +8,20 @@ export type NavDirection = 'back' | 'next';
 
 export interface NavButtonProps extends ButtonProps {
   direction?: NavDirection;
+  /**
+   * V1.9 VB-53 — how this control names itself to the melt.
+   *
+   * Written straight onto the wrapper as `data-nav`, which is the only thing
+   * components/NavCluster.tsx reads to work out what became of each control
+   * when a question is replaced. It is a label on a control the caller has
+   * *already decided to render*, not a description of which controls exist:
+   * `Flow` still owns that (Skip only on a skippable question, Back only with
+   * history), and VB-53 is presentation over that truth rather than a second
+   * copy of it.
+   *
+   * Optional, because the proof loop's footer has no bar to melt into.
+   */
+  control?: string;
 }
 
 /**
@@ -38,13 +52,28 @@ export interface NavButtonProps extends ButtonProps {
  * the thing you can see are the same box. One markup, two treatments, decided
  * by the one class that says which situation this is (`.flowshell`, Flow.tsx).
  */
-export function NavButton({ direction, children, ...rest }: NavButtonProps) {
+export function NavButton({ direction, control, children, ...rest }: NavButtonProps) {
   return (
-    <span className="navbtn">
+    <span className="navbtn" data-nav={control}>
       <Button {...rest}>
-        {direction === 'back' && <NavChevron direction="back" />}
-        <span className="navbtn-label">{children}</span>
-        {direction === 'next' && <NavChevron direction="next" />}
+        {/* V1.9 VB-53 — the control's INK, in one box.
+            The word and its chevron were two siblings of the button until the
+            melt needed something to move that was not the button: the
+            pressable box has to stay exactly 44px and exactly where it is
+            while the cue plays (VB-10 guarantees nothing on screen moves while
+            a question prints, and a press has to land on a control that is
+            still travelling). Two siblings could not be moved as one — they
+            are different heights, so they would collapse towards two
+            different lines — so they get a box, the box is what melts, and
+            the button underneath it never moves at all.
+            Layout is unchanged in both contexts: the row was already a flex
+            line of these two items with the button's gap between them, and
+            this is the same line one level down (`gap: inherit`). */}
+        <span className="navbtn-face">
+          {direction === 'back' && <NavChevron direction="back" />}
+          <span className="navbtn-label">{children}</span>
+          {direction === 'next' && <NavChevron direction="next" />}
+        </span>
       </Button>
     </span>
   );

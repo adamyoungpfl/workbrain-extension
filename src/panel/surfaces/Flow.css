@@ -763,14 +763,21 @@
    `border: 0` rather than a transparent border, because a 1px border top and
    bottom would make the box 46 and the arithmetic in core a description of
    something else. The floor is then kept by `min-height` AND by the padding,
-   which agree by construction (dock.test.ts). */
-.flowshell .flow-foot .navbtn {
+   which agree by construction (dock.test.ts).
+
+   V1.9 VB-53 adds `.flow-melt` to every selector in this section. That layer
+   holds COPIES of controls that have already left the document, sinking into
+   the bar (components/NavCluster.tsx), and a copy that is not dressed exactly
+   like the thing it is a copy of would be visible as a jump at the moment of
+   the swap. One list of rules, both clusters — the same reasoning V1.4 VB-22
+   used for the dock's palette, which is a few blocks up. */
+.flowshell :is(.flow-foot, .flow-melt) .navbtn {
   display: inline-flex;
   flex: none;
   border-radius: var(--r-md);
 }
 
-.flowshell .flow-foot .btn {
+.flowshell :is(.flow-foot, .flow-melt) .btn {
   border: 0;
   border-radius: 0;
   background: none;
@@ -819,7 +826,7 @@
 
 /* Back, and anything else secondary: the panel's own quiet ink, 6.96:1 on the
    canvas. */
-.flowshell .flow-foot .btn-secondary {
+.flowshell :is(.flow-foot, .flow-melt) .btn-secondary {
   color: var(--ink-2);
 }
 
@@ -827,7 +834,7 @@
    the primary: it also carries the heavier weight and the chevron
    (components/NavButton.tsx), because docs/GUARDRAILS.md does not allow the
    difference to be hue alone. 6.82:1 on the canvas. */
-.flowshell .flow-foot .btn-primary {
+.flowshell :is(.flow-foot, .flow-melt) .btn-primary {
   color: var(--primary);
   font-weight: 700;
 }
@@ -835,7 +842,7 @@
 /* Skip. The quietest thing in the bar, at --ink-3's 4.71:1 — over the floor,
    and the same ink the save note above it uses, which is the register this
    control belongs to. */
-.flowshell .flow-foot .btn-quiet {
+.flowshell :is(.flow-foot, .flow-melt) .btn-quiet {
   color: var(--ink-3);
   font-weight: 500;
 }
@@ -862,6 +869,119 @@
    the drawer; the reservation stays, so nothing below moves. */
 .flowshell .flow-foot:empty {
   display: none;
+}
+
+/* ── V1.9 VB-53: the buttons melt into the bar and rise back out ──────────
+   "On advancing, the nav buttons melt down into the bar, and only the buttons
+   valid for the next question rise back out to reform. A living panel rather
+   than a static one." (docs/V1.9-REFINEMENT.md)
+
+   READ components/NavCluster.tsx FIRST. It holds the mechanism and the reason
+   there has to be one: advancing is an unmount and a mount in the same commit,
+   so the outgoing buttons are out of the document before a single frame of
+   them leaving could be drawn. The band below is where copies of them are put
+   so that they can be seen to leave.
+
+   THIS SITS ON THE PATH OF EVERY ANSWER — forty-nine questions, forty-nine
+   melts — so three things are load-bearing rather than decorative:
+
+     · NOTHING PRESSABLE MOVES. What animates is `.navbtn-face`, a box holding
+       the word and its chevron INSIDE the button (components/NavButton.tsx).
+       The 44px target and the box the focus ring hugs both stay exactly where
+       they were for the whole gesture, which is how this cue can never gate a
+       press and why V1.2 VB-10's promise — nothing on screen moves while a
+       question prints — survives a cue that plays on every advance. The ink
+       travels less than half the target (navMelt.ts's `NAV_MELT_DROP`), so it
+       never leaves the control it belongs to either.
+       `pointer-events: none` on the copies is the other half of the same rule:
+       they are drawn over the live controls and must never intercept anything.
+     · IT IS SHORT. 120ms down, 120ms up, laid over each other so the whole
+       gesture is §06's 200ms default — not 240ms played end to end, which is
+       what "melt, then rise" would cost and what would read as a wait. Every
+       duration is a token; the only number that is a sum is the delay, and
+       core/flow/navMelt.ts is where that sum is held.
+     · IT FLATTENS, IT DOES NOT FADE. There is no opacity anywhere in this
+       gesture and that is an accessibility decision. docs/GUARDRAILS.md's
+       4.5:1 floor is unconditional, and a word cross-fading to nothing passes
+       through every ratio underneath it — which axe reads as a real violation
+       the moment it samples the panel mid-advance, as
+       tests/e2e/dictation-hint.spec.ts does. So the ink squashes towards its
+       own bottom edge until it has no height at all: full colour at every
+       frame, gone because there is nothing left of it rather than because it
+       has faded out. It is also the better metaphor — a thing that melts goes
+       flat. */
+.flow-melt {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: var(--drawer-h, 186px);
+  z-index: 1;
+  box-sizing: border-box;
+  height: var(--flow-nav-h, 64px);
+  /* The same frame as `.flow-foot`, so a copy lands on the pixel its original
+     stood on. Two lists of geometry would be two bars slightly out of step. */
+  padding: 0 8px var(--nav-clearance, 20px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  /* Never a press target. The copies carry no React fiber and are out of the
+     tab order (NavCluster.tsx), and this is the third lock on the same door. */
+  pointer-events: none;
+  /* No ground of its own: the band underneath is already painted `--canvas`,
+     and a second opaque layer over it would hide the live cluster rising. */
+  background: none;
+}
+
+/* Nothing at rest, and nothing in the layout at rest either — the twin of
+   `.flow-foot:empty` above, for the same reason. Outside the 120ms after an
+   answer this element occupies no space and paints nothing. */
+.flow-melt:empty {
+  display: none;
+}
+
+/* Down into the bar, going flat as it goes. `scaleY(0)` is the end state
+   rather than a small number: at zero the ink has no height, which is what
+   makes it *gone* — an element with no height paints nothing and measures
+   nothing, so no frame of this leaves faint text on the screen. */
+@keyframes nav-melt {
+  from {
+    transform: none;
+  }
+  to {
+    transform: translateY(var(--nav-melt-drop, 14px)) scaleY(0);
+  }
+}
+
+/* And back out of it, the same two terms in reverse. */
+@keyframes nav-rise {
+  from {
+    transform: translateY(var(--nav-melt-drop, 14px)) scaleY(0);
+  }
+  to {
+    transform: none;
+  }
+}
+
+/* Both halves squash towards the ink's own bottom edge, which is what makes
+   the word sink INTO a surface rather than slide behind one. */
+.flow-melt .navbtn.is-melting .navbtn-face,
+.flowshell .flow-foot .navbtn.is-rising .navbtn-face {
+  transform-origin: 50% 100%;
+}
+
+/* Down. `forwards` so a copy holds its flattened last frame for the instant
+   between the animation ending and NavCluster.tsx removing it, rather than
+   springing back to full height for one frame on the way out. */
+.flow-melt .navbtn.is-melting .navbtn-face {
+  animation: nav-melt var(--fast) var(--ease) forwards;
+}
+
+/* Up, after the delay that overlaps it into the melt. `backwards` is the
+   important word: it applies the flattened first frame during the delay, so
+   the control is never visible at rest before it rises. */
+.flowshell .flow-foot .navbtn.is-rising .navbtn-face {
+  animation: nav-rise var(--fast) var(--ease) var(--nav-rise-delay, 80ms) backwards;
 }
 
 /* The bar has to arrive at the drawer's new edge at exactly the speed the edge
@@ -914,6 +1034,24 @@
   .flowshell:has(.filedrawer[data-settle='nudge']) .flow,
   .flowshell:has(.filedrawer[data-settle='jump']) .flow {
     transition: none;
+  }
+
+  /* V1.9 VB-53. The buttons simply change: no melt, no rise, same end state.
+     The still equivalent carries the same information because the information
+     this cue carries is "these are the controls now" — and under this
+     preference they are the controls now, from the first frame.
+
+     THE FIRST LINE OF DEFENCE IS NOT THIS RULE, and that matters. NavCluster
+     reads the preference before it clones anything, so under it no copy is
+     ever made and neither class is ever added: there is nothing scheduled,
+     not merely nothing visible. This is the second line, and it is not a rule
+     that turns off nothing — the preference can change while the panel is
+     open, and a class added a moment before it changed would otherwise keep
+     animating. It is also what makes the still form true of a browser that
+     ran the stylesheet and not the script. */
+  .flow-melt .navbtn.is-melting .navbtn-face,
+  .flowshell .flow-foot .navbtn.is-rising .navbtn-face {
+    animation: none;
   }
 }
 

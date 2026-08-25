@@ -44,15 +44,42 @@ describe('NavButton', () => {
     const skip = mount(<NavButton variant="quiet">Skip</NavButton>);
 
     // Before the word going back, after the word going on: the chevron reads
-    // as the direction of travel rather than as decoration.
-    const backButton = back.container.querySelector('button')!;
-    const nextButton = next.container.querySelector('button')!;
-    expect(backButton.firstElementChild!.tagName.toLowerCase()).toBe('svg');
-    expect(nextButton.lastElementChild!.tagName.toLowerCase()).toBe('svg');
-    expect(backButton.querySelector('svg path')!.getAttribute('d')).not.toBe(
-      nextButton.querySelector('svg path')!.getAttribute('d'),
+    // as the direction of travel rather than as decoration. Read off the face
+    // rather than the button since V1.9 VB-53 — the order inside the line is
+    // the thing being asserted, and the line moved one level in.
+    const backFace = back.container.querySelector('.navbtn-face')!;
+    const nextFace = next.container.querySelector('.navbtn-face')!;
+    expect(backFace.firstElementChild!.tagName.toLowerCase()).toBe('svg');
+    expect(nextFace.lastElementChild!.tagName.toLowerCase()).toBe('svg');
+    expect(backFace.querySelector('svg path')!.getAttribute('d')).not.toBe(
+      nextFace.querySelector('svg path')!.getAttribute('d'),
     );
     expect(skip.container.querySelectorAll('svg')).toHaveLength(0);
+  });
+
+  /**
+   * V1.9 VB-53. The melt moves the control's ink and never the control, so
+   * there has to be exactly one box holding all of the ink and nothing else —
+   * inside the button, so the 44px target and the ring's box both stay put.
+   */
+  it('gives the word and its chevron one box, inside the button', () => {
+    const { container } = mount(
+      <NavButton variant="primary" direction="next">
+        Next
+      </NavButton>,
+    );
+    const button = container.querySelector('button')!;
+    const faces = container.querySelectorAll('.navbtn-face');
+    expect(faces).toHaveLength(1);
+    const face = faces[0]!;
+    // Inside the button, not around it: what melts must not be what is pressed.
+    expect(face.parentElement).toBe(button);
+    expect(button.children).toHaveLength(1);
+    // And it holds all of the ink — the word and the glyph, nothing left out
+    // to be the one thing that does not move with the rest.
+    expect(face.querySelector('.navbtn-label')!.textContent).toBe('Next');
+    expect(face.querySelectorAll('svg')).toHaveLength(1);
+    expect(button.textContent).toBe('Next');
   });
 
   it('passes everything else through to the Button underneath', () => {
