@@ -86,6 +86,10 @@ async function openDrawer(context: BrowserContext, sw: Worker, id: string): Prom
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: S.fileGoThrough, exact: true }).click();
   await page.waitForSelector('.flow');
@@ -212,8 +216,9 @@ test.describe('VB-52 — the trail and the Brain’s zoom are one state', () => 
     await expect(page.locator('.crumbs-seg[data-seg="file"]')).toHaveCount(1);
     await expect(rung(page, 'file')).toContainText(S.fileContext);
 
-    // ROUTE THREE: the globe's own back button, the other end of the same move.
-    await page.getByRole('button', { name: S.workBrainBack, exact: true }).first().click();
+    // ROUTE THREE: the nav band's Back (V2.1 VB-74), the other end of the
+    // same move.
+    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
     await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
     await expect(page.locator('.crumbs-seg')).toHaveCount(1);
 

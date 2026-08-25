@@ -39,6 +39,11 @@ async function openPanel(context: BrowserContext, id: string): Promise<Page> {
   await page.setViewportSize({ width: 400, height: 900 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home-recs');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — and
+  // the covered panel is `inert`, so a Tab walk that started under it would
+  // find nothing at all. Escape, then genuinely gone.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   return page;
 }
 

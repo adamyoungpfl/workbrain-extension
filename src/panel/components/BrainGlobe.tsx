@@ -2264,9 +2264,73 @@ export function BrainGlobe({
 
   const rootStyle = { '--brainglobe-size': `${size}px` } as CSSProperties;
 
+  /**
+   * ── V2.1 VB-74 — THE WAY OUT LEAVES THE PICTURE ──────────────────────────
+   *
+   * "Lock the back and centre controls to a nav row below the breadcrumbs.
+   * They must not travel with the visual." Until now the way out lived in the
+   * stage's own corner — VB-59's disc at the file tier, the `Back to the whole
+   * file` pill inside a section — which meant it sat ON the picture, moved
+   * when the stage resized, and changed shape at every level. This band is a
+   * normal-flow row above the square: fixed while the picture underneath
+   * turns, zooms and flies, and the same two controls at every depth.
+   *
+   * BACK IS THE ESCAPE LADDER'S POINTER RUNGS, EXACTLY. One level up from
+   * wherever you are: a picked sub-node un-picks, a flown section flies out, a
+   * file pulls back to the work brain. The keyboard's Escape (below, in
+   * `onStageKeyDown`) walks the identical ladder — plus one rung this button
+   * deliberately does not have: Escape dismisses an open hover summary first,
+   * because the summary is pointer state and a button press should never spend
+   * itself on a tooltip.
+   *
+   * HOME IS THE LADDER JUMPED. All the way out to the work brain — Adam: "the
+   * high-level equivalent of the Home screen." At the file tier the two
+   * buttons converge on the same move; that redundancy is the price of the
+   * shape never changing, and it is the trade VB-74 asks for by name.
+   *
+   * IN THE MARKUP IT FOLLOWS THE SQUARE; ON SCREEN IT SITS ABOVE IT. See the
+   * comment on the band's own JSX for why the tab order goes pins-first.
+   *
+   * DISABLED, NOT HIDDEN, AT THE TOP. At the work tier there is nothing above,
+   * and the controls stay where they are with `aria-disabled` rather than
+   * vanishing — "the way out is always the same shape" is the whole point, and
+   * a row that empties at one tier is a different shape. `aria-disabled` and
+   * not `disabled`, so they stay in the tab order and a keyboard walk finds
+   * them in the same place every time (the locked-chip precedent,
+   * Breadcrumb.tsx). The one case where a control IS absent rather than
+   * disabled: `workEnabled` false means no grouping exists at all, so Home has
+   * no destination on any screen and a permanently disabled button would be
+   * furniture — that follows `brainFitsIn`'s rule ("a control that cannot do
+   * its job is worse than no control"), not this one.
+   *
+   * The band's 30px and the stage arithmetic that pays for it live in
+   * core/drawer/mode.ts (`BRAIN_NAV_BAND`); the 44px targets overhang the
+   * stage below (BrainGlobe.css), which is the drawer handle's own
+   * painted-versus-pressable split.
+   */
+  const backTarget =
+    pickedChildId !== null || flownIndex !== null || (workEnabled && tierShown === 'file');
+  const navBack = () => {
+    if (pickedChildId !== null) {
+      unpickChild();
+      return;
+    }
+    if (flownIndex !== null) {
+      flyOut();
+      return;
+    }
+    goWork();
+  };
+  const navHome = () => {
+    if (tierShown === 'work') return;
+    if (flownIndex !== null) flyOut();
+    goWork();
+  };
+
   return (
-    <div
-      className="brainglobe"
+    <>
+      <div
+        className="brainglobe"
       style={rootStyle}
       data-moving={moving ? 'true' : 'false'}
       data-inside={inside ? 'true' : 'false'}
@@ -3228,72 +3292,16 @@ export function BrainGlobe({
       */}
       <BrainTurnCue showing={turnCue} turned={turned} paused={inside} />
 
-      {flownSection && (
-        <button type="button" className="brainglobe-back" onClick={flyOut} hidden={!inside}>
-          {S.brainGlobeBack}
-        </button>
-      )}
-
       {/*
-        V1.8 VB-48 — the way back out of the file.
-
-        In the same corner as `Back to the whole file` and never on screen at
-        the same time as it: the two are rungs of one ladder, and the one being
-        offered is always the next step out from where you are. Escape does the
-        same thing, in the same order, for anyone who never reaches for it.
-
-        ── V2.0 VB-59 — A MARK INSTEAD OF A SENTENCE ─────────────────────────
-
-        "Replace the 'Back to your work brain' chip with an icon or visual cue.
-        Keep a real accessible name on it — an icon-only control still needs
-        one, and it still needs 44×44."
-
-        So the chip becomes a 44×44 disc with the panel's own back chevron in
-        it, and THREE THINGS ARE DELIBERATELY UNCHANGED:
-
-        · THE NAME. `aria-label={S.workBrainBack}` — the same string, word for
-          word, not a shorter one invented for a smaller control. An icon-only
-          button whose name is "Back" would be the third different way this one
-          move is worded, after the trail's `Work brain` rung and this.
-        · THE TARGET. 44×44 exactly, which the chip cleared by being tall and
-          wide; a disc has to be given the width the words used to supply.
-        · THE CHEVRON ITSELF. `M15 5 8 12l7 7` is components/NavButton.tsx's
-          back chevron, the mark the interview's own Back button draws. Drawn
-          rather than typed, for the reason components/DeepDive.tsx documents:
-          `◂` renders as an all-but-invisible dot in this panel's font stack.
-
-        WHY LOSING THE WORDS COSTS NOTHING HERE. V1.9 VB-52 put the trail
-        directly above this stage, and its first rung is the word `Work brain`,
-        pressable, going to exactly the same place through exactly the same
-        function (`pullBack`, core/globe/workBrain.ts). The sentence is still on
-        screen; what went is the second copy of it, printed over the picture.
+        V2.1 VB-74 — the way out used to live HERE, on the picture. Two
+        controls stood in this corner: the `Back to the whole file` pill while
+        a section was flown into (V1.8 VB-48), and the 44px chevron disc back
+        to the work brain (V2.0 VB-59). Both are gone to the nav band above
+        the stage — see the block ahead of the return — because they travelled
+        with the visual and changed shape at every level, which is the pair of
+        things VB-74 exists to stop. Escape still walks the same ladder from
+        the keyboard, unchanged.
       */}
-      {workEnabled && tierShown === 'file' && !inside && (
-        <button
-          type="button"
-          className="brainglobe-back is-out"
-          aria-label={S.workBrainBack}
-          onClick={goWork}
-        >
-          <svg
-            className="brainglobe-back-chevron"
-            viewBox="0 0 24 24"
-            width="18"
-            height="18"
-            aria-hidden="true"
-            focusable="false"
-          >
-            <path
-              d="M15 5 8 12l7 7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-      )}
 
       {/*
         V1.8 VB-48 — what a locked file is waiting for, printed.
@@ -3325,5 +3333,48 @@ export function BrainGlobe({
         {pickedChild ? S.brainGlobeInside(pickedChild.label) : flownSection ? S.brainGlobeInside(flownSection.label) : ''}
       </p>
     </div>
+      {/* AFTER the square in the markup, ABOVE it on the screen (CSS
+          `order: -1`). The tab order is the decision here, and it is the one
+          the retired corner disc already made and every keyboard suite
+          already encodes: the pins first, the way out after — Escape, which
+          walks the same ladder, remains the keyboard's fast exit, so the two
+          stops at the end cost a keyboard user nothing on the way in. Putting
+          the band first in the DOM was tried and put Back and Home in front
+          of every pin on every Tab journey into the globe. */}
+      <div className="brainglobe-nav">
+        <button
+          type="button"
+          className="brainglobe-nav-btn"
+          aria-disabled={backTarget ? undefined : 'true'}
+          onClick={backTarget ? navBack : undefined}
+        >
+          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
+            {/* components/NavButton.tsx's own back chevron — the mark the
+                interview's Back draws, drawn rather than typed for the reason
+                DeepDive.tsx documents: `◂` renders as an all-but-invisible
+                dot in this panel's font stack. */}
+            <path
+              d="M15 5 8 12l7 7"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+          {S.navBack}
+        </button>
+        {workEnabled && (
+          <button
+            type="button"
+            className="brainglobe-nav-btn"
+            aria-disabled={tierShown === 'work' ? 'true' : undefined}
+            onClick={tierShown === 'work' ? undefined : navHome}
+          >
+            {S.navHome}
+          </button>
+        )}
+      </div>
+    </>
   );
 }

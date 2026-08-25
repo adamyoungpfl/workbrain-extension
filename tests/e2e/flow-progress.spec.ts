@@ -33,6 +33,10 @@ async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).focus();
   await page.keyboard.press('Enter');
   // V1.7 VB-37: the file row opens the FILE, and the file view is where the
@@ -156,6 +160,10 @@ test.describe('VB-02 — module title + progress bar', () => {
     await reopened.setViewportSize({ width: 400, height: 700 });
     await reopened.goto(panelUrl);
     await reopened.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await reopened.keyboard.press('Escape');
+    await reopened.waitForSelector('.splash', { state: 'detached' });
     await reopened.getByRole('button', { name: /^Context\.md/ }).click();
     // V1.7 VB-37: the file row opens the FILE, and the file view is where the
     // interview is entered from — see src/panel/surfaces/FileView.tsx.

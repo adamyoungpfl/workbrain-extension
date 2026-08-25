@@ -623,35 +623,58 @@
   color: var(--globe-detail-key);
 }
 
-/* ── Back out of a section ───────────────────────────────────────────────── */
+/* ── V2.1 VB-74 — the nav band: the way out, off the picture ──────────────
+   Replaces the two corner controls that stood ON the stage — the section
+   pill (V1.8 VB-48) and the work-brain disc (V2.0 VB-59), whose rules lived
+   here. Both travelled with the visual and changed shape at every level; the
+   band is a normal-flow row above the square, fixed while the picture
+   underneath moves, holding the same two words at every depth.
 
-.brainglobe-back {
-  position: absolute;
-  top: 8px;
-  left: 8px;
-  min-height: var(--target-min);
+   THE 30px BAND HOLDS 44px TARGETS. The row's height is `BRAIN_NAV_BAND`
+   (core/drawer/mode.ts — the stage arithmetic pays for it there), and the
+   buttons keep the floor by overhanging the stage below: 44px tall, margin
+   pulling the row's box back up to 30. The drawer's handle is the precedent —
+   a 24px visible band of a 44px target. Overhanging DOWN, onto the stage,
+   because above is the breadcrumb band whose rungs own their own 44px; the
+   strip of stage under the buttons gives up its drag, which a corner of dead
+   drag space costs nobody anything.
+
+   ON THE FIELD, IN THE FIELD'S OWN INK. The band sits on the drawer's dark
+   surface, so it keeps the retired controls' colour vocabulary — the same
+   `--globe-label` ink and `--globe-focus` ring whose contrast on this ground
+   was measured when the corner controls wore them. Hover is the underline,
+   the drawer's one hover language (V1.9 VB-50). */
+
+.brainglobe-nav {
+  /* Drawn above the square while following it in the DOM — the stage's parent
+     is a flex column (FileDrawer.css), and -1 lifts the row over the picture
+     without touching the keyboard journey the markup order carries. */
+  order: -1;
+  height: 30px;
+  display: flex;
+  align-items: flex-start;
+  gap: 2px;
+  width: 100%;
+  padding: 0 2px;
+  box-sizing: border-box;
+}
+
+.brainglobe-nav-btn {
   display: inline-flex;
   align-items: center;
-  padding: 0 12px;
-  border: 1px solid var(--globe-edge);
-  border-radius: var(--r-pill);
-  /* V2.0 VB-69: this was `var(--globe-field)` — the field painted a second
-     time, over the same colour, which really only punched an opaque hole in
-     the picture behind the control. With one field under everything, the fill
-     IS the field and the edge above is what says where the control is. The
-     mark inside keeps its 3:1 on the same ground it always had.
-     `none` and not the removed declaration: a `<button>` with no background of
-     its own falls back to the UA's `buttonface`, which paints a light grey
-     disc on the deep field — the opposite of showing the surface through. */
+  gap: 6px;
+  height: var(--target-min);
+  /* The overhang: the box is 44 tall in a 30 row. The bottom 14px lie over
+     the stage's top edge and take the presses that land there; the painted
+     words sit in the row because the padding below pushes them up. */
+  margin-bottom: -14px;
+  padding: 0 10px 14px;
+  border: 0;
   background: none;
   color: var(--globe-label);
-  /* WHAT THE FILL WAS ALSO DOING, said the way the rest of the stage says it.
-     An opaque chip guaranteed the words stood on the field; without it, an
-     edge or an orb can pass behind them, and a near-white label on a lit orb
-     measures under 2:1. This is the same halo every label on this stage
-     carries for exactly that reason (`.brainglobe-label`, `.brainglobe-locknote`)
-     — the field's own colour, tight and then soft, so the ink keeps its floor
-     over whatever the picture puts underneath it. */
+  /* The same halo every label on this stage carries (`.brainglobe-label`):
+     the field's own colour, tight then soft, so the ink keeps its floor over
+     whatever the picture puts near the band's bottom edge. */
   text-shadow: 0 1px 3px var(--globe-field), 0 0 8px var(--globe-field);
   font-family: var(--font-sans);
   font-size: 13px;
@@ -659,64 +682,30 @@
   cursor: pointer;
 }
 
-/* `display: inline-flex` above out-specifies the UA stylesheet's
-   `[hidden] { display: none }` — an author rule beats a UA rule at equal
-   specificity — so without this line the `hidden` attribute on these buttons
-   would draw nothing at all. Exactly the bug `.brainglobe-pin[hidden]` fixes a
-   few rules up, found again by V1.8 VB-48, whose way out of a file is hidden
-   for as long as somebody is at the work tier rather than for a frame of a
-   transition. */
-.brainglobe-back[hidden] {
-  display: none;
-}
-
-.brainglobe-back:hover {
-  border-color: var(--globe-focus);
-}
-
-.brainglobe-back:focus-visible {
-  outline: 2px solid var(--globe-focus);
-  outline-offset: 2px;
-}
-
-/* ── V2.0 VB-59 — the way out of the file is a mark, not a sentence ───────
-   The chip that said "Back to your work brain" becomes a disc with the panel's
-   back chevron in it. It keeps the field, the edge, the hover and the focus
-   ring of the chip above — it is the same control in the same corner, and the
-   two rungs of this ladder must not look like two different products.
-
-   EXACTLY 44 SQUARE. The chip cleared the floor by being 44 tall and as wide as
-   its words; take the words away and the width has to be stated, or an
-   icon-only button collapses to its 18px glyph and its padding. `flex: none` so
-   the stage's own layout cannot shrink it, and the padding goes because the
-   width is now the target rather than the ink.
-
-   The accessible name is on the button (components/BrainGlobe.tsx) and the
-   chevron is `aria-hidden`: it is a picture of the name, never a second one. */
-.brainglobe-back.is-out {
+.brainglobe-nav-btn svg {
   flex: none;
-  box-sizing: border-box;
-  width: var(--target-min);
-  height: var(--target-min);
-  padding: 0;
-  justify-content: center;
+  filter: drop-shadow(0 1px 3px var(--globe-field));
 }
 
-.brainglobe-back-chevron {
-  display: block;
-  /* The chevron's half of the halo above. A text-shadow cannot reach an SVG
-     stroke, so the mark takes the same three pixels of field as a
-     `drop-shadow` — one static filter, no motion, and the same colour. Without
-     it the disc is a 1px rim and a thin mark with nothing between them and a
-     lit orb that happens to turn under the corner. */
-  filter: drop-shadow(0 1px 3px var(--globe-field));
-  /* CENTRED BY ITS INK, NOT BY ITS BOX. The chevron NavButton.tsx draws runs
-     from x=8 to x=15 in a 24-unit viewBox, so its ink is centred at 11.5 and
-     its box at 12 — at 18px that leaves the mark 0.375px left of the middle of
-     a circle, which is visible on a disc with nothing else in it. 1px of
-     margin on a centred flex item moves it half that back the other way, which
-     lands within an eighth of a pixel of true. */
-  margin-left: 1px;
+.brainglobe-nav-btn:hover:not([aria-disabled='true']) {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+
+.brainglobe-nav-btn:focus-visible {
+  outline: 2px solid var(--globe-focus);
+  outline-offset: -2px;
+}
+
+/* Nothing above you. Quiet ink and no affordance, but still here and still in
+   the tab order (`aria-disabled`, not `disabled`) — the row keeping its shape
+   at the top is the point of the row. The trail directly above says why it is
+   quiet. */
+.brainglobe-nav-btn[aria-disabled='true'] {
+  color: var(--globe-dim, var(--globe-label));
+  opacity: 0.55;
+  cursor: default;
 }
 
 /* ── V1.8 VB-48 — the work brain, one level above a file ─────────────────── */

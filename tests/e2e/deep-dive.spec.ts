@@ -118,6 +118,10 @@ async function openPanel(context: BrowserContext, id: string): Promise<Page> {
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   return page;
 }
 
@@ -437,6 +441,10 @@ test.describe('the deeper-dive follow-ups', () => {
     await page.setViewportSize({ width: 400, height: 700 });
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
     await enterInterview(page);
     await chipQuestion(page);
     await waitForShimmers(page, 1);
@@ -504,6 +512,10 @@ test.describe('the deeper-dive follow-ups', () => {
     await page.setViewportSize({ width: 400, height: 700 });
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
     await enterInterview(page);
     await chipQuestion(page);
     await waitForShimmers(page, 1);
@@ -554,6 +566,10 @@ test.describe('the deeper-dive follow-ups', () => {
     await page.setViewportSize({ width: 400, height: 700 });
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
     await enterInterview(page);
     await chipQuestion(page);
     await waitForShimmers(page, 1);
@@ -597,6 +613,10 @@ test.describe('the deeper-dive follow-ups', () => {
     await page.setViewportSize({ width: 400, height: 700 });
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
     await enterInterview(page);
     await expect(page.locator('.flow .deepdive-item')).toHaveCount(2);
     await page.waitForTimeout(attractMs(2) + 200);

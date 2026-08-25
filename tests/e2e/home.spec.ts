@@ -32,6 +32,11 @@ async function openPanel(context: BrowserContext, id: string): Promise<Page> {
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed. These
+  // tests are about Home, and before this line their first click would have
+  // been the dismissal rather than the press they meant.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   return page;
 }
 
@@ -307,6 +312,10 @@ test.describe('Home surface (R1-12)', () => {
     await page.setViewportSize({ width: 400, height: 700 });
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
 
     // Scoped to the welcome card. V1.7 VB-34 put a second mark on the panel —
     // the splash's, on top for the first couple of seconds of a session — and

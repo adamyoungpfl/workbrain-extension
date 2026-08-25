@@ -98,6 +98,10 @@ async function openPanel(
   await page.setViewportSize({ width: 400, height: 760 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   return page;
 }
 
@@ -124,7 +128,12 @@ test.describe('VB-49 — the dictation hint', () => {
     await reachTheQuestion(page);
 
     await expect(hint(page)).toHaveCount(1);
-    await expect(hint(page)).toContainText('Press the Fn key twice');
+    // V2.1 fixed this line's copy — it asserted "Press the Fn key twice",
+    // which promised a shortcut that ships off, is remappable, and is
+    // commonly claimed by other dictation apps. The claim now is the fix's
+    // own shape: the setting is named, the shortcut is hedged, and it is
+    // still the Mac line and not the Windows one.
+    await expect(hint(page)).toContainText('Turn on Dictation in Settings');
     await expect(hint(page)).not.toContainText('Windows');
 
     // Under the field, not floating beside the question: it is about the box.
@@ -270,9 +279,10 @@ test.describe('VB-49 — the dictation hint', () => {
     expect(files.length).toBeGreaterThan(3);
 
     // The control: the hint's own copy IS in there, so this is searching the
-    // real bundle and not an empty directory or the wrong folder.
+    // real bundle and not an empty directory or the wrong folder. (V2.1: the
+    // Mac marker tracks the rewritten line — see strings.ts's dictationMac.)
     const scripts = files.filter((f) => f.file.endsWith('.js'));
-    expect(scripts.some((f) => f.source.includes('Press the Fn key twice'))).toBe(true);
+    expect(scripts.some((f) => f.source.includes('Turn on Dictation in Settings'))).toBe(true);
     expect(scripts.some((f) => f.source.includes('Press the Windows key and H'))).toBe(true);
 
     for (const api of CAPTURE_APIS) {

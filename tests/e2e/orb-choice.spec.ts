@@ -110,6 +110,10 @@ async function openAtRoleNames(context: BrowserContext, sw: Worker, id: string):
   await page.setViewportSize({ width: 400, height: 760 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');

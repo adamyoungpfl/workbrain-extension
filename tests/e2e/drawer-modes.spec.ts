@@ -124,10 +124,17 @@ async function openMidInterview(
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   // V1.7 VB-34. The splash runs its own animation loop for the first couple
   // of seconds of a session, including the 320ms it spends fading out after
   // it has stopped taking clicks. The frame-rate baselines below mean "the
   // status mark, and nothing else", so wait until that is true.
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   // V1.7 VB-37: the file row opens the FILE, and the file view is where the
@@ -530,7 +537,11 @@ test.describe('VB-14b — navigation survives in both modes', () => {
     // The List path, which VB-07 built and which must not regress.
     await page.locator('.filetree-row[data-node-id="sec1"] .filetree-nav').click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', firstQuestion);
-    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    // Scoped to the interview's footer: V2.1 VB-74's nav band above the globe
+    // also carries a button named Back, and an unscoped role query resolves
+    // both. (That two same-named controls share a screen at all is flagged
+    // for review in docs/V2.1-REFINEMENT.md.)
+    await page.locator('footer').getByRole('button', { name: 'Back', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', before!);
 
     // The Brain path: the same section, the same destination, the same Back.
@@ -543,7 +554,8 @@ test.describe('VB-14b — navigation survives in both modes', () => {
     await page.keyboard.press('Enter');
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', firstQuestion);
 
-    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    // Scoped like the List path's Back above, for the same VB-74 reason.
+    await page.locator('footer').getByRole('button', { name: 'Back', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', before!);
 
     await context.close();

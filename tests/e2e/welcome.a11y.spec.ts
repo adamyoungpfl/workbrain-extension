@@ -33,18 +33,23 @@ async function openWelcome(): Promise<{ context: BrowserContext; page: Page }> {
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home-welcome');
+  // V2.1 VB-73: the splash is a doorway and stays until dismissed — and it is
+  // in the accessibility tree now, with the panel `inert` underneath it. Both
+  // scans and the Tab-order walk below are about the WELCOME screen, which
+  // does not exist for either audience until the splash has left.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   return { context, page };
 }
 
 /** The accessibility floor docs/GUARDRAILS.md actually commits to: WCAG 2.1
- * A and AA. Applied to the whole-panel scan below because the panel shell
- * (panel.html + App.tsx) has no `<main>` and no `<h1>`, which axe reports as
- * two *best-practice* findings against `<html>`. Both predate this screen and
- * belong to the shell, not to VB-01 — fixing them means restructuring every
- * surface's outer element, which is somebody's whole task and not a change to
- * smuggle in here. The `.home-welcome` scan right after runs with no tag
- * filter at all, so best-practice findings inside the new markup are still
- * caught. */
+ * A and AA. This filter used to carry a second job: the panel shell had no
+ * `<main>` and no `<h1>`, and A/AA-only kept axe's two best-practice findings
+ * about that out of a scan that was never about the shell. V2.1 gave the
+ * shell its landmark and its heading, so the filter is now only what it says
+ * it is — the committed floor. The `.home-welcome` scan right after runs with
+ * no tag filter at all, so best-practice findings inside the welcome markup
+ * are still caught. */
 const WCAG_AA = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 test.describe('welcome screen — accessibility', () => {

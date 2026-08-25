@@ -443,14 +443,15 @@ test.describe('VB-27 — layout', () => {
   test('it never covers the way out of the section either', async ({ page }) => {
     await open(page);
     await flyIntoAboutMe(page);
-    // The two lower sub-nodes are the ones whose card is pinned to the top,
-    // where `Back to the whole file` lives.
+    // The two lower sub-nodes are the ones whose card is pinned to the top.
+    // V2.1 VB-74: `Back to the whole file` no longer lives up there — the way
+    // out is the nav band above the picture — so the card's one remaining
+    // duty at the top edge is staying inside the stage, which the geometry
+    // suite already holds it to. What this keeps is that the card really
+    // appears for the pinned-to-top pair.
     for (const id of ['sec2-3', 'sec2-4']) {
       await pin(page, id).hover();
       await expect(card(page)).toBeVisible();
-      const box = (await card(page).boundingBox())!;
-      const back = (await page.locator('.brainglobe-back').boundingBox())!;
-      expect(overlaps(box, back), `${id}: the summary is sitting on the Back button`).toBe(false);
     }
   });
 

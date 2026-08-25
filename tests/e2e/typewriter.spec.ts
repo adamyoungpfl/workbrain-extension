@@ -65,6 +65,10 @@ async function openPanel(context: BrowserContext, id: string): Promise<Page> {
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   return page;
 }
 
@@ -432,6 +436,10 @@ test.describe('VB-10 — reduced motion', () => {
     await page.setViewportSize({ width: 400, height: 700 });
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
 
     // Watch from before the interview even opens, so the first question's
     // arrival is inside the window rather than before it.
@@ -489,6 +497,10 @@ test.describe('VB-10 — reduced motion', () => {
     await page.setViewportSize({ width: 400, height: 700 });
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
     await enterInterview(page);
 
     await expect.poll(() => intervalCount(page)).toBeGreaterThan(0);

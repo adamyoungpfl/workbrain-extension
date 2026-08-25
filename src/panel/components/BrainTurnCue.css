@@ -7,27 +7,11 @@
    this file; `npm run audit` and tests/tokens.test.mjs both fail the build on
    one. */
 
-/* THE PAIR, IN THE ORDER ADAM DREW THEM. The cue takes the stage's top-left
-   corner and the way out steps one disc to its right, so the two sit side by
-   side rather than on top of each other. Both terms are the same 8px gutter the
-   way-out control has always used, plus one 44px target — written as a sum so
-   it is obvious the two numbers are the same decision.
-
-   Scoped to a following sibling, so it is true exactly while the cue is on
-   screen: `BrainTurnCue` renders nothing once the hint is retired, the selector
-   stops matching, and the way out takes its corner back with no second flag to
-   keep in step.
-
-   AND SCOPED TO `.is-out`, WHICH IS THE 44px DISC. The other `.brainglobe-back`
-   is the `Back to the whole file` pill a flown-in section shows, and it is as
-   wide as its own sentence: stepped across by one target it runs its right edge
-   onto the globe's and wraps onto two lines. The cue stands down for that one
-   rather than shoving it (BrainTurnCue.tsx's `paused`), so this rule never has
-   to be true of it — belt as well as braces, because a pill that ever did match
-   would fail by looking wrong rather than by throwing. */
-.brainturncue ~ .brainglobe-back.is-out {
-  left: calc(8px + var(--target-min) + 8px);
-}
+/* A rule used to sit here stepping the way-out disc sideways while the cue
+   held the corner (`.brainturncue ~ .brainglobe-back.is-out`). V2.1 VB-74
+   moved the way out off the stage entirely — it is the nav band above the
+   picture now (BrainGlobe.css) — so the cue has the corner to itself and
+   there is nothing left to shove. */
 
 .brainturncue {
   position: absolute;

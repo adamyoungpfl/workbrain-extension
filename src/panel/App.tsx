@@ -6,6 +6,7 @@ import { Flow } from './surfaces/Flow';
 import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
 import { Splash } from './surfaces/Splash';
+import type { SplashIntent } from './surfaces/Splash';
 import { getSession, setSession } from '../core/storage/client';
 import { Button } from './components';
 import { contextModules, contextOutline, buildProofModules } from '../core/flow/flow';
@@ -111,8 +112,20 @@ export default function App() {
     };
   }, []);
 
-  /** Stable, so the splash's own timers are never reset by a re-render. */
-  const endSplash = useCallback(() => setSplash('gone'), []);
+  /**
+   * V2.1 VB-73 — which door the splash was left through. `'load'` asks Home
+   * to open the import picker the moment the splash is gone (Home hands it to
+   * FileActions, which owns the input); anything else is Home as it stands.
+   * One-shot: FileActions reports back through `onDone` below and the flag
+   * drops, so a re-render can never re-open a picker somebody closed.
+   */
+  const [importAsked, setImportAsked] = useState(false);
+
+  /** Stable, so the splash's own listeners are never reset by a re-render. */
+  const endSplash = useCallback((intent: SplashIntent) => {
+    setSplash('gone');
+    if (intent === 'load') setImportAsked(true);
+  }, []);
 
   function goHome() {
     setSurface('home');
@@ -180,6 +193,8 @@ export default function App() {
           onOpenFile={() => setSurface('file')}
           onOpenProof={openProof}
           onOpenMultiples={() => setSurface('multiples')}
+          importAsked={importAsked}
+          onImportAnswered={() => setImportAsked(false)}
         />
       );
     }
@@ -239,13 +254,27 @@ export default function App() {
   // began at level two and the document had no <h1> anywhere in it.
   //
   // The splash stays OUTSIDE `<main>`, and that is the one judgement call here.
-  // It is a cover over the panel rather than a part of it, it holds no content
-  // that belongs to the surface underneath, and it leaves of its own accord —
-  // putting it inside the landmark would file it as page content and hand a
-  // screen reader two competing accounts of what this panel currently is.
+  // It is a cover over the panel rather than a part of it, and it holds its
+  // own controls now (VB-73) — putting it inside the landmark would file it as
+  // page content and hand a screen reader two competing accounts of what this
+  // panel currently is.
+  //
+  // V2.1 VB-73: while the splash is up, the covered panel is `inert` — one
+  // account of the screen at a time. It is what makes the splash's doors
+  // keyboard-reachable WITHOUT stealing focus (docs/GUARDRAILS.md: nothing
+  // steals focus): the first Tab lands on the first door because everything
+  // else declines it, not because anything grabbed it. The attribute rides
+  // `splash === 'showing'` exactly, so the 'asking' frame — before the session
+  // read answers — renders a live, non-inert panel and the first-paint
+  // guarantee is untouched.
+  //
+  // The spread, not a JSX attribute: React 18 forwards `inert` as a plain
+  // attribute but its TypeScript types predate the property. `''` sets it,
+  // `undefined` removes it — the two states HTML actually has.
+  const inertWhileCovered = splash === 'showing' ? { inert: '' } : {};
   return (
     <>
-      <main className="app-main">
+      <main className="app-main" {...(inertWhileCovered as Record<string, string>)}>
         <h1 className="app-sr">{S.appName}</h1>
         {currentSurface()}
       </main>

@@ -179,6 +179,10 @@ async function openPanel(context: BrowserContext, id: string): Promise<Page> {
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   return page;
 }
 
@@ -605,6 +609,10 @@ test.describe('what it must never do', () => {
     await bare.setViewportSize({ width: 400, height: 700 });
     await bare.goto(`chrome-extension://${id}/panel.html`);
     await bare.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await bare.keyboard.press('Escape');
+    await bare.waitForSelector('.splash', { state: 'detached' });
     await enterInterview(bare);
     await toggle(bare).click();
     await expect.poll(() => probeOf(bare).then((p) => p.spoken.length)).toBe(1);
@@ -626,6 +634,10 @@ test.describe('what it must never do', () => {
     await silent.setViewportSize({ width: 400, height: 700 });
     await silent.goto(`chrome-extension://${id}/panel.html`);
     await silent.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await silent.keyboard.press('Escape');
+    await silent.waitForSelector('.splash', { state: 'detached' });
     await enterInterview(silent);
     await expect(silent.locator('.narrator-toggle')).toHaveCount(0);
     await expect(silent.locator('.flow-q').first()).toBeVisible();

@@ -5,9 +5,11 @@ import { fileURLToPath } from 'node:url';
 import { ORBIT_STILL } from '../../src/core/geometry/markOrbit';
 
 /**
- * V1.7 VB-34 accept criteria: "loops smoothly without a visible seam;
- * reduced motion is a still frame with the same information; any click/key
- * skips it; never blocks input; the tagline is in strings.ts."
+ * V1.7 VB-34 accept criteria, amended by V2.1 VB-73: "loops smoothly without
+ * a visible seam; reduced motion is a still frame with the same information;
+ * the tagline is in strings.ts" — and, replacing VB-34's "any click/key skips
+ * it", VB-73's own contract: it stays until dismissed, the doors carry their
+ * intent, Escape is the keyboard exit, and the covered panel is inert.
  *
  * WHAT IS PROVEN WHERE, AND WHY THE SPLIT
  * The loop's smoothness is a property of a pure function of time, and
@@ -141,9 +143,9 @@ test.describe('VB-34 — the splash arrives', () => {
 
   test('the tagline is legible — real contrast, not a decorative wash', async () => {
     const { context, page } = await launchPanel();
-    // The splash is aria-hidden, so axe will not measure this one for us.
-    // 4.5:1 is the floor in docs/GUARDRAILS.md and it applies to any text a
-    // person is expected to read.
+    // Measured by hand even though the splash is in the accessibility tree
+    // now (VB-73) — the a11y suite's axe passes run on other surfaces, and
+    // 4.5:1 is docs/GUARDRAILS.md's floor for any text a person must read.
     const ratio = await page.evaluate(() => {
       const parse = (c: string) => c.match(/[\d.]+/g)!.slice(0, 3).map(Number);
       const lum = (rgb: number[]) => {
@@ -263,61 +265,128 @@ test.describe('VB-34 — the camera drifts', () => {
   });
 });
 
-test.describe('VB-34 — it never holds anyone up', () => {
-  test('a key press skips it', async () => {
+test.describe('V2.1 VB-73 — it is a doorway, and it stays until dismissed', () => {
+  /**
+   * THIS BLOCK IS THE INVERSE OF THE ONE IT REPLACES. VB-34's version was
+   * titled "it never holds anyone up": any key skipped the splash and it left
+   * on its own after 2.4s. VB-73 reverses both on Adam's call — "load and
+   * remain up until we click" — because the surface carries a real choice
+   * now, and a doorway that dismisses itself slams. What is kept from VB-34:
+   * the panel is fully built underneath (the first-paint test above is
+   * untouched), a stray press never acts on a covered control, and Escape is
+   * a real exit for a keyboard.
+   */
+  test('a letter key does NOT dismiss it, and neither does time', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
-    const started = Date.now();
 
     await page.keyboard.press('a');
-    // Gone well inside the dwell it would otherwise have held for.
+    // Well past the old dwell (2.4s) — VB-34's version was gone by now on
+    // either count. Still here is the point.
+    await page.waitForTimeout(3200);
+    await expect(page.locator('.splash')).toHaveCount(1);
+
+    await context.close();
+  });
+
+  test('Escape dismisses it, choosing nothing', async () => {
+    const { context, page } = await launchPanel();
+    await page.waitForSelector('.splash');
+
+    await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
-    expect(Date.now() - started).toBeLessThan(1500);
     // And the panel is immediately usable.
     await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeVisible();
 
     await context.close();
   });
 
-  test('a click skips it', async () => {
+  test('“Build your file” goes to Home, ready to start', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
-    const started = Date.now();
 
-    await page.mouse.click(200, 320);
+    await page.locator('.splash').getByRole('button', { name: 'Build your file', exact: true }).click();
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
-    expect(Date.now() - started).toBeLessThan(1500);
+    await expect(page.locator('.home')).toHaveCount(1);
+    // The door orients; Home's own CTA is the one that starts the interview,
+    // because it is the control that knows this person's actual state.
+    await expect(page.locator('.flow')).toHaveCount(0);
 
     await context.close();
   });
 
-  test('a click on the splash does not reach the control it is covering', async () => {
+  test('“Load your file” opens the import picker over Home', async () => {
+    const { context, page } = await launchPanel();
+    await page.waitForSelector('.splash');
+
+    // The real assertion: Chrome's file chooser actually opens — not a class,
+    // not a spy on a handler. Playwright intercepts the native chooser, so
+    // its arrival is observable.
+    const chooser = page.waitForEvent('filechooser', { timeout: 4000 });
+    // Scoped to the splash, exact — Home's "Download your file" CONTAINS
+    // "load your file", so an unscoped role query resolves to both. That the
+    // two labels collide as substrings is also worth a human read: they are
+    // opposite moves (one brings a file in, one takes it out) wearing
+    // near-identical names.
+    await page.locator('.splash').getByRole('button', { name: 'Load your file', exact: true }).click();
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
+    await expect(page.locator('.home')).toHaveCount(1);
+    await chooser;
+
+    await context.close();
+  });
+
+  test('a press through the splash never acts on the control it is covering', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
     await page.waitForSelector('.home');
 
-    // Aim at the middle of a real button on Home, through the splash. The
-    // splash must eat that click: acting on a control nobody could see is
-    // worse than costing them one tap.
+    // Aim at the middle of a real button on Home, through the splash. VB-34's
+    // trust property survives VB-73 unchanged: whatever that press does to the
+    // splash — dismiss it from the backdrop, nothing from the card — it must
+    // not act on a control nobody could see.
     const target = page.getByRole('button', { name: /^Context\.md/ });
     const box = (await target.boundingBox())!;
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
 
-    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
-    // Still on Home — the interview did not start behind the splash.
+    await page.waitForTimeout(600);
     await expect(page.locator('.home')).toHaveCount(1);
     await expect(page.locator('.flow')).toHaveCount(0);
 
     await context.close();
   });
 
-  test('leaves on its own if nobody touches it at all', async () => {
+  test('the covered panel is inert while the splash is up, and live after', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
-    // No input of any kind. A splash that waits for a click is still a click
-    // somebody has to make before they can start work.
-    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 6000 });
-    await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeVisible();
+
+    // One account of the screen at a time: the doors are the only reachable
+    // controls while the splash shows, which is what makes them the first
+    // Tab stop without anything stealing focus.
+    await expect(page.locator('main[inert]')).toHaveCount(1);
+    await page.keyboard.press('Tab');
+    const first = await page.evaluate(() => document.activeElement?.textContent ?? '');
+    expect(first).toBe('Build your file');
+
+    await page.keyboard.press('Escape');
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
+    await expect(page.locator('main[inert]')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('the voice toggle flips, and the state is printed as a word', async () => {
+    const { context, page } = await launchPanel();
+    await page.waitForSelector('.splash');
+
+    // Real Chrome has a speech engine, so the row must be here.
+    const voice = page.locator('.splash-voice');
+    await expect(voice).toHaveCount(1);
+    const before = await voice.getAttribute('aria-pressed');
+    await voice.click();
+    await expect(voice).toHaveAttribute('aria-pressed', before === 'true' ? 'false' : 'true');
+    // Pressing the toggle configured; it did not dismiss the doorway.
+    await expect(page.locator('.splash')).toHaveCount(1);
 
     await context.close();
   });
@@ -402,10 +471,13 @@ test.describe('VB-34 — reduced motion', () => {
     await context.close();
   });
 
-  test('still leaves, and still skips', async () => {
+  test('still dismissable, instantly — no fade and not one frame', async () => {
     const { context, page } = await launchPanel({ reduce: true });
     await page.waitForSelector('.splash');
-    await page.keyboard.press('Enter');
+    // VB-73: Enter used to be the proof here, because any key skipped it.
+    // Escape is the keyboard exit now; under reduced motion the handover is
+    // immediate, with no 320ms of invisible overlay and no frame loop.
+    await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
     expect(await frameCount(page)).toBe(0);
     await context.close();

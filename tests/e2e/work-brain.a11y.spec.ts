@@ -68,6 +68,10 @@ async function openAtWorkBrain(context: BrowserContext, sw: Worker, id: string):
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
   await page.waitForSelector('.flow');
@@ -77,7 +81,8 @@ async function openAtWorkBrain(context: BrowserContext, sw: Worker, id: string):
   await page.waitForSelector('.filetree-row');
   await page.getByRole('button', { name: S.drawerModeBrain, exact: true }).click();
   await expect(page.locator('.filedrawer')).toHaveAttribute('data-mode', 'brain');
-  await page.getByRole('button', { name: S.workBrainBack, exact: true }).first().click();
+  // V2.1 VB-74: the way out is the nav band's Back, above the stage.
+  await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
   await expect(page.locator('.brainglobe')).toHaveAttribute('data-tier', 'work');
   return page;
 }

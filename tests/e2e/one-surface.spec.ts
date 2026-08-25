@@ -111,6 +111,10 @@ async function openQuestion(context: BrowserContext, sw: Worker, id: string): Pr
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
   await page.waitForSelector('.filedrawer-handle');
@@ -429,12 +433,14 @@ test('the stage has no ground of its own — one colour through the visual (VB-6
   const box = parseCssColor(await page.locator('.brainglobe').evaluate((el) => getComputedStyle(el).backgroundColor));
   expect(isOpaque(box), 'the stage declares a ground of its own').toBe(false);
 
-  // The way out of the file: an edge and a mark, standing on the surface —
-  // never a fill of its own (VB-59's disc, VB-69's second removal).
-  const disc = page.locator('.brainglobe-back').first();
-  await expect(disc).toBeVisible();
-  const fill = parseCssColor(await disc.evaluate((el) => getComputedStyle(el).backgroundColor));
-  expect(isOpaque(fill), 'the way out of the file paints a ground of its own').toBe(false);
+  // The way out: words standing on the surface, never a fill of their own —
+  // VB-59's disc and VB-69's second removal established the claim on the
+  // corner control; V2.1 VB-74 moved the control to the nav band and the
+  // claim moved with it.
+  const navOut = page.locator('.brainglobe-nav-btn').first();
+  await expect(navOut).toBeVisible();
+  const fill = parseCssColor(await navOut.evaluate((el) => getComputedStyle(el).backgroundColor));
+  expect(isOpaque(fill), 'the way out paints a ground of its own').toBe(false);
 
   console.log(`\n  VB-69 through the stage\n${measured.map((line) => `    ${line}`).join('\n')}\n`);
   await context.close();

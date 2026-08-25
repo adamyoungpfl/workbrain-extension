@@ -81,6 +81,11 @@ async function panel(where) {
   await page.setViewportSize({ width: 400, height: 720 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway and stays until dismissed. The
+  // listing photographs the surfaces, not the doorway — Escape, then wait for
+  // it to be genuinely gone so no shot catches its fade.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
 
   if (where !== 'home') {
     await page.getByRole('button', { name: /Context\.md/ }).first().click();

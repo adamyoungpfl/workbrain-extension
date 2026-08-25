@@ -31,6 +31,7 @@ import {
   MORPH_MS,
   brainDriftAllowed,
   brainFitsIn,
+  brainStageFits,
   brainStageSize,
   heightForMode,
   morphPoints,
@@ -379,10 +380,10 @@ export function FileDrawer({
     (next: number, how: DrawerSettle | 'none') => {
       if (next > bounds.min) restoreRef.current = next;
       setSettle(how);
-      const yielded = nextBrainYield(brainYielded, next, panelWidth);
+      const yielded = nextBrainYield(brainYielded, next, panelWidth, 0, bounds.max);
       if (next !== height || yielded !== brainYielded) onResize(next, yielded);
     },
-    [bounds.min, brainYielded, height, onResize, panelWidth],
+    [bounds.max, bounds.min, brainYielded, height, onResize, panelWidth],
   );
 
   // A panel that got shorter must not leave the drawer covering the question.
@@ -390,7 +391,7 @@ export function FileDrawer({
   // window changing size, and it is a no-op in every other render.
   useEffect(() => {
     const clamped = clampDrawerHeight(height, bounds);
-    if (clamped !== height) onResize(clamped, nextBrainYield(brainYielded, clamped, panelWidth));
+    if (clamped !== height) onResize(clamped, nextBrainYield(brainYielded, clamped, panelWidth, 0, bounds.max));
   }, [bounds, brainYielded, height, onResize, panelWidth]);
 
   /**
@@ -404,9 +405,9 @@ export function FileDrawer({
    * and is settled in the same batch as the height it came from.
    */
   useEffect(() => {
-    const yielded = nextBrainYield(brainYielded, height, panelWidth);
+    const yielded = nextBrainYield(brainYielded, height, panelWidth, 0, bounds.max);
     if (yielded !== brainYielded) onResize(height, yielded);
-  }, [brainYielded, height, onResize, panelWidth]);
+  }, [bounds.max, brainYielded, height, onResize, panelWidth]);
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.button !== 0 && event.pointerType === 'mouse') return;
@@ -457,6 +458,21 @@ export function FileDrawer({
   function chooseMode(next: DrawerMode) {
     onRequestMode(next);
     const grown = heightForMode(next, height, bounds);
+    if (next === 'brain') {
+      // V2.1 VB-74 — a press starts a fresh episode. The hysteresis
+      // (`nextBrainYield`'s band) exists to stop a parked POINTER flipping
+      // modes on the boundary; a person pressing the Brain button is not
+      // jitter, and folding their press through a yield left over from the
+      // resting peek meant the button could grow the drawer to exactly the
+      // height Brain needs and still be refused by the band above it. The
+      // verdict for a press is the plain question: does the globe fit at the
+      // height the press produced?
+      if (grown > bounds.min) restoreRef.current = grown;
+      setSettle('jump');
+      const fresh = !brainStageFits(grown, panelWidth);
+      if (grown !== height || fresh !== brainYielded) onResize(grown, fresh);
+      return;
+    }
     if (grown !== height) applyHeight(grown, 'jump');
   }
 
@@ -676,10 +692,13 @@ export function FileDrawer({
    * crossfade nobody can see yet.
    */
   const shownModeRef = useRef(mode);
-  useEffect(() => {
-    if (shownModeRef.current === mode) return;
-    shownModeRef.current = mode;
-
+  /**
+   * The measurement, shared by the two moments that need it. On a mode flip it
+   * starts (or, mid-flight, re-aims) the morph; on the drawer's own
+   * `transitionend` it re-aims a still-live flight — see the listener below
+   * for why that second moment exists at all.
+   */
+  const aimMorph = useCallback(() => {
     // Reduced motion: no flight at all. The mode simply changes, with every
     // node and row still reachable — VB-14's own reduced-motion clause. The
     // still equivalent carries the same information because the information is
@@ -715,8 +734,50 @@ export function FileDrawer({
     // again from `start` would snap every one of them back to the end it left.
     const phase = morphingRef.current ? 'run' : 'start';
     morphingRef.current = true;
-    setMorph({ to: mode, points, phase });
-  }, [mode, outline]);
+    setMorph((current) => ({ to: shownModeRef.current, points, phase: current && phase === 'run' ? 'run' : phase }));
+  }, [outline]);
+
+  useEffect(() => {
+    if (shownModeRef.current === mode) return;
+    shownModeRef.current = mode;
+    aimMorph();
+  }, [mode, aimMorph]);
+
+  /**
+   * V2.1 VB-74 — RE-AIM WHEN THE DRAWER FINISHES MOVING UNDER THE FLIGHT.
+   *
+   * Choosing Brain changes the mode and the height in the same press. The
+   * flights' ends are measured on the new mode's first frame — while the
+   * drawer's height transition has barely started — so every measured end is
+   * where its sphere WAS, in a coordinate space (the morph layer's own box)
+   * that is itself still travelling with the drawer. Both keep moving for the
+   * settle's whole duration and the flight does not: measured, the landing
+   * missed by exactly the distance the drawer moved after the measurement.
+   *
+   * That error existed from the first morph and sat just under the landing
+   * tolerance; VB-74's nav band made the opening jump thirty pixels longer
+   * and pushed it well past. The machinery for the fix predates the bug: an
+   * interrupted morph already keeps its nodes where they are and re-aims them
+   * at freshly measured ends. So when the drawer's own height transition
+   * ends while a flight is live, the flight is re-aimed through exactly that
+   * path — from real boxes that have now stopped moving.
+   *
+   * `transitionend` rather than a timer, because the settle's duration is the
+   * stylesheet's (`data-settle`, FileDrawer.css) and a second copy of it here
+   * would drift. Guarded to the drawer's own height so a label fading inside
+   * the drawer cannot re-aim anything.
+   */
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root) return undefined;
+    function onSettleEnd(event: TransitionEvent) {
+      if (event.target !== root || event.propertyName !== 'height') return;
+      if (!morphingRef.current) return;
+      aimMorph();
+    }
+    root.addEventListener('transitionend', onSettleEnd);
+    return () => root.removeEventListener('transitionend', onSettleEnd);
+  }, [aimMorph]);
 
   /**
    * `start` → `run`, in the same frame.

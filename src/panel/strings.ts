@@ -419,7 +419,18 @@ export const S = {
   brainGlobeHelp: 'Drag to turn it. Tab to step between sections.',
   brainGlobeNode: (label: string, state: string) => `${label} — ${state}`,
   brainGlobeInside: (label: string) => `Inside ${label}`,
-  brainGlobeBack: 'Back to the whole file',
+
+  /**
+   * V2.1 VB-74 — the nav band's two words. One name each, at every depth,
+   * which is the NarratorToggle rule: a control that renames itself as you
+   * use it is a control that has to be re-learned every press. The retired
+   * corner controls each carried a sentence naming their one destination
+   * ('Back to the whole file', 'Back to your work brain'); a single Back
+   * whose destination changes with the level cannot, and the trail directly
+   * above it already prints where you are and where pressing it lands.
+   */
+  navBack: 'Back',
+  navHome: 'Home',
 
   /**
    * V2.0 VB-71 — the one line that says the globe can be turned.
@@ -692,10 +703,11 @@ export const S = {
    * it is for the tier below. "Your work brain" is the product's own phrase for
    * the set of files (docs/workbrain-spec.html) and is already on Home.
    *
-   * `workBrainBack` is one string used by BOTH views: the button on the globe
-   * and the row above the List. Same words for the same move, in the same
-   * shape as `brainGlobeBack` a few lines up — "Back to ...", the way out that
-   * says where it goes.
+   * `workBrainBack` lived here until V2.1 VB-74 — 'Back to your work brain',
+   * the corner disc's name. The disc left the stage for the nav band, whose
+   * Back keeps one name at every depth (`navBack`), and the List's own copy
+   * of the move had already become the trail's `Work brain` rung. Recorded
+   * rather than silently deleted, same as `Prefs.followUps`.
    *
    * `workBrainOpen` is the state word on an open file node, and it is the
    * counterpart of `badgeLocked`: what a node says out loud when it is not
@@ -707,7 +719,6 @@ export const S = {
    */
   workBrainStage: 'Your work brain',
   workBrainHelp: 'Open a file to see what is in it.',
-  workBrainBack: 'Back to your work brain',
   workBrainOpen: 'Open',
   workBrainInside: (file: string) => `Inside ${file}`,
 
@@ -885,6 +896,21 @@ export const S = {
    * both second person, no product noun in either.
    */
   splashTagline: 'AI does the work. You do the thinking.',
+
+  /**
+   * V2.1 VB-73 — the splash's two doors. Adam's own labels from the VB-73
+   * notes, sentence-cased to match every button in the panel. "Load your
+   * file" and Home's "I already have a file" are two names for one move,
+   * kept deliberately: the splash's pair answers "which door", Home's button
+   * answers "what is true of me", and both land in the same place.
+   */
+  splashBuild: 'Build your file',
+  splashLoad: 'Load your file',
+  /** The voice toggle's printed state. The word, not just a colour or an icon
+   * — the splash is the one surface where a person has never seen the icon
+   * before, so the state is spelled out beside it. */
+  splashVoiceOn: 'On',
+  splashVoiceOff: 'Off',
 
   // ---------------------------------------------------------------- welcome
   // V1.1 VB-01. The first thing a person ever sees. Approved verbatim in

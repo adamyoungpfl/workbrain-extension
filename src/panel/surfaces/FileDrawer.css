@@ -464,8 +464,14 @@
   right: 0;
   bottom: var(--drawer-viewbar-h, 44px);
   display: flex;
-  justify-content: center;
-  align-items: flex-start;
+  /* V2.1 VB-74: a column, because the globe stopped being this box's only
+     child — the nav band sits above the square, in flow, and a row would put
+     them side by side. Still anchored to the top for the same reason as ever:
+     the picture must not slide while the drawer's height settles, or the
+     morph's measurements go stale. */
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: center;
   padding: 10px;
   box-sizing: border-box;
   overflow: hidden;

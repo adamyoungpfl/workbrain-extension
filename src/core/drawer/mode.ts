@@ -49,6 +49,23 @@ export const BRAIN_STAGE_PAD = 10;
 export const BRAIN_STAGE_MIN = 116;
 
 /**
+ * V2.1 VB-74 — the navigation band above the stage, in px: the row holding
+ * Back and Home, below the breadcrumbs, fixed while the picture underneath
+ * moves. It exists only in Brain mode, so it belongs to this file's room
+ * arithmetic rather than to `DRAWER_CHROME_HEIGHT`, which both modes pay.
+ *
+ * THIRTY, NOT FORTY-FOUR, AND THE SIX PIXELS ARE THE REASON. The band's
+ * controls keep their full 44px targets by overhanging the stage below
+ * (BrainGlobe.css — the same painted-versus-pressable split the drawer's own
+ * handle uses, whose visible band is 24 of a 44px target). A 44px band would
+ * put `BRAIN_MIN_HEIGHT` at 384 against a 700px viewport's drawer ceiling of
+ * 376 — no Brain at all on the panel's own standard height, which is not a
+ * trade anyone asked for. At 30 the floor lands at 370, six pixels under the
+ * ceiling. Measured before it was built, not discovered after.
+ */
+export const BRAIN_NAV_BAND = 30;
+
+/**
  * How big a globe is worth showing, in px — VB-14's "at 300px it's excellent".
  *
  * 260 rather than 300 because the drawer's ceiling on a 700px panel is 376 and
@@ -113,7 +130,7 @@ export const BRAIN_STAGE_IDEAL = 208;
  * any ordinary width, which is why three specs and the drawer's own
  * documentation remain written in terms of it.
  */
-export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
+export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_NAV_BAND + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
 
 /**
  * V2.0 VB-70 — how far past the threshold the drawer has to come back before
@@ -152,7 +169,7 @@ export const BRAIN_YIELD_BAND = DRAWER_STEP;
  * surface edge to edge (core/drawer/chrome.ts) leaves nothing there to pay for,
  * and every term here is again a band the drawer really has.
  */
-export const BRAIN_OPEN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
+export const BRAIN_OPEN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_NAV_BAND + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
 
 /**
  * The morph, in ms. VB-14: "Mode change is a morph, not a swap: every node
@@ -300,7 +317,12 @@ export function brainStageSize(height: number, width: number, extra = 0): number
  */
 export function brainStageRoom(height: number, width: number, extra = 0): number | null {
   if (!Number.isFinite(height) || !Number.isFinite(width) || !Number.isFinite(extra)) return null;
-  const tall = height - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2 - Math.max(0, extra);
+  // V2.1 VB-74: the nav band is baked in here rather than passed by every
+  // caller, because it is not optional the way `extra` is — Brain never
+  // renders without its way out, so room that ignored the band would be room
+  // the picture does not really have, and the globe would clip along its
+  // bottom edge by exactly the band on every panel.
+  const tall = height - DRAWER_CHROME_HEIGHT - BRAIN_NAV_BAND - BRAIN_STAGE_PAD * 2 - Math.max(0, extra);
   const wide = width - BRAIN_STAGE_PAD * 2;
   return Math.min(tall, wide);
 }
@@ -361,10 +383,27 @@ export function brainStageFits(height: number, width: number, extra = 0): boolea
  * A fold, so the caller can run it in the same batch as the height change it
  * came from and the two can never be a frame apart.
  */
-export function nextBrainYield(yielded: boolean, height: number, width: number, extra = 0): boolean {
+export function nextBrainYield(
+  yielded: boolean,
+  height: number,
+  width: number,
+  extra = 0,
+  ceiling = Number.POSITIVE_INFINITY,
+): boolean {
   if (!brainStageFits(height, width, extra)) return true;
   if (!yielded) return false;
-  return !brainStageFits(height - BRAIN_YIELD_BAND, width, extra);
+  // V2.1 VB-74 — the band is capped by the headroom the panel actually has.
+  // Found by driving it, not by reading it: VB-74's nav band moved
+  // BRAIN_MIN_HEIGHT to within six pixels of a 700px viewport's drawer
+  // ceiling, and a return leg demanding a full sixteen past the threshold was
+  // demanding a height the drawer is not allowed to reach — Brain became
+  // unreachable on the panel's own standard height, with every constant
+  // individually correct. The band exists to stop a parked pointer flipping
+  // modes; a band taller than the panel's slack stops the person instead. So
+  // it shrinks to the slack where the slack is short, and where the ceiling
+  // is far away (the default) nothing changes.
+  const band = Math.max(0, Math.min(BRAIN_YIELD_BAND, ceiling - BRAIN_MIN_HEIGHT));
+  return !brainStageFits(height - band, width, extra);
 }
 
 /**

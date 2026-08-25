@@ -756,9 +756,9 @@ test.describe('VB-23 — clicking a sub-node splits the stage', () => {
     expect(panel.x).toBeGreaterThanOrEqual(stage.x - 1);
     expect(panel.x + panel.width).toBeLessThanOrEqual(stage.x + stage.width + 1);
     expect(panel.y + panel.height).toBeLessThanOrEqual(stage.y + stage.height + 1);
-    // Not hidden behind the way out, either.
-    const back = (await page.locator('.brainglobe-back').boundingBox())!;
-    expect(panel.y).toBeGreaterThanOrEqual(back.y + back.height);
+    // (Until V2.1 VB-74 this also checked the panel cleared the corner back
+    // control. The way out lives above the stage now, so there is nothing on
+    // the picture for the panel to hide behind.)
     // And the whole cluster it came out of has gone.
     const others = await page
       .locator('.brainglobe-child-node[data-picked="false"]')

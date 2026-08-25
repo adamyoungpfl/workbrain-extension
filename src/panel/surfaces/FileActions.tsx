@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import type { ChangeEvent } from 'react';
 import { Button, Toast } from '../components';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
@@ -16,6 +16,21 @@ export interface FileActionsProps {
    * them plainly, offer the download). Returns whether the write actually
    * succeeded, so the toast here only ever confirms a real save. */
   onImport: (next: Answers) => Promise<boolean>;
+  /**
+   * V2.1 VB-73 — the splash's "Load your file" door, arrived here. `true`
+   * opens the picker once, through exactly the same `handleImportClick` the
+   * button underneath presses, so the two entrances cannot drift apart.
+   *
+   * `onPickAnswered` fires whether or not the picker opened — the ask is
+   * answered by being attempted, and holding it after a failed attempt would
+   * re-open a picker on some unrelated later render. If the click is refused
+   * (Chrome wants recent user activation, and the splash's press is recent
+   * but not guaranteed to still count), the person is standing on Home next
+   * to "I already have a file" — the degradation is silent and one press
+   * deep, which is the shape docs/GUARDRAILS.md requires.
+   */
+  pickAsked?: boolean | undefined;
+  onPickAnswered?: (() => void) | undefined;
 }
 
 const FILE_NAME = 'Context.md';
@@ -39,7 +54,7 @@ const FILE_NAME = 'Context.md';
  * their own established pattern, since a Context.md is the only file format
  * R1-09 built a generator/parser for.
  */
-export function FileActions({ answers, onImport }: FileActionsProps) {
+export function FileActions({ answers, onImport, pickAsked, onPickAnswered }: FileActionsProps) {
   const [downloaded, setDownloaded] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
@@ -72,6 +87,18 @@ export function FileActions({ answers, onImport }: FileActionsProps) {
     setImportError(null);
     fileInputRef.current?.click();
   }
+
+  // V2.1 VB-73 — the splash's ask, answered once. An effect rather than a
+  // render-time call because clicking an input mid-render is undefined
+  // behaviour; the splash's press is milliseconds old at this point, which is
+  // inside Chrome's activation window in the ordinary case. See the prop's
+  // comment for what happens when it is not.
+  useEffect(() => {
+    if (!pickAsked) return;
+    handleImportClick();
+    onPickAnswered?.();
+    // The ask is the dependency; the two functions are stable for its life.
+  }, [pickAsked]); // eslint would want the functions too; there is no eslint, and they cannot change under the ask
 
   function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
     const input = e.target;

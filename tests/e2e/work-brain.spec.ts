@@ -102,6 +102,9 @@ async function openMidInterview(
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
@@ -130,9 +133,13 @@ async function tierSettled(page: Page, at: 0 | 1): Promise<void> {
   await expect.poll(() => tierClock(page), { timeout: 4000 }).toBe(at);
 }
 
-/** Out to the work brain, from inside the file. */
+/** Out to the work brain, from inside the file — V2.1 VB-74: the nav band's
+ * Back, above the stage, which replaced the corner disc. */
+function bandBack(page: Page) {
+  return page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true });
+}
 async function pullBack(page: Page): Promise<void> {
-  await page.getByRole('button', { name: S.workBrainBack, exact: true }).first().click();
+  await bandBack(page).click();
   await tierSettled(page, 0);
 }
 
@@ -380,11 +387,12 @@ test.describe('VB-48 — nothing below the new tier changed', () => {
     const page = await openMidInterview(context, sw, id);
     await showBrain(page);
 
-    // Inside a section, the offer is "back to the whole file" and NOT the tier
-    // above it — one rung at a time.
+    // V2.1 VB-74: one Back, at every level, in the band above the stage —
+    // the ladder's shape never changes, only how far up it there is to go.
+    // Inside a section it is enabled and one press means one rung.
     await page.locator('.brainglobe-pin[data-section-id="sec2"]').click();
-    await expect(page.getByRole('button', { name: S.brainGlobeBack, exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: S.workBrainBack, exact: true }).first()).toBeHidden();
+    await expect(bandBack(page)).toBeVisible();
+    expect(await bandBack(page).getAttribute('aria-disabled')).toBeNull();
 
     // Escape climbs it: out of the section first, then out of the file.
     await page.locator('.brainglobe-pin[data-section-id="sec2"]').focus();
@@ -399,47 +407,65 @@ test.describe('VB-48 — nothing below the new tier changed', () => {
 });
 
 /**
- * V2.0 VB-59 — the way out of a file is a mark rather than a sentence.
- *
- * "Replace the 'Back to your work brain' chip with an icon or visual cue. Keep
- * a real accessible name on it — an icon-only control still needs one, and it
- * still needs 44×44."
- *
- * Three things have to be true at once, and an icon-only control is exactly the
- * shape that quietly loses one of them: it has to be a real 44×44 target, it
- * has to carry the same name it always did, and it has to ring on the keyboard.
- * The fourth assertion is the one that says the change happened at all — the
- * sentence is no longer printed over the picture.
+ * V2.1 VB-74 — the way out leaves the picture. This block tested VB-59's
+ * corner disc; the disc is gone, and the claims move to what replaced it: a
+ * nav band above the stage holding Back and Home, fixed while the picture
+ * moves, the same two words at every depth. The 44px floor survives the
+ * band's 30px height by overhanging the stage (the drawer handle's own
+ * painted-versus-pressable split), which is exactly the kind of arrangement
+ * that quietly loses the floor — so the target is measured, not assumed.
  */
-test.describe('VB-59 — the work-brain back control is an icon', () => {
-  test('it is a 44px target with the same name, drawn rather than printed', async () => {
+test.describe('VB-74 — the way out is a band above the stage', () => {
+  test('Back and Home are 44px targets in a fixed row, and Back does the move', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openMidInterview(context, sw, id);
     await showBrain(page);
 
-    const back = page.getByRole('button', { name: S.workBrainBack, exact: true }).first();
+    const back = bandBack(page);
     await expect(back).toBeVisible();
 
-    // THE NAME IS UNCHANGED, and it is an `aria-label` rather than text — the
-    // words themselves are no longer on screen.
-    expect((await back.textContent())!.trim()).toBe('');
-    expect(await back.getAttribute('aria-label')).toBe(S.workBrainBack);
-    await expect(page.locator('.brainglobe')).not.toContainText(S.workBrainBack);
+    // THE WORD IS PRINTED — VB-59's disc carried its name as an aria-label
+    // because nothing fit in a disc; the band has room, and a way out you can
+    // read beats one you have to recognise. One name at every depth (see
+    // strings.ts's navBack) with the trail above saying where it lands.
+    expect((await back.textContent())!.trim()).toBe(S.navBack);
 
-    // A MARK IS DRAWN IN IT, and it is hidden from assistive tech: a picture of
-    // the name, never a second one.
-    const chevron = back.locator('.brainglobe-back-chevron');
-    await expect(chevron).toHaveCount(1);
-    await expect(chevron).toHaveAttribute('aria-hidden', 'true');
-    // Really painted, not a zero-size SVG that only looks present in the DOM.
-    const drawn = (await chevron.boundingBox())!;
-    expect(drawn.width).toBeGreaterThanOrEqual(12);
-    expect(drawn.height).toBeGreaterThanOrEqual(12);
-
-    // 44×44 EXACTLY, which is what the words used to buy it (docs/GUARDRAILS.md).
+    // The band's row is 30px; the TARGET is still 44, by overhang — measured,
+    // because this split is exactly where a floor quietly goes missing.
     const box = (await back.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
+
+    // Home stands beside it, and out here — already at the top once out — it
+    // must never pretend otherwise. (At the file tier both are live.)
+    const home = page.locator('.brainglobe-nav').getByRole('button', { name: S.navHome, exact: true });
+    await expect(home).toBeVisible();
+    const homeBox = (await home.boundingBox())!;
+    expect(homeBox.width).toBeGreaterThanOrEqual(44);
+    expect(homeBox.height).toBeGreaterThanOrEqual(44);
+
+    // AND THE ROW DOES NOT TRAVEL WITH THE VISUAL: drag the globe and the
+    // band's box does not move — that sentence is the whole of VB-74. The
+    // drawer is still settling from showBrain's own grow for ~320ms, and the
+    // band rides the drawer's chrome, so the baseline is taken only once the
+    // box has genuinely stopped (the photograph test's own poll) — otherwise
+    // this measures the settle, not the drag.
+    await expect
+      .poll(async () => {
+        const first = (await page.locator('.brainglobe-nav').boundingBox())!.y;
+        await page.waitForTimeout(80);
+        return Math.round(Math.abs((await page.locator('.brainglobe-nav').boundingBox())!.y - first));
+      })
+      .toBe(0);
+    const before = (await page.locator('.brainglobe-nav').boundingBox())!;
+    const stageBox = (await page.locator('.brainglobe').boundingBox())!;
+    await page.mouse.move(stageBox.x + stageBox.width / 2, stageBox.y + stageBox.height / 2);
+    await page.mouse.down();
+    for (let i = 1; i <= 6; i++) await page.mouse.move(stageBox.x + stageBox.width / 2 + i * 12, stageBox.y + stageBox.height / 2);
+    const during = (await page.locator('.brainglobe-nav').boundingBox())!;
+    await page.mouse.up();
+    expect(Math.abs(during.x - before.x)).toBeLessThan(1);
+    expect(Math.abs(during.y - before.y)).toBeLessThan(1);
 
     // AND IT STILL DOES THE MOVE. Same button, same function, same tier.
     expect(await tier(page)).toBe('file');
@@ -455,12 +481,14 @@ test.describe('VB-59 — the work-brain back control is an icon', () => {
     const page = await openMidInterview(context, sw, id);
     await showBrain(page);
 
-    const back = page.getByRole('button', { name: S.workBrainBack, exact: true }).first();
+    const back = bandBack(page);
     // Reached with the KEYBOARD, because that is what `:focus-visible` is a
     // question about — a ring measured after a programmatic focus can pass on a
-    // stylesheet that only rings mouse users. Tabbed to from the section node
-    // before it rather than from a counted number of stops: the stage's tab
-    // order is the globe's business and this test is not the place to pin it.
+    // stylesheet that only rings mouse users. V2.1 VB-74's band FOLLOWS the
+    // pins in the markup (the disc's own order, kept deliberately — see the
+    // band's JSX comment), so from a section node the walk is forward. Tabbed
+    // rather than a counted number of stops: the stage's tab order is the
+    // globe's business and this test is not the place to pin it.
     await page.locator('.brainglobe-pin[data-section-id]').first().focus();
     for (let i = 0; i < 30; i++) {
       if (await back.evaluate((el) => el === document.activeElement)) break;
@@ -488,7 +516,7 @@ test.describe('VB-59 — the work-brain back control is an icon', () => {
    * as the way out of the file, or whether the chevron sits centred in it. The
    * corner is photographed close enough to see the ink.
    */
-  test('the disc in the corner, resting and focused — for a person to look at (VB-59)', async () => {
+  test('the band above the stage, resting and focused — for a person to look at (VB-74)', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openMidInterview(context, sw, id);
     await showBrain(page);
@@ -499,10 +527,10 @@ test.describe('VB-59 — the work-brain back control is an icon', () => {
     await handle.focus();
     await page.keyboard.press('End');
 
-    const back = page.getByRole('button', { name: S.workBrainBack, exact: true }).first();
+    const back = bandBack(page);
     await expect(back).toBeVisible();
-    // The drawer settles over 320ms and the control travels with it, so the
-    // clip is taken from a box that has stopped moving — otherwise the corner
+    // The drawer settles over 320ms and the band rides its chrome, so the
+    // clip is taken from a box that has stopped moving — otherwise the row
     // is photographed where the button WAS.
     await expect
       .poll(async () => {
@@ -564,6 +592,9 @@ test.describe('VB-48 — the complete state, one level up', () => {
     await page.setViewportSize(PANEL);
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
     await page.getByRole('button', { name: /^Context\.md/ }).click();
     await page.getByRole('button', { name: /^Go through them again$/ }).click();
@@ -615,7 +646,7 @@ test.describe('VB-48 — reduced motion', () => {
       };
       requestAnimationFrame(tick);
     });
-    await page.getByRole('button', { name: S.workBrainBack, exact: true }).first().click();
+    await bandBack(page).click();
     await expect.poll(() => tier(page)).toBe('work');
     await expect.poll(() => tierClock(page)).toBe(0);
     const trail: string[] = await page.evaluate(() => (window as unknown as { __wbClock: string[] }).__wbClock);

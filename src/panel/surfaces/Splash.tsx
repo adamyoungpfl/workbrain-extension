@@ -1,101 +1,103 @@
 import { useEffect, useRef, useState } from 'react';
-import { BrandMark } from '../components';
+import { BrandMark, Button } from '../components';
+import { NARRATOR_ICON } from '../components/NarratorToggle';
+import { narratorSupported } from '../voice/speech';
+import { useNarratorPref } from '../voice/prefs';
 import { S } from '../strings';
 import './Splash.css';
 
 /**
- * V1.7 VB-34 — the splash.
+ * V1.7 VB-34, rebuilt by V2.1 VB-73 — the splash becomes a doorway.
  *
- * The mark, drifting on `core/geometry/markOrbit`'s camera path, with the
- * lockup centred and the tagline under it. That is the whole surface.
+ * The mark on `core/geometry/markOrbit`'s camera path, the lockup, the
+ * tagline — and now, underneath them, the decisions someone should make
+ * before the first instruction: which door (build a file, or load one they
+ * already have), and whether questions are read aloud.
  *
- * ── HOW OFTEN, AND WHY ────────────────────────────────────────────────────
+ * ── WHAT VB-73 REVERSED, AND WHAT IT KEPT ─────────────────────────────────
  *
- * Once per browser session. Adam settled this on 2026-08-24: "a splash on
- * every open is a toll booth on someone's own work."
+ * VB-34 decided the splash "ends on its own", and its header argued that was
+ * the thing that made it not a toll booth. VB-73 reverses that deliberately —
+ * Adam: "I want the splash page to load and remain up until we click one of
+ * the CTAs." The reversal is honest because the surface changed underneath
+ * it: a splash with nothing on it that waits for a click is a toll booth, and
+ * a doorway with a real choice on it that dismisses itself is a doorway that
+ * slams. Same rule — a surface holds the screen only as long as it is doing
+ * something — landing on opposite behaviours because the surface stopped
+ * being decoration.
  *
- * The choice is `chrome.storage.session`, and it is the *only* mechanism that
- * says "session" here. A plain module variable — which is what everything
- * else ephemeral in this panel uses — would mean once per *panel document*,
- * and Chrome destroys the side panel's document every time the panel is
- * closed. Somebody who opens the panel, glances, closes it and reopens it
- * five seconds later would get the splash twice. That is the "every open"
- * behaviour, wearing a different name.
+ * Three VB-34 decisions are deliberately KEPT:
  *
- * `chrome.storage.session` is in memory, is cleared when Chrome closes, needs
- * no permission the extension does not already have, and never touches disk.
- * It is not a stored preference and it is not derived state kept around
- * (docs/ARCHITECTURE.md's rule is about `local` and `sync`, the two areas
- * that are still there tomorrow) — see schema/storage.types.ts's SessionState
- * comment for the full argument. App.tsx does the read; this component knows
- * nothing about storage.
+ * 1. **It never gates the first paint.** App.tsx renders the real surface
+ *    immediately and lays this over it; the 'asking' state renders no splash
+ *    at all. The panel is built and laid out underneath the whole time.
  *
- * ── IT NEVER HOLDS ANYONE UP ──────────────────────────────────────────────
+ * 2. **Once per browser session** — "a splash on every open is a toll booth
+ *    on someone's own work" (Adam, 2026-08-24). VB-73 changed how the splash
+ *    LEAVES, not how often it ARRIVES. `chrome.storage.session` is still the
+ *    mechanism and App.tsx still does the read; see schema/storage.types.ts
+ *    for why an in-memory area is not the persistence ARCHITECTURE forbids.
  *
- * Three separate guarantees, in order of how much they matter:
+ * 3. **A stray click never reaches a control nobody could see.** The overlay
+ *    is opaque and the backdrop consumes its click — it dismisses, and the
+ *    press ends there. Acting on a covered control costs trust.
  *
- * 1. **It does not gate the panel's first paint.** App.tsx renders the real
- *    surface immediately and lays this over the top. The panel is built,
- *    laid out and ready underneath the whole time; the splash is a sheet of
- *    paper on a finished desk, not a loading screen.
+ * ── HOW IT LEAVES ─────────────────────────────────────────────────────────
  *
- * 2. **Any input ends it.** Pointer, key, touch, wheel — captured on
- *    `window` in the capture phase so nothing between here and the target
- *    can swallow the skip.
+ * A click, and only a click — on a door, or on the backdrop:
  *
- * 3. **It ends on its own.** This is the one that makes it not a toll booth.
- *    A splash that waits for a click is still a click somebody has to make
- *    before they can start work, however cheap that click is. So it holds for
- *    `SPLASH_DWELL_MS` and then leaves, and the skip is there for people who
- *    are faster than that rather than as the only way out.
+ *   · "Build your file" → Home, whose own CTA knows what building means for
+ *     this person's actual state (start, resume, or reflect).
+ *   · "Load your file"  → Home, and the file picker opens over it
+ *     (`intent: 'load'` — App.tsx hands it to Home, Home to FileActions,
+ *     which owns the input). If the picker cannot open, the person is
+ *     standing next to "I already have a file" — the degradation is silent
+ *     and one press deep, per docs/GUARDRAILS.md.
+ *   · The backdrop → Home, nothing else. Not choosing is allowed.
+ *   · Escape → same as the backdrop. The keyboard path out is not a choice
+ *     and does not need one; the doors themselves are real buttons reached by
+ *     Tab, because App.tsx marks the covered panel `inert` while this is up.
  *
- * The overlay is opaque and does take the first click rather than passing it
- * through to whatever happens to be underneath. That is deliberate: passing
- * it through would mean a person's dismissing tap could start the interview
- * they could not see they were tapping. Consuming one click costs a moment;
- * acting on a control nobody could see costs trust.
+ * Every other key does nothing. VB-34 let any key skip the splash because the
+ * splash carried nothing; these keys now have a surface with controls on it,
+ * and a keystroke that dismissed it would throw away the choice it exists to
+ * offer.
  *
- * ── REDUCED MOTION ────────────────────────────────────────────────────────
+ * ── THE AUDIO TOGGLE, AND THE MICROPHONE THAT IS NOT HERE ─────────────────
  *
- * A still, composed frame carrying exactly the same three things: the mark,
- * the name, the tagline. `BrandMark`'s orbit mode checks the preference
- * before it schedules anything, so no frame loop ever starts — the still
- * frame is in the markup React writes, not painted in afterwards, and
- * `tests/e2e/splash.spec.ts` counts `requestAnimationFrame` from before the
- * bundle runs to prove it. The fade-out goes too: it would be 320ms of an
- * invisible overlay still on top, so under reduced motion this hands over the
- * instant it is done.
+ * The toggle is the narrator preference — the same `wb:prefs.narrator` the
+ * header toggle reads, through the same hook, so the two controls cannot
+ * disagree. Where there is no speech engine there is no row, not a disabled
+ * one (degradation rule; same check NarratorToggle makes).
  *
- * Nothing here is information the person needs read aloud — the name is on
- * Home a second later and the tagline is a promise, not an instruction — so
- * the whole overlay is `aria-hidden`. That is the kinder answer as well as
- * the simpler one: a screen-reader user is never covered by this at all, and
- * reads the real panel from the first moment.
+ * VB-73's notes asked for "audio and microphone" configuration. The
+ * microphone toggle is DELIBERATELY NOT BUILT, per docs/V2.1-REFINEMENT.md's
+ * flag: this product does not build a microphone (V1.8 VB-49 — four
+ * independent blockers, each sufficient), so a toggle labelled "microphone"
+ * would switch a hint, not a microphone, and a control that does less than
+ * its name is the kind of small dishonesty this product has avoided
+ * everywhere else. The splash offers audio only.
+ *
+ * ── ACCESSIBILITY ─────────────────────────────────────────────────────────
+ *
+ * VB-34's splash was `aria-hidden` — nothing on it was information. VB-73's
+ * has three controls, so it is exposed, and the covered panel is `inert`
+ * (App.tsx) for exactly as long as it shows: one account of the screen at a
+ * time. Focus is not stolen — the first Tab lands on the first door because
+ * everything underneath is inert, not because anything grabbed it. Reduced
+ * motion still means the still pose and no frame loop (BrandMark checks
+ * before scheduling anything), and the fade-out is skipped so the handover
+ * is immediate.
  */
-
-/**
- * How long the splash holds before it leaves on its own.
- *
- * Not one of `docs/design-system.html` §06's three durations, and it is not
- * trying to be: those govern a thing changing state, and this is a dwell —
- * the same category as how long a toast stays. It is long enough to read
- * seven words and watch one camera move, and short enough that nobody who
- * ignores it feels stopped.
- *
- * The camera's loop is nine seconds (`ORBIT_PERIOD_MS`), so a person who sits
- * through the whole splash sees roughly a quarter of it. The loop is longer
- * than the splash on purpose: the point of a loop here is that the motion has
- * no beginning and no end to catch the eye, not that anybody is made to watch
- * a full revolution. Its seamlessness is asserted in markOrbit.test.ts, where
- * it can be measured at every moment rather than at the one a person happens
- * to see.
- */
-export const SPLASH_DWELL_MS = 2400;
 
 /** The fade out. §06's drawer duration — this is a full surface leaving. */
 export const SPLASH_FADE_MS = 320;
 
 const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
+
+/** Which door was taken, if any. `null` is the backdrop or Escape: no choice
+ * made, and Home as it stands is the answer. */
+export type SplashIntent = 'build' | 'load' | null;
 
 /**
  * The tagline, one sentence per line.
@@ -106,68 +108,69 @@ const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
  * the work. You do the" / "thinking.", which leaves a one-word orphan under
  * seven words of headline — looked at, in a real panel, before deciding. The
  * sentences are the natural break and the line was written as two of them.
- *
- * Falls back to the whole string as one line if it ever stops containing a
- * sentence break, which wraps exactly as it does today rather than breaking.
  */
 function taglineLines(text: string): string[] {
   return text.split(/(?<=[.?!])\s+/);
 }
 
 export interface SplashProps {
-  /** Called when the splash is finished and may be unmounted. */
-  onDone: () => void;
+  /** Called when the splash is finished and may be unmounted, carrying the
+   * door that was taken. */
+  onDone: (intent: SplashIntent) => void;
 }
 
 export function Splash({ onDone }: SplashProps) {
   const [leaving, setLeaving] = useState(false);
   /** One handover, however many ways it is triggered at once. */
   const handedOver = useRef(false);
+  const narrator = useNarratorPref();
+  /** Decided during the first render, exactly as NarratorToggle decides it —
+   * an effect would paint the row a frame late and shift the doors under a
+   * pointer already travelling toward them (the class of bug V2.0's 6px hunt
+   * traced to a late-deciding NarratorToggle). */
+  const [voiced] = useState(narratorSupported);
 
-  useEffect(() => {
-    // No matchMedia means no way to know the preference, so assume reduce —
-    // the same call BrandMark makes, for the same reason.
+  const leave = useRef((intent: SplashIntent) => intent);
+  leave.current = (intent: SplashIntent) => {
+    if (handedOver.current) return intent;
+    handedOver.current = true;
     const reduce =
       typeof window.matchMedia !== 'function' || window.matchMedia(REDUCE_QUERY).matches;
-
-    let dwell = 0;
-    let fade = 0;
-
-    function end() {
-      if (handedOver.current) return;
-      handedOver.current = true;
-      window.clearTimeout(dwell);
-      if (reduce) {
-        onDone();
-        return;
-      }
-      // Fades out, then hands over. `pointer-events` is dropped for the
-      // duration of the fade (see Splash.css), so the panel underneath is
-      // live from the moment the splash starts leaving rather than from the
-      // moment it finishes.
-      setLeaving(true);
-      fade = window.setTimeout(onDone, SPLASH_FADE_MS);
+    if (reduce) {
+      onDone(intent);
+      return intent;
     }
+    // Fades out, then hands over. `pointer-events` is dropped for the
+    // duration of the fade (see Splash.css), so the panel underneath is
+    // live from the moment the splash starts leaving rather than from the
+    // moment it finishes.
+    setLeaving(true);
+    window.setTimeout(() => onDone(intent), SPLASH_FADE_MS);
+    return intent;
+  };
 
-    dwell = window.setTimeout(end, SPLASH_DWELL_MS);
-
-    // Capture phase, on window: the skip has to work no matter what is
-    // underneath and no matter what stops propagation. Passive, and nothing
-    // is prevented — the input is a skip, never a cancelled action.
-    const options = { capture: true, passive: true } as const;
-    const kinds = ['pointerdown', 'keydown', 'touchstart', 'wheel'] as const;
-    for (const kind of kinds) window.addEventListener(kind, end, options);
-
-    return () => {
-      for (const kind of kinds) window.removeEventListener(kind, end, options);
-      window.clearTimeout(dwell);
-      window.clearTimeout(fade);
-    };
-  }, [onDone]);
+  useEffect(() => {
+    // Escape only. VB-34 listened for every kind of input here; VB-73's
+    // surface has controls, and the one key that means "close this" is the
+    // one key that should.
+    function onKey(event: KeyboardEvent) {
+      if (event.key === 'Escape') leave.current(null);
+    }
+    window.addEventListener('keydown', onKey, { capture: true, passive: true });
+    return () => window.removeEventListener('keydown', onKey, { capture: true });
+  }, []);
 
   return (
-    <div className="splash" data-leaving={leaving ? 'on' : 'off'} aria-hidden="true">
-      <div className="splash-lockup">
+    // The backdrop's click is the dismissal, and stopPropagation on the card
+    // below is what keeps a press on a door from also being a press on the
+    // backdrop behind it. Not a keyboard trap: the card's own buttons are the
+    // keyboard path, and Escape is handled above.
+    <div
+      className="splash"
+      data-leaving={leaving ? 'on' : 'off'}
+      onClick={() => leave.current(null)}
+    >
+      <div className="splash-lockup" onClick={(event) => event.stopPropagation()}>
         {/* Bigger than anywhere else the mark appears, because here it is the
             subject rather than a label's companion — and big enough that the
             node graph is the right drawing rather than the silhouette
@@ -187,6 +190,45 @@ export function Splash({ onDone }: SplashProps) {
             </span>
           ))}
         </p>
+
+        {/* The doors — the panel's own Button, not a bespoke control: the
+            splash fades into Home and its buttons must be Home's buttons.
+            Build is the one primary on this screen (§04's rule) because it is
+            the product's own first move; Load is the door for someone arriving
+            with a file — it lands beside Home's "I already have a file" and
+            opens its picker when it can. Labels are Adam's own, from VB-73's
+            notes, sentence-cased to match every other button in the panel. */}
+        <div className="splash-doors">
+          <Button type="button" onClick={() => leave.current('build')}>
+            {S.splashBuild}
+          </Button>
+          <Button type="button" variant="secondary" onClick={() => leave.current('load')}>
+            {S.splashLoad}
+          </Button>
+        </div>
+
+        {/* The one configuration that belongs at the doorway. Same pref, same
+            hook, same icon as the header's toggle — two controls, one answer.
+            The label is visible here where the header's is an icon-button,
+            because a doorway is where a person has never seen the icon. */}
+        {voiced && (
+          <button
+            type="button"
+            className="splash-voice"
+            aria-pressed={narrator.on}
+            onClick={() => narrator.setOn(!narrator.on)}
+          >
+            {/* The same drawing the header's toggle uses, keyed to the same
+                attribute: `[aria-pressed]` shows the waves or the cross
+                (Splash.css mirrors NarratorToggle.css's two rules), so the
+                state is in the shape, never only in the colour. */}
+            <span className="splash-voice-icon" aria-hidden="true">
+              {NARRATOR_ICON}
+            </span>
+            {S.narrator}
+            <span className="splash-voice-state">{narrator.on ? S.splashVoiceOn : S.splashVoiceOff}</span>
+          </button>
+        )}
       </div>
     </div>
   );

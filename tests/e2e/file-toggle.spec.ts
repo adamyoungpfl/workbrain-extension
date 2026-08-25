@@ -90,6 +90,10 @@ async function openList(context: BrowserContext, id: string): Promise<Page> {
   await page.setViewportSize({ width: 400, height: 760 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
+  await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: S.fileGoThrough, exact: true }).click();
   await page.waitForSelector('.flow');
@@ -132,6 +136,10 @@ test.describe('VB-47 — one answers key per file', () => {
     await page.setViewportSize({ width: 400, height: 760 });
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
 
     // Home read them: the file row is not the "nothing here yet" state, and it
     // reports the age of the answers that were seeded.
@@ -237,6 +245,10 @@ test.describe('VB-47 — the strip is gone; the trail is the switcher', () => {
     await page.setViewportSize({ width: 400, height: 760 });
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
     // The shelf and the trail must agree, so read the shelf first.
     await expect(page.locator('.home-filelist')).toContainText(S.lockedComingLater);
     await expect(page.locator('.home-filelist')).not.toContainText(S.lockedNeedsFirst(S.fileContext));

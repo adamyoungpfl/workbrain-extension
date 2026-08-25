@@ -710,8 +710,11 @@ describe('BrainGlobe — flying in', () => {
     const stillThere = sectionPins(container).filter((pin) => !pin.hidden);
     expect(stillThere).toHaveLength(1);
     expect(stillThere[0]!.getAttribute('data-section-id')).toBe('sec2');
-    // And a real way back that is not only a keystroke.
-    expect(container.querySelector('.brainglobe-back')).not.toBeNull();
+    // And a real way back that is not only a keystroke — V2.1 VB-74: the nav
+    // band's Back, above the stage, enabled because there is now a level up.
+    const back = container.querySelector('.brainglobe-nav-btn')!;
+    expect(back).not.toBeNull();
+    expect(back.getAttribute('aria-disabled')).toBeNull();
   });
 });
 
@@ -823,8 +826,9 @@ describe('BrainGlobe — VB-23, hierarchy inside a section', () => {
     expect(Number(halo()!.getAttribute('opacity'))).toBeCloseTo(0, 3);
 
     // ...and comes back out here, where it is the only mark of the section
-    // being written now among ten equal siblings.
-    act(() => container.querySelector<HTMLButtonElement>('.brainglobe-back')!.click());
+    // being written now among ten equal siblings. V2.1 VB-74: the way out is
+    // the nav band's Back.
+    act(() => container.querySelector<HTMLButtonElement>('.brainglobe-nav-btn')!.click());
     env.settle();
     expect(Number(halo()!.getAttribute('opacity'))).toBeCloseTo(1, 3);
   });
@@ -983,8 +987,8 @@ describe('BrainGlobe — VB-23, the split', () => {
     expect(childPin(container, 'sec2-1').getAttribute('aria-pressed')).toBe('true');
     // The panel is a real stop of its own, because it scrolls.
     expect(container.querySelector('.brainglobe-detail')!.getAttribute('tabindex')).toBe('0');
-    // Nothing removed the way back out.
-    expect(container.querySelector('.brainglobe-back')).not.toBeNull();
+    // Nothing removed the way back out (V2.1 VB-74: the band's Back, live).
+    expect(container.querySelector('.brainglobe-nav-btn')!.getAttribute('aria-disabled')).toBeNull();
   });
 
   it('Escape closes the split first and the section only after it', () => {
@@ -1005,14 +1009,30 @@ describe('BrainGlobe — VB-23, the split', () => {
     expect(chosen).toEqual(['sec2', 'sec2-1', null]);
   });
 
-  it('flying out of the section closes the split with it', () => {
+  /**
+   * V2.1 VB-74 rewrote this test's scenario out of existence. It used to click
+   * the corner pill from an open sub-node, which flew out of the section with
+   * the split still open — the pill skipped a rung. The band's Back walks the
+   * same strict ladder Escape does: one level per press, split first, section
+   * second. So the claim becomes the pointer's copy of the Escape-ladder test
+   * above, and "flying out closes the split" survives inside it — by the time
+   * the section closes, the split is already gone.
+   */
+  it('Back walks one level per press: the split closes first, the section after', () => {
     const env = stubEnvironment({ reduce: false });
     const { container } = render({ details: DETAILS });
     openChild(container, env);
-    act(() => container.querySelector<HTMLButtonElement>('.brainglobe-back')!.click());
+    const back = () => container.querySelector<HTMLButtonElement>('.brainglobe-nav-btn')!;
+
+    act(() => back().click());
     env.settle();
     expect(container.querySelector('.brainglobe-detail')).toBeNull();
+    expect(container.querySelector('.brainglobe')!.getAttribute('data-inside')).toBe('true');
     expect(container.querySelector('.brainglobe')!.getAttribute('data-split')).toBe('0.000');
+
+    act(() => back().click());
+    env.settle();
+    expect(container.querySelector('.brainglobe')!.getAttribute('data-inside')).toBe('false');
   });
 
   it('names the sub-node out loud when the stage splits', () => {

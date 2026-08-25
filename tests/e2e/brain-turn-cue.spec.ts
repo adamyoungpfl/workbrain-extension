@@ -87,6 +87,9 @@ async function openMidInterview(
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
@@ -155,28 +158,28 @@ async function pixels(page: Page, points: readonly { x: number; y: number }[]): 
 
 test.describe('VB-71 — the cue that says the brain can be turned', () => {
   /**
-   * WHERE ADAM DREW IT: "a filled disc at the top-left of the stage,
-   * immediately left of the back control — the two sit side by side as a pair."
-   *
-   * Measured against both boxes rather than against fixed coordinates, because
-   * the stage is a square whose size follows the drawer's height: what has to
-   * hold is the RELATIONSHIP — same top, cue first, one gutter between them,
-   * and both inside the picture's top-left corner.
+   * WHERE ADAM DREW IT, AMENDED BY V2.1 VB-74. The cue was drawn as one of a
+   * pair — "immediately left of the back control" — and VB-74 moved the way
+   * out off the picture into the nav band above the stage, so the cue holds
+   * the corner alone now. What has to hold is still a RELATIONSHIP rather
+   * than fixed coordinates: the cue inside the picture's top-left, and the
+   * band's controls above the picture, never on it.
    */
-  test('it is a pair with the way out, at the stage’s top-left', async () => {
+  test('it has the stage’s top-left to itself, under the nav band', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openMidInterview(context, sw, id);
     await showBrain(page);
 
     await expect(cue(page)).toBeVisible();
     const disc = (await cue(page).boundingBox())!;
-    const back = (await page.locator('.brainglobe-back.is-out').boundingBox())!;
     const globe = (await page.locator('.brainglobe').boundingBox())!;
 
-    // Side by side, on one line, cue first and never overlapping.
-    expect(disc.y).toBeCloseTo(back.y, 0);
-    expect(disc.x + disc.width).toBeLessThanOrEqual(back.x);
-    expect(back.x - (disc.x + disc.width), 'the pair drifted apart').toBeLessThanOrEqual(10);
+    // The way out sits ABOVE the picture, not on it. The band's buttons
+    // overhang the stage's top edge by design (their 44px targets), so the
+    // measured line is the PAINTED row — the band's own box — which must end
+    // where the picture begins.
+    const band = (await page.locator('.brainglobe-nav').boundingBox())!;
+    expect(band.y + band.height).toBeLessThanOrEqual(globe.y + 1);
 
     // In the picture's top-left corner, and inside it — the stage clips
     // (`overflow: hidden`), so a disc hanging off the edge would be a disc with
@@ -236,14 +239,12 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
     const rim = parseCssColor(await cue(page).evaluate((el) => getComputedStyle(el).borderTopColor))!;
     expect([rimPaint!.r, rimPaint!.g, rimPaint!.b]).toEqual([rim.r, rim.g, rim.b]);
 
-    // And it is filled where the control beside it is open — a SHAPE
-    // difference, so the two discs are not told apart by colour alone.
+    // And it is FILLED — the shape that said "this one is the cue" when a
+    // second disc stood beside it (VB-59's was open). The neighbour left for
+    // the nav band (V2.1 VB-74), and the fill stays: a cue that reads as a
+    // solid dot is a cue, not a button that lost its label.
     const fill = await cue(page).evaluate((el) => getComputedStyle(el).backgroundColor);
-    const backFill = await page
-      .locator('.brainglobe-back.is-out')
-      .evaluate((el) => getComputedStyle(el).backgroundColor);
     expect(parseCssColor(fill)!.a).toBeGreaterThan(0);
-    expect(parseCssColor(backFill)!.a).toBe(0);
 
     // A focus ring somebody can see, reached BY TAB and not by a scripted
     // `focus()` — the ring is a `:focus-visible` ring, and how focus arrived is
@@ -312,10 +313,12 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
 
     await cue(page).click();
     await expect(cue(page)).toHaveCount(0);
-    // The way out takes the corner back the moment the pair is a single.
-    const back = (await page.locator('.brainglobe-back.is-out').boundingBox())!;
+    // V2.1 VB-74: the way out lives in the band above the stage and holds its
+    // place — the cue leaving changes nothing about it, because a row that
+    // shuffles when a hint retires is a row that cannot be learned.
+    const back = (await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).boundingBox())!;
     const globe = (await page.locator('.brainglobe').boundingBox())!;
-    expect(back.x - globe.x).toBeLessThan(TARGET_MIN);
+    expect(back.y + 1).toBeLessThan(globe.y + TARGET_MIN);
 
     // The reopen. A side panel that closes destroys its document, and a reload
     // is the closest a test gets to that: everything in memory goes, the panel
@@ -323,6 +326,9 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
     // `wb:prefs`.
     await page.reload();
     await page.waitForSelector('.home');
+    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+    // is its keyboard exit, and nothing else about this walk-in changed.
+    await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
     await page.getByRole('button', { name: /^Context\.md/ }).click();
     await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
@@ -374,7 +380,7 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
    * furniture. So the cue stands down for that one, and comes back out with
    * you, unspent.
    */
-  test('a flown-in section takes the corner back, and the cue is not spent by it', async () => {
+  test('a flown-in section stands the cue down, and does not spend it', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openMidInterview(context, sw, id);
     await showBrain(page);
@@ -392,21 +398,20 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
     await page.waitForTimeout(1200);
 
     await expect(cue(page)).toHaveCount(0);
-    const pill = page.locator('.brainglobe-back:not(.is-out)');
-    await expect(pill).toBeVisible();
-    const pillBox = (await pill.boundingBox())!;
-    const globe = (await page.locator('.brainglobe').boundingBox())!;
-    expect(pillBox.x - globe.x).toBeLessThan(TARGET_MIN);
-    expect(pillBox.x + pillBox.width, 'the way back runs off the stage').toBeLessThan(globe.x + globe.width);
-    // One line, which is the thing that actually went wrong when it was shoved.
-    expect(pillBox.height).toBeLessThan(TARGET_MIN * 1.4);
-    // Nothing was written: the corner was busy, not the cue seen.
+    // V2.1 VB-74: the pill that used to take this corner is gone — the way
+    // back is the nav band's Back, above the stage, enabled from in here.
+    // Flying in is not somebody learning that the globe turns, so the cue
+    // stands down WITHOUT being spent — that half of the claim is unchanged.
+    const back = page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true });
+    await expect(back).toBeVisible();
+    expect(await back.getAttribute('aria-disabled')).toBeNull();
+    // Nothing was written: the stage was busy, not the cue seen.
     expect(await page.evaluate(async () => (await chrome.storage.sync.get('wb:prefs'))['wb:prefs']?.turnHint)).not.toBe(
       false,
     );
 
     // Out again, and it is still owed.
-    await pill.evaluate((el) => (el as HTMLElement).click());
+    await back.evaluate((el) => (el as HTMLElement).click());
     await page.waitForTimeout(1200);
     await expect(cue(page)).toBeVisible();
 

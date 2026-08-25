@@ -5,11 +5,13 @@ import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import {
   BRAIN_MIN_HEIGHT,
+  BRAIN_NAV_BAND,
   BRAIN_OPEN_HEIGHT,
-  BRAIN_STAGE_MIN,
+  BRAIN_STAGE_IDEAL,
   BRAIN_STAGE_PAD,
   BRAIN_YIELD_BAND,
 } from '../../src/core/drawer/mode';
+import { drawerBounds } from '../../src/core/drawer/height';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
@@ -85,6 +87,9 @@ async function openMidInterview(context: BrowserContext, sw: Worker, id: string)
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home');
+  // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
+  // is its keyboard exit, and nothing else about this walk-in changed.
+  await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
@@ -170,11 +175,15 @@ test.describe('VB-70 — the visual’s height governs the mode', () => {
     expect(await drawerMode(page), 'the threshold itself is still Brain').toBe('brain');
 
     const at = await boxes(page);
-    // The stage's padding is the only thing between its box and the picture.
-    expect(at.stage - BRAIN_STAGE_PAD * 2).toBeCloseTo(at.globe, 0);
-    // And the picture is at its own floor: one pixel less room and the globe
-    // stops shrinking, which is the moment it would start being clipped.
-    expect(at.globe).toBeCloseTo(BRAIN_STAGE_MIN, 0);
+    // V2.1 VB-74: the stage's box now holds two things — the nav band above
+    // the picture, then the picture — with the padding around them. So the
+    // stage less its padding is the band plus the globe, exactly.
+    expect(at.stage - BRAIN_STAGE_PAD * 2).toBeCloseTo(at.globe + BRAIN_NAV_BAND, 0);
+    // And the picture at the handover is the IDEAL — V2.1 VB-75's whole
+    // point. This line used to expect BRAIN_STAGE_MIN: the globe at the
+    // threshold was the smallest legal globe, and there is no such thing any
+    // more. One pixel less room and the answer is List, not a smaller picture.
+    expect(at.globe).toBeCloseTo(BRAIN_STAGE_IDEAL, 0);
 
     // One pixel shorter and the mode is gone — because the box would now be
     // smaller than the smallest globe there is.
@@ -242,14 +251,25 @@ test.describe('VB-70 — the visual’s height governs the mode', () => {
     await expect.poll(() => drawerMode(page), { timeout: 3000 }).toBe('list');
     await drawerSettled(page);
 
-    // Back to just inside the threshold: still List, because that is the point.
-    await dragHandleTo(page, PANEL.height - (BRAIN_MIN_HEIGHT + BRAIN_YIELD_BAND - 2));
+    // V2.1 VB-74 capped the return band by the panel's own headroom: the nav
+    // band put BRAIN_MIN_HEIGHT within six pixels of a 700px viewport's
+    // ceiling, and a return leg demanding the full sixteen was demanding a
+    // height this drawer is not allowed to reach — Brain would have been
+    // unreachable by drag on the panel's own standard height. So the band
+    // here is the slack that exists, not the constant.
+    const ceiling = drawerBounds(PANEL.height).max;
+    const returnAt = Math.min(BRAIN_MIN_HEIGHT + BRAIN_YIELD_BAND, ceiling);
+
+    // Back to just inside the (capped) band: still List, because that is the
+    // point.
+    await dragHandleTo(page, PANEL.height - (returnAt - 2));
     await drawerSettled(page);
-    expect(await announcedHeight(page)).toBe(BRAIN_MIN_HEIGHT + BRAIN_YIELD_BAND - 2);
+    expect(await announcedHeight(page)).toBe(returnAt - 2);
     expect(await drawerMode(page), 'Brain came back inside the hysteresis band').toBe('list');
 
-    // A whole band clear of it, and Brain is back — the request never changed.
-    await dragHandleTo(page, PANEL.height - (BRAIN_MIN_HEIGHT + BRAIN_YIELD_BAND));
+    // The whole (capped) band clear of the threshold, and Brain is back — the
+    // request never changed.
+    await dragHandleTo(page, PANEL.height - returnAt);
     await expect.poll(() => drawerMode(page), { timeout: 3000 }).toBe('brain');
     await drawerSettled(page);
     await expect(brainButton(page)).toHaveAttribute('aria-pressed', 'true');

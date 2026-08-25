@@ -80,6 +80,67 @@
   display: block;
 }
 
+/* ── V2.1 VB-73 — the doors and the voice row ─────────────────────────────
+   The doors are the panel's own `Button`s; nothing here restyles them. This
+   only lays the pair out and holds them far enough under the tagline that the
+   lockup still reads as the lockup, with the decisions under it rather than
+   crowding it. */
+.splash-doors {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  width: min(240px, 100%);
+  margin-top: 28px;
+}
+
+/* The voice toggle. A quiet, real control: the same 44px floor as everything
+   pressable, the label printed because this is the one surface where the icon
+   has never been seen before. */
+.splash-voice {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--target-min);
+  margin-top: 10px;
+  padding: 0 12px;
+  border: 0;
+  border-radius: var(--r-pill);
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.splash-voice:hover {
+  color: var(--ink);
+}
+.splash-voice:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.splash-voice-icon {
+  display: inline-flex;
+  color: var(--ink-2);
+}
+
+/* The printed state, bolder than the label so the answer is louder than the
+   question — and `aria-pressed` under it for anything that is not looking. */
+.splash-voice-state {
+  font-weight: 700;
+  color: var(--ink);
+}
+
+/* The icon's two halves, keyed to the same attribute the header's toggle
+   keys them to (NarratorToggle.css's own pair of rules) — the waves show
+   when the narrator is on, the cross when it is off, so the state is in the
+   shape and never only in the word beside it. */
+.splash-voice[aria-pressed='true'] .narrator-mute,
+.splash-voice[aria-pressed='false'] .narrator-waves {
+  opacity: 0;
+}
+
 /* Leaving. `pointer-events: none` from the first frame of the fade, so the
    panel underneath is live for the whole 320ms rather than only after it. */
 .splash[data-leaving='on'] {
