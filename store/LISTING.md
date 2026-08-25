@@ -93,15 +93,41 @@ so they do not have to re-explain who they are and how they work every time.
 ## Screenshots, in order
 | File | Shows |
 |---|---|
-| `1-home.png` | Home — the file, its freshness, and the quiet way out to a person |
+| `1-home.png` | Home — your files, what is built and what is still locked |
 | `2-question.png` | One question, with its follow-ups and an example on tap |
 | `3-brain.png` | The file assembling as you answer |
 | `4-proof.png` | The proof loop — same question, with and without the file |
 
+> **⚠️ The images in this folder are stale and must be regenerated before submitting.**
+> They were driven against a build from 24 August 2026, and roughly twenty-five feature commits
+> have landed since — the accordion list, the lit orbs, the file toggle, the work brain tier, the
+> nav melt, the fixed breadcrumb nav. Shot 1 in particular is now wrong rather than merely dated:
+> Home stopped being *one file and its freshness* at V1.7 VB-36/37 and became a shelf of files with
+> locked slots, and V2.0 VB-64 renamed it again. The caption above is the current one; the picture
+> is not.
+>
+> `npm run build && node scripts/store-shots.mjs`, then **look at all four**. That is not a
+> formality — the last pass caught a caption contradicting its own panel and a shot clipping
+> "Keep it as-is" in half, and both were only visible by looking.
+
 ## Pre-submit checklist
-- [ ] Privacy policy published and reachable at the URL above
+- [x] Privacy policy **written and typechecked** — `src/app/work-brain/privacy/page.tsx` in the
+      sibling repo (`../modelcitizen`). Every claim in it was verified against the shipping source
+      on 25 August 2026; see `store/PRIVACY.md` for what was checked and the one sentence that was
+      wrong.
+- [ ] Privacy policy **deployed** and reachable at the URL above ← *the remaining hard blocker*
+- [ ] Screenshots regenerated against the current build, and all four looked at
 - [ ] `npm run check` green
 - [ ] `npm run zip` produces `dist.zip`
 - [ ] `dist.zip`'s manifest requests exactly `storage` and `sidePanel`
 - [ ] Version bumped in `manifest.config.ts` if resubmitting
 - [ ] Data disclosure: every category left unticked
+
+## Before the next submission, re-read this listing against the product
+
+The copy above still describes what ships — checked 25 August 2026 — and that is not luck: it
+describes the *proposition*, and the proposition has not moved through ten rounds of refinement.
+The things that rot are the pictures and the specifics. Two claims in the detailed description are
+worth re-checking each time, because they are the two that a reviewer could hold up against the
+product: **"about fifteen minutes"**, and **"a plain text file you own"**. If either becomes untrue,
+it is the listing that is wrong, not the product.
