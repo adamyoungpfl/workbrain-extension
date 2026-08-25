@@ -26,6 +26,43 @@ Sibling repo: `../modelcitizen/`
 | VB-10 ✅ | The two typewriter triggers | `src/components/WorkBrainContextInterview.tsx` → `useTypewriter` (~line 174, animates on mount) and `useTypewriterOnChange` (~line 208, does not) | Done. Behaviour, not copy, and the *distinction* is the thing ported: the question gets the mount-triggered variant (every new question prints), the module label the change-triggered one (only when the module changes). Both live in `src/panel/components/Typed.tsx`; the arithmetic they share is pure and sits in `src/core/motion/typewriter.ts`. Four deliberate differences, all forced by this panel rather than by taste: (1) **elapsed-time driven, not tick-counting** — a remount mid-print must resume rather than restart, because `Flow` remounts its step view on every one of the forty-nine questions; (2) **the change-trigger's memory is module-scope**, for that same reason, exactly as `BrandMark.tsx`'s `spinCue` already is; (3) **10ms a character, not 15** — VB-10's own number, chosen against the length of the interview; (4) **skippable, and the un-typed characters stay in the DOM** — neither exists in the source, and both are VB-10 requirements (any key or click finishes the text; nothing on the screen may move while it prints). |
 | VB-07b ✅ | The live file text | `src/components/WorkBrainContextBuilder.tsx`'s preview note | Done. The note is verbatim in `src/panel/strings.ts`'s `filePreviewNote`. The Builder's `FILE_BLOCKS` + `minStep` reveal system is **not** ported and is not needed: `core/files/generate.ts` already omits a section with nothing in it, so sections appear as they are answered for free. `generateContextFileParts` adds per-section output; `generateContextFile` is now one field of it, so the preview and the download are the same bytes by construction (asserted in `generate.test.ts` and end-to-end in `tests/e2e/file-tree.spec.ts`). |
 
+## Skills.md and Actions.md — the sources exist, and one of them is a trap
+
+Added V2.1. Neither file is built and both are blocked on decisions in `docs/SPIKE-skills-actions.md`,
+but the content question is settled: **there is no `skillsInterviewFlow.ts` or `actionsInterviewFlow.ts`
+to port.** Verified by filename search, repo-wide grep including `.next`, and `git log --diff-filter=D`
+— nothing was deleted. What exists instead is two production *wizards*, which are a different form
+factor. So this is a conversion, not the verbatim port R1-05 was, and not writing from nothing either.
+
+| Task | Needs | Already exists at | Notes |
+|---|---|---|---|
+| Skills | Step titles, ledes, per-field micro-copy, seed lists, an assist prompt | `../modelcitizen/src/components/WorkBrainSkillsBuilder.tsx` (1,803 lines, confirmed) | 6 wizard steps → ~18 questions. The four seed lists (`TRIGGER_SEEDS`/`INPUT_SEEDS`/`TOOL_SEEDS`/`OUTPUT_SEEDS`) map onto `ideas[]`/`options[]`; the assist prompt maps onto `interpret.buildPrompt`. |
+| Skills | The data model | `../modelcitizen/src/components/workbrain/shared.tsx` (1,068 lines, confirmed) | `SkillDraft = {name, trigger, inputs[], tools[], steps[], output}`, plus `skillMd()` which renders one. |
+| Skills | An answer-space to check questions against | `../modelcitizen/src/lib/skillLibrary.ts` (1,054 lines, confirmed) | **53 entries — and read the warning below before using any of them.** |
+| Skills | A framing paragraph for the file | — | **New work.** Actions has one; Skills does not. Its job is different from Context's: it tells the AI to follow a recipe exactly rather than improvise. |
+| Actions | Step titles, ledes, micro-copy, source seeds, the safety footer | `../modelcitizen/src/components/WorkBrainActionsBuilder.tsx` (1,238 lines, confirmed) | 4 wizard steps → ~11 questions. The framing paragraph and the **fixed safety footer** are verbatim ports — do not paraphrase either. |
+
+### ⚠️ `skillLibrary.ts` is placeholder copy, not the product's voice
+
+`docs/SPIKE-skills-actions.md` called this file *"a complete validated answer-space… the richest
+single asset"* and cited 54 entries. **Both halves of that are wrong**, and the file says so itself:
+
+> *"Placeholder-quality content for all 23 — Adam should review/refine the actual step wording
+> before this ships publicly."*
+
+It holds **53** entries, not 54, and its own header comment says 23 — so the comment is stale on top
+of everything else. The content was auto-filled from the Builder's seed chips and **has never had
+Adam's review pass.**
+
+This matters more here than it would anywhere else, because it inverts this document's whole
+premise. Everywhere else on this page, the sibling repo holds the real voice and inventing a fresh
+version loses it. Here the sibling repo holds filler, and porting it *as if* it were the voice would
+put unreviewed placeholder wording into a shipped file under the product's name — and it would read
+fine in review, which is exactly why it would survive.
+
+**Use it for shape, never for words.** It is a good check on whether a question's answer space is
+wide enough and whether `SkillDraft`'s fields are the right fields. It is not copy.
+
 ## How to port
 
 1. Read the source. Do not open it in the same breath as writing the target — read, then write.

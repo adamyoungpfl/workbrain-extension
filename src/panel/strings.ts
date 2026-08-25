@@ -105,7 +105,18 @@ export const S = {
    * "Got it" dismisses it for good — it is what someone says, and it does not
    * pretend to be a choice with two sides.
    */
-  dictationMac: 'Your Mac can type what you say. Press the Fn key twice, then talk.',
+  /* V2.1. This line used to say "Press the Fn key twice, then talk." and state
+     it as fact. It is wrong in three ordinary situations: Dictation ships off
+     and has to be turned on; its shortcut is user-configurable; and other
+     dictation apps commonly bind the same double tap, so Fn-Fn may open one of
+     those instead. The last of those is the least harmful — something is still
+     typing what you say — but the first two leave a person tapping a key that
+     does nothing, having been told plainly that it would work.
+
+     So: name the setting, because that is the part that is always true and the
+     part they need in order to find it, and give the shortcut as the usual
+     case rather than a promise. */
+  dictationMac: 'Your Mac can type what you say. Turn on Dictation in Settings. It usually starts with two taps of the Fn key.',
   dictationWindows: 'Windows can type what you say. Press the Windows key and H, then talk.',
   dictationDismiss: 'Got it',
   /**

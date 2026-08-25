@@ -1,0 +1,36 @@
+/**
+ * The panel's shell. Two elements, one rule, and the rule is only here because
+ * the heading it hides has to exist for anything that is not looking.
+ *
+ * `<main>` itself is deliberately unstyled. It is a plain block at full width,
+ * exactly what `#root` gave the surfaces before it existed, and it sets no
+ * `position` and no `transform` — so it creates no containing block and every
+ * absolutely-positioned thing in the drawer still resolves against the same
+ * ancestor it always did. The surfaces measure themselves against `100dvh`
+ * rather than a parent, so inserting a level costs them nothing either. This
+ * was the whole risk of adding the landmark and it is closed by adding nothing.
+ */
+
+/* The product's name, for screen readers only.
+   Three surfaces open at <h2> and the panel had no <h1> above any of them, so
+   the heading structure started at level two and the document had no top-level
+   heading at all — flagged repeatedly and never fixed until V2.1. It is hidden
+   because the design has no visible product title outside the splash and this
+   is a structure fix, not a new piece of chrome.
+
+   The clip/inset pair rather than `display: none` or `visibility: hidden`,
+   both of which take it out of the accessibility tree and would leave the
+   document exactly as it was. Same technique as `.crumbs-sr` and
+   `.filedrawer-sr`, which are the other two places in this panel that need it. */
+.app-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}

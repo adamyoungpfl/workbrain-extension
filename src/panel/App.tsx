@@ -1,4 +1,5 @@
 import './tokens.css';
+import './App.css';
 import { useCallback, useEffect, useState } from 'react';
 import { FileView } from './surfaces/FileView';
 import { Flow } from './surfaces/Flow';
@@ -233,9 +234,21 @@ export default function App() {
   // the order it renders. VB-34: the splash must not gate the panel's first
   // paint, and the cheapest way to guarantee that is for the panel never to
   // wait on it.
+  // V2.1. The landmark and the top-level heading, which this panel went its
+  // whole life without: every surface opened at <h2>, so the heading structure
+  // began at level two and the document had no <h1> anywhere in it.
+  //
+  // The splash stays OUTSIDE `<main>`, and that is the one judgement call here.
+  // It is a cover over the panel rather than a part of it, it holds no content
+  // that belongs to the surface underneath, and it leaves of its own accord —
+  // putting it inside the landmark would file it as page content and hand a
+  // screen reader two competing accounts of what this panel currently is.
   return (
     <>
-      {currentSurface()}
+      <main className="app-main">
+        <h1 className="app-sr">{S.appName}</h1>
+        {currentSurface()}
+      </main>
       {splash === 'showing' && <Splash onDone={endSplash} />}
     </>
   );

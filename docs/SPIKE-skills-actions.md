@@ -28,7 +28,7 @@ shipped production wizards do:**
 | Skills wizard, 1,803 lines | `../modelcitizen/src/components/WorkBrainSkillsBuilder.tsx` | 6 step titles + ledes, per-field micro-copy, four seed lists usable as `ideas[]`/`options[]`, an assist prompt usable as `interpret.buildPrompt` |
 | Actions wizard, 1,238 lines | `../modelcitizen/src/components/WorkBrainActionsBuilder.tsx` | 4 step titles + ledes, micro-copy, source seeds, the generator and its **fixed safety footer** |
 | Data models | `../modelcitizen/src/components/workbrain/shared.tsx` | `SkillDraft = {name, trigger, inputs[], tools[], steps[], output}` |
-| **54 authored skills** | `../modelcitizen/src/lib/skillLibrary.ts` | A complete validated answer-space for every Skills field — the richest single asset |
+| ~~54 authored skills~~ **53 placeholder skills** | `../modelcitizen/src/lib/skillLibrary.ts` | ⚠️ **Corrected V2.1.** This row said "a complete validated answer-space… the richest single asset". It is neither. The file holds 53 entries and its own header says *"Placeholder-quality content… Adam should review/refine the actual step wording before this ships publicly."* Use it for **shape, never for words** — see `docs/CONTENT-SOURCES.md`. |
 
 **So: Skills is a form-factor conversion (~6 wizard steps → ~18 questions). Actions is a thinner
 port plus real authoring. Neither is writing from nothing; neither is R1-05's verbatim port

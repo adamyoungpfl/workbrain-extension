@@ -42,7 +42,16 @@
  */
 export const DICTATION_STEP_ID = 'stop_explaining';
 
-/** The two desktop platforms with dictation built in and no setup to do. */
+/**
+ * The two desktop platforms with dictation built in.
+ *
+ * NOT "with no setup to do", which is what this said until V2.1 and was wrong:
+ * macOS ships Dictation switched off, and its shortcut is user-configurable
+ * and commonly claimed by third-party dictation apps. The hint's copy now
+ * names the setting and hedges the shortcut for exactly that reason — see
+ * `S.dictationMac`. Nothing about the platform detection changed, because the
+ * detection was never the problem; the sentence it printed was.
+ */
 export type DictationPlatform = 'mac' | 'windows' | null;
 
 /**

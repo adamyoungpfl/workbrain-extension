@@ -4,6 +4,7 @@ import { DictationHint } from './DictationHint';
 import { mount } from './testUtils';
 import { resetPrefsMemory } from '../voice/prefs';
 import { DICTATION_STEP_ID } from '../../core/flow/dictation';
+import { S } from '../strings';
 
 /**
  * V1.8 VB-49 — the OS-dictation hint.
@@ -74,22 +75,45 @@ afterEach(() => {
 });
 
 describe('DictationHint', () => {
+  // These two used to hardcode the sentences byte for byte. That asserted the
+  // words rather than the wiring, so V2.1's copy fix broke a test that had no
+  // opinion about the thing being fixed — and a test that fails whenever the
+  // copy is *deliberately* changed teaches everyone to update it without
+  // reading it. What is worth pinning is that each platform gets its own line
+  // and that they are not the same line.
   it('names the Mac shortcut on a Mac', async () => {
     installStorage();
     setUserAgent(...MAC);
     const { container } = await show();
-    expect(container.querySelector('.dictation-line')?.textContent).toBe(
-      'Your Mac can type what you say. Press the Fn key twice, then talk.',
-    );
+    expect(container.querySelector('.dictation-line')?.textContent).toBe(S.dictationMac);
+    expect(S.dictationMac).not.toBe(S.dictationWindows);
   });
 
   it('names the Windows shortcut on Windows', async () => {
     installStorage();
     setUserAgent(...WINDOWS);
     const { container } = await show();
-    expect(container.querySelector('.dictation-line')?.textContent).toBe(
-      'Windows can type what you say. Press the Windows key and H, then talk.',
-    );
+    expect(container.querySelector('.dictation-line')?.textContent).toBe(S.dictationWindows);
+  });
+
+  /**
+   * V2.1, and the reason the copy changed. The old line said "Press the Fn key
+   * twice, then talk" and stated it as fact. macOS ships Dictation switched
+   * OFF, its shortcut is user-configurable, and other dictation apps commonly
+   * claim the same double tap — so the line sent people to a key that does
+   * nothing, or to somebody else's product, having promised plainly that it
+   * would work.
+   *
+   * This asserts the two properties of the fix rather than its wording, so the
+   * sentence stays free to be rewritten and the fix does not: it must point at
+   * the setting, because that is the part that is always true and the part
+   * somebody needs in order to turn it on, and it must not state the shortcut
+   * as a certainty.
+   */
+  it('points the Mac at the setting and does not promise the shortcut', () => {
+    expect(S.dictationMac).toMatch(/dictation/i);
+    expect(S.dictationMac).toMatch(/usually|often|most/i);
+    expect(S.dictationMac).not.toMatch(/^(?:.*\.)?\s*Press the Fn key twice/i);
   });
 
   it('says nothing where there is no built-in dictation to point at', async () => {

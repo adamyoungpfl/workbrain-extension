@@ -318,6 +318,14 @@ button.crumbs-seg:focus-visible {
   flex: none;
   margin: 0;
   padding-left: 4px;
+  /* V2.1 VB-76. The row insets 8px on the left and 6px on the right, because
+     the chips want the extra two and the chips are the reason the right side is
+     tighter. The count is not a chip — it is the last word on a line whose
+     first word starts 8px in, and it was landing 6px from the edge and reading
+     as if it had been pushed off. The two pixels here put it level with the
+     trail's left edge without moving the chips, which still stand down while
+     the count is shown and vice versa. */
+  padding-right: 2px;
   font-family: var(--font-sans);
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
