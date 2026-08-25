@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from 'vitest';
-import { act } from 'react';
+import { act, useLayoutEffect, useRef } from 'react';
 import { NarratorToggle } from './NarratorToggle';
 import { currentPrefs, resetPrefsMemory, setNarrator } from '../voice/prefs';
 import { S } from '../strings';
@@ -59,6 +59,44 @@ describe('NarratorToggle', () => {
     const { container, unmount } = mount(<NarratorToggle />);
     expect(container.textContent).toBe('');
     expect(toggleIn(container)).toBeNull();
+    unmount();
+  });
+
+  it('is in the FIRST commit, not the second — the header must not move', () => {
+    // THIS IS A LAYOUT ASSERTION WEARING A MARKUP ASSERTION'S CLOTHES.
+    //
+    // `.narrator` is a zero-height row on a -10px margin inside `.flow`, a flex
+    // column with a 4px gap, so its real cost to everything below it is six
+    // pixels *up* (NarratorToggle.css, Flow.css). A version of this component
+    // that decided `narratorSupported()` in a `useEffect` rendered `null` first
+    // and the control second, which pulled the progress bar, the question, the
+    // follow-ups and the answer field up by 6px one frame into every screen —
+    // and left anything that measured inside that frame disagreeing with
+    // everything after it by exactly that much (see the note on the component,
+    // and tests/e2e/deep-dive.spec.ts's closing FLIP, which is what caught it).
+    //
+    // The frame that matters is the FIRST PAINTED one, so the probe is a
+    // `useLayoutEffect` in a parent: layout effects run inside the commit,
+    // before the browser paints and before any passive effect anywhere in the
+    // tree. Deferred to an effect, the toggle is not in the DOM yet when this
+    // reads it. The plain `mount` assertions below cannot tell the two apart —
+    // `act` flushes the passive effect before handing the container back, so a
+    // regression would pass every one of them.
+    installSpeech();
+    let firstCommit = 'not committed';
+    function AtFirstPaint() {
+      const ref = useRef<HTMLDivElement>(null);
+      useLayoutEffect(() => {
+        firstCommit = ref.current?.innerHTML ?? '';
+      }, []);
+      return (
+        <div ref={ref}>
+          <NarratorToggle />
+        </div>
+      );
+    }
+    const { unmount } = mount(<AtFirstPaint />);
+    expect(firstCommit).toContain('narrator-toggle');
     unmount();
   });
 

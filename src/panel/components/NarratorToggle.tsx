@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { narratorSupported } from '../voice/speech';
 import { loadPrefs, useNarratorPref } from '../voice/prefs';
 import { S } from '../strings';
@@ -30,9 +30,28 @@ import './NarratorToggle.css';
  *
  * WHERE THERE IS NO SPEECH ENGINE, THERE IS NO TOGGLE. Not a disabled button,
  * not a note explaining itself: docs/GUARDRAILS.md's degradation rule says the
- * panel does less and says nothing about it. `narratorSupported` is checked
- * after mount rather than during render because a `useSyncExternalStore`
- * subscription and a `useEffect` above it cannot be skipped by an early return.
+ * panel does less and says nothing about it.
+ *
+ * THAT ANSWER IS DECIDED DURING THE FIRST RENDER, AND V2.0 MOVED IT THERE.
+ * It used to be state, written by a `useEffect` after mount, so the very first
+ * commit of every interview screen rendered `null` here and the second one
+ * rendered the control. That looked free and was not. `.narrator` is a
+ * zero-height row that hangs out of the header on a -10px margin, and it sits
+ * in `.flow`, a flex column with a 4px `gap` — so the row's real cost to
+ * everything below it is `-10 + 4`, six pixels *up*. Mounting it one render
+ * late therefore pulled the whole question column — progress bar, question,
+ * follow-ups, answer field — up by 6px, one frame into every screen.
+ *
+ * Nobody would have called that a bug from a screenshot; it is one frame. It
+ * was found by tests/e2e/deep-dive.spec.ts's "closing animates the bubble back
+ * to exactly the box it left from", which measures the follow-up's box before
+ * a disclosure and again after it, and read a 6px disagreement that had
+ * nothing to do with the disclosure: the `before` had simply been taken inside
+ * that one frame. The FLIP was landing exactly. See the note on `available`.
+ *
+ * The hook order is untouched by the move, which is what makes it safe: every
+ * hook this component has is still called unconditionally, above the early
+ * return, exactly as it was.
  */
 
 /**
@@ -89,18 +108,25 @@ export const NARRATOR_ICON = (
  */
 export function NarratorToggle() {
   const { on, setOn } = useNarratorPref();
-  const [available, setAvailable] = useState(false);
+  /**
+   * THE SPEECH ENGINE IS NOT WOKEN UP HERE, AND THAT IS WHY THIS CAN BE READ
+   * DURING RENDER AT ALL. `narratorSupported` deliberately does not *read*
+   * `window.speechSynthesis` — reading that accessor once costs about 570ms of
+   * browser work while Chrome starts the operating system's speech service,
+   * and this control mounts on the first screen of the interview for
+   * everybody, including everybody who never turns it on. It asks `in` and a
+   * `typeof` instead, neither of which invokes the getter, so it is two
+   * property lookups: cheap enough to answer on every render and pure enough
+   * to answer during one. See voice/speech.ts for the measurement.
+   *
+   * Not `useState`, not an effect. The answer cannot change while the panel is
+   * open — a browser does not grow a speech API mid-session — and deferring it
+   * by one render is what put the six-pixel jump in the header (see above).
+   */
+  const available = narratorSupported();
 
   useEffect(() => {
     void loadPrefs();
-    // THE SPEECH ENGINE IS NOT WOKEN UP HERE. `narratorSupported` deliberately
-    // does not read `window.speechSynthesis` — reading it once costs about
-    // 570ms of browser work while Chrome starts the operating system's speech
-    // service, and this control mounts on the first screen of the interview
-    // for everybody, including everybody who never turns it on. See
-    // voice/speech.ts's `narratorSupported` for the measurement and what is
-    // checked instead.
-    setAvailable(narratorSupported());
   }, []);
 
   if (!available) return null;

@@ -12,7 +12,20 @@
    The *hit target* is untouched: the full 44×44 docs/GUARDRAILS.md requires,
    overlapping only the flow's own top padding and the unused end of a bar
    nobody can press. `z-index` keeps it above the bar it overhangs; the bar is
-   not interactive, so nothing is stolen from anything. */
+   not interactive, so nothing is stolen from anything.
+
+   "COSTS NO HEIGHT" IS THE INTENT AND NOT QUITE THE ARITHMETIC — V2.0 measured
+   it. The row is `height: 0`, but it is a flex child of `.flow`, which has a
+   4px `gap` (surfaces/Flow.css), so what the rest of the column actually feels
+   is `-10px` of margin plus that 4px of gap: SIX PIXELS UP. The numbers are
+   left exactly as they are — this is the header everyone has been looking at
+   since V1.3, and correcting the margin would move the question down 6px on
+   every screen to fix nothing anybody can see.
+
+   What it does mean is that the presence of this row is worth six pixels to
+   the whole question column, so the row must never arrive a render late.
+   NarratorToggle.tsx decides `narratorSupported()` during render for exactly
+   that reason, and says so at length. */
 .narrator {
   display: flex;
   justify-content: flex-end;

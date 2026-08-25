@@ -696,6 +696,16 @@ test.describe('the deeper-dive follow-ups', () => {
   test('closing animates the bubble back to exactly the box it left from', async () => {
     // Same retarget as the test above, and the same half removed: the boxes
     // being restored is still measured, on the tag that still ships.
+    //
+    // THESE ARE VIEWPORT BOXES, WHICH MAKES THIS WIDER THAN THE FLIP. It says
+    // the bubble is back where the person last saw it — so anything else on
+    // the screen that moves between the two measurements fails it too, and
+    // rightly: a chip that returns to the right offset inside a row that has
+    // itself slid is not back where it was. That is what it caught in V2.0.
+    // The FLIP was landing exactly and `NarratorToggle` was mounting one
+    // render late, which pulled the whole question column up by 6px one frame
+    // into the screen — see components/NarratorToggle.tsx. If this ever reads
+    // "6" again, measure the row's own top before blaming the arithmetic.
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
     await enterInterview(page);
