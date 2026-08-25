@@ -98,17 +98,14 @@ so they do not have to re-explain who they are and how they work every time.
 | `3-brain.png` | The file assembling as you answer |
 | `4-proof.png` | The proof loop — same question, with and without the file |
 
-> **⚠️ The images in this folder are stale and must be regenerated before submitting.**
-> They were driven against a build from 24 August 2026, and roughly twenty-five feature commits
-> have landed since — the accordion list, the lit orbs, the file toggle, the work brain tier, the
-> nav melt, the fixed breadcrumb nav. Shot 1 in particular is now wrong rather than merely dated:
-> Home stopped being *one file and its freshness* at V1.7 VB-36/37 and became a shelf of files with
-> locked slots, and V2.0 VB-64 renamed it again. The caption above is the current one; the picture
-> is not.
+> Regenerated 25 August 2026 against the V2.1 build (commit b4cbc24) and **looked at, all four**
+> — that is not a formality: this pass caught shot 2 parked on a bare yes/no gate, and shot 3
+> photographing the work-tier list because a loose `/brain/i` locator pressed the breadcrumb's
+> "Work brain" rung instead of the Brain toggle. Shot 3 now shows the globe with its always-on
+> labels (VB-77) and the fixed Back/Home band (VB-74) — the current product.
 >
-> `npm run build && node scripts/store-shots.mjs`, then **look at all four**. That is not a
-> formality — the last pass caught a caption contradicting its own panel and a shot clipping
-> "Keep it as-is" in half, and both were only visible by looking.
+> Regenerate again after any visual change: `npm run build && node scripts/store-shots.mjs`,
+> then look at all four.
 
 ## Pre-submit checklist
 - [x] Privacy policy **written and typechecked** — `src/app/work-brain/privacy/page.tsx` in the
@@ -116,8 +113,8 @@ so they do not have to re-explain who they are and how they work every time.
       on 25 August 2026; see `store/PRIVACY.md` for what was checked and the one sentence that was
       wrong.
 - [ ] Privacy policy **deployed** and reachable at the URL above ← *the remaining hard blocker*
-- [ ] Screenshots regenerated against the current build, and all four looked at
-- [ ] `npm run check` green
+- [x] Screenshots regenerated against the current build (V2.1, b4cbc24), and all four looked at
+- [x] `npm run check` green — 25 August 2026: typecheck, audit, 1612 unit, 503 e2e, 68 a11y
 - [ ] `npm run zip` produces `dist.zip`
 - [ ] `dist.zip`'s manifest requests exactly `storage` and `sidePanel`
 - [ ] Version bumped in `manifest.config.ts` if resubmitting

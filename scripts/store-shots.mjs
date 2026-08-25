@@ -89,14 +89,28 @@ async function panel(where) {
 
   if (where !== 'home') {
     await page.getByRole('button', { name: /Context\.md/ }).first().click();
+    // V1.7 VB-37: the file row opens the FILE, and the file view is where the
+    // interview is entered — the same two-step walk every e2e spec makes.
+    await page.getByRole('button', { name: /Go through (the questions|them again)/ }).click();
     await page.waitForSelector('.flow');
     await page.waitForTimeout(700);
-    // A reflect screen is a poor listing image — it shows the machinery, not the
-    // question. Step past it onto a real one.
-    for (let i = 0; i < 4; i++) {
-      if ((await page.locator('.flow').getAttribute('data-position')) !== 'reflect') break;
-      await page.getByRole('button', { name: 'Keep it as-is', exact: true }).click();
-      await page.waitForTimeout(600);
+    // A reflect screen is a poor listing image — it shows the machinery, not
+    // the question. So is a bare yes/no gate ("another role?"), which V1.4's
+    // roles loop parks the resume on: a listing shot captioned "the questions
+    // are the point" must show a question with some point to it. Step past
+    // both until the screen holds a real box to write in.
+    for (let i = 0; i < 8; i++) {
+      const position = await page.locator('.flow').getAttribute('data-position');
+      if (position === 'reflect') {
+        await page.getByRole('button', { name: 'Keep it as-is', exact: true }).click();
+        await page.waitForTimeout(600);
+        continue;
+      }
+      if ((await page.locator('.flow textarea.field').count()) > 0) break;
+      const no = page.getByRole('button', { name: 'No', exact: true });
+      if (await no.count()) await no.click();
+      await page.getByRole('button', { name: 'Next', exact: true }).click();
+      await page.waitForTimeout(700);
     }
   }
   if (where === 'brain') {
@@ -107,8 +121,17 @@ async function panel(where) {
     await page.mouse.move(b.x + b.width / 2, b.y - 150, { steps: 14 });
     await page.mouse.up();
     await page.waitForTimeout(500);
-    const brain = page.getByRole('button', { name: /brain/i }).first();
-    if (await brain.count()) { await brain.click(); await page.waitForTimeout(1400); }
+    // Exact, not /brain/i: the breadcrumb's "Work brain" rung also matches the
+    // loose pattern and sits first in the DOM, which pulled the shot out to
+    // the work tier instead of showing the globe.
+    const brain = page.getByRole('button', { name: 'Brain', exact: true });
+    if (await brain.count()) {
+      await brain.click();
+      // The globe, its nav band, and a settled pose — the drawer grows and the
+      // stage drifts for a moment; a shot mid-motion is a smear.
+      await page.waitForSelector('.brainglobe-nav');
+      await page.waitForTimeout(2200);
+    }
   }
   if (where === 'proof') {
     await page.goBack().catch(() => {});
