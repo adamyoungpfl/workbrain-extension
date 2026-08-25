@@ -32,7 +32,7 @@ import {
   navHitPadding,
   navPaintOverhang,
 } from '../../core/flow/dock';
-import { NAV_MELT_DROP, NAV_RISE_DELAY_MS } from '../../core/flow/navMelt';
+import { NAV_MELT_DROP, NAV_MELT_STAGGER_MS, NAV_RISE_DELAY_MS } from '../../core/flow/navMelt';
 import { questionAreaOffset } from '../../core/flow/composition';
 import {
   findPosition,
@@ -655,6 +655,11 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
             // of the 44px box it belongs to.
             '--nav-melt-drop': `${NAV_MELT_DROP}px`,
             '--nav-rise-delay': `${NAV_RISE_DELAY_MS}ms`,
+            // V2.0. How long after one control starts the next one does —
+            // the whole of the wave that made this gesture visible. Derived
+            // in core/flow/navMelt.ts from the length the design system
+            // allows a full cluster's reform to take, never chosen here.
+            '--nav-stagger': `${NAV_MELT_STAGGER_MS}ms`,
             // V1.9 VB-50: `--dock-frame` was published here for V1.6 VB-29's
             // white border down the drawer's sides. The frame is gone — one
             // colour edge to edge is a frame's opposite — so the constant went
@@ -731,6 +736,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
     return withDrawer(
       <ModuleIntro
         key={positionKey(position)}
+        cue={positionKey(position)}
         module={position.module}
         current={topLevelIndex(modules, position)}
         total={total}
@@ -746,6 +752,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
   return withDrawer(
     <StepView
       key={positionKey(position)}
+      cue={positionKey(position)}
       modules={modules}
       pos={position}
       answers={answers}
@@ -818,6 +825,10 @@ function initialSelection(
 
 interface StepViewProps {
   modules: Module[];
+  /** V2.0 — the position key, threaded down to every `NavCluster` this screen
+   * can render so the melt plays on each new question rather than on each
+   * remount. See components/NavCluster.tsx. */
+  cue: string;
   /** Every position that is a question of some shape. `done` hands off to
    * Home, and `module-intro` is its own screen (see `ModuleIntro`) — neither
    * has a step to render. */
@@ -845,6 +856,7 @@ interface StepViewProps {
  */
 function StepView({
   modules,
+  cue,
   pos,
   answers,
   total,
@@ -1279,7 +1291,7 @@ function StepView({
           )}
         </AnswerArea>
         {saveNote}
-        <NavCluster>
+        <NavCluster cue={cue}>
           {canGoBack && (
             <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
               {S.back}
@@ -1361,7 +1373,7 @@ function StepView({
               </div>
             </AnswerArea>
             {saveNote}
-            <NavCluster>
+            <NavCluster cue={cue}>
               <NavButton type="button" variant="secondary" direction="back" control="back" onClick={backToView}>
                 {S.back}
               </NavButton>
@@ -1405,7 +1417,7 @@ function StepView({
             </div>
           </AnswerArea>
           {saveNote}
-          <NavCluster>
+          <NavCluster cue={cue}>
             <NavButton type="button" variant="secondary" direction="back" control="back" onClick={backToView}>
               {S.back}
             </NavButton>
@@ -1446,7 +1458,7 @@ function StepView({
           </div>
         </AnswerArea>
         {saveNote}
-        <NavCluster>
+        <NavCluster cue={cue}>
           {canGoBack && (
             <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
               {S.back}
@@ -1756,7 +1768,7 @@ function StepView({
       </AnswerArea>
 
       {saveNote}
-      <NavCluster>
+      <NavCluster cue={cue}>
         {canGoBack && (
           <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
             {S.back}

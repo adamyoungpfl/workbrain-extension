@@ -89,6 +89,20 @@ export const FLOW_NAV_CLEARANCE = 20;
 export const FLOW_NAV_RING_REACH = 4;
 
 /**
+ * The most controls the bar ever holds at once: Back, Next, Skip.
+ *
+ * Written down rather than left in a sentence because two files now depend on
+ * it. `FLOW_NAV_HEIGHT` below is fixed rather than measured on the strength of
+ * it — three controls fit one row in a 400px panel and never wrap — and
+ * `core/flow/navMelt.ts` divides the melt's travelling wave by it, so adding a
+ * fourth control tightens the stagger to keep the whole gesture inside the
+ * length the design system allows, rather than quietly running over it.
+ * It is a ceiling on what `Flow` renders, not a list: navMelt.ts still knows
+ * no control by name.
+ */
+export const FLOW_NAV_MAX_CONTROLS = 3;
+
+/**
  * How tall the docked navigation bar is, in px.
  *
  * One hit box, then the clearance above the drawer. There is deliberately
@@ -97,9 +111,10 @@ export const FLOW_NAV_RING_REACH = 4;
  * so a top inset would be a second helping of the same space — paid for out of
  * the question's room (see `FLOW_NAV_CLEARANCE`).
  *
- * Fixed rather than measured: the bar holds at most three controls on one row
- * and never wraps in a 400px panel, and a measured height would mean the
- * drawer's ceiling could not be computed until after first paint.
+ * Fixed rather than measured: the bar holds at most `FLOW_NAV_MAX_CONTROLS`
+ * controls on one row and never wraps in a 400px panel, and a measured height
+ * would mean the drawer's ceiling could not be computed until after first
+ * paint.
  */
 export const FLOW_NAV_HEIGHT = FLOW_NAV_TARGET + FLOW_NAV_CLEARANCE;
 

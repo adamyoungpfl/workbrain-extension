@@ -33,6 +33,10 @@ export interface ModuleIntroProps {
   answers: Answers;
   canGoBack: boolean;
   saveError: boolean;
+  /** V2.0 — the position key, handed to `NavCluster` so the melt plays on
+   * this screen for the same reason it plays on every other: the page
+   * changed. See components/NavCluster.tsx. */
+  cue: string;
   onBack: () => void;
   onContinue: () => void;
 }
@@ -73,6 +77,7 @@ export function ModuleIntro({
   answers,
   canGoBack,
   saveError,
+  cue,
   onBack,
   onContinue,
 }: ModuleIntroProps) {
@@ -126,7 +131,7 @@ export function ModuleIntro({
         <span>{S.savedNote}</span>
         <span>{S.privacyNote}</span>
       </p>
-      <NavCluster>
+      <NavCluster cue={cue}>
         {canGoBack && (
           <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
             {S.back}

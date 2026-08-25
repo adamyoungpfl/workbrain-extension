@@ -949,14 +949,14 @@
     transform: none;
   }
   to {
-    transform: translateY(var(--nav-melt-drop, 14px)) scaleY(0);
+    transform: translateY(var(--nav-melt-drop, 20px)) scaleY(0);
   }
 }
 
 /* And back out of it, the same two terms in reverse. */
 @keyframes nav-rise {
   from {
-    transform: translateY(var(--nav-melt-drop, 14px)) scaleY(0);
+    transform: translateY(var(--nav-melt-drop, 20px)) scaleY(0);
   }
   to {
     transform: none;
@@ -970,18 +970,41 @@
   transform-origin: 50% 100%;
 }
 
+/* ── V2.0: THE WAVE ───────────────────────────────────────────────────────
+   V1.9 played this in unison and Adam's verdict on the built extension was
+   that the melt is not obvious at any point. Three words leaving together is
+   one event and the eye throws it away; three words leaving in turn is a
+   direction, and there is always a control still standing to see the moving
+   one against. So each control now starts `--nav-stagger` after the one to
+   its left, on BOTH halves, which means every control still performs the
+   identical 200ms gesture — nothing here makes anything move further or for
+   longer, which is what rules 1 and 2 in core/flow/navMelt.ts forbid.
+
+   `--nav-i` is the control's place in its cluster, counted from the left and
+   written by components/NavCluster.tsx. It has to come from script: `nth-child`
+   cannot count `.navbtn` elements a `<form>` interleaves with everything else
+   in a question, and the copies in the melt layer are not children of anything
+   CSS could count them in. The multiplication happens here because a delay is
+   a duration, and durations belong to the stylesheet — core/flow/navMelt.ts
+   holds the one number being multiplied. */
+
 /* Down. `forwards` so a copy holds its flattened last frame for the instant
    between the animation ending and NavCluster.tsx removing it, rather than
-   springing back to full height for one frame on the way out. */
+   springing back to full height for one frame on the way out. No `backwards`
+   on this half, deliberately: during its share of the stagger a copy has no
+   animated style at all and simply stands there at full height, which is the
+   half of the wave a person actually reads. */
 .flow-melt .navbtn.is-melting .navbtn-face {
-  animation: nav-melt var(--fast) var(--ease) forwards;
+  animation: nav-melt var(--fast) var(--ease) calc(var(--nav-i, 0) * var(--nav-stagger, 60ms)) forwards;
 }
 
-/* Up, after the delay that overlaps it into the melt. `backwards` is the
-   important word: it applies the flattened first frame during the delay, so
-   the control is never visible at rest before it rises. */
+/* Up, after the delay that overlaps it into the melt, plus this control's own
+   place in the wave. `backwards` is the important word: it applies the
+   flattened first frame during the delay, so the control is never visible at
+   rest before it rises. */
 .flowshell .flow-foot .navbtn.is-rising .navbtn-face {
-  animation: nav-rise var(--fast) var(--ease) var(--nav-rise-delay, 80ms) backwards;
+  animation: nav-rise var(--fast) var(--ease)
+    calc(var(--nav-rise-delay, 80ms) + var(--nav-i, 0) * var(--nav-stagger, 60ms)) backwards;
 }
 
 /* The bar has to arrive at the drawer's new edge at exactly the speed the edge

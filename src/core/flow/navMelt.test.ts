@@ -1,17 +1,21 @@
 import { describe, it, expect } from 'vitest';
 import {
+  NAV_MELT_CLUSTER_MS,
   NAV_MELT_DROP,
   NAV_MELT_GESTURE_MS,
   NAV_MELT_MS,
+  NAV_MELT_STAGGER_MS,
   NAV_RISE_DELAY_MS,
   NAV_RISE_MS,
+  navMeltClusterMs,
   navMeltDropBounds,
+  navMeltOffsetMs,
   navMeltPlan,
   navMelters,
   navReformsToNothing,
   navRisers,
 } from './navMelt';
-import { FLOW_NAV_TARGET, navPaintGapAboveDrawer, navPaintHeight } from './dock';
+import { FLOW_NAV_MAX_CONTROLS, FLOW_NAV_TARGET, navPaintGapAboveDrawer, navPaintHeight } from './dock';
 
 /**
  * VB-53's rules, stated as arithmetic rather than as a browser.
@@ -51,6 +55,71 @@ describe('the melt’s timing', () => {
   });
 });
 
+/**
+ * V2.0 — THE WAVE.
+ *
+ * V1.9's gesture played in unison and was, in Adam's words on the built
+ * extension, "not obvious at any point". The fix is a stagger, and the reason
+ * these are arithmetic rather than taste is that a stagger is the one lever
+ * that makes the cue more legible WITHOUT making any single control move
+ * further or for longer — which is exactly what the two rules above forbid.
+ * So the tests that matter are the ones proving it did not buy legibility out
+ * of the input rule's pocket.
+ */
+describe('the wave across the cluster', () => {
+  it('does not lengthen how long a single control moves', () => {
+    // The number the whole first section is about, restated here because this
+    // is the section that could have been tempted to change it.
+    expect(navMeltClusterMs(1)).toBe(NAV_MELT_GESTURE_MS);
+    expect(NAV_MELT_GESTURE_MS).toBe(200);
+  });
+
+  it('holds a full cluster inside §06’s longest duration', () => {
+    // `--slow` in design/tokens.json, borrowed as a ceiling: the most the
+    // design system lets anything on screen take, and not one ms more.
+    expect(NAV_MELT_CLUSTER_MS).toBe(320);
+    expect(navMeltClusterMs(FLOW_NAV_MAX_CONTROLS)).toBe(NAV_MELT_CLUSTER_MS);
+  });
+
+  it('derives the stagger from that ceiling rather than choosing one', () => {
+    expect(NAV_MELT_STAGGER_MS).toBe(
+      (NAV_MELT_CLUSTER_MS - NAV_MELT_GESTURE_MS) / (FLOW_NAV_MAX_CONTROLS - 1),
+    );
+    expect(NAV_MELT_STAGGER_MS).toBe(60);
+  });
+
+  it('crosses the bar faster than one control finishes melting', () => {
+    // What makes it one gesture rippling rather than three played in turn:
+    // the next control is on its way down before the last one has landed.
+    expect(NAV_MELT_STAGGER_MS).toBeGreaterThan(0);
+    expect(NAV_MELT_STAGGER_MS).toBeLessThan(NAV_MELT_MS);
+  });
+
+  it('counts a control’s place in the wave from the left, starting at nothing', () => {
+    expect(navMeltOffsetMs(0)).toBe(0);
+    expect(navMeltOffsetMs(1)).toBe(NAV_MELT_STAGGER_MS);
+    expect(navMeltOffsetMs(2)).toBe(NAV_MELT_STAGGER_MS * 2);
+    // The bar cannot hold a control at a negative index, and if a caller ever
+    // asks about one it gets the start of the wave rather than a delay that
+    // runs backwards into the last question.
+    expect(navMeltOffsetMs(-1)).toBe(0);
+  });
+
+  it('is shorter for the clusters that hold fewer controls', () => {
+    expect(navMeltClusterMs(0)).toBe(0);
+    expect(navMeltClusterMs(1)).toBe(200);
+    expect(navMeltClusterMs(2)).toBe(260);
+    expect(navMeltClusterMs(3)).toBe(320);
+  });
+
+  it('leaves the last control on the bar its full gesture inside the envelope', () => {
+    // The whole point of deriving the stagger: the control that starts last
+    // still gets all 200ms, and the sum still lands on the ceiling.
+    const last = navMeltOffsetMs(FLOW_NAV_MAX_CONTROLS - 1);
+    expect(last + NAV_MELT_GESTURE_MS).toBe(NAV_MELT_CLUSTER_MS);
+  });
+});
+
 describe('how far it travels', () => {
   it('goes far enough to disappear into the surface rather than twitch', () => {
     expect(NAV_MELT_DROP).toBeGreaterThanOrEqual(navPaintHeight() / 2);
@@ -73,6 +142,19 @@ describe('how far it travels', () => {
     expect(min).toBeLessThan(max);
     expect(NAV_MELT_DROP).toBeGreaterThanOrEqual(min);
     expect(NAV_MELT_DROP).toBeLessThan(max);
+  });
+
+  it('travels far enough to be seen as a drop and not only as a squash', () => {
+    /* V2.0. Fourteen was one pixel over the floor, which made the drop a
+       rounding error next to the squash and left the gesture reading as a
+       blink. This is the half of that fix that is a number rather than a
+       sequence — and it is stated as "well inside the bounds" rather than as
+       "20", so it can only be satisfied by a travel that is actually worth
+       looking at, and never by creeping back to the minimum. */
+    const { min, max } = navMeltDropBounds();
+    expect(NAV_MELT_DROP).toBeGreaterThan(min + (max - min) / 2);
+    // And still honestly under both ceilings rather than sitting on them.
+    expect(max - NAV_MELT_DROP).toBeGreaterThanOrEqual(2);
   });
 });
 

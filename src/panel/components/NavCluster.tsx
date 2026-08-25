@@ -11,18 +11,18 @@ import { prefersReducedMotion } from '../cues/verbs';
  *
  * ── WHY A COMPONENT AND NOT A STYLESHEET ─────────────────────────────────
  * A CSS-only answer cannot exist here, and the reason is structural rather
- * than a limitation of CSS. `StepView` is keyed by position (Flow.tsx), so
- * advancing is an unmount and a mount in the same commit: the outgoing
- * buttons are gone from the document in the very frame the incoming ones
- * arrive. There is nothing left on screen to melt.
+ * than a limitation of CSS. Advancing replaces the whole question in one
+ * commit: the outgoing buttons are gone from the document in the very frame
+ * the incoming ones arrive. There is nothing left on screen to melt.
  *
- * **So the outgoing cluster leaves a copy of itself behind.** On the way out
- * this component clones its own controls into a layer that outlives it
- * (`.flow-melt`, rendered once by `Flow` beside the drawer) and that copy is
- * what sinks into the bar. The real controls — the next question's, already
- * mounted, already pressable — rise out of it 80ms later. What a person sees
- * is one cluster melting and reforming. What the DOM is doing is a ghost
- * fading down while the live thing comes up behind it.
+ * **So the outgoing cluster leaves a copy of itself behind.** Each cluster
+ * photographs its own controls as it arrives, and when the question changes
+ * that photograph goes into a layer that outlives it (`.flow-melt`, rendered
+ * once by `Flow` beside the drawer) and sinks into the bar. The real controls
+ * — the next question's, already mounted, already pressable — rise out of it
+ * behind the copy. What a person sees is one cluster melting and reforming.
+ * What the DOM is doing is a ghost going flat while the live thing comes up
+ * behind it.
  *
  * ── THE RULE THAT MATTERS MOST: IT NEVER GATES INPUT ─────────────────────
  * Forty-nine questions is forty-nine melts, so the only unforgivable
@@ -41,10 +41,14 @@ import { prefersReducedMotion } from '../cues/verbs';
  *    nothing on screen moves while a question prints survives a cue that now
  *    plays on every advance. That is not a nicety: the first build of this
  *    task moved the button and VB-10's own e2e caught it.
- *  · The incoming cluster is the real one from frame zero. It has no height
- *    for 80ms (`animation-fill-mode: backwards` on a flattened first frame),
- *    and a button whose ink has no height is still a button: it hit-tests, it
- *    takes Enter, it submits.
+ *  · The incoming cluster is the real one from frame zero. Its ink has no
+ *    height until that control's turn in the wave comes round
+ *    (`animation-fill-mode: backwards` on a flattened first frame), and a
+ *    button whose ink has no height is still a button: it hit-tests, it takes
+ *    Enter, it submits. The V2.0 stagger makes that wait longer for the
+ *    controls further right — Skip's ink is flat for 140ms rather than 80 —
+ *    and it costs nothing, because the wait was never a gate. The e2e proves
+ *    it the hard way: it presses Next while every control is still flat.
  *  · It flattens rather than fades — see core/flow/navMelt.ts, which holds the
  *    reason. No frame of this gesture paints text under the contrast floor.
  *
@@ -59,13 +63,61 @@ import { prefersReducedMotion } from '../cues/verbs';
  * than queueing, VB-04's rule exactly (Flow.tsx's `restartCue`): remove the
  * class, force a reflow so the removal is committed, add it back. The ghost
  * layer is emptied before the new copies go in, so ghosts cannot stack, and
- * each copy removes itself when its own animation ends.
+ * each copy removes itself when its own animation ends — its own, not the
+ * cluster's, which is what keeps the wave's copies from waiting on each other
+ * when a press lands in the middle of one.
+ *
+ * ── WHAT MAKES IT PLAY: THE CUE, NOT A REMOUNT ───────────────────────────
+ * V1.9 hung the whole gesture off this component's own mount and unmount, with
+ * an empty dependency array, which works only for as long as somebody else
+ * keeps remounting it. It does today — `Flow` keys both `StepView` and
+ * `ModuleIntro` by `positionKey(position)` — and the gesture measurably plays
+ * on every question because of it. But that is an invariant owned by another
+ * file, invisible from this one, and Adam's requirement is stated on the
+ * question rather than on the mount: *"a quick but visibly detectable
+ * animation on each page change … even if it happens to be the same kind as
+ * the last."*
+ *
+ * So the trigger is now the thing the requirement is about. `cue` is the
+ * position key, and the effect depends on it — `BrandMark`'s `spinCue`, which
+ * is where this panel already keeps "play when this value changes". A new
+ * question plays the gesture whether the cluster was rebuilt or merely
+ * re-rendered, and it plays even when the same three controls are valid again,
+ * because the cue changed and the cue is what a page change *is*.
+ *
+ * One difference from `BrandMark`, and it is deliberate: that component
+ * remembers its cue at module scope so a remount *inside* one module does not
+ * restart the turn. This one does not remember. Suppressing a repeat is what
+ * that memory is for, and here every remount is a real change of what the bar
+ * offers — the reflect screen swaps its whole cluster without the position
+ * moving — so the memory would filter out gestures that should play. The cue
+ * adds a trigger; it takes none away.
+ *
+ * ── WHY THE COPIES ARE TAKEN ON THE WAY IN ───────────────────────────────
+ * The copies that sink are made when the cluster *arrives*, not when it
+ * leaves, and held until the cue changes. Cloning on the way out only works if
+ * the way out is an unmount, because that is the one moment React still has
+ * the old buttons in the document; on a cue change without a remount the DOM
+ * has already been updated by the time a cleanup runs, and the ghost would be
+ * a copy of the cluster that just arrived. Taking the snapshot on the way in
+ * is correct for both, and it is correct here for a reason worth stating: the
+ * controls a cluster shows never change during its life. Which of Back, Next
+ * and Skip are rendered depends on `canGoBack`, on the step's kind and on the
+ * position — all fixed for as long as one cluster is on screen.
  *
  * ── prefers-reduced-motion ───────────────────────────────────────────────
  * The buttons simply change. No melt, no rise, and — the part that is easy to
- * get wrong — *nothing scheduled*: the preference is read before anything is
- * cloned, so under it no ghost is ever created, no class is ever added and no
- * animation ever exists to be cancelled. The end state is identical, which is
+ * get wrong — *nothing scheduled*: the preference is read at both ends of the
+ * gesture, before a copy is put on screen and before a class is added, so
+ * under it no ghost ever enters the document, no class is ever added and no
+ * animation ever exists to be cancelled. The snapshot above is still taken,
+ * and that is deliberate rather than an oversight: it is three detached
+ * elements that are never inserted, never painted and never measured, and
+ * taking it unconditionally is what lets the preference change mid-interview
+ * without the next gesture finding it has nothing to melt. What the
+ * reduced-motion spec watches for is what actually matters — every child ever
+ * added to the layer, every class ever applied, every animation ever
+ * scheduled — and all three stay at zero. The end state is identical, which is
  * the whole of the still equivalent here: the information this cue carries is
  * "these are the controls now", and under the preference they are the
  * controls now from the first frame.
@@ -91,9 +143,30 @@ export const NAV_CONTROL_ATTR = 'data-nav';
  * rule VB-53 states is legible on the screen rather than inferred. */
 export const NAV_FATE_ATTR = 'data-nav-fate';
 
+/**
+ * Where a control stands in its cluster, counted from the left, published to
+ * the stylesheet as a custom property.
+ *
+ * This is the whole of the V2.0 wave as far as the panel is concerned: the
+ * delay is `index × --nav-stagger`, and Flow.css does that multiplication
+ * because a delay is a duration and durations live in the stylesheet. The
+ * index has to be written by script rather than derived in CSS — `nth-child`
+ * cannot count `.navbtn` elements that a `<form>` interleaves with other
+ * children, and the ghost layer's copies are not children of anything CSS
+ * could count them in.
+ */
+export const NAV_INDEX_PROP = '--nav-i';
+
 /** The controls inside a cluster, in the order they stand. */
 function controlsIn(root: ParentNode): HTMLElement[] {
   return [...root.querySelectorAll<HTMLElement>(`.navbtn[${NAV_CONTROL_ATTR}]`)];
+}
+
+/** Stamps each control with its place in the wave. Both clusters get it, and
+ * they get it from the same function, so a copy can never be a frame out of
+ * step with the control it is a copy of. */
+function stampOrder(controls: readonly HTMLElement[]): void {
+  controls.forEach((control, index) => control.style.setProperty(NAV_INDEX_PROP, String(index)));
 }
 
 function idOf(control: HTMLElement): string {
@@ -117,7 +190,11 @@ function restart(elements: readonly HTMLElement[], cueClass: string, host: HTMLE
 }
 
 /**
- * The way out: leave a copy behind and let it sink.
+ * The copies that will sink, taken while the cluster they copy is on screen.
+ *
+ * Made on the way in and kept until the cue changes — see the file header on
+ * why the snapshot cannot be taken on the way out any more. Nothing is
+ * scheduled here and nothing is put in the document; this is a photograph.
  *
  * The copies are inert in three ways at once, because one of them is not
  * enough for a `<button>`: the layer takes no pointer events (Flow.css), it is
@@ -125,23 +202,26 @@ function restart(elements: readonly HTMLElement[], cueClass: string, host: HTMLE
  * A clone carries no React fiber either, so even a click that somehow reached
  * one would find no handler to run.
  */
-function meltIntoBar(layer: HTMLElement, foot: HTMLElement): void {
-  if (prefersReducedMotion()) return;
-  const leaving = controlsIn(foot);
-  if (leaving.length === 0) return;
-
-  // Restart cleanly: a press that lands mid-melt replaces the copy rather
-  // than stacking a second one on top of it.
-  layer.replaceChildren();
-
-  const copies = leaving.map((control) => {
+function copiesOf(foot: HTMLElement): HTMLElement[] {
+  return controlsIn(foot).map((control) => {
     const copy = control.cloneNode(true) as HTMLElement;
     for (const focusable of copy.querySelectorAll<HTMLElement>('button, a, input, [tabindex]')) {
       focusable.tabIndex = -1;
     }
     return copy;
   });
+}
+
+/** The way out: put the copies in the layer and let them sink. */
+function meltIntoBar(layer: HTMLElement, copies: readonly HTMLElement[]): void {
+  if (prefersReducedMotion()) return;
+  if (copies.length === 0) return;
+
+  // Restart cleanly: a press that lands mid-melt replaces the copy rather
+  // than stacking a second one on top of it.
+  layer.replaceChildren();
   layer.append(...copies);
+  stampOrder(copies);
   restart(copies, NAV_MELT_CLASS, layer);
   for (const copy of copies) {
     copy.addEventListener('animationend', () => copy.remove(), { once: true });
@@ -172,10 +252,21 @@ function riseFromBar(layer: HTMLElement | null, foot: HTMLElement): void {
     if (fate) control.setAttribute(NAV_FATE_ATTR, fate);
   }
 
+  stampOrder(arriving);
   restart(arriving, NAV_RISE_CLASS, foot);
 }
 
 export interface NavClusterProps {
+  /**
+   * What counts as a page change: the position key, from `Flow`.
+   *
+   * Change it and the cluster melts and reforms — including when the very
+   * same three controls are valid again, which is the common case and the one
+   * V1.9 was never seen to play. Left undefined outside the interview (the
+   * proof loop's footer), where there is no drawer to melt into and nothing
+   * is ever scheduled.
+   */
+  cue?: string;
   children?: ReactNode;
 }
 
@@ -189,7 +280,7 @@ export interface NavClusterProps {
  * nothing is cloned and nothing is scheduled; the markup, the tab order and
  * the ordinary footer treatment are unchanged.
  */
-export function NavCluster({ children }: NavClusterProps) {
+export function NavCluster({ cue, children }: NavClusterProps) {
   const ref = useRef<HTMLElement>(null);
 
   useLayoutEffect(() => {
@@ -202,16 +293,22 @@ export function NavCluster({ children }: NavClusterProps) {
     const layer = shell.querySelector<HTMLElement>(`.${NAV_MELT_LAYER_CLASS}`);
 
     riseFromBar(layer, foot);
+    // Photographed after the rise, so a copy is dressed exactly as the
+    // control it copies was — the same classes, the same place in the wave.
+    const copies = copiesOf(foot);
 
     // React runs a deleted tree's layout cleanups in the mutation phase and
     // the incoming tree's layout effects after it, so this fires BEFORE the
     // next cluster's rise — which is the ordering the whole gesture depends
     // on, and the reason the ghost is already in place when the plan above
-    // is computed.
+    // is computed. On a cue change without a remount the same order holds:
+    // React runs the cleanup for a changed dependency before re-running the
+    // effect, and the copies above were taken while this cluster was on
+    // screen rather than after it had been replaced.
     return () => {
-      if (layer) meltIntoBar(layer, foot);
+      if (layer) meltIntoBar(layer, copies);
     };
-  }, []);
+  }, [cue]);
 
   return (
     <footer className="flow-foot" ref={ref}>

@@ -15,6 +15,7 @@ export {
   NAV_RISE_CLASS,
   NAV_CONTROL_ATTR,
   NAV_FATE_ATTR,
+  NAV_INDEX_PROP,
 } from './NavCluster';
 export type { NavClusterProps } from './NavCluster';
 
