@@ -77,6 +77,9 @@ describe('loadPrefs', () => {
       // it has always had — the dictation line has not been seen off — so no
       // migration.
       dictationHint: true,
+      // V2.0 VB-71's field, on exactly the same terms: an install that
+      // predates it has never been shown the turn cue, so it is still owed it.
+      turnHint: true,
     });
   });
 
@@ -126,6 +129,7 @@ describe('setNarrator', () => {
           handoff: 'fill',
           packUrls: ['a'],
           dictationHint: true,
+          turnHint: true,
         },
       },
     ]);

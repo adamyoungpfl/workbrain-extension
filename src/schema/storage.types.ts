@@ -96,6 +96,18 @@ export interface Prefs {
    * mic in this product (see core/flow/dictation.ts).
    */
   dictationHint: boolean;
+  /**
+   * V2.0 VB-71. False once the person has been told the globe can be turned —
+   * either by turning it, or by putting the cue away, or by leaving Brain with
+   * it on screen. Once false it never comes back.
+   *
+   * A stated preference about the interface, which is the one category
+   * `wb:prefs` holds and the only category `docs/ARCHITECTURE.md`'s "nothing
+   * derived is stored" admits. It is not a count, not a record of what was
+   * used, and not derivable from anything else — the same shape as
+   * `dictationHint` above, for the same kind of hint.
+   */
+  turnHint: boolean;
 }
 
 /** local */

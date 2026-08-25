@@ -77,6 +77,12 @@ export type { FileTreeProps } from './FileTree';
 export { BrainGlobe } from './BrainGlobe';
 export type { BrainGlobeProps } from './BrainGlobe';
 
+// V2.0 VB-71. The disc on the stage that says the globe can be turned, once.
+// Rendered by BrainGlobe, which owns where it sits and which stage is showing;
+// this is the cue itself, and it owns whether there is anything left to say.
+export { BrainTurnCue } from './BrainTurnCue';
+export type { BrainTurnCueProps } from './BrainTurnCue';
+
 // V1.5 VB-27. The floating summary a sub-node shows on hover, focus and
 // activation. Rendered by BrainGlobe, which owns where it sits and when it is
 // open; this is the card itself.

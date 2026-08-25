@@ -28,7 +28,7 @@
  * would spend a frame disagreeing with itself each time.
  */
 
-import { DRAWER_CHROME_HEIGHT, clampDrawerHeight } from './height';
+import { DRAWER_CHROME_HEIGHT, DRAWER_STEP, clampDrawerHeight } from './height';
 import type { DrawerBounds } from './height';
 
 /** The two modes, by the names they carry in the interface. "Brain" passes
@@ -79,8 +79,40 @@ export const BRAIN_STAGE_IDEAL = 208;
  * Derived rather than typed, so it cannot drift from `brainStageSize` below:
  * this is exactly the height at which that function stops being able to give
  * the globe `BRAIN_STAGE_MIN`.
+ *
+ * V2.0 VB-70 keeps the number and stops it being the *test*. `brainStageFits`
+ * below asks the stage itself, from the same two measurements `brainStageSize`
+ * is given, so the threshold is the picture's real size rather than a constant
+ * sitting beside it. This stays exported because it is the height at which that
+ * answer changes on a panel of any ordinary width, and three specs and the
+ * drawer's own documentation are written in terms of it.
  */
 export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2;
+
+/**
+ * V2.0 VB-70 — how far past the threshold the drawer has to come back before
+ * Brain is offered again, in px.
+ *
+ * **This is the whole of the anti-thrash.** Without it the mode is a step
+ * function of a number a hand is holding, and a pointer resting one pixel off
+ * the threshold flips the drawer between two modes sixty times a second — each
+ * flip a 520ms morph, restarted before it can finish. docs/V2.0-REFINEMENT.md
+ * VB-70 names it: "the switch must not thrash at the boundary ... hysteresis,
+ * or commit on drag end."
+ *
+ * Hysteresis rather than commit-on-drag-end, deliberately. Committing at the
+ * end would leave the globe drawn into a box smaller than itself for the whole
+ * of a drag — clipped by the stage's `overflow: hidden` — and the person would
+ * be dragging a broken picture to find out what it becomes. Handing over live
+ * and refusing to hand back until the drawer is honestly taller keeps every
+ * frame of the drag a frame someone could have asked for.
+ *
+ * `DRAWER_STEP` is the size of one arrow-key nudge (core/drawer/height.ts) —
+ * the smallest change this drawer has a name for. Anything a hand does while
+ * holding still is far under it, and a person who means to come back up crosses
+ * it in a single keypress.
+ */
+export const BRAIN_YIELD_BAND = DRAWER_STEP;
 
 /**
  * What the drawer expands to when Brain is chosen while it is too short.
@@ -160,6 +192,13 @@ export function brainFitsIn(bounds: DrawerBounds): boolean {
  * Written as `!(height >= …)` rather than `height < …` so a NaN height — which
  * compares false against everything — resolves to List, the mode that works at
  * any size, instead of to a globe drawn into no space at all.
+ *
+ * **V2.0 VB-70: this is no longer what the drawer renders from.** A threshold
+ * with no memory flips on every frame a pointer spends near it, so the drawer
+ * now folds `nextBrainYield` into `shownDrawerMode` and this states the
+ * memoryless rule the fold is built on — one direction of it, at one width, and
+ * still the answer for anything asking "does this height allow Brain at all".
+ * `brainDriftAllowed` below is the remaining caller and wants exactly that.
  */
 export function modeForHeight(requested: DrawerMode, height: number): DrawerMode {
   if (requested !== 'brain') return 'list';
@@ -210,10 +249,101 @@ export function heightForMode(mode: DrawerMode, height: number, bounds: DrawerBo
  * globe that ignored it would spend that moment clipped along its bottom edge.
  */
 export function brainStageSize(height: number, width: number, extra = 0): number {
-  if (!Number.isFinite(height) || !Number.isFinite(width) || !Number.isFinite(extra)) return BRAIN_STAGE_MIN;
+  const room = brainStageRoom(height, width, extra);
+  if (room === null) return BRAIN_STAGE_MIN;
+  return Math.max(BRAIN_STAGE_MIN, Math.round(room));
+}
+
+/**
+ * V2.0 VB-70 — how much square the stage really has, before the clamp.
+ *
+ * `brainStageSize` above is this number with a floor under it: below
+ * `BRAIN_STAGE_MIN` the globe stops shrinking and the stage starts *clipping*
+ * it (`overflow: hidden`, FileDrawer.css). So this is the one measurement that
+ * knows the difference between "a small globe" and "a globe with its edges cut
+ * off", and it is what VB-70's threshold is pinned to:
+ *
+ *   > The stage's displayed height becomes the minimum for Brain to be
+ *   > available.
+ *
+ * `null` rather than a number when any input is not finite, so a caller cannot
+ * accidentally compare `NaN` against a threshold and get "fits" — see
+ * `brainStageFits`.
+ */
+export function brainStageRoom(height: number, width: number, extra = 0): number | null {
+  if (!Number.isFinite(height) || !Number.isFinite(width) || !Number.isFinite(extra)) return null;
   const tall = height - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2 - Math.max(0, extra);
   const wide = width - BRAIN_STAGE_PAD * 2;
-  return Math.max(BRAIN_STAGE_MIN, Math.round(Math.min(tall, wide)));
+  return Math.min(tall, wide);
+}
+
+/**
+ * V2.0 VB-70 — whether the stage can still paint the globe at the size it is
+ * being drawn at.
+ *
+ * This is the threshold, and it is a question about the picture rather than a
+ * constant beside it: it is true exactly while `brainStageRoom` is at least the
+ * size `brainStageSize` will hand the globe, which is what "the visual's height
+ * governs the mode" means when it is written down. `BRAIN_MIN_HEIGHT` is the
+ * drawer height where it goes false on any panel wide enough to matter, and
+ * `mode.test.ts` asserts the two agree so the constant cannot drift.
+ *
+ * **`extra` is deliberately not passed by the drawer.** The 18px lock line the
+ * breadcrumb borrows while it is offering the files is a band a *menu* holds
+ * open for as long as it is open; a mode that changed when a menu opened would
+ * be a mode governed by the menu rather than by the drawer somebody is
+ * dragging. The globe still loses those pixels — `brainStageSize` still
+ * subtracts them, so the picture stays inside its box — it simply does not lose
+ * the mode with them. The parameter exists so a caller that means the opposite
+ * can say so.
+ */
+export function brainStageFits(height: number, width: number, extra = 0): boolean {
+  const room = brainStageRoom(height, width, extra);
+  return room !== null && room >= BRAIN_STAGE_MIN;
+}
+
+/**
+ * V2.0 VB-70 — the return leg, and the whole of the mode's memory.
+ *
+ * `true` means **Brain has handed the drawer over to List because there was no
+ * room for it**, which is a different thing from the person having chosen List:
+ * the request is untouched underneath (see `shownDrawerMode`), so when the room
+ * comes back the mode does too. That asymmetry is the point of VB-70:
+ *
+ *   > Auto-transition *out* of Brain is a necessity; auto-transition *into* it
+ *   > is a suggestion.
+ *
+ * Out is unconditional — a globe drawn into a box smaller than itself is not a
+ * mode, it is a clipped picture, and nobody asked for it. Back in happens only
+ * for a drawer that was in Brain when the room ran out. Somebody who pressed
+ * `List` has `requested === 'list'` and is never touched by any of this,
+ * however tall they make the drawer.
+ *
+ * The two thresholds are what stop it thrashing. It yields the moment the stage
+ * cannot paint the globe; it comes back only once there is a whole
+ * `BRAIN_YIELD_BAND` of room to spare. A pointer parked on the boundary and
+ * jittering therefore settles into List and stays there, rather than starting a
+ * 520ms morph on every frame.
+ *
+ * A fold, so the caller can run it in the same batch as the height change it
+ * came from and the two can never be a frame apart.
+ */
+export function nextBrainYield(yielded: boolean, height: number, width: number, extra = 0): boolean {
+  if (!brainStageFits(height, width, extra)) return true;
+  if (!yielded) return false;
+  return !brainStageFits(height - BRAIN_YIELD_BAND, width, extra);
+}
+
+/**
+ * V2.0 VB-70 — the mode on screen, from the request and the one thing that is
+ * allowed to overrule it.
+ *
+ * Replaces `modeForHeight` at the drawer's call site. Same rule, same
+ * reversibility, one difference: the overrule now carries hysteresis, and a
+ * fold with memory cannot be written as a function of the height alone.
+ */
+export function shownDrawerMode(requested: DrawerMode, yielded: boolean): DrawerMode {
+  return requested === 'brain' && !yielded ? 'brain' : 'list';
 }
 
 /**

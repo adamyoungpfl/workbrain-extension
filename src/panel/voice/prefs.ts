@@ -66,6 +66,7 @@ const DEFAULT_PREFS: Prefs = {
   handoff: 'manual',
   packUrls: [],
   dictationHint: true,
+  turnHint: true,
 };
 
 /**
@@ -199,4 +200,22 @@ export function useDictationHintPref(): { show: boolean; loaded: boolean; dismis
   const show = useSyncExternalStore(subscribe, () => prefs.dictationHint);
   const ready = useSyncExternalStore(subscribe, () => loaded);
   return { show, loaded: ready, dismiss: () => void setPref('dictationHint', false) };
+}
+
+/**
+ * V2.0 VB-71 — whether the globe still has to say it can be turned, and the one
+ * call that retires it.
+ *
+ * The second preference whose default is the *louder* state, so it hands
+ * `loaded` back for the same reason `useDictationHintPref` above does: the cue
+ * sits on the stage rather than under a question, and one frame of a cue
+ * somebody saw off months ago is one frame of the panel forgetting them.
+ *
+ * Same store, same key, same single read — a second module reading `wb:prefs`
+ * on its own would disagree with this one for as long as a write took.
+ */
+export function useTurnHintPref(): { show: boolean; loaded: boolean; dismiss: () => void } {
+  const show = useSyncExternalStore(subscribe, () => prefs.turnHint);
+  const ready = useSyncExternalStore(subscribe, () => loaded);
+  return { show, loaded: ready, dismiss: () => void setPref('turnHint', false) };
 }

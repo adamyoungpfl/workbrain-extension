@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
 import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import {
   Beats,
@@ -21,7 +21,7 @@ import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
-import { modeForHeight } from '../../core/drawer/mode';
+import { shownDrawerMode } from '../../core/drawer/mode';
 import type { DrawerMode } from '../../core/drawer/mode';
 import {
   FLOW_NAV_CLEARANCE,
@@ -473,12 +473,45 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
    * used to be private to. Ephemeral, exactly like `drawerHeight` beside it —
    * the panel opens on List however it was left (see core/drawer/mode.ts).
    *
-   * What is *shown* is still derived, never held: `modeForHeight` folds the
-   * request together with the current height, so dragging the drawer short
+   * What is *shown* is still derived, never held: `shownDrawerMode` folds the
+   * request together with `brainYielded` below, so dragging the drawer short
    * hands Brain over to List and dragging it back hands it back — with the
    * bar's colour following, because both read this one value.
    */
   const [requestedDrawerMode, setRequestedDrawerMode] = useState<DrawerMode>('list');
+  /**
+   * V2.0 VB-70 — whether Brain has had to give the drawer up because the stage
+   * ran out of room for the globe.
+   *
+   * The other half of the request above, and the reason the coupling is
+   * reversible in both directions: the *request* is what the person chose and
+   * never changes on its own, this is what the drawer's current size allows,
+   * and the mode on screen is the fold of the two. Somebody who pressed `List`
+   * is never affected by it however tall they make the drawer — VB-70's
+   * "auto-transition INTO Brain is a suggestion, not a necessity".
+   *
+   * Ephemeral, like the height it is computed from. Set by the drawer, in the
+   * same call that reports the new height, so the two can never be a frame
+   * apart and the morph is never asked to run against a mode that is about to
+   * be corrected. The threshold and the hysteresis are core/drawer/mode.ts's
+   * (`nextBrainYield`) — nothing about it is decided here.
+   */
+  const [brainYielded, setBrainYielded] = useState(false);
+  /**
+   * V2.0 VB-70. Two facts, one call, one batch: how tall the drawer is now, and
+   * whether that height still leaves the stage room for the globe. Set together
+   * because the mode on screen is the fold of them — reporting them separately
+   * would give the panel a render in which a tall drawer still believed Brain
+   * had yielded, and that render is a 520ms morph nobody asked for.
+   *
+   * A stable identity because the drawer watches it: two of its effects have it
+   * in their dependency list, and a fresh function every render would re-run
+   * both on every frame of a drag.
+   */
+  const resizeDrawer = useCallback((next: number, yielded: boolean) => {
+    setDrawerHeight(next);
+    setBrainYielded(yielded);
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -613,7 +646,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
    */
   function withDrawer(screen: ReactNode): ReactNode {
     if (!outline) return screen;
-    const drawerMode = modeForHeight(requestedDrawerMode, drawerHeight);
+    const drawerMode = shownDrawerMode(requestedDrawerMode, brainYielded);
     return (
       <div
         className="flowshell"
@@ -675,7 +708,8 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
           answers={ans}
           position={position}
           height={drawerHeight}
-          onResize={setDrawerHeight}
+          onResize={resizeDrawer}
+          brainYielded={brainYielded}
           mode={drawerMode}
           onRequestMode={setRequestedDrawerMode}
           onNavigate={(next) => {

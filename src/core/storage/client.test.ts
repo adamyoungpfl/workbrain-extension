@@ -53,6 +53,7 @@ describe('getSync / setSync', () => {
       handoff: 'manual' as const,
       packUrls: [],
       dictationHint: true,
+      turnHint: true,
     };
     await setSync('wb:prefs', prefs, backend);
     expect(await getSync('wb:prefs', backend)).toEqual(prefs);

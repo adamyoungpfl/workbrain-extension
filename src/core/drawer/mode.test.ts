@@ -4,17 +4,22 @@ import {
   BRAIN_OPEN_HEIGHT,
   BRAIN_STAGE_MIN,
   BRAIN_STAGE_PAD,
+  BRAIN_YIELD_BAND,
   MORPH_DOT_SIZE,
   MORPH_FADE_OUT_MS,
   MORPH_LIST_SCALE,
   MORPH_MS,
   brainDriftAllowed,
   brainFitsIn,
+  brainStageFits,
+  brainStageRoom,
   brainStageSize,
   heightForMode,
   modeForHeight,
   morphPoints,
   morphTransform,
+  nextBrainYield,
+  shownDrawerMode,
 } from './mode';
 import { DRAWER_CHROME_HEIGHT, DRAWER_CRUMB_NOTE, DRAWER_MIN_HEIGHT, DRAWER_REST_HEIGHT, drawerBounds } from './height';
 
@@ -152,6 +157,122 @@ describe('brainStageSize', () => {
 
   it('at the handover threshold it is still a globe, not a badge', () => {
     expect(brainStageSize(BRAIN_MIN_HEIGHT, 400)).toBeGreaterThanOrEqual(BRAIN_STAGE_MIN);
+  });
+});
+
+/**
+ * V2.0 VB-70 — the threshold, pinned to the picture rather than typed beside
+ * it.
+ *
+ * The claim this block has to make honest is the one in the spec: "the stage's
+ * displayed height becomes the minimum for Brain to be available". So every
+ * assertion below is written against `brainStageSize` — the number the globe is
+ * really drawn at — and `BRAIN_MIN_HEIGHT` is checked as a *consequence* of it
+ * rather than being the thing under test.
+ */
+describe('brainStageRoom and brainStageFits — the threshold is the stage', () => {
+  it('the room and the size are the same number until the clamp catches', () => {
+    expect(brainStageRoom(324, 400)).toBe(brainStageSize(324, 400));
+    // Below the floor they part company, and that parting IS the threshold:
+    // the globe stops shrinking and the stage starts cutting it off.
+    const short = BRAIN_MIN_HEIGHT - 20;
+    expect(brainStageRoom(short, 400)).toBeLessThan(brainStageSize(short, 400));
+  });
+
+  it('fits exactly while the stage can paint the globe it is given', () => {
+    for (const height of [BRAIN_MIN_HEIGHT - 40, BRAIN_MIN_HEIGHT - 1, BRAIN_MIN_HEIGHT, BRAIN_MIN_HEIGHT + 1, 340]) {
+      const room = brainStageRoom(height, 400)!;
+      expect(brainStageFits(height, 400), `${height}px tall`).toBe(room >= brainStageSize(height, 400));
+    }
+  });
+
+  it('BRAIN_MIN_HEIGHT is where that answer turns over, so the constant cannot drift', () => {
+    expect(brainStageFits(BRAIN_MIN_HEIGHT, 400)).toBe(true);
+    expect(brainStageFits(BRAIN_MIN_HEIGHT - 1, 400)).toBe(false);
+  });
+
+  it('a panel too narrow for the globe fails at every height — width is part of the picture', () => {
+    // `modeForHeight` cannot see this: it is a threshold on the height alone.
+    // A real side panel is never this narrow; the point is that the answer now
+    // comes from the stage's own two measurements rather than from one of them.
+    const narrow = BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2 - 1;
+    expect(brainStageFits(BOUNDS.max, narrow)).toBe(false);
+    expect(brainStageFits(BOUNDS.max, narrow + 1)).toBe(true);
+  });
+
+  it('is false rather than NaN-true when it is handed nothing usable', () => {
+    expect(brainStageRoom(Number.NaN, 400)).toBeNull();
+    expect(brainStageFits(Number.NaN, 400)).toBe(false);
+    expect(brainStageFits(300, Number.NaN)).toBe(false);
+  });
+});
+
+describe('nextBrainYield — out is a necessity, back in is a suggestion', () => {
+  const W = 400;
+
+  it('hands the drawer over the moment the stage cannot paint the globe', () => {
+    expect(nextBrainYield(false, BRAIN_MIN_HEIGHT, W)).toBe(false);
+    expect(nextBrainYield(false, BRAIN_MIN_HEIGHT - 1, W)).toBe(true);
+    expect(nextBrainYield(false, DRAWER_MIN_HEIGHT, W)).toBe(true);
+  });
+
+  it('does not hand it back until there is a whole band of room to spare', () => {
+    // Back over the threshold is NOT enough — that is the thrash.
+    expect(nextBrainYield(true, BRAIN_MIN_HEIGHT, W)).toBe(true);
+    expect(nextBrainYield(true, BRAIN_MIN_HEIGHT + BRAIN_YIELD_BAND - 1, W)).toBe(true);
+    expect(nextBrainYield(true, BRAIN_MIN_HEIGHT + BRAIN_YIELD_BAND, W)).toBe(false);
+  });
+
+  /**
+   * THE TEST THE SPEC ASKS FOR BY NAME: "a drag hovering on the threshold
+   * cannot flip modes every frame".
+   *
+   * Driven the way a hand does it — a pointer parked on the boundary, wobbling
+   * a pixel or two either side, sixty samples of it — and folded exactly as the
+   * drawer folds it. One change of mode, ever: out, and then nothing.
+   */
+  it('a pointer jittering on the boundary changes mode once and then stops', () => {
+    let yielded = false;
+    const seen: boolean[] = [];
+    for (let frame = 0; frame < 60; frame++) {
+      const wobble = [0, -1, 1, -2, 2, -3, 3][frame % 7]!;
+      yielded = nextBrainYield(yielded, BRAIN_MIN_HEIGHT + wobble, W);
+      seen.push(yielded);
+    }
+    const flips = seen.filter((value, index) => index > 0 && value !== seen[index - 1]).length;
+    expect(flips, 'the mode flipped more than once on a still hand').toBeLessThanOrEqual(1);
+    expect(seen[seen.length - 1], 'it settled in the mode that works at any size').toBe(true);
+  });
+
+  it('and it is a real hysteresis, not a one-way door', () => {
+    let yielded = false;
+    yielded = nextBrainYield(yielded, BRAIN_MIN_HEIGHT - 10, W); // dragged short
+    expect(yielded).toBe(true);
+    yielded = nextBrainYield(yielded, BRAIN_OPEN_HEIGHT, W); // dragged tall again
+    expect(yielded).toBe(false);
+  });
+
+  it('a panel that got narrower yields too, at the same height', () => {
+    const narrow = BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2 - 1;
+    expect(nextBrainYield(false, BRAIN_OPEN_HEIGHT, narrow)).toBe(true);
+  });
+});
+
+describe('shownDrawerMode — nobody is yanked into Brain', () => {
+  it('shows what was asked for, unless Brain had to give the drawer up', () => {
+    expect(shownDrawerMode('brain', false)).toBe('brain');
+    expect(shownDrawerMode('brain', true)).toBe('list');
+  });
+
+  /**
+   * VB-70: "a person who explicitly chose List must not be yanked into Brain
+   * just because they made the drawer taller."
+   *
+   * There is no height and no yield state that turns a `list` request into a
+   * Brain on screen. The only way into Brain is to ask for it.
+   */
+  it('never turns a List request into Brain, however much room appears', () => {
+    for (const yielded of [true, false]) expect(shownDrawerMode('list', yielded)).toBe('list');
   });
 });
 

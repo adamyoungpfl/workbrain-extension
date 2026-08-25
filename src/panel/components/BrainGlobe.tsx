@@ -32,6 +32,7 @@ import {
 } from '../../core/globe/workBrain';
 import type { BrainNav, BrainTier } from '../../core/globe/workBrain';
 import { LockGlyph, fileName, lockLine } from './fileLabels';
+import { BrainTurnCue } from './BrainTurnCue';
 import {
   CAMERA,
   ICOSAHEDRON_EDGES,
@@ -951,6 +952,21 @@ export interface BrainGlobeProps {
    * request, so a caller cannot accidentally implement "locked" a second way.
    */
   onTier?: (next: BrainNav) => void;
+  /**
+   * V2.0 VB-71. Whether this stage is the one somebody is looking at, so the
+   * cue that says the globe can be turned may offer itself here.
+   *
+   * **Off unless asked for**, exactly like `drift` above and for a related
+   * reason: the drawer mounts this component in both of its modes and hides one
+   * of them (surfaces/FileDrawer.tsx), and a hint on a hidden stage is a hint
+   * that retires itself without ever being seen. The caller knows which mode is
+   * showing; this component does not, and should not have to.
+   *
+   * Whether the cue has anything left to say is `wb:prefs.turnHint`'s answer,
+   * and it is components/BrainTurnCue.tsx that asks. Nothing about the
+   * preference is decided here.
+   */
+  turnCue?: boolean;
 }
 
 // ── A frame ────────────────────────────────────────────────────────────────
@@ -1169,6 +1185,7 @@ export function BrainGlobe({
   file = 'context',
   tier = 'file',
   onTier,
+  turnCue = false,
 }: BrainGlobeProps) {
   const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
   const pinRefs = useRef<Array<HTMLButtonElement | null>>([]);
@@ -1256,6 +1273,18 @@ export function BrainGlobe({
   tierClockRef.current = tierClock;
   const draggingRef = useRef(false);
   const draggedRef = useRef(false);
+  /**
+   * V2.0 VB-71. Whether the globe has been turned with the pointer during this
+   * panel session — the gesture the turn cue exists to teach, and therefore the
+   * moment there is nothing left for it to say.
+   *
+   * State rather than a ref, because something renders off it (the cue below),
+   * and set once: `setTurned(true)` on a second drag is a no-op React drops, so
+   * this costs one render in a panel's life rather than one per gesture. It is
+   * `draggedRef`'s own moment — past the slop, so a click that wobbled is not a
+   * turn — read from the one place that already decides that question.
+   */
+  const [turned, setTurned] = useState(false);
   const reducedRef = useRef(reduced);
   reducedRef.current = reduced;
   /** Whether the caller wants the idle turn. A ref as well as a prop, because
@@ -1843,6 +1872,10 @@ export function BrainGlobe({
     const travelled = Math.hypot(event.clientX - pointerRef.current.ox, event.clientY - pointerRef.current.oy);
     if (!draggedRef.current && travelled > DRAG_SLOP_PX) {
       draggedRef.current = true;
+      // V2.0 VB-71 — the cue's job is done the moment somebody does the thing
+      // it was going to tell them. Same instant the gesture stops counting as a
+      // click, so a press that wobbled never retires a hint nobody read.
+      setTurned(true);
       event.currentTarget.setPointerCapture?.(event.pointerId);
     }
     const now = performance.now();
@@ -3172,6 +3205,28 @@ export function BrainGlobe({
           <DetailGrid details={details?.[pickedChild.id] ?? []} />
         </div>
       )}
+
+      {/*
+        V2.0 VB-71 — the cue that says this can be turned.
+
+        Immediately before the two way-out controls in the markup as well as on
+        the screen, which is doing three jobs at once: it puts the pair in
+        Adam's own order, it makes `.brainturncue ~ .brainglobe-back` the
+        selector that steps the way out sideways while the cue is up
+        (BrainTurnCue.css), and it puts the tip ahead of the navigation in the
+        tab order — read it, then leave.
+
+        `paused` while a section is flown into: the corner then belongs to
+        `Back to the whole file`, which is a pill as wide as its sentence rather
+        than a 44px disc, and there is not room for both on a 208px stage.
+        Flying in is not somebody learning that the globe turns, so it stands
+        the cue down without spending it.
+
+        Everything else about it — whether it has anything left to say, what
+        retires it, what a reduced-motion visitor gets — is
+        components/BrainTurnCue.tsx's, which is the file to read.
+      */}
+      <BrainTurnCue showing={turnCue} turned={turned} paused={inside} />
 
       {flownSection && (
         <button type="button" className="brainglobe-back" onClick={flyOut} hidden={!inside}>

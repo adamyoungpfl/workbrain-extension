@@ -1,0 +1,121 @@
+/* V2.0 VB-71 — the cue that says the globe can be turned.
+   Read BrainTurnCue.tsx first: it holds the placement, the once-and-never-again
+   rule, and why this is a real control rather than a picture.
+
+   Every colour here is a token from design/tokens.json's `color.globe` group —
+   the same group the rest of the stage is dressed from. No hex may appear in
+   this file; `npm run audit` and tests/tokens.test.mjs both fail the build on
+   one. */
+
+/* THE PAIR, IN THE ORDER ADAM DREW THEM. The cue takes the stage's top-left
+   corner and the way out steps one disc to its right, so the two sit side by
+   side rather than on top of each other. Both terms are the same 8px gutter the
+   way-out control has always used, plus one 44px target — written as a sum so
+   it is obvious the two numbers are the same decision.
+
+   Scoped to a following sibling, so it is true exactly while the cue is on
+   screen: `BrainTurnCue` renders nothing once the hint is retired, the selector
+   stops matching, and the way out takes its corner back with no second flag to
+   keep in step.
+
+   AND SCOPED TO `.is-out`, WHICH IS THE 44px DISC. The other `.brainglobe-back`
+   is the `Back to the whole file` pill a flown-in section shows, and it is as
+   wide as its own sentence: stepped across by one target it runs its right edge
+   onto the globe's and wraps onto two lines. The cue stands down for that one
+   rather than shoving it (BrainTurnCue.tsx's `paused`), so this rule never has
+   to be true of it — belt as well as braces, because a pill that ever did match
+   would fail by looking wrong rather than by throwing. */
+.brainturncue ~ .brainglobe-back.is-out {
+  left: calc(8px + var(--target-min) + 8px);
+}
+
+.brainturncue {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 1;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  /* 44 square exactly, like the control beside it. An icon-only button that
+     collapsed to its 20px mark and its padding would fail the accessibility
+     floor outright (docs/GUARDRAILS.md). */
+  width: var(--target-min);
+  height: var(--target-min);
+  padding: 0;
+  border-radius: var(--r-pill);
+  /* FILLED, WHICH IS THE WHOLE DIFFERENCE FROM THE DISC NEXT DOOR. The way out
+     is an open rim with the field showing through (BrainGlobe.css, VB-69); this
+     is a solid one. Filled versus open is a SHAPE difference — it survives
+     greyscale and a screenshot — which is what keeps the two discs apart
+     without either of them relying on colour (docs/GUARDRAILS.md).
+
+     `--globe-panel` is the stage's own "a panel sits here" surface, the same
+     one the detail block uses, so a filled disc is still part of this picture
+     rather than a chip pasted onto it. It measures 1.23:1 against the field, so
+     the FILL cannot be the boundary — the rim below is, at 6.8:1, the same
+     `--globe-edge` hairline VB-45 measured for exactly this job. */
+  background: var(--globe-panel);
+  border: 1px solid var(--globe-edge);
+  color: var(--globe-label);
+  cursor: pointer;
+  /* The stage sets `cursor: grab` on everything inside it; this is a button and
+     says so. `.brainglobe:active`'s grabbing cursor is left alone — a press
+     that starts here is still a press. */
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+
+.brainturncue:hover {
+  border-color: var(--globe-focus);
+}
+
+.brainturncue:focus-visible {
+  outline: 2px solid var(--globe-focus);
+  outline-offset: 2px;
+}
+
+.brainturncue-mark {
+  display: block;
+}
+
+/* ── The single draw ──────────────────────────────────────────────────────
+   The arc sweeps itself on once, over docs/design-system.html §06's drawer
+   value and on the system's one curve. It is a mark arriving, not a
+   demonstration of the gesture: nothing here mimes a drag, so there is nothing
+   a still frame has to stand in for.
+
+   THE STILL VERSION IS THE SAME PICTURE. `stroke-dashoffset: 0` is the resting
+   state and the keyframe starts from the offset, so an arc with no animation on
+   it is simply drawn — which is what `prefers-reduced-motion` gets below. The
+   instruction lives in the sentence on the control and in the shape of the
+   mark; it was never in the movement, so the still equivalent loses none of it
+   (docs/GUARDRAILS.md).
+
+   Nothing is scheduled in JavaScript in either case. The cue sets no timer,
+   waits for nothing, and covers nothing — the first drag works from the first
+   frame. */
+.brainturncue-arc {
+  /* Longer than the arc's own ~37 units, so the whole stroke is one dash. */
+  stroke-dasharray: 40;
+  stroke-dashoffset: 0;
+  animation: brainturncue-draw var(--slow) var(--ease) both;
+}
+
+@keyframes brainturncue-draw {
+  from {
+    stroke-dashoffset: 40;
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brainturncue {
+    transition: none;
+  }
+  .brainturncue-arc {
+    animation: none;
+  }
+}

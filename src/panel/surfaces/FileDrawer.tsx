@@ -35,6 +35,7 @@ import {
   heightForMode,
   morphPoints,
   morphTransform,
+  nextBrainYield,
 } from '../../core/drawer/mode';
 import type { DrawerMode, MorphPoint } from '../../core/drawer/mode';
 import {
@@ -129,10 +130,21 @@ import './FileDrawer.css';
  *    DOM, and a `display: none` layer has no geometry to measure.
  *
  * 3. **The mode on screen is derived, never stored.** What is held is the
- *    *request*; `modeForHeight` turns that plus the current height into what
- *    shows. Drag below ~180px and Brain hands over to List; drag back up and
- *    Brain returns. See core/drawer/mode.ts for why holding the request rather
- *    than the result is what makes that reversible.
+ *    *request*; `shownDrawerMode` turns that plus one bit — has the stage run
+ *    out of room? — into what shows. Drag the drawer short and Brain hands over
+ *    to List; drag back up and Brain returns. See core/drawer/mode.ts for why
+ *    holding the request rather than the result is what makes that reversible.
+ *
+ *    **V2.0 VB-70 pins the boundary to the picture and stops it thrashing.**
+ *    The threshold is no longer a height compared against a constant: it is
+ *    `brainStageFits`, asked from the same two measurements the globe's own
+ *    size is computed from, so "too short for Brain" means "the stage can no
+ *    longer paint the globe it is being handed" and cannot drift from it. The
+ *    way back has a `BRAIN_YIELD_BAND` of hysteresis on it, so a pointer parked
+ *    on the boundary settles rather than restarting a 520ms morph every frame.
+ *    Going OUT of Brain is unconditional; coming back happens only for a drawer
+ *    that was in Brain when the room ran out. Nobody who pressed `List` is ever
+ *    put back into Brain by making the drawer taller.
  *
  * 4. **Navigation is identical in both modes.** A lit node in Brain resolves
  *    through the same `navigationTargetFor` → `positionForQuestionId` →
@@ -196,7 +208,30 @@ export interface FileDrawerProps {
    * viewport can hold and hands changes back.
    */
   height: number;
-  onResize: (height: number) => void;
+  /**
+   * The drawer's new height, and — V2.0 VB-70 — whether that height still
+   * leaves the stage room to paint the globe.
+   *
+   * Both, in one call, because they are one event. `Flow` folds the second
+   * together with the mode that was requested to get the mode on screen, and a
+   * height that arrived a render before its verdict would give the panel one
+   * frame of the wrong mode — which, this being a morph, is half a second of
+   * flying nodes.
+   *
+   * The verdict is computed here rather than there for one reason: it is a
+   * question about the *stage*, and the stage's two measurements — the drawer's
+   * height and the panel's width — are only both known in this component.
+   */
+  onResize: (height: number, brainYielded: boolean) => void;
+  /**
+   * V2.0 VB-70. Whether Brain has already handed the drawer over to List
+   * because the stage ran out of room. Handed down so the fold that decides
+   * whether it comes back (`nextBrainYield`) can see which side of the
+   * boundary it is starting from — that memory is the whole of the hysteresis,
+   * and without it a pointer resting on the threshold flips the mode every
+   * frame.
+   */
+  brainYielded: boolean;
   /**
    * V1.4 VB-22. Which mode is on screen — derived by `Flow` from the mode
    * requested and the height, because the docked bar above this drawer now
@@ -259,6 +294,7 @@ export function FileDrawer({
   position,
   height,
   onResize,
+  brainYielded,
   onNavigate,
   mode,
   onRequestMode,
@@ -328,13 +364,25 @@ export function FileDrawer({
    * rather than accumulated, so the grip cannot drift away from the pointer. */
   const dragRef = useRef<{ id: number; startY: number; startHeight: number } | null>(null);
 
+  /**
+   * Every height change the drawer makes goes through here — the drag, the
+   * arrow keys, choosing a mode, and the clamp below.
+   *
+   * V2.0 VB-70 puts the stage's verdict in the same call. `nextBrainYield` is
+   * asked whether this height still leaves room for the globe, from the same
+   * two measurements `brainStageSize` is given a few lines down, and the answer
+   * travels up with the height rather than behind it — see the `onResize` prop.
+   * The crumb note is deliberately not in the sum; core/drawer/mode.ts's
+   * `brainStageFits` says why.
+   */
   const applyHeight = useCallback(
     (next: number, how: DrawerSettle | 'none') => {
       if (next > bounds.min) restoreRef.current = next;
       setSettle(how);
-      if (next !== height) onResize(next);
+      const yielded = nextBrainYield(brainYielded, next, panelWidth);
+      if (next !== height || yielded !== brainYielded) onResize(next, yielded);
     },
-    [bounds.min, height, onResize],
+    [bounds.min, brainYielded, height, onResize, panelWidth],
   );
 
   // A panel that got shorter must not leave the drawer covering the question.
@@ -342,8 +390,23 @@ export function FileDrawer({
   // window changing size, and it is a no-op in every other render.
   useEffect(() => {
     const clamped = clampDrawerHeight(height, bounds);
-    if (clamped !== height) onResize(clamped);
-  }, [bounds, height, onResize]);
+    if (clamped !== height) onResize(clamped, nextBrainYield(brainYielded, clamped, panelWidth));
+  }, [bounds, brainYielded, height, onResize, panelWidth]);
+
+  /**
+   * V2.0 VB-70 — the same verdict, for the inputs a height change does not
+   * carry: the panel getting narrower, and the drawer's first render.
+   *
+   * An effect rather than a fold, because these are readings of the window and
+   * nothing here asked for them. One render late, which is invisible: neither
+   * happens during a drag, and the mount case is a drawer that opens on List
+   * anyway. Every path that a hand is holding goes through `applyHeight` above
+   * and is settled in the same batch as the height it came from.
+   */
+  useEffect(() => {
+    const yielded = nextBrainYield(brainYielded, height, panelWidth);
+    if (yielded !== brainYielded) onResize(height, yielded);
+  }, [brainYielded, height, onResize, panelWidth]);
 
   function onPointerDown(event: ReactPointerEvent<HTMLDivElement>) {
     if (event.button !== 0 && event.pointerType === 'mouse') return;
@@ -856,6 +919,13 @@ export function FileDrawer({
           file={nav.file}
           tier={nav.tier}
           onTier={setNav}
+          /* V2.0 VB-71 — offer the turn cue only on the stage somebody is
+             actually looking at. Both layers are mounted at all times and one
+             of them is hidden (decision 2 in the header), so `mode` rather than
+             "this component exists" is what says the globe is on screen — and
+             leaving Brain is one of the three things that retires the cue for
+             good (components/BrainTurnCue.tsx). */
+          turnCue={mode === 'brain'}
         />
       </div>
       <div className="filedrawer-body" id={BODY_ID} ref={bodyRef}>

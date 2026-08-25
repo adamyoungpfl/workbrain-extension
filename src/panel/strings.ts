@@ -411,6 +411,30 @@ export const S = {
   brainGlobeBack: 'Back to the whole file',
 
   /**
+   * V2.0 VB-71 — the one line that says the globe can be turned.
+   *
+   * **The words already existed and were only ever said out loud.**
+   * `brainGlobeHelp` three lines up has told screen readers "Drag to turn it"
+   * since V1.2; it lives in `.brainglobe-sr`, so a person looking at the stage
+   * with a mouse in their hand has never been told anything. This is that same
+   * sentence, given a place on the picture — which is why it is worded the same
+   * way rather than being a second, cleverer version of it.
+   *
+   * "Drag" and "turn", not "rotate" or "orbit": docs/design-system.html §08's
+   * rule about words a person would say, and the same two verbs the sentence
+   * above the stage already uses. Seven words, one clause, no product noun —
+   * "brain" is the product's own name and the button beside it is already
+   * called Brain.
+   *
+   * It is the disc's accessible NAME as well as its tooltip. The disc is a real
+   * button and pressing it puts the cue away for good, so the name is the tip
+   * itself rather than "dismiss": a control named for its own housekeeping
+   * would be the only thing on the stage that talked about the interface
+   * instead of about the file.
+   */
+  brainTurnCue: 'Drag the brain to turn it',
+
+  /**
    * V1.5 VB-25 — the unified glow, in words.
    *
    * The picture says it with one colour, and a colour says nothing to a screen
