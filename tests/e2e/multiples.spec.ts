@@ -169,7 +169,12 @@ async function answerCurrent(page: Page): Promise<void> {
   }
   const textarea = page.locator('.flow textarea');
   const input = page.locator('.flow input.field');
-  const pills = page.locator('.flow .pillgroup .pill:not(.pill-add)');
+  // V2.0 VB-60: a choice is a pill or an orb — `role_names` is asked as orbs
+  // now (core/choice/orbs.ts). A walker that knew only pills would leave that
+  // question unanswered and still pass, because it is optional.
+  const pills = page.locator(
+    '.flow .pillgroup .pill:not(.pill-add), .flow .orbgroup .orbchoice:not(.orbchoice-add)',
+  );
   if (await textarea.count()) await textarea.first().fill('An answer typed on this screen.');
   else if (await pills.count()) await pills.first().click();
   else if (await input.count()) await input.first().fill('An answer typed on this screen.');
@@ -316,9 +321,10 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
     await navigateToSection(page, 'sec2-1', 'role_names', 'sec2');
 
     // It is ON the list and shown as picked, not selected behind a row of
-    // pills that does not include it. Exact and case-sensitive: one built-in
-    // option is "Volunteer / Board Member", which a loose match would find.
-    const addedPill = page.locator('.flow .pillgroup .pill').filter({ hasText: new RegExp(`^${NEW_ROLE}$`) });
+    // choices that does not include it — orbs since V2.0 VB-60. Exact and
+    // case-sensitive: one built-in option is "Volunteer / Board Member",
+    // which a loose match would find.
+    const addedPill = page.locator('.flow .orbgroup .orbchoice').filter({ hasText: new RegExp(`^${NEW_ROLE}$`) });
     await expect(addedPill).toHaveCount(1);
     await expect(addedPill).toHaveAttribute('aria-pressed', 'true');
 

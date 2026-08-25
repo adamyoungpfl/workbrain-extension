@@ -2,6 +2,29 @@
  * V1.8 VB-42 — one follow-up at a time, rotating, without a DOM.
  * V2.0 VB-57 — and it now stops for good the first time the person does
  * anything at all.
+ * V2.0 VB-60 — and the orb picker's travelling outline is THIS module too.
+ *
+ * ── TWO SURFACES, ONE RULE ───────────────────────────────────────────────
+ *
+ * VB-60 puts a second piece of auto-updating content in the question area: a
+ * glowing outline that moves from choice to choice, saying "one or several"
+ * without printing the words. docs/V2.0-REFINEMENT.md FLAG 1 governs it in the
+ * same sentence it governs the follow-ups — "**The same rule governs VB-60's
+ * rotating orb outline.** One implementation, both places" — so there is no
+ * second machine here and there must never be one. `components/DeepDive.tsx`
+ * and `components/OrbGroup.tsx` both hold a `RotationLife`, both stop it
+ * through `stopRotation`, both read `viewFor` and `isRunning`, and both take a
+ * `stoppedBy` from the surface so that an interaction anywhere in the question
+ * area stops BOTH of them at once. The only per-surface value is the length of
+ * a turn — `ROTATE_MS` against `ORB_ROTATE_MS`, and the reason is written on
+ * the second one.
+ *
+ * `viewFor`'s two answers carry over exactly. `{kind:'one'}` is one follow-up
+ * showing, or one orb outlined; `{kind:'all'}` is every follow-up printed, or
+ * every orb outlined at once — which is why reduced motion needs nothing
+ * special on either surface. The still version of the orb picker outlines
+ * ALL the choices, which is more of the instruction rather than less of it
+ * (docs/GUARDRAILS.md).
  *
  * The follow-ups under a question stop being a row of chips and become a
  * single text link that changes every five seconds. **The rotation is
@@ -71,6 +94,48 @@
 
 /** Five seconds — VB-42 asks for this number by name. */
 export const ROTATE_MS = 5000;
+
+/**
+ * V2.0 VB-60 — the same machine, on a shorter clock, for the orb picker's
+ * travelling outline.
+ *
+ * **THIS IS A SECOND INTERVAL, NOT A SECOND ROTATION.** Everything below —
+ * `RotationLife`, `stopRotation`, `RotationInteraction`, `viewFor`,
+ * `isRunning` — is shared verbatim by the follow-up link and by the orbs, and
+ * the task's instruction is exactly that: one rule, both places, no second
+ * implementation. The only thing that differs is how long a turn lasts, and it
+ * differs because the two turns are made of different stuff:
+ *
+ * - A follow-up is **a sentence somebody has to read**. Five seconds is the
+ *   time to read one, and it is the number VB-42 names.
+ * - An orb outline carries **no words at all**. Its whole message is "any of
+ *   these, one or several", and that message is made of the outline visibly
+ *   MOVING BETWEEN choices. At five seconds a turn, `role_names`' six options
+ *   take half a minute to say it once — long enough that most people would
+ *   have answered and stopped the rotation (below) before it ever finished a
+ *   circuit, which is a cue that never gets to be one.
+ *
+ * 1.5s puts a full circuit of six at nine seconds and reads as a scan rather
+ * than as a strobe: 0.67Hz, an order of magnitude under WCAG 2.3.1's three
+ * flashes a second, and slower than the panel's own 2.8s live-row breath is
+ * fast.
+ */
+export const ORB_ROTATE_MS = 1500;
+
+/**
+ * How long the add-new orb's `+` takes to breathe once — V2.0 VB-60's "faintly
+ * glowing orb with a pulsing +".
+ *
+ * Deliberately NOT a multiple of `ORB_ROTATE_MS`. The two cues are unrelated —
+ * one says "these are choices", the other says "and you can add one that is
+ * not here" — and a pulse that landed on the same beat as the outline would
+ * read as one mechanism with a stutter in it. It is also the slowest thing on
+ * the screen, on the same reasoning FileTree.css gives its live row: this runs
+ * beside a question somebody is reading in order to think.
+ *
+ * It stops with the outline, on the same terminal life. See OrbGroup.tsx.
+ */
+export const ORB_PULSE_MS = 2400;
 
 /**
  * A reason the clock is not running *right now*, and the only one left that is

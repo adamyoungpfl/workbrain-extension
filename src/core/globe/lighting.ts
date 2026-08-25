@@ -243,3 +243,53 @@ export function highlightExtent(light: OrbLight): number {
 export function shadeExtent(light: OrbLight): number {
   return Math.hypot(light.sx, light.sy) + SHADE_RADIUS;
 }
+
+/** A painted box, in whatever pixel space the caller measured it in. */
+export interface Frame {
+  readonly left: number;
+  readonly top: number;
+  readonly width: number;
+  readonly height: number;
+}
+
+/**
+ * V2.0 VB-60 — A PAINTED POINT, IN THE SPACE THIS FILE DEFINES.
+ *
+ * The two callers this file already had could each model their own layout: the
+ * globe knows where it put every node, and the List's rows are an evenly
+ * spaced column, so `FileTree.tsx`'s `listOrbLight` computes a place from a row
+ * index and says out loud that it is a model rather than a measurement.
+ *
+ * VB-60's picker cannot do that, and the reason is worth stating rather than
+ * apologising for. Its orbs sit in a WRAPPING flow: how many land on a line
+ * depends on the width of the words beside them, on the panel's width — which
+ * a person can drag — and on how many roles they have added of their own. There
+ * is no index arithmetic that yields those positions, so a model here would not
+ * be a simplification of the layout, it would be a different layout that the
+ * light was computed for and nobody could see.
+ *
+ * So the picker measures. It can afford to: seven orbs, measured when the
+ * option list or the panel's width changes, and never on a keystroke — which is
+ * precisely the cost `listOrbLight` refused to put on every row of the List on
+ * every character of the interview.
+ *
+ * WHAT THIS FUNCTION IS FOR is that the conversion into stage space then lives
+ * HERE, with the space it converts into, instead of being a division scattered
+ * through a component. The space's own file owns the only way in, so a surface
+ * cannot quietly hold a second opinion about where −1 is.
+ *
+ * `z` is 0: the picker is flat, like the List's pane. It is the orb's own place
+ * ACROSS AND DOWN the group that varies, which is the whole of what makes a
+ * scattered handful of circles read as one lit object rather than seven
+ * stickers (see this file's header on VB-23).
+ *
+ * A frame with no extent — an unmounted group, a `getBoundingClientRect` before
+ * layout, a jsdom test — resolves to the centre, which `orbLight` reads as lit
+ * from straight ahead. Neutral, no NaN, no orb flung off the stage; the same
+ * degenerate-case discipline as `orbLight` itself.
+ */
+export function stagePoint(x: number, y: number, frame: Frame): ScenePoint {
+  const across = frame.width > 0 ? ((x - frame.left) / frame.width) * 2 - 1 : 0;
+  const down = frame.height > 0 ? ((y - frame.top) / frame.height) * 2 - 1 : 0;
+  return { x: across, y: down, z: 0 };
+}

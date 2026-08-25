@@ -11,6 +11,7 @@ import {
   NavButton,
   NavCluster,
   NAV_MELT_LAYER_CLASS,
+  OrbGroup,
   PillGroup,
   ReadOnlyBlock,
   TypedHeading,
@@ -61,6 +62,7 @@ import {
   PROOF_SERVICE_KEY,
 } from '../../core/flow/proofAdapter';
 import { hintStaysVisible } from '../../core/flow/deepDive';
+import { usesOrbChoice } from '../../core/choice/orbs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
@@ -1663,14 +1665,44 @@ function StepView({
 
         {step.kind !== 'text' && step.kind !== 'intro' && step.kind !== 'gen' && step.kind !== 'demo' && (
           <>
-            <PillGroup
-              legend={questionText}
-              mode={step.kind === 'multi' ? 'multi' : 'single'}
-              options={pillOptions}
-              value={draftValues}
-              onChange={answerValues}
-              onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
-            />
+            {/* V2.0 VB-60. The roles question's choices are the brain's own
+                orbs rather than pills — which questions, and why only those, is
+                core/choice/orbs.ts's `usesOrbChoice` and not a condition
+                spelled out here.
+
+                EVERYTHING AROUND IT IS UNCHANGED, deliberately. Same `legend`
+                (the question, which names the group), same draft, same
+                `answerValues` — so the same "typing" stop and the same commit
+                on Next — and the same `onAddOwn`, which opens the same field
+                below. VB-60 replaces the paint on a trigger, never the
+                mechanism behind it.
+
+                `stoppedBy` is the one thing the orbs need that the pills do
+                not: FLAG 1's rule is that ANY interaction in the question area
+                ends the motion, and most of that list happens outside this
+                group. It is the identical prop `QuestionHelp` hands the
+                follow-up link, off the identical piece of state, so one
+                keystroke in the answer field stops both at once. */}
+            {usesOrbChoice(step) ? (
+              <OrbGroup
+                legend={questionText}
+                mode="multi"
+                options={pillOptions}
+                value={draftValues}
+                onChange={answerValues}
+                onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
+                stoppedBy={reasonFor(rotation)}
+              />
+            ) : (
+              <PillGroup
+                legend={questionText}
+                mode={step.kind === 'multi' ? 'multi' : 'single'}
+                options={pillOptions}
+                value={draftValues}
+                onChange={answerValues}
+                onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
+              />
+            )}
             {customOpen && (
               <div className="flow-custom">
                 <div className="flow-field-sr-label">

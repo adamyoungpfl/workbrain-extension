@@ -1,0 +1,352 @@
+/* ═══ V2.0 VB-60 — THE ORB PICKER ═══════════════════════════════════════════
+
+   The reasoning lives in OrbGroup.tsx's header. This file is the paint, and the
+   two things it must not get wrong are the hit targets and the greyscale.
+
+   ── THE GROUP ─────────────────────────────────────────────────────────────
+
+   A wrapping flow, like the pill row it replaces, so a question that used three
+   lines of pills does not become a full screen of stacked rows. The row-gap is
+   the load-bearing number and it is bigger than it looks like it needs to be —
+   see the note on `.orbchoice` below, which is where the 44px targets overhang
+   the paint. */
+.orbgroup {
+  display: flex;
+  flex-wrap: wrap;
+  /* The first orb's painted edge lands on the question's first painted pixel,
+     which is where V2.0 VB-57 just put the follow-up link and where the pill
+     row has always been — a pill's own border box starts at the container's
+     edge. This group cannot do that by having no padding, because the padding
+     is what makes the 44px target, so it takes the padding back out again:
+     6px on the chip plus 2px on the paint. Measured in
+     tests/e2e/orb-choice.spec.ts against the heading above it, not assumed. */
+  margin-left: -8px;
+  column-gap: 4px;
+  /* 14px of gap against a 32px laid-out row and 6px of overhang each side:
+     46px of pitch for a 44px target, so two rows of hit boxes never touch.
+     DeepDive.css widened its row-gap for exactly this reason and this is the
+     same arithmetic on a different paint. */
+  row-gap: 14px;
+}
+
+/* ── ONE CHOICE ───────────────────────────────────────────────────────────
+
+   V1.3 VB-15's split, reused as the task asks: the paint is 28px of orb beside
+   a label, and the box you can press is the full 44. The orb sits in 2px of
+   paint padding, so the painted row is 32; 6px of button padding above and
+   below makes the pressable box exactly 44, and -6px of margin takes 12 of
+   those back out of the layout again, so the row LAYS OUT at 32 while the
+   target overhangs it by 6 above and 6 below. Shrink the paint, keep the
+   target. tests/e2e/orb-choice.spec.ts measures both boxes and asserts that
+   no two targets overlap, which is the only part of this that can silently
+   go wrong.
+
+   NOTHING HERE LOOKS PRESSABLE AND THAT IS VB-60's INSTRUCTION, not an
+   oversight: "inactive, dimmed orbs... an anchor to action when nothing on
+   screen looks clickable". No border, no fill, no shadow. What says the group
+   can be touched is the outline travelling round it and the pulse on the `+`. */
+.orbchoice {
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 14px;
+  line-height: 18px;
+  min-height: var(--target-min);
+  padding: 6px;
+  margin: -6px 0;
+  border: 0;
+  background: none;
+  color: var(--ink);
+  text-align: left;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+}
+
+/* The painted box inside the target — orb, gap, label. The focus ring goes on
+   THIS and not on the button, for DeepDive.css's reason: the button is
+   deliberately bigger than the thing you can see, and a ring around empty space
+   is not a visible focus indicator (docs/GUARDRAILS.md). */
+.orbchoice-paint {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  border-radius: var(--r-pill);
+  padding: 2px 8px 2px 2px;
+}
+.orbchoice:focus-visible {
+  outline: none;
+}
+.orbchoice:focus-visible .orbchoice-paint {
+  /* 2px solid --primary at 2px offset — identical to every other ring in the
+     product, and deliberately a different shape from the travelling outline
+     below, which is a soft halo around the orb alone. */
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.orbchoice-label {
+  min-width: 0;
+  transition: font-weight var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+/* SELECTION, SIGNAL 3 — weight. Neither shape nor colour, and a real step
+   rather than a hair. Signals 1 and 2 are the tick and the fill, below. */
+.orbchoice[aria-pressed='true'] .orbchoice-label {
+  font-weight: 650;
+}
+.orbchoice-add .orbchoice-label {
+  color: var(--ink-2);
+}
+
+/* Hover is the only thing that paints the chip itself, and it paints almost
+   nothing: this is feedback that a pointer is over a target, not an invitation.
+   120ms, docs/design-system.html §06's colour value. */
+.orbchoice:hover .orbchoice-paint {
+  background: var(--surface);
+}
+
+/* ── THE ORB ──────────────────────────────────────────────────────────────
+
+   Everything from here down is FileTree.css's orb, on this surface. The custom
+   properties, the three gradient layers, the inset hairline and the deep
+   `color` are the same rules over the same numbers, produced by the same
+   converters in OrbGroup.tsx over the same core constants — which is what makes
+   an orb in the question area the same object as an orb in the List rather
+   than a circle that resembles one. If the two ever have to differ, they have
+   stopped being one object and VB-45's whole claim goes with it. */
+.orbchoice-orb {
+  position: relative;
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  width: var(--orb-px, 28px);
+  height: var(--orb-px, 28px);
+  border-radius: var(--r-pill);
+  transition:
+    background-color var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+
+/* The five orb colours, from design/tokens.json's `color.globe` group — the
+   `mid` step, the one the globe's bloom, the morph's flying node and the List's
+   rows all use, and the one that reads on a light ground. Which orb wears which
+   is `childNodeGradient`'s answer, never a second cycle.
+
+   `background-color`, not the `background` shorthand: the shorthand resets
+   `background-image`, which is where the light lives. */
+.orbchoice-orb[data-gradient='1'] {
+  background-color: var(--globe-node-1-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-1-deep);
+  color: var(--globe-node-1-deep);
+}
+.orbchoice-orb[data-gradient='2'] {
+  background-color: var(--globe-node-2-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-2-deep);
+  color: var(--globe-node-2-deep);
+}
+.orbchoice-orb[data-gradient='3'] {
+  background-color: var(--globe-node-3-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-3-deep);
+  color: var(--globe-node-3-deep);
+}
+.orbchoice-orb[data-gradient='4'] {
+  background-color: var(--globe-node-4-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-4-deep);
+  color: var(--globe-node-4-deep);
+}
+.orbchoice-orb[data-gradient='5'] {
+  background-color: var(--globe-node-5-mid);
+  box-shadow: inset 0 0 0 1px var(--globe-node-5-deep);
+  color: var(--globe-node-5-deep);
+}
+
+/* V1.9 VB-54's three layers, from core/globe/lighting.ts, unchanged. Nothing
+   here knows which orb it is: every offset, blob size and strength arrives as a
+   custom property, because there is no finite set of classes for "where this
+   orb stands relative to a fixed point". All the arithmetic is OrbGroup.tsx's,
+   over core's own numbers, so no rule here can hold a second opinion about a
+   light it cannot see. */
+.orbchoice-orb[data-gradient] {
+  background-image:
+    /* 1 — the specular, toward the light. */
+    radial-gradient(
+      ellipse var(--orb-spec-r, 17%) var(--orb-spec-r, 17%) at calc(50% + var(--orb-hx, 0%)) calc(50% + var(--orb-hy, 0%)),
+      color-mix(in srgb, var(--globe-highlight) var(--orb-spec-mix, 40%), transparent),
+      transparent
+    ),
+    /* 2 — the terminator, away from it. */
+    radial-gradient(
+      ellipse var(--orb-shade-r, 24%) var(--orb-shade-r, 24%) at calc(50% + var(--orb-sx, 0%)) calc(50% + var(--orb-sy, 0%)),
+      color-mix(in srgb, currentColor var(--orb-shade-mix, 10%), transparent),
+      transparent
+    ),
+    /* 3 — the limb: the curvature, which is not about the light at all. */
+    radial-gradient(
+      circle closest-side at 50% 50%,
+      transparent var(--orb-limb-inner, 50%),
+      color-mix(in srgb, currentColor calc(var(--orb-limb-mix, 42%) / 3), transparent) 80%,
+      color-mix(in srgb, currentColor var(--orb-limb-mix, 42%), transparent) 100%
+    );
+}
+
+/* ── SELECTION, SIGNAL 2 — "INACTIVE, DIMMED" ────────────────────────────
+
+   An unpicked orb is mixed most of the way to the canvas. That is VB-60's own
+   word for how these start — dimmed — and it is also what carries selection
+   without a hue: picked and unpicked differ in LIGHTNESS, which is exactly what
+   a greyscale screen keeps.
+
+   `color-mix` toward `--canvas` rather than `opacity`, and the difference is
+   the whole rule. `opacity` composites the element AND its hairline, which
+   would take a 12:1 edge down with it — the mistake FileRow.css records making
+   on the locked row, where a dim `opacity` dropped the subtitle to 2.0:1.
+   Mixing the FILL leaves the inset ring and the mark at full strength, so the
+   orb's SHAPE reads at the same contrast whether it is picked or not and the
+   3:1 WCAG 1.4.11 asks of it is never in question.
+
+   The three light layers stay on and simply have less to paint over, which is
+   right: a dimmed sphere is still a sphere. */
+.orbchoice-orb[data-gradient='1'][data-picked='false']:not(.is-add) {
+  background-color: color-mix(in srgb, var(--globe-node-1-mid) 26%, var(--canvas));
+}
+.orbchoice-orb[data-gradient='2'][data-picked='false']:not(.is-add) {
+  background-color: color-mix(in srgb, var(--globe-node-2-mid) 26%, var(--canvas));
+}
+.orbchoice-orb[data-gradient='3'][data-picked='false']:not(.is-add) {
+  background-color: color-mix(in srgb, var(--globe-node-3-mid) 26%, var(--canvas));
+}
+.orbchoice-orb[data-gradient='4'][data-picked='false']:not(.is-add) {
+  background-color: color-mix(in srgb, var(--globe-node-4-mid) 26%, var(--canvas));
+}
+.orbchoice-orb[data-gradient='5'][data-picked='false']:not(.is-add) {
+  background-color: color-mix(in srgb, var(--globe-node-5-mid) 26%, var(--canvas));
+}
+
+/* SELECTION, SIGNAL 1 — the tick. VB-45's mark, in the orb's own deep colour,
+   which clears 4:1 on every one of the five fills; a white mark would drop to
+   2.9:1 on the lightest of them. */
+.orbchoice-mark {
+  display: block;
+  overflow: visible;
+}
+
+/* ── THE TRAVELLING OUTLINE ───────────────────────────────────────────────
+
+   VB-60: "a glowing outline that rotates through the available choices". Which
+   orb wears it is core/motion/rotation.ts's answer — the follow-up link's own
+   machine — and this is only how it is painted.
+
+   A SOFT HALO AROUND THE ORB, and deliberately not a hard ring: the hard 2px
+   ring at 2px offset is the focus indicator, and it goes around the whole
+   painted chip. The two can be on screen at once — focus arriving stops the
+   rotation, which freezes the outline wherever it was — so they have to be
+   unmistakable for one another. Different shape, different extent, different
+   softness.
+
+   It is also not the selected state and cannot be read as one: picked is a tick
+   plus a fill, both inside the orb, and neither of them is a halo.
+
+   On `::after` rather than folded into `box-shadow`, so it composes with the
+   inset hairline the gradient rules above already set rather than having to be
+   restated in five places. 120ms — a colour change (§06). */
+.orbchoice-orb::after {
+  content: '';
+  position: absolute;
+  /* Hugging the rim rather than standing off it: a halo with a gap between it
+     and the orb reads as a ring around the orb, and a ring at an offset is
+     what the focus indicator is. One pixel out, then straight into blur. */
+  inset: -1px;
+  border-radius: var(--r-pill);
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    0 0 0 1px color-mix(in srgb, var(--primary) 30%, transparent),
+    0 0 10px 3px color-mix(in srgb, var(--primary) 38%, transparent);
+  transition: opacity var(--fast) var(--ease);
+}
+.orbchoice-orb[data-outlined='true']::after {
+  opacity: 1;
+}
+
+/* ── THE ADD-NEW ORB ──────────────────────────────────────────────────────
+
+   VB-60: "a smaller, faintly glowing orb with a pulsing `+`". Smaller is the
+   20px in OrbGroup.tsx. The glow is permanent and low, because this one is not
+   part of what the outline travels through — it is the way OUT of the list, not
+   another thing in it.
+
+   IT IS NOT ONE OF THE FIVE COLOURS, and that is the point of it: a coloured
+   sphere here would read as a seventh role. It is drawn in the panel's own ink
+   instead — an empty orb, hairlined in `--ink-3` (4.6:1 on the canvas, well
+   over the 3:1 WCAG 1.4.11 asks) with the `+` in `--ink-2` inside it.
+
+   It keeps `data-gradient` all the same, so the three light layers above still
+   apply and it is still a SPHERE standing under the same light as its
+   neighbours — shaded in ink rather than in colour, which is exactly what
+   "the same object, quieter" has to mean here. */
+.orbchoice-orb.is-add[data-gradient] {
+  background-color: var(--canvas);
+  box-shadow: inset 0 0 0 1px var(--ink-3);
+  color: var(--ink-2);
+}
+.orbchoice-orb.is-add::after {
+  opacity: 1;
+  box-shadow: 0 0 8px 2px color-mix(in srgb, var(--primary) 24%, transparent);
+}
+
+/* THE PULSE. It is the `+` that pulses — VB-60 says so — not the orb, so the
+   mark is what carries it and the sphere under it stays put. A `+` that grew
+   and shrank with the orb around it would be a wobble; a `+` breathing inside a
+   still orb is the anchor the spec asks for.
+
+   Slow: `ORB_PULSE_MS` is 2.4s, published from core/motion/rotation.ts and set
+   on the element, so the one place that decides how long a beat lasts is the
+   same file that decides how long a turn lasts.
+
+   IT STOPS WHEN THE ROTATION DOES. `data-pulsing` is the rotation's own
+   `isRunning`, so the first thing a person does to this question takes every
+   moving thing in the group still at once — no animation left running and none
+   left merely invisible. */
+.orbchoice-orb.is-add[data-pulsing='true'] .orbchoice-mark {
+  animation: orbAddPulse var(--orb-pulse, 2400ms) var(--ease) infinite;
+}
+
+@keyframes orbAddPulse {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: scale(0.86);
+  }
+  45% {
+    opacity: 1;
+    transform: scale(1.08);
+  }
+}
+
+/* ── REDUCED MOTION ───────────────────────────────────────────────────────
+
+   Nothing here removes information, which is the whole test (docs/GUARDRAILS.md
+   — the still version still carries the instruction).
+
+   The outline: no rule needed. `core/motion/rotation.ts`'s `viewFor` returns
+   `{kind:'all'}` under reduced motion, so EVERY orb is outlined at once and the
+   group says "any of these, one or several" more completely than the travelling
+   version manages in any one instant. That is React's business, not this file's.
+
+   The pulse: the `+` stops breathing and sits at its full size and full
+   strength — the state the animation spends its brightest moment in, not the
+   dimmest — so the add control is if anything more visible standing still. */
+@media (prefers-reduced-motion: reduce) {
+  .orbchoice-orb.is-add[data-pulsing='true'] .orbchoice-mark {
+    animation: none;
+    opacity: 1;
+    transform: none;
+  }
+  .orbchoice-orb,
+  .orbchoice-orb::after,
+  .orbchoice-label {
+    transition: none;
+  }
+}

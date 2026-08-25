@@ -47,13 +47,19 @@ async function openPanel(context: BrowserContext): Promise<Page> {
 
 /**
  * Answers whatever is currently on screen with a minimal, keyboard-only
- * interaction: types into a text field, or selects a pill. For a pill
+ * interaction: types into a text field, or selects a choice. For a choice
  * question, the group's roving tabindex already starts on the first option,
  * so no arrow key is needed there — Space alone selects it. That "first
  * option" default is "Yes" for the two repeatable gates (entities_gate,
  * initiatives_gate — the only two `yesno` questions in the data) and picks
  * a role for `role_names`, which is exactly what exercises both the
- * open-ended and seeded repeatable paths. An "add another?" prompt renders
+ * open-ended and seeded repeatable paths. V2.0 VB-60 draws THAT question's
+ * choices as orbs rather than pills (core/choice/orbs.ts) — same roving
+ * tabindex, same Space, a different group class — so the locator below has to
+ * find either. It matters here more than anywhere: `role_names` is optional,
+ * so a walker that could not select on it would leave the seeded repeatable
+ * empty and this test would keep passing while covering half of what it
+ * says it covers. An "add another?" prompt renders
  * identically (two pills, Yes/No) but is marked `data-position="add-another"`
  * specifically so this can choose "No" there instead, via one ArrowRight —
  * bounding every open-ended repeatable to exactly one record.
@@ -82,7 +88,7 @@ async function answerCurrentQuestion(page: Page): Promise<void> {
 
   const textarea = page.locator('.flow textarea');
   const textInput = page.locator('.flow input.field');
-  const pills = page.locator('.flow .pillgroup .pill');
+  const pills = page.locator('.flow .pillgroup .pill, .flow .orbgroup .orbchoice');
 
   if (await textarea.count()) {
     await textarea.first().focus();

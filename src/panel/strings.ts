@@ -130,6 +130,29 @@ export const S = {
    */
   narratorReflectCta: 'Keep it as-is, tighten it with your AI, or say it again.',
   addYourOwn: '+ add your own',
+  /**
+   * V2.0 VB-60 — the same action, on the orb picker, where the `+` is DRAWN.
+   *
+   * The pill row prints its plus as a character because a pill is a word in a
+   * box and the glyph has to come from somewhere. The orb picker's add control
+   * is "a smaller, faintly glowing orb with a pulsing `+`" — the plus is the
+   * thing inside the orb, stroked so it survives greyscale, and printing a
+   * second one in the label would put two pluses side by side.
+   *
+   * It is the whole accessible name, not a shortening of `addYourOwn`, so what
+   * a screen reader says and what is printed are the same words (WCAG 2.5.3).
+   */
+  addYourOwnOrb: 'add your own',
+  /**
+   * V2.0 VB-60 — what the orb group is, for someone who cannot see that the
+   * outline is travelling round it.
+   *
+   * The travelling outline says "one or several" to the eye and says nothing at
+   * all to a screen reader, so the group carries it in words instead. Appended
+   * to the question, which is the group's accessible name, rather than printed:
+   * the sentence is about how to answer, and the answer is right there.
+   */
+  orbPickHint: 'Pick one or several.',
   addYourOwnPrompt: 'What should it say?',
   addYourOwnConfirm: 'Add',
   yes: 'Yes',

@@ -85,7 +85,8 @@ test('axe finds no violations on the "another role?" screen (VB-20)', async () =
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
 
   // Pick a role, then answer everything the loop asks about it.
-  await page.locator('.flow .pillgroup .pill').first().click();
+  // V2.0 VB-60: `role_names` is asked as orbs; the rest of the loop is pills.
+  await page.locator('.flow .orbgroup .orbchoice').first().click();
   await page.getByRole('button', { name: S.next, exact: true }).click();
   for (let guard = 0; guard < 12; guard++) {
     if ((await page.locator('.flow').getAttribute('data-position')) === 'add-another') break;
@@ -95,7 +96,11 @@ test('axe finds no violations on the "another role?" screen (VB-20)', async () =
     }
     const textarea = page.locator('.flow textarea');
     if (await textarea.count()) await textarea.first().fill('What this role is there to do.');
-    else await page.locator('.flow .pillgroup .pill:not(.pill-add)').first().click();
+    else
+      await page
+        .locator('.flow .pillgroup .pill:not(.pill-add), .flow .orbgroup .orbchoice:not(.orbchoice-add)')
+        .first()
+        .click();
     await page.getByRole('button', { name: S.next, exact: true }).click();
   }
   await expect(page.locator('.flow')).toHaveAttribute('data-position', 'add-another');

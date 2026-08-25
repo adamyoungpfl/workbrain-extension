@@ -119,9 +119,15 @@ async function answerCurrent(page: Page): Promise<void> {
     return;
   }
   const textarea = page.locator('.flow textarea');
-  const pills = page.locator('.flow .pillgroup .pill:not(.pill-add)');
+  // V2.0 VB-60: a choice on this screen is a pill or an orb — `role_names` is
+  // asked as orbs now (core/choice/orbs.ts) and every other question in this
+  // loop is still pills. A walker that only knew one of them would answer
+  // nothing on the other and pass anyway, because `role_names` is optional.
+  const choice = page.locator(
+    '.flow .pillgroup .pill:not(.pill-add), .flow .orbgroup .orbchoice:not(.orbchoice-add)',
+  );
   if (await textarea.count()) await textarea.first().fill('What this role is there to do.');
-  else if (await pills.count()) await pills.first().click();
+  else if (await choice.count()) await choice.first().click();
   await next(page);
 }
 
@@ -134,9 +140,10 @@ async function answerOneRole(page: Page): Promise<void> {
   throw new Error('the roles loop never reached its add-another screen');
 }
 
-/** Picks a role on `role_names` and answers everything the loop then asks. */
+/** Picks a role on `role_names` and answers everything the loop then asks.
+ * V2.0 VB-60: that question's choices are orbs. */
 async function throughFirstRole(page: Page): Promise<void> {
-  await page.locator('.flow .pillgroup .pill').first().click();
+  await page.locator('.flow .orbgroup .orbchoice').first().click();
   await next(page);
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_for');
   await answerOneRole(page);
@@ -280,11 +287,12 @@ test.describe('VB-20 — the roles loop asks for another', () => {
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
 
     // It is ON the list, and shown as picked — not silently selected behind a
-    // row of pills that does not include it.
+    // row of choices that does not include it. V2.0 VB-60 made those choices
+    // orbs; the guarantee is the same one.
     // Exact, and case-sensitive: one of the six built-in options is
     // "Volunteer / Board Member", which a loose substring match would also
     // find and quietly pass on.
-    const addedPill = page.locator('.flow .pillgroup .pill').filter({ hasText: new RegExp(`^${NEW_ROLE}$`) });
+    const addedPill = page.locator('.flow .orbgroup .orbchoice').filter({ hasText: new RegExp(`^${NEW_ROLE}$`) });
     await expect(addedPill).toHaveCount(1);
     await expect(addedPill).toHaveAttribute('aria-pressed', 'true');
 

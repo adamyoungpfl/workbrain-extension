@@ -21,6 +21,12 @@ export type { NavClusterProps } from './NavCluster';
 export { Pill, PillGroup } from './Pill';
 export type { PillProps, PillOption, PillGroupProps } from './Pill';
 
+/** V2.0 VB-60 — the same choice group, drawn as the brain's own orbs. Which
+ * questions get it is core/choice/orbs.ts's `usesOrbChoice`, never an `if` at
+ * a call site. */
+export { OrbGroup } from './OrbGroup';
+export type { OrbGroupProps, OrbOption } from './OrbGroup';
+
 export { Field } from './Field';
 export type { FieldProps } from './Field';
 

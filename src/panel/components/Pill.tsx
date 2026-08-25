@@ -1,5 +1,6 @@
 import { forwardRef, useRef, useState } from 'react';
 import type { ButtonHTMLAttributes, KeyboardEvent } from 'react';
+import { rovingTarget, toggleChoice } from '../../core/choice/roving';
 import { S } from '../strings';
 import './Pill.css';
 
@@ -43,6 +44,20 @@ export interface PillGroupProps {
  * presses Next, because auto-advance removes their sense of control.
  * Arrow keys move a roving tabindex between pills; Space/Enter select via
  * native button activation.
+ *
+ * V2.0 VB-60: WHERE THE ARROW KEYS AND THE TOGGLE NOW LIVE.
+ *
+ * They were twenty lines of `switch (e.key)` here. VB-60 gives the roles
+ * question a second group that looks nothing like this one
+ * (`components/OrbGroup.tsx`) and requires — in the task's own words — that
+ * "whatever replaces it keeps ALL of that". Two copies of a keyboard contract
+ * are two contracts that agree until somebody edits one, so the arithmetic
+ * moved to `core/choice/roving.ts` and both groups call it. Nothing about this
+ * component's behaviour changed; what changed is that it is now the same
+ * behaviour as the other group's by construction rather than by inspection.
+ *
+ * Focus stayed here. Moving focus is a DOM act (CLAUDE.md's one architectural
+ * rule) — core says which index, this says `.focus()`.
  */
 export function PillGroup({ legend, options, mode, value, onChange, onAddOwn }: PillGroupProps) {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
@@ -51,46 +66,19 @@ export function PillGroup({ legend, options, mode, value, onChange, onAddOwn }: 
   const [rovingIndex, setRovingIndex] = useState(Math.max(0, selectedIndex));
 
   function focusItem(index: number) {
-    const wrapped = (index + count) % count;
-    setRovingIndex(wrapped);
-    itemRefs.current[wrapped]?.focus();
+    setRovingIndex(index);
+    itemRefs.current[index]?.focus();
   }
 
   function handleKeyDown(e: KeyboardEvent<HTMLButtonElement>, index: number) {
-    switch (e.key) {
-      case 'ArrowRight':
-      case 'ArrowDown':
-        e.preventDefault();
-        focusItem(index + 1);
-        break;
-      case 'ArrowLeft':
-      case 'ArrowUp':
-        e.preventDefault();
-        focusItem(index - 1);
-        break;
-      case 'Home':
-        e.preventDefault();
-        focusItem(0);
-        break;
-      case 'End':
-        e.preventDefault();
-        focusItem(count - 1);
-        break;
-      default:
-        break;
-    }
+    const target = rovingTarget(e.key, index, count);
+    if (target === null) return;
+    e.preventDefault();
+    focusItem(target);
   }
 
   function toggle(optionValue: string) {
-    if (mode === 'multi') {
-      onChange(
-        value.includes(optionValue)
-          ? value.filter((v) => v !== optionValue)
-          : [...value, optionValue],
-      );
-    } else {
-      onChange([optionValue]);
-    }
+    onChange(toggleChoice(value, optionValue, mode));
   }
 
   return (

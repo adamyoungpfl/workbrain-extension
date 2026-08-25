@@ -8,6 +8,7 @@ import {
   highlightExtent,
   orbLight,
   shadeExtent,
+  stagePoint,
 } from './lighting';
 import type { ScenePoint } from './lighting';
 
@@ -197,5 +198,50 @@ describe('VB-54 — the highlight never leaves the orb', () => {
     // distance, not zero.
     expect(Math.max(...seen) - Math.min(...seen)).toBeLessThan(1e-9);
     expect(seen[0]!).toBeGreaterThan(0.2);
+  });
+});
+
+/**
+ * V2.0 VB-60 — the picker measures its orbs and converts them here, so this is
+ * the only arithmetic between a painted pixel and the scene. See `stagePoint`.
+ */
+describe('a painted point in stage space', () => {
+  const frame = { left: 20, top: 100, width: 200, height: 80 };
+
+  it('puts the frame’s own corners on the stage’s corners', () => {
+    expect(stagePoint(20, 100, frame)).toEqual({ x: -1, y: -1, z: 0 });
+    expect(stagePoint(220, 180, frame)).toEqual({ x: 1, y: 1, z: 0 });
+    expect(stagePoint(120, 140, frame)).toEqual({ x: 0, y: 0, z: 0 });
+  });
+
+  it('keeps screen’s downward y, which is what both callers draw in', () => {
+    expect(stagePoint(120, 110, frame).y).toBeLessThan(0);
+    expect(stagePoint(120, 170, frame).y).toBeGreaterThan(0);
+  });
+
+  it('is flat — the picker is a pane, like the List’s', () => {
+    expect(stagePoint(50, 150, frame).z).toBe(0);
+  });
+
+  it('resolves a frame with no extent to the centre rather than to NaN', () => {
+    // A group measured before layout, or in a test with no browser. `orbLight`
+    // reads the centre as lit from straight ahead: neutral, and drawable.
+    const nothing = { left: 0, top: 0, width: 0, height: 0 };
+    const point = stagePoint(0, 0, nothing);
+    expect(point).toEqual({ x: 0, y: 0, z: 0 });
+    expect(Number.isNaN(orbLight(point).hx)).toBe(false);
+  });
+
+  it('an orb further right sees the light from further away, and its highlight moves left', () => {
+    // The whole reason the picker measures rather than models: this
+    // relationship BETWEEN neighbours is the cue, and it only exists if the
+    // positions are the ones actually painted (see the header on VB-23).
+    const left = orbLight(stagePoint(40, 140, frame));
+    const right = orbLight(stagePoint(200, 140, frame));
+    expect(right.hx).toBeLessThan(left.hx);
+    expect(right.sx).toBeGreaterThan(left.sx);
+    // Same light, so both still point at it: up and to the left of both.
+    expect(left.hy).toBeLessThan(0);
+    expect(right.hy).toBeLessThan(0);
   });
 });
