@@ -485,12 +485,28 @@ test.describe('VB-14 — it stays inside the panel', () => {
     expect(overflow).toBeLessThanOrEqual(0);
   });
 
+  /**
+   * V2.0 VB-69 EDITED THIS TEST, AND THE EDIT IS THE POINT OF VB-69.
+   *
+   * It used to read `.brainglobe`'s own `background-color` and expect the
+   * field. The stage has no background of its own any more — the drawer it
+   * sits in is that colour top edge to bottom edge (V1.9 VB-50), and a second
+   * ground in the middle of it was the lighter rectangle Adam photographed.
+   *
+   * The claim is unchanged and is still worth making: the dark surface is
+   * CONTAINED, and the page around it keeps the panel's light identity. So it
+   * is measured one layer out, where the ground now is — and it gains the
+   * other half of VB-69, that the stage itself paints nothing.
+   */
   test('the dark stage is contained — the page around it keeps the panel’s own light identity', async ({ page }) => {
     await open(page);
     const stage = await page.locator('.brainglobe').evaluate((el) => getComputedStyle(el).backgroundColor);
+    const ground = await page.getByTestId('stage').evaluate((el) => getComputedStyle(el).backgroundColor);
     const body = await page.evaluate(() => getComputedStyle(document.body).backgroundColor);
-    expect(stage).toBe('rgb(6, 10, 22)');
-    expect(body).not.toBe(stage);
+    // Transparent, in whichever way this browser spells it.
+    expect(parseCssColor(stage)?.a ?? 0, 'the stage paints a ground of its own').toBe(0);
+    expect(ground).toBe('rgb(6, 10, 22)');
+    expect(body).not.toBe(ground);
   });
 });
 
@@ -543,9 +559,14 @@ test.describe('VB-23 — an answered node is a solid orb', () => {
       // A real rgb(), not `url(#…)`: the three-stop radial is gone.
       expect(fill).toMatch(/^rgb\(/);
     }
-    // The field, five blooms, five limbs, five terminators, one specular. One
-    // specular for twelve orbs is what "one light" costs.
-    expect(await page.locator('radialGradient').count()).toBe(17);
+    // Five blooms, five limbs, five terminators, one specular. One specular
+    // for twelve orbs is what "one light" costs.
+    //
+    // Sixteen and not seventeen since V2.0 VB-69: the seventeenth was the
+    // STAGE's own radial, and it is the one gradient here that was not part of
+    // an orb — it painted the box the orbs stand in, which is the lighter
+    // rectangle VB-69 removes. Every gradient left belongs to a sphere.
+    expect(await page.locator('radialGradient').count()).toBe(16);
     // And every one of them is CENTRED — `cx="50%"`, the orb's own middle. The
     // gradient VB-23 deleted was at `cx="34%"`, off-centre in each orb's own
     // box, which is the arrangement that made twelve orbs wear one highlight.

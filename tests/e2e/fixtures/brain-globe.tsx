@@ -268,6 +268,17 @@ function Harness() {
   return (
     <main style={{ width: 400, margin: '0 auto', padding: 20, boxSizing: 'border-box' }}>
       <h1 style={{ fontSize: 16, fontFamily: 'var(--font-sans)' }}>Brain globe harness</h1>
+      {/* V2.0 VB-69 — THE GROUND BELONGS TO THE DRAWER NOW.
+          The stage stopped painting a field of its own, so the surface the
+          picture sits in is `.filedrawer-stage`'s (surfaces/FileDrawer.css).
+          This page stands in for the drawer, so it has to supply that ground
+          or every contrast measured here is taken against a white page the
+          product never shows.
+
+          One declaration, and deliberately no padding: the globe's own box is
+          where it was, so nothing measured in tests/e2e/brain-globe.spec.ts
+          moves by a pixel. */}
+      <div data-testid="stage" style={{ background: 'var(--globe-field)' }}>
       <BrainGlobe
         sections={contextOutline}
         states={MODEL_STATES}
@@ -279,6 +290,7 @@ function Harness() {
         onSelect={setSelected}
         {...(WORK === 'off' ? {} : { files, file: nav.file, tier: nav.tier, onTier: setNav })}
       />
+      </div>
       {/* Where the drawer's own detail panel will go. Here it exists only so a
           test can read back what the globe reported without reaching into
           React's internals. */}

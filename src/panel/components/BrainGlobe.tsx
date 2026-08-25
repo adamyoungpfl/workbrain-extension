@@ -2272,10 +2272,14 @@ export function BrainGlobe({
           here is the only way to learn anything. */}
       <svg className="brainglobe-svg" viewBox="-100 -100 200 200" aria-hidden="true" focusable="false">
         <defs>
-          <radialGradient id={`${uid}-field`} cx="50%" cy="42%" r="72%">
-            <stop offset="0%" className="brainglobe-stop-glow" />
-            <stop offset="100%" className="brainglobe-stop-field" />
-          </radialGradient>
+          {/*
+            V2.0 VB-69 — the stage's own radial was declared here and painted
+            by a full-bleed rect below. Both are gone: the drawer's field is
+            the only ground now, so there is nothing for the picture to sit on
+            except the surface it is already in. See BrainGlobe.css's note at
+            `.brainglobe` for why the GLOW, not the fill, was the rectangle
+            Adam could see.
+          */}
           {/*
             V1.9 VB-54 — THE LIGHT'S TWO BRUSHES, and there are only two of
             them however many orbs are on the stage.
@@ -2325,8 +2329,6 @@ export function BrainGlobe({
             </radialGradient>
           ))}
         </defs>
-
-        <rect className="brainglobe-field" x="-100" y="-100" width="200" height="200" fill={`url(#${uid}-field)`} />
 
         {/*
           V1.8 VB-48 — THE WORK BRAIN: the files, as a network of their own.

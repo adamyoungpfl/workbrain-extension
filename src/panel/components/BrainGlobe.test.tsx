@@ -154,11 +154,17 @@ describe('BrainGlobe — the drawing', () => {
     const { container } = render();
 
     /**
-     * V1.9 VB-54 CHANGED THE COUNT HERE ON PURPOSE.
+     * V1.9 VB-54 CHANGED THE COUNT HERE ON PURPOSE, AND V2.0 VB-69 CHANGED IT
+     * BACK BY ONE.
      *
      * The field and five blooms were six; the light adds five limbs, five
-     * terminators and one specular, for seventeen. That is not the thing VB-23
-     * deleted coming back. What VB-23 deleted was a gradient bound to an ORB —
+     * terminators and one specular, for seventeen. VB-69 then removed the
+     * field's own radial — the one gradient here that belonged to the STAGE
+     * rather than to a sphere, and the one a person could see as a lighter
+     * rectangle inside the drawer — leaving sixteen, every one of them an orb's.
+     *
+     * Neither change is the thing VB-23 deleted coming back. What VB-23
+     * deleted was a gradient bound to an ORB —
      * `cx="34%"`, a highlight fixed in each orb's own local box, so every orb
      * wore the identical one wherever it stood and twelve spheres read as
      * twelve stickers.
@@ -170,7 +176,7 @@ describe('BrainGlobe — the drawing', () => {
      * off-centre, and that the sphere itself still takes a flat token fill.
      */
     const gradients = [...container.querySelectorAll('radialGradient')];
-    expect(gradients).toHaveLength(17);
+    expect(gradients).toHaveLength(16);
     for (const gradient of gradients) {
       expect(gradient.getAttribute('cx'), 'a gradient is anchored inside one orb’s own box').toBe('50%');
     }

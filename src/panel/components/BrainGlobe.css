@@ -19,6 +19,31 @@
    motion to cancel; that switch lives in the component, where it stops the
    frame loop from ever starting rather than merely hiding it. */
 
+/* ── V2.0 VB-69: THE STAGE HAS NO BACKGROUND OF ITS OWN ──────────────────
+   Adam's screenshot: the globe's stage read as a lighter rounded rectangle
+   sitting inside the drawer's darker field, and the two are supposed to be one
+   continuous surface.
+
+   This FINISHES V1.9 VB-50 rather than reversing it. VB-50 made the drawer one
+   colour from its top edge to the bottom of the panel and deliberately deleted
+   List's separate pane (`--dock-pane`); the stage is the same class of thing —
+   a ground in the middle of a surface that is meant to have one — and it was
+   missed. So: no `background` here, no radial rect inside the SVG
+   (BrainGlobe.tsx), and no fill on the way-out disc below. What paints behind
+   the picture now is `.filedrawer-stage`, which is the drawer's own field.
+
+   The radial went with the flat fill and that is the part worth stating: the
+   rectangle a person could see was the GLOW, not the colour. `--globe-field`
+   and the drawer's field are the same token, so the flat fill was invisible on
+   its own; what drew the box was the soft `--globe-field-glow` centre falling
+   to the field at r=72%, which never reaches the field within the stage's own
+   edges. A soft gradient with a hard rectangle around it is still a rectangle.
+
+   What the orbs sit in front of now is the same near-black the whole drawer
+   is, and every contrast floor measured against `--globe-field` still measures
+   against `--globe-field` — the light simply has one ground instead of two.
+   Re-measured in the browser at tests/e2e/one-surface.spec.ts (VB-69), which
+   samples the painted column from the chrome down through the stage. */
 .brainglobe {
   position: relative;
   width: var(--brainglobe-size);
@@ -27,7 +52,6 @@
   margin: 0 auto;
   border-radius: var(--r-lg);
   overflow: hidden;
-  background: var(--globe-field);
   /* The stage owns rotation within its own bounds; the drawer's grip owns
      vertical resize (VB-14's open item 1). `touch-action: none` is what makes
      that true on a touch screen — without it the browser claims the vertical
@@ -51,11 +75,14 @@
 
 /* ── The field ───────────────────────────────────────────────────────────── */
 
-/* Not a flat black rectangle. The globe needs something to sit *in front of*,
-   so the stage is a soft radial: lighter behind the solid, falling to the deep
-   field at the corners. */
-.brainglobe-stop-glow  { stop-color: var(--globe-field-glow); }
-.brainglobe-stop-field { stop-color: var(--globe-field); }
+/* V2.0 VB-69: `.brainglobe-stop-glow` and `.brainglobe-stop-field` were here,
+   dressing the two stops of the stage's radial. V1.2's argument for it was
+   "not a flat black rectangle — the globe needs something to sit in front of";
+   the correction is that the something is the DRAWER, and a radial inside the
+   stage's own box drew the rectangle the argument was trying to avoid. What
+   the globe sits in front of is the one field the whole drawer is painted in.
+   The orbs' own blooms (below) are what still separate a lit node from it, and
+   they travel with the node instead of being a lighter patch of stage. */
 
 /* ── The orbs ────────────────────────────────────────────────────────────── */
 
@@ -585,8 +612,24 @@
   padding: 0 12px;
   border: 1px solid var(--globe-edge);
   border-radius: var(--r-pill);
-  background: var(--globe-field);
+  /* V2.0 VB-69: this was `var(--globe-field)` — the field painted a second
+     time, over the same colour, which really only punched an opaque hole in
+     the picture behind the control. With one field under everything, the fill
+     IS the field and the edge above is what says where the control is. The
+     mark inside keeps its 3:1 on the same ground it always had.
+     `none` and not the removed declaration: a `<button>` with no background of
+     its own falls back to the UA's `buttonface`, which paints a light grey
+     disc on the deep field — the opposite of showing the surface through. */
+  background: none;
   color: var(--globe-label);
+  /* WHAT THE FILL WAS ALSO DOING, said the way the rest of the stage says it.
+     An opaque chip guaranteed the words stood on the field; without it, an
+     edge or an orb can pass behind them, and a near-white label on a lit orb
+     measures under 2:1. This is the same halo every label on this stage
+     carries for exactly that reason (`.brainglobe-label`, `.brainglobe-locknote`)
+     — the field's own colour, tight and then soft, so the ink keeps its floor
+     over whatever the picture puts underneath it. */
+  text-shadow: 0 1px 3px var(--globe-field), 0 0 8px var(--globe-field);
   font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 600;
@@ -638,6 +681,12 @@
 
 .brainglobe-back-chevron {
   display: block;
+  /* The chevron's half of the halo above. A text-shadow cannot reach an SVG
+     stroke, so the mark takes the same three pixels of field as a
+     `drop-shadow` — one static filter, no motion, and the same colour. Without
+     it the disc is a 1px rim and a thin mark with nothing between them and a
+     lit orb that happens to turn under the corner. */
+  filter: drop-shadow(0 1px 3px var(--globe-field));
   /* CENTRED BY ITS INK, NOT BY ITS BOX. The chevron NavButton.tsx draws runs
      from x=8 to x=15 in a 24-unit viewBox, so its ink is centred at 11.5 and
      its box at 12 — at 18px that leaves the mark 0.375px left of the middle of

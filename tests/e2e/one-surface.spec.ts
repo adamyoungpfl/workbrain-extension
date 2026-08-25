@@ -277,6 +277,131 @@ test('the drawer is one colour, sampled every third pixel of its height, in both
   await context.close();
 });
 
+/* ── V2.0 VB-69: THE ONE GROUND VB-50 MISSED ─────────────────────────────
+ *
+ * The test above walks x = 2, and x = 2 is beside the globe rather than
+ * through it. That is exactly the column in which the stage's own field was
+ * invisible — same token, same colour — while a person looking at the panel
+ * saw a lighter rounded rectangle in the middle of the drawer, because what
+ * drew it was the stage's radial GLOW and not its flat fill.
+ *
+ * So this walks the column the other test cannot: down the middle, through the
+ * picture's own box. Two halves, because there were two grounds to remove:
+ *
+ *   · WITH THE PICTURE HIDDEN, every pixel of that column is the one colour.
+ *     Hiding `.brainglobe`'s children leaves the stage's own box painting
+ *     whatever it paints, so a `background` put back on `.brainglobe` fails
+ *     here even though it would be the very same token.
+ *   · WITH THE PICTURE SHOWING, the top inch of the stage's box — where the
+ *     radial was at its brightest and where nothing is drawn — is the one
+ *     colour too. The gradient measured about eleven levels above the field
+ *     there, which is three times PAINT_TOLERANCE.
+ *
+ * And the way out of a file (VB-59's disc) is asked what it fills, because it
+ * was the second `background: var(--globe-field)` in the file: a fill that
+ * repainted the surface it stands on in order to punch a hole in the picture.
+ */
+test('the stage has no ground of its own — one colour through the visual (VB-69)', async () => {
+  const { context, sw, id } = await launchExtension();
+  const page = await openQuestion(context, sw, id);
+  const field = await tokenColor(page, '--globe-field');
+  const measured: string[] = [];
+
+  await chooseMode(page, 'brain');
+  for (const { name, height } of heightsFor('brain')) {
+    await setHeight(page, height);
+    const where = `brain at ${name}`;
+    const drawer = (await page.locator('.filedrawer').boundingBox())!;
+    const stage = (await page.locator('.brainglobe').boundingBox())!;
+    const middle = Math.round(stage.x + stage.width / 2);
+    /**
+     * WHAT THE COLUMN IS ALLOWED TO MISS.
+     *
+     * Straight down the middle of the picture is also straight down the middle
+     * of the grip, and at the smallest stage it passes the trail's words and
+     * the two view glyphs as well. Those are ink, not ground, and this test is
+     * about ground — so the rows they stand on are dropped, from their real
+     * boxes at this height rather than from a guess about where a word ends.
+     * Everything else in the column is ground and has to be the one colour.
+     */
+    const taken = await page.evaluate(() =>
+      [
+        ...document.querySelectorAll(
+          '.filedrawer-grip, .crumbs-item, .crumbs-count, .filedrawer-viewbar button',
+        ),
+      ].map((el) => {
+        const box = el.getBoundingClientRect();
+        return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+      }),
+    );
+    const isGround = (x: number, y: number): boolean =>
+      taken.every((box) => x < box.left - 3 || x > box.right + 3 || y < box.top - 3 || y > box.bottom + 3);
+
+    // THE PICTURE SHOWING. Two pixels inside the top edge of the stage's box,
+    // across it — clear of the topmost orb and of the disc in the corner, and
+    // right where the radial's centre used to spill.
+    const rim = await pixels(
+      page,
+      [0.25, 0.5, 0.75].map((across) => ({
+        x: Math.round(stage.x + stage.width * across),
+        y: Math.round(stage.y) + 2,
+      })),
+    );
+    for (const [index, pixel] of rim.entries()) {
+      expect(
+        channelDistance(pixel, field),
+        `${where}: the top of the stage's box, ${[25, 50, 75][index]}% across, is not the drawer's colour`,
+      ).toBeLessThanOrEqual(PAINT_TOLERANCE);
+    }
+
+    // THE PICTURE HIDDEN. `visibility` on the children only: the box itself
+    // still paints, which is the whole point of hiding them one level down.
+    await page.locator('.brainglobe').evaluate((root) => {
+      for (const child of [...root.children]) (child as HTMLElement).style.visibility = 'hidden';
+    });
+    const column: { x: number; y: number }[] = [];
+    for (let y = Math.round(drawer.y) + 1; y < PANEL.height; y += 3) {
+      if (isGround(middle, y)) column.push({ x: middle, y });
+    }
+    const painted = await pixels(page, column);
+    let worst = 0;
+    painted.forEach((sample, index) => {
+      const distance = channelDistance(sample, field);
+      worst = Math.max(worst, distance);
+      expect(
+        distance,
+        `${where}: ${column[index]!.y - Math.round(drawer.y)}px down the middle of the drawer is not the one colour`,
+      ).toBeLessThanOrEqual(PAINT_TOLERANCE);
+    });
+    // ...and the walk really did cross the stage rather than skirting it: the
+    // rows inside the picture's own box are most of what was sampled.
+    const inStage = column.filter((point) => point.y > stage.y && point.y < stage.y + stage.height).length;
+    expect(inStage, `${where}: the column missed the stage`).toBeGreaterThan(stage.height / 6);
+    measured.push(
+      `${where} — ${painted.length} samples down the middle (${inStage} inside the picture), worst ${worst} levels off the field`,
+    );
+    await page.locator('.brainglobe').evaluate((root) => {
+      for (const child of [...root.children]) (child as HTMLElement).style.visibility = '';
+    });
+  }
+
+  // And said in the stylesheet as well as in the pixels. A flat fill in the
+  // field's own token is invisible in a screenshot — that is exactly why it
+  // survived VB-50 — so the box is also asked what it declares.
+  const box = parseCssColor(await page.locator('.brainglobe').evaluate((el) => getComputedStyle(el).backgroundColor));
+  expect(isOpaque(box), 'the stage declares a ground of its own').toBe(false);
+
+  // The way out of the file: an edge and a mark, standing on the surface —
+  // never a fill of its own (VB-59's disc, VB-69's second removal).
+  const disc = page.locator('.brainglobe-back').first();
+  await expect(disc).toBeVisible();
+  const fill = parseCssColor(await disc.evaluate((el) => getComputedStyle(el).backgroundColor));
+  expect(isOpaque(fill), 'the way out of the file paints a ground of its own').toBe(false);
+
+  console.log(`\n  VB-69 through the stage\n${measured.map((line) => `    ${line}`).join('\n')}\n`);
+  await context.close();
+});
+
 test('no element inside the drawer paints a ground that is not the one colour (VB-50)', async () => {
   const { context, sw, id } = await launchExtension();
   const page = await openQuestion(context, sw, id);
