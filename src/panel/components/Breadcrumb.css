@@ -1,0 +1,329 @@
+/* V1.9 VB-52 — the breadcrumb across the top of the drawer.
+   See Breadcrumb.tsx for what it is and why it is the only file switcher.
+
+   FOUR THINGS THAT LOOK LIKE TASTE AND ARE NOT:
+
+   1. **The band is a full 44px and nothing overhangs it.** Every rung is a
+      control and docs/GUARDRAILS.md floors a control at 44. V1.8's file strip
+      could lay out at 28 and let its hit boxes overhang, because what they
+      overhung was list rows inside the same scrolling box. This band sits
+      directly under the drag handle, and an overhang here would take pixels off
+      one 44px control to give them to another. So the band is the floor, and
+      core/drawer/height.ts charges the drawer for it honestly.
+   2. **It wears the chrome's colour, not the pane's.** V1.6 VB-30 settled that
+      the drawer's chrome is the dark field in BOTH modes, so the handle above
+      and the view bar below and this band are one surface whichever view is
+      showing — which is also the direction VB-50 is taking the whole panel.
+   3. **The ring is inset.** A ring drawn outside a rung would be clipped by the
+      band and would sit over the handle above it. 2px at 2px inset, in the
+      dock's own accent: --primary measures 2.90:1 on this field, under the floor
+      for a non-text indicator (Flow.css says the same for every other ring in
+      the dock).
+   4. **The trail can shrink; the count cannot.** A long section name ellipsises
+      inside its own rung rather than pushing `2/2` off a 400px panel. The count
+      is the one thing here that is fixed, because it is the thing being glanced
+      at. */
+
+.crumbs {
+  flex: none;
+  background: var(--dock-stage, var(--canvas));
+  /* Over both content layers, which are absolutely positioned from the bottom
+     of this band down — the same reason the head band above carries one. */
+  position: relative;
+  z-index: 1;
+}
+
+.crumbs-row {
+  display: flex;
+  align-items: center;
+  /* The band's own height, published by FileDrawer.tsx from
+     core/drawer/height.ts so the drawer's arithmetic and its layout cannot
+     disagree. */
+  height: var(--crumb-row-h, 44px);
+  padding: 0 6px 0 8px;
+  box-sizing: border-box;
+  gap: 4px;
+}
+
+.crumbs-trail {
+  display: flex;
+  /* STRETCH, NOT CENTRE, ALL THE WAY DOWN. Every rung and every chip takes its
+     44px hit box from `height: 100%`, and a percentage height means nothing
+     inside a box that is only as tall as its content — centring here would give
+     the whole trail the 28px chip's height and every control in it would fail
+     docs/GUARDRAILS.md's floor while looking exactly right. Measured, not
+     assumed: tests/e2e/breadcrumb.a11y.spec.ts reads the boxes back. */
+  align-self: stretch;
+  align-items: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.crumbs-item {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  min-width: 0;
+}
+
+/* The rungs BEFORE the last one never shrink. A trail whose "Work brain"
+   ellipsises to "Work br…" to make room for the rung after it has lost the one
+   thing it is for; what gives way is the end of the trail — the section name,
+   or the file chips — because those are the parts a person is looking straight
+   at and can identify from their first few characters. */
+.crumbs-item:not(:last-child):not(.is-files) {
+  flex: none;
+}
+
+/* The separator. A chevron drawn in text rather than an SVG, because it is
+   punctuation between two labels and not a control — and `aria-hidden` by
+   virtue of being generated content, which no screen reader announces. */
+.crumbs-item + .crumbs-item::before {
+  content: '›';
+  flex: none;
+  padding: 0 2px;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1;
+  color: var(--dock-ink-quiet, var(--ink-3));
+}
+
+/* A rung: a button when it goes somewhere, a plain label when it is where you
+   already are. Both are laid out identically, so the trail does not shift by a
+   pixel when the last rung changes. */
+.crumbs-seg {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  min-width: 0;
+  /* THE HIT BOX: the whole band is 44 tall and the rung fills it. */
+  height: 100%;
+  padding: 0 5px;
+  margin: 0;
+  appearance: none;
+  border: 0;
+  border-radius: var(--r-sm);
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  color: var(--dock-ink-quiet, var(--ink-2));
+  cursor: pointer;
+  transition: color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+
+.crumbs-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* Where you are. Not a control, so no pointer and no hover — and louder than
+   the rungs behind it, which is the trail's own way of saying which end you are
+   standing on. `aria-current="page"` is the half that does not depend on
+   seeing it. */
+.crumbs-seg.is-here {
+  color: var(--dock-ink, var(--ink));
+  font-weight: 700;
+  cursor: default;
+}
+
+button.crumbs-seg:hover {
+  color: var(--dock-ink, var(--ink));
+  background: var(--dock-chip-hover, var(--sunken));
+}
+
+button.crumbs-seg:focus-visible {
+  outline: 2px solid var(--dock-accent, var(--primary));
+  outline-offset: -2px;
+}
+
+/* The caret turns when the files are showing. A SHAPE, not a colour — the
+   state has to survive greyscale (docs/GUARDRAILS.md). It rides the file rung
+   while the files are hidden and the chip for the file you are in while they
+   are showing, because that is the control that closes them again
+   (Breadcrumb.tsx). */
+.crumbs-caret {
+  flex: none;
+  transition: transform var(--fast) var(--ease);
+}
+.crumbs[data-open='true'] .crumbs-caret {
+  transform: rotate(180deg);
+}
+
+/* ── The files, in place of the rungs to the right of the one that opened them ── */
+
+.crumbs-files {
+  display: flex;
+  align-items: stretch;
+  align-self: stretch;
+  flex: 1 1 auto;
+  min-width: 0;
+  gap: 2px;
+}
+
+/* Each chip at its own width, shrinking only if it has to.
+   NOT equal thirds, which is what the strip this replaced used: that strip owned
+   the drawer's full width, and this one shares it with the rung that opened it.
+   At equal thirds `Actions.md` ellipsises to `Actions…` on a 400px panel while
+   `Skills.md` sits in slack it does not need — three names that fit are worth
+   more than three boxes that match. The basis is the name's own width and the
+   slack left over is shared equally, so the row fills without any chip being
+   squeezed to pay for another. `min-width: 0` keeps the shrink available for a
+   filename longer than any of today's. */
+.crumbs-file {
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  /* The band is the hit box, exactly as it is for a rung. */
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  appearance: none;
+  border: 0;
+  background: none;
+  color: var(--dock-ink-quiet, var(--ink-2));
+  cursor: pointer;
+  transition: color var(--fast) var(--ease);
+}
+
+/* THE PAINTED BOX: the chip, what the ring hugs, and the only thing on screen.
+   28px because that is the smallest that holds an 11.5px label with air either
+   side and still reads as a chip rather than a rule with words on it. */
+.crumbs-chip {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  min-width: 0;
+  height: 28px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  border-radius: var(--r-sm);
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1;
+  transition: background var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+}
+
+.crumbs-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.crumbs-file:hover:not([aria-disabled='true']) {
+  color: var(--dock-ink, var(--ink));
+}
+.crumbs-file:hover:not([aria-disabled='true']) .crumbs-chip {
+  background: var(--dock-chip-hover, var(--sunken));
+}
+
+/* THE RING GOES ON THE CHIP, not on the button: on the button it would enclose
+   eight pixels of empty space above and below the only thing anybody can see. */
+.crumbs-file:focus-visible {
+  outline: none;
+}
+.crumbs-file:focus-visible .crumbs-chip {
+  outline: 2px solid var(--dock-accent, var(--primary));
+  outline-offset: -2px;
+}
+
+/* The file on screen. Three signals and none of them colour on its own. */
+.crumbs-file[aria-pressed='true'] {
+  color: var(--dock-ink, var(--ink));
+}
+.crumbs-file[aria-pressed='true'] .crumbs-chip {
+  background: var(--dock-accent-chip, var(--primary-tint));
+  box-shadow: inset 0 -2px 0 var(--dock-accent, var(--primary));
+  font-weight: 700;
+}
+
+/* A file that is not built yet. The padlock is the signal that survives
+   greyscale; the ink is the one that does not, and it is deliberately the
+   quieter of the two rather than the only one. */
+.crumbs-file[aria-disabled='true'] {
+  /* Not `not-allowed`: nothing here is an error. Pressing it prints the line
+     that says what unlocks it, which is a thing worth doing. */
+  cursor: default;
+}
+.crumbs-file[aria-disabled='true'] .crumbs-chip {
+  /* Broken where every other edge in the panel is solid — the same borrowed
+     idea `.filerow.locked` uses for a row that is not available yet.
+     --dock-edge, never --divider: this boundary carries meaning and WCAG 1.4.11
+     wants 3:1 on one that does. It measures 5.26:1 on the drawer's dark field —
+     the token exists for exactly this job (design/tokens.json). */
+  border: 1px dashed var(--dock-edge);
+  /* The border would otherwise make this chip a pixel taller than its
+     neighbours and the three would sit unevenly. */
+  padding: 0 5px;
+}
+
+.crumbs-file[aria-disabled='true'] .crumbs-name {
+  color: var(--dock-ink-quiet, var(--ink-2));
+}
+
+/* THE SENTENCE. What unlocks the file the chips are explaining — present the
+   whole time they are, never a tooltip (VB-47), one line, ellipsised rather
+   than wrapped for the same reason the chips' labels are. The drawer gives this
+   line real room (core/drawer/height.ts's DRAWER_CRUMB_NOTE) rather than
+   floating it over the picture. */
+.crumbs-note {
+  height: var(--crumb-note-h, 18px);
+  margin: 0;
+  padding: 0 8px;
+  box-sizing: border-box;
+  font-family: var(--font-sans);
+  font-size: 11px;
+  line-height: 15px;
+  color: var(--dock-ink-quiet, var(--ink-2));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* `2/2`. Printed short and heard whole — see Breadcrumb.tsx. */
+.crumbs-count {
+  flex: none;
+  margin: 0;
+  padding-left: 4px;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-variant-numeric: tabular-nums;
+  color: var(--dock-ink-quiet, var(--ink-3));
+}
+
+/* Present for a screen reader, absent from the screen. Standard sr-only. */
+.crumbs-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The still equivalent carries the same information: which file is on screen
+     is a chip, a bar and a weight, and whether the files are open is a caret
+     pointing the other way. All of it arrives on the first frame; only the
+     120ms between states goes. */
+  .crumbs-seg,
+  .crumbs-file,
+  .crumbs-chip,
+  .crumbs-caret {
+    transition: none;
+  }
+}

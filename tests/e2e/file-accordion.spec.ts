@@ -268,14 +268,16 @@ test.describe('VB-33 — a section row says all four things', () => {
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    // Every percentage on screen belongs to exactly one section row. V1.8
-    // VB-47 put the file-type toggle in the strip above the list, where VB-19's
-    // counts used to be — if a file-level figure ever appeared in either, this
-    // is where it would show.
+    // Every percentage on screen belongs to exactly one section row. V1.9
+    // VB-52 put the breadcrumb above the list, where VB-19's counts used to be
+    // and where V1.8's file strip briefly was — if a file-level figure ever
+    // appeared there, this is where it would show. The trail carries a count of
+    // SECTIONS (`3/10`, and that is a count, not a score); what it must never
+    // grow is a percentage of the whole file.
     const all = await page.locator('.filetree .filetree-percent').count();
     const inRows = await page.locator('.filetree-row[data-node-id] .filetree-percent').count();
     expect(all).toBe(inRows);
-    await expect(page.locator('.filetypes')).not.toContainText('%');
+    await expect(page.locator('.crumbs')).not.toContainText('%');
 
     await context.close();
   });

@@ -658,7 +658,7 @@
   color: var(--globe-detail-key);
 }
 
-.brainglobe-pin.is-file .filetypes-lock {
+.brainglobe-pin.is-file .filelock {
   flex: none;
   opacity: 0.9;
 }

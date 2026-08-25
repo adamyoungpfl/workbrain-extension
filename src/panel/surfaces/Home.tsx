@@ -18,8 +18,8 @@ import type { FileSlot } from '../../core/files/slots';
 import { fileLock } from '../../core/files/toggle';
 // V1.8 VB-47. The file's name, the lock's sentence and the padlock itself,
 // shared with the drawer's toggle so the shelf and the switcher cannot say
-// different things about the same file — see components/FileTypeToggle.tsx.
-import { LockGlyph, fileName, lockLine } from '../components/FileTypeToggle';
+// different things about the same file — see components/fileLabels.tsx.
+import { LockGlyph, fileName, lockLine } from '../components/fileLabels';
 import { contextModules, contextOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
@@ -118,7 +118,7 @@ const STACK_ICON = (
  * it in words; this is the same fact as a picture, so it is `aria-hidden` and
  * nothing rests on it alone.
  *
- * V1.8 VB-47: the drawing moved to `components/FileTypeToggle.tsx`, where the
+ * V1.8 VB-47: the drawing moved to `components/fileLabels.tsx`, where the
  * toggle's own locked segments wear it at 12px. One padlock in the product, at
  * two sizes, rather than two padlocks that drift. */
 const LOCK_ICON = <LockGlyph size={17} stroke={1.7} />;

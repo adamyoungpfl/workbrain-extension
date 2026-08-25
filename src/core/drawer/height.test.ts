@@ -36,9 +36,9 @@ describe('drawerBounds', () => {
     // V1.2 VB-11 put the Back/Next/Skip bar on the drawer's top edge, so the
     // room the ceiling has to leave is the question's reserve *plus* that bar.
     const kept = DRAWER_QUESTION_RESERVE + FLOW_NAV_HEIGHT;
-    // Tall: 62% of 1600 is 992, which is far less than 1600 - 320.
+    // Tall: 62% of 1600 is 992, which is far less than 1600 - 324.
     expect(drawerBounds(1600).max).toBe(Math.round(1600 * DRAWER_MAX_FRACTION));
-    // Short: 62% of 520 is 322, which is more than 520 - 320 = 200.
+    // Short: 62% of 520 is 322, which is more than 520 - 324 = 196.
     expect(drawerBounds(520).max).toBe(520 - kept);
   });
 

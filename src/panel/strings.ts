@@ -653,6 +653,38 @@ export const S = {
   workBrainBack: 'Back to your work brain',
   workBrainOpen: 'Open',
   workBrainInside: (file: string) => `Inside ${file}`,
+
+  /**
+   * V1.9 VB-52 — the breadcrumb, and the count it carries.
+   *
+   * THREE STRINGS, AND EVERYTHING ELSE ON THE TRAIL IS BORROWED. The file rung
+   * prints `fileContext` / `fileSkills` / `fileActions`; a locked chip says
+   * `fileToggleLockedName` and the line under it says `fileToggleLockedNote`;
+   * the group of chips is named `fileToggleLabel`. All four are VB-47's, kept
+   * word for word when its toggle moved into the trail, because Home's shelf,
+   * the Brain's top tier and this are one navigation and must agree about a
+   * locked file.
+   *
+   * `crumbsLabel` names the trail for a screen reader and is never printed —
+   * the trail is visible and says where you are. "Where you are", not
+   * "Breadcrumb": a breadcrumb is a word about the interface rather than a word
+   * the person brought (docs/design-system.html §08).
+   *
+   * `crumbWork` is the top rung. Two words, because the trail has to fit three
+   * rungs and a count across 400px, and because "Your work brain" is already
+   * said in full on Home and on the stage below (`workBrainStage`).
+   *
+   * `crumbCount` is the mockup's `2/2`. It is PRINTED ONLY, and the same fact
+   * goes to a screen reader as `sectionsOf` — "3 of 10 sections" — which is
+   * what the rest of the product already says. Adam's decision of 2026-08-24:
+   * the count belongs in the drawer, where it is orientation while navigating,
+   * and NOT on the question screen, where a running count is a number people
+   * bargain with (VB-02). `FlowProgress` still prints no number.
+   */
+  crumbsLabel: 'Where you are',
+  crumbWork: 'Work brain',
+  crumbCount: (done: number, total: number) => `${done}/${total}`,
+
   notBuiltYet: 'Not built yet',
   updatedToday: 'Updated today',
   daysOld: (n: number) => (n === 1 ? '1 day old' : `${n} days old`),

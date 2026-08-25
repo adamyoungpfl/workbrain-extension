@@ -29,7 +29,7 @@
  */
 
 import { DOCK_FRAME } from './chrome';
-import { DRAWER_HANDLE_HEIGHT, clampDrawerHeight } from './height';
+import { DRAWER_CHROME_HEIGHT, clampDrawerHeight } from './height';
 import type { DrawerBounds } from './height';
 
 /** The two modes, by the names they carry in the interface. "Brain" passes
@@ -37,31 +37,45 @@ import type { DrawerBounds } from './height';
  * "List" is a word everyone brought with them. */
 export type DrawerMode = 'brain' | 'list';
 
+/** Breathing room around the globe inside the drawer, per side, in px. */
+export const BRAIN_STAGE_PAD = 10;
+
+/** The smallest stage the globe is ever asked to draw itself into. Kept at
+ * V1.2's own number so "too short for Brain" still means the same picture; it
+ * is the floor a degenerate viewport cannot ask below. */
+export const BRAIN_STAGE_MIN = 116;
+
 /**
- * The height at which Brain stops being usable, in px — VB-14's own "~180px".
+ * How big a globe is worth showing, in px — VB-14's "at 300px it's excellent".
+ *
+ * 260 rather than 300 because the drawer's ceiling on a 700px panel is 376 and
+ * the chrome takes some of it. V1.9 VB-51 and VB-52 put two more bands inside
+ * that chrome — the breadcrumb above the visual and the view bar below it — so
+ * the same arithmetic that chose 260 now chooses 208: `376 - 132 - 20 - 8`,
+ * with a few pixels of slack so the ideal is not sitting exactly on the ceiling
+ * of the panel it was measured against.
+ *
+ * That is the cost of the mockup, stated where it is paid. The alternative was
+ * a globe that opens taller than the drawer is allowed to be, which
+ * `heightForMode` would silently clamp — a showcase visual whose size depended
+ * on a clamp nobody could see.
+ */
+export const BRAIN_STAGE_IDEAL = 208;
+
+/**
+ * The height at which Brain stops being usable, in px — VB-14's own "~180px",
+ * re-derived for V1.9's chrome.
  *
  * Below this the drawer hands the stage over to List on its own. It is a
  * threshold on the *drawer's* height rather than on the stage's because the
  * drawer's height is the number the person is dragging and the number the
- * handle announces; the stage is what is left after the handle.
+ * handle announces; the stage is what is left after the chrome.
+ *
+ * Derived rather than typed, so it cannot drift from `brainStageSize` below:
+ * this is exactly the height at which that function stops being able to give
+ * the globe `BRAIN_STAGE_MIN`.
  */
-export const BRAIN_MIN_HEIGHT = 180;
-
-/** Breathing room around the globe inside the drawer, per side, in px. */
-export const BRAIN_STAGE_PAD = 10;
-
-/**
- * How big a globe is worth showing, in px — VB-14's "at 300px it's excellent".
- * 260 rather than 300 because the drawer's ceiling on a 700px panel is 380 and
- * the handle takes 44 of it; 260 fits with the pad and still reads as the
- * showcase visual rather than as a badge.
- */
-export const BRAIN_STAGE_IDEAL = 260;
-
-/** The smallest stage the globe is ever asked to draw itself into. Falls out
- * of `BRAIN_MIN_HEIGHT` (180 - 44 - 20 = 116) and exists as a floor so a
- * degenerate viewport cannot ask for a negative size. */
-export const BRAIN_STAGE_MIN = 116;
+export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2 + DOCK_FRAME;
 
 /**
  * What the drawer expands to when Brain is chosen while it is too short.
@@ -69,8 +83,14 @@ export const BRAIN_STAGE_MIN = 116;
  * VB-14: "Asking for Brain expands the drawer to fit it." Clamped by the
  * caller to the panel's own bounds, so a short panel gets as much of this as
  * it can hold rather than a drawer that has quietly become the surface.
+ *
+ * V1.9 adds the frame to the sum. It was missing while the frame was only along
+ * the bottom of a drawer the globe was measured against separately; now that
+ * every term here is a band `brainStageSize` subtracts, leaving one out would
+ * open the drawer eight pixels short of the globe it opened for.
  */
-export const BRAIN_OPEN_HEIGHT = DRAWER_HANDLE_HEIGHT + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
+export const BRAIN_OPEN_HEIGHT =
+  DRAWER_CHROME_HEIGHT + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2 + DOCK_FRAME;
 
 /**
  * The morph, in ms. VB-14: "Mode change is a morph, not a swap: every node
@@ -174,10 +194,18 @@ export function heightForMode(mode: DrawerMode, height: number, bounds: DrawerBo
  * the stage clips what will not fit (`overflow: hidden`, FileDrawer.css), so a
  * size computed against a box eight pixels wider than the real one shows as a
  * globe with its edge cut off rather than as a globe that is slightly too big.
+ *
+ * V1.9 VB-51/VB-52 replace the handle term with the whole chrome — the handle,
+ * the breadcrumb above the stage and the view bar below it — for exactly that
+ * reason. `extra` is the one band that comes and goes: the lock line the
+ * breadcrumb prints while it is offering the files
+ * (`DRAWER_CRUMB_NOTE`). It is a parameter rather than a constant because it is
+ * true for as long as a menu is open and false the rest of the time, and a
+ * globe that ignored it would spend that moment clipped along its bottom edge.
  */
-export function brainStageSize(height: number, width: number): number {
-  if (!Number.isFinite(height) || !Number.isFinite(width)) return BRAIN_STAGE_MIN;
-  const tall = height - DRAWER_HANDLE_HEIGHT - BRAIN_STAGE_PAD * 2 - DOCK_FRAME;
+export function brainStageSize(height: number, width: number, extra = 0): number {
+  if (!Number.isFinite(height) || !Number.isFinite(width) || !Number.isFinite(extra)) return BRAIN_STAGE_MIN;
+  const tall = height - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2 - DOCK_FRAME - Math.max(0, extra);
   const wide = width - BRAIN_STAGE_PAD * 2 - DOCK_FRAME * 2;
   return Math.max(BRAIN_STAGE_MIN, Math.round(Math.min(tall, wide)));
 }

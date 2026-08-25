@@ -32,23 +32,107 @@ export const DRAWER_HANDLE_HEIGHT = 44;
 export const DRAWER_ROW_HEIGHT = 44;
 
 /**
- * The smallest the drawer may get: the handle plus two rows.
+ * V1.9 VB-52 — the breadcrumb band, in px.
  *
- * Two rows is the floor because the drawer scrolls the section being written
- * into view (FileDrawer.tsx) and a one-row peek would show that section with
- * no sign of anything above or below it — a list of one is not a list. It is
- * also comfortably clear of VB-14's "~90px" note about the peek being where
- * people spend most of their time.
+ * A full 44 and not the 28px chip the strip it replaces laid out at
+ * (components/FileTypeToggle.css, V1.8). That strip could shrink its own row
+ * because the hit box overhung it and the overhang landed on list rows inside
+ * the same scrolling box. This band sits directly under the drag handle, and an
+ * overhang here would land on the handle — taking pixels off a 44px control to
+ * give them to another one, which is not a saving, it is a swap that breaks
+ * docs/GUARDRAILS.md's floor twice over. So the band is the floor itself and
+ * nothing overlaps anything.
  */
-export const DRAWER_MIN_HEIGHT = DRAWER_HANDLE_HEIGHT + DRAWER_ROW_HEIGHT * 2;
+export const DRAWER_CRUMB_HEIGHT = 44;
 
 /**
- * Where it starts, every session: the handle plus three rows — the same peek
- * V1.1 shipped (FileDrawer.css's 132px body under a 44px header). VB-12
- * changes how the drawer is resized, not what it looks like when you have
- * never touched it.
+ * V1.9 VB-52 — the extra line the breadcrumb takes while the files are open.
+ *
+ * The lock sentence, printed under the file chips. It appears only while the
+ * trail is offering the files, so it is not part of `DRAWER_CHROME_HEIGHT`
+ * below: the drawer's floor and its resting height are about the state it
+ * spends its life in, not the two seconds somebody is picking a file.
  */
-export const DRAWER_REST_HEIGHT = DRAWER_HANDLE_HEIGHT + DRAWER_ROW_HEIGHT * 3 + 10;
+export const DRAWER_CRUMB_NOTE = 18;
+
+/**
+ * V1.9 VB-51 — the view bar under the visual, in px.
+ *
+ * Two icon buttons, so 44: docs/GUARDRAILS.md floors every control at 44 and
+ * says "including icon buttons" in as many words. This is the band the mode
+ * pair moved down into — it is not new furniture, it is the same two buttons
+ * one band lower — but the band it left was the handle's, which stays 44
+ * whether anything sits in it or not. That is the honest cost of the mockup and
+ * it is paid below, in the drawer's own heights, rather than by quietly
+ * shrinking the peek.
+ */
+export const DRAWER_VIEW_BAR_HEIGHT = 44;
+
+/**
+ * Everything in the drawer that is not the file: the handle, the breadcrumb
+ * under it, and the view bar along the bottom.
+ *
+ * Named once because four numbers are derived from it — the floor, the resting
+ * height, the height Brain hands over at and the height Brain opens to
+ * (core/drawer/mode.ts) — and a drawer whose chrome and whose arithmetic
+ * disagree is a globe with its edge cut off.
+ */
+export const DRAWER_CHROME_HEIGHT = DRAWER_HANDLE_HEIGHT + DRAWER_CRUMB_HEIGHT + DRAWER_VIEW_BAR_HEIGHT;
+
+/**
+ * ── V1.9: THE DRAWER DOES NOT GROW. THE CHROME INSIDE IT DID ─────────────
+ *
+ * VB-51 and VB-52 put two more 44px bands inside this box, and the obvious move
+ * — make the drawer 88px taller so the file keeps its rows — is not available.
+ * Every pixel the drawer takes at rest comes out of the question, and the
+ * question's composition is a rule with tests on it:
+ *
+ *  · V1.3 VB-17: at the resting height the question area is roughly the top 60%
+ *    of the panel, and a 600px panel and a 900px panel must land within 15
+ *    points of each other (core/flow/composition.ts, composition.test.ts). That
+ *    second clause is the tight one — it puts the ceiling on this constant at
+ *    189px, three above where V1.1 left it.
+ *  · V1.3 VB-17 again, in the browser: the whole answer cluster inside the top
+ *    third on the shortest question, and a tall hint's worked examples above the
+ *    nav band (tests/e2e/question-fill.spec.ts, tests/e2e/save-note.spec.ts).
+ *
+ * So the resting height stays exactly what V1.1 shipped and V1.2 kept to the
+ * pixel, and the FILE pays for the two bands. What that costs is honest and
+ * worth stating: the peek was 134px of body with a 37px file strip stuck to the
+ * top of it (~2 rows of file), and it is now 46px of body with nothing stuck to
+ * it (~1 row).
+ *
+ * It is not the loss it looks like, for one reason: the breadcrumb prints the
+ * name of the section being written, which is the job the peek's rows were
+ * doing. What the peek says at rest is unchanged — you are here, this much is
+ * done — and the row underneath is now the confirmation rather than the whole
+ * message. Anything more than that is one drag away, as it always was.
+ */
+
+/**
+ * The smallest the drawer may get: the chrome plus one row.
+ *
+ * The floor is what a person drags down to when they want the question and not
+ * the file, and one row is the least that still shows the section being written
+ * underneath the trail that names it.
+ *
+ * It says one row where V1.8 said two, and that is a correction rather than a
+ * reduction: V1.8's floor was `44 + 44 * 2` and delivered about one row of
+ * file, because 37px of the body it left was the file-type strip stuck to the
+ * top of it. This is the number that was always true, written down.
+ */
+export const DRAWER_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + DRAWER_ROW_HEIGHT;
+
+/**
+ * Where it starts, every session — 186px, the peek V1.1 shipped and V1.2 kept
+ * to the pixel (FileDrawer.css's 132px body under a 44px header).
+ *
+ * The terms have changed and the total has not, which is the whole point: see
+ * the note above for what the ceiling on this number is and why it is not
+ * negotiable. VB-12 changed how the drawer is resized, V1.9 changed what is
+ * inside it, and neither changed what it looks like when nobody has touched it.
+ */
+export const DRAWER_REST_HEIGHT = DRAWER_CHROME_HEIGHT + DRAWER_ROW_HEIGHT + 10;
 
 /**
  * Space that stays above the drawer no matter what, in px.

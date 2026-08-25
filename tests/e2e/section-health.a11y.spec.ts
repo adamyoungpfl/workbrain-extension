@@ -131,16 +131,17 @@ test('the health pills add no control, no tab stop and no live region (VB-19)', 
   // announce itself while somebody is trying to answer a question
   // (docs/GUARDRAILS.md — nothing steals focus, and no nudges).
   await expect(page.locator('.sectionhealth-pill [tabindex], .sectionhealth-pill button, .sectionhealth-pill a')).toHaveCount(0);
-  // V1.8 VB-47 replaced the counts strip above the list with the file-type
-  // toggle, so the "no live region in the drawer" rule now runs over that
-  // strip: a toggle whose locked buttons announced themselves would be exactly
-  // the interruption this test exists to prevent. A locked button carries its
-  // whole sentence in its own name instead (components/FileTypeToggle.tsx).
-  await expect(page.locator('.filetypes [aria-live], .filetree [aria-live]')).toHaveCount(0);
+  // V1.8 VB-47 replaced the counts strip above the list with a file-type
+  // toggle and V1.9 VB-52 moved that toggle into the breadcrumb, so the "no
+  // live region in the drawer" rule now runs over the trail: a switcher whose
+  // locked chips announced themselves would be exactly the interruption this
+  // test exists to prevent. A locked chip carries its whole sentence in its own
+  // name instead (components/Breadcrumb.tsx).
+  await expect(page.locator('.crumbs [aria-live], .filetree [aria-live]')).toHaveCount(0);
 
-  // The group above the list has a real name rather than being an unlabelled
-  // group — the same requirement, now the toggle's.
-  await expect(page.locator('.filetypes-row')).toHaveAttribute('aria-label', /\S/);
+  // The trail above the list has a real name rather than being an unlabelled
+  // landmark — the same requirement, now the breadcrumb's.
+  await expect(page.locator('.crumbs')).toHaveAttribute('aria-label', /\S/);
 
   await context.close();
 });

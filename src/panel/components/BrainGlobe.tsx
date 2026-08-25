@@ -31,7 +31,7 @@ import {
   workNodeState,
 } from '../../core/globe/workBrain';
 import type { BrainNav, BrainTier } from '../../core/globe/workBrain';
-import { LockGlyph, fileName, lockLine } from './FileTypeToggle';
+import { LockGlyph, fileName, lockLine } from './fileLabels';
 import {
   CAMERA,
   ICOSAHEDRON_EDGES,
@@ -1666,7 +1666,7 @@ export function BrainGlobe({
   /**
    * Which locked file the line under the stage is explaining, if one has been
    * pressed. Ephemeral, and the same rule the drawer's toggle follows
-   * (components/FileTypeToggle.tsx): the line is always there, explaining the
+   * (components/fileLabels.tsx): the line is always there, explaining the
    * next locked file, and swaps to whichever locked node was last pressed.
    */
   const [lockPressed, setLockPressed] = useState<FileSlotId | null>(null);
@@ -3056,7 +3056,7 @@ export function BrainGlobe({
                 // would be too. `aria-disabled` says the same to assistive tech
                 // while leaving it focusable — and pressing it moves nothing,
                 // because `chooseNav` refuses. Identical to the drawer's toggle,
-                // on purpose (components/FileTypeToggle.tsx).
+                // on purpose (components/fileLabels.tsx).
                 {...(locked ? { 'aria-disabled': true } : {})}
                 // The whole truth, spoken on focus: the file, that it is locked,
                 // and what unlocks it — the same sentence the toggle and the
@@ -3087,7 +3087,7 @@ export function BrainGlobe({
                 <span className="brainglobe-hit" aria-hidden="true" />
                 <span className="brainglobe-label" aria-hidden="true">
                   {/* The padlock, at the same 12px the toggle's segments draw
-                      it — one glyph, one place (components/FileTypeToggle.tsx),
+                      it — one glyph, one place (components/fileLabels.tsx),
                       so the two surfaces cannot end up with two padlocks. */}
                   {locked && <LockGlyph />}
                   {fileName(item.id)}

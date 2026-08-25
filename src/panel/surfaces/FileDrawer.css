@@ -86,8 +86,11 @@
   transition: height var(--slow) var(--ease);
 }
 
-/* The 44px band at the top of the drawer, holding the two mode buttons, the
-   grip and the count.
+/* The 44px band at the top of the drawer. V1.9 VB-52: the handle's, and only
+   the handle's — the two mode buttons went down to the bar along the bottom
+   (VB-51) and the count went onto the trail below (components/Breadcrumb.css).
+   The handle covers the whole band (`inset: 0`), so anything else in here takes
+   pixels off a 44px control, which docs/GUARDRAILS.md has no exception for.
 
    V1.6 VB-30 — IT PAINTS ITSELF NOW, AND IT PAINTS ITSELF DARK. Until V1.6
    this band was transparent and took whatever the drawer's own background was,
@@ -99,32 +102,46 @@
 .filedrawer-head {
   position: relative;
   flex: none;
-  height: var(--target-min);
+  height: var(--drawer-head-h, 44px);
   background: var(--dock-stage, var(--canvas));
   /* Over both content layers, which are absolutely positioned from the bottom
-     of this band down. Without it the globe's own stage would paint across the
-     buttons that switch away from it. */
+     of the trail down. */
   z-index: 1;
+}
+
+/* ── V1.9 VB-51: the bottom bar ──────────────────────────────────────────── */
+
+/* Brain / list, below the visual. The last band of the drawer and the last
+   thing in its tab order, wearing the chrome's own colour so the handle at the
+   top, the trail under it and this bar are one surface with the picture
+   between them (V1.6 VB-30, and the direction VB-50 takes the whole panel). */
+.filedrawer-viewbar {
+  position: relative;
+  flex: none;
+  height: var(--drawer-viewbar-h, 44px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dock-stage, var(--canvas));
+  /* Over both content layers, which run to the top of this band. */
+  z-index: 1;
+  /* V1.6 VB-29's frame: this box now sits on the pane's bottom edge, so it
+     takes the pane's own bottom corners — otherwise the bar's ground would be
+     drawn square across the rounding underneath it. */
+  border-bottom-left-radius: var(--r-lg);
+  border-bottom-right-radius: var(--r-lg);
 }
 
 /* ── V1.2 VB-14b: Brain / List ───────────────────────────────────────────── */
 
-/* At the left of the band, clear of the grip in the middle and the count at
-   the right. Absolutely positioned like both of those, so the grip keeps the
-   centre of the panel — which is where a handle is looked for. */
+/* The pair, centred in the bar. V1.4 put them at the left of the head band,
+   clear of the grip; there is no grip down here to keep clear of, and two icons
+   pushed into a corner of an otherwise empty bar read as leftovers rather than
+   as the bar's purpose. */
 .filedrawer-modes {
-  position: absolute;
-  left: 8px;
-  top: 0;
-  height: 100%;
   display: flex;
   align-items: center;
   gap: 2px;
-  /* Above the handle, which covers the whole band (`inset: 0`) and comes after
-     this in the markup. Without it the handle takes every press meant for
-     these two buttons — the tab order puts them first, so the paint order has
-     to be corrected here rather than by moving them after it. */
-  z-index: 1;
 }
 
 /* V1.4 VB-22: two glyphs, not two words. The band wears the stage's own
@@ -273,25 +290,12 @@
   background: var(--dock-accent, var(--primary));
 }
 
-/* How much of the file has been written. Not a label for the drawer — that is
-   the heading, which is now read rather than printed — just the one number
-   worth carrying at a glance. Out of the way at the end of the rule, and
-   transparent to the pointer so it never eats a piece of the grab target. */
-.filedrawer-count {
-  position: absolute;
-  right: 14px;
-  top: 0;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  margin: 0;
-  font-size: 11.5px;
-  /* V1.4 VB-22: it goes light with the band. V1.6 VB-30: it STAYS light, in
-     both modes, because the band is the same dark field in both — 9.7:1 on it,
-     and no longer a colour that has to be right on two different grounds. */
-  color: var(--dock-ink-quiet, var(--ink-3));
-  pointer-events: none;
-}
+/* V1.9 VB-52: `.filedrawer-count` was here — "7 of 10 sections", at the right
+   of the head band. The mockup puts the count on the trail as `2/2` and Adam's
+   decision of 2026-08-24 keeps it there and only there, so the rule went with
+   the markup rather than being left behind styling nothing. The number itself
+   is unchanged, and the long form is still what a screen reader hears
+   (components/Breadcrumb.tsx). */
 
 /* Present for a screen reader, absent from the screen. Standard sr-only. */
 .filedrawer-sr {
@@ -312,63 +316,12 @@
    below stays mounted and merely scrolls — which is what lets the tree's
    typewriter keep its per-row memory instead of remounting rows in and out of
    a window. */
-/* V1.8 VB-48 — the "where am I" cluster: the way up, then which file.
-
-   ONE ROW, AND IT HAS TO BE. Two things forced it:
-
-   1. **The peek.** A separate 44px row above the strip — 44 is the floor, not a
-      preference — costs a third of everything the drawer's peek can show, and
-      what the peek is for is the section being written. Beside the strip it
-      costs seven pixels (the strip lays out at the chip's height and the button
-      at the floor).
-   2. **The sticky strip.** The drawer scrolls itself to keep the live section
-      in view, so anything left in the flow slides under the toggle and is half
-      covered by it within a question or two — a control that goes missing while
-      somebody works, and one axe reports as a partially obscured target (WCAG
-      2.5.8). Found by `npm run check`, not by reading.
-
-   Sticky as ONE box rather than two, because the toggle inside it is sticky
-   already (FileTypeToggle.css) and a second sticky sibling at the same `top`
-   would slide under it. The wrapper carries the same bleed and ground, so the
-   left 44px is as opaque as the strip beside it and the hairline runs the whole
-   width; the strip's own background is untouched (tests/e2e/file-toggle.spec.ts
-   measures it). */
-.filedrawer-nav {
-  position: sticky;
-  top: 0;
-  z-index: 2;
-  display: flex;
-  align-items: center;
-  gap: 2px;
-  margin: 0 -14px;
-  padding: 0 14px;
-  /* THE PANE'S GROUND, NOT THE PANEL'S. `--canvas` here is a white bar laid
-     over a tinted pane — the same tax the strip inside it already pays a
-     hundred lines down, and the same one the counts summary paid before it.
-     It is also what `tests/e2e/drawer-frame.spec.ts` reads: that spec finds the
-     frame by walking in from the panel's edge until the colour stops being
-     `--canvas`, so a white band across the pane at that height is a drawer with
-     no frame as far as it can tell. Found by `npm run check`. */
-  background: var(--dock-pane, var(--canvas));
-}
-
-/* The strip takes what is left of the row and keeps its own bleed on the right
-   only — its left edge now meets the button rather than the panel's. It brings
-   its own ground and its own hairline with it (FileTypeToggle.css, and the dock
-   override below), so the wrapper adds neither. */
-.filedrawer-nav .filetypes {
-  flex: 1 1 auto;
-  min-width: 0;
-  margin-left: 0;
-  /* The hairline moves up to the wrapper, so it runs the whole width of the
-     strip instead of stopping where the button starts. A rule with a notch cut
-     out of one end reads as a mistake. */
-  border-bottom: 0;
-}
-
-.filedrawer-nav {
-  border-bottom: 1px solid var(--divider);
-}
+/* V1.9 VB-52: `.filedrawer-nav` was here — V1.8's sticky "where am I" cluster,
+   the way back up beside the file strip, pinned to the top of this scrolling
+   box. Both of its jobs are the breadcrumb's now, and the breadcrumb sits ABOVE
+   the scroll box, which is the better answer to the problem that row was built
+   around: nothing inside the list can slide under a control that is not inside
+   the list. */
 
 .filedrawer-body {
   position: relative;
@@ -379,12 +332,11 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 14px 10px;
-  /* V1.6 VB-29. This box sits on the pane's bottom edge, so it takes the
-     pane's own bottom corners — otherwise the tree's full-bleed hairlines
-     (FileTree.css) would be drawn straight across the rounding. It already
-     clips (it scrolls), so this costs nothing that was not clipped anyway. */
-  border-bottom-left-radius: var(--r-lg);
-  border-bottom-right-radius: var(--r-lg);
+  /* V1.6 VB-29 gave this box the pane's own bottom corners, because it sat on
+     the pane's bottom edge. V1.9 VB-51 puts the view bar there instead, and the
+     bar carries the rounding now (`.filedrawer-viewbar`): a radius on a box
+     that no longer reaches the corner rounds nothing and hides the fact that
+     something else does. */
 }
 
 /* ── V1.2 VB-14b: the two layers ─────────────────────────────────────────── */
@@ -402,10 +354,14 @@
    the measurements stay true. */
 .filedrawer-stage {
   position: absolute;
-  top: var(--target-min);
+  /* V1.9 VB-51/VB-52 — between the three bands: under the handle and the trail,
+     above the view bar. Every term is published by FileDrawer.tsx from
+     core/drawer/height.ts, which is the same file `brainStageSize` measures the
+     globe against, so the box and the picture drawn into it cannot disagree. */
+  top: calc(var(--drawer-head-h, 44px) + var(--drawer-crumb-h, 44px));
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--drawer-viewbar-h, 44px);
   display: flex;
   justify-content: center;
   align-items: flex-start;
@@ -431,12 +387,10 @@
      the picture instead of a fact about the mode: the crossfade out of Brain
      would otherwise repaint the stage light while it is still visible.
 
-     V1.6 VB-29 gives it the pane's own bottom corners, for the same reason the
-     body above takes them — this layer reaches the frame and would square off
-     the rounding underneath it. */
+     V1.9 VB-51: it stops at the view bar rather than at the frame, so the
+     rounding V1.6 VB-29 gave it belongs to the bar now — see
+     `.filedrawer-viewbar`. */
   background: var(--globe-field);
-  border-bottom-left-radius: var(--r-lg);
-  border-bottom-right-radius: var(--r-lg);
 }
 
 /* ── What tinting the ground costs, paid here ─────────────────────────────
@@ -500,29 +454,11 @@
   background: var(--dock-pane, var(--canvas));
 }
 
-/* V1.8 VB-47 — the file-type toggle pays the same three taxes, for the same
-   three reasons, in the same place. It is a component of its own
-   (components/FileTypeToggle.css) drawn on the panel's canvas everywhere else;
-   this is what it costs to sit on the drawer's pane:
-
-     · the strip's own ground — a --canvas bar on a tinted pane is a white
-       strip laid over the drawer, which is what the summary above corrects for
-       and what this inherits along with its sticky position;
-     · the locked chip's dashed edge — it carries meaning (WCAG 1.4.11) and
-       --border-i measures 2.92:1 here, so it steps to --dock-edge, exactly as
-       the hollow pill and the dim orb do;
-     · the hover — --sunken on --surface is a 1.06 difference, a cue nobody
-       could see, so it lifts to the panel's white instead of sinking, exactly
-       as a tree row's hover does above. */
-.filedrawer .filetypes {
-  background: var(--dock-pane, var(--canvas));
-}
-.filedrawer .filetypes-item[aria-disabled='true'] .filetypes-chip {
-  border-color: var(--dock-edge);
-}
-.filedrawer .filetypes-item:hover:not([aria-disabled='true']) .filetypes-chip {
-  background: var(--canvas);
-}
+/* V1.9 VB-52: the three corrections V1.8's file strip needed to sit on the
+   drawer's tinted PANE are gone with it. The trail that replaced it stands on
+   the drawer's CHROME — the same dark field the handle and the view bar wear —
+   so it is coloured from the dock's own palette at source
+   (components/Breadcrumb.css) and pays no tax here at all. */
 
 /* Only one layer is on screen at a time, and the one that is not is
    `visibility: hidden` rather than `display: none`. That is what keeps it out
@@ -562,10 +498,13 @@
    controls that exist for real in whichever layer is arriving. */
 .filedrawer-morph {
   position: absolute;
-  top: var(--target-min);
+  /* Exactly the stage's box — see the note there. A flight measured against a
+     layer that is not where the two content layers are lands every node in the
+     wrong place. */
+  top: calc(var(--drawer-head-h, 44px) + var(--drawer-crumb-h, 44px));
   left: 0;
   right: 0;
-  bottom: 0;
+  bottom: var(--drawer-viewbar-h, 44px);
   overflow: hidden;
   pointer-events: none;
   z-index: 2;

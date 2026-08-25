@@ -282,16 +282,26 @@ test('the mode toggles lose their words and keep their names (VB-22)', async () 
     expect(parseFloat(pressed.stroke), `${label} pressed stroke`).toBeGreaterThan(2);
   }
 
-  // And the count beside them goes light with the band — V1.6 VB-30: it goes
-  // light and STAYS light, so this now also holds the two modes to one ink on
-  // one band rather than to two that each happen to clear the floor.
+  // And the count goes light with the band — V1.6 VB-30: it goes light and
+  // STAYS light, so this now also holds the two modes to one ink on one band
+  // rather than to two that each happen to clear the floor.
+  //
+  // V1.9 VB-51/VB-52 moved both of them off the head band without changing the
+  // rule they answer to: the count is on the breadcrumb under the handle and
+  // the two glyphs are in the bar along the bottom. All three bands are the
+  // same `--dock-stage` field, which is what makes one measurement of "the
+  // band" still the right ground for both — and the pixel below is read from
+  // the band each one is really drawn on rather than from the one it used to
+  // be.
   const counts: { ink: Rgb; band: Rgb }[] = [];
   for (const mode of ['brain', 'list'] as const) {
     await chooseMode(page, mode);
-    const count = page.locator('.filedrawer-count');
-    const g = await geometry(page);
+    const count = page.locator('.crumbs-count');
     const ink = parseCssColor(await count.evaluate((el) => getComputedStyle(el).color))!;
-    const [band] = await pixels(page, [{ x: g.emptyX, y: g.drawerTop + 20 }]);
+    // Read at the band's own left inset — inside the row's 8px padding, so it
+    // is ground rather than a rung — for the same reason `emptyX` exists above.
+    const crumbBand = (await page.locator('.crumbs-row').boundingBox())!;
+    const [band] = await pixels(page, [{ x: crumbBand.x + 3, y: crumbBand.y + crumbBand.height / 2 }]);
     expect(contrastRatio(ink, band!), `${mode}: the section count on the band`).toBeGreaterThanOrEqual(
       DOCK_TEXT_MIN_CONTRAST,
     );
@@ -306,8 +316,16 @@ test('the mode toggles lose their words and keep their names (VB-22)', async () 
         .getByRole('button', { name: mode === 'brain' ? S.drawerModeList : S.drawerModeBrain, exact: true })
         .evaluate((el) => getComputedStyle(el).color),
     )!;
-    expect(contrastRatio(glyph, band!), `${mode}: the unpressed mode glyph on the band`)
+    // The bar's two icons are centred, so its left end is ground.
+    const viewBar = (await page.locator('.filedrawer-viewbar').boundingBox())!;
+    const [barGround] = await pixels(page, [{ x: viewBar.x + 3, y: viewBar.y + viewBar.height / 2 }]);
+    expect(contrastRatio(glyph, barGround!), `${mode}: the unpressed mode glyph on the bar`)
       .toBeGreaterThanOrEqual(DOCK_BOUNDARY_MIN_CONTRAST);
+    // One field, three bands: the bar the glyphs stand on is the same colour as
+    // the band the count stands on, which is the whole of VB-30 and the whole
+    // of VB-50's "one solid colour, top edge to bottom edge".
+    expect(channelDistance(barGround!, band!), `${mode}: the view bar is not the chrome's own field`)
+      .toBeLessThanOrEqual(PAINT_TOLERANCE);
   }
   expect(channelDistance(counts[0]!.ink, counts[1]!.ink), 'the section count changes with the mode')
     .toBeLessThanOrEqual(1);

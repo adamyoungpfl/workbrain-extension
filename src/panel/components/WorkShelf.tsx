@@ -1,6 +1,6 @@
 import type { FileSlotId } from '../../core/files/slots';
 import type { FileToggleItem } from '../../core/files/toggle';
-import { LockGlyph, fileName, lockLine } from './FileTypeToggle';
+import { LockGlyph, fileName, lockLine } from './fileLabels';
 import { S } from '../strings';
 import './WorkShelf.css';
 
@@ -14,8 +14,9 @@ import './WorkShelf.css';
  *
  *  · at the **work** tier it is this — one row per file, which is the same
  *    three nodes the globe draws, in the shape a list draws them;
- *  · at the **file** tier it is the outline tree it has always been, with
- *    `WorkBrainBack` above it as the way up.
+ *  · at the **file** tier it is the outline tree it has always been, with the
+ *    breadcrumb above the drawer's whole content area as the way up (V1.9
+ *    VB-52; it used to be a button of this component's own).
  *
  * Pressing a row here and pressing a node there run the same `chooseNav`
  * (core/globe/workBrain.ts) against the same state, so the two views cannot end
@@ -84,51 +85,12 @@ export function WorkShelf({ items, note, onOpen }: WorkShelfProps) {
 }
 
 /**
- * The way up, in the List — the counterpart of the globe's own
- * `Back to your work brain` button, in the same words for the same move.
- *
- * ── WHY IT IS A GLYPH AND NOT A ROW OF WORDS ──────────────────────────────
- *
- * It started as a labelled row above the tree and was measured, not imagined:
- * a 44px row (the floor, and not negotiable) inside a drawer whose peek holds
- * about 130px of content costs a third of everything the peek can show, and the
- * peek's whole job is the section being written. So it takes the shape the
- * drawer's own mode buttons take (V1.4 VB-22): a 44px glyph, in the strip that
- * is already there, with the same sentence as its accessible name. Nothing is
- * lost in the accessibility tree — the string the globe prints is the string a
- * screen reader hears here — and the list keeps its rows.
- *
- * An arrow pointing up, because up is what it does. It sits to the left of the
- * file switcher, so the strip reads "up a level, then which file".
+ * V1.9 VB-52: `WorkBrainBack` was here — the List's own way back to the work
+ * brain, a 44px arrow above the tree. The breadcrumb replaced it, and replaced
+ * it for both views at once: the trail's first rung runs the same `pullBack`
+ * this button ran, from above the scroll box, where it cannot slide under
+ * anything (components/Breadcrumb.tsx).
  */
-export function WorkBrainBack({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      className="workshelf-up"
-      aria-label={S.workBrainBack}
-      title={S.workBrainBack}
-      onClick={onClick}
-    >
-      <svg
-        className="workshelf-arrow"
-        viewBox="0 0 24 24"
-        width="18"
-        height="18"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        aria-hidden="true"
-        focusable="false"
-      >
-        <path d="M12 19V6" />
-        <path d="M6 12l6-6 6 6" />
-      </svg>
-    </button>
-  );
-}
 
 /** The file glyph, drawn — the same page-with-a-fold Home's shelf uses. An icon
  * set is a dependency, and docs/GUARDRAILS.md names that as a thing that looks

@@ -17,7 +17,7 @@ import {
   morphTransform,
 } from './mode';
 import { DOCK_FRAME } from './chrome';
-import { DRAWER_HANDLE_HEIGHT, DRAWER_MIN_HEIGHT, DRAWER_REST_HEIGHT, drawerBounds } from './height';
+import { DRAWER_CHROME_HEIGHT, DRAWER_CRUMB_NOTE, DRAWER_MIN_HEIGHT, DRAWER_REST_HEIGHT, drawerBounds } from './height';
 
 /** The real side panel: 400px wide, about this tall on a laptop. */
 const PANEL = 700;
@@ -35,13 +35,16 @@ describe('modeForHeight', () => {
     // The whole reason the *request* is what is held, not the result. Drag
     // down past the threshold and Brain hands over; drag back up and it
     // returns, because nothing about what was asked for changed.
-    const walk = [320, 240, 180, 179, 140, 132, 200, 400];
+    const T = BRAIN_MIN_HEIGHT;
+    const walk = [T + 140, T + 40, T, T - 1, T - 40, DRAWER_MIN_HEIGHT, T + 20, T + 200];
     const seen = walk.map((height) => modeForHeight('brain', height));
     expect(seen).toEqual(['brain', 'brain', 'brain', 'list', 'list', 'list', 'brain', 'brain']);
   });
 
   it('never promotes List to Brain, however tall the drawer gets', () => {
-    for (const height of [132, 180, 300, 400, 900]) expect(modeForHeight('list', height)).toBe('list');
+    for (const height of [DRAWER_MIN_HEIGHT, BRAIN_MIN_HEIGHT, 300, 400, 900]) {
+      expect(modeForHeight('list', height)).toBe('list');
+    }
   });
 
   it('a height that is not a number reads as List', () => {
@@ -95,19 +98,30 @@ describe('brainFitsIn', () => {
   it('is offered on a real panel and withheld on one that cannot hold it', () => {
     expect(brainFitsIn(drawerBounds(700))).toBe(true);
     expect(brainFitsIn(drawerBounds(600))).toBe(true);
-    // 300px of panel leaves the drawer at its 132px floor — there is no
-    // height at which Brain would be usable, so it is not on the menu.
+    // 300px of panel leaves the drawer at its own floor — there is no height
+    // at which Brain would be usable, so it is not on the menu.
     expect(brainFitsIn(drawerBounds(300))).toBe(false);
   });
 });
 
 describe('brainStageSize', () => {
-  it('is the drawer minus its handle, its padding and its frame, squared off by the narrower side', () => {
+  it('is the drawer minus its chrome, its padding and its frame, squared off by the narrower side', () => {
     // V1.6 VB-29: the frame is along the bottom and down both sides, so it
-    // costs the height one of itself and the width two.
-    expect(brainStageSize(324, 400)).toBe(324 - DRAWER_HANDLE_HEIGHT - BRAIN_STAGE_PAD * 2 - DOCK_FRAME);
+    // costs the height one of itself and the width two. V1.9 VB-51/VB-52: the
+    // chrome is three bands now, not one.
+    expect(brainStageSize(324, 400)).toBe(324 - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2 - DOCK_FRAME);
     // A panel narrower than the drawer is tall: width wins.
     expect(brainStageSize(600, 400)).toBe(400 - BRAIN_STAGE_PAD * 2 - DOCK_FRAME * 2);
+  });
+
+  it('gives back the line the breadcrumb takes while it is offering the files', () => {
+    // The globe is drawn into a box the CSS has already shortened, so a size
+    // that ignored the open menu would be a globe clipped along its bottom
+    // edge for as long as the menu is open (FileDrawer.css's `overflow`).
+    const tall = 420;
+    expect(brainStageSize(tall, 400, DRAWER_CRUMB_NOTE)).toBe(brainStageSize(tall, 400) - DRAWER_CRUMB_NOTE);
+    // Never an excuse to grow: a negative extra is not a taller globe.
+    expect(brainStageSize(tall, 400, -40)).toBe(brainStageSize(tall, 400));
   });
 
   /**
@@ -120,7 +134,7 @@ describe('brainStageSize', () => {
    */
   it('always fits the box the frame leaves, at every height a real panel allows', () => {
     for (const height of [BRAIN_MIN_HEIGHT, 240, 320, BOUNDS.max]) {
-      const room = height - DOCK_FRAME - DRAWER_HANDLE_HEIGHT - BRAIN_STAGE_PAD * 2;
+      const room = height - DOCK_FRAME - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2;
       expect(brainStageSize(height, 400), `${height}px tall`).toBeLessThanOrEqual(Math.max(room, BRAIN_STAGE_MIN));
       expect(brainStageSize(height, 400)).toBeLessThanOrEqual(400 - DOCK_FRAME * 2 - BRAIN_STAGE_PAD * 2);
     }

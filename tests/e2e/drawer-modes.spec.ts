@@ -224,6 +224,28 @@ const readTrack = (page: Page) =>
     target: (window as unknown as { __wbTarget: number[][] }).__wbTarget,
   }));
 
+/**
+ * Tab from the drag handle until the globe's roving focus has it.
+ *
+ * WALKED, NOT COUNTED. Until V1.9 the globe was exactly one Tab from the
+ * handle; VB-52 put the breadcrumb between them, so the number of stops in
+ * between is now a fact about the trail rather than about the globe. Walking it
+ * keeps this a test of "the keyboard reaches the globe" instead of a test of
+ * how many controls happen to sit above it, and it still fails — by never
+ * arriving — if the globe stops being reachable at all.
+ */
+async function tabToTheGlobe(page: Page): Promise<void> {
+  await page.locator('.filedrawer-handle').focus();
+  for (let i = 0; i < 10; i++) {
+    const onGlobe = await page.evaluate(() =>
+      (document.activeElement as HTMLElement | null)?.classList.contains('brainglobe-pin') ?? false,
+    );
+    if (onGlobe) return;
+    await page.keyboard.press('Tab');
+  }
+  throw new Error('the keyboard never reached the globe');
+}
+
 test.describe('VB-14b — two modes in one drawer', () => {
   test('it opens on List, and Brain is a choice with a name', async () => {
     const { context, sw, id } = await launchExtension();
@@ -516,8 +538,7 @@ test.describe('VB-14b — navigation survives in both modes', () => {
     await drawerSettled(page);
     // Reached from the keyboard — the globe is one tab stop with a roving
     // focus, so this is also the whole keyboard path through it.
-    await page.locator('.filedrawer-handle').focus();
-    await page.keyboard.press('Tab');
+    await tabToTheGlobe(page);
     await expect(page.locator('.brainglobe-pin[data-section-id="sec1"]')).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', firstQuestion);
@@ -707,8 +728,7 @@ test.describe('VB-14b — reduced motion', () => {
     // Brain: the globe is one tab stop, every section is on the roving focus,
     // and every lit one still navigates.
     await brainButton(page).click();
-    await page.locator('.filedrawer-handle').focus();
-    await page.keyboard.press('Tab');
+    await tabToTheGlobe(page);
     const reached: string[] = [];
     for (let i = 0; i < contextOutline.length; i++) {
       reached.push(await page.evaluate(() => document.activeElement?.getAttribute('data-section-id') ?? ''));

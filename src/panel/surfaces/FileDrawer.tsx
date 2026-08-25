@@ -2,9 +2,9 @@ import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } fr
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
 import { BrainGlobe, FileTree } from '../components';
 import { sectionNodeGradient } from '../components/BrainGlobe';
-import { FileTypeToggle } from '../components/FileTypeToggle';
-import { WorkBrainBack, WorkShelf } from '../components/WorkShelf';
-import { BRAIN_NAV_HOME, chooseNav, pullBack } from '../../core/globe/workBrain';
+import { Breadcrumb } from '../components/Breadcrumb';
+import { WorkShelf } from '../components/WorkShelf';
+import { BRAIN_NAV_HOME, chooseNav } from '../../core/globe/workBrain';
 import type { BrainNav } from '../../core/globe/workBrain';
 import { contextFileDate, generateContextFileParts } from '../../core/files/generate';
 import type { ContextFileSection } from '../../core/files/generate';
@@ -12,6 +12,10 @@ import { fileFinished } from '../../core/files/slots';
 import type { FileSlotId } from '../../core/files/slots';
 import { fileToggle } from '../../core/files/toggle';
 import {
+  DRAWER_CRUMB_HEIGHT,
+  DRAWER_CRUMB_NOTE,
+  DRAWER_HANDLE_HEIGHT,
+  DRAWER_VIEW_BAR_HEIGHT,
   clampDrawerHeight,
   drawerBounds,
   drawerHeightForKey,
@@ -39,6 +43,7 @@ import {
   outlineNodeState,
   positionForQuestionId,
 } from '../../core/flow/outline';
+import { splitSectionLabel } from '../../core/flow/sectionLabel';
 import { nodeDetailsByNode } from '../../core/flow/nodeDetails';
 import { nodeSummaries } from '../../core/flow/nodeSummary';
 import { sectionHealthMap } from '../../core/freshness/sectionHealth';
@@ -139,6 +144,41 @@ import './FileDrawer.css';
  *    and those two are the mitigation. They live in `Flow`, above this
  *    component, and nothing here may push them off the screen — the drawer's
  *    own ceiling (core/drawer/height.ts) is what guarantees it.
+ *
+ * ── V1.9 VB-51 + VB-52 — three bands, and one of each kind of switch ──────
+ *
+ * The mockup makes the lower panel an app: a handle at the top, a breadcrumb
+ * under it, the visual filling the middle, and a bar along the bottom carrying
+ * brain / list as two icons. Adam's decision of 2026-08-24 settles what those
+ * two rows are FOR, because V1.8 had left the panel with two toggle bars
+ * sandwiching one picture:
+ *
+ *   **ONE toggle bar. The breadcrumb switches files; the bottom bar switches
+ *   view.** VB-47's file toggle above the list is removed and its behaviour
+ *   moves into the breadcrumb, whose three rungs are VB-48's three tiers.
+ *
+ * So this component gained two bands and lost one strip:
+ *
+ *  · `components/Breadcrumb.tsx` sits under the handle. It is handed the SAME
+ *    `nav` the globe is handed, so pressing `Work brain` on the trail and
+ *    zooming out on the stage are one action by two routes — there is no second
+ *    piece of state for them to disagree through.
+ *  · the mode pair moved out of the head band and down into `.filedrawer-viewbar`
+ *    along the bottom. Same two buttons, same names, same three signals; one
+ *    band lower.
+ *  · the sticky `.filedrawer-nav` row inside the list — VB-47's file strip and
+ *    VB-48's way back up — is gone. The trail does both jobs for both views, and
+ *    doing them above the scroll box is what stops the control sliding under
+ *    itself as the drawer scrolls (the WCAG 2.5.8 problem that row was built to
+ *    dodge in the first place).
+ *
+ * **The two bands are charged for honestly.** They are 44px each because
+ * everything in them is a control, and core/drawer/height.ts adds both to
+ * `DRAWER_CHROME_HEIGHT` — which the drawer's floor, its resting height, the
+ * height Brain hands over at and the globe's own stage size are all derived
+ * from. The peek still shows three rows of file; the drawer is taller by
+ * exactly the furniture the mockup adds, rather than the file being quietly
+ * shorter to pay for it.
  */
 
 export interface FileDrawerProps {
@@ -459,6 +499,20 @@ export function FileDrawer({
   const shownFile: FileSlotId = nav.file;
 
   /**
+   * V1.9 VB-52 — whether the breadcrumb is offering the files right now.
+   *
+   * Held here rather than inside the trail because the band gets a line taller
+   * while the chips are showing, and the globe drawn underneath has to be sized
+   * against the box that is really left (`brainStageSize`'s third term). One
+   * fact, one owner, no way for the picture and the chrome to disagree about
+   * how much room there is.
+   *
+   * Ephemeral, like everything else about a glance at this panel
+   * (docs/ARCHITECTURE.md): a reopen lands with the trail closed.
+   */
+  const [filesOpen, setFilesOpen] = useState(false);
+
+  /**
    * The toggle itself: which files exist, which one is on screen, and what a
    * locked one may truthfully say.
    *
@@ -669,8 +723,20 @@ export function FileDrawer({
     if (target) handleNavigate(target);
   }
 
-  const stageSize = brainStageSize(height, panelWidth);
+  /** V1.9 VB-52. The line the trail takes while it is offering the files —
+   * zero the rest of the time. Read twice, and it must be the same number in
+   * both places: the stage's own top edge (CSS, below) and the size the globe
+   * is drawn at (core/drawer/mode.ts). */
+  const crumbNote = filesOpen && nav.tier === 'file' ? DRAWER_CRUMB_NOTE : 0;
+  const stageSize = brainStageSize(height, panelWidth, crumbNote);
   const drifting = brainDriftAllowed(mode, height, morph !== null);
+
+  /** The section rung of the trail: the section being written, without the
+   * numeral its label carries in the file (core/flow/sectionLabel.ts). `null`
+   * before anything has been reached, which is a two-rung trail rather than an
+   * empty third rung. */
+  const currentSection = outline.find((node) => node.id === currentSectionId) ?? null;
+  const sectionRung = currentSection ? splitSectionLabel(currentSection.label).title : null;
 
   return (
     <aside
@@ -684,6 +750,17 @@ export function FileDrawer({
       style={
         {
           '--filedrawer-h': `${height}px`,
+          // V1.9 VB-51/VB-52 — the three bands of the drawer's chrome, from
+          // core/drawer/height.ts. The stylesheet positions the two content
+          // layers between them and works none of it out: the same numbers
+          // decide the drawer's floor, its resting height and the globe's
+          // stage size, and a `calc()` with its own copy of 44 is how those
+          // four quietly stop agreeing.
+          '--drawer-head-h': `${DRAWER_HANDLE_HEIGHT}px`,
+          '--crumb-row-h': `${DRAWER_CRUMB_HEIGHT}px`,
+          '--crumb-note-h': `${DRAWER_CRUMB_NOTE}px`,
+          '--drawer-crumb-h': `${DRAWER_CRUMB_HEIGHT + crumbNote}px`,
+          '--drawer-viewbar-h': `${brainOffered ? DRAWER_VIEW_BAR_HEIGHT : 0}px`,
           // The morph's clock, published from core/drawer/mode.ts so the
           // stylesheet never carries a second copy of a number that has to
           // agree with the component's.
@@ -701,15 +778,6 @@ export function FileDrawer({
         {S.fileTreeHeading}
       </h2>
       <div className="filedrawer-head">
-        {/* Before the handle in the markup, so the tab order reads
-            "what am I looking at" then "how big is it" — and so the last
-            control inside the drawer stays one of the file's own. */}
-        {brainOffered && (
-          <div className="filedrawer-modes" role="group" aria-label={S.drawerModes}>
-            <ModeButton mode="brain" active={mode === 'brain'} label={S.drawerModeBrain} onPick={chooseMode} />
-            <ModeButton mode="list" active={mode === 'list'} label={S.drawerModeList} onPick={chooseMode} />
-          </div>
-        )}
         <div
           ref={handleRef}
           className="filedrawer-handle"
@@ -730,13 +798,26 @@ export function FileDrawer({
         >
           <span className="filedrawer-grip" aria-hidden="true" />
         </div>
-        {/* Outside the separator, deliberately: text inside a splitter is
-            text a screen reader will never reach, because the splitter's own
-            name replaces its contents. It sits over the handle and lets every
-            pointer event through to it, so it takes nothing away from the
-            grab target. */}
-        <p className="filedrawer-count">{S.sectionsOf(reached, outline.length)}</p>
+        {/* V1.9 VB-52 — the count that used to sit at the right of this band
+            has moved onto the trail below, where the mockup puts it and where
+            it is read rather than glanced past. The band is the handle's alone
+            now: nothing else may sit in it, because the handle covers the whole
+            of it (`inset: 0`) and anything overlapping it takes pixels off a
+            44px control. */}
       </div>
+      {/* V1.9 VB-52 — the trail, and the product's only file switcher.
+          Handed the same `nav` the globe below is handed, so the two are one
+          navigation rather than two that agree today (see the header). */}
+      <Breadcrumb
+        nav={nav}
+        files={toggle}
+        section={sectionRung}
+        done={reached}
+        total={outline.length}
+        filesOpen={filesOpen}
+        onFilesOpen={setFilesOpen}
+        onNav={setNav}
+      />
       {/* Brain. Mounted in both modes — see decision 2 in the header — and
           anchored to the top of its box rather than centred, so the globe does
           not slide while the drawer's own height is still settling underneath
@@ -763,31 +844,18 @@ export function FileDrawer({
         />
       </div>
       <div className="filedrawer-body" id={BODY_ID} ref={bodyRef}>
-        {/* V1.8 VB-47 — the switch between Context, Skills and Actions, in the
-            strip that used to hold the `[ ] 9 not yet` summary tag.
-
-            HERE AND NOT INSIDE `FileTree`: the tree is a picture of ONE file
-            and choosing which file that is belongs to the drawer around it —
-            the same reasoning that keeps the mode buttons in the head band
-            rather than inside the globe. Sticky at the top of this scrolling
-            box (FileTypeToggle.css), exactly as the summary was, because a
-            switcher that scrolls away is one you have to go looking for.
-
-            The refusal lives in core: `chooseFile` returns the file already on
-            screen when a locked one is pressed, and the strip prints what
-            unlocks it. */}
         {/* V1.8 VB-48 — THE LIST HAS THE SAME TWO TIERS THE BRAIN HAS.
 
             Out at the work brain, the List is the files; inside one, it is that
-            file's outline with the way back up above it. Same state, same rule,
-            same words as the globe beside it — a tier that existed in only one
-            of the two views would be a second navigation rather than a shared
-            one, which is the thing VB-48 asks for by name.
+            file's outline. Same state, same rule, same words as the globe
+            beside it — a tier that existed in only one of the two views would
+            be a second navigation rather than a shared one, which is the thing
+            VB-48 asks for by name.
 
-            The toggle strip belongs to the file tier: out here the shelf IS the
-            switcher, and printing both would be two controls doing one job in
-            one drawer (the exact conflict Adam's decision of 2026-08-24
-            settled). */}
+            V1.9 VB-52 takes the sticky strip that used to sit above this tree
+            away entirely: the file switcher and the way back up are both the
+            breadcrumb's now, one band higher and above the scroll box. Nothing
+            inside the list scrolls under a control any more. */}
         {nav.tier === 'work' ? (
           <WorkShelf
             items={toggle}
@@ -796,23 +864,6 @@ export function FileDrawer({
           />
         ) : (
           <>
-            {/* The "where am I" cluster, pinned together at the top of the
-                scrolling list.
-
-                THE WAY UP HAS TO BE STUCK TO THE STRIP, not merely above it.
-                The drawer scrolls itself to keep the section being written in
-                view, so a row left in the flow scrolls under the sticky toggle
-                and is half covered by it — which axe reports as a target that
-                is partially obscured (WCAG 2.5.8), and which a person would
-                experience as a control that goes missing while they answer
-                questions. Found by `npm run check`, not by reading. */}
-            <div className="filedrawer-nav">
-              <WorkBrainBack onClick={() => setNav(pullBack)} />
-              <FileTypeToggle
-                items={toggle}
-                onPick={(id) => setNav((current) => chooseNav(current, id, toggle))}
-              />
-            </div>
             <FileTree
               outline={outline}
               modules={modules}
@@ -825,6 +876,24 @@ export function FileDrawer({
           </>
         )}
       </div>
+      {/* V1.9 VB-51 — the bottom bar: brain / list, and nothing else.
+          "The mode toggle moves to a bottom bar ... two icons in a bar below
+          the visual, not a strip above it." It is the same pair that stood in
+          the head band since V1.4 — same names, same three signals, same
+          `aria-pressed` — one band lower, and now the only toggle in the
+          drawer that is about HOW to look rather than WHAT at.
+
+          Last in the markup as well as last on the screen, so the tab order
+          through the drawer reads: where am I, what is in the file, how do I
+          want to see it. */}
+      {brainOffered && (
+        <div className="filedrawer-viewbar">
+          <div className="filedrawer-modes" role="group" aria-label={S.drawerModes}>
+            <ModeButton mode="brain" active={mode === 'brain'} label={S.drawerModeBrain} onPick={chooseMode} />
+            <ModeButton mode="list" active={mode === 'list'} label={S.drawerModeList} onPick={chooseMode} />
+          </div>
+        </div>
+      )}
       {/* The flight path. Always mounted, so there is always a box to measure
           against; empty except during a morph. `aria-hidden` because every
           node it draws is a picture of a control that exists, focusable and

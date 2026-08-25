@@ -321,8 +321,10 @@ test.describe('VB-48 — one navigation, two views', () => {
     expect(await tier(page)).toBe('file');
     await tierSettled(page, 1);
 
-    // ...and out again from the List's own way up.
-    await page.getByRole('button', { name: S.workBrainBack, exact: true }).first().click();
+    // ...and out again from the way up. V1.9 VB-52 made that the breadcrumb's
+    // first rung, for BOTH views at once — the List's own arrow is gone, and
+    // the trail runs the same `pullBack` it ran (components/Breadcrumb.tsx).
+    await page.locator('.crumbs-seg[data-seg="work"]').click();
     await expect(page.locator('.workshelf')).toHaveCount(1);
     expect(await tier(page)).toBe('work');
 
@@ -364,8 +366,10 @@ test.describe('VB-48 — nothing below the new tier changed', () => {
     await expect.poll(async () => page.locator('.filedrawer-morph-node').count(), { timeout: 5000 }).toBe(0);
     await expect(page.locator('.filetree-row').first()).toBeVisible();
 
-    // VB-47's toggle is still the switcher inside a file.
-    await expect(page.locator('.filetypes-item[data-file="context"]')).toHaveAttribute('aria-pressed', 'true');
+    // The file switcher still names the file inside a file — V1.9 VB-52 moved
+    // it from VB-47's strip into the trail, and it is still the one control
+    // that says which file the drawer is drawing.
+    await expect(page.locator('.crumbs-seg[data-seg="file"]')).toContainText(S.fileContext);
 
     await context.close();
   });
