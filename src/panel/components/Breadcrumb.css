@@ -10,10 +10,15 @@
       directly under the drag handle, and an overhang here would take pixels off
       one 44px control to give them to another. So the band is the floor, and
       core/drawer/height.ts charges the drawer for it honestly.
-   2. **It wears the chrome's colour, not the pane's.** V1.6 VB-30 settled that
-      the drawer's chrome is the dark field in BOTH modes, so the handle above
-      and the view bar below and this band are one surface whichever view is
-      showing — which is also the direction VB-50 is taking the whole panel.
+   2. **It wears the drawer's one colour.** V1.6 VB-30 settled that the chrome
+      is the dark field in BOTH modes; V1.9 VB-50 finishes the thought and makes
+      the WHOLE drawer that colour, top edge to bottom edge. So this band is not
+      "the chrome's colour over the pane's" any more — there is no pane. It is
+      the same paint as the handle above it, the picture under it and the bar at
+      the bottom, and every hover tint and pressed fill that used to give a rung
+      or a chip a ground of its own has gone. What replaces them is a LINE: a
+      text underline on hover, a 2px accent bar under the file you are in. See
+      FileDrawer.css for why a line, and why the same line everywhere.
    3. **The ring is inset.** A ring drawn outside a rung would be clipped by the
       band and would sit over the handle above it. 2px at 2px inset, in the
       dock's own accent: --primary measures 2.90:1 on this field, under the floor
@@ -132,9 +137,17 @@
   cursor: default;
 }
 
+/* V1.9 VB-50 — hover is the ink lifting and the word underlining. The tint
+   that used to sit behind it is gone; the underline is the drawer's one hover
+   language and matches the nav cluster above it exactly (3px offset, 1.5px
+   thick — Flow.css). Two signals, neither of them a ground. */
 button.crumbs-seg:hover {
   color: var(--dock-ink, var(--ink));
-  background: var(--dock-chip-hover, var(--sunken));
+}
+button.crumbs-seg:hover .crumbs-label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
 }
 
 button.crumbs-seg:focus-visible {
@@ -223,8 +236,14 @@ button.crumbs-seg:focus-visible {
 .crumbs-file:hover:not([aria-disabled='true']) {
   color: var(--dock-ink, var(--ink));
 }
-.crumbs-file:hover:not([aria-disabled='true']) .crumbs-chip {
-  background: var(--dock-chip-hover, var(--sunken));
+/* V1.9 VB-50: the chip's hover fill is gone and the name underlines instead —
+   the same move the rungs above make, and the same one the list's rows make.
+   A locked chip is excluded because pressing it moves nothing: an affordance on
+   a control that refuses is a promise the product does not keep. */
+.crumbs-file:hover:not([aria-disabled='true']) .crumbs-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
 }
 
 /* THE RING GOES ON THE CHIP, not on the button: on the button it would enclose
@@ -237,12 +256,16 @@ button.crumbs-seg:focus-visible {
   outline-offset: -2px;
 }
 
-/* The file on screen. Three signals and none of them colour on its own. */
+/* The file on screen. Three signals and none of them colour on its own —
+   V1.9 VB-50 takes away the one that was a ground and leaves the other two
+   plus the accent ink: a solid bar under the chip, a heavier label, and
+   `aria-pressed` under both for anything that is not looking. The bar is the
+   same 2px accent bar the chosen view wears in the bar at the bottom, which is
+   how "the one you are in" is said in this drawer now. */
 .crumbs-file[aria-pressed='true'] {
-  color: var(--dock-ink, var(--ink));
+  color: var(--dock-accent, var(--primary));
 }
 .crumbs-file[aria-pressed='true'] .crumbs-chip {
-  background: var(--dock-accent-chip, var(--primary-tint));
   box-shadow: inset 0 -2px 0 var(--dock-accent, var(--primary));
   font-weight: 700;
 }

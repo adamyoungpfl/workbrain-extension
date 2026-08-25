@@ -3,26 +3,40 @@ import { resolve } from 'node:path';
 import { describe, it, expect } from 'vitest';
 import { contrastRatio } from '../color/contrast';
 import type { Rgb } from '../color/contrast';
-import { DOCK_BOUNDARY_MIN_CONTRAST, DOCK_FRAME, DOCK_TEXT_MIN_CONTRAST } from './chrome';
+import {
+  DOCK_BOUNDARY_MIN_CONTRAST,
+  DOCK_LINE_TOKEN,
+  DOCK_ORB_TOKENS,
+  DOCK_ROLES,
+  DOCK_SURFACE_TOKEN,
+  DOCK_TEXT_MIN_CONTRAST,
+  dockRoleFloor,
+} from './chrome';
 
 /**
  * The dock's palette, against docs/GUARDRAILS.md — read out of
  * design/tokens.json rather than restated.
  *
- * V1.4 VB-22 wrote this file about a gradient: every colour the dock put on
- * that ramp, checked at the bottom edge of the buttons, in their middle and at
- * their top edge. V1.7 VB-41 removed the ramp (core/drawer/chrome.ts), so what
- * is checked here is two flat grounds instead of one moving one — the panel's
- * canvas, which the button cluster now stands on, and the drawer's own dark
- * stage, which is unchanged from the handle down.
+ * V1.4 VB-22 wrote this file about a gradient. V1.7 VB-41 removed the ramp and
+ * it became two flat grounds — the panel's canvas under the button cluster, and
+ * the drawer's dark stage from the handle down.
+ *
+ * **V1.9 VB-50 makes the drawer's half of that ONE ground.** The pane the
+ * List's rows used to sit on is gone; so are the hover tints, the pressed
+ * chips and the white frame around the whole thing. Every control in the drawer
+ * — the trail's rungs, the file chips, the view bar's two glyphs, the list's
+ * rows and their orbs, the work shelf, the file preview — is now read against
+ * `--globe-field` and nothing else. So the shape of this file changes with it:
+ * where it used to check a handful of inks against two grounds, it now walks
+ * the palette core declares (`DOCK_ROLES`) against the one surface core names
+ * (`DOCK_SURFACE_TOKEN`).
  *
  * Reading the tokens rather than restating them is deliberate. A test with the
  * hex values copied into it passes forever while the product drifts; this one
- * fails the moment someone edits `--globe-panel` or the stage colours, which is
- * exactly the conversation that should happen. tests/e2e/button-cluster.spec.ts
- * and tests/e2e/dock-surface.spec.ts then prove the same things about the
- * pixels a browser really painted — this proves them about the palette we
- * chose.
+ * fails the moment someone edits `--globe-field` or any role drawn on it, which
+ * is exactly the conversation that should happen. tests/e2e/one-surface.spec.ts
+ * then proves the same things about the pixels a browser really painted — this
+ * proves them about the palette we chose.
  */
 
 interface TokenFile {
@@ -54,44 +68,108 @@ function token(name: string): Rgb {
 }
 
 const CANVAS = token('canvas');
+/** The one surface, named by core rather than by this file. */
+const FIELD = token(DOCK_SURFACE_TOKEN);
+
 /**
- * The stage the dock takes its colour from, per mode.
+ * V1.9 VB-50 — ONE SURFACE, TOP EDGE TO BOTTOM EDGE.
  *
- * V1.6 VB-30 made those two the SAME colour: the drawer's head band is the
- * Brain visual's dark field in List as well, so everything drawn on it stands
- * on that field in both modes. Kept as a map rather than collapsed to one
- * constant because the two modes are still two cases that have to be checked —
- * the assertions below are the ones that would catch the day one of them drifts
- * back.
+ * This is the block that pays for the task's central risk: removing the tints
+ * removed the grounds half these controls were being measured against, so every
+ * one of them now has to hold against the field itself.
  */
-const STAGE = { brain: token('globe.field'), list: token('globe.field') };
+describe('one surface, and everything drawn on it (VB-50)', () => {
+  it('is really dark, and really is the globe’s own field', () => {
+    // A bar that reads as the globe's own field is the point (VB-30), and one
+    // colour from the drawer's top edge to the panel's bottom is VB-50's.
+    expect(contrastRatio(FIELD, CANVAS)).toBeGreaterThan(DOCK_TEXT_MIN_CONTRAST * 2);
+  });
 
-/** V1.6 VB-30. What is left of "List's own lighter stage": the ground the
- * drawer's CONTENT sits on, which the bar above it no longer shares. */
-const PANE_LIST = token('surface');
+  it('clears every role’s own floor against that one colour', () => {
+    const measured: string[] = [];
+    for (const role of DOCK_ROLES) {
+      const ratio = contrastRatio(token(role.token), FIELD);
+      measured.push(`--${role.name} (${role.token}) ${ratio.toFixed(2)}:1 — ${role.what}`);
+      expect(ratio, `--${role.name} carries ${role.what}`).toBeGreaterThanOrEqual(dockRoleFloor(role.kind));
+    }
+    // Printed, because "it passes" is worth less than the numbers when the
+    // next person is choosing a colour to add to this list.
+    console.log(`\n  VB-50 palette on ${DOCK_SURFACE_TOKEN}\n${measured.map((l) => `    ${l}`).join('\n')}\n`);
+  });
 
-describe('the frame the pane sits inside (VB-29)', () => {
-  it('is the panel’s own margin', () => {
-    // 8px is not a number somebody liked: it is the panel body's own margin,
-    // which is why the pane's sides land in the column the rest of the product
-    // already uses.
-    expect(DOCK_FRAME).toBe(8);
+  it('keeps the five orbs above 1.4.11 on it, since a row now wears them there too', () => {
+    // V1.8 VB-45 put the globe's orbs in the list's rows. While the list sat on
+    // a near-white pane those fills needed a hairline to clear 3:1 at all
+    // (FileTree.css); on the field they are the colours they were chosen for.
+    for (const orb of DOCK_ORB_TOKENS) {
+      expect(contrastRatio(token(orb), FIELD), `${orb} on the field`).toBeGreaterThanOrEqual(
+        DOCK_BOUNDARY_MIN_CONTRAST,
+      );
+    }
+  });
+
+  it('leaves the light palette unusable here, so a half-done revert fails loudly', () => {
+    // The inks the List's pane carried until VB-50. Stated as failures on
+    // purpose: if a rule anywhere goes back to `--ink` or `--primary` inside the
+    // drawer, this is the sentence explaining why the screen went unreadable.
+    expect(contrastRatio(token('ink'), FIELD)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
+    expect(contrastRatio(token('ink-2'), FIELD)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
+    expect(contrastRatio(token('ink-3'), FIELD)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
+    expect(contrastRatio(token('green'), FIELD)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
+    expect(contrastRatio(token('amber'), FIELD)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
+    // And the ring, which is the reason `--dock-accent` is not `--primary`:
+    // 2.90:1 here, under the floor for a non-text indicator.
+    expect(contrastRatio(token('primary'), FIELD)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
+  });
+
+  it('finds --dock-edge no longer needed, and keeps it anyway — measured, not assumed', () => {
+    // A finding worth writing down rather than quietly acting on. `--dock-edge`
+    // was cut at V1.6 because `--border-i` measured 2.92:1 on the LIGHT pane the
+    // drawer's content used to sit on, under WCAG 1.4.11's floor for a boundary
+    // that carries meaning. VB-50 deletes that pane — and on the field the two
+    // are 6.30:1 and 5.26:1, so both would do.
+    expect(contrastRatio(token('border-i'), FIELD)).toBeGreaterThanOrEqual(DOCK_BOUNDARY_MIN_CONTRAST);
+    expect(contrastRatio(token('dock-edge'), FIELD)).toBeGreaterThanOrEqual(DOCK_BOUNDARY_MIN_CONTRAST);
+    // It stays because the drawer already dresses from `--dock-edge` in four
+    // places and one name for one job is worth more than deleting a token that
+    // is doing no harm. The reason it exists has changed, though, and this is
+    // where that is recorded: it is the drawer's edge, not a rescue from a
+    // ground that no longer exists.
+    expect(contrastRatio(token('border-i'), token('surface'))).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
+  });
+
+  it('exempts exactly one hairline, and says why', () => {
+    // docs/GUARDRAILS.md floors an interactive border at 3:1 and names
+    // `--divider` as the exception, because a divider carries no meaning. This
+    // is that variable's opposite number on the field: it is under the floor,
+    // deliberately, and it is the ONLY thing in the drawer that is.
+    expect(contrastRatio(token(DOCK_LINE_TOKEN), FIELD)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
+    // …and it is still a visible line rather than the field repainted on
+    // itself, which is the way this exemption could be abused.
+    expect(contrastRatio(token(DOCK_LINE_TOKEN), FIELD)).toBeGreaterThan(1.5);
+  });
+
+  it('reads the accent against the ink it sits beside, not only against the field', () => {
+    // Nothing in the drawer is distinguished by colour alone, but the chosen
+    // view, the current rung and the live section are all accent against quiet
+    // ink on one ground — so the two have to be tellable apart as well as
+    // legible. Both clear the text floor on the field, and they are far enough
+    // apart in luminance to read as two levels.
+    const accent = contrastRatio(token('globe.focus'), FIELD);
+    const quiet = contrastRatio(token('globe.detail-key'), FIELD);
+    expect(accent).toBeGreaterThan(quiet);
   });
 });
 
 /**
- * V1.7 VB-41 — THE FLOOR THE BUTTON CLUSTER HAS TO CLEAR NOW.
+ * V1.7 VB-41's half of the dock, untouched by VB-50.
  *
- * The containers are gone, so a nav label is no longer read against a chip cut
- * from the dock's own palette. It is read against whatever the bar is painted,
- * and the bar is painted the panel's own canvas — flat, the same at every drag
- * height, in both modes, because the fade that used to move under these
- * controls has gone with the boxes (core/drawer/chrome.ts's header).
- *
- * That makes the check simple, which is the point of it: three inks on one
- * ground. tests/e2e/button-cluster.spec.ts then proves the ground really is
- * that colour behind every control, from real pixels, at three drag heights in
- * both modes — this proves the inks we chose are legible on it.
+ * The button cluster stands on the panel's own canvas ABOVE the drawer. VB-50
+ * is a decision about the lower panel — the drawer, top edge to bottom edge —
+ * and the mockup's nav row inside that panel is VB-53's business, not this
+ * task's. So these three assertions are exactly as V1.7 left them, and the fact
+ * that they still pass is the statement that VB-50 stopped where it said it
+ * would.
  */
 describe('the button cluster, on the panel’s own canvas (VB-41)', () => {
   it('reads every label on the canvas, well clear of the floor', () => {
@@ -105,162 +183,28 @@ describe('the button cluster, on the panel’s own canvas (VB-41)', () => {
     expect(contrastRatio(token('ink-3'), CANVAS)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
   });
 
-  it('focuses with the panel’s own ring, which the dark stage could not use', () => {
+  it('focuses with the panel’s own ring, which the dark surface could not use', () => {
     // On the canvas --primary is the ring every other control in the product
-    // uses, and it clears 1.4.11 outright. Stated beside the reason the dock
-    // needed a different one: on the drawer's dark stage the same ring is
-    // 2.90:1, which is why --globe-focus exists (design/tokens.json).
+    // uses, and it clears 1.4.11 outright. Stated beside the reason the drawer
+    // needed a different one: on the field the same ring is 2.90:1, which is
+    // why --globe-focus exists (design/tokens.json).
     expect(contrastRatio(token('primary'), CANVAS)).toBeGreaterThanOrEqual(DOCK_BOUNDARY_MIN_CONTRAST);
-    expect(contrastRatio(token('primary'), STAGE.brain)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
-  });
-
-  it('is not carried by colour alone — and could not be, at these ratios', () => {
-    // The three controls are three words, so nothing here is identified by
-    // colour in the first place (Back, Next and Skip are their own labels, and
-    // the two navigating ones carry a chevron as well — components/NavButton).
-    // What colour adds is emphasis, and this is the statement that emphasis is
-    // all it adds: the primary and the secondary are within a point of each
-    // other against the canvas, so a person who cannot tell the two hues apart
-    // has lost nothing but the accent.
-    const primary = contrastRatio(token('primary'), CANVAS);
-    const secondary = contrastRatio(token('ink-2'), CANVAS);
-    expect(Math.abs(primary - secondary)).toBeLessThan(1);
+    expect(contrastRatio(token('primary'), FIELD)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
   });
 
   it('leaves nothing standing on the deleted ramp', () => {
     // The old bar gave every control an opaque chip cut from --globe-panel so
     // the gradient could pass behind it. Nothing in the cluster has a ground of
     // its own now, and the ground it does have is the canvas — so the dark
-    // set's inks would be unreadable there. Stated so a half-done revert fails
-    // here rather than on a screen.
+    // set's inks would be unreadable there.
     expect(contrastRatio(token('globe.label'), CANVAS)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
     expect(contrastRatio(token('globe.detail-key'), CANVAS)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
   });
-});
 
-/**
- * The dark stage did not go anywhere — VB-41 changed the bar ABOVE the drawer,
- * not the drawer. Everything below is the chrome from the handle down: the head
- * band, its two mode glyphs, the section count and the grip, which is now the
- * first dark thing under the cluster and therefore the boundary that has to
- * hold on its own.
- */
-describe('Brain — the drawer’s own chrome on the dark stage', () => {
-  it('bounds the grip and the pressed toggle against the field they sit on', () => {
-    // The grip's two bars, which are the whole of the handle's visible
-    // representation (FileDrawer.css) — and, since VB-41 took the fade away,
-    // the first thing under the cluster with an edge to hold.
-    expect(contrastRatio(token('globe.detail-key'), STAGE.brain)).toBeGreaterThanOrEqual(
-      DOCK_BOUNDARY_MIN_CONTRAST,
-    );
-    // The pressed mode toggle's own chip, cut from the dock's deep navy.
-    expect(contrastRatio(token('globe.panel'), token('globe.label'))).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    // And the band itself against the canvas above it. VB-41 removed the ramp
-    // between the two, so this seam is now a plain edge — which only works
-    // because the two colours are nowhere near each other.
-    expect(contrastRatio(STAGE.brain, CANVAS)).toBeGreaterThan(DOCK_TEXT_MIN_CONTRAST * 2);
-  });
-
-  it('reads every label on the band against the band', () => {
-    expect(contrastRatio(token('globe.label'), token('globe.panel'))).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    expect(contrastRatio(token('globe.detail-key'), token('globe.panel'))).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-  });
-
-  it('carries the bar’s own light text on the stage itself', () => {
-    // The two mode toggles and the section count, which sit on the drawer's
-    // head.
-    expect(contrastRatio(token('globe.detail-key'), STAGE.brain)).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    expect(contrastRatio(token('globe.label'), STAGE.brain)).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    // The pressed toggle's own chip, and the ring the dark stage focuses with
-    // (--primary measures 2.90:1 here, which is why it is not this).
-    expect(contrastRatio(token('globe.label'), token('globe.panel'))).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    expect(contrastRatio(token('globe.focus'), STAGE.brain)).toBeGreaterThanOrEqual(
-      DOCK_BOUNDARY_MIN_CONTRAST,
-    );
-  });
-});
-
-/**
- * V1.6 VB-30 — one head band, in both modes.
- *
- * The band takes the Brain visual's dark field in List as well, so in List it
- * deliberately sits ON a light pane. Every glyph, count and grip bar on it
- * therefore stands on a background it did not stand on before V1.6, and the
- * honest way to say so is to run List's block against the same stage Brain's is
- * run against and watch it hold.
- *
- * V1.7 VB-41 leaves this half untouched — it removed the ramp ABOVE the band,
- * not the band — so what is gone from this block is only the assertions that
- * were about controls standing in that ramp.
- */
-describe('List — the drawer’s head band stands on the same dark field', () => {
-  it('is the same stage as Brain: one bar, not two dressed alike', () => {
-    expect(STAGE.list).toEqual(STAGE.brain);
-    // …and it really is dark, not merely equal to whatever Brain happens to
-    // be: a bar that reads as the globe's own field is the point of VB-30.
-    expect(contrastRatio(STAGE.list, CANVAS)).toBeGreaterThan(DOCK_TEXT_MIN_CONTRAST * 2);
-  });
-
-  it('bounds everything drawn on the band against the band', () => {
-    // The grip's two bars and the unpressed mode glyphs, which are non-text
-    // indicators and so carry WCAG 1.4.11 rather than the text floor.
-    expect(contrastRatio(token('globe.detail-key'), STAGE.list)).toBeGreaterThanOrEqual(
-      DOCK_BOUNDARY_MIN_CONTRAST,
-    );
-    // The ring the band focuses with, and the reason it is not --primary.
-    expect(contrastRatio(token('globe.focus'), STAGE.list)).toBeGreaterThanOrEqual(
-      DOCK_BOUNDARY_MIN_CONTRAST,
-    );
-    expect(contrastRatio(token('primary'), STAGE.list)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
-  });
-
-  it('reads every label against a ground that clears the floor', () => {
-    // The pressed mode toggle's own chip, cut from the dock's deep navy.
-    expect(contrastRatio(token('globe.label'), token('globe.panel'))).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    expect(contrastRatio(token('globe.detail-key'), token('globe.panel'))).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    // And the band's own two: the mode toggles and the section count, which
-    // VB-30 says go light and STAY light.
-    expect(contrastRatio(token('globe.detail-key'), STAGE.list)).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    expect(contrastRatio(token('globe.label'), STAGE.list)).toBeGreaterThanOrEqual(
-      DOCK_TEXT_MIN_CONTRAST,
-    );
-    // The ink the light bar used to carry would now be unreadable — stated so
-    // a half-done revert fails here rather than on a screen.
-    expect(contrastRatio(token('ink-2'), STAGE.list)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
-  });
-
-  it('leaves the drawer’s own pane light, and --dock-edge with a job', () => {
-    // What VB-30 did NOT change: below the bar, List is still the panel's own
-    // light ground, and everything the drawer prints on it is measured there.
-    expect(contrastRatio(token('ink'), PANE_LIST)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
-    expect(contrastRatio(token('ink-2'), PANE_LIST)).toBeGreaterThanOrEqual(DOCK_TEXT_MIN_CONTRAST);
-    // --ink-3 is 4.71:1 on the canvas and 4.40:1 here, which is why the pane's
-    // quiet text steps up (FileDrawer.css).
-    expect(contrastRatio(token('ink-3'), PANE_LIST)).toBeLessThan(DOCK_TEXT_MIN_CONTRAST);
-    // And why --dock-edge exists at all: --border-i is measured against
-    // --canvas and drops under the floor on this pane, where the drawer's own
-    // hollow pill still needs a 3:1 boundary.
-    expect(contrastRatio(token('border-i'), PANE_LIST)).toBeLessThan(DOCK_BOUNDARY_MIN_CONTRAST);
-    expect(contrastRatio(token('dock-edge'), PANE_LIST)).toBeGreaterThanOrEqual(
-      DOCK_BOUNDARY_MIN_CONTRAST,
-    );
+  it('meets the drawer at a plain edge, because the two colours are nowhere near each other', () => {
+    // VB-41 removed the ramp between the canvas and the drawer's field, and
+    // VB-50 leaves that seam exactly where it was — it is now the lower panel's
+    // top edge, and it is the one seam in the panel that is meant to show.
+    expect(contrastRatio(FIELD, CANVAS)).toBeGreaterThan(DOCK_TEXT_MIN_CONTRAST * 2);
   });
 });

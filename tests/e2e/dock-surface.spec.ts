@@ -5,11 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import { drawerBounds } from '../../src/core/drawer/height';
 import { BRAIN_MIN_HEIGHT } from '../../src/core/drawer/mode';
-import {
-  DOCK_BOUNDARY_MIN_CONTRAST,
-  DOCK_FRAME,
-  DOCK_TEXT_MIN_CONTRAST,
-} from '../../src/core/drawer/chrome';
+import { DOCK_BOUNDARY_MIN_CONTRAST, DOCK_TEXT_MIN_CONTRAST } from '../../src/core/drawer/chrome';
 import { FLOW_NAV_HEIGHT } from '../../src/core/flow/dock';
 import { channelDistance, contrastRatio, isOpaque, parseCssColor } from '../../src/core/color/contrast';
 import type { Rgb } from '../../src/core/color/contrast';
@@ -236,9 +232,11 @@ test('the head band is the same dark field in both modes (VB-22, VB-30)', async 
     const [head] = await pixels(page, [{ x: g.emptyX, y: g.drawerTop + 20 }]);
     band.push(head!);
     if (mode === 'brain') {
-      // Inside the frame and inside the stage's own padding, which is the one
-      // column of the pane the globe's radial never reaches.
-      const [pane] = await pixels(page, [{ x: DOCK_FRAME + 4, y: g.drawerTop + 60 }]);
+      // Inside the stage's own padding, which is the one column of the pane
+      // the globe's radial never reaches. V1.9 VB-50 removed the frame this
+      // used to have to step over, so the column is now four pixels in from
+      // the panel's own edge.
+      const [pane] = await pixels(page, [{ x: 4, y: g.drawerTop + 60 }]);
       expect(channelDistance(head!, pane!), 'brain: the mode bar is not the stage’s colour')
         .toBeLessThanOrEqual(12);
     }
@@ -270,14 +268,19 @@ test('the mode toggles lose their words and keep their names (VB-22)', async () 
 
     await chooseMode(page, mode);
     await expect(button).toHaveAttribute('aria-pressed', 'true');
-    // Never colour alone: the pressed one also carries a fill, a bar under it
-    // and a heavier glyph stroke.
+    // Never colour alone: the pressed one carries a bar under it and a heavier
+    // glyph stroke, either of which reads with every hue stripped out.
+    //
+    // V1.9 VB-50 took the third signal away on purpose — the filled chip was a
+    // ground, and the whole panel is one colour now — so this asserts the fill
+    // is GONE rather than present. Two shape signals plus `aria-pressed` is
+    // what docs/GUARDRAILS.md asks for; a fill was never the part carrying it.
     const pressed = await button.evaluate((el) => ({
       fill: getComputedStyle(el).backgroundColor,
       bar: getComputedStyle(el).boxShadow,
       stroke: getComputedStyle(el.querySelector('svg')!).strokeWidth,
     }));
-    expect(isOpaque(parseCssColor(pressed.fill)), `${label} pressed fill`).toBe(true);
+    expect(isOpaque(parseCssColor(pressed.fill)), `${label} still has a pressed fill`).toBe(false);
     expect(pressed.bar, `${label} pressed bar`).not.toBe('none');
     expect(parseFloat(pressed.stroke), `${label} pressed stroke`).toBeGreaterThan(2);
   }

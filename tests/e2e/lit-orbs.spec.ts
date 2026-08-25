@@ -344,7 +344,7 @@ test.describe('VB-54 — the same light, on the List’s rows', () => {
     await context.close();
   });
 
-  test('VB-45’s hairline still clears 3:1 on the pane after relighting', async () => {
+  test('the orb’s silhouette still clears 3:1 on the pane after relighting', async () => {
     const { context, sw, id } = await launchExtension();
     await sw.evaluate(async (value) => {
       await chrome.storage.local.set({ 'wb:answers': value });
@@ -352,14 +352,32 @@ test.describe('VB-54 — the same light, on the List’s rows', () => {
     const page = await openList(context, id);
 
     /**
-     * The orb's edge, in real painted pixels.
+     * The orb against the ground it is really drawn on, in real painted pixels.
      *
-     * VB-45 put a 1px inset ring in the orb's own deep colour on it precisely
-     * to clear WCAG 1.4.11's 3:1 against this near-white pane, and the risk
-     * VB-54 introduces is that a highlight lifts the fill's average and takes
-     * the edge with it. So this reads the DARKEST pixel on the ring's own
-     * circle and the pane just outside the orb, and asks the question in
-     * anger — a computed style would only re-read the token.
+     * WHAT THIS ASKED BEFORE, AND WHY IT ASKS SOMETHING ELSE NOW. VB-45 put a
+     * 1px inset ring in the orb's own deep colour on it to clear WCAG 1.4.11's
+     * 3:1 against the NEAR-WHITE pane, where the lightest of the five fills
+     * measured about 2.7:1 — so the darkest pixel on the rim was the thing that
+     * had to hold, and this test read exactly that.
+     *
+     * V1.9 VB-50 takes the near-white pane away: the drawer is one colour from
+     * its top edge to the bottom of the panel, and it is the globe's own field.
+     * On that field the five fills are 4.24–6.74:1 (src/core/drawer/chrome.ts's
+     * `DOCK_ORB_TOKENS`, held in chrome.test.ts), so the orb reads by its FILL
+     * and the deep hairline is the DARK side of the same object rather than its
+     * boundary — measuring the darkest rim pixel would now be measuring the
+     * shadow, not the shape.
+     *
+     * So the question is the one 1.4.11 actually asks — is the orb tellable
+     * apart from the ground it sits on — and it is asked of the body of the
+     * orb, at the worst pixel on a circle inside the limb. The hairline itself
+     * is untouched and still doing its original job on the LIGHT surface, where
+     * `components/FileTree.tsx` also draws these rows
+     * (`src/panel/surfaces/FileView.tsx`).
+     *
+     * The risk VB-54 introduced is unchanged and is still what this catches: a
+     * highlight or a terminator that moves the fill far enough to take the orb
+     * under the floor.
      */
     const box = (await page
       .locator('.filetree-row[data-life="lit"] .filetree-glyph[data-gradient]')
@@ -367,9 +385,15 @@ test.describe('VB-54 — the same light, on the List’s rows', () => {
       .boundingBox())!;
     const centre = { x: box.x + box.width / 2, y: box.y + box.height / 2 };
     const radius = box.width / 2;
+    // Two and a half pixels in from the rim, which is the one band of the orb
+    // that is neither of the two things this is not asking about: outside it is
+    // VB-45's 1px hairline (the dark side of the object, not its boundary, on
+    // this ground), and inside it is the tick — drawn in the orb's own deep
+    // colour on purpose, because a white mark would sit at 2.9:1 on the
+    // lightest fill (FileTree.css). What is left is the orb's own surface.
     const ring: Array<{ x: number; y: number }> = [];
     for (let a = 0; a < Math.PI * 2; a += Math.PI / 24) {
-      ring.push({ x: centre.x + Math.cos(a) * (radius - 1), y: centre.y + Math.sin(a) * (radius - 1) });
+      ring.push({ x: centre.x + Math.cos(a) * (radius - 2.5), y: centre.y + Math.sin(a) * (radius - 2.5) });
     }
     const outside = { x: centre.x + radius + 4, y: centre.y };
 
@@ -393,12 +417,17 @@ test.describe('VB-54 — the same light, on the List’s rows', () => {
     );
 
     const pane = pixels[pixels.length - 1]!;
-    const edge = pixels
+    // The worst pixel on the circle, not the average: an average hides exactly
+    // the case this exists to catch, which is one side of the orb sinking into
+    // the ground while the lit side carries the number.
+    const worst = pixels
       .slice(0, ring.length)
-      .reduce((darkest, pixel) => (pixel.r + pixel.g + pixel.b < darkest.r + darkest.g + darkest.b ? pixel : darkest));
+      .reduce((least, pixel) =>
+        contrastRatio(pixel, pane) < contrastRatio(least, pane) ? pixel : least,
+      );
     expect(
-      contrastRatio(edge, pane),
-      `the orb's edge measures ${contrastRatio(edge, pane).toFixed(2)}:1 on the pane`,
+      contrastRatio(worst, pane),
+      `the orb's worst-lit pixel measures ${contrastRatio(worst, pane).toFixed(2)}:1 on the pane`,
     ).toBeGreaterThanOrEqual(3);
 
     await context.close();

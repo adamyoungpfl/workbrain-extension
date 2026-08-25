@@ -25,17 +25,18 @@
   display: flex;
   flex-direction: column;
   height: var(--filedrawer-h, 186px);
-  /* The frame below is part of the drawer, not an extra eight pixels on top of
-     it — otherwise the box on screen is taller than the height the handle
-     announces, and the space `.flowshell` reserves is short by the difference.
-     The same reasoning kept V1.2's 1px top rule inside the box. */
+  /* Kept from V1.6's frame: anything this box ever draws inside its own edge is
+     part of the announced height, never eight pixels on top of it, or the box on
+     screen is taller than the number the handle announces and the space
+     `.flowshell` reserves is short by the difference. The same reasoning kept
+     V1.2's 1px top rule inside the box. */
   box-sizing: border-box;
   /* V1.4 VB-22. The drawer, its head band and the docked bar above it are ONE
      SURFACE, so the colour comes from the dock's palette — declared once, in
      Flow.css, on the shell that wraps both — rather than from a token named
-     here. V1.6 VB-30 splits that palette in two: `--dock-stage` is the chrome,
-     now the same dark field in both modes, and `--dock-pane` is the ground the
-     drawer's own content sits on, which is what a mode change still moves. The
+     here. V1.6 VB-30 split that palette in two — `--dock-stage` for the chrome
+     and `--dock-pane` for the ground the content sat on — and V1.9 VB-50 puts
+     it back together: there is one colour, and it is `--dock-stage`. The
      fallback is the panel's own canvas, for any surface that somehow renders
      this drawer outside that shell.
 
@@ -45,35 +46,45 @@
      own visible representation (the grip) and its own focus ring, so nothing
      that rule identified is left unidentified.
 
-     ── V1.6 VB-29: THE WHITE FRAME ────────────────────────────────────────
-     A border in --canvas down both sides and across the bottom, with the
-     background clipped to the padding box so the drawer's own colour stops
-     inside it. That is the whole frame: the pane reads as a framed object
-     inside the app rather than as a surface running off the edge.
+     ── V1.9 VB-50: ONE COLOUR, TOP EDGE TO BOTTOM EDGE ────────────────────
+     THE WHITE FRAME IS GONE, AND SO IS THE PANE.
 
-     Three things it is deliberately NOT:
-       · not a margin, not `left`/`right`/`bottom` insets — the frame lives
-         inside the announced height (see `box-sizing` above), so the dock's
-         arithmetic (core/flow/dock.ts) is untouched by it;
-       · not `overflow: hidden` — the grip straddles the drawer's top edge by
-         half its height (`.filedrawer-grip`), and clipping the box would cut
-         the control's own handle in half. What needs the rounding gets it: the
-         two content layers, which are the only children that reach the pane's
-         bottom corners;
-       · not a radius of its own invention. The pane's corners are the panel's
-         --r-lg card radius; the outer radius is that plus the frame's width,
-         because a border's inner radius is the outer one less its own
-         thickness — which is what makes the PANE 14px and not 6.
+     V1.6 VB-29 put a border in --canvas down both sides and across the bottom,
+     clipped the background to the padding box, and rounded the result to the
+     panel's card radius, so the drawer read as a framed object inside the app.
+     V1.6 VB-30 then kept one variable moving with the mode — `--dock-pane`, the
+     ground the drawer's CONTENT sat on, light in List and the field in Brain.
 
-     The frame's width comes from core/drawer/chrome.ts through Flow.tsx, so
-     the globe's stage size, the ramp above and this border are all one
-     number. */
-  border-style: solid;
-  border-width: 0 var(--dock-frame, 8px) var(--dock-frame, 8px);
-  border-color: var(--canvas);
-  border-radius: 0 0 calc(var(--r-lg) + var(--dock-frame, 8px)) calc(var(--r-lg) + var(--dock-frame, 8px));
-  background: var(--dock-pane, var(--canvas));
-  background-clip: padding-box;
+     VB-50 removes both, and both removals are the same sentence: "the whole
+     panel is a single colour, top edge to bottom edge". A frame is a second
+     colour around the edge of it; a pane is a second colour in the middle of
+     it. Adam's decision of 2026-08-24 records the frame as a deliberate
+     reversal of a shipped decision rather than an oversight, and the pane goes
+     with it because a drawer whose chrome is dark and whose middle is light is
+     the thing this task exists to stop.
+
+     What that leaves is four lines: fixed to the bottom, as tall as it was
+     dragged, and `--dock-stage` — one background, no border, no radius, no
+     clip. Every consequence is paid where it lands:
+
+       · the globe gets the eight vertical and sixteen horizontal pixels the
+         border was standing in (core/drawer/mode.ts's `brainStageSize`);
+       · the List's rows, its counts, its pills and its preview text now stand
+         on the field, so every one of them is re-coloured and re-measured
+         against it — see "the list, on the field" below;
+       · nothing needs `overflow: hidden` or a radius any more, which was the
+         awkward part of VB-29: the grip straddles this box's top edge by half
+         its height and clipping would have cut the handle's own mark in two. */
+  background: var(--dock-stage, var(--canvas));
+  /* AND THE DEFAULT INK GOES WITH THE DEFAULT GROUND. Found by measuring, not
+     by reading: `.filetree-nav` is `color: inherit`, so until this line the
+     drawer's rows inherited the PANEL's `--ink` — 2.4:1 on the field. Nothing
+     was actually painted in it, because every visible thing inside a row sets
+     its own colour, but the next element added to a row would have arrived
+     invisible and nobody would have known why.
+     tests/e2e/one-surface.spec.ts reads each control's computed ink against the
+     pixel behind it, which is what caught it. */
+  color: var(--dock-ink, var(--ink));
 }
 
 /* Only a settled change animates. A drag must track the pointer to the pixel:
@@ -125,11 +136,10 @@
   background: var(--dock-stage, var(--canvas));
   /* Over both content layers, which run to the top of this band. */
   z-index: 1;
-  /* V1.6 VB-29's frame: this box now sits on the pane's bottom edge, so it
-     takes the pane's own bottom corners — otherwise the bar's ground would be
-     drawn square across the rounding underneath it. */
-  border-bottom-left-radius: var(--r-lg);
-  border-bottom-right-radius: var(--r-lg);
+  /* V1.9 VB-50: the two bottom radii V1.6 VB-29's frame needed here are gone
+     with the frame. The bar runs to the panel's own bottom corners now, in the
+     same colour as everything above it — there is no rounding underneath for a
+     square ground to be drawn across. */
 }
 
 /* ── V1.2 VB-14b: Brain / List ───────────────────────────────────────────── */
@@ -176,26 +186,55 @@
   stroke-width: 1.75;
 }
 
+/* ── V1.9 VB-50: WHERE HOVER WENT ────────────────────────────────────────
+   The tint is gone from every control in this drawer, and something has to
+   carry hover or the panel feels dead. The answer, everywhere: A LINE UNDER
+   THE THING YOU ARE POINTING AT — a text underline under a word, a 2px bar
+   under a glyph.
+
+   Why a line and not, say, a scale or a glow. It is the affordance the panel
+   already uses: the nav cluster above this drawer has underlined its words on
+   hover since V1.7 VB-41, for exactly this reason ("on a surface with no boxes
+   a colour shift on its own is easy to miss — the underline is the affordance
+   the boxes used to be"). Extending it down into the drawer costs no new idea.
+   It also survives greyscale, it cannot be confused with the focus ring (which
+   surrounds, where this underlines), and — the deciding one — it is the same
+   shape as the bar the CHOSEN view already wears, so hovering a view reads as
+   a quiet version of choosing it rather than as an unrelated effect.
+
+   The two are told apart the way they are everywhere else in the panel: the
+   chosen bar is the accent and comes with a heavier glyph, the hover bar is
+   plain ink and comes with nothing. */
 .filedrawer-mode:hover {
-  background: var(--dock-chip-hover, var(--sunken));
   color: var(--dock-ink, var(--ink));
-  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+  box-shadow: inset 0 -2px 0 var(--dock-ink, var(--ink));
+  transition: box-shadow var(--fast) var(--ease), color var(--fast) var(--ease);
 }
 
 .filedrawer-mode:focus-visible {
   /* The dock's own accent: --primary measures 2.90:1 on the dark stage, under
      the floor for a non-text indicator, so the ring changes with the stage
      (Flow.css). Inset for the reason it always was — a ring outside this box
-     would sit over the question above it. */
+     would sit over the question above it.
+
+     V1.9 VB-50 REMOVES THE TINT, NOT THE RING. Adam's decision of 2026-08-24 is
+     explicit: "'No tone change on click' removes the tint, not the ring.
+     Pressed states may go; focus states may not." */
   outline: 2px solid var(--dock-accent, var(--primary));
   outline-offset: -2px;
 }
 
-/* The chosen one. THREE signals, not one: a fill, a heavier glyph, and a solid
-   bar under it. Colour alone would fail docs/GUARDRAILS.md, and this pair sits
-   in a 44px strip where a person is glancing rather than reading. */
+/* The chosen one. THREE signals, and V1.9 VB-50 takes away the one that was a
+   ground: the fill is gone, the accent bar and the heavier glyph stay, and the
+   accent ink joins them. Colour alone would fail docs/GUARDRAILS.md, and this
+   pair sits in a 44px strip where a person is glancing rather than reading —
+   so the bar (a shape) and the stroke weight (a shape) both have to read with
+   every hue stripped out, and `aria-pressed` says it again to anything that is
+   not looking at all.
+
+   After the hover rule on purpose: pointing at the view you are already in
+   must not quietly downgrade its bar to the hover one. */
 .filedrawer-mode[aria-pressed='true'] {
-  background: var(--dock-accent-chip, var(--primary-tint));
   color: var(--dock-accent, var(--primary));
   box-shadow: inset 0 -2px 0 var(--dock-accent, var(--primary));
 }
@@ -235,7 +274,12 @@
   height: 14px;
   /* Opaque and the stage's own colour (V1.4 VB-22): there is no rule left for
      it to break, so what it does now is sit in the surface rather than on it,
-     and the two bars are the whole of what is visible. */
+     and the two bars are the whole of what is visible.
+
+     Still painted rather than left transparent, and that is not redundant: the
+     grip's top half hangs ABOVE the drawer's own top edge, over the panel's
+     canvas, and the two bars would be unreadable there without it. Below the
+     edge it is the same colour as everything around it, which is the point. */
   background: var(--dock-stage, var(--canvas));
   border-radius: var(--r-pill);
   /* Half of it above the seam, half below. */
@@ -244,7 +288,6 @@
      under the grip, and only the hover fades. */
   transition: none;
 }
-.filedrawer-handle:hover .filedrawer-grip,
 .filedrawer-handle:hover .filedrawer-grip::before,
 .filedrawer-handle:hover .filedrawer-grip::after {
   transition: background var(--fast) var(--ease);
@@ -271,9 +314,12 @@
   bottom: 4px;
 }
 
-.filedrawer-handle:hover .filedrawer-grip {
-  background: var(--dock-chip-hover, var(--sunken));
-}
+/* V1.9 VB-50: the grip's own hover tint went with every other one. The two
+   bars going from quiet ink to full ink is what is left, which is the same
+   move the mode glyphs make and is a change of ink rather than of ground.
+   There is nothing to underline here — the bars ARE lines — so the hover
+   language of this drawer resolves, on this one control, to the lines it
+   already had getting brighter. */
 .filedrawer-handle:hover .filedrawer-grip::before,
 .filedrawer-handle:hover .filedrawer-grip::after,
 .filedrawer-handle:focus-visible .filedrawer-grip::before,
@@ -281,10 +327,9 @@
   background: var(--dock-ink, var(--ink));
 }
 /* Held. Not colour alone — the grip has already moved by the time this shows,
-   and the movement is the cue. This is confirmation of which thing moved it. */
-.filedrawer[data-dragging='true'] .filedrawer-grip {
-  background: var(--dock-accent-chip, var(--primary-tint));
-}
+   and the movement is the cue. This is confirmation of which thing moved it.
+   V1.9 VB-50 takes the tinted chip out from behind it and leaves the two bars
+   in the accent, which is the same confirmation without a second ground. */
 .filedrawer[data-dragging='true'] .filedrawer-grip::before,
 .filedrawer[data-dragging='true'] .filedrawer-grip::after {
   background: var(--dock-accent, var(--primary));
@@ -332,11 +377,9 @@
   overflow-y: auto;
   overflow-x: hidden;
   padding: 0 14px 10px;
-  /* V1.6 VB-29 gave this box the pane's own bottom corners, because it sat on
-     the pane's bottom edge. V1.9 VB-51 puts the view bar there instead, and the
-     bar carries the rounding now (`.filedrawer-viewbar`): a radius on a box
-     that no longer reaches the corner rounds nothing and hides the fact that
-     something else does. */
+  /* V1.6 VB-29 gave this box the pane's own bottom corners; V1.9 VB-51 moved
+     them to the view bar; V1.9 VB-50 removes them outright with the frame. One
+     colour edge to edge has no corner to round — see `.filedrawer`. */
 }
 
 /* ── V1.2 VB-14b: the two layers ─────────────────────────────────────────── */
@@ -389,76 +432,253 @@
 
      V1.9 VB-51: it stops at the view bar rather than at the frame, so the
      rounding V1.6 VB-29 gave it belongs to the bar now — see
-     `.filedrawer-viewbar`. */
+     `.filedrawer-viewbar`.
+
+     V1.9 VB-50 makes the argument moot in the best way: the drawer is this
+     colour, so this layer is no longer "the one sanctioned dark surface inside
+     a light drawer" but the same paint as the box around it. The declaration
+     stays because the reasoning behind it does — naming the globe's own field
+     keeps this layer's colour a fact about the PICTURE rather than about the
+     mode, which is what stops the crossfade out of Brain repainting the stage
+     while it is still visible. It now happens to agree with everything else. */
   background: var(--globe-field);
 }
 
-/* ── What tinting the ground costs, paid here ─────────────────────────────
-   V1.4 VB-22 gave List a ground of its own instead of the panel's canvas
-   (V1.6 VB-30 renames it `--dock-pane`, since the chrome above it no longer
-   shares it), and everything inside the drawer was measured against that
-   canvas. Four things land differently on --surface, and all four are
-   corrected in one place —
-   scoped to `.filedrawer`, because none of these components is wrong anywhere
-   else and the drawer is the only place any of them sits on a stage:
+/* ── V1.9 VB-50: THE LIST, ON THE FIELD ──────────────────────────────────
 
-     · the hover on a tree row: --sunken on --surface is a 1.06 difference, a
-       cue nobody could see. It lifts to the panel's white instead of sinking,
-       which is exactly the strength it had before.
-     · the detail line and the chevron: --ink-3 is 4.71:1 on the canvas and
-       4.40:1 here — under the floor (docs/GUARDRAILS.md) — so both take the
-       next step up, at 6.5:1, and stay quieter than the label beside them.
-       V1.6 VB-33 moved the other two --ink-3 users out of reach of this
-       correction by giving them --ink-2 outright (FileTree.css's
-       `.filetree-num`, and `--row-accent` on an untouched row): a variable
-       read by several rules is not a place to be paying a stage's tax from a
-       different file.
-     · the hollow "not yet" pill: --border-i carries meaning on it (WCAG
-       1.4.11) and measures 2.92:1 on this stage, so it takes --dock-edge,
-       which exists for exactly this (design/tokens.json).
-     · the sticky summary: a --canvas bar on a tinted stage is a white strip
-       laid over the drawer, which is the thing this whole task is about. */
-.filedrawer .filetree-nav:hover {
-  background: var(--canvas);
+   THE BLOCK THIS REPLACES. V1.4 VB-22 gave List a ground of its own instead of
+   the panel's canvas, and four things had to be corrected because they had been
+   measured against the canvas: a hover that sank into --sunken, --ink-3 dropping
+   to 4.40:1, --border-i dropping to 2.92:1, and a white sticky bar laid over a
+   tinted stage. All four were a tax on tinting the ground.
+
+   VB-50 does not tint the ground. It removes it: the drawer is `--dock-stage`
+   from its top edge to the bottom of the panel, so the List's rows stand on the
+   same field the globe does and the morph between the two stops repainting
+   anything underneath the nodes in flight. That turns four corrections into a
+   translation of one whole component, which is what this block now is.
+
+   IT IS STILL SCOPED TO `.filedrawer`, and that is load-bearing rather than
+   tidy: `components/FileTree.tsx` and `components/SectionHealth.tsx` also draw
+   the file on `surfaces/FileView.tsx`, which is an ordinary light surface and
+   must not change. The dark reading belongs to the drawer, so it is written
+   where the drawer is.
+
+   EVERY COLOUR HERE IS MEASURED, NOT PICKED. The roles come from
+   src/core/drawer/chrome.ts's `DOCK_ROLES`, chrome.test.ts holds each of them to
+   its floor against the field, and tests/e2e/one-surface.spec.ts reads the
+   painted pixel behind each control and measures the real thing. The light
+   palette this replaces is unusable here and says so in the same test file:
+   --ink 2.4:1, --ink-2 2.84:1, --primary 2.90:1, --green 3.16:1. */
+
+/* The row's three state accents. `--row-accent` is FileTree.css's own variable
+   — the marker, the percentage and the terminal cursor all read it — so
+   translating the row is four declarations rather than a rule per user.
+   `--row-accent-tint` was a pale fill behind the live orb's ring; on one
+   surface it becomes the surface, which turns the middle band of that ring into
+   a gap and keeps the three-ring shape VB-46 asked for. */
+.filedrawer .filetree-row {
+  --row-accent: var(--dock-ink-quiet);
+  --row-accent-tint: var(--dock-stage);
 }
-/* The chevron paints its hover on a 30px pseudo-element inside a 44px target
-   (FileTree.css), so the correction has to land there and not on the button. */
-.filedrawer .filetree-toggle:hover::before {
-  background: var(--canvas);
+.filedrawer .filetree-row[data-health='here'] {
+  --row-accent: var(--dock-here);
 }
-/* V1.8 VB-46 adds two more --ink-3 users to this correction — the count and,
-   on a greyed row, the percentage beside it. Same reasoning, same step up:
-   --ink-3 measures 4.40:1 on this stage, under the floor, and both of these are
-   real text. */
+.filedrawer .filetree-row[data-health='done'] {
+  --row-accent: var(--dock-done);
+}
+.filedrawer .filetree-row[data-health='due'] {
+  --row-accent: var(--dock-due);
+}
+.filedrawer .filetree-row[data-health='not-yet'],
+.filedrawer .filetree-row[data-life='dim'] {
+  --row-accent: var(--dock-ink-quiet);
+}
+
+/* The hairlines between sections. `--divider` is invisible on the field; this
+   is its opposite number, and it is the one thing in the drawer deliberately
+   under 3:1 — see core/drawer/chrome.ts's `DOCK_LINE_TOKEN` for the exemption
+   and why it is the only one. */
+.filedrawer .filetree > .filetree-list > .filetree-item,
+.filedrawer .sectionhealth-summary {
+  border-color: var(--dock-line);
+}
+
+/* The words. The loud one and the quiet one, which is the same two-level
+   hierarchy the light pane had — `--ink` / `--ink-2` — read off the field.
+   The file preview below is not in this list: it is declared in this very file
+   and renders nowhere but the drawer, so it takes the dark inks at source
+   rather than being written light and corrected two hundred lines later. */
+.filedrawer .filetree-label {
+  color: var(--dock-ink);
+}
+.filedrawer .filetree-num,
 .filedrawer .filetree-detail,
 .filedrawer .filetree-count,
+.filedrawer .filetree-toggle,
+.filedrawer .filetree-row[data-life='dim'] .filetree-label,
 .filedrawer .filetree-row[data-life='dim'] .filetree-percent,
-.filedrawer .filetree-toggle {
-  color: var(--ink-2);
+.filedrawer .filetree-row.is-record .filetree-label {
+  color: var(--dock-ink-quiet);
 }
 
-/* V1.8 VB-45 — the hollow orb's dashed edge carries meaning (WCAG 1.4.11), and
-   --border-i measures 2.92:1 on this stage, so it takes --dock-edge for exactly
-   the reason the hollow "not yet" pill above does. */
-.filedrawer .filetree-glyph[data-life='dim'] {
-  border-color: var(--dock-edge);
+/* ── Hover: a line under the thing, never a ground under it ───────────────
+   The row's hover was `--sunken`, then `--canvas` when the pane arrived. It is
+   now the section's own name underlining, which is the drawer's one hover
+   language (see the mode buttons above) and the same one the nav cluster over
+   the drawer has used since V1.7 VB-41.
+
+   The offset is 3px, matching Flow.css's cluster exactly, so the two read as
+   one behaviour rather than two that both happen to underline. */
+.filedrawer .filetree-nav:hover .filetree-label {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+.filedrawer .filetree-nav:hover {
+  background: none;
+}
+
+/* The disclosure is a glyph with no word, so it takes the glyph form of the
+   same idea: a 2px bar under it, in place of the 30px tinted disc it used to
+   fill. The pseudo-element that painted that disc becomes the bar, so there is
+   still exactly one painted thing inside a 44px target (V1.3 VB-15's split is
+   untouched — the box you press has not moved a pixel).
+
+   `bottom` alone: with `left` left at `auto` the bar keeps the static position
+   the flex centring gave it, which is what centres it under the chevron. */
+.filedrawer .filetree-toggle::before {
+  width: 22px;
+  height: 2px;
+  top: auto;
+  bottom: 7px;
+  border-radius: 1px;
+}
+.filedrawer .filetree-toggle:hover::before {
+  background: currentColor;
 }
 .filedrawer .filetree-toggle:hover {
-  color: var(--ink);
+  color: var(--dock-ink);
+}
+
+/* ── The rings ────────────────────────────────────────────────────────────
+   THE TINT GOES, THE RING STAYS (Adam, 2026-08-24). Both of these controls
+   focus with the panel's `--primary`, which is 2.90:1 on this field — under
+   1.4.11's floor for a non-text indicator. On the field they focus with the
+   accent the rest of the drawer already uses, at 11.55:1.
+
+   Still `outline-offset: 2px` rather than the inset the chrome bands use:
+   these sit inside a scrolling box with room around them, so the ring can be
+   drawn outside the control where it belongs. */
+.filedrawer .filetree-nav:focus-visible,
+.filedrawer .filetree-toggle:focus-visible {
+  outline-color: var(--dock-accent);
+}
+
+/* ── The orbs, and the edges that mean “not yet” ──────────────────────────
+   The dashed edge on a hollow orb carries meaning, so it is held to 3:1: on the
+   field --dock-edge is 5.26:1. The hollow orb's own inner ink follows the quiet
+   role.
+
+   The five FILLED orbs need nothing here at all, and that is worth stating.
+   V1.8 VB-45 gave each one a 1px inset ring in its own deep colour precisely
+   because the globe's colours were chosen against a near-black field and
+   measured about 2.7:1 on the near-white pane. On the field they are between
+   4.24 and 6.74:1 (chrome.test.ts) — the colours doing the job they were
+   chosen for, in the place they were chosen for. */
+.filedrawer .filetree-glyph[data-life='dim'] {
+  border-color: var(--dock-edge);
+  color: var(--dock-ink-quiet);
+}
+.filedrawer .filetree-row.is-record .filetree-glyph::before {
+  background: var(--dock-edge);
+}
+
+/* ── An open section's children ───────────────────────────────────────────
+   VB-33 drew these as light cards on the near-white ground: "the one place a
+   box earns its keep — it says 'these belong to the row above' without a second
+   rule competing with the hairlines". A filled card is exactly the thing VB-50
+   removes, so the card becomes a RULE DOWN THE LEFT: the same sentence, said
+   with a line instead of a ground, and consistent with a drawer whose hover and
+   whose chosen state are both lines now.
+
+   The row keeps its 12px indent and its 8px inset, so nothing moves — only the
+   ground under it is replaced by the edge beside it. */
+.filedrawer .filetree-row.is-child {
+  background: none;
+  box-shadow: inset 2px 0 0 var(--dock-line);
+  border-radius: 0;
+}
+/* The card's own two hover corrections go with the card: inside it, hover is
+   the same underline it is anywhere else in this list. */
+.filedrawer .filetree-row.is-child .filetree-nav:hover,
+.filedrawer .filetree-row.is-child .filetree-toggle:hover {
+  background: none;
+}
+
+/* ── The health pills ────────────────────────────────────────────────────
+   `.badge`'s three tones are a pale fill with dark ink — `--green-tint` under
+   `--green`, and so on. Both halves of that fail here: the fill is a light chip
+   floating on a dark panel, which is precisely the "loudest thing on the
+   drawer" VB-22 removed words to avoid, and the ink is 3.16:1 at best.
+
+   So on the field a pill is HOLLOW and drawn in its own accent — the same
+   treatment the fifth state already had, which is what makes this a
+   translation rather than a new idea. The fifth state keeps its DASHED edge, so
+   "not yet" is still told apart from the other four by shape alone, and every
+   pill still carries its word and its ASCII glyph before colour is considered
+   at all (tests/e2e/section-health.spec.ts strips the hue and re-reads them).
+
+   1px of border where there was none, so the padding gives it back and the row
+   of pills stays the height it was. */
+.filedrawer .sectionhealth-pill {
+  background: none;
+  border: 1px solid var(--dock-ink-quiet);
+  color: var(--dock-ink-quiet);
+  padding: 1px 6px;
+}
+/* `background: none` is repeated in all three, and that is not sloppiness.
+   `.badge.fresh` in components/FileRow.css is (0,2,0) and so is
+   `.filedrawer .sectionhealth-pill` above it — a tie, settled by whichever
+   stylesheet the bundler happens to emit second. Naming the ground inside each
+   tone makes these (0,3,0) and takes the outcome away from file order. */
+.filedrawer .sectionhealth-pill.fresh {
+  background: none;
+  border-color: var(--dock-done);
+  color: var(--dock-done);
+}
+.filedrawer .sectionhealth-pill.due {
+  background: none;
+  border-color: var(--dock-due);
+  color: var(--dock-due);
+}
+.filedrawer .sectionhealth-pill.next {
+  background: none;
+  border-color: var(--dock-here);
+  color: var(--dock-here);
 }
 .filedrawer .sectionhealth-pill.is-hollow {
+  border-style: dashed;
   border-color: var(--dock-edge);
-  color: var(--ink-2);
+  color: var(--dock-ink-quiet);
 }
+
+/* The sticky summary. Still opaque, and still for the same reason — the tree
+   scrolls under it — but the colour it is opaque IN is now the field, so it is
+   an invisible strip rather than a bar laid across the drawer. That is what
+   "one colour, top edge to bottom edge" means for a box that has to be painted
+   and must not be seen. */
 .filedrawer .sectionhealth-summary {
-  background: var(--dock-pane, var(--canvas));
+  background: var(--dock-stage, var(--canvas));
 }
 
 /* V1.9 VB-52: the three corrections V1.8's file strip needed to sit on the
    drawer's tinted PANE are gone with it. The trail that replaced it stands on
    the drawer's CHROME — the same dark field the handle and the view bar wear —
    so it is coloured from the dock's own palette at source
-   (components/Breadcrumb.css) and pays no tax here at all. */
+   (components/Breadcrumb.css) and pays no tax here at all. V1.9 VB-50 makes
+   that true of the whole drawer: there is no second ground left to pay a tax
+   for. */
 
 /* Only one layer is on screen at a time, and the one that is not is
    `visibility: hidden` rather than `display: none`. That is what keeps it out
@@ -559,17 +779,23 @@
 .filedrawer-morph-node[data-life='dim'][data-gradient='4'] { background: var(--globe-node-4-muted); }
 .filedrawer-morph-node[data-life='dim'][data-gradient='5'] { background: var(--globe-node-5-muted); }
 
+/* V1.9 VB-50 — the preview is a child of this file and of nowhere else, so it
+   takes the dark palette at source rather than being written for a light pane
+   and corrected in the block above. `--dock-line` is the divider's opposite
+   number on the field; the two inks are the same loud/quiet pair the list uses.
+   The fallbacks are the light values it had, for any surface that ever renders
+   a preview outside the shell that declares the dock's palette. */
 .filepreview {
   margin-top: 14px;
   padding-top: 12px;
-  border-top: 1px solid var(--divider);
+  border-top: 1px solid var(--dock-line, var(--divider));
 }
 
 .filepreview-note {
   margin: 0 0 10px;
   font-size: 12px;
   line-height: 1.45;
-  color: var(--ink-2);
+  color: var(--dock-ink-quiet, var(--ink-2));
 }
 
 .filepreview-section {
@@ -577,7 +803,7 @@
   font-family: var(--font-mono);
   font-size: 11.5px;
   line-height: 1.55;
-  color: var(--ink);
+  color: var(--dock-ink, var(--ink));
   /* Wraps rather than scrolling sideways — nothing in a 400px panel may make
      the page scroll horizontally. */
   white-space: pre-wrap;

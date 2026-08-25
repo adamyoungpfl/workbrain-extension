@@ -16,7 +16,6 @@ import {
   morphPoints,
   morphTransform,
 } from './mode';
-import { DOCK_FRAME } from './chrome';
 import { DRAWER_CHROME_HEIGHT, DRAWER_CRUMB_NOTE, DRAWER_MIN_HEIGHT, DRAWER_REST_HEIGHT, drawerBounds } from './height';
 
 /** The real side panel: 400px wide, about this tall on a laptop. */
@@ -105,13 +104,13 @@ describe('brainFitsIn', () => {
 });
 
 describe('brainStageSize', () => {
-  it('is the drawer minus its chrome, its padding and its frame, squared off by the narrower side', () => {
-    // V1.6 VB-29: the frame is along the bottom and down both sides, so it
-    // costs the height one of itself and the width two. V1.9 VB-51/VB-52: the
-    // chrome is three bands now, not one.
-    expect(brainStageSize(324, 400)).toBe(324 - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2 - DOCK_FRAME);
+  it('is the drawer minus its chrome and its padding, squared off by the narrower side', () => {
+    // V1.9 VB-51/VB-52: the chrome is three bands, not one. V1.9 VB-50: there
+    // is no frame left to subtract — the drawer is one colour edge to edge, so
+    // the stage really does reach both edges (core/drawer/chrome.ts).
+    expect(brainStageSize(324, 400)).toBe(324 - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2);
     // A panel narrower than the drawer is tall: width wins.
-    expect(brainStageSize(600, 400)).toBe(400 - BRAIN_STAGE_PAD * 2 - DOCK_FRAME * 2);
+    expect(brainStageSize(600, 400)).toBe(400 - BRAIN_STAGE_PAD * 2);
   });
 
   it('gives back the line the breadcrumb takes while it is offering the files', () => {
@@ -125,18 +124,23 @@ describe('brainStageSize', () => {
   });
 
   /**
-   * THE ASSERTION THE FRAME COULD HAVE BROKEN SILENTLY.
+   * THE ASSERTION A CHANGED BOX COULD BREAK SILENTLY.
    *
-   * The stage clips (FileDrawer.css), so a globe sized against the box the
-   * drawer had *before* the frame would simply lose its edge — and nothing
-   * would fail. This states the real box: the drawer's height less the frame
-   * along its bottom, less the head band, less the stage's own padding.
+   * The stage clips (FileDrawer.css), so a globe sized against a box bigger
+   * than the drawer's real one simply loses its edge — and nothing fails. This
+   * states the real box at every height a real panel allows: the drawer's
+   * height, less its three chrome bands, less the stage's own padding.
+   *
+   * It is the assertion V1.9 VB-50 had to be checked against, because removing
+   * the frame moves this box outward by eight pixels vertically and sixteen
+   * horizontally. Growing INTO room that is genuinely there is safe; the
+   * failure mode is growing past it.
    */
-  it('always fits the box the frame leaves, at every height a real panel allows', () => {
+  it('always fits the box the drawer really leaves, at every height a real panel allows', () => {
     for (const height of [BRAIN_MIN_HEIGHT, 240, 320, BOUNDS.max]) {
-      const room = height - DOCK_FRAME - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2;
+      const room = height - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2;
       expect(brainStageSize(height, 400), `${height}px tall`).toBeLessThanOrEqual(Math.max(room, BRAIN_STAGE_MIN));
-      expect(brainStageSize(height, 400)).toBeLessThanOrEqual(400 - DOCK_FRAME * 2 - BRAIN_STAGE_PAD * 2);
+      expect(brainStageSize(height, 400)).toBeLessThanOrEqual(400 - BRAIN_STAGE_PAD * 2);
     }
   });
 

@@ -18,7 +18,6 @@ import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
-import { DOCK_FRAME } from '../../core/drawer/chrome';
 import { modeForHeight } from '../../core/drawer/mode';
 import type { DrawerMode } from '../../core/drawer/mode';
 import {
@@ -622,11 +621,11 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
             // reason as the four above: the two gaps either side of the button
             // cluster are one decision and the stylesheet makes neither of them.
             '--flow-note-foot': `${FLOW_SAVE_NOTE_FOOT}px`,
-            // V1.6 VB-29. The white margin the drawer's pane sits inside —
-            // published here rather than named in either stylesheet, because
-            // the drawer's frame, the ramp's own inset and the globe's stage
-            // size all have to be the same number (core/drawer/chrome.ts).
-            '--dock-frame': `${DOCK_FRAME}px`,
+            // V1.9 VB-50: `--dock-frame` was published here for V1.6 VB-29's
+            // white border down the drawer's sides. The frame is gone — one
+            // colour edge to edge is a frame's opposite — so the constant went
+            // with it (core/drawer/chrome.ts) rather than being published to a
+            // stylesheet that no longer reads it.
           } as CSSProperties
         }
       >

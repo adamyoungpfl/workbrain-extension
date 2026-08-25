@@ -3,7 +3,27 @@
    The same three files the globe draws as nodes, in the shape a list draws
    them. Deliberately quieter than Home's shelf: this sits inside a drawer that
    may be 130px tall, so the rows are compact rather than the 16px-padded cards
-   Home can afford. */
+   Home can afford.
+
+   ── V1.9 VB-50: NOT CARDS ANY MORE ──────────────────────────────────────
+   This component renders in exactly one place — inside the file drawer — so it
+   takes the drawer's one colour at source rather than being written light and
+   corrected from FileDrawer.css. Two things follow from "one solid surface,
+   no controls sitting on it":
+
+     · the card goes. A bordered box with its own `--canvas` ground on the
+       drawer's field is the definition of a control sitting on a surface. What
+       says "these three are a list" instead is a hairline under each row —
+       the same thing the file tree beside it uses, which is the point: the two
+       lists the drawer can show now read as one kind of object.
+     · hover is a line, not a lift. The name underlines, exactly as a section
+       name does in the tree and a word does in the nav cluster above the
+       drawer. The `--e-1` shadow it used to raise was a light-surface effect
+       and is invisible on the field anyway.
+
+   The fallbacks on every variable are the light values this had, for any
+   surface that renders a shelf outside the shell that declares the dock's
+   palette (Flow.css). */
 
 .workshelf {
   list-style: none;
@@ -25,41 +45,51 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 8px 12px;
-  border: 1px solid var(--divider);
-  border-radius: var(--r-md);
-  background: var(--canvas);
+  padding: 8px 2px;
+  border: 0;
+  /* The one rule that separates two rows, and nothing else doing the
+     separating. `--dock-line` is `--divider`'s opposite number on the field and
+     is the one thing in the drawer deliberately under 3:1, because a divider
+     carries no meaning (core/drawer/chrome.ts's `DOCK_LINE_TOKEN`). */
+  border-bottom: 1px solid var(--dock-line, var(--divider));
+  background: none;
   text-align: left;
   font-family: inherit;
   cursor: pointer;
-  transition: border-color var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+  transition: color var(--fast) var(--ease);
 }
 
-.workshelf-row:hover {
-  border-color: var(--border-i);
-  box-shadow: var(--e-1);
+.workshelf-item:last-child .workshelf-row {
+  border-bottom: 0;
+}
+
+.workshelf-row:hover:not([data-locked='true']) .workshelf-name {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
 }
 
 .workshelf-row:focus-visible {
-  outline: 2px solid var(--primary);
+  /* The drawer's own accent. --primary measures 2.90:1 on the field, under
+     WCAG 1.4.11's floor for a non-text indicator — the ring changes with the
+     surface, it never goes away (docs/GUARDRAILS.md, and Adam's decision of
+     2026-08-24: the tint goes, the ring stays). */
+  outline: 2px solid var(--dock-accent, var(--primary));
   outline-offset: 2px;
 }
 
 /* A file that is not built yet. IT DOES NOT DIM — the same finding
    components/FileRow.css records: an opacity on the row drops the sentence
    carrying "Finish Context.md first" below the contrast floor. So the locked
-   reading is carried by a dashed edge, a padlock and the sentence itself, and
+   reading is carried by a broken edge, a padlock and the sentence itself, and
    the ink stays a real token (docs/GUARDRAILS.md — 4.5:1, and nothing by
-   colour alone). */
-.workshelf-row[data-locked='true'] {
-  border-style: dashed;
-  border-color: var(--border-i);
-  background: var(--surface);
-  cursor: default;
-}
+   colour alone).
 
-.workshelf-row[data-locked='true']:hover {
-  box-shadow: none;
+   V1.9 VB-50 moves the broken edge from the card to the ICON, because there is
+   no card left to dash. Same borrowed idea, same token: --dock-edge, which is
+   5.26:1 on the field, over 1.4.11's 3:1 for a boundary that carries meaning. */
+.workshelf-row[data-locked='true'] {
+  cursor: default;
 }
 
 .workshelf-icon {
@@ -69,8 +99,15 @@
   display: grid;
   place-items: center;
   border-radius: var(--r-sm);
-  background: var(--sunken);
-  color: var(--ink-2);
+  /* No tile behind it. The glyph is the mark; a filled square would be one more
+     control sitting on the surface. */
+  background: none;
+  box-sizing: border-box;
+  color: var(--dock-ink-quiet, var(--ink-2));
+}
+
+.workshelf-row[data-locked='true'] .workshelf-icon {
+  border: 1px dashed var(--dock-edge, var(--border-i));
 }
 
 .workshelf-text {
@@ -82,14 +119,14 @@
   display: block;
   font-size: 14px;
   font-weight: 600;
-  color: var(--ink);
+  color: var(--dock-ink, var(--ink));
 }
 
 .workshelf-note {
   display: block;
   margin-top: 1px;
   font-size: 12px;
-  color: var(--ink-2);
+  color: var(--dock-ink-quiet, var(--ink-2));
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -99,3 +136,14 @@
    44px arrow at the left of the file strip above the list. The breadcrumb is
    the way up now, for BOTH views at once, so the rule went with the button
    rather than being left behind styling nothing (components/Breadcrumb.css). */
+
+@media (prefers-reduced-motion: reduce) {
+  /* Nothing here moves — the transition is a colour — but the rule is stated
+     where the component is styled, as everything else in this panel does. The
+     still equivalent carries the same information because the information is
+     which row you are pointing at, and the underline arrives on the first
+     frame. */
+  .workshelf-row {
+    transition: none;
+  }
+}

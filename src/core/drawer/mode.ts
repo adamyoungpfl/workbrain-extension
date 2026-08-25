@@ -28,7 +28,6 @@
  * would spend a frame disagreeing with itself each time.
  */
 
-import { DOCK_FRAME } from './chrome';
 import { DRAWER_CHROME_HEIGHT, clampDrawerHeight } from './height';
 import type { DrawerBounds } from './height';
 
@@ -55,6 +54,12 @@ export const BRAIN_STAGE_MIN = 116;
  * with a few pixels of slack so the ideal is not sitting exactly on the ceiling
  * of the panel it was measured against.
  *
+ * V1.9 VB-50 hands eight of those pixels back — the frame that term counted is
+ * gone (core/drawer/chrome.ts) — and the number is deliberately left at 208
+ * rather than pushed up to spend them. The slack under the ceiling is what
+ * stops the ideal globe depending on a clamp nobody can see, and more of it is
+ * better than less.
+ *
  * That is the cost of the mockup, stated where it is paid. The alternative was
  * a globe that opens taller than the drawer is allowed to be, which
  * `heightForMode` would silently clamp — a showcase visual whose size depended
@@ -75,7 +80,7 @@ export const BRAIN_STAGE_IDEAL = 208;
  * this is exactly the height at which that function stops being able to give
  * the globe `BRAIN_STAGE_MIN`.
  */
-export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2 + DOCK_FRAME;
+export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2;
 
 /**
  * What the drawer expands to when Brain is chosen while it is too short.
@@ -84,13 +89,12 @@ export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_MIN + BRAIN_S
  * caller to the panel's own bounds, so a short panel gets as much of this as
  * it can hold rather than a drawer that has quietly become the surface.
  *
- * V1.9 adds the frame to the sum. It was missing while the frame was only along
- * the bottom of a drawer the globe was measured against separately; now that
- * every term here is a band `brainStageSize` subtracts, leaving one out would
- * open the drawer eight pixels short of the globe it opened for.
+ * V1.9 VB-50 takes the frame back out of the sum. V1.6 VB-29's border was a
+ * band `brainStageSize` had to subtract, so this had to add it; one solid
+ * surface edge to edge (core/drawer/chrome.ts) leaves nothing there to pay for,
+ * and every term here is again a band the drawer really has.
  */
-export const BRAIN_OPEN_HEIGHT =
-  DRAWER_CHROME_HEIGHT + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2 + DOCK_FRAME;
+export const BRAIN_OPEN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
 
 /**
  * The morph, in ms. VB-14: "Mode change is a morph, not a swap: every node
@@ -188,12 +192,14 @@ export function heightForMode(mode: DrawerMode, height: number, bounds: DrawerBo
  * width. Square because the solid is; the smaller of the two dimensions wins,
  * so it is never clipped by the drawer it is inside.
  *
- * V1.6 VB-29 subtracts the frame from both terms — once from the height (the
- * frame is along the bottom) and twice from the width (it is down both sides).
- * That is the whole of what the frame costs the globe, and it is not optional:
- * the stage clips what will not fit (`overflow: hidden`, FileDrawer.css), so a
- * size computed against a box eight pixels wider than the real one shows as a
- * globe with its edge cut off rather than as a globe that is slightly too big.
+ * V1.6 VB-29 subtracted a frame from both terms — once from the height, twice
+ * from the width. **V1.9 VB-50 removes the frame**, so both of those terms are
+ * gone and the globe is eight pixels taller and sixteen wider than it was. That
+ * is not a windfall, it is the room the border was standing in; the direction
+ * this matters in is the dangerous one, because the stage clips what will not
+ * fit (`overflow: hidden`, FileDrawer.css) and a size computed against a box
+ * WIDER than the real one shows as a globe with its edge cut off rather than as
+ * a globe that is slightly too big.
  *
  * V1.9 VB-51/VB-52 replace the handle term with the whole chrome — the handle,
  * the breadcrumb above the stage and the view bar below it — for exactly that
@@ -205,8 +211,8 @@ export function heightForMode(mode: DrawerMode, height: number, bounds: DrawerBo
  */
 export function brainStageSize(height: number, width: number, extra = 0): number {
   if (!Number.isFinite(height) || !Number.isFinite(width) || !Number.isFinite(extra)) return BRAIN_STAGE_MIN;
-  const tall = height - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2 - DOCK_FRAME - Math.max(0, extra);
-  const wide = width - BRAIN_STAGE_PAD * 2 - DOCK_FRAME * 2;
+  const tall = height - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2 - Math.max(0, extra);
+  const wide = width - BRAIN_STAGE_PAD * 2;
   return Math.max(BRAIN_STAGE_MIN, Math.round(Math.min(tall, wide)));
 }
 

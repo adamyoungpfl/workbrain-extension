@@ -580,12 +580,12 @@
    modes — light glyphs, light count — so the bar and the visual read as one
    object rather than as a strip sitting on one.
 
-   That leaves exactly one thing still varying with the mode, and it is not the
-   chrome: `--dock-pane` is the ground the drawer's CONTENT sits on, which is
-   the globe's own field in Brain and the panel's light surface in List. Two
-   variables where V1.4 had one, because they are two different jobs — the
-   chrome's colour is now a constant and the pane's is what a mode change
-   changes.
+   That left exactly one thing still varying with the mode, and it was not the
+   chrome: `--dock-pane`, the ground the drawer's CONTENT sat on — the globe's
+   own field in Brain and the panel's light surface in List. **V1.9 VB-50 stops
+   it varying, which is the same as deleting it** (see below): one colour, both
+   modes, top edge to bottom edge, and a mode change that repaints no ground at
+   all.
 
    V1.6's consequence — that the nav's ramp ran from this dark stage in both
    modes, so Back / Next / Skip stood on a dark foot in List too — is gone with
@@ -594,71 +594,88 @@
    docs/GUARDRAILS.md and tests/e2e/dock-surface.spec.ts holds the painted
    pixels to it, at three drag heights in both modes.
 
+   ── V1.9 VB-50: ONE SURFACE, TOP EDGE TO BOTTOM EDGE ────────────────────
+   "The whole panel is a single colour. No hover tint, no pressed state, no
+   'default to background' — buttons through to the bottom bar read as one
+   fluid piece of app rather than controls sitting on a surface."
+
+   Three things went, and each of them was a ground:
+
+     · `--dock-pane`. V1.6 VB-30 kept ONE variable moving with the mode — the
+       ground the drawer's CONTENT sat on, light in List and the field in
+       Brain. VB-50 stops it moving, which means it stops existing: the pane IS
+       the stage now, so the drawer is one colour in both modes and a mode
+       change repaints no ground at all. The `@property` declaration and the
+       320ms transition that existed to keep that repaint from flashing under a
+       fading layer went with it, because there is nothing left to travel.
+     · `--dock-chip-hover`. Every hover tint in the drawer dressed from it.
+       There are no hover tints. What carries hover instead is a LINE — a text
+       underline under a word, a 2px bar under a glyph — see FileDrawer.css.
+     · `--dock-accent-chip`. Every pressed/selected fill dressed from it. The
+       chosen view and the file on screen are now an accent bar, a heavier
+       glyph or label, and the accent ink, none of which is a ground.
+
+   What arrived is the rest of the panel's own palette, one step over onto the
+   field: the drawer needs a `--green`, an `--amber`, a `--divider` and an
+   `--ink` as much as any other surface does, and until VB-50 it borrowed the
+   light ones because half of it stood on a light pane. The mapping is declared
+   in core (src/core/drawer/chrome.ts's `DOCK_ROLES`) and every row of it is
+   measured against the field in chrome.test.ts, because taking the tints away
+   took away the grounds these were being measured against.
+
    Every value is from the globe's own palette rather than a second dark set
    that would have to agree with it (design/tokens.json's `globe` group) —
    THE ONE SANCTIONED DARK SURFACE (docs/V1.2-REFINEMENT.md), which V1.4
-   extended from "the globe's stage" to "the drawer's whole chrome" and V1.6
-   extends again to "the drawer's chrome, in both of its modes". */
+   extended from "the globe's stage" to "the drawer's whole chrome", V1.6
+   extended to "in both of its modes", and V1.9 extends to the whole drawer. */
 .flowshell {
   --dock-stage: var(--globe-field);
-  --dock-chip-hover: var(--globe-edge-far);
   --dock-ink: var(--globe-label);
   --dock-ink-quiet: var(--globe-detail-key);
+
+  /* The hairline between two rows. `--divider`'s opposite number on the field,
+     and the ONE thing in the drawer deliberately under 3:1 — a divider carries
+     no meaning, which is the exemption docs/GUARDRAILS.md writes for
+     `--divider` itself. core/drawer/chrome.ts's `DOCK_LINE_TOKEN` is where that
+     is stated and chrome.test.ts is where it is held. */
+  --dock-line: var(--globe-edge-far);
+
+  /* The three state accents, which used to be `--primary`, `--green` and
+     `--amber` read off the light pane. On the field those measure 2.90, 3.16
+     and 3.12:1 — all three under the text floor for ink that prints a
+     percentage. These are the same three meanings in the globe's own colours:
+     11.55, 12.39 and 9.16:1. */
+  --dock-here: var(--globe-focus);
+  --dock-done: var(--globe-ring);
+  --dock-due: var(--amber-line);
   /* V1.7 VB-41 took four more of these out — `--dock-chip`, its two edges and
      the quiet button's ground. They dressed Back / Next / Skip, which have no
      ground and no keyline any more; the cluster stands on the panel's own
      canvas above this stage and is coloured from the panel's own inks (see
-     the block on the docked nav below). What is left here is the drawer's own
-     chrome, from the handle down, which VB-41 did not touch. */
+     the block on the docked nav below). What is left here is the drawer, which
+     VB-41 did not touch — its chrome from the handle down at V1.7, and since
+     V1.9 VB-50 everything inside it as well. */
   /* --primary measures 2.90:1 on this field, under the 3:1 floor for a
      non-text indicator, so the dark stage focuses with the ring the globe
-     already uses (docs/GUARDRAILS.md: an equal replacement, never none). */
+     already uses (docs/GUARDRAILS.md: an equal replacement, never none).
+
+     V1.9 VB-50 makes this the busiest variable in the drawer: with the pressed
+     chips gone it is also the chosen view's bar, the current file's bar and the
+     live section's ring. It is the field's `--primary`, and it does the same
+     three jobs `--primary` does on the canvas. */
   --dock-accent: var(--globe-focus);
-  --dock-accent-chip: var(--globe-panel);
-
-  /* The drawer's own content ground, and the only thing here the mode still
-     moves. The light set is the default and the `list` block restates it,
-     deliberately: a shell that somehow rendered without `data-stage` gets the
-     navigable mode's ground rather than a transparent pane. */
-  --dock-pane: var(--surface);
-
-  /* V1.6 VB-29 — the white margin the drawer's pane sits inside, from
-     core/drawer/chrome.ts via Flow.tsx. Read here as well as in the drawer
-     because the globe's stage size is derived from the same number; V1.7
-     VB-41 removed the third reader, the ramp, which had to be inset by it so
-     the frame did not stop in a notch at the drawer's top corners. */
-  --dock-frame: 8px;
-
-  /* The pane travels between the two grounds over the drawer's own settle
-     duration (docs/design-system.html §06), so a mode change moves the drawer
-     at one speed instead of flipping its ground under a layer that is still
-     fading out. Only the ground travels — see the note on the buttons below,
-     which change in one frame. */
-  transition: --dock-pane var(--slow) var(--ease);
 }
 
-/* A custom property the browser has not been told the type of cannot be
-   transitioned at all, so without this the rule above means nothing and the
-   ground flips in one frame — leaving the pane light under a globe that is
-   still fading out (the drawer crossfades its two layers over --morph-ms,
-   core/drawer/mode.ts). The initial value is never used: every shell matches
-   one of the two blocks. */
-@property --dock-pane {
-  syntax: '<color>';
-  inherits: true;
-  initial-value: transparent;
-}
-
-/* Brain — the globe's own field, so the pane under the bar is the picture's
-   own ground and the two are one surface from the handle down. */
-.flowshell[data-stage='brain'] {
-  --dock-pane: var(--globe-field);
-}
-
-/* List — the drawer's own lighter ground, under the same dark bar. */
-.flowshell[data-stage='list'] {
-  --dock-pane: var(--surface);
-}
+/* V1.9 VB-50 — `--dock-pane`, its `@property` declaration and the two
+   `[data-stage]` blocks that moved it were here.
+   V1.6 VB-30 left exactly one thing changing with the mode: the ground the
+   drawer's content sat on. One colour edge to edge takes that last moving part
+   away, so the variable, the typed-custom-property declaration it needed to be
+   transitionable at all, and the 320ms travel between two grounds are all
+   deleted rather than left setting the same value twice.
+   `data-stage` itself stays on the shell — it is how the panel says which view
+   is showing, and several specs wait on it — it simply no longer decides a
+   colour. */
 
 /* ── V1.2 VB-11: the navigation, docked to the drawer ────────────────────
    Back / Next / Skip stop being the end of the question and become a bar
@@ -870,14 +887,13 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* V1.4 VB-22, now only about the drawer's own ground: it stops *travelling*
-     between the two modes when the mode changes. (The gradient this used to
-     also be about is gone — V1.7 VB-41.) The still equivalent carries the same
-     information for the same reason the morph's does: the information is which
-     mode the drawer is in, and it is in it from the first frame. */
-  .flowshell {
-    transition: none;
-  }
+  /* V1.9 VB-50: `.flowshell { transition: none }` was here — V1.4 VB-22's
+     gradient and then V1.6 VB-30's travelling pane. The pane is gone (see the
+     block above), so there is no longer a transition on this element for a
+     preference to cancel, and a rule that turns off nothing is a rule the next
+     person has to check. Nothing is lost: the mode change was already still on
+     the first frame under this preference, because the drawer's ground stopped
+     changing colour at all. */
 
   /* FileDrawer.css drops the drawer's settle here, so the bar has to drop it
      too — otherwise the bar is the one thing on screen still travelling, and

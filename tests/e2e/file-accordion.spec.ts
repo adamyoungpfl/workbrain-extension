@@ -405,31 +405,49 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
     await context.close();
   });
 
-  test('an open section\'s children are rounded cards on the ground the rows sit on', async () => {
+  test('an open section\'s children belong to the row above — by indent and a rule, not a card', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
+    /**
+     * VB-33 drew these as light rounded cards on the near-white ground, and
+     * called that "the one place a box earns its keep — it says 'these belong
+     * to the row above' without a second rule competing with the hairlines".
+     *
+     * **V1.9 VB-50 reverses the box and keeps the sentence.** The drawer is one
+     * colour from its top edge to the bottom of the panel now, so a filled card
+     * inside it is exactly the "controls sitting on a surface" that task removes.
+     * What says the same thing instead is what always said most of it: the
+     * indent, plus a rule down the left of the group. So this test asserts the
+     * MEANING VB-33 was buying — these rows are visibly subordinate to the one
+     * above them — rather than the card it bought it with.
+     *
+     * It is written as an assertion that the ground is gone, not merely that a
+     * card is optional: a fill creeping back is the regression worth catching.
+     */
     const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle');
     if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
     await expect(page.locator('.filetree-row.is-child').first()).toBeVisible();
 
-    const cards = await page.locator('.filetree-row.is-child').evaluateAll((els) =>
+    const children = await page.locator('.filetree-row.is-child').evaluateAll((els) =>
       els.map((el) => {
         const s = getComputedStyle(el);
         return {
-          radius: parseFloat(s.borderTopLeftRadius),
           background: s.backgroundColor,
+          shadow: s.boxShadow,
           indent: parseFloat(s.marginLeft),
         };
       }),
     );
-    const ground = await page.locator('.filedrawer-body').evaluate((el) => getComputedStyle(el).backgroundColor);
-    for (const card of cards) {
-      expect(card.radius).toBeGreaterThanOrEqual(8);
-      expect(card.background).not.toBe('rgba(0, 0, 0, 0)');
-      expect(card.background).not.toBe(ground);
-      expect(card.indent).toBeGreaterThan(0);
+    expect(children.length).toBeGreaterThan(0);
+    for (const child of children) {
+      // No ground of its own — the whole of VB-50, said about this one box.
+      expect(child.background, 'a child row has a ground again').toBe('rgba(0, 0, 0, 0)');
+      // The rule that replaced it, down the left.
+      expect(child.shadow, 'a child row has nothing marking it as one').not.toBe('none');
+      // And the indent VB-33 already had, untouched.
+      expect(child.indent).toBeGreaterThan(0);
     }
 
     await context.close();

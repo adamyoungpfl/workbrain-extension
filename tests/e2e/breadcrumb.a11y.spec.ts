@@ -263,9 +263,15 @@ test('the file on screen is never told apart by colour alone (VB-52)', async () 
   await page.locator('.crumbs-seg[data-seg="file"]').click();
 
   // Colour taken away entirely, and the signals that are left are read off real
-  // pixels: the pressed chip is FILLED and the locked ones are not, the pressed
-  // chip carries a solid bar, its label is heavier, and a locked one carries a
-  // padlock and a broken edge.
+  // pixels: the pressed chip carries a solid bar and a heavier label, and a
+  // locked one carries a padlock and a broken edge.
+  //
+  // V1.9 VB-50 removed the fourth signal, which was a FILL — the drawer is one
+  // colour from its top edge to the bottom of the panel now, so a chip with a
+  // ground of its own is exactly what that task takes away. The assertion is
+  // inverted rather than dropped: no chip may have a fill, and the two shape
+  // signals have to carry the state on their own. Three of them still do
+  // (the bar, the weight, and `aria-pressed` for anything not looking).
   await page.addStyleTag({ content: 'html { filter: grayscale(1) !important; }' });
   await page.waitForTimeout(80);
   const read = await page.locator('.crumbs-file').evaluateAll((els) =>
@@ -285,11 +291,11 @@ test('the file on screen is never told apart by colour alone (VB-52)', async () 
   );
   const pressed = read.find((entry) => entry.pressed === 'true')!;
   expect(pressed.file).toBe('context');
-  expect(pressed.filled, 'the pressed chip has no fill').toBe(true);
+  expect(pressed.filled, 'the pressed chip has a fill again (VB-50)').toBe(false);
   expect(pressed.bar, 'the pressed chip has no bar under it').toBe(true);
   expect(pressed.lock).toBe(0);
   for (const entry of read.filter((e) => e.pressed === 'false')) {
-    expect(entry.filled, `${entry.file} is filled like the pressed one`).toBe(false);
+    expect(entry.filled, `${entry.file} has a fill (VB-50)`).toBe(false);
     expect(entry.bar).toBe(false);
     expect(entry.weight, `${entry.file} is as heavy as the pressed one`).toBeLessThan(pressed.weight);
     expect(entry.lock, `${entry.file} has no padlock`).toBe(1);
