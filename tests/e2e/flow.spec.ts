@@ -50,10 +50,11 @@ async function openPanel(context: BrowserContext): Promise<Page> {
  * interaction: types into a text field, or selects a choice. For a choice
  * question, the group's roving tabindex already starts on the first option,
  * so no arrow key is needed there — Space alone selects it. That "first
- * option" default is "Yes" for the two repeatable gates (entities_gate,
- * initiatives_gate — the only two `yesno` questions in the data) and picks
- * a role for `role_names`, which is exactly what exercises both the
- * open-ended and seeded repeatable paths. V2.0 VB-60 draws THAT question's
+ * option" default picks a role for `role_names` and a reader for
+ * `audiences_list`, which is exactly what exercises the two seeded repeatable
+ * paths; the two open-ended blocks (entities, initiatives) are no longer
+ * gated at all — V2.0 VB-61/VB-63 made both required, so this walk goes
+ * through them whatever it clicks. V2.0 VB-60 draws THAT question's
  * choices as orbs rather than pills (core/choice/orbs.ts) — same roving
  * tabindex, same Space, a different group class — so the locator below has to
  * find either. It matters here more than anywhere: `role_names` is optional,
@@ -106,11 +107,36 @@ async function answerCurrentQuestion(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Next', exact: true }).click();
 }
 
+/**
+ * V2.0 VB-62/VB-64 — what the type-first cycle is FOR, read off the screen.
+ *
+ * The walk below picks the first option everywhere, which makes `entity_type`
+ * "Person" and `audiences_list` the first reader on the list. Every question
+ * after those must therefore say so: this is the only place the record-aware
+ * context is really assembled out of live storage (Flow.tsx) rather than
+ * handed to a phrase by a unit test, so if that wiring came loose the panel
+ * would quietly print the generic fallback and every other test would pass.
+ *
+ * A fragment, not the whole sentence — the wording itself is pinned in
+ * core/flow/overrides.test.ts. What is being proved here is *which branch*.
+ */
+const RECORD_AWARE_WORDING: Record<string, string> = {
+  entity_name: "What's their name?",
+  entity_relevance: 'why does AI need to know about them?',
+  entity_aliases: 'nicknames they go by?',
+  // The em dash is the tell: the fallback reads "What's different about
+  // writing to this reader?" and never names anybody.
+  audience_needs: "— what's different about writing to them?",
+};
+
 test.describe('Context interview — flow runner (R1-06)', () => {
   test('a full keyboard-only pass reaches the end, exercising both repeatable shapes', async () => {
     const { context, page } = await launchPanel();
 
     const visited = new Set<string>();
+    /** Every step id in the order it was actually put on screen — what proves
+     * V2.0 VB-62's re-ordered item cycle really is the order somebody walks. */
+    const order: string[] = [];
     const transitions: string[] = [];
     let guard = 0;
     // Generous cap: 38 top-level slots plus every repeatable field/add-another
@@ -128,11 +154,21 @@ test.describe('Context interview — flow runner (R1-06)', () => {
     // `savePending`'s own comment on why), during which neither `.flow`
     // nor `.home` is in the DOM yet, so each turn waits for whichever
     // shows up next rather than assuming `.flow` is always still there.
-    while (guard++ < 130) {
+    // V2.0 adds a handful of screens to that count: VB-64's per-audience
+    // question and its add-another, and VB-61/VB-63's two gates swapped for
+    // two framing beats (one screen each, either way). 140 keeps the same
+    // comfortable margin the 130 had.
+    while (guard++ < 140) {
       await page.waitForSelector('.flow, .home');
       if (await page.locator('.home').count()) break;
       const stepId = await page.locator('.flow').getAttribute('data-step-id');
-      if (stepId) visited.add(stepId);
+      if (stepId) {
+        visited.add(stepId);
+        if (order[order.length - 1] !== stepId) order.push(stepId);
+        const wording = RECORD_AWARE_WORDING[stepId];
+        // Retrying, because the question types itself on (V1.1 VB-10).
+        if (wording) await expect(page.locator('.flow')).toContainText(wording);
+      }
       if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
         transitions.push((await page.locator('.flow').getAttribute('data-module-id')) ?? '');
       }
@@ -144,13 +180,37 @@ test.describe('Context interview — flow runner (R1-06)', () => {
     await expect(page.getByText('Context.md')).toBeVisible();
 
     // Confirm the open-ended repeatables (entities, initiatives) and the
-    // seeded one (roles) were actually walked, not just skipped past.
-    for (const id of ['entities_gate', 'entity_name', 'entity_type', 'initiatives_gate', 'initiative_name']) {
+    // seeded ones (roles, audiences) were actually walked, not just skipped past.
+    for (const id of ['entities_intro', 'entity_name', 'entity_type', 'initiatives_intro', 'initiative_name']) {
       expect(visited.has(id), `expected to have visited "${id}"`).toBe(true);
     }
     for (const id of ['role_names', 'role_for', 'role_mandate', 'role_standing', 'role_durability']) {
       expect(visited.has(id), `expected to have visited "${id}" (seeded roles)`).toBe(true);
     }
+    for (const id of ['audiences_list', 'audience_needs']) {
+      expect(visited.has(id), `expected to have visited "${id}" (V2.0 VB-64, seeded audiences)`).toBe(true);
+    }
+
+    // V2.0 VB-61/VB-63: nobody starting a file today is offered the chance to
+    // decline either block — the two ported gates are asked of nobody new
+    // (core/flow/overrides.ts), and this walk is the proof that a real person
+    // going through the real interface never sees them.
+    for (const id of ['entities_gate', 'initiatives_gate', 'audience_variance']) {
+      expect(visited.has(id), `"${id}" should not be asked of a new file`).toBe(false);
+    }
+
+    // V2.0 VB-61/VB-62: My World opens with a framing beat and then walks a
+    // typed item cycle — kind, then name, then why it matters, then what else
+    // it is called. Asserted as the real on-screen sequence, not as flow data.
+    const myWorld = order.slice(order.indexOf('entities_intro'), order.indexOf('entities_intro') + 5);
+    expect(myWorld).toEqual(['entities_intro', 'entity_type', 'entity_name', 'entity_relevance', 'entity_aliases']);
+
+    // VB-63 leaves the initiative order alone — only its gate changed.
+    const initiatives = order.slice(order.indexOf('initiatives_intro'), order.indexOf('initiatives_intro') + 3);
+    expect(initiatives).toEqual(['initiatives_intro', 'initiative_name', 'initiative_description']);
+
+    // VB-64: the per-audience question comes after the list it is seeded from.
+    expect(order.indexOf('audience_needs')).toBeGreaterThan(order.indexOf('audiences_list'));
     // Every base top-level id should appear somewhere (repeatable blocks
     // themselves aren't a visitable step id, so this is necessarily a subset).
     expect(visited.size).toBeGreaterThanOrEqual(TOTAL_TOP_LEVEL);

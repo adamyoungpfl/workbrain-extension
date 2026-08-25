@@ -148,6 +148,37 @@ function everythingAnsweredLongAgo(): Answers {
   return { values, repeatables, answeredAt, reflectedAt };
 }
 
+/**
+ * Answers whatever screen is up, the way flow.spec.ts's own walker does.
+ *
+ * Needed here since V2.0 VB-63: an initiative is required for a complete file,
+ * so walking OUT of 4. Initiatives — which is what the accordion test below is
+ * really about — is a framing screen, a whole initiative and a declined
+ * "another one?" rather than a single Yes/No.
+ */
+async function answerWhateverIsOnScreen(page: Page): Promise<void> {
+  const position = await page.locator('.flow').getAttribute('data-position');
+  if (position === 'reflect') {
+    await page.getByRole('button', { name: S.reflectKeep, exact: true }).click();
+    return;
+  }
+  const textarea = page.locator('.flow textarea');
+  const textInput = page.locator('.flow input.field');
+  const choices = page.locator('.flow .pillgroup .pill, .flow .orbgroup .orbchoice');
+  if (await textarea.count()) {
+    await textarea.first().focus();
+    await page.keyboard.type('A real answer for this question.');
+  } else if (await textInput.count()) {
+    await textInput.first().focus();
+    await page.keyboard.type('The Q4 rebrand');
+  } else if (await choices.count()) {
+    await choices.first().focus();
+    if (position === 'add-another') await page.keyboard.press('ArrowRight'); // -> "No"
+    await page.keyboard.press('Space');
+  }
+  await page.getByRole('button', { name: S.next, exact: true }).click();
+}
+
 async function openList(context: BrowserContext, id: string): Promise<Page> {
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 760 });
@@ -354,12 +385,18 @@ test.describe('VB-33 — the sections collapse and expand', () => {
     await expect(sec2).toHaveAttribute('aria-expanded', 'true');
 
     // ...until the active section itself moves on. The interview is standing
-    // in 4. Initiatives; answering its gate finishes it and walks into the
-    // next module, whose section is 5. How I Think — which has no children, so
-    // what the override is dropped in favour of is "nothing open".
-    await page.getByRole('button', { name: S.no, exact: true }).click();
-    await page.getByRole('button', { name: S.next, exact: true }).click();
-    await page.getByRole('button', { name: S.next, exact: true }).click();
+    // in 4. Initiatives; finishing it walks into the next module, whose
+    // section is 5. How I Think — which has no children, so what the override
+    // is dropped in favour of is "nothing open".
+    //
+    // V2.0 VB-63 is why this is a walk rather than one Yes/No: an initiative
+    // is required for a complete file now, so leaving that section means a
+    // framing screen, a whole initiative, and "no" to another one.
+    for (let guard = 0; guard < 20; guard++) {
+      if (await page.locator('.filetree-row[data-node-id="sec5"][data-health="here"]').count()) break;
+      await answerWhateverIsOnScreen(page);
+    }
+    await expect(page.locator('.filetree-row[data-node-id="sec5"]')).toHaveAttribute('data-health', 'here');
     await expect(page.locator('.filetree-row[data-health="here"]')).toHaveCount(1);
     await expect(page.locator('.filetree-toggle[aria-expanded="true"]')).toHaveCount(0);
     await expect(page.locator('.filetree-row.is-child')).toHaveCount(0);

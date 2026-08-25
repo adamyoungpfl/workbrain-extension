@@ -47,25 +47,18 @@ import type { ParsedAnswers } from './parse';
  *        `applySkip`), so every intro step not already in `parsed.values`
  *        is safely filled in as `null`.
  *      - `yesno` in the real, current data exists only as a repeatable's
- *        gate, always named `<blockId>_gate` (`entities_gate` gates
- *        `entities`, `initiatives_gate` gates `initiatives` — see
- *        core/flow/adapter.ts's real ported data). The schema has no
- *        explicit field linking a gate question to the block it gates —
- *        `RepeatableBlock.skipIf` is an opaque predicate, not introspectable
- *        — so this is a naming-convention inference, not a structural one.
+ *        gate. Which block a gate governs is now stated outright, by
+ *        `RepeatableBlock.gateQuestionId` (V2.0 VB-61/VB-63 — see
+ *        `blockIdsByGateQuestion` below for the naming-convention guess it
+ *        replaced, and the live bug that guess had been causing since R1-10).
  *        Whether the block has any restored records is a sound proxy for
  *        what the gate must have been (a "done" interview cannot have
  *        answered "yes" and produced zero records — reaching "done" means
  *        every field of every record, even an explicitly skipped one, got
  *        an entry — see generate.ts's `formatAnswerValue`, which still
  *        renders a skipped field's marker rather than dropping the record).
- *        A `yesno` question that doesn't fit the `<blockId>_gate` pattern
- *        is left alone rather than guessed at; none exists in real content
- *        today (confirmed against ../modelcitizen/src/lib/contextInterviewFlow.ts),
- *        but a genuinely generic fix would add an explicit
- *        `gateQuestionId` to `RepeatableBlock` in src/schema/flow.types.ts —
- *        out of scope for R1-10, since it would ripple into adapter.ts and
- *        the real ported content.
+ *        A `yesno` question no block claims is left alone rather than
+ *        guessed at; none exists in real content today.
  *
  * Pure — no chrome.*, no DOM (see CLAUDE.md's core purity rule). `modules`
  * defaults to the real ported flow and is only ever overridden in tests,
@@ -84,6 +77,35 @@ function needsReflectStamp(step: Step | undefined, value: AnswerValue): boolean 
   return !!step && step.kind === 'text' && !!step.interpret && typeof value === 'string';
 }
 
+/**
+ * Which block each gate question governs — read off `gateQuestionId`, which
+ * the flow now states outright (schema/flow.types.ts, set by
+ * core/flow/overrides.ts).
+ *
+ * THE BUG THIS REPLACED, because it is worth not re-introducing. This used to
+ * slice `_gate` off the question's id and look for a block by what was left.
+ * That is right for `entities_gate` -> `entities` and has been WRONG since
+ * R1-10 for `initiatives_gate`, whose block is `initiatives_records`: no block
+ * ever matched, the record count read as zero, and every imported file came
+ * back with `initiatives_gate: "no"` however many initiatives it held. Under
+ * V2.0 VB-63 that "no" is permanent and takes a REQUIRED block out of the
+ * interview, so a person importing their own file would find their initiatives
+ * unreachable — docs/GUARDRAILS.md's "never lose an answer silently" by way of
+ * a naming coincidence. This file's own header called the explicit field the
+ * real fix and put it out of scope; VB-63 brought it back into scope.
+ *
+ * A gate with no block claiming it is left alone rather than guessed at.
+ */
+function blockIdsByGateQuestion(modules: Module[]): Map<string, string> {
+  const byGate = new Map<string, string>();
+  for (const module of modules) {
+    for (const node of module.nodes) {
+      if ('fields' in node && node.gateQuestionId) byGate.set(node.gateQuestionId, node.id);
+    }
+  }
+  return byGate;
+}
+
 /** Fills in the `intro`/`yesno` gap described in this file's header comment
  * (point 3) — mutates `values` in place, since it's only ever called on the
  * fresh, local copy `buildImportedAnswers` builds below. */
@@ -92,6 +114,7 @@ function fillUnwritableTopLevelGaps(
   values: Record<string, AnswerValue>,
   repeatables: Record<string, Record<string, AnswerValue>[]>,
 ): void {
+  const gatedBlockIds = blockIdsByGateQuestion(modules);
   for (const module of modules) {
     for (const node of module.nodes) {
       if ('fields' in node) continue; // repeatable blocks have no top-level key of their own
@@ -103,8 +126,8 @@ function fillUnwritableTopLevelGaps(
         continue;
       }
       if (node.kind === 'yesno') {
-        const gatedBlockId = node.id.endsWith('_gate') ? node.id.slice(0, -'_gate'.length) : undefined;
-        if (gatedBlockId === undefined) continue; // doesn't fit the only inference this repo can safely make — leave it
+        const gatedBlockId = gatedBlockIds.get(node.id);
+        if (gatedBlockId === undefined) continue; // nothing claims this gate — leave it rather than guess
         values[key] = (repeatables[gatedBlockId]?.length ?? 0) > 0 ? 'yes' : 'no';
       }
     }

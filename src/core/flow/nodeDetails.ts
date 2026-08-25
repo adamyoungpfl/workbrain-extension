@@ -1,7 +1,7 @@
 import type { AnswerValue, FileOutlineNode, FlowContext, Module, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import type { FlowLookups } from '../files/lookups';
-import { buildFlowLookups, keyOf, resolvePhrase } from '../files/lookups';
+import { bodyFieldsFor, buildFlowLookups, keyOf, resolvePhrase } from '../files/lookups';
 import { formatAnswerValue, repeatableRecordTitle } from '../files/generate';
 import { contextModules } from './flow';
 
@@ -175,11 +175,13 @@ function detailsFor(
   for (const blockId of blocksSeen) {
     const block = lookups.repeatableBlocksById.get(blockId);
     if (!block) continue;
-    // A seeded block's first field IS the record's title (the role's name), so
-    // repeating it as a cell would print the heading twice. An open-ended
-    // block's title is its own first answer, and generate.ts drops that field
-    // for exactly the same reason — this mirrors `renderRepeatableRecord`.
-    const bodyFields = block.seedFrom ? block.fields : block.fields.slice(1);
+    // A seeded block's title is its seed value, so every field is a cell. An
+    // open-ended block's title is its NAME field's own answer, and generate.ts
+    // drops that field from the body for exactly the same reason — printing it
+    // as a cell would print the heading twice. One resolver decides which
+    // field that is (V2.0 VB-62), so this cannot drift from
+    // `renderRepeatableRecord`.
+    const bodyFields = bodyFieldsFor(block);
     for (const record of answers.repeatables[blockId] ?? []) {
       const group = repeatableRecordTitle(block, record);
       for (const field of bodyFields) {

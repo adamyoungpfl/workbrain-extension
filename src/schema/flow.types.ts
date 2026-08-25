@@ -15,6 +15,29 @@ export type AnswerValue = string | string[] | null;
 export interface FlowContext {
   answers: Record<string, AnswerValue>;
   repeatables: Record<string, Record<string, AnswerValue>[]>;
+  /**
+   * V2.0 VB-62 — the ONE repeatable record being answered right now, when the
+   * screen is inside a block. Absent everywhere else, and absent on purpose in
+   * `core/files/generate.ts` and `core/files/parse.ts`: a `Phrase` that reads
+   * this must therefore always have a record-free fallback, and that fallback
+   * is what the generated file prints.
+   *
+   * WHY IT IS NOT DERIVABLE FROM `repeatables`
+   * A phrase function is handed a context, not a position — it cannot know
+   * which index it is being asked about, and "the last record" is wrong the
+   * moment somebody edits an earlier one (core/flow/runner.ts's
+   * `positionForRecord`, V1.7 VB-38). The caller that knows the record passes
+   * it; nobody else can.
+   *
+   * WHY THE FILE DELIBERATELY DOES NOT GET IT
+   * `parse.ts` matches a record's field labels against the same
+   * `resolvePhrase` call `generate.ts` wrote them with. Keeping both
+   * record-free keeps one stable label per question across every record, which
+   * is what makes the round-trip an identity rather than a coincidence — and a
+   * file whose bullet labels changed from record to record would be worse to
+   * read anyway.
+   */
+  record?: Record<string, AnswerValue>;
 }
 
 /** Most questions are static text; a few are scope-aware (e.g. "in your work life" vs "in your personal life"). */
@@ -96,7 +119,21 @@ export interface Step {
   /** where the answer is stored */
   key?: string;
   options?: Option[];
-  ph?: string;
+  /**
+   * The example shown in an empty field.
+   *
+   * A `Phrase` since V2.0 VB-62, for the same reason `q` always was: once the
+   * entity cycle asks what kind of thing this is FIRST, the questions after it
+   * phrase themselves for a person or for a tool — and an example is part of
+   * how a question reads, not decoration beside it. "What's their name?" over
+   * *"e.g. Priya, the Growth team, Salesforce, the weekly review"* is a
+   * question and an answer to a different one.
+   *
+   * Resolve it with `core/files/lookups.ts`'s `resolvePhrase`, never by
+   * reading it as a string — most are still plain strings and both shapes have
+   * to render the same way.
+   */
+  ph?: Phrase;
   prefill?: string;
   /** text only: textarea vs a single-line input */
   multiline?: boolean;
@@ -149,6 +186,44 @@ export interface RepeatableBlock {
    * screen is the plain yes/no it has always been.
    */
   addAnotherName?: { prompt: string; placeholder: string };
+  /**
+   * V2.0 VB-62 — which field NAMES a record, when it is not the first one.
+   *
+   * An open-ended block's record has always been titled by `fields[0]`, in the
+   * file and in every surface that lists records. VB-62 asks the entity cycle
+   * to start with the KIND of thing rather than its name, which would have
+   * made every entity in the file read "**Person**" and left the name buried
+   * in a bullet. The ask order and the record's identity are two different
+   * things; this is the second one, said out loud.
+   *
+   * Absent means `fields[0]`, which is what every other block still is.
+   * Meaningless on a seeded block, whose name is `seedFrom.seedField` and is
+   * not one of its questions at all. Resolve it through
+   * `core/files/lookups.ts`'s `nameStepFor`/`bodyFieldsFor`, never by hand —
+   * the file's title, the file's bullets and the panel's record list all have
+   * to agree, and they only do because they ask the same function.
+   */
+  nameField?: string;
+  /**
+   * V2.0 VB-61/VB-63 — the yes/no question whose stored answer can take this
+   * whole block out of the interview.
+   *
+   * `skipIf` is an opaque predicate, so nothing could read the link back out
+   * of it. `core/files/restore.ts` needed exactly that link and had to guess:
+   * it sliced `_gate` off the question's id and looked for a block by that
+   * name. The guess worked for `entities_gate` -> `entities` and has been
+   * WRONG SINCE R1-10 for `initiatives_gate`, whose block is
+   * `initiatives_records` — so importing a file full of initiatives inferred
+   * "no", and the person's own records went unreachable in the interview.
+   * restore.ts's header called the explicit field the real fix and put it out
+   * of scope; VB-63 makes it in scope, because a block that is REQUIRED must
+   * not be switchable off by a naming coincidence.
+   *
+   * Absent means no gate — which is now true of every block for anybody
+   * starting a file today, since neither gate is asked any more. It is only
+   * ever set by `core/flow/overrides.ts`, whose business the gates now are.
+   */
+  gateQuestionId?: string;
   skipIf?: (ctx: FlowContext) => boolean;
   fields: Step[];
 }

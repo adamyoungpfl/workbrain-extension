@@ -108,18 +108,27 @@ function fillRecord(answers: Answers, blockId: string, recordIndex: number): Ans
 }
 
 describe('multipleGroups — the real flow', () => {
-  it('lists the three blocks that come in numbers, under the file own section names', () => {
+  it('lists the four blocks that come in numbers, under the file own section names', () => {
+    // V2.0 VB-64 made Audience Profiles the second seeded block — the roles
+    // pattern reused, one record per audience already picked.
     const groups = multipleGroups(contextModules, contextOutline, completeFlow('yes'));
-    expect(groups.map((g) => g.blockId)).toEqual(['roles', 'entities', 'initiatives_records']);
-    expect(groups.map((g) => g.title)).toEqual(['Roles', 'My World', 'Initiatives']);
-    expect(groups.map((g) => g.seeded)).toEqual([true, false, false]);
+    expect(groups.map((g) => g.blockId)).toEqual(['roles', 'entities', 'initiatives_records', 'audiences']);
+    expect(groups.map((g) => g.title)).toEqual(['Roles', 'My World', 'Initiatives', 'Audience Profiles']);
+    expect(groups.map((g) => g.seeded)).toEqual([true, false, false, true]);
   });
 
   it('leaves out a block the interview itself would skip', () => {
-    const groups = multipleGroups(contextModules, contextOutline, completeFlow('no'));
-    // Both gates said no, so neither open-ended block is askable. `roles` is
-    // seeded from a multi-select, which is answered either way.
-    expect(groups.map((g) => g.blockId)).toEqual(['roles']);
+    // V2.0 VB-61/VB-63: there is no gate left to answer "no" to — both blocks
+    // are required now. The one thing that still takes a block out of the
+    // interview is a decline RECORDED UNDER THE OLD RULE, which
+    // core/flow/overrides.ts honours forever, so that is what this seeds.
+    const legacyDecline = completeFlow('yes');
+    const answers: Answers = {
+      ...legacyDecline,
+      values: { ...legacyDecline.values, entities_gate: 'no', initiatives_gate: 'no' },
+    };
+    const groups = multipleGroups(contextModules, contextOutline, answers);
+    expect(groups.map((g) => g.blockId)).toEqual(['roles', 'audiences']);
   });
 
   it('counts each record answered questions, and names it the way the file does', () => {
@@ -153,7 +162,8 @@ describe('multipleGroups — the real flow', () => {
   });
 
   it('counts every record a person holds', () => {
-    expect(multipleRecordCount(contextModules, contextOutline, completeFlow('yes'))).toBe(3);
+    // Four blocks, one record each — V2.0 VB-64 added the fourth (audiences).
+    expect(multipleRecordCount(contextModules, contextOutline, completeFlow('yes'))).toBe(4);
     expect(multipleRecordCount(contextModules, contextOutline, EMPTY)).toBe(0);
   });
 });

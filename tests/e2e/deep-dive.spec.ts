@@ -157,7 +157,10 @@ function buildAnswersExcept(modules: Module[], leaveUnanswered: string): Answers
   for (const module of modules) {
     for (const node of module.nodes) {
       if ('fields' in node) {
-        if (node.seedFrom) rolesBlock = node;
+        // By id, not by `seedFrom`: V2.0 VB-64 added a second seeded block
+        // (`audiences`), and "the last seeded block wins" would have quietly
+        // built this fixture's role records into the wrong one.
+        if (node.id === 'roles') rolesBlock = node;
         continue;
       }
       const step = node;

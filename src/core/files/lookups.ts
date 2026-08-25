@@ -55,6 +55,45 @@ export function keyOf(step: Step): string {
   return step.key ?? step.id;
 }
 
+/**
+ * V2.0 VB-62 — the field that NAMES one record of an open-ended block, and the
+ * fields that make up its body.
+ *
+ * Until VB-62 both were positional: `fields[0]` was the name, `fields.slice(1)`
+ * was the body, spelled out separately in `generate.ts`, `parse.ts`,
+ * `nodeDetails.ts` and `multiples.ts`. Reordering the entity cycle to ask the
+ * KIND first broke that assumption in four places at once, so it is resolved
+ * here instead — the file's record heading, the file's bullets, the panel's
+ * record list and the globe's detail grid have to agree about what a record is
+ * called, and now they agree because they ask the same two functions.
+ *
+ * A SEEDED block has no name field of its own: its records are titled by
+ * `seedFrom.seedField`, which is seed data rather than an answered question, so
+ * `nameStepFor` is `undefined` there and every field is a body field. That is
+ * the same split `renderRepeatableRecord` has always made.
+ *
+ * A `nameField` naming a question the block does not have falls back to the
+ * first field rather than throwing: a record with a heading is always better
+ * than a surface that will not render, and `overrides.test.ts` asserts the real
+ * data resolves properly.
+ */
+export function nameStepFor(block: RepeatableBlock): Step | undefined {
+  if (block.seedFrom) return undefined;
+  if (block.nameField) {
+    const named = block.fields.find((field) => field.id === block.nameField);
+    if (named) return named;
+  }
+  return block.fields[0];
+}
+
+/** Everything except the name field, in the block's own order — what the file
+ * prints as bullets under the record's heading, and what the parser reads back
+ * in the same order. */
+export function bodyFieldsFor(block: RepeatableBlock): Step[] {
+  const name = nameStepFor(block);
+  return name ? block.fields.filter((field) => field !== name) : block.fields;
+}
+
 /** `Step.q`/repeatable field prompts are always `(ctx) => string` in the
  * real ported data, but the schema (flow.types.ts's `Phrase`) allows a
  * plain string too — resolve either the same way generate.ts and

@@ -114,10 +114,15 @@ describe('ideasFor', () => {
 });
 
 describe('the ported ideas this button exists to surface', () => {
-  it('is still 22 questions carrying 94 written answers', () => {
+  it('is still 22 ported questions carrying 94 written answers, plus VB-64 own', () => {
+    // The 23rd is `audience_needs`, authored here rather than ported (V2.0
+    // VB-64, core/flow/overrides.ts) — counted apart from the port so this
+    // number keeps meaning "what came from modelcitizen".
     const carrying = allSteps().filter((s) => ideasFor(s).length > 0);
-    expect(carrying).toHaveLength(22);
-    expect(carrying.reduce((total, s) => total + ideasFor(s).length, 0)).toBe(94);
+    const ported = carrying.filter((s) => s.id !== 'audience_needs');
+    expect(ported).toHaveLength(22);
+    expect(ported.reduce((total, s) => total + ideasFor(s).length, 0)).toBe(94);
+    expect(carrying).toHaveLength(23);
   });
 
   it('still puts ten on reference_example_primary', () => {

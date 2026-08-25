@@ -282,10 +282,19 @@ function initiativeNoSuccess(answers: Answers): Recommendation[] {
 /**
  * One name where the section is built for several.
  *
- * Gated on the person having said yes in the first place. Somebody who
+ * Gated on the person not having declined the section outright. Somebody who
  * answered "no" to "are there specific people, teams, tools or processes
  * worth telling AI about" is not thin — they answered the question, and
  * pushing back on that answer would be the panel overruling them.
+ *
+ * V2.0 VB-61/VB-63: that question is no longer askable — the block is required
+ * now, and its old gate is a framing beat whose recorded value is a skip
+ * (`null`), not "yes". So the test is "has NOT declined" rather than "said
+ * yes": a stored "no" is a decision made under the old rule and is still
+ * respected forever (core/flow/overrides.ts), and everybody else — who now
+ * necessarily has at least one record — can be told that one is thin. Reading
+ * it the old way would have retired this rule silently the day the gate
+ * changed, which is the failure mode worth spelling out.
  */
 function thin(
   answers: Answers,
@@ -295,7 +304,7 @@ function thin(
   kind: 'entities-thin' | 'initiatives-thin',
   nameQuestionId: string,
 ): Recommendation[] {
-  if (answers.values[gateId] !== 'yes') return [];
+  if (answers.values[gateId] === 'no') return [];
   const records = answers.repeatables[blockId] ?? [];
   if (records.length === 0 || records.length > THIN_AT_OR_BELOW) return [];
   return [

@@ -1,7 +1,7 @@
 import type { Answers } from '../../schema/storage.types';
 import type { AnswerValue, FileOutlineNode, FlowContext, RepeatableBlock, Step } from '../../schema/flow.types';
 import { contextModules, contextOutline } from '../flow/flow';
-import { buildFlowLookups, keyOf, resolvePhrase } from './lookups';
+import { bodyFieldsFor, buildFlowLookups, keyOf, nameStepFor, resolvePhrase } from './lookups';
 import { FILE_TITLE, GROUNDING_RULE_HEADING, SYSTEM_GROUNDING_RULE, fileIntroLine } from './source';
 
 /**
@@ -66,22 +66,24 @@ export function formatAnswerValue(step: Step, value: AnswerValue | undefined): s
  * VB-07 — in the panel's file tree. Lifted out of `renderRepeatableRecord`
  * unchanged so the tree cannot drift from the heading the file actually
  * prints: a seeded block (roles) titles a record by its seed value, an
- * open-ended one (entities, initiatives) by its first sub-question's answer.
+ * open-ended one (entities, initiatives) by its NAME sub-question's answer —
+ * which since V2.0 VB-62 is not always the first one asked (see
+ * `nameStepFor`).
  */
 export function repeatableRecordTitle(block: RepeatableBlock, record: Record<string, AnswerValue>): string {
   if (block.seedFrom) {
     const seedVal = record[block.seedFrom.seedField];
     return typeof seedVal === 'string' && seedVal ? seedVal : 'Untitled';
   }
-  const firstField = block.fields[0];
-  return (firstField && formatAnswerValue(firstField, record[firstField.id])) || 'Untitled';
+  const nameField = nameStepFor(block);
+  return (nameField && formatAnswerValue(nameField, record[nameField.id])) || 'Untitled';
 }
 
 /** One repeatable record (a role, an entity, an initiative) as its own
  * mini Q&A block. Mirrors the source's `renderRepeatableRecord`. */
 function renderRepeatableRecord(block: RepeatableBlock, record: Record<string, AnswerValue>, ctx: FlowContext): string {
   const title = repeatableRecordTitle(block, record);
-  const bodyFields: Step[] = block.seedFrom ? block.fields : block.fields.slice(1);
+  const bodyFields: Step[] = bodyFieldsFor(block);
   const lines = bodyFields
     .filter((f) => f.kind !== 'yesno' && f.kind !== 'intro')
     .map((f) => {

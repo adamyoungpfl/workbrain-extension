@@ -5,6 +5,15 @@ import {
 import { DEEP_DIVE } from './deepDive';
 import { ADD_ANOTHER } from './addAnother';
 import type { AddAnotherCopy } from './addAnother';
+import {
+  DEEP_DIVE_ALIASES,
+  GATE_QUESTIONS,
+  INSERTED_BLOCK_ADD_ANOTHER,
+  NAME_FIELDS,
+  PLACEHOLDERS,
+  applyFlowOverrides,
+  applyOutlineOverrides,
+} from './overrides';
 import type {
   Question as SrcQuestion,
   Module as SrcModule,
@@ -115,11 +124,21 @@ function adaptQuestion(
   if (question.type !== 'intro') step.key = question.id;
   if (question.hint !== undefined) step.hint = question.hint;
   // Attached here, not authored on the source question — source.ts is a
-  // verbatim snapshot of the ported interview and stays that way.
-  const dive = deepDive[question.id];
+  // verbatim snapshot of the ported interview and stays that way. V2.0
+  // VB-61/VB-63: a question this repo INSERTED may borrow the follow-ups
+  // written for the ported question it stands in front of — see
+  // ./overrides.ts's DEEP_DIVE_ALIASES for why that is a lookup rather than a
+  // re-keying of V1.1's copy.
+  const alias = DEEP_DIVE_ALIASES[question.id];
+  const dive = deepDive[question.id] ?? (alias ? deepDive[alias] : undefined);
   if (dive) step.deepDive = dive;
   if (question.options) step.options = question.options.map(adaptOption);
   if (question.placeholder !== undefined) step.ph = question.placeholder;
+  // V2.0 VB-62 — a placeholder that phrases itself for the kind of thing being
+  // named. Attached here rather than patched onto the source question, because
+  // `Question.placeholder` in the snapshot is a plain string and stays one.
+  const placeholder = PLACEHOLDERS[question.id];
+  if (placeholder) step.ph = placeholder.placeholder;
   if (question.multiline !== undefined) step.multiline = question.multiline;
   if (question.skipIf) step.skipIf = question.skipIf;
   if (question.required !== undefined) step.required = question.required;
@@ -146,13 +165,27 @@ function adaptRepeatable(
   // a verbatim snapshot of the ported interview and stays that way, exactly as
   // with `deepDive` above. A block with no entry keeps its ported prompt,
   // including the deliberate "" that means "never ask".
-  const grows = lookups.addAnother[block.id];
+  // V2.0 VB-64: a block this repo authored (see ./overrides.ts) carries its own
+  // add-another copy, because the snapshot has none to fill in for it. Same
+  // shape, same screen — read here so the two provenances converge in one
+  // place rather than in the renderer.
+  const grows = lookups.addAnother[block.id] ?? INSERTED_BLOCK_ADD_ANOTHER[block.id];
   const result: RepeatableBlock = {
     id: block.id,
     addAnotherPrompt: grows?.prompt ?? block.addAnotherPrompt,
     fields: block.questions.map((sub) => adaptQuestion(sub, moduleNumber, eyebrow, lookups)),
   };
   if (grows) result.addAnotherName = { prompt: grows.namePrompt, placeholder: grows.namePlaceholder };
+  // V2.0 VB-62 — which field titles a record, where it is no longer the first
+  // one. Attached here, never authored on the ported block: `nameField` has no
+  // equivalent in the snapshot's own schema. See ./overrides.ts.
+  const nameField = NAME_FIELDS[block.id]?.field;
+  if (nameField) result.nameField = nameField;
+  // V2.0 VB-61/VB-63 — which question's stored "no" still skips this block,
+  // said out loud instead of guessed at from the block's name (see the
+  // schema's own note on `gateQuestionId`, and ./overrides.ts).
+  const gate = GATE_QUESTIONS[block.id]?.questionId;
+  if (gate) result.gateQuestionId = gate;
   if (block.seedFrom) result.seedFrom = block.seedFrom;
   if (block.skipIf) result.skipIf = block.skipIf;
   return result;
@@ -175,15 +208,26 @@ function adaptModule(module: SrcModule, lookups: Lookups): Module {
   };
 }
 
+/**
+ * V2.0 VB-61 · VB-62 · VB-63 · VB-64 (docs/V2.0-REFINEMENT.md, FLAG 2) — the
+ * capture-flow changes are applied HERE, to a copy, on the way through.
+ * `source.ts` is a verbatim port and is never edited; ./overrides.ts is the one
+ * file that says what this repo changed and why. Applied before the transform
+ * so a question this repo authored is adapted by exactly the same code path as
+ * a ported one — same section resolution, same deep-dive attachment, same kind
+ * mapping — rather than by a second one that could drift.
+ */
 export function adaptContextFlow(
   sourceModules: SrcModule[] = CONTEXT_INTERVIEW_MODULES,
   sourceOutline: SrcFileOutlineNode[] = CONTEXT_FILE_OUTLINE,
   deepDive: Record<string, DeepDiveEntry[]> = DEEP_DIVE,
   addAnother: Record<string, AddAnotherCopy> = ADD_ANOTHER,
 ): { modules: Module[]; outline: FileOutlineNode[] } {
-  const { indexByQuestionId } = flattenOutline(sourceOutline);
+  const overriddenModules = applyFlowOverrides(sourceModules);
+  const overriddenOutline = applyOutlineOverrides(sourceOutline);
+  const { indexByQuestionId } = flattenOutline(overriddenOutline);
   return {
-    modules: sourceModules.map((m) => adaptModule(m, { indexByQuestionId, deepDive, addAnother })),
-    outline: sourceOutline.map(adaptOutlineNode),
+    modules: overriddenModules.map((m) => adaptModule(m, { indexByQuestionId, deepDive, addAnother })),
+    outline: overriddenOutline.map(adaptOutlineNode),
   };
 }

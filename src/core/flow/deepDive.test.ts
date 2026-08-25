@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { DEEP_DIVE, HINT_STAYS_VISIBLE, deepDiveFor, hintStaysVisible } from './deepDive';
 import { adaptContextFlow } from './adapter';
+import { DEEP_DIVE_ALIASES } from './overrides';
 import type { Module, Step } from '../../schema/flow.types';
 
 /**
@@ -122,9 +123,25 @@ describe('the adapter attaches deep-dives onto the real steps', () => {
     expect(roleFor?.deepDive).toHaveLength(1);
   });
 
-  it('leaves every other question alone', () => {
+  /**
+   * V2.0 VB-61/VB-63 added the one exception, and it is deliberately narrow: a
+   * question this repo INSERTED may borrow the follow-ups written for the
+   * ported question it now stands in front of, through
+   * `core/flow/overrides.ts`'s `DEEP_DIVE_ALIASES`. That copy is about the
+   * SECTION, not about answering yes or no, so it belongs on the screen that
+   * opens the section. Asserted against the alias map rather than waved
+   * through, so a third id cannot quietly acquire a follow-up nobody wrote for
+   * it — and asserted byte-identical, so the alias is a pointer to V1.1's
+   * approved copy rather than a second copy of it that could drift.
+   */
+  it('leaves every other question alone, bar the aliases V2.0 declares', () => {
     for (const step of steps) {
       if (step.id in DEEP_DIVE) continue;
+      const alias = DEEP_DIVE_ALIASES[step.id];
+      if (alias) {
+        expect(step.deepDive, `"${step.id}" should carry "${alias}"'s`).toEqual(DEEP_DIVE[alias]);
+        continue;
+      }
       expect(step.deepDive, `"${step.id}" should have no deep-dive`).toBeUndefined();
     }
   });

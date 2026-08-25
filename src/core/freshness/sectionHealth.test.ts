@@ -434,12 +434,38 @@ describe('against the real ported flow', () => {
     expect(map.sec1!.total).toBe(2);
   });
 
-  it('lets 3. My World finish at 1 of 1 when the gate says no', () => {
+  /**
+   * V2.0 VB-61 — THE REGRESSION THIS WHOLE TEST EXISTS TO CATCH.
+   *
+   * My World is a required block now. Somebody who declined it UNDER THE OLD
+   * RULE finished their file legitimately, and docs/GUARDRAILS.md's
+   * degradation table makes that finished state ours to protect: they must not
+   * open the panel the morning after an update and find the file incomplete
+   * with no action of their own in between.
+   *
+   * `core/flow/overrides.ts` protects it by KEEPING the ported gate — asked of
+   * nobody new, kept for everybody who already answered it — rather than
+   * retyping it into a framing beat. The difference is exactly these numbers:
+   * an intro is not a countable question, so retyping would have left this
+   * section printing "0 of 0", dropping out of `sectionLife`'s lit state and
+   * taking the finished file's unified glow with it. Keeping the question
+   * leaves the section reading 1 of 1, done — byte for byte what it read
+   * before the update, which is the point.
+   */
+  it('keeps 3. My World finished, and unchanged, for a file that said no under the old rule', () => {
     const a = answers({ values: { entities_gate: 'no' }, answeredAt: { entities_gate: daysAgo(1) } });
     const map = sectionHealthMap(contextOutline, contextModules, a, null, NOW);
     expect(map.sec3!.total).toBe(1);
     expect(map.sec3!.answered).toBe(1);
     expect(map.sec3!.state).toBe('done');
+  });
+
+  it('asks four questions in 3. My World for a file with no such answer stored', () => {
+    // The other half of the same rule: nobody new can decline, so the block is
+    // in the interview from the first question — one item, four questions.
+    const map = sectionHealthMap(contextOutline, contextModules, empty, null, NOW);
+    expect(map.sec3!.total).toBe(4);
+    expect(map.sec3!.state).toBe('not-yet');
   });
 
   it('puts the section holding the live question into here, and only that one', () => {

@@ -72,7 +72,10 @@ async function seedAnswers(sw: Worker, answers: Answers): Promise<void> {
  *   clock, so it is finished and **due**.
  * - Two questions inside 2. About Me are skipped, so it is **partly**.
  * - `entities_gate` is answered "no", which takes the whole entities block out
- *   of the interview, so 3. My World is genuinely finished and **done**.
+ *   of the interview, so 3. My World is genuinely finished and **done**. V2.0
+ *   VB-61 stops ASKING that question of anybody new — the block is required
+ *   now — but a file that already holds the answer keeps it, and keeps this
+ *   row exactly as it reads here (see core/flow/overrides.ts).
  * - Nothing in module five is answered, so the interview resumes there and
  *   4. Initiatives is **here**.
  * - Everything after it is **not yet**.
@@ -106,6 +109,53 @@ function fiveStateAnswers(): Answers {
     }
   }
   return { values, repeatables: {}, answeredAt, reflectedAt };
+}
+
+/**
+ * How many questions 4. Initiatives really asks — derived from the flow, not
+ * typed in, so it stays true if the ported block gains or loses one.
+ *
+ * V2.0 VB-63 is why this is a number at all. The section used to be able to
+ * close on its yes/no gate alone ("1 of 1"); an initiative is required for a
+ * complete file now, so the section asks the whole of one.
+ */
+const INITIATIVE_QUESTIONS = (() => {
+  const block = contextModules
+    .flatMap((m) => m.nodes)
+    .find((node) => 'fields' in node && node.id === 'initiatives_records');
+  if (!block || !('fields' in block)) throw new Error('the initiatives block moved');
+  return block.fields.length;
+})();
+
+/**
+ * Answers whatever screen is up, the way flow.spec.ts's own walker does.
+ *
+ * Needed here since V2.0 VB-63: finishing 4. Initiatives is no longer one
+ * Yes/No but a framing screen, a whole initiative and a declined "another
+ * one?". The point of the test using it is that the ROW moves as the person
+ * does, so the person is really walked rather than the answers seeded.
+ */
+async function answerWhateverIsOnScreen(page: Page): Promise<void> {
+  const position = await page.locator('.flow').getAttribute('data-position');
+  if (position === 'reflect') {
+    await page.getByRole('button', { name: S.reflectKeep, exact: true }).click();
+    return;
+  }
+  const textarea = page.locator('.flow textarea');
+  const textInput = page.locator('.flow input.field');
+  const choices = page.locator('.flow .pillgroup .pill, .flow .orbgroup .orbchoice');
+  if (await textarea.count()) {
+    await textarea.first().focus();
+    await page.keyboard.type('A real answer for this question.');
+  } else if (await textInput.count()) {
+    await textInput.first().focus();
+    await page.keyboard.type('The Q4 rebrand');
+  } else if (await choices.count()) {
+    await choices.first().focus();
+    if (position === 'add-another') await page.keyboard.press('ArrowRight'); // -> "No"
+    await page.keyboard.press('Space');
+  }
+  await page.getByRole('button', { name: S.next, exact: true }).click();
 }
 
 async function openList(context: BrowserContext, id: string): Promise<Page> {
@@ -446,26 +496,44 @@ test.describe('VB-19 — five states, derived', () => {
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    // 4. Initiatives is where the interview is, and its gate is on screen.
+    // 4. Initiatives is where the interview is, standing on the screen that
+    // opens the section.
     const initiatives = page.locator('.filetree-row[data-node-id="sec4"]');
     await expect(initiatives).toHaveAttribute('data-health', 'here');
     // V1.8 VB-46: the count lives in the bundle at the right end now, and the
     // section being worked on is live whatever it reads.
-    await expect(initiatives.locator('.filetree-count')).toHaveText(S.sectionAnsweredOf(0, 1));
+    //
+    // V2.0 VB-63 is what the denominator says: at least one initiative is
+    // required for a complete file, so this section asks the whole of one —
+    // six questions — where it used to ask a yes/no that could close it.
+    await expect(initiatives.locator('.filetree-count')).toHaveText(S.sectionAnsweredOf(0, INITIATIVE_QUESTIONS));
     await expect(initiatives).toHaveAttribute('data-life', 'live');
 
-    // Answering "no" finishes the section outright: the gate is the only
-    // question it asks once the block behind it is closed. Picking and then
-    // committing, in two acts — docs/GUARDRAILS.md rules out auto-advance.
-    await page.getByRole('button', { name: S.no, exact: true }).click();
-    await page.getByRole('button', { name: S.next, exact: true }).click();
+    // ON THE SAME COMMIT — the claim in this test's name. One answer, and the
+    // count moves by one with no other action anywhere.
+    await answerWhateverIsOnScreen(page); // the framing screen: nothing to answer
+    await answerWhateverIsOnScreen(page); // the first real question
+    await expect(initiatives.locator('.filetree-count')).toHaveText(S.sectionAnsweredOf(1, INITIATIVE_QUESTIONS));
+    await expect(initiatives).toHaveAttribute('data-health', 'here');
+
+    // Then the rest of the initiative, and "no" to another one, which is what
+    // finishes the section now. Walked until the module itself is over rather
+    // than until the row says done — the row reaches "done" one screen early,
+    // on the "another one?" question, which is exactly right and would have
+    // stopped this loop before the answer that produced it.
+    for (let guard = 0; guard < 20; guard++) {
+      if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') break;
+      await answerWhateverIsOnScreen(page);
+    }
     await expect(initiatives).toHaveAttribute('data-health', 'done');
     // V2.0 VB-55: what the row shows for "done" is the tick in its orb and a
     // count that has reached its total — the pill that used to print the word
     // is gone, and the row's figures are what moved.
     await expect(initiatives).toHaveAttribute('data-life', 'lit');
     await expect(initiatives.locator('.filetree-mark')).toHaveCount(1);
-    await expect(initiatives.locator('.filetree-count')).toHaveText(S.sectionAnsweredOf(1, 1));
+    await expect(initiatives.locator('.filetree-count')).toHaveText(
+      S.sectionAnsweredOf(INITIATIVE_QUESTIONS, INITIATIVE_QUESTIONS),
+    );
 
     // The panel is now on the next module's transition screen, where no
     // question is being asked — so nothing is "here", correctly, because

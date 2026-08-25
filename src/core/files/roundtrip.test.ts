@@ -215,6 +215,9 @@ describe('round-trip — real ported content', () => {
         decision_rights: 'Anything under $5k in vendor spend.',
         expertise: 'Our reporting pipeline, end to end.',
         audiences_list: ['manager', 'team', 'A very specific stakeholder'],
+        // V2.0 VB-64 replaced this with one question per audience, but it is
+        // still asked of anybody who already answered it, and their file still
+        // prints it — so the round-trip has to carry both shapes at once.
         audience_variance: null, // explicitly skipped — required: false
         standards_list: ['cite-source', 'show-work', 'A rule of my own'],
         reference_example_primary: 'Finished the quarterly count this morning.',
@@ -250,6 +253,13 @@ describe('round-trip — real ported content', () => {
             entity_relevance: 'Where every customer record lives.',
             entity_aliases: 'Also called the CRM',
           },
+        ],
+        // V2.0 VB-64: one record per selected audience, seeded exactly the way
+        // `roles` is — including one whose answer was passed on.
+        audiences: [
+          { audience_name: 'My manager', audience_needs: 'The headline first, then the detail.' },
+          { audience_name: 'My team', audience_needs: null },
+          { audience_name: 'A very specific stakeholder', audience_needs: 'Plain words, no shorthand.' },
         ],
         initiatives_records: [
           {

@@ -57,9 +57,9 @@ async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker;
 }
 
 /**
- * The whole interview answered, every gate said yes, every "another?"
- * declined — so the person holds exactly one role, one entity and one
- * initiative. Walked through the real flow rather than hand-written, so it
+ * The whole interview answered, every "another?" declined — so the person
+ * holds exactly one role, one entity, one initiative and, since V2.0 VB-64,
+ * one audience. Walked through the real flow rather than hand-written, so it
  * stays correct as the ported questions move.
  */
 function completedInterview(): Answers {
@@ -251,13 +251,14 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
 
     const row = page.getByRole('button', { name: new RegExp(S.multiplesTitle) });
     await expect(row).toBeVisible();
-    // One role, one entity, one initiative.
-    await expect(row).toContainText(S.multiplesCount(3));
+    // One role, one entity, one initiative — and since V2.0 VB-64 one
+    // audience, which is a seeded block exactly like Roles.
+    await expect(row).toContainText(S.multiplesCount(4));
 
     await openMultiples(page);
     const titles = await page.locator('.multiples-group-title').allTextContents();
     // The file's own section names, not new ones invented for this screen.
-    expect(titles).toEqual(['Roles', 'My World', 'Initiatives']);
+    expect(titles).toEqual(['Roles', 'My World', 'Initiatives', 'Audience Profiles']);
 
     const roles = group(page, 'Roles');
     await expect(roles.locator('.filerow')).toHaveCount(1);
@@ -349,7 +350,10 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
     const page = await openPanel(context, sw, id, completedInterview());
     await openMultiples(page);
 
-    // Its name question is the block's own first question, verbatim.
+    // Its name question is the block's own NAMING question, verbatim — which
+    // since V2.0 VB-62 is the second one asked, not the first (the cycle now
+    // opens with the kind of thing it is). `nameStepFor` decides that in one
+    // place for the file and for this screen alike.
     const world = group(page, 'My World');
     await world.getByRole('button', { name: S.multipleAddTo('My World') }).click();
     await expect(world.locator('label')).toHaveText("What's their name — or its name, if this is a tool or team?");
@@ -378,9 +382,14 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
       'entity_type',
     ]);
 
-    await navigateToSection(page, 'sec3', 'entities_gate');
+    // Back into the section the way a person would get there — the drawer's
+    // "3. My World" row. V2.0 VB-61: that row now lands on the framing screen
+    // that opens the section, because the yes/no gate behind it is asked of
+    // nobody new and landing somebody on a skipped question would show them a
+    // screen the interview itself would never give them.
+    await navigateToSection(page, 'sec3', 'entities_intro');
     await next(page);
-    await expect(page.locator('.flow')).not.toHaveAttribute('data-step-id', 'entities_gate');
+    await expect(page.locator('.flow')).not.toHaveAttribute('data-step-id', 'entities_intro');
 
     const after = await storedAnswers(sw);
     expect(after.repeatables.entities).toHaveLength(2);

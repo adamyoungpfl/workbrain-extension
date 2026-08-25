@@ -294,6 +294,15 @@ function resolvePhrase(phrase: Step['q'], ctx: FlowContext): string {
   return typeof phrase === 'function' ? phrase(ctx) : phrase;
 }
 
+/** The same, for a phrase that may not be there at all — `Step.ph` became a
+ * `Phrase` in V2.0 VB-62 so an example can phrase itself for the kind of thing
+ * being named, and most are still plain strings. `undefined` stays undefined,
+ * so a field with no example still renders without one. */
+function resolveOptionalPhrase(phrase: Step['ph'], ctx: FlowContext): string | undefined {
+  if (phrase === undefined) return undefined;
+  return typeof phrase === 'function' ? phrase(ctx) : phrase;
+}
+
 /**
  * V1.1 VB-03. A question's deep-dive replaces its always-visible hint — the
  * hint paragraph is what the disclosure is made of, so rendering both would
@@ -1006,7 +1015,24 @@ function StepView({
     else stopSpeaking();
   }
 
-  const ctx: FlowContext = { answers: answers.values, repeatables: answers.repeatables };
+  /**
+   * V2.0 VB-62/VB-64: a question inside a repeatable resolves against THE
+   * RECORD IT IS ABOUT, not just the top-level answers — that is how an entity
+   * question phrases itself for a person rather than a tool, and how the
+   * per-audience question says which reader it means. `core/voice/narration.ts`
+   * builds the same context from the same position, so the spoken question and
+   * the printed one stay the same sentence.
+   *
+   * The record is read live from `answers`, so answering the type question and
+   * pressing Next re-renders the next field already knowing what was picked.
+   */
+  const activeRecord =
+    (pos.kind === 'step' || pos.kind === 'reflect') && pos.location.in === 'repeatable'
+      ? answers.repeatables[pos.location.blockId]?.[pos.location.recordIndex]
+      : undefined;
+  const ctx: FlowContext = activeRecord
+    ? { answers: answers.values, repeatables: answers.repeatables, record: activeRecord }
+    : { answers: answers.values, repeatables: answers.repeatables };
   /**
    * "Saved on this device / Nothing leaves your browser".
    *
@@ -1373,7 +1399,7 @@ function StepView({
                 as={step.multiline ? 'textarea' : 'input'}
                 value={draftText}
                 onChange={setDraftText}
-                placeholder={step.ph}
+                placeholder={resolveOptionalPhrase(step.ph, ctx)}
                 error={pendingError ?? undefined}
               />
             </div>
@@ -1566,7 +1592,7 @@ function StepView({
                 as={step.multiline ? 'textarea' : 'input'}
                 value={draftText}
                 onChange={answerText}
-                placeholder={step.ph}
+                placeholder={resolveOptionalPhrase(step.ph, ctx)}
                 error={pendingError ?? undefined}
               />
             </div>

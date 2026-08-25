@@ -1,7 +1,7 @@
 import type { Answers } from '../../schema/storage.types';
 import type { AnswerValue, FileOutlineNode, FlowContext, RepeatableBlock, Step } from '../../schema/flow.types';
 import { contextModules, contextOutline } from '../flow/flow';
-import { buildFlowLookups, keyOf, resolvePhrase, type FlowLookups } from './lookups';
+import { bodyFieldsFor, buildFlowLookups, keyOf, nameStepFor, resolvePhrase, type FlowLookups } from './lookups';
 import { SYSTEM_GROUNDING_RULE } from './source';
 import { SKIPPED_ANSWER_MARKER } from './generate';
 
@@ -164,7 +164,10 @@ function parsePlainValue(step: Step, rawContent: string): AnswerValue | undefine
 
 function parseRecordBlock(raw: RawBlock, block: RepeatableBlock, ctx: FlowContext): Record<string, AnswerValue> {
   const record: Record<string, AnswerValue> = {};
-  let bodyFields = block.fields;
+  // The exact split `generate.ts` wrote the record with — same resolver, so
+  // the bullets are read back in the order they were printed even after V2.0
+  // VB-62 stopped the name field being the first one asked.
+  const bodyFields = bodyFieldsFor(block);
 
   if (block.seedFrom) {
     // Seeded blocks (e.g. "roles") store the title itself, verbatim, as
@@ -173,11 +176,10 @@ function parseRecordBlock(raw: RawBlock, block: RepeatableBlock, ctx: FlowContex
     // LABEL text directly, not its key. No reversal needed.
     record[block.seedFrom.seedField] = raw.heading;
   } else {
-    const [firstField, ...rest] = block.fields;
-    bodyFields = rest;
-    if (firstField) {
-      const titleValue = parsePlainValue(firstField, raw.heading);
-      record[keyOf(firstField)] = titleValue === undefined ? raw.heading : titleValue;
+    const nameField = nameStepFor(block);
+    if (nameField) {
+      const titleValue = parsePlainValue(nameField, raw.heading);
+      record[keyOf(nameField)] = titleValue === undefined ? raw.heading : titleValue;
     }
   }
 

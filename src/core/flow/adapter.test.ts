@@ -1,6 +1,12 @@
 import { describe, it, expect } from 'vitest';
 import type { Module, RepeatableBlock, Step, Phrase, FlowContext, FileOutlineNode } from '../../schema/flow.types';
-import type { Module as SrcModule, FileOutlineNode as SrcFileOutlineNode } from './source';
+import type {
+  Module as SrcModule,
+  FileOutlineNode as SrcFileOutlineNode,
+  Question as SrcQuestion,
+  RepeatableBlock as SrcRepeatableBlock,
+} from './source';
+import { CONTEXT_FILE_OUTLINE, CONTEXT_INTERVIEW_MODULES } from './source';
 import { adaptContextFlow } from './adapter';
 
 /** Top-level steps only — repeatable sub-questions are counted separately below. */
@@ -131,9 +137,27 @@ describe('adaptContextFlow — real content (docs/RELEASE-1.md R1-05)', () => {
     expect(modules).toHaveLength(11);
   });
 
-  it('ports 49 questions total (35 top-level + 14 repeatable sub-questions) across 3 repeatable blocks', () => {
-    expect(everyStepIncludingRepeatableFields(modules)).toHaveLength(49);
-    expect(allRepeatables(modules)).toHaveLength(3);
+  /**
+   * 49 ported + 3 authored here (core/flow/overrides.ts): VB-64's
+   * `audience_needs` and the seeded `audiences` block it lives in, plus
+   * VB-61's and VB-63's framing beats. NOTHING IS REMOVED — an override that
+   * deleted a question would delete somebody's answer with it — so this count
+   * only ever grows, and the ported 49 are all still here.
+   */
+  it('ports 49 questions and adds V2.0 own 3, across 4 repeatable blocks', () => {
+    const all = everyStepIncludingRepeatableFields(modules);
+    const authoredHere = ['entities_intro', 'initiatives_intro', 'audience_needs'];
+    expect(all).toHaveLength(52);
+    for (const id of authoredHere) {
+      expect(all.filter((s) => s.id === id), id).toHaveLength(1);
+    }
+    expect(all.filter((s) => !authoredHere.includes(s.id))).toHaveLength(49);
+    expect(allRepeatables(modules).map((r) => r.id)).toEqual([
+      'roles',
+      'entities',
+      'initiatives_records',
+      'audiences',
+    ]);
   });
 
   it('every question renders — resolves to non-empty text, including all 3 scope-aware branches', () => {
@@ -265,5 +289,110 @@ describe('adaptContextFlow — verbatim spot-checks (hand-copied from the source
   it('carries multiline through for textareas and leaves single-line text questions unset', () => {
     expect(byId('stop_explaining').multiline).toBe(true);
     expect(byId('preferred_name').multiline).toBeUndefined();
+  });
+});
+
+/**
+ * V2.0, FLAG 2's own acceptance line: *"adapter.test.ts should assert that
+ * `source.ts`'s own exports are untouched by any of it."*
+ *
+ * Four capture-flow items (VB-61..64) change what the interview asks. All of
+ * them are attached here, by ./overrides.ts, and NONE of them may reach the
+ * snapshot — not by editing it, and not by mutating it at run time, which is
+ * the subtler failure: `CONTEXT_INTERVIEW_MODULES` is a module-level constant
+ * shared by every caller, and one in-place `questions.sort()` inside the
+ * adapter would silently rewrite the port for the whole process.
+ *
+ * So this asserts both halves:
+ *  1. the snapshot still says what the port said (hand-copied values below,
+ *     read from the source, not derived from it — a derived expectation would
+ *     pass no matter what somebody changed);
+ *  2. adapting does not change it — a structural digest taken before, compared
+ *     after several adaptations.
+ */
+describe('source.ts stays the verbatim port (V2.0 FLAG 2)', () => {
+  function digest(): string {
+    return JSON.stringify(
+      CONTEXT_INTERVIEW_MODULES.map((m) => ({
+        id: m.id,
+        nodes: m.nodes.map((n) =>
+          n.kind === 'repeatable'
+            ? { id: n.id, prompt: n.addAnotherPrompt, questions: n.questions.map((q) => `${q.id}:${q.type}`) }
+            : { id: n.id, type: n.type },
+        ),
+      })),
+    );
+  }
+
+  function sourceBlock(id: string): SrcRepeatableBlock {
+    const found = CONTEXT_INTERVIEW_MODULES.flatMap((m) => m.nodes).find(
+      (n): n is SrcRepeatableBlock => n.kind === 'repeatable' && n.id === id,
+    );
+    if (!found) throw new Error(`no source block "${id}"`);
+    return found;
+  }
+
+  function sourceQuestion(id: string): SrcQuestion {
+    const found = CONTEXT_INTERVIEW_MODULES.flatMap((m) => m.nodes).find(
+      (n): n is Extract<typeof n, { kind: 'question' }> => n.kind === 'question' && n.id === id,
+    );
+    if (!found) throw new Error(`no source question "${id}"`);
+    return found;
+  }
+
+  it('still asks both gates as yes-no questions, in the ported wording', () => {
+    const entities = sourceQuestion('entities_gate');
+    expect(entities.type).toBe('yes-no');
+    expect(entities.prompt(EMPTY_CTX)).toBe(
+      "Are there specific people, teams, tools, or processes worth telling AI about by name — the kind you'd expect it to recognize instead of re-explaining every time?",
+    );
+    expect(sourceQuestion('initiatives_gate').type).toBe('yes-no');
+  });
+
+  it('still asks the entity cycle name-first, and still gates its block on "yes"', () => {
+    const entities = sourceBlock('entities');
+    expect(entities.questions.map((q) => q.id)).toEqual([
+      'entity_name',
+      'entity_type',
+      'entity_relevance',
+      'entity_aliases',
+    ]);
+    expect(entities.skipIf?.({ answers: { entities_gate: 'yes' }, repeatables: {} })).toBe(false);
+    expect(entities.skipIf?.({ answers: {}, repeatables: {} })).toBe(true);
+  });
+
+  it('still has audience_variance as one plain top-level question, and no audiences block', () => {
+    const variance = sourceQuestion('audience_variance');
+    expect(variance.type).toBe('text');
+    expect(variance.skipIf).toBeUndefined();
+    expect(variance.prompt(EMPTY_CTX)).toBe('Do any of these need something noticeably different from the rest?');
+    expect(CONTEXT_INTERVIEW_MODULES.flatMap((m) => m.nodes).some((n) => n.id === 'audiences')).toBe(false);
+    const sec7 = CONTEXT_FILE_OUTLINE.find((n) => n.id === 'sec7');
+    expect(sec7?.questionIds).toEqual(['audiences_list', 'audience_variance']);
+  });
+
+  it('is not mutated by adapting it, however many times that happens', () => {
+    const before = digest();
+    adaptContextFlow();
+    adaptContextFlow();
+    expect(digest()).toBe(before);
+  });
+
+  it('and the adapted flow really did change — otherwise the above proves nothing', () => {
+    const { modules, outline } = adaptContextFlow();
+    const entities = modules
+      .flatMap((m) => m.nodes)
+      .find((n): n is RepeatableBlock => 'fields' in n && n.id === 'entities');
+    expect(entities?.fields.map((f) => f.id)).toEqual([
+      'entity_type',
+      'entity_name',
+      'entity_relevance',
+      'entity_aliases',
+    ]);
+    expect(outline.find((n) => n.id === 'sec7')?.questionIds).toEqual([
+      'audiences_list',
+      'audience_variance',
+      'audience_needs',
+    ]);
   });
 });

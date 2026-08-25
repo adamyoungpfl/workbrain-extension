@@ -435,7 +435,10 @@ function realAnswers(opts: {
   for (const module of contextModules) {
     for (const node of module.nodes) {
       if ('fields' in node) {
-        if (node.seedFrom) rolesBlock = node;
+        // By id, not by `seedFrom`: V2.0 VB-64 added a second seeded block
+        // (`audiences`), and "the last seeded block wins" would have quietly
+        // built this fixture's role records into the wrong one.
+        if (node.id === ROLES_BLOCK_ID) rolesBlock = node;
         continue;
       }
       const key = node.key ?? node.id;
@@ -571,7 +574,12 @@ describe('the real ported flow', () => {
   });
 
   it('a real file left untouched for years is out of date section by section, not all at once', () => {
-    const recs = runReal(realAnswers({ ageDays: 400, durabilityAgeDays: 400 }));
+    // Two of each named thing, because V2.0 VB-61/VB-63 made both blocks
+    // required: a file whose My World and Initiatives hold nothing has no
+    // answers in those sections to go stale, and two apiece keeps the "one
+    // where the section is built for several" offer out of the way of the
+    // staleness this test is about.
+    const recs = runReal(realAnswers({ ageDays: 400, durabilityAgeDays: 400, entities: 2, initiatives: 2 }));
     // Every top-level section has its own clock, and only the ones actually
     // past theirs speak. 5. How I Think (730) and 6. How I Communicate (730)
     // and 9. Context Boundaries (730) are not yet due at 400 days.

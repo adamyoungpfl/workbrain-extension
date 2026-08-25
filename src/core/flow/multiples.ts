@@ -1,7 +1,6 @@
 import type { FileOutlineNode, FlowContext, Module, RepeatableBlock, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
-import { buildFlowLookups, keyOf, resolvePhrase } from '../files/lookups';
-import { addAnotherCopyFor } from './addAnother';
+import { buildFlowLookups, keyOf, nameStepFor, resolvePhrase } from '../files/lookups';
 import { applyAnswer, applySeededAddAnother, findSeedStep, seededNameTaken } from './runner';
 import { splitSectionLabel } from './sectionLabel';
 
@@ -100,15 +99,16 @@ function blockById(modules: Module[], blockId: string): RepeatableBlock | undefi
  * Which key in a record holds its name.
  *
  * A seeded block's name is seed data under `seedFrom.seedField` and is not one
- * of its questions at all. An open-ended block's name is its first question,
- * which is why `core/files/generate.ts` renders that field as the record's
- * heading and then drops it from the body — this reads the same field, so the
- * panel and the file name a record identically.
+ * of its questions at all. An open-ended block's name is one of its questions —
+ * the one `core/files/generate.ts` renders as the record's heading before
+ * dropping it from the body. This reads the same field through the same
+ * resolver, so the panel and the file name a record identically even now that
+ * the naming question is not always the first one asked (V2.0 VB-62).
  */
 export function nameKeyFor(block: RepeatableBlock): string | undefined {
   if (block.seedFrom) return block.seedFrom.seedField;
-  const first = block.fields[0];
-  return first ? keyOf(first) : undefined;
+  const named = nameStepFor(block);
+  return named ? keyOf(named) : undefined;
 }
 
 function nameOf(block: RepeatableBlock, record: Record<string, unknown>): string {
@@ -151,14 +151,29 @@ function titleFor(block: RepeatableBlock, outline: readonly FileOutlineNode[]): 
   return node ? splitSectionLabel(node.label).title : '';
 }
 
-/** The question that names a new record, and what its field shows while empty. */
+/**
+ * The question that names a new record, and what its field shows while empty.
+ *
+ * A seeded block's naming question is `addAnotherName`, read off the block
+ * itself rather than out of `core/flow/addAnother.ts`'s map: V2.0 VB-64 adds a
+ * second seeded block whose copy comes from `core/flow/overrides.ts` instead,
+ * and a surface has no business knowing which file a block's wording was
+ * authored in. The adapter has already put both on the block.
+ */
 function nameQuestionFor(block: RepeatableBlock, ctx: FlowContext): { prompt: string; placeholder: string } {
   if (block.seedFrom) {
-    const copy = addAnotherCopyFor(block.id);
-    return { prompt: copy?.namePrompt ?? '', placeholder: copy?.namePlaceholder ?? '' };
+    const naming = block.addAnotherName;
+    return { prompt: naming?.prompt ?? '', placeholder: naming?.placeholder ?? '' };
   }
-  const first = block.fields[0];
-  return { prompt: first ? resolvePhrase(first.q, ctx) : '', placeholder: first?.ph ?? '' };
+  const named = nameStepFor(block);
+  // `ph` is a `Phrase` since V2.0 VB-62 and resolves against a context with no
+  // record here, because there IS no record yet — this is the screen that makes
+  // one. That is the same record-free fallback the file prints, which is what
+  // keeps this screen's example and the interview's the same words.
+  return {
+    prompt: named ? resolvePhrase(named.q, ctx) : '',
+    placeholder: named?.ph === undefined ? '' : resolvePhrase(named.ph, ctx),
+  };
 }
 
 /**
@@ -270,12 +285,12 @@ export function applyAddRecord(
     return { answers: next, recordIndex };
   }
 
-  // Open-ended: the name IS the block's first question, so adding a record is
+  // Open-ended: the name IS one of the block's questions, so adding a record is
   // answering it. `applyAnswer` already extends the array for an index that
   // does not exist yet (see its own comment) and stamps `answeredAt` under the
   // compound key freshness reads — which is right here, and deliberately not
   // right for a seeded block's name, where nothing was asked.
-  const nameStep = block.fields[0] as Step | undefined;
+  const nameStep: Step | undefined = nameStepFor(block);
   if (!nameStep) return null;
   return {
     answers: applyAnswer(answers, nameStep, { in: 'repeatable', blockId, recordIndex }, trimmed),

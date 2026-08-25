@@ -102,6 +102,25 @@ export function narrationForFollowUp(answer: string): Narration | null {
 }
 
 /**
+ * The context this screen's wording resolves against — including, when the
+ * screen sits inside a repeatable, THE RECORD IT IS ABOUT.
+ *
+ * V2.0 VB-62: an entity question phrases itself for a person or for a tool,
+ * and VB-64's audience question says the reader's name out loud. Both read
+ * `ctx.record` (see schema/flow.types.ts). Without this the narrator would
+ * read the fallback wording while the panel printed the specific one — and
+ * this module's own first rule is "someone listening and someone reading are
+ * on the same sentence".
+ */
+function contextFor(position: Position, answers: Answers): FlowContext {
+  const base = { answers: answers.values, repeatables: answers.repeatables };
+  if (position.kind !== 'step' && position.kind !== 'reflect') return base;
+  if (position.location.in !== 'repeatable') return base;
+  const record = answers.repeatables[position.location.blockId]?.[position.location.recordIndex];
+  return record ? { ...base, record } : base;
+}
+
+/**
  * What this position narrates — or `null` for a screen with nothing to say.
  *
  * `answers` rather than a bare `FlowContext` because the reflect screen plays
@@ -114,7 +133,7 @@ export function narrationFor(
   copy: NarrationCopy,
   options: NarrationOptions = {},
 ): Narration | null {
-  const ctx: FlowContext = { answers: answers.values, repeatables: answers.repeatables };
+  const ctx: FlowContext = contextFor(position, answers);
 
   if (position.kind === 'done') return null;
 

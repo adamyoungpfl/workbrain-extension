@@ -52,12 +52,17 @@ async function openPanel(context: BrowserContext, id: string): Promise<Page> {
  *    `null` — an explicit skip, not "never answered".
  *  - `role_names` (the real multi-select that seeds the `roles` repeatable)
  *    gets two picks, producing two seeded `roles` records.
- * `entities`/`initiatives` (the two open-ended repeatables) are gated off
- * via their own `entities_gate`/`initiatives_gate` yes-no answers set to
- * "no" — real behaviour (core/flow/runner.ts's `skipIf` handling), and it
- * keeps this fixture from also having to fill two more multi-field repeatable
- * shapes just to reach "done". `roles` alone already covers "repeatable
- * with multiple entries".
+ * `entities`/`initiatives` used to be gated off here via their own yes-no
+ * answers. V2.0 VB-61/VB-63 removed that option — both blocks are required for
+ * a complete file now — so this fixture fills one record in each, and the test
+ * is stronger for it: all three repeatable shapes make the round trip, not one.
+ *
+ * That also matters for what this test asserts. A gate is a framing beat now
+ * (an `intro`), and an intro's value is a skip; `core/files/restore.ts` fills
+ * one back in as `null` on import, so a fixture still holding the old "no"
+ * would fail the comparison below for a reason that has nothing to do with
+ * downloading or importing. The grandfathered path — a decline recorded under
+ * the old rule — is unit-tested in core/flow/overrides.test.ts instead.
  *
  * `answeredAt`/`reflectedAt` are stamped for every key generically — a
  * stray `reflectedAt` entry on a key that could never have needed one is
@@ -84,7 +89,10 @@ function buildDoneAnswers(modules: Module[]): Answers {
   for (const module of modules) {
     for (const node of module.nodes) {
       if ('fields' in node) {
-        if (node.seedFrom) rolesBlock = node; // the only seeded repeatable in real content ('roles')
+        // By id, not by `seedFrom`: V2.0 VB-64 added a second seeded block
+        // (`audiences`), and "the last seeded block wins" would have quietly
+        // built this fixture's role records into the wrong one.
+        if (node.id === 'roles') rolesBlock = node;
         continue; // repeatable blocks handled in the second pass below
       }
       const step = node;
@@ -92,8 +100,6 @@ function buildDoneAnswers(modules: Module[]): Answers {
 
       if (step.id === 'professional_name') {
         stampTop(key, null); // the explicit skip this test is proving round-trips
-      } else if (step.id === 'entities_gate' || step.id === 'initiatives_gate') {
-        stampTop(key, 'no'); // gates the two open-ended repeatables off entirely
       } else if (step.id === 'role_names') {
         roleNamesStep = step;
         const picks = (step.options ?? []).slice(0, 2).map((o) => o.v);
@@ -132,6 +138,23 @@ function buildDoneAnswers(modules: Module[]): Answers {
         if (typeof v === 'string') reflectedAt[compound] = now;
       }
     });
+  }
+
+  // V2.0 VB-61/VB-63: one record in each open-ended block, because a file with
+  // none of either is no longer a finished file. Filled generically off the
+  // real fields, so a reordered cycle (VB-62) needs no change here.
+  for (const module of modules) {
+    for (const node of module.nodes) {
+      if (!('fields' in node) || node.seedFrom) continue;
+      const record: Record<string, AnswerValue> = {};
+      for (const field of node.fields) {
+        const fk = field.key ?? field.id;
+        record[fk] = field.kind === 'chips' ? (field.options?.[0]?.v ?? 'x') : `A test answer for ${field.id}.`;
+        answeredAt[`${node.id}#0#${fk}`] = now;
+        if (typeof record[fk] === 'string') reflectedAt[`${node.id}#0#${fk}`] = now;
+      }
+      repeatables[node.id] = [record];
+    }
   }
 
   return { values, repeatables, answeredAt, reflectedAt };

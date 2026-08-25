@@ -135,6 +135,38 @@ describe('narrationFor', () => {
     ).toBeNull();
   });
 
+  /**
+   * V2.0 VB-62/VB-64 — the narrator and the screen have to be on the SAME
+   * SENTENCE, and since VB-62 a question inside a repeatable phrases itself
+   * from the record it is about: `entity_name` says "What's their name?" for a
+   * person, and `audience_needs` says the reader's name out loud. Without the
+   * record in the context this module would have read the generic fallback
+   * aloud while the panel printed the specific one — someone listening and
+   * someone reading would have been on two different questions.
+   */
+  it('speaks the question the way the record makes it read, not the fallback', () => {
+    const typed: Step = { ...textStep, q: (ctx) => (ctx.record?.kind === 'person' ? 'Their name?' : 'Its name?') };
+    const answers = makeAnswers({ repeatables: { items: [{ kind: 'tool' }, { kind: 'person' }] } });
+    expect(
+      narrationFor(
+        { kind: 'step', step: typed, location: { in: 'repeatable', blockId: 'items', recordIndex: 1 } },
+        answers,
+        COPY,
+      )?.text,
+    ).toContain('Their name?');
+    expect(
+      narrationFor(
+        { kind: 'step', step: typed, location: { in: 'repeatable', blockId: 'items', recordIndex: 0 } },
+        answers,
+        COPY,
+      )?.text,
+    ).toContain('Its name?');
+    // At top level there is no record and the fallback is the honest reading.
+    expect(narrationFor({ kind: 'step', step: typed, location: { in: 'top' } }, answers, COPY)?.text).toContain(
+      'Its name?',
+    );
+  });
+
   it('reads a module transition as its approved lines, in the recap voice', () => {
     expect(narrationFor({ kind: 'module-intro', module }, makeAnswers(), COPY)).toEqual({
       role: 'recap',
