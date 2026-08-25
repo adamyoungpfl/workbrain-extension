@@ -10,7 +10,16 @@ than finding a clever way around it.
 
 | Rule | Why |
 |---|---|
-| **No analytics, telemetry, error reporting, or beacons.** Not Sentry, not Plausible, not a pixel, not a "just count installs" ping. | Under the Chrome Web Store limited-use policy in force since 1 Aug 2026, collected data must be strictly necessary to the single declared purpose and prominently disclosed. Zero collection is the only position that needs no defending. |
+| **No analytics, telemetry, error reporting, or beacons.** Not Sentry, not Plausible, not a pixel, not a "just count installs" ping. **This includes local-only measurement that never leaves the device.** | A deliberate choice, not a compliance necessity — and stronger for being one. *Correction, 2026-08-24:* this row previously claimed the store forbids collection. It does not. The [User Data FAQ Q8](https://developer.chrome.com/docs/webstore/program-policies/user-data-faq) permits analytics "reasonably necessary to maintain, secure, or measure the performance and reliability" of disclosed functionality, with disclosure. We are stricter than required because the promise is the product. What the store *does* say (FAQ Q3, verbatim) is that local-only handling **must still be disclosed**: *"even when data is processed or stored locally on a user's device and is not transmitted."* So "we keep it on-device" buys nothing — it still ticks a category, and the install panel has no field for "locally only." |
+
+**The test, when something looks borderline:** *a number the person typed is data; a number the
+product observed is telemetry.* Authorship, not transmission, and not derivability.
+
+That last word matters. `docs/ARCHITECTURE.md`'s "nothing derived is stored" is the **wrong guard**
+for this class of question — `wb:recs` was admitted on the argument that a dismissal isn't
+derivable, and a usage log makes exactly the same argument and wins. Authorship is the guard that
+holds. `wb:report.scores` (a self-reported 0–10 the person typed) is on the right side of it;
+a count of panel opens is not, however local it stays.
 | **No accounts, logins, email capture, or identity of any kind** in the individual product. | The install is the sign-up. This is the entire trust proposition. |
 | **No `<all_urls>`, no `tabs` permission, no `scripting` beyond the four named AI origins.** | Broad host access raises review scrutiny and frightens the exact user we are designing for. |
 | **No permission requested at install beyond `storage` and `sidePanel`.** Host permissions are optional and requested in context. | Install is the highest-friction moment in the product. |
