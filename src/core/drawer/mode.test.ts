@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import {
   BRAIN_MIN_HEIGHT,
   BRAIN_OPEN_HEIGHT,
+  BRAIN_STAGE_IDEAL,
   BRAIN_STAGE_MIN,
   BRAIN_STAGE_PAD,
   BRAIN_YIELD_BAND,
@@ -101,9 +102,13 @@ describe('heightForMode', () => {
 describe('brainFitsIn', () => {
   it('is offered on a real panel and withheld on one that cannot hold it', () => {
     expect(brainFitsIn(drawerBounds(700))).toBe(true);
-    expect(brainFitsIn(drawerBounds(600))).toBe(true);
-    // 300px of panel leaves the drawer at its own floor — there is no height
-    // at which Brain would be usable, so it is not on the menu.
+    // V2.1 VB-75 — this line used to expect `true`. A 600px viewport caps the
+    // drawer at a 144px stage: enough to paint the old minimum globe, not
+    // enough to paint the globe at reading size, and reading size is now the
+    // bar. "It either is important enough to see at reading size or not
+    // important enough to use and just stay in list view." On this panel the
+    // view bar is not rendered at all and the drawer is simply the List.
+    expect(brainFitsIn(drawerBounds(600))).toBe(false);
     expect(brainFitsIn(drawerBounds(300))).toBe(false);
   });
 });
@@ -173,17 +178,32 @@ describe('brainStageSize', () => {
 describe('brainStageRoom and brainStageFits — the threshold is the stage', () => {
   it('the room and the size are the same number until the clamp catches', () => {
     expect(brainStageRoom(324, 400)).toBe(brainStageSize(324, 400));
-    // Below the floor they part company, and that parting IS the threshold:
-    // the globe stops shrinking and the stage starts cutting it off.
-    const short = BRAIN_MIN_HEIGHT - 20;
+    // Below the arithmetic floor they part company: the size stops shrinking
+    // and the room keeps falling. V2.1 VB-75 moved `BRAIN_MIN_HEIGHT` well
+    // above this point — the threshold and the clamp used to coincide and no
+    // longer do — so the short height is derived from the clamp itself, which
+    // is the thing this assertion is actually about.
+    const clampHeight = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2;
+    const short = clampHeight - 20;
     expect(brainStageRoom(short, 400)).toBeLessThan(brainStageSize(short, 400));
   });
 
-  it('fits exactly while the stage can paint the globe it is given', () => {
-    for (const height of [BRAIN_MIN_HEIGHT - 40, BRAIN_MIN_HEIGHT - 1, BRAIN_MIN_HEIGHT, BRAIN_MIN_HEIGHT + 1, 340]) {
+  /**
+   * V2.1 VB-75 — this block used to assert `fits === room >= brainStageSize`:
+   * "fits exactly while the stage can paint the globe it is given". That
+   * equivalence WAS the old rule, and it is gone on purpose — a stage that can
+   * paint a 150px globe without clipping it is still not offering Brain,
+   * because 150px is below the size the globe was designed to be read at.
+   * The claim now: fits exactly while the stage has room for the IDEAL.
+   */
+  it('fits exactly while the stage has room for the globe at reading size', () => {
+    for (const height of [BRAIN_MIN_HEIGHT - 40, BRAIN_MIN_HEIGHT - 1, BRAIN_MIN_HEIGHT, BRAIN_MIN_HEIGHT + 1, BRAIN_MIN_HEIGHT + 60]) {
       const room = brainStageRoom(height, 400)!;
-      expect(brainStageFits(height, 400), `${height}px tall`).toBe(room >= brainStageSize(height, 400));
+      expect(brainStageFits(height, 400), `${height}px tall`).toBe(room >= BRAIN_STAGE_IDEAL);
     }
+    // And the ideal really is what a just-fitting stage paints — the shown
+    // globe is never smaller than the globe "show me the Brain" opens.
+    expect(brainStageSize(BRAIN_MIN_HEIGHT, 400)).toBe(BRAIN_STAGE_IDEAL);
   });
 
   it('BRAIN_MIN_HEIGHT is where that answer turns over, so the constant cannot drift', () => {
@@ -191,11 +211,29 @@ describe('brainStageRoom and brainStageFits — the threshold is the stage', () 
     expect(brainStageFits(BRAIN_MIN_HEIGHT - 1, 400)).toBe(false);
   });
 
+  /**
+   * V2.1 VB-75, stated as the property it is. Adam: "It either is important
+   * enough to see at reading size or not important enough to use and just stay
+   * in list view." So: there is NO height and no ordinary width at which the
+   * drawer offers Brain and paints the globe smaller than the size it opens
+   * at. The two constants being equal is the implementation; this is the
+   * behaviour, swept across the whole range rather than sampled at the edge.
+   */
+  it('no shown globe is ever smaller than the one "show me the Brain" opens', () => {
+    for (let height = DRAWER_MIN_HEIGHT; height <= 900; height += 1) {
+      if (!brainStageFits(height, 400)) continue;
+      expect(brainStageSize(height, 400), `${height}px tall`).toBeGreaterThanOrEqual(BRAIN_STAGE_IDEAL);
+    }
+    expect(BRAIN_MIN_HEIGHT).toBe(BRAIN_OPEN_HEIGHT);
+  });
+
   it('a panel too narrow for the globe fails at every height — width is part of the picture', () => {
     // `modeForHeight` cannot see this: it is a threshold on the height alone.
     // A real side panel is never this narrow; the point is that the answer now
     // comes from the stage's own two measurements rather than from one of them.
-    const narrow = BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2 - 1;
+    // V2.1 VB-75: the width bar is the IDEAL too — a panel wide enough for a
+    // 116px globe but not a 208px one gets the List, same as a short one.
+    const narrow = BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2 - 1;
     expect(brainStageFits(BOUNDS.max, narrow)).toBe(false);
     expect(brainStageFits(BOUNDS.max, narrow + 1)).toBe(true);
   });
@@ -248,12 +286,15 @@ describe('nextBrainYield — out is a necessity, back in is a suggestion', () =>
     let yielded = false;
     yielded = nextBrainYield(yielded, BRAIN_MIN_HEIGHT - 10, W); // dragged short
     expect(yielded).toBe(true);
-    yielded = nextBrainYield(yielded, BRAIN_OPEN_HEIGHT, W); // dragged tall again
+    // V2.1 VB-75 made BRAIN_OPEN_HEIGHT and BRAIN_MIN_HEIGHT the same number,
+    // so the return has to clear the hysteresis band past it — landing exactly
+    // on the threshold is the thrash the band exists to refuse.
+    yielded = nextBrainYield(yielded, BRAIN_OPEN_HEIGHT + BRAIN_YIELD_BAND, W); // dragged tall again
     expect(yielded).toBe(false);
   });
 
   it('a panel that got narrower yields too, at the same height', () => {
-    const narrow = BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2 - 1;
+    const narrow = BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2 - 1;
     expect(nextBrainYield(false, BRAIN_OPEN_HEIGHT, narrow)).toBe(true);
   });
 });
@@ -278,9 +319,11 @@ describe('shownDrawerMode — nobody is yanked into Brain', () => {
 
 describe('brainDriftAllowed', () => {
   it('turns only in Brain, only above the peek, and never mid-morph', () => {
-    expect(brainDriftAllowed('brain', 300, false)).toBe(true);
-    expect(brainDriftAllowed('brain', 300, true)).toBe(false);
-    expect(brainDriftAllowed('list', 300, false)).toBe(false);
+    // V2.1 VB-75: 300px used to be comfortably in Brain and is now below the
+    // threshold — drift heights are stated relative to it, not as literals.
+    expect(brainDriftAllowed('brain', BRAIN_MIN_HEIGHT + 20, false)).toBe(true);
+    expect(brainDriftAllowed('brain', BRAIN_MIN_HEIGHT + 20, true)).toBe(false);
+    expect(brainDriftAllowed('list', BRAIN_MIN_HEIGHT + 20, false)).toBe(false);
     // VB-14's open item 3, stated where it is tested: drift stops at the peek.
     expect(brainDriftAllowed('brain', DRAWER_MIN_HEIGHT, false)).toBe(false);
     expect(brainDriftAllowed('brain', BRAIN_MIN_HEIGHT - 1, false)).toBe(false);

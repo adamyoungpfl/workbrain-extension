@@ -39,9 +39,13 @@ export type DrawerMode = 'brain' | 'list';
 /** Breathing room around the globe inside the drawer, per side, in px. */
 export const BRAIN_STAGE_PAD = 10;
 
-/** The smallest stage the globe is ever asked to draw itself into. Kept at
- * V1.2's own number so "too short for Brain" still means the same picture; it
- * is the floor a degenerate viewport cannot ask below. */
+/** The smallest stage the globe is ever asked to draw itself into — a floor on
+ * `brainStageSize`'s arithmetic for degenerate inputs (zero, negative, NaN),
+ * nothing more. V2.1 VB-75 took away its other job: it was also the "fits"
+ * threshold, which meant a *shown* globe could be this small. It cannot now —
+ * a visible globe is `BRAIN_STAGE_IDEAL` or better, and any size between this
+ * floor and the ideal is only ever computed for the hidden layer while the
+ * drawer is showing List. */
 export const BRAIN_STAGE_MIN = 116;
 
 /**
@@ -68,26 +72,48 @@ export const BRAIN_STAGE_MIN = 116;
 export const BRAIN_STAGE_IDEAL = 208;
 
 /**
- * The height at which Brain stops being usable, in px — VB-14's own "~180px",
- * re-derived for V1.9's chrome.
+ * The height at which Brain stops being offered, in px.
  *
  * Below this the drawer hands the stage over to List on its own. It is a
  * threshold on the *drawer's* height rather than on the stage's because the
  * drawer's height is the number the person is dragging and the number the
  * handle announces; the stage is what is left after the chrome.
  *
- * Derived rather than typed, so it cannot drift from `brainStageSize` below:
- * this is exactly the height at which that function stops being able to give
- * the globe `BRAIN_STAGE_MIN`.
+ * ── V2.1 VB-75: THE LINE MOVES FROM "STOPS WORKING" TO "STOPS BEING WORTH
+ * LOOKING AT", and the shrinking range between the two is gone. ──────────────
  *
- * V2.0 VB-70 keeps the number and stops it being the *test*. `brainStageFits`
- * below asks the stage itself, from the same two measurements `brainStageSize`
- * is given, so the threshold is the picture's real size rather than a constant
- * sitting beside it. This stays exported because it is the height at which that
- * answer changes on a panel of any ordinary width, and three specs and the
- * drawer's own documentation are written in terms of it.
+ * This used to derive from `BRAIN_STAGE_MIN`: Brain was offered all the way
+ * down to a 116px globe, shrinking as the drawer did. Adam, deciding VB-75:
+ * "It either is important enough to see at reading size or not important
+ * enough to use and just stay in list view." Reading size is not a new number
+ * anyone had to invent — it is `BRAIN_STAGE_IDEAL`, the size the drawer has
+ * always opened Brain at, the size every label and orb was tuned against. The
+ * product already knew what the globe should look like; what went is only the
+ * degraded band below it.
+ *
+ * Deriving from IDEAL makes this constant **equal `BRAIN_OPEN_HEIGHT` by
+ * construction**, and that identity is the decision, not a coincidence: the
+ * height Brain needs and the height Brain opens at are now the same number, so
+ * there is no such thing as a legal globe smaller than the one "show me the
+ * Brain" hands you. `heightForMode`'s old warning about "the worst legal
+ * globe" describes a thing that can no longer exist.
+ *
+ * What this costs, measured before it was decided: a viewport under ~664px
+ * tall can never fit the ideal stage inside the drawer's legal bounds, so on
+ * such a panel Brain is not available at all — today those panels get a 144px
+ * globe, which is precisely the shrunken version VB-75 rejects. The request
+ * machinery already handles it: pressing Brain there grows the drawer as far
+ * as it may and List stays on screen, and the moment the window is made
+ * taller, Brain arrives (`nextBrainYield`'s return leg — "Brain becomes
+ * available again, not Brain reopens"). That behaviour already shipped at the
+ * old threshold; VB-75 moves the line, it does not create the case.
+ *
+ * V2.0 VB-70's structure is untouched: `brainStageFits` below is still the
+ * test and this is still the height at which that answer changes on a panel of
+ * any ordinary width, which is why three specs and the drawer's own
+ * documentation remain written in terms of it.
  */
-export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2;
+export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
 
 /**
  * V2.0 VB-70 — how far past the threshold the drawer has to come back before
@@ -208,12 +234,14 @@ export function modeForHeight(requested: DrawerMode, height: number): DrawerMode
 /**
  * The height the drawer should be at, given the mode just chosen.
  *
- * VB-14: "Asking for Brain expands the drawer to fit it." **To fit it**, not
- * merely to clear the handover threshold — so the bar is `BRAIN_OPEN_HEIGHT`,
- * the height at which the globe is the showcase visual it exists to be, rather
- * than `BRAIN_MIN_HEIGHT`, the height below which it stops working at all.
- * Those are two different numbers doing two different jobs, and using the
- * threshold here would hand someone the worst legal globe and call it done.
+ * VB-14: "Asking for Brain expands the drawer to fit it." **To fit it** — the
+ * bar is `BRAIN_OPEN_HEIGHT`, the height at which the globe is the showcase
+ * visual it exists to be. This paragraph used to distinguish that from
+ * `BRAIN_MIN_HEIGHT`, "the height below which it stops working at all", and
+ * warn that using the threshold here would hand someone the worst legal globe.
+ * V2.1 VB-75 made the two numbers equal by construction, so the warning
+ * describes a thing that can no longer exist: the only globe there is, is the
+ * one this function opens.
  *
  * It only ever grows. A person who has dragged the drawer taller than the
  * globe needs keeps the height they chose; the panel does not tidy up after
@@ -299,7 +327,12 @@ export function brainStageRoom(height: number, width: number, extra = 0): number
  */
 export function brainStageFits(height: number, width: number, extra = 0): boolean {
   const room = brainStageRoom(height, width, extra);
-  return room !== null && room >= BRAIN_STAGE_MIN;
+  // V2.1 VB-75 — IDEAL, not MIN. "Fits" now means "fits at reading size":
+  // below the size the globe was designed at, the answer is List, not a
+  // smaller picture. Both directions of `nextBrainYield` read this one test,
+  // so the yield and the return move together and the hysteresis band still
+  // separates them. See BRAIN_MIN_HEIGHT's comment for the decision.
+  return room !== null && room >= BRAIN_STAGE_IDEAL;
 }
 
 /**
