@@ -12,7 +12,7 @@ import { repeatableRecordTitle } from '../../core/files/generate';
 import { childNodeGradient, sectionNodeGradient } from './BrainGlobe';
 import { HIGHLIGHT_RADIUS, LIMB_INNER, SHADE_RADIUS, orbLight } from '../../core/globe/lighting';
 import type { OrbLight } from '../../core/globe/lighting';
-import { HealthPill, healthFreshness } from './SectionHealth';
+import { healthFreshness } from './SectionHealth';
 import { prefersReducedMotion } from '../cues/verbs';
 import { S } from '../strings';
 import './FileTree.css';
@@ -69,12 +69,11 @@ import './FileTree.css';
  *     whole ("1. About This Context"); `splitSectionLabel` only lets the "1."
  *     be set quietly so the name is the loud thing.
  *
- * **Colour is still never the only signal.** A row now carries five: the ASCII
- * marker, the hidden word, the marker's FILL (hollow / tinted / solid, one per
- * tree state), the pill's own word and glyph, and the percentage. Colour is the
- * sixth and the only removable one — tests/e2e/section-health.spec.ts strips it
- * and re-reads every row, and VB-33 extended that pass to the new treatment
- * rather than replacing it.
+ * **Colour is still never the only signal.** A row carries the marker, the
+ * hidden word, the marker's FILL (hollow / tinted / solid, one per tree state)
+ * and the percentage. Colour is the removable one — tests/e2e/
+ * section-health.spec.ts strips it and re-reads every row, and every revision
+ * since VB-33 has extended that pass rather than replacing it.
  *
  * ── V1.8 VB-45 + VB-46 — the row carries the brain's orb ──────────────────
  *
@@ -98,9 +97,19 @@ import './FileTree.css';
  *   · live — solid fill, with a CARET (the old `[>]`, drawn), inside a RING
  *            that the dim and lit orbs do not have.
  *
- * Plus the hidden word beside it, the pill's own word and glyph, and the count
- * and percentage at the right end. Colour remains the removable signal, and
- * tests/e2e/section-health.spec.ts strips it and re-reads all of it.
+ * Plus the hidden word beside it, and the count and percentage at the right
+ * end. Colour remains the removable signal, and tests/e2e/section-health.spec.ts
+ * strips it and re-reads all of it.
+ *
+ * ── V2.0 VB-55 + VB-56 — two things taken off the row ─────────────────────
+ *
+ * VB-55 removes the status pill from the right end of every row and VB-56
+ * removes the blinking cursor from the section being written. Both were extra
+ * tellings of facts the row says elsewhere; the one place that was not true —
+ * a section that has aged past its clock — is answered on the ORB, not by
+ * putting the pill back. The reasoning for both lives beside the code: see the
+ * VB-55 note over `sectionHealth` in `FileTreeRow` and the VB-56 note over
+ * `label`.
  *
  * **The orb's box is still the morph's landing target.** `core/drawer/mode.ts`'s
  * `endOf` sizes every flying node from `min(width, height) / 2` of
@@ -426,15 +435,24 @@ function FileTreeRow({
    * that a resumed session shows a whole label still reads one.
    */
   const { numeral, title } = splitRevealedSectionLabel(node.label, typedLabel);
+  /**
+   * ── V2.0 VB-56 — THE BLINKING CURSOR IS GONE ─────────────────────────────
+   *
+   * V1.1 VB-07 printed a `▋` after the section being written and blinked it on
+   * a 2.2s `steps(1)` clock, ported from the sibling app's terminal aesthetic
+   * along with the typewriter it sat beside. VB-56 removes it: "the pulse on
+   * the left icon is enough... the panel has moved past that register."
+   *
+   * NOTHING WAS BEING SAID ONLY BY IT. The live section is the one wearing a
+   * ring on its orb (VB-46), the one whose row says "Writing now" out loud
+   * (`LIFE_WORD` below), and the one the flow is standing in. The cursor was a
+   * fourth telling on a screen where V1.9 has been removing perpetual motion
+   * one cue at a time, and it is the only one of the four that moved.
+   */
   const label = (
     <span className="filetree-label">
       {numeral && <span className="filetree-num">{numeral}</span>}
       {title}
-      {state === 'current' && (
-        <span className="filetree-cursor" aria-hidden="true">
-          ▋
-        </span>
-      )}
     </span>
   );
 
@@ -446,13 +464,10 @@ function FileTreeRow({
    * an element's contents, so anything put inside it is on screen but absent
    * from the accessibility tree.
    *
-   * - The PILL sits OUTSIDE it, so its word is read as the row's own text.
-   *   V1.6 VB-33 moved it visually — it now sits ON the name's line, over the
-   *   control's top right corner, so the meta line under it can have the whole
-   *   row's width (FileTree.css's `.filetree-main`) — but it is still a
-   *   SIBLING and not a child, precisely so this stays true. A state word
-   *   demoted to a description is the one signal in the drawer that cannot
-   *   afford to be optional.
+   * - The STATE WORD sits OUTSIDE it, so it is read as the row's own text
+   *   rather than demoted to a description. V1.3 VB-19 to V1.9 that word was
+   *   the pill's; V2.0 VB-55 takes the pill away and the rule is unchanged for
+   *   what is left of it — see the VB-55 note below.
    * - The DETAIL sits INSIDE it, bound back as `aria-describedby`. Inside is
    *   what lets the control be one 44px box holding both lines instead of a
    *   44px box with a line hanging under it — which would push every answered
@@ -483,9 +498,8 @@ function FileTreeRow({
    * "Per row, bundle **X of Y**, **%**, and the status pairing at the **right
    * end** of the row." So the count leaves the freshness clause it used to lead
    * (`healthDetail`) and stands with the figure it is the numerator of, hard
-   * right, directly under the pill. The three of them are one column at the
-   * row's right edge; what is left of the meta line is the one clause the pill
-   * cannot carry — how long ago, or what was passed on.
+   * right. What is left of the meta line at its LEFT is the one clause the
+   * figures cannot carry — how long ago, or what was passed on.
    *
    * `healthDetail` itself is UNTOUCHED, because `FileView` (V1.7) still prints
    * it whole and a row there has no right-hand column to bundle into.
@@ -497,6 +511,55 @@ function FileTreeRow({
    * VB-46 overrules that outright — "A row at **0 of X** is **greyed out**,
    * showing **0%**" — and the row can afford it now: the count sits in a column
    * that already exists rather than opening a line of its own.
+   *
+   * ── V2.0 VB-55: THE PILL GOES, THE COUNT AND THE FIGURE STAY ─────────────
+   *
+   * "Remove the `[x] Done` / `[>] Here` marker from the right end of each row…
+   * keep the count/percentage that share that column." The right end is now two
+   * figures rather than three things, and the row's status is the ORB at its
+   * left edge, which VB-45 already drew in three greyscale-proof treatments
+   * (hollow+dashed / filled+tick / filled+caret+ring).
+   *
+   * **THE PILL WAS NOT PURELY REDUNDANT, AND THE DIFFERENCE IS `due`.** The orb
+   * reads `core/freshness/sectionLife.ts` — three states — and the pill read
+   * `sectionHealth.state` — five. Four of the five map onto something the row
+   * still says without any colour at all:
+   *
+   *   here     → the orb's caret and ring, and "Writing now" out loud.
+   *   not-yet  → the orb hollow and empty, and "0 of 13" printed.
+   *   partly   → the clause "2 skipped", and a count short of its total.
+   *   done     → the orb's tick, "13 of 13", "100%".
+   *
+   * `due` is the fifth, and it is `done` plus one fact: this section is past its
+   * own clock (core/freshness/halfLives.ts). Both are finished, both are lit,
+   * both read 100% — so with the pill gone the ONLY thing separating them was
+   * `--row-accent`, amber against green. That is precisely the "distinguished by
+   * colour alone" docs/GUARDRAILS.md rules out, and deleting the pill without
+   * noticing would have shipped it.
+   *
+   * SO THE MARKER GOT STRONGER RATHER THAN THE PILL COMING BACK, which is what
+   * VB-55 itself asks for. Two signals replace the one that went:
+   *
+   *   1. VISIBLE — a dashed ring around the due section's orb (FileTree.css).
+   *      A SHAPE, on the object that already carries state, told apart from the
+   *      live row's solid three-ring and from the hollow orb's dashed EDGE by
+   *      being outside a filled orb. It survives greyscale, which is the whole
+   *      point, and it is still one object rather than a chip beside one.
+   *   2. SPOKEN — the pill's own word, `sectionStateDue`, kept as a hidden word
+   *      in the exact place in the row the pill occupied, so the reading order
+   *      a screen reader gets is byte-identical to what it was. A cue that is
+   *      drawn for the eye and dropped for the ear is not a smaller pill, it is
+   *      a regression, and this is the one state where the picture and the
+   *      three-way orb vocabulary genuinely disagree.
+   *
+   * The other four states add no hidden word, deliberately: their sentence is
+   * already in the row twice over, and a second copy of "Done" beside "13 of 13
+   * · 100% complete" is noise in the one place noise is expensive.
+   *
+   * `HealthPill` itself is untouched and still renders on `FileView` (V1.7),
+   * whose rows have no right-hand column and no orb — see components/
+   * SectionHealth.tsx. VB-55 is about the drawer's List, not about the
+   * vocabulary.
    */
   const sectionHealth = health[node.id];
   const freshness = sectionHealth ? healthFreshness(sectionHealth) : null;
@@ -551,10 +614,7 @@ function FileTreeRow({
   return (
     <li className={depth === 0 ? 'filetree-item' : 'filetree-item is-nested'}>
       <div
-        // `has-meta` is CSS's only way to know a row has a second line: it
-        // moves the pill onto the name's line so the meta line can have the
-        // pill's width back (FileTree.css's `.filetree-main`).
-        className={`filetree-row is-${state}${depth > 0 ? ' is-child' : ''}${metaLine ? ' has-meta' : ''}`}
+        className={`filetree-row is-${state}${depth > 0 ? ' is-child' : ''}`}
         data-node-id={node.id}
         data-node-state={state}
         data-life={life}
@@ -584,7 +644,19 @@ function FileTreeRow({
               {metaLine}
             </span>
           )}
-          {sectionHealth && <HealthPill state={sectionHealth.state} />}
+          {/* V2.0 VB-55 — THE STATUS PILL IS GONE FROM THE ROW, AND THIS IS
+              WHAT IT LEFT BEHIND: one hidden word, on the one state the
+              picture cannot draw. See the long note above `sectionHealth`. */}
+          {/* `.filetree-sr`, the panel's hidden-word rule, plus a hook of its
+              own: the percentage's "complete" wears the same class a few lines
+              up, and a test asking for "the row's hidden word" must not have
+              to guess which of the two it got (FileTree.css says so where the
+              class is defined). */}
+          {sectionHealth?.state === 'due' && (
+            <span className="filetree-sr" data-health-word="due">
+              {S.sectionStateDue}
+            </span>
+          )}
         </span>
         {hasChildren ? (
           <button

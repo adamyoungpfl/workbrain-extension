@@ -140,9 +140,11 @@ test.describe('VB-07 — the living file tree', () => {
     // does too, so this counts one-or-more rather than exactly one.
     const current = page.locator('.filetree-row[data-node-state="current"]').first();
     expect(await page.locator('.filetree-row[data-node-state="current"]').count()).toBeGreaterThanOrEqual(1);
-    // An orb wearing a ring nothing else has, a mark drawn inside it, a word
-    // for assistive tech, and a terminal cursor — none of them colour
-    // (docs/GUARDRAILS.md: nothing distinguished by colour alone).
+    // An orb wearing a ring nothing else has, a mark drawn inside it and a
+    // word for assistive tech — none of them colour (docs/GUARDRAILS.md:
+    // nothing distinguished by colour alone). V2.0 VB-56 removed the fourth
+    // signal, a blinking terminal cursor after the name, and this asserts its
+    // absence rather than simply forgetting it.
     //
     // V1.8 VB-45 replaced the ASCII tile with the section's own orb from the
     // Brain visual. The three states still differ in three non-colour ways;
@@ -151,13 +153,12 @@ test.describe('VB-07 — the living file tree', () => {
     await expect(current.locator('.filetree-glyph')).toHaveAttribute('data-life', 'live');
     await expect(current.locator('.filetree-mark')).toHaveCount(1);
     await expect(current.locator('.filetree-srstate')).toHaveText(S.fileTreeStateCurrent);
-    await expect(current.locator('.filetree-cursor')).toHaveCount(1);
+    await expect(current.locator('.filetree-cursor')).toHaveCount(0);
 
     const reached = page.locator('.filetree-row[data-life="lit"]').first();
     await expect(reached.locator('.filetree-glyph')).toHaveAttribute('data-life', 'lit');
     await expect(reached.locator('.filetree-mark')).toHaveCount(1);
     await expect(reached.locator('.filetree-srstate')).toHaveText(S.fileTreeStateReached);
-    await expect(reached.locator('.filetree-cursor')).toHaveCount(0);
 
     // The greyed one is the only one with nothing drawn inside its orb.
     const untouched = page.locator('.filetree-row[data-node-state="untouched"]').first();
@@ -502,17 +503,12 @@ test.describe('VB-07 — the terminal aesthetic', () => {
     }
     await openDrawer(page);
 
-    // The cursor is still there and still marks the active row — it simply
-    // does not blink. The instruction survives the animation being removed.
-    const cursor = page.locator('.filetree-cursor').first();
-    expect(await page.locator('.filetree-cursor').count()).toBeGreaterThanOrEqual(1);
-    await expect(cursor).toBeVisible();
-    const cursorStyle = await cursor.evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { animationName: s.animationName, opacity: s.opacity };
-    });
-    expect(cursorStyle.animationName).toBe('none');
-    expect(Number(cursorStyle.opacity)).toBe(1);
+    // V2.0 VB-56 — THE BLINKING CURSOR IS GONE, at every motion preference.
+    // This used to assert that reduced motion left it still and visible; there
+    // is nothing left to keep still, and the live row is still marked by the
+    // ring below, which is the cue that was always doing the work.
+    await expect(page.locator('.filetree-cursor')).toHaveCount(0);
+    await expect(page.locator('.filedrawer')).not.toContainText('▋');
 
     // All three states still say what they are, in words and in marks.
     for (const [life, marks, word] of [

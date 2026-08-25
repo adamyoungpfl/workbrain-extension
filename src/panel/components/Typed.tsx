@@ -65,12 +65,15 @@ import './Typed.css';
  * and axe never sees a heading with no accessible name. Once the print is
  * finished the attribute is gone and the markup is exactly what V1.1 shipped.
  *
- * NO BLINKING CARET, deliberately, unlike the file tree's rows. A caret is one
- * more glyph in the flow of the text: at the end of a full line it either wraps
- * the last word or has to be pulled out of layout entirely, and either way it
- * is the one thing on this screen that would move the question about. The tree
- * can afford it because its rows are single-line and never wrap. The typing
- * itself is what carries "this is being written".
+ * NO BLINKING CARET, deliberately. A caret is one more glyph in the flow of the
+ * text: at the end of a full line it either wraps the last word or has to be
+ * pulled out of layout entirely, and either way it is the one thing on this
+ * screen that would move the question about. The typing itself is what carries
+ * "this is being written".
+ *
+ * The file tree's rows once had one — single-line rows that never wrap could
+ * afford it — and V2.0 VB-56 removed that too, so this is now the panel's only
+ * position rather than the exception to one (components/FileTree.tsx).
  */
 
 /** What one print looks like at one moment. */

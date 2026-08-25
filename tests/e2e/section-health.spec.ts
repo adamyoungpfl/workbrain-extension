@@ -19,22 +19,34 @@ import type { Answers } from '../../src/schema/storage.types';
  *   Asserted twice — once by checking each row carries a non-colour signal,
  *   and once by really stripping colour from the page and re-reading it, so a
  *   future change that moves the distinction into a tint fails here.
- *   **V1.6 VB-33 AND V1.8 VB-45 EACH EXTENDED THAT PASS RATHER THAN REPLACING
- *   IT.** VB-33 turned the row's state marker from bare text into a tile and
- *   the read-back started checking the tile's fill; VB-45 turned the tile into
- *   the Brain visual's own orb, and the read-back now checks the orb's FILL,
- *   the MARK drawn inside it and the RING only the live one wears — as well as
- *   the pill's own word and glyph, and the count VB-46 prints beside them.
+ *   **EVERY REVISION HAS EXTENDED THAT PASS RATHER THAN REPLACING IT.** VB-33
+ *   turned the row's state marker from bare text into a tile and the read-back
+ *   started checking the tile's fill; VB-45 turned the tile into the Brain
+ *   visual's own orb, and the read-back checks the orb's FILL, the MARK drawn
+ *   inside it and the RING only the live one wears, plus the count VB-46
+ *   prints beside them.
+ *
+ *   **V2.0 VB-55 IS THE REVISION THAT COULD HAVE BROKEN IT.** It removes the
+ *   status pill from the row — the word and the ASCII glyph this pass used to
+ *   read for each of the five health states. Four of the five survive that
+ *   untouched, because the orb, the count and the freshness clause were
+ *   already saying them. The fifth, `due`, did not: a due section and a done
+ *   one are both finished, both lit, both at 100%, and the pill's word was the
+ *   only thing between them that was not a hue. So the row gained a DASHED
+ *   RING on its orb and a hidden word for the ear, and this pass is what holds
+ *   both to their job — see `ORB` below, which now has four entries rather
+ *   than three.
  * - That the row still navigates, and that an empty section is still not a
  *   control at all.
  * - That the rows stay in FILE ORDER whatever their status.
  * - That nothing new is written to storage.
- * - That a 400px panel holds the longest real section name beside its pill
- *   without clipping either or scrolling the page sideways.
+ * - That a 400px panel prints the longest real section name whole, inside the
+ *   row, without scrolling the page sideways.
  *
  * Self-contained launch helpers, per this repo's standalone-spec convention.
  */
 const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const SHOTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../test-results/vb55');
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
@@ -150,17 +162,49 @@ const ORB: Record<string, { filled: boolean; mark: 'tick' | 'caret' | null; ring
   live: { filled: true, mark: 'caret', ring: true },
 };
 
-/** The word and the glyph a state must print, with no colour involved. */
-const EXPECTED: Record<string, { glyph: string; word: string }> = {
-  here: { glyph: '[>]', word: S.sectionStateHere },
-  done: { glyph: '[x]', word: S.sectionStateDone },
-  due: { glyph: '[!]', word: S.sectionStateDue },
-  partly: { glyph: '[~]', word: S.sectionStatePartly },
-  'not-yet': { glyph: '[ ]', word: S.fileTreeStateUntouched },
+/**
+ * V2.0 VB-55 — THE FOURTH TREATMENT, AND WHY IT IS KEYED ON HEALTH RATHER THAN
+ * ON LIFE.
+ *
+ * `sectionLife` has three states and `sectionHealth` has five. Four of the five
+ * land on a life the orb already draws differently, or on figures printed in
+ * the row. `due` lands on `lit` — the same life a `done` section has — so with
+ * the pill gone it needed a mark of its own: one dashed hairline ring outside
+ * the filled orb, drawn on `::after`.
+ *
+ * Told apart from the other two rings by shape alone, which is the whole point:
+ * the LIVE row's ring is solid and on the orb's own box-shadow, and the DIM
+ * orb's dashes are on its own border, around no fill and no mark.
+ */
+const DUE_RING = { style: 'dashed', width: '1px' };
+
+/**
+ * The five health states, and what each one has to say WITHOUT ANY COLOUR.
+ *
+ * Until V2.0 VB-55 the answer for all five was the same — a pill printing a
+ * word and an ASCII glyph — and this map held those two strings. The pill is
+ * gone, so the map holds what actually carries each state now: the row's LIFE
+ * (which decides the orb's fill, mark and ring), whether the orb wears the due
+ * ring, whether the row says a word out loud, and the shape of the figures at
+ * its right end.
+ *
+ * NO TWO ROWS HERE SHARE A COMBINATION, and the test below asserts that as a
+ * property rather than trusting the table: any two states that ended up
+ * identical after a change would be two states told apart by colour alone.
+ */
+const EXPECTED: Record<
+  string,
+  { life: string; dueRing: boolean; spoken: string | null; count: RegExp; clause: RegExp | null }
+> = {
+  here: { life: 'live', dueRing: false, spoken: null, count: /^\d+ of \d+$/, clause: null },
+  done: { life: 'lit', dueRing: false, spoken: null, count: /^(\d+) of \1$/, clause: /^answered /},
+  due: { life: 'lit', dueRing: true, spoken: S.sectionStateDue, count: /^(\d+) of \1$/, clause: /^answered / },
+  partly: { life: 'lit', dueRing: false, spoken: null, count: /^\d+ of \d+$/, clause: /skipped$/ },
+  'not-yet': { life: 'dim', dueRing: false, spoken: null, count: /^0 of \d+$/, clause: null },
 };
 
 test.describe('VB-19 — five states, derived', () => {
-  test('one seeded file puts every state on screen, each with its own words', async () => {
+  test('one seeded file puts every state on screen, each with its own treatment', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
@@ -177,20 +221,27 @@ test.describe('VB-19 — five states, derived', () => {
     await context.close();
   });
 
-  test('every row is distinguishable with no colour at all — the orb and the word carry it', async () => {
+  test('every row is distinguishable with no colour at all — the orb and the figures carry it', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    // 1 — the signals exist, per row, independent of any paint.
+    // 1 — the signals exist, per row, independent of any paint. V2.0 VB-55:
+    // and the pill they used to be printed in is really gone from every row,
+    // which is what makes the rest of this test the load-bearing one.
+    await expect(page.locator('.filetree-row .sectionhealth-pill')).toHaveCount(0);
     for (const node of contextOutline) {
       const row = page.locator(`.filetree-row[data-node-id="${node.id}"]`);
       const state = (await row.getAttribute('data-health'))!;
-      const pill = row.locator('.sectionhealth-pill');
-      await expect(pill, node.id).toHaveCount(1);
-      await expect(pill.locator('.sectionhealth-glyph'), node.id).toHaveText(EXPECTED[state]!.glyph);
-      // The word is the pill's own text, minus the glyph beside it.
-      expect((await pill.textContent())!.replace(EXPECTED[state]!.glyph, '').trim(), node.id).toBe(EXPECTED[state]!.word);
+      const expected = EXPECTED[state]!;
+      await expect(row, node.id).toHaveAttribute('data-life', expected.life);
+      await expect(row.locator('.filetree-count'), node.id).toHaveText(expected.count);
+      if (expected.clause) await expect(row.locator('.filetree-detail'), node.id).toHaveText(expected.clause);
+      // The one state the picture cannot draw says itself out loud, in the
+      // pill's own word, and no other state does (VB-55).
+      const spoken = row.locator('[data-health-word]');
+      if (expected.spoken) await expect(spoken, node.id).toHaveText(expected.spoken);
+      else await expect(spoken, node.id).toHaveCount(0);
     }
 
     // 2 — and they survive colour actually being taken away. A greyscale
@@ -201,14 +252,14 @@ test.describe('VB-19 — five states, derived', () => {
       els.map((el) => {
         const orb = el.querySelector('.filetree-glyph') as HTMLElement;
         const orbStyle = getComputedStyle(orb);
+        // V2.0 VB-55's due ring lives on the orb's `::after`, so it is read
+        // where it is drawn rather than inferred from the row's class.
+        const after = getComputedStyle(orb, '::after');
         const mark = orb.querySelector('.filetree-mark path');
         return {
           id: (el as HTMLElement).dataset.nodeId,
           state: (el as HTMLElement).dataset.health,
           life: (el as HTMLElement).dataset.life,
-          text: el.querySelector('.sectionhealth-pill')?.textContent ?? '',
-          // Whether the pill is filled or hollow is a third, non-colour signal.
-          hollow: (el.querySelector('.sectionhealth-pill') as HTMLElement | null)?.classList.contains('is-hollow') ?? false,
           // ── V1.8 VB-45 — the row's own ORB, which replaced VB-33's ASCII
           // tile. Read as computed style and real geometry rather than as
           // classes, so a rule that stops applying fails here.
@@ -224,26 +275,37 @@ test.describe('VB-19 — five states, derived', () => {
             .replace(/rgba?\([^)]*\)/g, 'C')
             .split(',')
             .some((part) => part.trim() !== 'none' && part.trim() !== '' && !part.includes('inset')),
+          // V2.0 VB-55 — the due section's own ring. A real painted pseudo
+          // element (`content` set, a non-zero dashed border), never a class.
+          dueRing:
+            after.content !== 'none' && after.borderTopStyle === 'dashed' && parseFloat(after.borderTopWidth) > 0
+              ? { style: after.borderTopStyle, width: after.borderTopWidth }
+              : null,
+          // The word for the ear, which must not go when the picture changes.
+          spoken: el.querySelector('[data-health-word]')?.textContent ?? null,
           // And the count and figure the greying is a redundancy for (VB-46).
           count: el.querySelector('.filetree-count')?.textContent ?? '',
           percent: el.querySelector('.filetree-percent')?.textContent ?? '',
+          detail: el.querySelector('.filetree-detail')?.textContent ?? '',
         };
       }),
     );
     const marks = new Map<string, string | null>();
+    /** Every non-colour signal a row shows, as one string. Two states landing
+     *  on the same string are two states told apart by colour alone — which is
+     *  exactly the regression removing the pill could have introduced. */
+    const fingerprints = new Map<string, string>();
     for (const row of readBack) {
       const expected = EXPECTED[row.state!]!;
-      expect(row.text, row.id).toContain(expected.glyph);
-      expect(row.text, row.id).toContain(expected.word);
-      expect(row.hollow, row.id).toBe(row.state === 'not-yet');
 
       // ── V1.8 VB-45, extending the same proof to the orb that replaced the
-      // tile. Fill, mark and ring tell the three states apart with every hue
+      // tile. Fill, mark and ring tell the three lives apart with every hue
       // gone: a section with nothing in it is the only hollow, dashed, empty
-      // one; the one being written is the only one wearing a ring; and no two
-      // states draw the same mark.
+      // one; the one being written is the only one wearing a solid ring; and no
+      // two lives draw the same mark.
       const orb = ORB[row.life!]!;
       expect(Object.keys(ORB), `${row.id} reported life "${row.life}"`).toContain(row.life);
+      expect(row.life, `${row.id} life`).toBe(expected.life);
       expect(row.orbFilled, `${row.id} orb fill`).toBe(orb.filled);
       expect(row.orbBorderStyle === 'dashed', `${row.id} orb outline`).toBe(!orb.filled);
       expect(row.orbMark === null, `${row.id} orb mark`).toBe(orb.mark === null);
@@ -251,25 +313,50 @@ test.describe('VB-19 — five states, derived', () => {
       if (marks.has(row.life!)) expect(row.orbMark, `${row.id} mark`).toBe(marks.get(row.life!));
       marks.set(row.life!, row.orbMark);
 
+      // ── V2.0 VB-55. The fourth treatment, on the one state the three lives
+      // cannot separate: a due section is `lit` exactly as a done one is.
+      expect(row.dueRing, `${row.id} due ring`).toEqual(expected.dueRing ? DUE_RING : null);
+      expect(row.spoken, `${row.id} spoken state`).toBe(expected.spoken);
+
       // VB-46: the greying is never the only way to know a row is at zero —
       // the count says it in figures too.
       expect(row.count, row.id).toMatch(/^\d+ of \d+$/);
       if (row.life === 'dim') expect(row.count, row.id).toMatch(/^0 of /);
+
+      // THE PROPERTY THE TABLE ABOVE IS ONLY A DESCRIPTION OF: no two states
+      // may present the same set of non-colour signals.
+      const fingerprint = [
+        row.life,
+        row.orbFilled,
+        row.orbMark,
+        row.orbRing,
+        row.dueRing ? 'due-ring' : 'no-ring',
+        row.spoken ?? '',
+        /^(\d+) of \1$/.test(row.count) ? 'all' : row.count.startsWith('0 of ') ? 'none' : 'some',
+        row.detail.replace(/\d+/g, 'N'),
+      ].join('|');
+      const already = fingerprints.get(fingerprint);
+      expect(
+        already === undefined || already === row.state,
+        `${row.state} and ${already} are indistinguishable without colour (${fingerprint})`,
+      ).toBe(true);
+      fingerprints.set(fingerprint, row.state!);
     }
     // All three treatments really are on screen — otherwise the assertions
     // above are vacuously true on a file where every row is the same state.
     expect(new Set(readBack.map((row) => row.life)).size).toBe(3);
     // …and the three marks really are three different shapes.
     expect(new Set([...marks.values()]).size).toBe(3);
+    // …and all five health states really are on screen, so the fingerprint
+    // check above compared five things rather than two.
+    expect(new Set(readBack.map((row) => row.state)).size).toBe(5);
+    // The due ring is really painted on exactly the due rows, and on no other.
+    expect(readBack.filter((row) => row.dueRing).map((row) => row.state)).toEqual(
+      readBack.filter((row) => row.state === 'due').map((row) => row.state),
+    );
 
-    // Every pill is still legible after the filter — none of them went
-    // transparent-on-transparent.
-    for (const pill of await page.locator('.filetree-row .sectionhealth-pill').all()) {
-      await expect(pill).toBeVisible();
-    }
-
-    // And so is every percentage: VB-33's one new number must not be the thing
-    // that only reads in colour either.
+    // Every percentage is still legible after the filter: VB-33's one new
+    // number must not be the thing that only reads in colour either.
     for (const percent of await page.locator('.filetree-row .filetree-percent').all()) {
       await expect(percent).toBeVisible();
       await expect(percent).toHaveText(/^\d+% /);
@@ -280,10 +367,11 @@ test.describe('VB-19 — five states, derived', () => {
 
   /**
    * V1.8 VB-46 moved the count out of this line and into the bundle at the
-   * row's right end, so what is left of the line is the one clause neither the
-   * pill nor the figures can carry.
+   * row's right end, so what is left of the line is the one clause the figures
+   * cannot carry — and after V2.0 VB-55 removed the pill, it is also the row's
+   * only printed word about freshness.
    */
-  test('the detail line says what the pill and the figures cannot', async () => {
+  test('the detail line says what the figures cannot', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
@@ -343,7 +431,7 @@ test.describe('VB-19 — five states, derived', () => {
     const seeded = fiveStateAnswers();
     await seedAnswers(sw, seeded);
     const page = await openList(context, id);
-    await page.waitForSelector('.sectionhealth-pill');
+    await page.waitForSelector('.filetree-row[data-health]');
 
     const keys = await sw.evaluate(async () => Object.keys(await chrome.storage.local.get(null)));
     expect(keys.filter((k) => /health|stale|due|fresh|summary/i.test(k))).toEqual([]);
@@ -372,7 +460,12 @@ test.describe('VB-19 — five states, derived', () => {
     await page.getByRole('button', { name: S.no, exact: true }).click();
     await page.getByRole('button', { name: S.next, exact: true }).click();
     await expect(initiatives).toHaveAttribute('data-health', 'done');
-    await expect(initiatives.locator('.sectionhealth-pill')).toContainText(S.sectionStateDone);
+    // V2.0 VB-55: what the row shows for "done" is the tick in its orb and a
+    // count that has reached its total — the pill that used to print the word
+    // is gone, and the row's figures are what moved.
+    await expect(initiatives).toHaveAttribute('data-life', 'lit');
+    await expect(initiatives.locator('.filetree-mark')).toHaveCount(1);
+    await expect(initiatives.locator('.filetree-count')).toHaveText(S.sectionAnsweredOf(1, 1));
 
     // The panel is now on the next module's transition screen, where no
     // question is being asked — so nothing is "here", correctly, because
@@ -408,7 +501,7 @@ test.describe('VB-19 — the list is still the file', () => {
     await context.close();
   });
 
-  test('an empty section is still not clickable, pill or no pill', async () => {
+  test('an empty section is still not clickable, figures or no figures', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
@@ -418,8 +511,8 @@ test.describe('VB-19 — the list is still the file', () => {
     for (const row of await notYet.all()) {
       await expect(row.locator('.filetree-nav')).toHaveCount(0);
       await expect(row.locator('button')).toHaveCount(0);
-      // Its pill is text, not a control.
-      await expect(row.locator('.sectionhealth-pill button, .sectionhealth-pill a')).toHaveCount(0);
+      // Its figures are text, not controls.
+      await expect(row.locator('.filetree-counts button, .filetree-counts a')).toHaveCount(0);
     }
 
     // Clicking one changes nothing.
@@ -473,24 +566,28 @@ test.describe('VB-47 — the counts strip is gone from the drawer', () => {
     await expect(page.locator('.filedrawer .sectionhealth-summary')).toHaveCount(0);
     await expect(page.locator('.filedrawer [data-health-summary]')).toHaveCount(0);
 
-    // The seed leaves sections nobody has touched, so "Not yet" is still on
-    // screen — as a per-row pill, never as a total. This is the tag VB-47
-    // names, and its shape was "9 not yet".
+    // The seed leaves sections nobody has touched, so the tag VB-47 names —
+    // whose shape was "9 not yet" — must not have come back as a total.
     const notYetRows = await page.locator('.filetree-row[data-health="not-yet"]').count();
     expect(notYetRows, 'the seed must really leave untouched sections').toBeGreaterThan(0);
     await expect(page.locator('.filedrawer-body')).not.toContainText(new RegExp(`${notYetRows}\\s*not yet`, 'i'));
 
-    // And every remaining pill belongs to exactly one row.
-    const pills = await page.locator('.filedrawer .sectionhealth-pill').count();
-    const inRows = await page.locator('.filetree-row .sectionhealth-pill').count();
-    expect(pills).toBe(inRows);
+    // V2.0 VB-55: and there is no pill left anywhere in the drawer to be a
+    // total OR a row's own — the strip went in VB-47, the rows' in VB-55.
+    await expect(page.locator('.filedrawer .sectionhealth-pill')).toHaveCount(0);
 
     await context.close();
   });
 });
 
 test.describe('VB-19 — it fits a 400px panel', () => {
-  test('the longest real section name sits beside its pill without clipping either', async () => {
+  /**
+   * V2.0 VB-55 gave this line the pill's seventy pixels back (`--pill-reserve`,
+   * deleted with it), so what has to hold now is that the longest real section
+   * name prints whole inside the row — the measurement the reserve existed to
+   * make possible, against a wider column.
+   */
+  test('the longest real section name prints whole, inside the row', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
@@ -503,23 +600,23 @@ test.describe('VB-19 — it fits a 400px panel', () => {
 
     const geometry = await row.evaluate((el) => {
       const label = el.querySelector('.filetree-label') as HTMLElement;
-      const pill = el.querySelector('.sectionhealth-pill') as HTMLElement;
+      const toggle = el.querySelector('.filetree-toggle, .filetree-toggle-spacer') as HTMLElement;
       const rowBox = el.getBoundingClientRect();
       return {
         label: label.getBoundingClientRect(),
-        pill: pill.getBoundingClientRect(),
+        text: label.textContent,
+        toggle: toggle.getBoundingClientRect(),
         row: rowBox,
         labelClipped: label.scrollWidth > label.clientWidth + 1,
-        pillClipped: pill.scrollWidth > pill.clientWidth + 1,
       };
     });
 
     expect(geometry.labelClipped, `"${longest.label}" is clipped`).toBe(false);
-    expect(geometry.pillClipped, 'the pill is clipped').toBe(false);
-    // The name ends before the pill starts — they never overlap.
-    expect(geometry.label.right).toBeLessThanOrEqual(geometry.pill.left + 1);
-    // And both are inside the row.
-    expect(geometry.pill.right).toBeLessThanOrEqual(geometry.row.right + 1);
+    expect(geometry.text, 'the name is printed whole').toBe(longest.label);
+    // The name ends before the disclosure at the far edge starts, and inside
+    // the row — the two things the reserve used to guarantee against the pill.
+    expect(geometry.label.right).toBeLessThanOrEqual(geometry.toggle.left + 1);
+    expect(geometry.label.right).toBeLessThanOrEqual(geometry.row.right + 1);
 
     await context.close();
   });
@@ -572,4 +669,44 @@ test.describe('VB-19 — it fits a 400px panel', () => {
 
     await context.close();
   });
+});
+
+/* ── For a person to look at ─────────────────────────────────────────────── */
+
+/**
+ * V2.0 VB-55. The assertions above prove the five states are TOLD APART with
+ * the colour gone; they cannot say whether the list still looks like one thing
+ * once the pill has left every row. So the same seeded file is photographed
+ * twice — as it ships, and through the greyscale filter the read-back uses —
+ * and the due row is photographed beside a done one, which is the pair the new
+ * dashed ring exists to separate.
+ */
+test('the list with the pill gone, in colour and in grey — for a person to look at (VB-55)', async () => {
+  const { context, sw, id } = await launchExtension();
+  await seedAnswers(sw, fiveStateAnswers());
+  const page = await openList(context, id);
+
+  const states = await page
+    .locator('.filetree-row[data-node-id]')
+    .evaluateAll((els) => els.map((el) => `${(el as HTMLElement).dataset.nodeId}:${(el as HTMLElement).dataset.health}`));
+  // The shot is only worth looking at if all five states are really in it.
+  expect(new Set(states.map((s) => s.split(':')[1])).size).toBe(5);
+
+  const drawer = page.locator('.filedrawer');
+  await page.screenshot({ path: path.join(SHOTS, 'list-colour.png') });
+  await drawer.screenshot({ path: path.join(SHOTS, 'drawer-colour.png') });
+
+  const due = states.find((s) => s.endsWith(':due'))!.split(':')[0]!;
+  const done = states.find((s) => s.endsWith(':done'))!.split(':')[0]!;
+  await page.locator(`.filetree-row[data-node-id="${due}"]`).screenshot({ path: path.join(SHOTS, 'row-due-colour.png') });
+  await page.locator(`.filetree-row[data-node-id="${done}"]`).screenshot({ path: path.join(SHOTS, 'row-done-colour.png') });
+
+  await page.addStyleTag({ content: 'html { filter: grayscale(1) !important; }' });
+  await page.waitForTimeout(150);
+  await page.screenshot({ path: path.join(SHOTS, 'list-grey.png') });
+  await drawer.screenshot({ path: path.join(SHOTS, 'drawer-grey.png') });
+  await page.locator(`.filetree-row[data-node-id="${due}"]`).screenshot({ path: path.join(SHOTS, 'row-due-grey.png') });
+  await page.locator(`.filetree-row[data-node-id="${done}"]`).screenshot({ path: path.join(SHOTS, 'row-done-grey.png') });
+
+  await context.close();
 });

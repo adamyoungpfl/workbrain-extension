@@ -29,18 +29,21 @@
       it carry the three states on their own: hollow and empty with a dashed
       edge when nothing is answered, filled with a tick when something is,
       filled with a caret inside a ring when it is the section being written.
-      The hidden word beside it, the pill's own word and glyph, and the printed
-      count all say the same thing again. Colour is the last signal and the only
-      removable one — tests/e2e/section-health.spec.ts takes it away and
-      re-reads every row.
+      The hidden word beside it and the printed count say the same thing again,
+      and V2.0 VB-55 adds one more mark for the state the three treatments
+      cannot draw (a due section's dashed ring, below). Colour is the last
+      signal and the only removable one — tests/e2e/section-health.spec.ts takes
+      it away and re-reads every row.
 
    Colour itself, unchanged in meaning since VB-07 and now driven by the row's
    HEALTH rather than by its position: `--row-accent` is amber where a section
    has aged past its clock, green where it is finished and current, the panel's
    primary where the interview is standing, and plain ink where it is merely
    part-done or untouched. That is VB-33's "a colour indicating incomplete or
-   stale", said with the palette the pills already use so a section that is due
-   in the drawer is due in the same colour on Home. */
+   stale", said with the palette Home's own badges use so a section that is due
+   in the drawer is due in the same colour on Home. V2.0 VB-55 makes the amber
+   one a redundancy rather than the signal: see the dashed ring on a due
+   section's orb below. */
 
 .filetree {
   font-family: var(--font-sans);
@@ -299,11 +302,10 @@
    is a ring either way and the instruction survives the animation being removed
    (docs/GUARDRAILS.md).
 
-   The ring is `--row-accent`, which on a `here` row is the panel's primary —
-   the same colour the pill beside it wears for the same state. The globe's own
-   halo is its mint `--globe-ring`, which is right on a near-black field and
-   invisible on this one; what the two views share is the SHAPE, which is the
-   part that carries the meaning. */
+   The ring is `--row-accent`, which on a `here` row is the panel's primary.
+   The globe's own halo is its mint `--globe-ring`, which is right on a
+   near-black field and invisible on this one; what the two views share is the
+   SHAPE, which is the part that carries the meaning. */
 .filetree-glyph[data-life='live'] {
   box-shadow:
     inset 0 0 0 1px var(--row-accent),
@@ -338,6 +340,42 @@
   }
 }
 
+/* ── The orb of a section that has aged past its clock ────────────────────
+   V2.0 VB-55. The status pill left the row, and `due` is the ONE state it was
+   carrying that nothing else on the row drew: a due section and a done one are
+   both finished, both lit, both at 100%, and with the pill gone the only thing
+   left between them was this variable — amber against green. Colour alone,
+   which docs/GUARDRAILS.md forbids outright.
+
+   VB-55's own instruction is that the fix is a stronger left marker rather than
+   the pill coming back, so the marker says it: a DASHED RING around the orb.
+   Three rings, three meanings, no two alike with every hue stripped out —
+
+     live  a solid three-band ring (above), plus the pulse travelling out of it.
+     due   one dashed hairline, still, around a FILLED orb with a tick in it.
+     dim   dashed on the orb's OWN EDGE, around nothing, with no mark inside.
+
+   `::after` is free here for exactly the reason the shape is unambiguous: the
+   live orb owns that pseudo-element and a section cannot be live and due at
+   once (`sectionHealth.ts` awards `here` first, `sectionLife.ts` reads it).
+
+   STILL, NEVER ANIMATED. This is a state, not an event, and V1.9 has spent the
+   month taking perpetual motion off this screen.
+
+   `--row-accent` is `--amber` here (6.33:1 on the canvas) and `--dock-due` on
+   the drawer's field, which is where the List actually renders (9.16:1 —
+   `--amber-line` on `--globe-field`, held to its floor in
+   core/drawer/chrome.test.ts). Both clear the 3:1 WCAG 1.4.11 asks of a
+   graphic that carries meaning, which this one now does on its own. */
+.filetree-row[data-health='due'] .filetree-glyph::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: var(--r-pill);
+  border: 1px dashed var(--row-accent);
+  pointer-events: none;
+}
+
 /* The state word, for assistive tech only. Standard sr-only, same values as
    Flow.css's `.flow-field-sr-label .field-label`. `.filetree-sr` is the same
    rule under a name that is not about state — V1.6 VB-33 needed a second
@@ -358,7 +396,7 @@
 }
 
 /* V1.3 VB-19 — everything to the right of the marker: the name with its meta
-   line under it, and the status pill pinned to the right of both.
+   line under it.
 
    THE NAME AND THE META SHARE ONE 44px BOX rather than stacking two. The
    navigate control has to clear 44x44 whatever is in it (docs/GUARDRAILS.md),
@@ -368,72 +406,33 @@
    line is still under 44, so a row that reports its health is exactly as tall
    as one that has nothing to report.
 
-   ── V1.6 VB-33: A GRID, SO THE TWO LINES CAN BE DIFFERENT WIDTHS ─────────
-   VB-19 laid this out as a flex row — control, then pill — which gave BOTH
-   lines inside the control the same narrow column, because the pill's width
-   came off the end of each of them. That was affordable while the meta line
-   was "8 of 8 · answered 7 months ago"; VB-33 adds the percentage to it, and
-   at 400px the widest real row ("29 of 29 · answered 11 months ago", a file
-   with five roles in it, written a year ago) then missed by two pixels.
-
-   The fix is not a smaller font. The pill only ever needs the NAME's line —
-   the reference puts it there too, hard right of the title — so the control
-   takes the full width and the pill overlaps its top right corner. The name
-   reserves the pill's room (`--pill-reserve`) and the meta line does not,
-   which hands the meta line the pill's width back: about seventy pixels, or
-   the difference between two pixels of headroom and a hundred.
-
-   Two consequences, both handled:
-     · The pill now sits over the control, so it takes `pointer-events: none`
-       — otherwise a strip of row that highlights on hover would swallow the
-       click that the highlight promised.
-     · The pill is aligned to the NAME's line rather than to the middle of the
-       row, which is what keeps it clear of the meta line underneath.
-       `.has-meta` rather than `:has()`, because the component already knows
-       which rows have a meta line and a computed class cannot get it wrong.
-   `tests/e2e/file-accordion.spec.ts` measures both — that the pill's box ends
-   above the meta line's, and that the meta line is never truncated. */
+   ── V2.0 VB-55: ONE CHILD AGAIN, SO IT IS A FLEX LINE AGAIN ──────────────
+   VB-19 laid this out as a flex row (control, then pill) and VB-33 made it a
+   two-column grid so the pill could overlap the control's top right corner and
+   hand the meta line its width back. With the pill gone there is exactly one
+   child here — the row's control, in either its button or its span form — so
+   the grid, its `--pill-reserve` and the explicit grid areas all go with it.
+   The box it hands that child is identical to the one the grid did: full
+   width, at least 44px tall, centred. `tests/e2e/file-accordion.spec.ts`
+   measures the meta line is never truncated, and section-health.spec.ts that
+   every row is still exactly 44px. */
 .filetree-main {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  display: flex;
   align-items: center;
   flex: 1;
   min-width: 0;
   min-height: var(--target-min);
-
-  /* The room the name leaves for the pill on its own line. Bigger than the
-     widest pill the five states produce ("[ ] Not yet"); the assertion that it
-     really is bigger lives in tests/e2e/section-health.spec.ts, which measures
-     the longest real section name ending before its pill begins. */
-  --pill-reserve: 72px;
-}
-
-.filetree-main > .filetree-nav,
-.filetree-main > .filetree-static {
-  grid-area: 1 / 1 / 2 / 3;
-}
-
-.filetree-main > .sectionhealth-pill {
-  grid-area: 1 / 2 / 2 / 3;
-  pointer-events: none;
-}
-
-/* Centred on the name's line, not on the row: a two-line row puts its name in
-   the top seventeen pixels and its meta line under that, and a pill floating
-   in the middle would sit across both. */
-.filetree-row.has-meta .filetree-main > .sectionhealth-pill {
-  align-self: start;
-  margin-top: 5px;
 }
 
 /* ── The meta line ────────────────────────────────────────────────────────
    V1.8 VB-46: "Per row, bundle **X of Y**, **%**, and the status pairing at the
    **right end** of the row."
 
-   So the right end of a row is one column of three facts: the pill on the
-   name's line, and the count and the percentage directly under it. What is left
-   at the LEFT of the meta line is the one clause the bundle cannot carry —
-   what was passed on, or how long ago this was written.
+   So the right end of a row is the count and the percentage beside it. (VB-46
+   bundled a third thing there, the status pill on the name's line above them;
+   V2.0 VB-55 removes it and leaves the two figures.) What is left at the LEFT
+   of the meta line is the one clause the bundle cannot carry — what was passed
+   on, or how long ago this was written.
 
    The percentage is ONE REAL RATIO of the count printed beside it, not a
    score: see the long note over `sectionCompletionPercent` in
@@ -507,8 +506,8 @@
    The rule is `core/freshness/sectionLife.ts` and the row wears its answer as
    `data-life`, so the greying is stated once for the whole row instead of five
    times for its parts. It is a REDUNDANCY, never the signal: the orb's fill and
-   mark, the pill's word and glyph and the printed "0 of 13" all say the same
-   thing without any colour at all. */
+   mark, its hidden word and the printed "0 of 13" all say the same thing
+   without any colour at all. */
 .filetree-row[data-life='dim'] {
   --row-accent: var(--ink-2);
   --row-accent-tint: var(--sunken);
@@ -563,19 +562,18 @@
 
 /* The section's name is the loud thing on the row (VB-33's "modern and sleek"
    register). Neutral ink at every state, because the state is already carried
-   by the marker, the pill and the cursor — a name that changes colour as well
-   would be a fourth telling of the same fact and would stop the list reading
-   as one object. */
+   by the marker — a name that changes colour as well would be a second telling
+   of the same fact and would stop the list reading as one object. */
 .filetree-label {
   display: block;
-  /* The pill's room, left on the NAME's line only — see `.filetree-main`.
-     Reserved as a MAX-WIDTH over a box that hugs its text, not as padding on a
-     box that fills the line: a name whose box ran on under the pill would make
-     "the name ends before the pill starts" unmeasurable, and that measurement
-     is the one that proves the reserve is big enough
-     (tests/e2e/section-health.spec.ts). */
+  /* V2.0 VB-55 gave this line back the seventy pixels the pill was reserving
+     (`--pill-reserve`, deleted with it), so the longest real section name now
+     has the whole row. Still a box that hugs its text rather than one that
+     fills the line: the hover underline on the drawer's field is drawn on this
+     element, and a box running the row's full width would underline the empty
+     part of it too (FileDrawer.css). */
   align-self: flex-start;
-  max-width: calc(100% - var(--pill-reserve, 0px));
+  max-width: 100%;
   font-size: 13px;
   font-weight: 650;
   line-height: 1.3;
@@ -612,7 +610,7 @@
 
 /* ── The disclosure, at the far edge ──────────────────────────────────────
    44x44 whatever is drawn in it (docs/GUARDRAILS.md), and the spacer keeps a
-   childless row's pill in the same column as one that has a chevron. */
+   childless row's name ending in the same column as one that has a chevron. */
 .filetree-toggle,
 .filetree-toggle-spacer {
   flex: none;
@@ -742,36 +740,14 @@
   color: var(--ink-2);
 }
 
-/* A slow blinking terminal cursor on the section being written — ported
-   straight from the source, including the reasoning: "making the file look
-   active in a way that feels familiar," i.e. a real cursor blip, not a glow.
-   steps(1) snaps on and off; a real terminal cursor does not ease. */
-.filetree-cursor {
-  display: inline-block;
-  margin-left: 3px;
-  color: var(--row-accent);
-  animation: filetreeBlink 2.2s steps(1) infinite;
-}
+/* V2.0 VB-56 — THE BLINKING CURSOR WAS HERE.
+   `.filetree-cursor`, its `filetreeBlink` keyframes and its reduced-motion
+   still are gone together, rather than left as rules nothing renders. What the
+   cursor was saying — "this is the section being written" — is said by the
+   caret and the ring on the row's own orb above, and out loud by the row's
+   hidden state word. See components/FileTree.tsx's VB-56 note. */
 
-@keyframes filetreeBlink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
-}
-
-/* Still, but still there: the cursor keeps marking the active row, it just
-   stops blinking. The instruction survives the animation being removed, which
-   is what docs/GUARDRAILS.md actually asks for. */
 @media (prefers-reduced-motion: reduce) {
-  .filetree-cursor {
-    animation: none;
-    opacity: 1;
-  }
   .filetree-chevron,
   .filetree-glyph {
     transition: none;

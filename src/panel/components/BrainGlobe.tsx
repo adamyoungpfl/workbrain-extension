@@ -3184,10 +3184,57 @@ export function BrainGlobe({
         the same time as it: the two are rungs of one ladder, and the one being
         offered is always the next step out from where you are. Escape does the
         same thing, in the same order, for anyone who never reaches for it.
+
+        ── V2.0 VB-59 — A MARK INSTEAD OF A SENTENCE ─────────────────────────
+
+        "Replace the 'Back to your work brain' chip with an icon or visual cue.
+        Keep a real accessible name on it — an icon-only control still needs
+        one, and it still needs 44×44."
+
+        So the chip becomes a 44×44 disc with the panel's own back chevron in
+        it, and THREE THINGS ARE DELIBERATELY UNCHANGED:
+
+        · THE NAME. `aria-label={S.workBrainBack}` — the same string, word for
+          word, not a shorter one invented for a smaller control. An icon-only
+          button whose name is "Back" would be the third different way this one
+          move is worded, after the trail's `Work brain` rung and this.
+        · THE TARGET. 44×44 exactly, which the chip cleared by being tall and
+          wide; a disc has to be given the width the words used to supply.
+        · THE CHEVRON ITSELF. `M15 5 8 12l7 7` is components/NavButton.tsx's
+          back chevron, the mark the interview's own Back button draws. Drawn
+          rather than typed, for the reason components/DeepDive.tsx documents:
+          `◂` renders as an all-but-invisible dot in this panel's font stack.
+
+        WHY LOSING THE WORDS COSTS NOTHING HERE. V1.9 VB-52 put the trail
+        directly above this stage, and its first rung is the word `Work brain`,
+        pressable, going to exactly the same place through exactly the same
+        function (`pullBack`, core/globe/workBrain.ts). The sentence is still on
+        screen; what went is the second copy of it, printed over the picture.
       */}
       {workEnabled && tierShown === 'file' && !inside && (
-        <button type="button" className="brainglobe-back is-out" onClick={goWork}>
-          {S.workBrainBack}
+        <button
+          type="button"
+          className="brainglobe-back is-out"
+          aria-label={S.workBrainBack}
+          onClick={goWork}
+        >
+          <svg
+            className="brainglobe-back-chevron"
+            viewBox="0 0 24 24"
+            width="18"
+            height="18"
+            aria-hidden="true"
+            focusable="false"
+          >
+            <path
+              d="M15 5 8 12l7 7"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.4"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
         </button>
       )}
 

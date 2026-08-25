@@ -518,13 +518,16 @@ test('every control is measured against the pixel really painted behind it (VB-5
   }
 
   // The things in the list that are not controls but carry the file's state —
-  // the count, the percentage, the section name and the health pill. Removing
-  // the light pane moved all four onto the field, so all four are read there.
+  // the count, the percentage and the section name. Removing the light pane
+  // moved them onto the field, so they are read there. (A fourth stood here
+  // until V2.0 VB-55: the health pill, which is no longer drawn on a row at
+  // all. Its entry is deleted rather than left to be skipped by the
+  // zero-count guard below, which would report a pass for a thing nobody
+  // measured.)
   const readings: { what: string; ink: string; box: Locator }[] = [
     { what: 'the section name', ink: '.filetree-label', box: page.locator('.filetree-row').first() },
     { what: 'the meta count', ink: '.filetree-count', box: page.locator('.filetree-row').first() },
     { what: 'the percentage', ink: '.filetree-percent', box: page.locator('.filetree-row').first() },
-    { what: 'the health pill', ink: '.sectionhealth-pill', box: page.locator('.filetree-row').first() },
     { what: 'the preview note', ink: '.filepreview-note', box: page.locator('.filepreview') },
   ];
   for (const reading of readings) {

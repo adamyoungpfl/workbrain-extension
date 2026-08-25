@@ -472,7 +472,8 @@
    --ink 2.4:1, --ink-2 2.84:1, --primary 2.90:1, --green 3.16:1. */
 
 /* The row's three state accents. `--row-accent` is FileTree.css's own variable
-   — the marker, the percentage and the terminal cursor all read it — so
+   — the marker, the percentage and (V2.0 VB-55) the due section's ring all
+   read it; V2.0 VB-56 took the terminal cursor that read it too — so
    translating the row is four declarations rather than a rule per user.
    `--row-accent-tint` was a pale fill behind the live orb's ring; on one
    surface it becomes the surface, which turns the middle band of that ring into
@@ -616,52 +617,23 @@
   background: none;
 }
 
-/* ── The health pills ────────────────────────────────────────────────────
-   `.badge`'s three tones are a pale fill with dark ink — `--green-tint` under
-   `--green`, and so on. Both halves of that fail here: the fill is a light chip
-   floating on a dark panel, which is precisely the "loudest thing on the
-   drawer" VB-22 removed words to avoid, and the ink is 3.16:1 at best.
+/* ── The health pills were here ───────────────────────────────────────────
+   V1.9 translated `.badge`'s three pale-fill tones into hollow pills drawn in
+   the dock's own accents, because a light chip floating on a dark panel is
+   precisely the "loudest thing on the drawer" VB-22 removed words to avoid.
 
-   So on the field a pill is HOLLOW and drawn in its own accent — the same
-   treatment the fifth state already had, which is what makes this a
-   translation rather than a new idea. The fifth state keeps its DASHED edge, so
-   "not yet" is still told apart from the other four by shape alone, and every
-   pill still carries its word and its ASCII glyph before colour is considered
-   at all (tests/e2e/section-health.spec.ts strips the hue and re-reads them).
+   V2.0 VB-55 takes the pill off the row altogether, so the translation has
+   nothing left to translate: `HealthPill` now renders only on `FileView`, an
+   ordinary light surface that never enters this file's scope. The rules are
+   deleted rather than kept against a class that no longer appears in the
+   drawer — a stylesheet full of rules for markup that is not there is how the
+   next person learns to distrust all of it.
 
-   1px of border where there was none, so the padding gives it back and the row
-   of pills stays the height it was. */
-.filedrawer .sectionhealth-pill {
-  background: none;
-  border: 1px solid var(--dock-ink-quiet);
-  color: var(--dock-ink-quiet);
-  padding: 1px 6px;
-}
-/* `background: none` is repeated in all three, and that is not sloppiness.
-   `.badge.fresh` in components/FileRow.css is (0,2,0) and so is
-   `.filedrawer .sectionhealth-pill` above it — a tie, settled by whichever
-   stylesheet the bundler happens to emit second. Naming the ground inside each
-   tone makes these (0,3,0) and takes the outcome away from file order. */
-.filedrawer .sectionhealth-pill.fresh {
-  background: none;
-  border-color: var(--dock-done);
-  color: var(--dock-done);
-}
-.filedrawer .sectionhealth-pill.due {
-  background: none;
-  border-color: var(--dock-due);
-  color: var(--dock-due);
-}
-.filedrawer .sectionhealth-pill.next {
-  background: none;
-  border-color: var(--dock-here);
-  color: var(--dock-here);
-}
-.filedrawer .sectionhealth-pill.is-hollow {
-  border-style: dashed;
-  border-color: var(--dock-edge);
-  color: var(--dock-ink-quiet);
-}
+   What replaced the one thing the pill was saying alone — that a section has
+   aged past its clock — is a dashed ring on that section's ORB, and it needs
+   nothing here: it is drawn in `--row-accent`, which the four declarations at
+   the top of this block already map onto the dock's palette
+   (components/FileTree.css). */
 
 /* The sticky summary. Still opaque, and still for the same reason — the tree
    scrolls under it — but the colour it is opaque IN is now the field, so it is

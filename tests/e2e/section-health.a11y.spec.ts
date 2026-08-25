@@ -80,7 +80,7 @@ async function openList(context: BrowserContext, sw: Worker, id: string): Promis
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
-  await page.waitForSelector('.sectionhealth-pill');
+  await page.waitForSelector('.filetree-row[data-health]');
   const handle = page.locator('.filedrawer-handle');
   await handle.focus();
   await page.keyboard.press('End');
@@ -105,13 +105,12 @@ test('axe finds no violations with every health state on screen (VB-19)', async 
   await context.close();
 });
 
-test('every pill and every detail line clears 4.5:1 against what it sits on (VB-19)', async () => {
+test('every state word and every detail line clears 4.5:1 against what it sits on (VB-19)', async () => {
   const { context, sw, id } = await launch();
   const page = await openList(context, sw, id);
 
   // axe's own contrast rule, aimed squarely at the new text. Scoped to the
-  // pills and detail lines so a violation elsewhere cannot be mistaken for a
-  // pass here — and asserted to have really run, since an empty result from a
+  // drawer so a violation elsewhere cannot be mistaken for a pass here — and asserted to have really run, since an empty result from a
   // rule that never applied would be a silent pass.
   const results = await new AxeBuilder({ page })
     .include('.filedrawer')
@@ -123,14 +122,23 @@ test('every pill and every detail line clears 4.5:1 against what it sits on (VB-
   await context.close();
 });
 
-test('the health pills add no control, no tab stop and no live region (VB-19)', async () => {
+test('the health a row reports adds no control, no tab stop and no live region (VB-19)', async () => {
   const { context, sw, id } = await launch();
   const page = await openList(context, sw, id);
 
   // Status text, not controls: nothing here may be focusable, and nothing may
   // announce itself while somebody is trying to answer a question
   // (docs/GUARDRAILS.md — nothing steals focus, and no nudges).
-  await expect(page.locator('.sectionhealth-pill [tabindex], .sectionhealth-pill button, .sectionhealth-pill a')).toHaveCount(0);
+  //
+  // V2.0 VB-55 removed the pill this used to name, so the rule runs over what
+  // replaced it: the row's figures, its hidden words, and the ORB that carries
+  // its state. The only controls a row may hold are its own two — the navigate
+  // button and the disclosure — and both are asserted elsewhere.
+  await expect(page.locator('.sectionhealth-pill')).toHaveCount(0);
+  await expect(
+    page.locator('.filetree-counts [tabindex], .filetree-counts button, .filetree-counts a'),
+  ).toHaveCount(0);
+  await expect(page.locator('.filetree-glyph [tabindex], .filetree-glyph button, .filetree-glyph a')).toHaveCount(0);
   // V1.8 VB-47 replaced the counts strip above the list with a file-type
   // toggle and V1.9 VB-52 moved that toggle into the breadcrumb, so the "no
   // live region in the drawer" rule now runs over the trail: a switcher whose

@@ -184,10 +184,20 @@ describe('FileTree', () => {
     }
   });
 
-  it('gives the section being written a terminal cursor, and nothing else one', () => {
+  /**
+   * V2.0 VB-56 — the blinking terminal cursor after the live section's name is
+   * gone. This is the test that used to require one, inverted: the section
+   * being written is still the only live row, and it still says so three ways
+   * (its `data-life`, the caret in its orb and the word it prints out loud),
+   * none of which is a character blinking beside its name.
+   */
+  it('gives the section being written no terminal cursor — the orb carries it', () => {
     const { container } = renderTree(makeAnswers({ values: { later: 'x' } }), 'name', 'sec1');
-    expect(container.querySelectorAll('.filetree-cursor')).toHaveLength(1);
-    expect(rowFor(container, 'sec1').querySelector('.filetree-cursor')).not.toBe(null);
+    expect(container.querySelectorAll('.filetree-cursor')).toHaveLength(0);
+    const live = rowFor(container, 'sec1');
+    expect(live.dataset.life).toBe('live');
+    expect(live.querySelector('.filetree-label')!.textContent).toBe('1. About Me');
+    expect(live.querySelector('.filetree-srstate')!.textContent).toBe(S.fileTreeStateCurrent);
   });
 
   it('makes a written or in-progress row real navigation', () => {
@@ -319,12 +329,43 @@ describe('FileTree — section health (VB-19)', () => {
   const YEAR_AGO = new Date(Date.now() - 800 * 24 * 60 * 60 * 1000).toISOString();
   const TODAY = new Date().toISOString();
 
-  it('gives every section row a health pill', () => {
+  /**
+   * V2.0 VB-55 — the pill is gone from every row and the health it reported is
+   * not: `data-health` is what the row's accent, its due ring and every test
+   * below read, and it is still derived per row.
+   */
+  it('gives every section row its own health, and no pill', () => {
     const { container } = renderTree(makeAnswers(), null, null);
     for (const row of rows(container)) {
       expect(row.dataset.health, row.dataset.nodeId).toBeDefined();
-      expect(row.querySelector('.sectionhealth-pill'), row.dataset.nodeId).not.toBe(null);
+      expect(row.querySelector('.sectionhealth-pill'), row.dataset.nodeId).toBe(null);
     }
+  });
+
+  /**
+   * V2.0 VB-55 — `due` is the one state the orb's three-way vocabulary cannot
+   * draw (a due section and a done one are both finished, both lit, both at
+   * 100%), so the word the pill used to print is kept as a hidden one. Without
+   * it a screen reader would get less than a greyscale screen does, which is
+   * the wrong side of that trade.
+   */
+  it('says "due" out loud on an aged section, and on no other', () => {
+    const stale = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: YEAR_AGO } }), 'name', 'sec1');
+    const due = rowFor(stale.container, 'sec2');
+    expect(due.dataset.health).toBe('due');
+    expect(due.querySelector('[data-health-word="due"]')?.textContent).toBe(S.sectionStateDue);
+    // Every other row on screen — none of them due — says no such thing.
+    for (const row of rows(stale.container)) {
+      if (row.dataset.health === 'due') continue;
+      expect(row.querySelector('[data-health-word]'), row.dataset.nodeId).toBe(null);
+    }
+    stale.unmount();
+
+    const fresh = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: TODAY } }), 'name', 'sec1');
+    const done = rowFor(fresh.container, 'sec2');
+    expect(done.dataset.health).toBe('done');
+    expect(done.querySelector('[data-health-word]')).toBe(null);
+    fresh.unmount();
   });
 
   it('reports the section being answered as here, and an empty one as not yet', () => {
@@ -432,10 +473,11 @@ describe('FileTree — section health (VB-19)', () => {
   it('carries no counts strip of its own — every count is on a row', () => {
     const { container } = renderTree(makeAnswers({ values: { later: 'x' }, answeredAt: { later: YEAR_AGO } }), 'name', 'sec1');
     expect(container.querySelectorAll('.sectionhealth-summary')).toHaveLength(0);
-    // The pills that remain are the rows' own, one each, never a total.
-    const pills = Array.from(container.querySelectorAll('.sectionhealth-pill')) as HTMLElement[];
-    expect(pills).toHaveLength(rows(container).length);
-    for (const pill of pills) expect(pill.dataset.healthSummary).toBe(undefined);
+    // V2.0 VB-55: and no pills at all now, per row or as a total — the counts
+    // that VB-46 bundled beside them are what the right end of a row is.
+    expect(container.querySelectorAll('.sectionhealth-pill')).toHaveLength(0);
+    expect(container.querySelectorAll('[data-health-summary]')).toHaveLength(0);
+    expect(container.querySelectorAll('.filetree-counts')).toHaveLength(rows(container).length);
   });
 });
 

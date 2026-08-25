@@ -8,8 +8,9 @@ import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 
 /**
- * V1.8 VB-45 + VB-46 — the rows carry the brain's orbs, and the count,
- * percentage and status are bundled at the right end.
+ * V1.8 VB-45 + VB-46 — the rows carry the brain's orbs, and the count and
+ * percentage are bundled at the right end. (VB-46 bundled the status pill
+ * there too; V2.0 VB-55 removed it — the state is the orb's job.)
  *
  * The rules themselves are proved without a browser —
  * src/core/freshness/sectionLife.test.ts for which row is live, and
@@ -22,8 +23,8 @@ import type { Answers } from '../../src/schema/storage.types';
  * - THE ONE THAT MATTERS FOR VB-46: List and Brain agree, node for node, about
  *   what is live. That is what "the same rule drives the Brain visual" means,
  *   and it is the failure a second implementation would produce.
- * - That the bundle really is bundled: count, figure and pill in one column at
- *   the row's right end, inside the row, never over the name.
+ * - That the bundle really is bundled: count and figure in one column at the
+ *   row's right end, inside the row, never over the name.
  * - That the pulse really moves, and really stops for reduced motion.
  *
  * Self-contained launch helpers, per this repo's standalone-spec convention.
@@ -257,7 +258,13 @@ test.describe('VB-46 — one rule, and both views obey it', () => {
     await context.close();
   });
 
-  test('count, figure and status are one column at the right end of the row', async () => {
+  /**
+   * V2.0 VB-55 removed the third thing in this bundle — the status pill — and
+   * kept the count and the percentage, which is what the row's right end is
+   * now. So this measures the two that remain: still bundled, still at the
+   * right end, still clear of the name, still inside a 44px band.
+   */
+  test('count and figure are one column at the right end of the row', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, midInterview());
     const page = await openList(context, id);
@@ -275,15 +282,17 @@ test.describe('VB-46 — one rule, and both views obey it', () => {
           counts: pick('.filetree-counts')!,
           count: pick('.filetree-count')!,
           percent: pick('.filetree-percent')!,
-          pill: pick('.sectionhealth-pill')!,
+          pill: pick('.sectionhealth-pill'),
           height: Math.round(el.getBoundingClientRect().height),
         };
       }),
     );
 
     for (const row of rows) {
-      // BUNDLED: the three sit in one column, right-aligned to each other.
-      expect(Math.abs(row.counts.right - row.pill.right), `${row.id} column ragged`).toBeLessThanOrEqual(2);
+      // No pill anywhere in the bundle any more (VB-55).
+      expect(row.pill, `${row.id} still has a status pill`).toBe(null);
+      // BUNDLED: the two sit in one column, right-aligned to each other.
+      expect(Math.abs(row.counts.right - row.percent.right), `${row.id} column ragged`).toBeLessThanOrEqual(2);
       // AT THE RIGHT END: past the middle of the row, and clear of the name.
       expect(row.counts.left, `${row.id} bundle is not at the right end`).toBeGreaterThan(
         row.row.left + row.row.width / 2,

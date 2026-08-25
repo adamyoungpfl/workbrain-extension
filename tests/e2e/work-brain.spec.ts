@@ -33,6 +33,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * Self-contained launch helpers, per this repo's standalone-spec convention.
  */
 const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const SHOTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../test-results/vb59');
 const PANEL = { width: 400, height: 700 };
 
 async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
@@ -392,6 +393,151 @@ test.describe('VB-48 — nothing below the new tier changed', () => {
     expect(await tier(page)).toBe('file');
     await page.keyboard.press('Escape');
     await expect.poll(() => tier(page)).toBe('work');
+
+    await context.close();
+  });
+});
+
+/**
+ * V2.0 VB-59 — the way out of a file is a mark rather than a sentence.
+ *
+ * "Replace the 'Back to your work brain' chip with an icon or visual cue. Keep
+ * a real accessible name on it — an icon-only control still needs one, and it
+ * still needs 44×44."
+ *
+ * Three things have to be true at once, and an icon-only control is exactly the
+ * shape that quietly loses one of them: it has to be a real 44×44 target, it
+ * has to carry the same name it always did, and it has to ring on the keyboard.
+ * The fourth assertion is the one that says the change happened at all — the
+ * sentence is no longer printed over the picture.
+ */
+test.describe('VB-59 — the work-brain back control is an icon', () => {
+  test('it is a 44px target with the same name, drawn rather than printed', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openMidInterview(context, sw, id);
+    await showBrain(page);
+
+    const back = page.getByRole('button', { name: S.workBrainBack, exact: true }).first();
+    await expect(back).toBeVisible();
+
+    // THE NAME IS UNCHANGED, and it is an `aria-label` rather than text — the
+    // words themselves are no longer on screen.
+    expect((await back.textContent())!.trim()).toBe('');
+    expect(await back.getAttribute('aria-label')).toBe(S.workBrainBack);
+    await expect(page.locator('.brainglobe')).not.toContainText(S.workBrainBack);
+
+    // A MARK IS DRAWN IN IT, and it is hidden from assistive tech: a picture of
+    // the name, never a second one.
+    const chevron = back.locator('.brainglobe-back-chevron');
+    await expect(chevron).toHaveCount(1);
+    await expect(chevron).toHaveAttribute('aria-hidden', 'true');
+    // Really painted, not a zero-size SVG that only looks present in the DOM.
+    const drawn = (await chevron.boundingBox())!;
+    expect(drawn.width).toBeGreaterThanOrEqual(12);
+    expect(drawn.height).toBeGreaterThanOrEqual(12);
+
+    // 44×44 EXACTLY, which is what the words used to buy it (docs/GUARDRAILS.md).
+    const box = (await back.boundingBox())!;
+    expect(box.width).toBeGreaterThanOrEqual(44);
+    expect(box.height).toBeGreaterThanOrEqual(44);
+
+    // AND IT STILL DOES THE MOVE. Same button, same function, same tier.
+    expect(await tier(page)).toBe('file');
+    await back.click();
+    await tierSettled(page, 0);
+    expect(await tier(page)).toBe('work');
+
+    await context.close();
+  });
+
+  test('it rings on the keyboard, and the keyboard can press it', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openMidInterview(context, sw, id);
+    await showBrain(page);
+
+    const back = page.getByRole('button', { name: S.workBrainBack, exact: true }).first();
+    // Reached with the KEYBOARD, because that is what `:focus-visible` is a
+    // question about — a ring measured after a programmatic focus can pass on a
+    // stylesheet that only rings mouse users. Tabbed to from the section node
+    // before it rather than from a counted number of stops: the stage's tab
+    // order is the globe's business and this test is not the place to pin it.
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    for (let i = 0; i < 30; i++) {
+      if (await back.evaluate((el) => el === document.activeElement)) break;
+      await page.keyboard.press('Tab');
+    }
+    await expect(back).toBeFocused();
+    const ring = await back.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return { width: style.outlineWidth, style: style.outlineStyle, visible: element.matches(':focus-visible') };
+    });
+    expect(ring.visible).toBe(true);
+    expect(ring.style).toBe('solid');
+    expect(parseFloat(ring.width)).toBeGreaterThanOrEqual(2);
+
+    await page.keyboard.press('Enter');
+    await tierSettled(page, 0);
+    expect(await tier(page)).toBe('work');
+
+    await context.close();
+  });
+
+  /**
+   * For a person to look at. The assertions above say the control is 44 square,
+   * named and ringed; they cannot say whether a disc in that corner still reads
+   * as the way out of the file, or whether the chevron sits centred in it. The
+   * corner is photographed close enough to see the ink.
+   */
+  test('the disc in the corner, resting and focused — for a person to look at (VB-59)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openMidInterview(context, sw, id);
+    await showBrain(page);
+
+    // The drawer opens all the way, so the stage is the size somebody really
+    // looks at it, and the shot is not of a globe squeezed into a peek.
+    const handle = page.locator('.filedrawer-handle');
+    await handle.focus();
+    await page.keyboard.press('End');
+
+    const back = page.getByRole('button', { name: S.workBrainBack, exact: true }).first();
+    await expect(back).toBeVisible();
+    // The drawer settles over 320ms and the control travels with it, so the
+    // clip is taken from a box that has stopped moving — otherwise the corner
+    // is photographed where the button WAS.
+    await expect
+      .poll(async () => {
+        const first = (await back.boundingBox())!.y;
+        await page.waitForTimeout(80);
+        return Math.round(Math.abs((await back.boundingBox())!.y - first));
+      })
+      .toBe(0);
+    const box = (await back.boundingBox())!;
+    const corner = {
+      x: Math.max(0, box.x - 24),
+      y: Math.max(0, box.y - 24),
+      width: box.width + 48,
+      height: box.height + 48,
+    };
+
+    await page.screenshot({ path: path.join(SHOTS, 'stage.png') });
+    await page.screenshot({ path: path.join(SHOTS, 'corner.png'), clip: corner });
+
+    // Hover BEFORE the keyboard reaches it: a hover shot taken after focusing
+    // is a picture of the focus ring, and the two treatments would be
+    // impossible to tell apart in the one place they are being compared.
+    await back.hover();
+    await page.waitForTimeout(200);
+    await page.screenshot({ path: path.join(SHOTS, 'corner-hover.png'), clip: corner });
+    await page.mouse.move(PANEL.width / 2, PANEL.height / 2);
+
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    for (let i = 0; i < 30; i++) {
+      if (await back.evaluate((el) => el === document.activeElement)) break;
+      await page.keyboard.press('Tab');
+    }
+    await expect(back).toBeFocused();
+    await page.waitForTimeout(150);
+    await page.screenshot({ path: path.join(SHOTS, 'corner-focus.png'), clip: corner });
 
     await context.close();
   });

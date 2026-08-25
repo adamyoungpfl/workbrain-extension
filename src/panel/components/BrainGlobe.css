@@ -613,6 +613,40 @@
   outline-offset: 2px;
 }
 
+/* ── V2.0 VB-59 — the way out of the file is a mark, not a sentence ───────
+   The chip that said "Back to your work brain" becomes a disc with the panel's
+   back chevron in it. It keeps the field, the edge, the hover and the focus
+   ring of the chip above — it is the same control in the same corner, and the
+   two rungs of this ladder must not look like two different products.
+
+   EXACTLY 44 SQUARE. The chip cleared the floor by being 44 tall and as wide as
+   its words; take the words away and the width has to be stated, or an
+   icon-only button collapses to its 18px glyph and its padding. `flex: none` so
+   the stage's own layout cannot shrink it, and the padding goes because the
+   width is now the target rather than the ink.
+
+   The accessible name is on the button (components/BrainGlobe.tsx) and the
+   chevron is `aria-hidden`: it is a picture of the name, never a second one. */
+.brainglobe-back.is-out {
+  flex: none;
+  box-sizing: border-box;
+  width: var(--target-min);
+  height: var(--target-min);
+  padding: 0;
+  justify-content: center;
+}
+
+.brainglobe-back-chevron {
+  display: block;
+  /* CENTRED BY ITS INK, NOT BY ITS BOX. The chevron NavButton.tsx draws runs
+     from x=8 to x=15 in a 24-unit viewBox, so its ink is centred at 11.5 and
+     its box at 12 — at 18px that leaves the mark 0.375px left of the middle of
+     a circle, which is visible on a disc with nothing else in it. 1px of
+     margin on a centred flex item moves it half that back the other way, which
+     lands within an eighth of a pixel of true. */
+  margin-left: 1px;
+}
+
 /* ── V1.8 VB-48 — the work brain, one level above a file ─────────────────── */
 
 /* AN EMPTY FILE IS AN EMPTY SHELL. A file that does not exist yet is an open

@@ -200,8 +200,14 @@ test.describe('VB-33 — a section row says all four things', () => {
       const state = (await row.getAttribute('data-health'))!;
       const expected = health[node.id]!;
 
-      // STATE — always, as a word in the pill, whatever else the row says.
-      await expect(row.locator('.sectionhealth-pill'), node.id).toHaveCount(1);
+      // STATE — V2.0 VB-55 took the pill off the row, so the state is the ORB
+      // at its left edge and nothing at its right end. `data-health` is still
+      // derived per row (it is what the accent and the due ring read), and the
+      // one state the orb's three-way vocabulary cannot draw says itself out
+      // loud instead — see tests/e2e/section-health.spec.ts, which is where
+      // that whole argument is asserted with the colour stripped out.
+      await expect(row.locator('.sectionhealth-pill'), node.id).toHaveCount(0);
+      await expect(row.locator('.filetree-glyph'), node.id).toHaveCount(1);
 
       // COUNT — VB-19's, moved to the bundle at the right end by V1.8 VB-46,
       // and now printed on EVERY row including the ones at zero.
@@ -507,7 +513,7 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
           meta: pick('.filetree-meta'),
           detail: pick('.filetree-detail'),
           percent: pick('.filetree-percent'),
-          pill: pick('.sectionhealth-pill'),
+          orb: pick('.filetree-glyph'),
         };
       }),
     );
@@ -518,9 +524,11 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
       // Losing this halves what the drawer's default peek can show.
       expect(row.height, row.id).toBe(44);
       expect(row.label!.clipped, `${row.id} name clipped`).toBe(false);
-      expect(row.pill!.clipped, `${row.id} pill clipped`).toBe(false);
-      expect(row.pill!.right, `${row.id} pill outside the row`).toBeLessThanOrEqual(row.right + 1);
       expect(row.label!.left, `${row.id} name outside the row`).toBeGreaterThanOrEqual(row.left - 1);
+      // V2.0 VB-55: the row's right end is the two figures, and the ORB at its
+      // left edge is where its state is. The orb's box is still the morph's
+      // landing target, so it is still measured, and it is still inside the row.
+      expect(row.orb!.left, `${row.id} orb outside the row`).toBeGreaterThanOrEqual(row.left - 1);
       if (row.detail) {
         // THE ONE THAT MATTERS AT 400px: the meta line is set to ellipsis so a
         // long one can never push the row out of its band — which means a
@@ -530,14 +538,13 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
         expect(row.percent!.clipped, `${row.id} percentage truncated`).toBe(false);
         // The count ends before the figure starts.
         expect(row.detail.right, `${row.id} count runs into the figure`).toBeLessThanOrEqual(row.percent!.left + 1);
-        // And the pill CLEARS THE META LINE VERTICALLY. The meta line runs the
-        // full width, under the pill's column — that is what buys it the room
-        // the percentage needed (FileTree.css's `.filetree-main`) — so the two
-        // are kept apart by the pill sitting on the name's line, not by the
-        // meta line stopping short. If that ever slips, the count and the
-        // status word print on top of each other.
-        expect(row.pill!.bottom, `${row.id} pill sits across the meta line`).toBeLessThanOrEqual(row.meta!.top + 1);
-        expect(row.pill!.right, `${row.id} pill outside the row`).toBeLessThanOrEqual(row.right + 1);
+        // And the NAME clears the meta line vertically: the two lines share
+        // one 44px control (FileTree.css's `.filetree-main`) rather than
+        // stacking two, and if that ever slips they print on top of each other.
+        // V2.0 VB-55 removed the pill this used to measure the same way; the
+        // meta line inherited its column, which is why it now runs to the
+        // row's own right edge.
+        expect(row.label!.bottom, `${row.id} name sits across the meta line`).toBeLessThanOrEqual(row.meta!.top + 1);
         expect(row.meta!.right, `${row.id} meta line outside the row`).toBeLessThanOrEqual(row.right + 1);
       }
     }

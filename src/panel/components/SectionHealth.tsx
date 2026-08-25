@@ -28,16 +28,26 @@ import './SectionHealth.css';
  * Colour is the fourth signal and the only one that can be removed. The
  * greyscale pass in tests/e2e/section-health.spec.ts is what keeps that true.
  *
+ * **V2.0 VB-55 TOOK THE PILL OFF THE DRAWER'S LIST**, where the row's own orb
+ * carries state and the count and percentage sit at its right end. `HealthPill`
+ * is unchanged and still renders on `FileView` (V1.7), whose rows have neither
+ * an orb nor a right-hand column — so this is now that surface's component
+ * rather than one shared by two. The five words and five glyphs stay exactly as
+ * they are: they are the vocabulary Home and the file view share, and VB-55 is
+ * about one surface's rows, not about the language.
+ *
  * The glyphs are deliberately ASCII, for the reason FileTree.tsx already
  * documents: `▸` / `▾` render as an all-but-invisible dot in this panel's
  * font stack, which would put the whole signal back on colour. They are also
  * bracketed, matching the tree's own `[ ]` / `[x]` / `[>]` markers — the same
  * family of marks, extended, rather than a new set beside them.
  *
- * Not re-exported from `components/index.ts`, deliberately: these three are
- * `FileTree`'s own parts rather than a surface anybody else composes with, and
+ * Not re-exported from `components/index.ts`, deliberately: these are the file
+ * views' own parts rather than a surface anybody else composes with, and
  * `FileDrawer.tsx` already sets the precedent of importing such a partner
- * directly (`sectionNodeGradient` from `BrainGlobe`).
+ * directly (`sectionNodeGradient` from `BrainGlobe`). `FileTree` still imports
+ * `healthFreshness` from here for the same reason — one wording of one clause,
+ * for both surfaces.
  *
  * **STATUS, NOT ACHIEVEMENT.** Every word here says what a section *is*.
  * Nothing counts a run, awards anything, or congratulates: docs/GUARDRAILS.md
