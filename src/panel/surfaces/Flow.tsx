@@ -66,7 +66,13 @@ import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scori
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
 import { NARRATION_COPY } from '../voice/copy';
 import { useNarration } from '../voice/useNarration';
-import { useFollowUpsPref, useNarratorPref } from '../voice/prefs';
+import { useNarratorPref } from '../voice/prefs';
+import {
+  ROTATION_RUNNING,
+  stopRotation,
+  stoppedBy as reasonFor,
+  type RotationInteraction,
+} from '../../core/motion/rotation';
 import { speak, stopSpeaking } from '../voice/speech';
 import type { AnswerValue, DeepDiveEntry, FileOutlineNode, FlowContext, Module, Option, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
@@ -350,24 +356,28 @@ function AnswerArea({ children }: { children: ReactNode }) {
  * with the entry that just opened, or `null` when the open one closes.
  *
  * V1.8 VB-42: the follow-ups are one rotating text link rather than a row of
- * tags, so this is where the two things the rotation needs from outside the
- * component are joined up — the person's standing answer to "stop it" (a
- * stated preference, so the next question is already still) and whether they
- * have started answering this one. The rotation itself, its five seconds and
- * every reason it stops live in `core/motion/rotation.ts` and
- * `components/DeepDive.tsx`; the primary question and the status bar above are
- * untouched by any of it, which is docs/V1.8-REFINEMENT.md's DECISIONS 3 in
- * one sentence. */
+ * tags. The rotation itself, its five seconds and every reason it stops live
+ * in `core/motion/rotation.ts` and `components/DeepDive.tsx`; the primary
+ * question and the status bar above are untouched by any of it, which is
+ * docs/V1.8-REFINEMENT.md's DECISIONS 3 in one sentence.
+ *
+ * V2.0 VB-57: the one thing the rotation still needs from outside itself is
+ * whether the person has touched the rest of the question — the answer field,
+ * rephrase, blank space beside the heading. `stoppedBy` carries it, and the
+ * question area's own capture handlers are what produce it (see `stopHere`
+ * below). There is no longer a preference to read: "Show all" is gone, so
+ * `mode` is always the rotating presentation and `core/motion/rotation.ts`
+ * decides on its own when that collapses back to the list (one follow-up,
+ * or reduced motion). */
 function QuestionHelp({
   step,
   onDisclose,
-  answering = false,
+  stoppedBy = null,
 }: {
   step: Step;
   onDisclose?: ((entry: DeepDiveEntry | null) => void) | undefined;
-  answering?: boolean;
+  stoppedBy?: RotationInteraction | null;
 }) {
-  const { mode, showAll } = useFollowUpsPref();
   return (
     <>
       {showsHint(step) && <p className="flow-hint">{step.hint}</p>}
@@ -376,9 +386,8 @@ function QuestionHelp({
           idPrefix={`flow-${step.id}`}
           entries={step.deepDive}
           onDisclose={onDisclose}
-          mode={mode === 'all' ? 'all' : 'one'}
-          onShowAll={showAll}
-          answering={answering}
+          mode="one"
+          stoppedBy={stoppedBy}
         />
       )}
     </>
@@ -862,26 +871,60 @@ function StepView({
   });
   const [rephraseIndex, setRephraseIndex] = useState(0);
   /**
-   * V1.8 VB-42 — they have started answering this question.
+   * V1.8 VB-42, rewritten by V2.0 VB-57 — has the person touched this question
+   * yet, and what did they do first.
    *
-   * The one signal the rotating follow-ups need from outside themselves, and
-   * Adam's own rule for it: the list renews "until the person clicks Next or
-   * starts typing an answer". Next is not a signal, because Next unmounts the
-   * whole question.
+   * V1.8 tracked one gesture here, "they have started answering", because that
+   * was Adam's rule for the follow-up rotation: the list renews "until the
+   * person clicks Next or starts typing an answer". docs/V2.0-REFINEMENT.md
+   * FLAG 1 widens it to **any** interaction and makes it permanent, which is
+   * what allows the visible "Show all" to be deleted rather than replaced. So
+   * this is no longer a boolean about typing; it is the terminal state from
+   * `core/motion/rotation.ts`, and the widening happens by wiring three
+   * capture handlers to the question area rather than by adding four more
+   * booleans.
    *
-   * Set by the act, not derived from the draft: a question they answered
-   * earlier arrives with its draft already full, and treating that as "they
-   * are typing right now" would silently kill the rotation on every question
-   * anybody ever goes Back to. Picking an option counts too — it is answering,
-   * and it is the same reason.
+   * Still set by the act, never derived from the draft: a question they
+   * answered earlier arrives with its draft already full, and treating that as
+   * "they are touching it right now" would silently kill the rotation on every
+   * question anybody ever goes Back to.
+   *
+   * Reset by the per-position remount, like every other draft on this screen —
+   * which is exactly the scope FLAG 1 asks for: "once stopped it stays stopped
+   * **for that question**".
    */
-  const [answering, setAnswering] = useState(false);
+  const [rotation, setRotation] = useState(ROTATION_RUNNING);
+  function stopRotating(by: RotationInteraction) {
+    setRotation((current) => stopRotation(current, by));
+  }
+  /**
+   * The three handlers that make "any interaction" broad, spread onto the
+   * question area's own element.
+   *
+   * Capture, so nothing can swallow the signal on its way up, and on the
+   * surface's root rather than on the follow-ups, because FLAG 1's list is
+   * mostly things that happen elsewhere: a click on blank space beside the
+   * heading, a keypress in the answer field, focus arriving from a Tab.
+   * Rephrase and the pills need no wiring of their own — pressing either is a
+   * click, and reaching either from the keyboard is focus and then a key.
+   *
+   * They are read-only listeners: nothing here preventsDefault, stops
+   * propagation, or moves focus, so no control on the screen behaves any
+   * differently for having them above it.
+   */
+  const stopHere = {
+    onClickCapture: () => stopRotating('click'),
+    onKeyDownCapture: () => stopRotating('key'),
+    onFocusCapture: () => stopRotating('focus'),
+  };
   function answerText(next: string) {
-    setAnswering(true);
+    // Typing, named as itself — the reason FLAG 1 inherited from VB-42, and
+    // the one that fires for dictation and paste as well as for a keystroke.
+    stopRotating('typing');
     setDraftText(next);
   }
   function answerValues(next: string[]) {
-    setAnswering(true);
+    stopRotating('typing');
     setDraftValues(next);
   }
   // V1.1 VB-08: how many times "give me an example" has been pressed on this
@@ -1310,6 +1353,7 @@ function StepView({
           className="flow"
           data-position="reflect"
           data-step-id={step.id}
+          {...stopHere}
           onSubmit={(e) => {
             e.preventDefault();
             submitRedo();
@@ -1318,7 +1362,7 @@ function StepView({
           {errorBanner}
           {topSection}
           <TypedHeading className="flow-q" text={questionText} />
-          <QuestionHelp step={step} onDisclose={narrateFollowUp} />
+          <QuestionHelp step={step} onDisclose={narrateFollowUp} stoppedBy={reasonFor(rotation)} />
           <AnswerArea>
             <div className="flow-field-sr-label">
               <Field
@@ -1406,6 +1450,10 @@ function StepView({
    * `variant`, `className` and the rest are constants at this call site.
    */
   function cycleRephrase(button: HTMLButtonElement) {
+    // FLAG 1 names rephrase on its own, so it is wired on its own: a new
+    // wording is a new sentence to read, and nothing beside it should be
+    // changing while they read it.
+    stopRotating('rephrase');
     setRephraseIndex((i) => (i + 1) % (rephrasings.length + 1));
     restartRephraseCue(button);
   }
@@ -1459,6 +1507,7 @@ function StepView({
       className="flow"
       data-position="step"
       data-step-id={step.id}
+      {...stopHere}
       onSubmit={(e) => {
         e.preventDefault();
         handleNext();
@@ -1500,7 +1549,7 @@ function StepView({
           )}
         </div>
       )}
-      <QuestionHelp step={step} onDisclose={narrateFollowUp} answering={answering} />
+      <QuestionHelp step={step} onDisclose={narrateFollowUp} stoppedBy={reasonFor(rotation)} />
 
       {/* V1.3 VB-17: every kind's controls in one band, so the room the
           question surface now fills has somewhere deliberate to put its

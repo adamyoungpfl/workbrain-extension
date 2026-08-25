@@ -52,7 +52,6 @@ describe('getSync / setSync', () => {
       reducedMotion: 'system' as const,
       handoff: 'manual' as const,
       packUrls: [],
-      followUps: 'rotate' as const,
       dictationHint: true,
     };
     await setSync('wb:prefs', prefs, backend);

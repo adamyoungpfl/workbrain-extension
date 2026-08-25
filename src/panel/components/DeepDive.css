@@ -316,9 +316,6 @@
 .deepdive.is-one {
   flex-direction: column;
   align-items: flex-start;
-  /* The base row-gap, unchanged and for the same reason: the link's hit target
-     overhangs its text by 8px top and bottom, so 16px is what keeps it clear
-     of the stop control's own 44px box below it. */
 }
 
 /* No bubble in this mode: a border and a fill around one sentence would make
@@ -326,6 +323,18 @@
 .deepdive.is-one .deepdive-item:not(.is-open) {
   border-color: transparent;
   background: none;
+  /* V2.0 VB-57 — left-justified, meaning the first painted pixel of the
+     follow-up sits on the same x as the first painted pixel of the question
+     above it. The border above is kept rather than removed (the open card has
+     a real one, and a box that gains a border on the way open is a box that
+     jumps 1px), so the invisible 1px it costs is taken back here. Without it
+     the link is one pixel inside the question — which is not visible, but
+     "aligns with the question" is a claim tests/e2e/follow-up-rotation.spec.ts
+     measures rather than eyeballs, and a claim worth measuring is worth
+     making exactly. The remaining indent to the label is the chevron, which
+     is a marker in front of the sentence — the same relationship a bullet has
+     to its list item. */
+  margin-left: -1px;
   /* Held at the tallest this question's follow-ups have needed, so a longer
      one rotating in does not push the answer field down under someone's
      hands. The value is measured in DeepDive.tsx; 0 until it is. */
@@ -343,37 +352,67 @@
   background-image: none;
 }
 
-/* The link itself. Same family as the question above it, one step down and
-   underlined — never colour alone (docs/GUARDRAILS.md), and the chevron is a
-   third signal on top of that. The 13px padding and -8px margin are inherited
-   from `.deepdive-chip`: the text is 16px but the box you can press is still
-   44, exactly as VB-15 built it. */
+/* The link itself. Same family as the question above it, one step down. The
+   13px padding and -8px margin are inherited from `.deepdive-chip`: the text
+   is 16px but the box you can press is still 44, exactly as VB-15 built it.
+
+   V2.0 VB-57 TAKES THE UNDERLINE OFF, AND THAT NEEDS A REPLACEMENT SIGNAL.
+   docs/GUARDRAILS.md forbids distinguishing anything by colour alone, and an
+   underlined link with the underline removed is a coloured word. Two things
+   carry it instead, and both survive colour being taken away entirely:
+
+     THE CHEVRON   a stroked mark in front of the sentence that no other text
+                   in the question area has, `currentColor`, and it turns 90°
+                   when the follow-up opens. This is the primary signal.
+     THE WEIGHT    560 against the 400 of the hint and the answer text beside
+                   it — the same distance the question's own 700 keeps from
+                   them, and enough to read as a different kind of thing in a
+                   greyscale screenshot.
+
+   Not a dotted rule, which the flag also offered: a dashed underline under a
+   16px sentence at 400px reads as a spelling error, and the mark is already
+   in the markup doing this job for the expanded state.
+
+   `text-decoration: none` is written out rather than left off — the base
+   `.deepdive-chip` sets nothing, but a button in a document that ever gains a
+   link reset should say what it means. The left padding goes with it: the
+   follow-up is left-justified with the question above it (see
+   `.deepdive-item` above).
+
+   tests/e2e/follow-up-rotation.spec.ts strips every colour from the document
+   and measures both signals, and it measures the left edge against the
+   question's. */
 .deepdive.is-one .deepdive-chip {
   font-size: 16px;
   line-height: 1.35;
   letter-spacing: -0.012em;
   font-weight: 560;
   color: var(--primary);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1px;
+  text-decoration: none;
+  padding-left: 0;
   align-items: baseline;
 }
 .deepdive.is-one .deepdive-chip:hover {
   color: var(--primary-hover);
 }
-/* Open drops the underline and gains weight. Both are deliberate: an expanded
-   follow-up is no longer an invitation to read further, so it stops being
-   painted as one, and the state is carried by two things that survive colour
-   being removed entirely — on top of the card's own border, fill and radius,
-   and the chevron turning (docs/GUARDRAILS.md). */
+/* Open gains weight, on top of the card's own border, fill and radius and the
+   chevron turning — four signals, none of them colour (docs/GUARDRAILS.md).
+   The left padding comes back with them: inside a card with 6px of padding of
+   its own, a label flush to the border reads as clipped. */
 .deepdive.is-one .deepdive-item.is-open .deepdive-chip {
   font-weight: 640;
-  text-decoration: none;
+  padding-left: 11px;
 }
+/* The mark sits on the FIRST line, not in the middle of the block. With the
+   underline gone this is the signal (see above), so it has to read as a marker
+   in front of a sentence — and a follow-up that wraps to two lines at 400px is
+   the common case, where centring floats the chevron into the gap between the
+   lines and detaches it from the words it belongs to. `baseline` is inherited
+   from `.deepdive.is-one .deepdive-chip`; it is written out here because this
+   line used to say `center` and the reason it no longer does is worth having. */
 .deepdive.is-one .deepdive-mark {
   color: currentColor;
-  align-self: center;
+  align-self: baseline;
 }
 
 /* The turn. 200ms — §06's default for anything that moves — and a fade with
@@ -395,34 +434,11 @@
   }
 }
 
-/* WCAG 2.2.2's stop. Quiet — it is not the point of the screen — but a real
-   control: 44px tall, underlined so it is not a colour, and with the same ring
-   as everything else. It sits after the link in the tab order, which is where
-   somebody who wants to stop the thing they just read will look for it. */
-.deepdive-stop {
-  box-sizing: border-box;
-  font-family: inherit;
-  font-size: 13px;
-  line-height: 18px;
-  min-height: var(--target-min);
-  padding: 13px 2px;
-  margin: -8px 0;
-  border: 0;
-  background: none;
-  color: var(--ink-2);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-  transition: color var(--fast) var(--ease);
-}
-.deepdive-stop:hover {
-  color: var(--ink);
-}
-.deepdive-stop:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  border-radius: var(--r-sm);
-}
+/* V1.8's `.deepdive-stop` — the visible "Show all" — used to sit here. V2.0
+   VB-57 removed it, because the rotation now stops for good the first time the
+   person touches the question and never resumes (docs/V2.0-REFINEMENT.md
+   FLAG 1). That is WCAG 2.2.2's mechanism without a control on the screen; see
+   core/motion/rotation.ts, which is where the rule lives and why. */
 
 /* Reduced motion never reaches this mode — DeepDive.tsx renders the static
    list instead, which is the still equivalent and carries more than the
@@ -431,8 +447,5 @@
 @media (prefers-reduced-motion: reduce) {
   .deepdive.is-one .deepdive-item:not(.is-open) {
     animation: none;
-  }
-  .deepdive-stop {
-    transition: none;
   }
 }

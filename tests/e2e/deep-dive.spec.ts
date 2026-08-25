@@ -209,22 +209,49 @@ function buildAnswersExcept(modules: Module[], leaveUnanswered: string): Answers
 }
 
 /**
- * V1.8 VB-42 — press the follow-ups' visible stop, so the tests below see the
- * list they were written about.
+ * WHERE THE CHIPS LIVE NOW — READ THIS BEFORE CHANGING ANY TEST BELOW.
  *
- * The chips did not go anywhere: a question now shows **one** follow-up at a
- * time as a rotating text link, and "Show all" is WCAG 2.2.2's required stop,
- * which both ends the rotation and puts every follow-up back on screen. That
- * static list is the same row V1.1 and V1.3 built, and everything they proved
- * about it — the 30px bubble inside a 44px target, the one-time shimmer, the
- * siblings leaving and coming back — is still true of it, so those tests are
- * unchanged apart from this line. The rotation itself has its own spec:
- * tests/e2e/follow-up-rotation.spec.ts.
+ * V1.1 and V1.3 built these follow-ups as a ROW OF TAGS. V1.8 VB-42 made the
+ * collapsed presentation one rotating text link instead, and kept the row
+ * reachable behind "Show all", so every test here simply pressed that first.
+ * V2.0 VB-57 deletes "Show all" — the rotation now stops permanently on any
+ * interaction, which is what satisfies WCAG 2.2.2 without a control
+ * (docs/V2.0-REFINEMENT.md FLAG 1). So the row is no longer something a person
+ * can ask for, and these tests are pointed at the two places the tag
+ * presentation still genuinely ships:
+ *
+ *   `chipQuestion(page)`   A question carrying exactly ONE follow-up. There is
+ *                          nothing to rotate to, so `core/motion/rotation.ts`
+ *                          renders the list — one V1.3 tag, with every
+ *                          animation on. This is where the shimmer and the
+ *                          expand-in-place FLIP are measured.
+ *   `launchExtension('reduce')`
+ *                          `prefers-reduced-motion`, where the whole list
+ *                          renders however many follow-ups there are. This is
+ *                          where the multi-chip geometry, the keyboard path
+ *                          and the ARIA are measured — none of which is about
+ *                          motion.
+ *
+ * WHAT THIS COST, STATED PLAINLY: the row of MORE THAN ONE tag with motion ON
+ * is now unreachable in the product, so the sibling ghosts (`is-leaving` /
+ * `is-entering`, and the FLIP that returns them to their resting boxes) are
+ * dead paint. The assertions that watched them frame by frame are gone from
+ * the two tests below rather than quietly weakened, and what replaced them is
+ * the same frame-by-frame watch on the single tag that does ship. The
+ * component still implements it and `DeepDive.test.tsx` still covers it; if
+ * VB-60's orbs or a later task never bring the row back, retiring the ghost
+ * machinery is a real piece of work and it needs its own task.
+ *
+ * The rotating link has its own spec: tests/e2e/follow-up-rotation.spec.ts.
  */
-async function showAllFollowUps(page: Page): Promise<void> {
-  const stop = page.locator('.flow .deepdive-stop');
-  await stop.click();
-  await expect(stop).toHaveCount(0);
+const CHIP_STEP = 'context_scope';
+
+/** One Next from `orientation_ready` to the question that ships a single tag. */
+async function chipQuestion(page: Page): Promise<void> {
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.locator('.flow')).toHaveAttribute('data-step-id', CHIP_STEP);
+  expect(DEEP_DIVE[CHIP_STEP], `${CHIP_STEP} must carry exactly one follow-up`).toHaveLength(1);
+  await expect(page.locator('.flow .deepdive-item')).toHaveCount(1);
 }
 
 /** The approved copy, read from the data rather than retyped — a drift here
@@ -234,10 +261,14 @@ const VOICE_DIRECTNESS = DEEP_DIVE.voice_directness!;
 
 test.describe('the deeper-dive follow-ups', () => {
   test('opens and closes on Enter, and never shifts focus away from the question', async () => {
-    const { context, id } = await launchExtension();
+    // Under `prefers-reduced-motion`, where the whole list renders (see the
+    // note above `chipQuestion`). Nothing in this test is about motion — it is
+    // the keyboard path, the ARIA and the focus — so the preference costs it
+    // nothing, and the list is the presentation these criteria were written
+    // for.
+    const { context, id } = await launchExtension('reduce');
     const page = await openPanel(context, id);
     await enterInterview(page);
-    await showAllFollowUps(page);
 
     // Question one, `orientation_ready` — two authored follow-ups.
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
@@ -287,10 +318,14 @@ test.describe('the deeper-dive follow-ups', () => {
   // ── V1.3 VB-15 — thinner chips, unchanged targets ───────────────────
 
   test('the bubble is visibly tighter than the 44px target it sits inside', async () => {
-    const { context, id } = await launchExtension();
+    // Two chips, so the "two rows of 44px targets must not overlap" half of
+    // this has something to measure. Reduced motion is how the list is
+    // reached now; the geometry is identical either way, because nothing here
+    // is animated — it is padding, a negative margin and a hit box.
+    const { context, id } = await launchExtension('reduce');
     const page = await openPanel(context, id);
     await enterInterview(page);
-    await showAllFollowUps(page);
+    await expect(page.locator('.flow .deepdive-item')).toHaveCount(2);
 
     const measured = await page.evaluate(() =>
       Array.from(document.querySelectorAll('.flow .deepdive-item')).map((item) => {
@@ -385,7 +420,14 @@ test.describe('the deeper-dive follow-ups', () => {
 
   // ── V1.3 VB-16 — the shimmer ────────────────────────────────────────
 
-  test('the shimmer plays once per chip, staggered, and then the row is genuinely still', async () => {
+  test('the shimmer plays once on the chip, on the overlay, and then the row is genuinely still', async () => {
+    // On the single tag that still ships (see `chipQuestion`). The STAGGER
+    // between two chips cannot be watched any more — a row of more than one
+    // tag only renders under reduced motion, where no sweep is scheduled at
+    // all — so it is asserted from the shipped stylesheet instead, in the test
+    // below this one. What is watched here is everything else: one pass, on
+    // the overlay, under the name core/motion/shimmer.ts exports, ending, and
+    // then genuinely nothing left running.
     const { context, id } = await launchExtension();
     const page = await context.newPage();
     await traceAnimations(page, 'watch');
@@ -393,13 +435,12 @@ test.describe('the deeper-dive follow-ups', () => {
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
     await enterInterview(page);
-    await showAllFollowUps(page);
-    await expect(page.locator('.flow .deepdive-item')).toHaveCount(2);
-    await waitForShimmers(page, 2);
+    await chipQuestion(page);
+    await waitForShimmers(page, 1);
 
     // Wait the attract out, generously, then prove nothing is left running —
     // "still" means no frames requested, not an invisible animation.
-    await page.waitForTimeout(attractMs(2) + 400);
+    await page.waitForTimeout(attractMs(1) + 400);
     const after = await page.evaluate((keyframe) => {
       const started = (window as unknown as { __wbAnimStarted: { name: string; pseudo: string | null; at: number }[] })
         .__wbAnimStarted;
@@ -417,16 +458,88 @@ test.describe('the deeper-dive follow-ups', () => {
           .filter((a) => row.contains((a.effect as KeyframeEffect | null)?.target ?? null)).length,
       };
     }, SHIMMER_KEYFRAME);
-    // One pass per chip, on the overlay, staggered by --fast — and the name
-    // the stylesheet uses is the one core/motion/shimmer.ts exports, which
-    // only a real browser can confirm.
-    expect(after.starts).toBe(2);
-    expect(after.pseudos).toEqual(['::after', '::after']);
-    expect(after.gap).toBeGreaterThan(SHIMMER_STAGGER_MS * 0.5);
-    expect(after.ends).toBe(2);
+    // One pass, on the overlay — and the name the stylesheet uses is the one
+    // core/motion/shimmer.ts exports, which only a real browser can confirm.
+    expect(after.starts).toBe(1);
+    expect(after.pseudos).toEqual(['::after']);
+    expect(after.ends).toBe(1);
     // And then it burns out for good: no animation, not even a finished one.
     expect(after.mode).toBe('none');
     expect(after.running).toBe(0);
+
+    await context.close();
+  });
+
+  /**
+   * The stagger, measured on the chip that ships.
+   *
+   * V1.3 measured it as the gap between two chips' sweeps starting. V2.0
+   * VB-57 took away the only screen with two sweeping chips on it (see the
+   * note above `chipQuestion`), so the gap between two of them cannot be
+   * watched any more. What is measured instead is the rule *acting on a real
+   * chip*: `--dd-index` is what DeepDive.tsx writes inline per chip, so
+   * setting it and re-reading the computed delay asks the shipped stylesheet
+   * the same question a second chip would have asked it.
+   *
+   * NOT read out of the CSSOM, which is where the obvious version of this test
+   * goes and why it is worth a paragraph: the rule is
+   * `animation: <name> var(--slow) var(--ease) both`, and a shorthand
+   * containing `var()` is a pending-substitution value — every longhand of it,
+   * `animationName` included, serialises as the empty string until it is
+   * resolved against an element. A CSSOM search for the keyframe name finds
+   * nothing, for ever, however correct the stylesheet is. Computed style on an
+   * element resolves it; that is the only place this can honestly be read.
+   *
+   * The shimmer is frozen so it never ends — the row's `data-shimmer` flips to
+   * `none` when it does (the test above proves that), which would take the
+   * rule off the element before it could be read.
+   */
+  test('the stagger is still one --fast per chip, on the chip that shipped', async () => {
+    const { context, id } = await launchExtension();
+    const page = await context.newPage();
+    await traceAnimations(page, 'freeze');
+    await page.setViewportSize({ width: 400, height: 700 });
+    await page.goto(`chrome-extension://${id}/panel.html`);
+    await page.waitForSelector('.home');
+    await enterInterview(page);
+    await chipQuestion(page);
+    await waitForShimmers(page, 1);
+
+    const measured = await page.evaluate(() => {
+      const item = document.querySelector('.flow .deepdive-item') as HTMLElement;
+      const overlay = () => {
+        const style = getComputedStyle(item, '::after');
+        return { name: style.animationName, delay: parseFloat(style.animationDelay) * 1000 };
+      };
+      // The first chip, exactly as the panel rendered it, then the second and
+      // the third as `--dd-index` would have made them.
+      const first = overlay();
+      item.style.setProperty('--dd-index', '1');
+      const second = overlay();
+      item.style.setProperty('--dd-index', '2');
+      const third = overlay();
+      return {
+        mode: (document.querySelector('.flow .deepdive') as HTMLElement).dataset.shimmer,
+        first,
+        second,
+        third,
+        fast: getComputedStyle(document.documentElement).getPropertyValue('--fast').trim(),
+      };
+    });
+
+    // The attract rule really is the one on this chip, under the keyframe name
+    // core/motion/shimmer.ts exports — which only a real browser can confirm.
+    expect(measured.mode).toBe('once');
+    expect(measured.first.name).toBe(SHIMMER_KEYFRAME);
+    // One step of one `--fast` per chip is what makes a row read as a wave.
+    expect(measured.first.delay).toBe(0);
+    expect(measured.second.delay).toBe(SHIMMER_STAGGER_MS);
+    expect(measured.third.delay).toBe(SHIMMER_STAGGER_MS * 2);
+    // ...and the step is the token itself, so the two numbers cannot drift
+    // apart unnoticed. The token is authored in seconds (`0.12s`), which is
+    // why this is not a bare `parseFloat`.
+    const fastMs = /ms$/.test(measured.fast) ? parseFloat(measured.fast) : parseFloat(measured.fast) * 1000;
+    expect(fastMs).toBe(SHIMMER_STAGGER_MS);
 
     await context.close();
   });
@@ -439,7 +552,7 @@ test.describe('the deeper-dive follow-ups', () => {
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
     await enterInterview(page);
-    await showAllFollowUps(page);
+    await chipQuestion(page);
     await waitForShimmers(page, 1);
 
     // Held on its first frame by the tracer, so it can be seeked and read.
@@ -512,12 +625,18 @@ test.describe('the deeper-dive follow-ups', () => {
 
   // ── V1.3 VB-16 — expand in place ────────────────────────────────────
 
-  test('opening expands one bubble, removes the others, and animates the height', async () => {
+  test('opening expands the bubble in place, and animates the height', async () => {
+    // On the single tag that still ships. V1.3 also watched the SIBLING leave
+    // frame by frame; a row of more than one tag with motion on is no longer
+    // reachable (see the note above `chipQuestion`), so that half of this
+    // test is gone rather than weakened, and `DeepDive.test.tsx` is what still
+    // holds it. Everything about the bubble itself — that it grows through the
+    // middle instead of cutting, overshoots neither end, and never drops the
+    // focus — is measured here exactly as it was.
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
     await enterInterview(page);
-    await showAllFollowUps(page);
-    await expect(page.locator('.flow .deepdive-item')).toHaveCount(2);
+    await chipQuestion(page);
 
     // Press it from the keyboard, then watch every frame for 400ms: the row's
     // height, how many chips are mounted, and — the thing that would break
@@ -554,11 +673,10 @@ test.describe('the deeper-dive follow-ups', () => {
       expect(f.h).toBeGreaterThanOrEqual(Math.min(trace.before, after) - 1);
       expect(f.h).toBeLessThanOrEqual(Math.max(trace.before, after) + 1);
     }
-    // The sibling is mounted while it leaves, and gone once it has.
-    expect(trace.frames[0]!.items).toBe(2);
-    expect(trace.frames.at(-1)!.items).toBe(1);
-    // Focus never fell to the body on any frame, including the ones either
-    // side of the unmount.
+    // The bubble is the same element throughout — it keeps its key, and so
+    // its DOM node, which is what lets the focus survive at all.
+    expect(trace.frames.every((f) => f.items === 1)).toBe(true);
+    // Focus never fell to the body on any frame.
     expect(trace.frames.every((f) => f.active.includes('deepdive-chip'))).toBe(true);
     expect(trace.frames.some((f) => f.active === 'BODY.')).toBe(false);
 
@@ -566,17 +684,19 @@ test.describe('the deeper-dive follow-ups', () => {
     await expect(page.locator('.flow .deepdive-item')).toHaveCount(1);
     await expect(page.locator('.flow .deepdive-chip')).toHaveCount(1);
     await expect(page.locator('.flow .deepdive-chip')).toHaveAttribute('aria-expanded', 'true');
-    await expect(page.locator('.flow .deepdive-answer')).toHaveText(ORIENTATION[0]!.a);
+    await expect(page.locator('.flow .deepdive-answer')).toHaveText(DEEP_DIVE[CHIP_STEP]![0]!.a);
     await expect(page.locator('.flow .deepdive-chip')).toBeFocused();
 
     await context.close();
   });
 
-  test('closing animates the siblings back to exactly the boxes they left from', async () => {
+  test('closing animates the bubble back to exactly the box it left from', async () => {
+    // Same retarget as the test above, and the same half removed: the boxes
+    // being restored is still measured, on the tag that still ships.
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
     await enterInterview(page);
-    await showAllFollowUps(page);
+    await chipQuestion(page);
 
     const boxesAt = () =>
       page.evaluate(() =>
@@ -587,11 +707,12 @@ test.describe('the deeper-dive follow-ups', () => {
       );
 
     const rest = await boxesAt();
-    expect(rest).toHaveLength(2);
+    expect(rest).toHaveLength(1);
 
     await page.locator('.flow .deepdive-chip').first().focus();
     await page.keyboard.press('Enter');
-    await expect(page.locator('.flow .deepdive-item')).toHaveCount(1);
+    await expect(page.locator('.flow .deepdive-chip')).toHaveAttribute('aria-expanded', 'true');
+    await page.waitForTimeout(EXPAND_MS + 60);
 
     // Close it, and watch the way back the same way.
     const trace = await page.evaluate(async (ms) => {
@@ -619,9 +740,8 @@ test.describe('the deeper-dive follow-ups', () => {
     const after = trace.frames.at(-1)!.h;
     expect(after).toBeLessThan(trace.before - 20);
     expect(trace.frames.filter((f) => f.h < trace.before - 1 && f.h > after + 1).length).toBeGreaterThan(3);
-    // The siblings are back for the whole way home, not conjured at the end.
-    expect(trace.frames[0]!.items).toBe(2);
-    expect(trace.frames.every((f) => f.items === 2)).toBe(true);
+    // The bubble is mounted for the whole way home, not conjured at the end.
+    expect(trace.frames.every((f) => f.items === 1)).toBe(true);
     expect(trace.frames.every((f) => f.active.includes('deepdive-chip'))).toBe(true);
 
     // Everything is exactly where it was, and nothing is left inline.

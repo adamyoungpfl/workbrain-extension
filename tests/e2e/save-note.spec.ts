@@ -18,6 +18,14 @@ import type { Answers } from '../../src/schema/storage.types';
 /**
  * V1.8 VB-44 — the foot under "Saved on this device · Nothing leaves your
  * browser", measured in a real browser.
+ * V2.0 VB-58 — and the same note, centred.
+ *
+ * VB-58 IS AN ALIGNMENT CHANGE AND NOTHING ELSE, which is why it lives in this
+ * file rather than in one of its own: everything below already exists to hold
+ * the numbers VB-44 tuned, and the one risk in centring the note is that
+ * someone moves a number while they are in here. So `expectCentred` is called
+ * from `expectFoot`, and every layout this file measures now asserts both.
+ * The 8px foot and the 25px to the nav's painted words are unchanged.
  *
  * The note rides on VB-17's slack, so it is always the last row of the
  * question area, and the space beneath it was the surface's own 20px frame.
@@ -168,6 +176,11 @@ interface Measured {
   paintToGrip: number;
   navTop: number;
   drawerTop: number;
+  /** V2.0 VB-58 — the note's own painted text, and the box it sits in. Read
+   * from the spans rather than from the paragraph: the paragraph is a full-
+   * width block whichever way its content is aligned, so its own box says
+   * nothing about whether the words are centred. */
+  centring: { inkLeft: number; inkRight: number; areaLeft: number; areaRight: number; align: string };
   /** Whether the question is taller than the room it was given, in which case
    * the note is pushed down by content rather than sitting on the slack. */
   overflowing: boolean;
@@ -191,6 +204,9 @@ async function measure(page: Page): Promise<Measured> {
       const painted = [...document.querySelectorAll('.flow-foot .navbtn')].map((n) => n.getBoundingClientRect());
       const paintTop = Math.min(...painted.map((p) => p.top));
       const paintBottom = Math.max(...painted.map((p) => p.bottom));
+      const noteEl = document.querySelector('.flow-save') as HTMLElement;
+      const spans = [...noteEl.querySelectorAll('span')].map((s) => s.getBoundingClientRect());
+      const flowStyle = getComputedStyle(flow);
       const rows: { name: string; top: number; bottom: number }[] = [];
       for (const selector of selectors) {
         for (const element of Array.from(document.querySelectorAll(selector))) {
@@ -211,6 +227,14 @@ async function measure(page: Page): Promise<Measured> {
         paintToGrip: grip.top - paintBottom,
         navTop: nav.top,
         drawerTop: drawer.top,
+        centring: {
+          inkLeft: Math.min(...spans.map((s) => s.left)),
+          inkRight: Math.max(...spans.map((s) => s.right)),
+          // The room the note has to be centred in: the surface's content box.
+          areaLeft: flowBox.left + parseFloat(flowStyle.paddingLeft),
+          areaRight: flowBox.right - parseFloat(flowStyle.paddingRight),
+          align: getComputedStyle(noteEl).textAlign,
+        },
         overflowing: flowBox.bottom > nav.top - navGap + 1,
         scrolledToEnd:
           window.scrollY > 0 &&
@@ -258,6 +282,29 @@ function expectOneSeam(m: Measured, where: string): void {
 }
 
 /**
+ * V2.0 VB-58 — the note is centred above the nav.
+ *
+ * Measured as painted ink rather than as a CSS property, and measured against
+ * the room it sits in rather than against the viewport: the paragraph is a
+ * block and fills the width whatever its alignment, so `text-align` alone
+ * would be a claim about a stylesheet and not about what a person sees.
+ *
+ * Two pixels of tolerance, because the note is two spans separated by a middot
+ * and the line's own trailing space is not painted.
+ */
+function expectCentred(m: Measured, where: string): void {
+  const { inkLeft, inkRight, areaLeft, areaRight } = m.centring;
+  expect(m.centring.align, `${where}: the note is not centred`).toBe('center');
+  const leftGap = inkLeft - areaLeft;
+  const rightGap = areaRight - inkRight;
+  expect(leftGap, `${where}: the note starts at the left edge`).toBeGreaterThan(2);
+  expect(
+    Math.abs(leftGap - rightGap),
+    `${where}: ${Math.round(leftGap)}px to the left of the note, ${Math.round(rightGap)}px to the right`,
+  ).toBeLessThanOrEqual(2);
+}
+
+/**
  * The foot, in whichever of its two states this layout is in.
  *
  * A question that FITS its room is read where it opens: the surface's bottom
@@ -274,6 +321,10 @@ function expectOneSeam(m: Measured, where: string): void {
  * as a failure rather than as a fudge factor that was already big enough.
  */
 function expectFoot(m: Measured, where: string): void {
+  // V2.0 VB-58 changed the alignment and NOTHING ELSE. The arithmetic below is
+  // VB-44's, unmoved, and it is asserted in the same breath as the centring so
+  // that a future pass at this region cannot trade one for the other.
+  expectCentred(m, where);
   expect(m.padBottom, `${where}: the foot`).toBe(FLOW_SAVE_NOTE_FOOT);
   expect(m.padTop, `${where}: the frame above`).toBe(SURFACE_FRAME);
   expect(m.padBottom, `${where}: the foot is no longer tighter than the frame`).toBeLessThan(m.padTop);

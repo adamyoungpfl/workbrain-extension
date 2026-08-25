@@ -20,12 +20,14 @@ import {
 } from '../../core/motion/shimmer';
 import {
   ROTATE_MS,
+  ROTATION_RUNNING,
   isRunning,
   nextIndex,
-  offersStop,
+  stopRotation,
   viewFor,
   type RotationHold,
   type RotationInput,
+  type RotationInteraction,
 } from '../../core/motion/rotation';
 import { prefersReducedMotion } from '../cues/verbs';
 import { S } from '../strings';
@@ -75,6 +77,16 @@ export const CHIP_SHIMMER: ShimmerTrigger = 'once';
  * Stroke-based, `currentColor`, `aria-hidden` — the same convention as
  * Home.tsx's PERSON_ICON. Rotation is driven by a class, not a CSS
  * attribute selector, so it is assertable without a stylesheet.
+ *
+ * V2.0 VB-57 MAKES THIS LOAD-BEARING. The rotating link's underline is gone,
+ * and an underlined link minus its underline is a coloured word — which
+ * docs/GUARDRAILS.md forbids outright. What replaces the underline is this
+ * mark plus the link's weight: a shape in front of the text that no other
+ * text in the question area has, drawn in strokes rather than fill so it
+ * survives greyscale at exactly the contrast it had in colour, and turning 90°
+ * when the thing opens. tests/e2e/follow-up-rotation.spec.ts strips every
+ * colour from the document and measures both signals rather than taking this
+ * paragraph's word for it.
  */
 function Chevron({ open }: { open: boolean }) {
   return (
@@ -172,18 +184,20 @@ export interface DeepDiveProps {
    */
   mode?: 'one' | 'all' | undefined;
   /**
-   * V1.8 VB-42 — WCAG 2.2.2's required mechanism, pressed. The surface owns
-   * what happens next, because "stop" outlives this component: it is
-   * remembered in `wb:prefs`, so the next question is already still (see
-   * panel/voice/prefs.ts's `useFollowUpsPref`).
+   * V2.0 VB-57 — an interaction the surface saw somewhere else in the question
+   * area, which ends this rotation for good exactly as one of its own does.
+   *
+   * FLAG 1 reads "any interaction" broadly and most of that list happens
+   * outside this component's box: typing in the answer field, pressing
+   * rephrase, clicking blank space beside the question. Those belong to the
+   * surface, so the surface names what it saw and hands the name down here,
+   * where it goes through the same `stopRotation` as a click on the link. One
+   * machine, two sources of signal — see `core/motion/rotation.ts`.
+   *
+   * `null` while nothing has happened. It can only ever go from `null` to a
+   * reason, because the surface's own copy of the state is terminal too.
    */
-  onShowAll?: (() => void) | undefined;
-  /**
-   * V1.8 VB-42 — they have started answering, so the rotation stops. Adam's
-   * own rule: the list renews "until the person clicks Next or starts typing
-   * an answer". Next unmounts the whole question, so it needs no signal.
-   */
-  answering?: boolean | undefined;
+  stoppedBy?: RotationInteraction | null | undefined;
   /**
    * V1.3 VB-18: which follow-up is open, for anything outside this component
    * that has to follow it — today, the narrator, whose `followUp` voice role
@@ -275,12 +289,28 @@ export interface DeepDiveProps {
  *
  * **WCAG 2.2.2 (Pause, Stop, Hide) IS THE DESIGN, NOT A CHECK AFTERWARDS.**
  * This auto-updates, starts on its own, lasts longer than five seconds and
- * sits beside content someone is reading, so it needs a way to stop. It has
- * five, and `core/motion/rotation.ts` holds the reasoning for each: hover,
- * focus, typing an answer, opening a follow-up, and a visible control that
- * stops it for good and shows the whole list. Under `prefers-reduced-motion`
- * no clock is ever scheduled and the static list is what renders — the still
- * equivalent carries *more* than the moving one, not less.
+ * sits beside content someone is reading, so it needs a way to stop.
+ *
+ * WHAT V2.0 VB-57 CHANGED: THE MECHANISM, AND THE PAINT
+ *
+ * V1.8 answered 2.2.2 with four temporary holds and a visible "Show all".
+ * docs/V2.0-REFINEMENT.md FLAG 1 replaces that: **the rotation stops
+ * permanently on any interaction and never resumes**, so the control is gone.
+ * `core/motion/rotation.ts` holds the machine and the reasoning; what this
+ * file adds is the wiring, and the wiring is three capture handlers on the row
+ * — a click, a keypress or focus arriving anywhere inside it — plus the
+ * `stoppedBy` prop for the rest of the question area, which is not this
+ * component's to listen to. Hover is the one thing still merely held: it is
+ * the pointer resting, not a decision, and letting go lets it move on.
+ *
+ * Capture, not bubble, and on the row rather than on the link: a press that
+ * opens a follow-up must stop the clock *before* the disclosure re-renders,
+ * and a click that lands on the row's padding rather than on the link is still
+ * a person touching this question.
+ *
+ * Under `prefers-reduced-motion` no clock is ever scheduled and the static
+ * list is what renders — the still equivalent carries *more* than the moving
+ * one, not less.
  *
  * Nothing here ever moves focus. The rotation swaps a link that nobody is
  * touching; the moment it is hovered or focused it stops, so it cannot change
@@ -291,8 +321,7 @@ export function DeepDive({
   entries,
   onDisclose,
   mode = 'all',
-  onShowAll,
-  answering = false,
+  stoppedBy = null,
 }: DeepDiveProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const [phase, setPhase] = useState<ExpandPhase>(CLOSED);
@@ -303,7 +332,23 @@ export function DeepDive({
   const reduced = useReducedMotion();
   const [turn, setTurn] = useState(0);
   const [hovered, setHovered] = useState(false);
-  const [focused, setFocused] = useState(false);
+  /**
+   * V2.0 VB-57 — whether this question's rotation has ended, and why.
+   *
+   * The surface's signal goes through the same terminal transition as this
+   * component's own, so there is one machine rather than two agreeing states:
+   * `stopRotation` is idempotent and keeps the first reason, so whichever
+   * arrived first is the one recorded, and once either has fired nothing here
+   * can produce a running life again.
+   *
+   * State rather than a ref because the clock has to be torn down on the
+   * frame it stops, not on the next render that happens for another reason.
+   */
+  const [ownLife, setOwnLife] = useState(ROTATION_RUNNING);
+  const life = stoppedBy ? stopRotation(ownLife, stoppedBy) : ownLife;
+  /** One interaction, whatever it was. Idempotent, so calling it on every
+   * event of every kind costs one render at most. */
+  const stop = (by: RotationInteraction) => setOwnLife((current) => stopRotation(current, by));
   /** The tallest the link has been, so a longer follow-up rotating in does not
    * push the field down under someone's hands. Only ever grows, and only
    * within one question — see `.deepdive.is-one` in DeepDive.css. */
@@ -311,23 +356,21 @@ export function DeepDive({
 
   const holds: RotationHold[] = [];
   if (hovered) holds.push('hover');
-  if (focused) holds.push('focus');
-  if (answering) holds.push('answering');
-  if (phase.kind !== 'closed') holds.push('open');
-  const rotation: RotationInput = { count: entries.length, mode, reduced, holds };
+  const rotation: RotationInput = { count: entries.length, mode, reduced, holds, life };
   const view = viewFor(rotation, turn);
   const running = isRunning(rotation);
-  const showsStop = offersStop(rotation) && phase.kind === 'closed';
 
   /**
    * The five seconds.
    *
    * An interval rather than a chain of timeouts, and torn down whenever
-   * `running` goes false — which is every hold, so a hovered link is not
-   * merely ignoring a clock that is still ticking under it. Letting go starts
-   * a fresh five seconds rather than resuming a stale one: a link that changed
-   * a fifth of a second after the pointer left would be exactly the swap
-   * WCAG 2.2.2 is about.
+   * `running` goes false — the hover hold and the terminal stop alike, so a
+   * held or stopped link is not merely ignoring a clock still ticking under
+   * it. After a hover, letting go starts a fresh five seconds rather than
+   * resuming a stale one: a link that changed a fifth of a second after the
+   * pointer left would be exactly the swap WCAG 2.2.2 is about. After a stop
+   * there is nothing to start — `isRunning` can never come back true for this
+   * question (core/motion/rotation.ts).
    */
   useEffect(() => {
     if (!running) return;
@@ -336,27 +379,6 @@ export function DeepDive({
     }, ROTATE_MS);
     return () => window.clearInterval(timer);
   }, [running, entries.length]);
-
-  /**
-   * The stop control removes itself when it is pressed — there is nothing left
-   * to stop — so the focus it was holding has to be put somewhere on purpose.
-   * It goes to the first follow-up, which is what the press just revealed.
-   *
-   * This is not the thing docs/GUARDRAILS.md forbids. Nothing *steals* focus
-   * here: the person pressed a control, that control is gone, and a keyboard
-   * user who is not given somewhere to land is dropped on `<body>` and has to
-   * tab back through the screen. The same `!== document.body` guard as VB-16's
-   * rescue below keeps it honest — focus that moved somewhere else in between
-   * stays where the person put it.
-   */
-  const showAllPressed = useRef(false);
-  useLayoutEffect(() => {
-    if (!showAllPressed.current || view.kind !== 'all') return;
-    showAllPressed.current = false;
-    const active = document.activeElement;
-    if (active && active !== document.body) return;
-    rootRef.current?.querySelector<HTMLButtonElement>('[data-dd-chip]')?.focus();
-  }, [view.kind]);
 
   /** Hold the room the tallest link so far needed. Measured after paint, on
    * the item rather than the row, so the open card is free to be any size. */
@@ -386,6 +408,13 @@ export function DeepDive({
   const fromAnswerWidth = useRef<number | null>(null);
 
   function press(index: number) {
+    // FLAG 1's "opening a follow-up", wired as itself rather than left to the
+    // row's click capture to cover. A press driven from the keyboard, from a
+    // test, or from anything that is not a pointer is still an interaction,
+    // and this is the line that says so. When a pointer did it the capture
+    // handler got there first and `stopRotation` keeps that reason — the
+    // reason is a label on a terminal state, not a decision anything reads.
+    stop('open');
     const root = rootRef.current;
     const item = root?.querySelector<HTMLElement>(`[data-dd-item="${index}"]`) ?? null;
     const next = toggle(phase, index, true);
@@ -530,8 +559,9 @@ export function DeepDive({
    * The attract belongs to the list and not to the rotation.
    *
    * A coloured sweep exists to stop three small tags going unnoticed in a row
-   * of them (see CHIP_SHIMMER above). One blue underlined sentence on its own
-   * has no such problem, and sweeping it every five seconds would turn a
+   * of them (see CHIP_SHIMMER above). One blue sentence with a chevron in
+   * front of it has no such problem, and sweeping it every five seconds would
+   * turn a
    * one-time cue into the permanent peripheral motion V1.2 and V1.3 both
    * decided against — the exact concern docs/V1.8-REFINEMENT.md's fourth
    * conflict raises about this feature. So the rotating presentation ships
@@ -546,13 +576,18 @@ export function DeepDive({
       role="group"
       aria-label={S.followUpsLabel}
       data-shimmer={shimmer}
-      // Hover and focus hold the rotation. Both are on the row rather than on
-      // the link, so reaching for the stop control does not let the link move
-      // out from under the pointer on the way.
+      // Hover holds the rotation while the pointer is on it — the one reason
+      // left that lets go (core/motion/rotation.ts). On the row rather than on
+      // the link, so the link cannot move out from under a pointer that is on
+      // its way to it.
       onMouseEnter={() => setHovered(true)}
       onMouseLeave={() => setHovered(false)}
-      onFocus={() => setFocused(true)}
-      onBlur={() => setFocused(false)}
+      // V2.0 VB-57 — and these three end it for good. Capture, so a press has
+      // stopped the clock before the disclosure it opens re-renders; on the
+      // row, so blank space beside the link counts as touching this question.
+      onClickCapture={() => stop('click')}
+      onKeyDownCapture={() => stop('key')}
+      onFocusCapture={() => stop('focus')}
       onAnimationEnd={(event) => {
         const owner = (event.target as HTMLElement).closest?.('[data-dd-item]');
         const index = owner instanceof HTMLElement ? Number(owner.dataset.ddItem) : -1;
@@ -608,28 +643,13 @@ export function DeepDive({
           </div>
         );
       })}
-      {/* WCAG 2.2.2's mechanism, and it is a real control rather than a
-          gesture: visible, in the tab order right after the link it stops,
-          and labelled with what pressing it leaves on screen. Pressing it
-          both stops the motion and gives back every follow-up the rotation
-          was taking turns showing, so nobody trades one for the other.
-
-          Only while nothing is open: with a follow-up expanded there is no
-          rotation to stop (its siblings are unmounted, and `open` holds the
-          clock), and a stop control under an answer would be an offer to
-          undo something that is not happening. */}
-      {showsStop && (
-        <button
-          type="button"
-          className="deepdive-stop"
-          onClick={() => {
-            showAllPressed.current = true;
-            onShowAll?.();
-          }}
-        >
-          {S.followUpsShowAll}
-        </button>
-      )}
+      {/* V2.0 VB-57: there is no "Show all" here any more, and its absence is
+          the point. WCAG 2.2.2's mechanism is now the rule in
+          core/motion/rotation.ts — the first thing the person does to this
+          question stops the motion for the rest of it — which is a stop they
+          reach by doing what they were already doing rather than by finding a
+          control. Deleting the button without that rule would have been a
+          regression; docs/V2.0-REFINEMENT.md FLAG 1 says so in those words. */}
     </div>
   );
 }

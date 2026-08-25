@@ -73,12 +73,34 @@ describe('loadPrefs', () => {
       reducedMotion: 'system',
       handoff: 'manual',
       packUrls: [],
-      // V1.8: the two fields VB-42 and VB-49 added. Both default to the
-      // state an install that predates them has always had — the follow-ups
-      // rotate, the dictation line has not been seen off — so no migration.
-      followUps: 'rotate',
+      // V1.8 VB-49's field, defaulting to the state an install that predates
+      // it has always had — the dictation line has not been seen off — so no
+      // migration.
       dictationHint: true,
     });
+  });
+
+  /**
+   * V2.0 VB-57 — `followUps` is gone from `Prefs`, because the "Show all"
+   * control it remembered is gone (docs/V2.0-REFINEMENT.md FLAG 1). An install
+   * that pressed it has the key in sync storage today, and this is what
+   * happens to it: nothing reads it, and the first write drops it. That is the
+   * whole migration, and it is here so "removed cleanly" is a fact rather than
+   * a claim.
+   */
+  it('drops a preference the product no longer has, rather than carrying it for ever', async () => {
+    const { writes } = installStorage({
+      'wb:prefs': { narrator: true, followUps: 'all', somethingOlderStill: 1 },
+    });
+    await loadPrefs();
+
+    expect(currentPrefs()).not.toHaveProperty('followUps');
+    expect(currentPrefs()).not.toHaveProperty('somethingOlderStill');
+    expect(currentPrefs().narrator).toBe(true);
+
+    await setNarrator(false);
+    expect(writes).toHaveLength(1);
+    expect(writes[0]!['wb:prefs']).not.toHaveProperty('followUps');
   });
 
   it('keeps the defaults when storage is not there at all', async () => {
@@ -103,7 +125,6 @@ describe('setNarrator', () => {
           reducedMotion: 'on',
           handoff: 'fill',
           packUrls: ['a'],
-          followUps: 'rotate',
           dictationHint: true,
         },
       },

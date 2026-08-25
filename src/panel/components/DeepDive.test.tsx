@@ -4,7 +4,7 @@ import { CHIP_SHIMMER, DeepDive, type DeepDiveProps } from './DeepDive';
 import { mount } from './testUtils';
 import { EXPAND_MS } from '../../core/motion/disclosure';
 import { SHIMMER_KEYFRAME, shimmerState } from '../../core/motion/shimmer';
-import { ROTATE_MS } from '../../core/motion/rotation';
+import { ROTATE_MS, ROTATION_INTERACTIONS } from '../../core/motion/rotation';
 import type { DeepDiveEntry } from '../../schema/flow.types';
 
 const ENTRIES: DeepDiveEntry[] = [
@@ -370,7 +370,9 @@ describe('DeepDive — VB-42, one follow-up at a time', () => {
     expect(labels(container)[0]).toContain(THREE[0]!.q);
   });
 
-  it('stops while the pointer is over it, and starts again when it leaves', () => {
+  it('pauses while the pointer is over it, and starts again when it leaves', () => {
+    // Hover is the one reason left that lets go: it is the pointer resting on
+    // the way past, not a person deciding anything (core/motion/rotation.ts).
     const { container } = rotating();
     const row = container.querySelector('.deepdive')!;
     fire(row, 'mouseover');
@@ -381,21 +383,77 @@ describe('DeepDive — VB-42, one follow-up at a time', () => {
     expect(labels(container)[0]).toContain(THREE[1]!.q);
   });
 
-  it('stops while something inside it has focus', () => {
+  // ── V2.0 VB-57 — it stops for good, and never resumes ─────────────────
+
+  it('stops for good the moment focus arrives, and does NOT resume when focus leaves', () => {
     const { container } = rotating();
     fire(chipsOf(container)[0]!, 'focusin');
     tick(3);
     expect(labels(container)[0]).toContain(THREE[0]!.q);
+    // V1.8 resumed here. FLAG 1 says it must not.
     fire(chipsOf(container)[0]!, 'focusout');
-    tick();
+    tick(4);
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+  });
+
+  it('stops for good on a keypress anywhere inside it', () => {
+    const { container } = rotating();
+    act(() => {
+      container
+        .querySelector('.deepdive')!
+        .dispatchEvent(new KeyboardEvent('keydown', { bubbles: true, key: 'a' }));
+    });
+    tick(4);
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+  });
+
+  it('stops for good on a click on the row itself, not only on the link', () => {
+    const { container } = rotating();
+    act(() => {
+      container.querySelector('.deepdive')!.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+    });
+    tick(4);
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+  });
+
+  it('stops for good on an interaction the surface saw elsewhere in the question', () => {
+    // Typing in the answer field, pressing rephrase, clicking blank space —
+    // none of which happen inside this component's box. Every reason FLAG 1
+    // names, one at a time, each on its own.
+    for (const by of ROTATION_INTERACTIONS) {
+      const { container } = rotating(THREE, { stoppedBy: by });
+      tick(4);
+      expect(labels(container)[0], `stopped by ${by}`).toContain(THREE[0]!.q);
+    }
+  });
+
+  it('never resumes when the follow-up it opened is closed again', () => {
+    const { container } = rotating();
+    press(chipsOf(container)[0]!);
+    expect(chipsOf(container)[0]?.getAttribute('aria-expanded')).toBe('true');
+    press(chipsOf(container)[0]!);
+    expect(chipsOf(container)[0]?.getAttribute('aria-expanded')).toBe('false');
+    tick(4);
+    expect(labels(container)[0]).toContain(THREE[0]!.q);
+  });
+
+  it('freezes on the follow-up that was showing — stopping never spills the list', () => {
+    // The alternative stop, "show every follow-up", would grow the block from
+    // one row to three under the person's hands on the one gesture nobody can
+    // avoid making. See core/motion/rotation.ts.
+    const { container } = rotating();
+    tick(); // move off the first, so "frozen" is not "never moved"
+    expect(labels(container)[0]).toContain(THREE[1]!.q);
+    fire(chipsOf(container)[0]!, 'focusin');
+    tick(4);
+    expect(itemsOf(container)).toHaveLength(1);
     expect(labels(container)[0]).toContain(THREE[1]!.q);
   });
 
-  it('stops for good once they start answering', () => {
-    const { container, rerender } = rotating();
-    rerender(<DeepDive idPrefix="flow-role_names" entries={THREE} mode="one" answering />);
-    tick(4);
-    expect(labels(container)[0]).toContain(THREE[0]!.q);
+  it('still rotates when nothing has been touched — the stop is not the default', () => {
+    const { container } = rotating();
+    tick(2);
+    expect(labels(container)[0]).toContain(THREE[2]!.q);
   });
 
   it('does not move the link out from under an open answer', () => {
@@ -433,43 +491,19 @@ describe('DeepDive — VB-42, one follow-up at a time', () => {
 
   // ── WCAG 2.2.2 ────────────────────────────────────────────────────────
 
-  it('offers a visible stop, in the tab order, that says what it does', () => {
+  it('shows no "Show all" anywhere — the terminal stop is the mechanism now', () => {
     const { container } = rotating();
-    const stop = container.querySelector('.deepdive-stop') as HTMLButtonElement;
-    expect(stop).not.toBeNull();
-    expect(stop.tagName).toBe('BUTTON');
-    expect(stop.textContent).toBe('Show all');
-    expect(stop.hasAttribute('hidden')).toBe(false);
-    // After the link it stops, so somebody who just read it looks forward.
-    expect(chipsOf(container)[0]!.compareDocumentPosition(stop)).toBe(
-      Node.DOCUMENT_POSITION_FOLLOWING,
-    );
-  });
-
-  it('tells the surface when the stop is pressed, and lands focus on the list', () => {
-    const seen: number[] = [];
-    const { container, rerender } = rotating(THREE, { onShowAll: () => seen.push(1) });
-    const stop = container.querySelector('.deepdive-stop') as HTMLButtonElement;
-    act(() => stop.focus());
-    click(stop);
-    expect(seen).toHaveLength(1);
-    // The surface is what remembers it — this is what it renders back.
-    rerender(<DeepDive idPrefix="flow-role_names" entries={THREE} mode="all" />);
-    expect(itemsOf(container)).toHaveLength(3);
     expect(container.querySelector('.deepdive-stop')).toBeNull();
-    // The control that was pressed has gone; focus did not fall to the body.
-    expect(document.activeElement).toBe(chipsOf(container)[0]);
+    expect(container.textContent).not.toContain('Show all');
+    // ...and not once it has stopped either. Nothing appears in its place.
+    fire(chipsOf(container)[0]!, 'focusin');
+    tick(2);
+    expect(container.querySelectorAll('button')).toHaveLength(1);
+    expect(container.textContent).not.toContain('Show all');
   });
 
-  it('offers no stop while a follow-up is open — nothing is moving to stop', () => {
-    const { container } = rotating();
-    press(chipsOf(container)[0]!);
-    expect(container.querySelector('.deepdive-stop')).toBeNull();
-  });
-
-  it('offers no stop, and no rotation, for a question with one follow-up', () => {
+  it('renders no rotation for a question with one follow-up', () => {
     const { container } = rotating([ENTRIES[0]!]);
-    expect(container.querySelector('.deepdive-stop')).toBeNull();
     expect(container.querySelector('.deepdive')?.className).not.toContain('is-one');
     tick(3);
     expect(labels(container)[0]).toContain(ENTRIES[0]!.q);

@@ -1062,9 +1062,25 @@
    has a narrow right-hand column to fit into: the separator is drawn here
    rather than written into the copy, so both halves stay whole strings in
    strings.ts. */
+/* V2.0 VB-58 — centred above the nav, with light padding.
+   Centring only. THE ARITHMETIC IS UNTOUCHED and it has to stay untouched:
+   VB-44 tuned the foot to 8px (`FLOW_SAVE_NOTE_FOOT`), which puts 25px between
+   the note and the nav's painted words, deliberately under VB-41's 29px below
+   them — more air above the cluster than below it groups the buttons with the
+   drawer, which is the confusion VB-41 exists to remove. Centring moves the
+   note along its own line and changes neither number; tests/e2e/save-note.spec.ts
+   still measures both, and this file's `padding-bottom` above is still where
+   the 8 comes from.
+
+   `justify-content` as well as `text-align`, because this is a flex row of two
+   spans: the first centres the pair on one line, the second centres the wrap
+   when a narrow panel puts the second span on its own line. The 24px above is
+   VB-44's, unchanged — it is the seam VB-17's slack falls into, not padding. */
 .flow-save {
   display: flex;
   flex-wrap: wrap;
+  justify-content: center;
+  text-align: center;
   column-gap: 6px;
   margin: 24px 0 0;
   font-size: 11.5px;

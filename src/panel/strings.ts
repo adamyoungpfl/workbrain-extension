@@ -81,14 +81,13 @@ export const S = {
    * have landed in is, which matters more now that it holds one link at a time
    * instead of a visible row.
    *
-   * `followUpsShowAll` is WCAG 2.2.2's required stop, and it is deliberately
-   * named for what it leaves behind rather than for the motion it ends.
-   * "Stop" would ask the person to think about a rotation they never asked
-   * about; "Show all" says what they get, and stopping is how they get it.
-   * Pressing it is remembered, so it is one press and not one per question.
+   * V1.8 also had `followUpsShowAll` — "Show all", WCAG 2.2.2's visible stop.
+   * V2.0 VB-57 deletes the control and the string with it: the rotation now
+   * stops permanently the first time the person touches the question and never
+   * resumes (docs/V2.0-REFINEMENT.md FLAG 1), which is the mechanism the
+   * criterion asks for, reached without another word on the screen.
    */
   followUpsLabel: 'More about this question',
-  followUpsShowAll: 'Show all',
   /**
    * V1.8 VB-49 — the OS dictation hint, on the first question with a real
    * paragraph to write.

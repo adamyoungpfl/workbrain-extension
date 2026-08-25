@@ -32,32 +32,62 @@ import type { Prefs } from '../../schema/storage.types';
  * exists and is already preserved by every write here.
  *
  * V1.8: IT IS NO LONGER ONLY THE NARRATOR'S STORE. `wb:prefs` is one key and
- * one read, so it gets one store — two things that are not voice now live
- * here rather than in a second module that would read the same key a second
- * time and disagree with this one for as long as a write took:
+ * one read, so it gets one store — **VB-49's `dictationHint`**, whether the
+ * OS-dictation line has been seen off, lives here rather than in a second
+ * module that would read the same key a second time and disagree with this one
+ * for as long as a write took. There is still no microphone anywhere in this
+ * product; that hint points at the dictation the operating system already has
+ * (see core/flow/dictation.ts).
  *
- * - **VB-42's `followUps`** — the follow-up links' visible stop (WCAG 2.2.2),
- *   remembered so it is one press rather than one per question.
- * - **VB-49's `dictationHint`** — whether the OS-dictation line has been seen
- *   off. There is still no microphone anywhere in this product; that hint
- *   points at the dictation the operating system already has (see
- *   core/flow/dictation.ts).
+ * V1.8 VB-42 also stored `followUps` here, and V2.0 VB-57 took it away with
+ * the control it existed for — see `DEFAULT_PREFS` below.
  *
  * `loaded` exists for VB-49 only, and for one frame of it: the hint's default
  * is "show", so a component that rendered before the stored answer arrived
  * would flash a hint at someone who dismissed it months ago. Anything whose
- * default is the quiet one — the narrator, the rotation — can ignore it.
+ * default is the quiet one — the narrator — can ignore it.
  */
 
+/**
+ * Every preference there is, and the value each has when nothing is stored.
+ *
+ * **This object is also the schema.** `loadPrefs` rebuilds what it read around
+ * these keys rather than spreading the stored object over them, so a field
+ * that was retired is dropped on the next write instead of riding along in
+ * `wb:prefs` for ever. That is how V2.0 VB-57 removes `followUps` — V1.8's
+ * memory of the "Show all" press — with no migration: the control is gone
+ * (docs/V2.0-REFINEMENT.md FLAG 1), nothing reads the field, and the first
+ * time any preference is written the stray key stops being written back.
+ */
 const DEFAULT_PREFS: Prefs = {
   narrator: false,
   mic: false,
   reducedMotion: 'system',
   handoff: 'manual',
   packUrls: [],
-  followUps: 'rotate',
   dictationHint: true,
 };
+
+/**
+ * The stored object, reduced to the preferences that still exist.
+ *
+ * Anything missing keeps its default; anything the product no longer declares
+ * is left behind. Written as a walk over `DEFAULT_PREFS`'s own keys rather
+ * than `{...DEFAULT_PREFS, ...stored}` for exactly that second half.
+ */
+function knownPrefs(stored: Partial<Prefs>): Prefs {
+  const next: Prefs = { ...DEFAULT_PREFS };
+  for (const key of Object.keys(DEFAULT_PREFS) as (keyof Prefs)[]) {
+    const value = stored[key];
+    if (value === undefined) continue;
+    // The assignment is sound — `stored[key]` and `next[key]` are the same
+    // field of the same type — but TypeScript cannot say so while `key` is a
+    // union, and there is no way to write it that it can. One cast, on the
+    // target only, so the value keeps its own type (CLAUDE.md: no `any`).
+    (next as unknown as Record<string, unknown>)[key] = value;
+  }
+  return next;
+}
 
 let prefs: Prefs = DEFAULT_PREFS;
 let loaded = false;
@@ -90,7 +120,7 @@ export function loadPrefs(): Promise<void> {
     try {
       const stored = await getSync('wb:prefs');
       loaded = true;
-      publish(stored ? { ...DEFAULT_PREFS, ...stored } : prefs);
+      publish(stored ? knownPrefs(stored) : prefs);
     } catch {
       // No storage, or storage refused: the defaults are already in memory and
       // the panel carries on with them. Never surfaced. `loaded` still turns
@@ -154,17 +184,6 @@ export function resetPrefsMemory(): void {
 export function useNarratorPref(): { on: boolean; setOn: (on: boolean) => void } {
   const on = useSyncExternalStore(subscribe, () => prefs.narrator);
   return { on, setOn: (next) => void setNarrator(next) };
-}
-
-/**
- * V1.8 VB-42 — whether the follow-ups still rotate, and the press that stops
- * them for good. Same store, same live read as the narrator: the control that
- * stops the rotation is inside the thing that is rotating, and the next
- * question's copy of that thing has to already know.
- */
-export function useFollowUpsPref(): { mode: Prefs['followUps']; showAll: () => void } {
-  const mode = useSyncExternalStore(subscribe, () => prefs.followUps);
-  return { mode, showAll: () => void setPref('followUps', 'all') };
 }
 
 /**
