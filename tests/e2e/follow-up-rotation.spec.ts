@@ -896,10 +896,13 @@ test.describe('VB-42 — it still expands in place, and reduced motion still win
     await expect(link(page)).toHaveCount(1);
 
     // Scan a settled screen. Focus stops the rotation — which is the feature,
-    // not a workaround — and the 200ms fade the link arrives on has to be
-    // over before its colour is measured: text at 40% opacity is not the
-    // colour anything ships, and a scan that landed mid-fade would be
-    // measuring a frame rather than a decision.
+    // not a workaround — and the 200ms turn the link arrives on is waited out
+    // so this scan is of a decision rather than of a frame.
+    //
+    // It is no longer the scan that would catch a fade: the turn carries no
+    // opacity term at all now (DeepDive.css), and the describe block at the
+    // foot of this file is what holds that — every frame of the entrance
+    // measured, rather than one settled frame after it.
     await link(page).focus();
     await page.waitForFunction(() =>
       document
@@ -966,6 +969,428 @@ test.describe('VB-42 — it still expands in place, and reduced motion still win
       clip: { x: 0, y: Math.max(0, Math.round(note.y) - 24), width: 400, height: 150 },
     });
     await page.screenshot({ path: path.join(SHOTS, 'whole-panel.png') });
+
+    await context.close();
+  });
+});
+
+/**
+ * ── THE TURN FLATTENS, IT DOES NOT FADE ──────────────────────────────────
+ *
+ * The link arrives every five seconds, forever, on every question that carries
+ * more than one follow-up. It used to arrive by fading up from `opacity: 0`,
+ * and docs/GUARDRAILS.md's 4.5:1 floor for text is unconditional — so every
+ * one of those arrivals painted the sentence at 1.9:1, then 3:1, then 4:1 on
+ * its way to the colour that was actually chosen. Not a theory: it is what
+ * tests/e2e/typewriter.a11y.spec.ts read off the real panel once V1.9 VB-53's
+ * revised timing changed when axe happened to look. The fade was always there;
+ * the sampling moved.
+ *
+ * core/flow/navMelt.ts's third constraint settled this for the nav cluster and
+ * gave the reason in one line — "a word cross-fading to nothing passes through
+ * every ratio below it on the way". These chips were written before that
+ * reasoning existed. DeepDive.css now says the same thing and flattens instead.
+ *
+ * WHY THIS BLOCK EXISTS RATHER THAN ONE MORE AXE SCAN. An axe pass samples the
+ * screen once, whenever it gets there, which is exactly the accident that let
+ * this ship for four versions and then exposed it. What is measured below is
+ * every frame of the gesture rather than one of them:
+ *
+ *   · SEEKED, end to end — the animation is paused and stepped through its own
+ *     duration, so the whole entrance is measured at a density no frame rate
+ *     can promise, and the keyframes themselves are read back and required to
+ *     carry no opacity term at all.
+ *   · PLAYED, frame by frame — a real five-second turn, sampled on every
+ *     animation frame it takes, because a seeked animation is a claim about
+ *     the stylesheet and this is the claim about the panel.
+ *   · PAINTED — the mid-flight frame photographed and the darkest pixel of the
+ *     sentence measured off the picture, because computed style is what the
+ *     browser intends and a screenshot is what a person sees.
+ *
+ * A gesture deleted rather than fixed fails all three: with no `wb-dd-turn`
+ * running there is nothing to seek, nothing to sample and nothing to photograph.
+ */
+
+/** The link's ink and the ground under it at one instant, plus what is running
+ * on it — everything a contrast ratio needs, read from the live document. */
+interface InkFrame {
+  ink: string;
+  /** Every `opacity` from the label up to the root, multiplied. 1 is full. */
+  alpha: number;
+  ground: string;
+  /** The label's own computed transform, so a gesture that has quietly become
+   * a no-op is visible as one. */
+  transform: string;
+  /** `name:playState` for every animation on the label. */
+  running: string[];
+  text: string;
+  /** The painted height, which under a flatten is how the sentence leaves. */
+  height: number;
+}
+
+/* The reader for one of those frames is written out inside each of the two
+   evaluates below rather than shared. It cannot be hoisted: a function defined
+   here does not exist in the panel, and the one way to send it as source —
+   `eval` — is exactly what an extension page's `script-src 'self'` refuses,
+   which is a guardrail this suite should be proving rather than working
+   around. nav-melt.spec.ts duplicates its own frame reader for the same
+   reason, and says so in the same place. */
+
+test.describe('VB-53 — the turn flattens rather than fades, and no frame paints faint text', () => {
+  test('every frame of the entrance clears 4.5:1, seeked from end to end', async () => {
+    const { context, id } = await launchExtension();
+    const page = await openPanel(context, id);
+    await enterInterview(page);
+    await expect(link(page)).toHaveCount(1);
+
+    const seeked = await page.evaluate(() => {
+      const read = (): InkFrame | null => {
+        const label = document.querySelector<HTMLElement>('.flow .deepdive-chip-label');
+        if (!label) return null;
+        const style = getComputedStyle(label);
+        const opaque = (colour: string) =>
+          !!colour && !/rgba\(0, 0, 0, 0\)|transparent/.test(colour);
+        let alpha = 1;
+        let ground: string | null = null;
+        let node: HTMLElement | null = label;
+        while (node) {
+          const chain = getComputedStyle(node);
+          alpha *= Number(chain.opacity);
+          if (!ground && opaque(chain.backgroundColor)) ground = chain.backgroundColor;
+          node = node.parentElement;
+        }
+        return {
+          ink: style.color,
+          alpha,
+          // panel.html paints no background on body or html, so an unpainted
+          // chain ends on the browser's own canvas — white. The contrast test
+          // above asserts that rather than assuming it; this is that fallback.
+          ground: ground ?? 'rgb(255, 255, 255)',
+          transform: style.transform,
+          running: document
+            .getAnimations()
+            .filter((a) => ((a.effect as KeyframeEffect | null)?.target ?? null) === label)
+            .map(
+              (a) =>
+                `${(a as CSSAnimation).animationName ?? (a as CSSTransition).transitionProperty ?? '?'}:${a.playState}`,
+            ),
+          text: (label.textContent ?? '').trim(),
+          height: label.getBoundingClientRect().height,
+        };
+      };
+      const label = document.querySelector('.flow .deepdive-chip-label');
+      // The entrance the link mounted on. It has `fill: both`, so it is still
+      // here after it has finished and can be wound back and stepped through
+      // — the same handle tests/e2e/nav-melt.spec.ts takes on the melt.
+      const turn = document
+        .getAnimations()
+        .find(
+          (a) =>
+            (a as CSSAnimation).animationName === 'wb-dd-turn' &&
+            ((a.effect as KeyframeEffect | null)?.target ?? null) === label,
+        );
+      if (!turn || !label) return null;
+      const duration = Number((turn.effect as KeyframeEffect).getComputedTiming().duration ?? 0);
+      turn.pause();
+      const frames: InkFrame[] = [];
+      const steps = 40;
+      for (let step = 0; step <= steps; step += 1) {
+        turn.currentTime = (duration * step) / steps;
+        const frame = read();
+        if (frame) frames.push(frame);
+      }
+      turn.finish();
+      turn.play();
+      return {
+        duration,
+        frames,
+        // The gesture's own terms, read back from the browser rather than from
+        // the stylesheet: this is the line an opacity term would come back on.
+        keyframes: (turn.effect as KeyframeEffect).getKeyframes().map((k) => Object.keys(k)),
+      };
+    });
+
+    expect(seeked, 'the link arrives on no animation at all — the gesture is gone').not.toBeNull();
+    // §06's default, and the duration navMelt.ts holds the whole cluster to.
+    expect(seeked!.duration).toBe(EXPAND_MS);
+    expect(seeked!.frames).toHaveLength(41);
+
+    // THE ASSERTION THIS TASK EXISTS FOR. Not "it ends up readable" — every
+    // frame of it, at 5ms of resolution, on the ground it is painted on.
+    for (const [index, frame] of seeked!.frames.entries()) {
+      const at = Math.round((seeked!.duration * index) / (seeked!.frames.length - 1));
+      expect(frame.alpha, `the link was painted at ${frame.alpha} opacity at ${at}ms`).toBe(1);
+      expect(
+        contrast(frame.ink, frame.ground),
+        `the link measured under 4.5:1 at ${at}ms of the turn`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+
+    // And it is still a gesture: it starts somewhere other than where it ends,
+    // and it leaves by having no height rather than by having no colour.
+    expect(seeked!.frames[0]!.transform).not.toBe(seeked!.frames.at(-1)!.transform);
+    // The identity matrix rather than `none`: an animation that is filling its
+    // last frame is still animating the property, and it lands on exactly the
+    // geometry the still link has.
+    expect(seeked!.frames.at(-1)!.transform).toBe('matrix(1, 0, 0, 1, 0, 0)');
+    expect(seeked!.frames[0]!.height).toBeLessThan(1);
+    expect(seeked!.frames.at(-1)!.height).toBeGreaterThan(8);
+
+    // The keyframes themselves. An opacity term added back to DeepDive.css
+    // fails here with the reason in the message, before anyone has to work out
+    // why an axe scan three files away went red.
+    for (const properties of seeked!.keyframes) {
+      expect(properties, 'the turn has grown an opacity term again').not.toContain('opacity');
+    }
+    expect(seeked!.keyframes.some((properties) => properties.includes('transform'))).toBe(true);
+
+    await context.close();
+  });
+
+  test('a real turn, sampled on every frame it plays', async () => {
+    const { context, id } = await launchExtension();
+    const page = await openPanel(context, id);
+    await enterInterview(page);
+    await expect(link(page)).toHaveCount(1);
+
+    // One whole cycle plus the turn at the end of it, sampled in the page:
+    // a round trip per frame would miss most of a 200ms gesture.
+    const played = await page.evaluate(
+      async (ms) => {
+        // The same reader as the seeked test, written out again — see the note
+        // over this describe block on why it cannot be shared.
+        const read = (): InkFrame | null => {
+          const label = document.querySelector<HTMLElement>('.flow .deepdive-chip-label');
+          if (!label) return null;
+          const style = getComputedStyle(label);
+          const opaque = (colour: string) =>
+            !!colour && !/rgba\(0, 0, 0, 0\)|transparent/.test(colour);
+          let alpha = 1;
+          let ground: string | null = null;
+          let node: HTMLElement | null = label;
+          while (node) {
+            const chain = getComputedStyle(node);
+            alpha *= Number(chain.opacity);
+            if (!ground && opaque(chain.backgroundColor)) ground = chain.backgroundColor;
+            node = node.parentElement;
+          }
+          return {
+            ink: style.color,
+            alpha,
+            ground: ground ?? 'rgb(255, 255, 255)',
+            transform: style.transform,
+            running: document
+              .getAnimations()
+              .filter((a) => ((a.effect as KeyframeEffect | null)?.target ?? null) === label)
+              .map(
+                (a) =>
+                  `${(a as CSSAnimation).animationName ?? (a as CSSTransition).transitionProperty ?? '?'}:${a.playState}`,
+              ),
+            text: (label.textContent ?? '').trim(),
+            height: label.getBoundingClientRect().height,
+          };
+        };
+        const frames: InkFrame[] = [];
+        const started = performance.now();
+        while (performance.now() - started < ms) {
+          const frame = read();
+          if (frame) frames.push(frame);
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+        return frames;
+      },
+      ROTATE_MS + 900,
+    );
+
+    // The recording is worth something only if it caught the thing: a turn
+    // genuinely in flight, and the sentence genuinely changing.
+    expect(
+      played.some((frame) => frame.running.includes('wb-dd-turn:running')),
+      'no turn played during the recording — nothing was sampled',
+    ).toBe(true);
+    expect(new Set(played.map((frame) => frame.text)).size).toBeGreaterThan(1);
+
+    for (const frame of played) {
+      expect(frame.alpha, 'a frame of the live panel painted the link faded').toBe(1);
+      expect(
+        contrast(frame.ink, frame.ground),
+        `the link measured ${contrast(frame.ink, frame.ground).toFixed(2)}:1 on a live frame`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+
+    await context.close();
+  });
+
+  test('mid-flight, in a photograph — the sentence is at full ink', async () => {
+    const { context, id } = await launchExtension();
+    const page = await openPanel(context, id);
+    await enterInterview(page);
+    await expect(link(page)).toHaveCount(1);
+
+    // Held where the sentence is half unfurled — which is a height rather than
+    // a time, because `--ease` is not linear and half the clock is most of the
+    // way home. This is the frame a fade would have been at its faintest on.
+    const held = await page.evaluate(() => {
+      const label = document.querySelector('.flow .deepdive-chip-label') as HTMLElement | null;
+      const turn = document
+        .getAnimations()
+        .find(
+          (a) =>
+            (a as CSSAnimation).animationName === 'wb-dd-turn' &&
+            ((a.effect as KeyframeEffect | null)?.target ?? null) === label,
+        );
+      if (!turn || !label) return null;
+      const duration = Number((turn.effect as KeyframeEffect).getComputedTiming().duration ?? 0);
+      const full = label.offsetHeight;
+      turn.pause();
+      let at = duration;
+      for (let ms = 0; ms <= duration; ms += 1) {
+        turn.currentTime = ms;
+        if (label.getBoundingClientRect().height >= full / 2) {
+          at = ms;
+          break;
+        }
+      }
+      turn.currentTime = at;
+      const box = label.getBoundingClientRect();
+      return {
+        at,
+        duration,
+        full,
+        box: { x: box.x, y: box.y, width: box.width, height: box.height },
+      };
+    });
+    expect(held, 'nothing to hold — the entrance is not there').not.toBeNull();
+    // It really is mid-gesture: half the ink's height, part way through the
+    // gesture rather than at either end of it.
+    expect(held!.at).toBeGreaterThan(0);
+    expect(held!.at).toBeLessThan(held!.duration);
+    expect(held!.box.height).toBeGreaterThan(2);
+    expect(held!.box.height).toBeLessThan(held!.full * 0.75);
+
+    // Read off the picture, not off the stylesheet — the same technique the
+    // greyscale test above uses on the chevron, for the same reason: computed
+    // style is what the browser intends, a screenshot is what a person sees.
+    const shot = (await page.screenshot()).toString('base64');
+    const darkest = await page.evaluate(
+      async ({ shot, box }) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${shot}`;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.width;
+        canvas.height = image.height;
+        const ctx = canvas.getContext('2d')!;
+        ctx.drawImage(image, 0, 0);
+        const data = ctx.getImageData(
+          Math.round(box.x),
+          Math.round(box.y),
+          Math.max(1, Math.round(box.width)),
+          Math.max(1, Math.round(box.height)),
+        ).data;
+        let ink = [255, 255, 255];
+        let lowest = Infinity;
+        for (let i = 0; i < data.length; i += 4) {
+          const luminance = 0.2126 * data[i]! + 0.7152 * data[i + 1]! + 0.0722 * data[i + 2]!;
+          if (luminance < lowest) {
+            lowest = luminance;
+            ink = [data[i]!, data[i + 1]!, data[i + 2]!];
+          }
+        }
+        return `rgb(${ink[0]}, ${ink[1]}, ${ink[2]})`;
+      },
+      { shot, box: held!.box },
+    );
+
+    // The floor, on painted pixels, half way through the gesture that used to
+    // sit at 1.9:1 here.
+    expect(contrast(darkest, 'rgb(255, 255, 255)')).toBeGreaterThanOrEqual(4.5);
+
+    // ...and the frame itself, for a person to look at.
+    const area = (await page.locator('.flow .deepdive').boundingBox())!;
+    await page.screenshot({
+      path: path.join(SHOTS, 'turn-mid-flight.png'),
+      clip: { x: 0, y: Math.max(0, Math.round(area.y) - 90), width: 400, height: 200 },
+    });
+
+    await context.close();
+  });
+
+  test('nothing in the follow-up animates the opacity of text, in any state', async () => {
+    const { context, id } = await launchExtension();
+    const page = await openPanel(context, id);
+    await enterInterview(page);
+    await expect(link(page)).toHaveCount(1);
+
+    // Open it and close it again, watching everything that runs inside the row
+    // — the answer arriving, the answer folding away, and the turn itself.
+    const seen = await page.evaluate(async (ms) => {
+      const found = new Map<
+        string,
+        { pseudo: string | null; text: boolean; properties: string[] }
+      >();
+      const collect = () => {
+        const row = document.querySelector('.flow .deepdive');
+        if (!row) return;
+        for (const animation of document.getAnimations()) {
+          const effect = animation.effect as KeyframeEffect | null;
+          const target = effect?.target ?? null;
+          if (!target || !row.contains(target)) continue;
+          const name =
+            (animation as CSSAnimation).animationName ??
+            (animation as CSSTransition).transitionProperty ??
+            '?';
+          const properties = new Set<string>();
+          for (const frame of effect!.getKeyframes()) {
+            for (const key of Object.keys(frame)) properties.add(key);
+          }
+          const previous = found.get(name);
+          for (const key of previous?.properties ?? []) properties.add(key);
+          found.set(name, {
+            pseudo: effect!.pseudoElement,
+            // Text is what 1.4.3 is about. A pseudo-element with `content: ''`
+            // renders none, whatever its host holds.
+            text: !effect!.pseudoElement && (target.textContent ?? '').trim().length > 0,
+            properties: [...properties],
+          });
+        }
+      };
+      const watch = async (duration: number) => {
+        const started = performance.now();
+        while (performance.now() - started < duration) {
+          collect();
+          await new Promise((resolve) => requestAnimationFrame(resolve));
+        }
+      };
+      const chip = document.querySelector('.flow .deepdive-chip') as HTMLButtonElement;
+      await watch(ms / 4);
+      chip.click();
+      await watch(ms);
+      (document.querySelector('.flow .deepdive-chip') as HTMLButtonElement).click();
+      await watch(ms);
+      return [...found].map(([name, what]) => ({ name, ...what }));
+    }, EXPAND_MS * 2);
+
+    // The three gestures this component plays on a rotating question. If one
+    // stops appearing, this test has stopped watching it and says so here
+    // rather than passing on an empty list.
+    const names = seen.map((entry) => entry.name);
+    expect(names, 'the turn never ran').toContain('wb-dd-turn');
+    expect(names, 'the answer never arrived').toContain('wb-dd-answer-in');
+    expect(names, 'the answer never folded away').toContain('wb-dd-out');
+
+    for (const entry of seen) {
+      if (!entry.text) continue;
+      expect(
+        entry.properties,
+        `${entry.name} animates the opacity of text — see the note over the keyframes in DeepDive.css`,
+      ).not.toContain('opacity');
+    }
+
+    // The shimmer's own alpha is NOT this, and is deliberately still there:
+    // it paints `::after`, which holds no text and cannot be given any.
+    const overlay = seen.filter((entry) => entry.pseudo === '::after');
+    for (const entry of overlay) expect(entry.text).toBe(false);
 
     await context.close();
   });

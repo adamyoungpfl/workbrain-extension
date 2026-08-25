@@ -145,12 +145,17 @@
   margin: 0;
   pointer-events: none;
 }
-/* The leaving chips go in 120ms, not 200: they are a fade, §06's own duration
-   for one, and they sit exactly where the bubble is about to grow — held for
+/* The leaving chips go in 120ms, not 200: §06's own duration for something
+   leaving, and they sit exactly where the bubble is about to grow — held for
    the full 200ms they read as smearing under it rather than clearing out of
-   it. They stay mounted for the whole transition either way. */
+   it. They stay mounted for the whole transition either way.
+
+   They squash towards their own bottom edge, so a chip sinks into the row it
+   was standing in rather than shrinking towards its middle — the same origin
+   the nav cluster's melt uses (surfaces/Flow.css). */
 .deepdive-item.is-leaving {
   animation: wb-dd-out var(--fast) var(--ease) both;
+  transform-origin: 50% 100%;
 }
 /* The moving bubble owns the space it is moving through: both ghosts and the
    bubble are positioned, so without this the ghosts win on document order. */
@@ -158,41 +163,73 @@
 .deepdive-item.is-collapsing {
   z-index: 1;
 }
+/* And back out of the row it sank into, the same term in reverse. */
 .deepdive-item.is-entering {
   animation: wb-dd-in var(--base) var(--ease) both;
+  transform-origin: 50% 100%;
 }
+/* The answer flattens UPWARD, towards the chip it is folding back into: the
+   card above it is shrinking towards its own top edge at the same time, so
+   this is the paragraph going the way the box is going. */
 .deepdive-answer.is-collapsing {
   position: absolute;
   animation: wb-dd-out var(--base) var(--ease) both;
+  transform-origin: 50% 0;
 }
 
+/* ── NO FRAME OF ANY OF THIS PAINTS FAINT TEXT ───────────────────────────
+   THERE IS NO OPACITY TERM IN THE FOUR GESTURES BELOW, AND THAT IS AN
+   ACCESSIBILITY DECISION RATHER THAN A STYLISTIC ONE.
+
+   docs/GUARDRAILS.md sets an unconditional 4.5:1 floor for text. A word
+   cross-fading to nothing passes through every ratio underneath that floor on
+   the way, and axe reads exactly what is on screen when it samples: the same
+   argument core/flow/navMelt.ts's third constraint made for the nav cluster in
+   V1.9, and the reason `.navbtn-face` flattens instead of fading.
+
+   These chips were written before that reasoning existed and did not get it.
+   They faded, and tests/e2e/typewriter.a11y.spec.ts found them: it dilates the
+   panel's clock and scans a half-printed question, which lands mid-gesture and
+   read `.deepdive-chip-label` at well under 4.5:1 — a real violation of a real
+   frame, not a testing artefact. What the slow clock changed was the odds of
+   looking, not what was there to see.
+
+   So everything here leaves and arrives by FLATTENING: full colour on every
+   painted frame, and gone because it has no height rather than because it has
+   no contrast. `scaleY(0)` is the end state rather than a small number for the
+   same reason it is in the nav — at zero there is nothing left to paint faint.
+
+   The two `rgba()` alphas further down are NOT this and are deliberately left:
+   they colour the shimmer's gradient and its reduced-motion tint, both painted
+   on `.deepdive-item::after`, which holds no text and never can (`content: ''`).
+   1.4.3 is about text. See tests/e2e/follow-up-rotation.spec.ts, which samples
+   this gesture frame by frame and fails on any opacity term that comes back. */
 @keyframes wb-dd-out {
   from {
-    opacity: 1;
-    transform: scale(1);
+    transform: none;
   }
   to {
-    opacity: 0;
-    transform: scale(0.94);
+    transform: scaleY(0);
   }
 }
 @keyframes wb-dd-in {
   from {
-    opacity: 0;
-    transform: scale(0.94);
+    transform: scaleY(0);
   }
   to {
-    opacity: 1;
-    transform: scale(1);
+    transform: none;
   }
 }
+/* The answer arriving is the one gesture that needs no flatten of its own: the
+   open card carries `overflow: hidden` and grows to its final height (see
+   `.deepdive-item.is-open`), so the box is already revealing the paragraph a
+   line at a time. What is left for the keyframes is the settle — 3px of
+   travel, at full ink from the first pixel the card lets through. */
 @keyframes wb-dd-answer-in {
   from {
-    opacity: 0;
     transform: translateY(-3px);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -415,21 +452,49 @@
   align-self: baseline;
 }
 
-/* The turn. 200ms — §06's default for anything that moves — and a fade with
-   3px of travel rather than a scale: this is text, and text that grows into
-   place is harder to read than text that arrives. Only the collapsed link
-   animates; a link that has been opened keeps its key, so nothing re-runs
-   under the answer. */
-.deepdive.is-one .deepdive-item:not(.is-open) {
+/* THE TURN. 200ms — §06's default for anything that moves — and it does not
+   fade, for the reason written over the keyframes above: this is the gesture
+   tests/e2e/typewriter.a11y.spec.ts caught painting the link at 3:1 and under,
+   because it is the one on screen every five seconds. The sentence rises out of
+   its own baseline instead, at full ink from the first frame that paints — the
+   nav cluster's flatten (core/flow/navMelt.ts, constraint 3), turned the right
+   way up, because a follow-up arriving is that gesture's second half.
+
+   THREE THINGS ABOUT WHERE IT IS APPLIED, EACH OF WHICH IS LOAD-BEARING.
+
+     IT IS ON THE LABEL, NOT ON THE ITEM. `scaleY` changes what
+     `getBoundingClientRect` reports, and two things measure this box: the
+     reserved height DeepDive.tsx holds so a longer follow-up cannot shove the
+     answer field down, and the FLIP that opens the card. Both would read a
+     squashed box and act on it. A transform on the label inside changes
+     neither — the item's layout is exactly what it was.
+
+     NOTHING PRESSABLE MOVES. The 44px target is the button, and the button is
+     untouched, so a press lands wherever it is aimed however far through the
+     gesture it is. VB-15 built that box and the nav's first constraint keeps
+     it; a squashing hit target would be a new way to miss a control.
+
+     THE CHEVRON HOLDS STILL, and it is the only thing here that does. It is a
+     marker in front of a sentence (see VB-57 above) and what changes every
+     five seconds is the sentence, not the marker — so the mark staying put is
+     the gesture reading correctly. It also leaves the mark's own `transform`
+     free for the 90° turn it owes the disclosure, which an animation on it
+     would win against and silently swallow.
+
+   The selector is not narrowed to the closed link. It matches for the whole
+   life of the element, so the animation runs once when a rotated-in link
+   mounts and never again — opening and closing one keeps its key, and a
+   sentence that re-ran its entrance while its own answer was folding away
+   would be an arrival with nothing arriving. */
+.deepdive.is-one .deepdive-chip-label {
   animation: wb-dd-turn var(--base) var(--ease) both;
+  transform-origin: 50% 100%;
 }
 @keyframes wb-dd-turn {
   from {
-    opacity: 0;
-    transform: translateY(3px);
+    transform: translateY(3px) scaleY(0);
   }
   to {
-    opacity: 1;
     transform: none;
   }
 }
@@ -445,7 +510,7 @@
    moving one, not less. This is belt to that braces, for a preference that
    changed while a question was on screen. */
 @media (prefers-reduced-motion: reduce) {
-  .deepdive.is-one .deepdive-item:not(.is-open) {
+  .deepdive.is-one .deepdive-chip-label {
     animation: none;
   }
 }
