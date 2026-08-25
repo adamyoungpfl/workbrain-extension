@@ -20,13 +20,66 @@
  * lives between calls is React state that dies with the panel.
  */
 
-import { FLOW_NAV_HEIGHT } from '../flow/dock';
+import { FLOW_NAV_CLEARANCE, FLOW_NAV_HEIGHT } from '../flow/dock';
 
-/** The grab handle's own height. 44px because it is a control and the
- * accessibility floor (docs/GUARDRAILS.md) has no exception for a control
- * that happens to look like a rule. Exported so the drawer's minimum can be
- * read as "the handle, plus two rows of tree" rather than as a magic number. */
+/** The grab handle's own height — its TARGET, since V2.0 VB-72 split that from
+ * the band it sits in. 44px because it is a control and the accessibility floor
+ * (docs/GUARDRAILS.md) has no exception for a control that happens to look like
+ * a rule. Exported so the two terms below can be read as a subtraction from it
+ * rather than as two magic numbers. */
 export const DRAWER_HANDLE_HEIGHT = 44;
+
+/* ── V2.0 VB-72: LESS AIR ABOVE THE BREADCRUMBS ──────────────────────────
+ *
+ * The complaint: too much empty drawer between the grip and the trail. The
+ * measurement, before: the grip's last painted pixel is 7px below the drawer's
+ * top edge (it straddles the edge by half of its 14), the band under it ran the
+ * handle's full 44, and the trail centres 11.5px words in its own 44 — so the
+ * air between the grip and the first word of the breadcrumb was 53px. Above the
+ * same edge, V1.7 VB-41 leaves 22px between the painted nav cluster and the top
+ * of the grip. One side of the seam had two and a half times the air of the
+ * other, and the wide side was the empty one.
+ *
+ * WHAT DOES NOT MOVE, because both are asserted numbers:
+ *   · VB-41's clearances. `navPaintGapAboveDrawer()` is still 29px to the
+ *     drawer's edge and 22px to the grip (tests/e2e/button-cluster.spec.ts).
+ *     Nothing above the seam changes — not the bar's height, not the cluster,
+ *     not the grip, which still straddles the edge exactly as it did.
+ *   · VB-44/VB-58's 25px between the save note and the nav's painted words
+ *     (`saveNotePaintGapAboveNav()`, tests/e2e/save-note.spec.ts).
+ *
+ * WHAT MOVES: the band under the grip, and only the part of it that is empty.
+ * The handle is still a 44px target — docs/GUARDRAILS.md has no exception for
+ * a control that looks like a rule — but 44px of TARGET is not 44px of drawer.
+ * It keeps its floor by reaching UP into the clearance VB-41 already measured,
+ * and it stops exactly where the nav's own hit boxes stop, so no press that
+ * would have landed on Back, Next or Skip now lands on the handle instead.
+ * That is the same paint-box/hit-box split VB-41 gave the nav and V1.3 VB-15
+ * gave the buttons: shrink the paint, keep the target.
+ *
+ * The air that leaves is 20px, and the breadcrumb comes up by exactly that.
+ */
+
+/**
+ * How much of the handle's 44 sits INSIDE the drawer — the band the trail
+ * begins under.
+ *
+ * Derived from `FLOW_NAV_CLEARANCE` rather than chosen: the clearance is the
+ * gap VB-41 leaves between the nav's hit boxes and the drawer's top edge, so it
+ * is exactly the room the handle can take without touching another control.
+ * Shrink VB-41's clearance and this band grows back rather than the two
+ * quietly overlapping — dock.test.ts and height.test.ts hold both ends.
+ */
+export const DRAWER_HANDLE_BAND = DRAWER_HANDLE_HEIGHT - FLOW_NAV_CLEARANCE;
+
+/**
+ * How far the handle reaches above the drawer's top edge, over the panel's own
+ * canvas, to keep its 44px target — and the pixels the drawer gets back.
+ *
+ * The grip is 14px and straddles that edge, so this has to clear 7 or the
+ * handle would not cover its own visible representation. It does, twice over.
+ */
+export const DRAWER_HANDLE_OVERHANG = DRAWER_HANDLE_HEIGHT - DRAWER_HANDLE_BAND;
 
 /** A tree row is exactly one 44px target tall (FileTree.css). */
 export const DRAWER_ROW_HEIGHT = 44;
@@ -69,15 +122,21 @@ export const DRAWER_CRUMB_NOTE = 18;
 export const DRAWER_VIEW_BAR_HEIGHT = 44;
 
 /**
- * Everything in the drawer that is not the file: the handle, the breadcrumb
- * under it, and the view bar along the bottom.
+ * Everything in the drawer that is not the file: the handle's band, the
+ * breadcrumb under it, and the view bar along the bottom.
  *
  * Named once because four numbers are derived from it — the floor, the resting
  * height, the height Brain hands over at and the height Brain opens to
  * (core/drawer/mode.ts) — and a drawer whose chrome and whose arithmetic
  * disagree is a globe with its edge cut off.
+ *
+ * V2.0 VB-72: the first term is the handle's BAND rather than its target. The
+ * two were the same number until the handle started reaching above the drawer's
+ * edge for the rest of its 44, and this is the one that has to be right: it is
+ * the space the chrome takes away from the file and from the globe's stage, and
+ * twenty pixels of it are now outside the drawer altogether.
  */
-export const DRAWER_CHROME_HEIGHT = DRAWER_HANDLE_HEIGHT + DRAWER_CRUMB_HEIGHT + DRAWER_VIEW_BAR_HEIGHT;
+export const DRAWER_CHROME_HEIGHT = DRAWER_HANDLE_BAND + DRAWER_CRUMB_HEIGHT + DRAWER_VIEW_BAR_HEIGHT;
 
 /**
  * ── V1.9: THE DRAWER DOES NOT GROW. THE CHROME INSIDE IT DID ─────────────
@@ -110,7 +169,7 @@ export const DRAWER_CHROME_HEIGHT = DRAWER_HANDLE_HEIGHT + DRAWER_CRUMB_HEIGHT +
  */
 
 /**
- * The smallest the drawer may get: the chrome plus one row.
+ * The smallest the drawer may get: the chrome, one row, and the band's refund.
  *
  * The floor is what a person drags down to when they want the question and not
  * the file, and one row is the least that still shows the section being written
@@ -120,8 +179,17 @@ export const DRAWER_CHROME_HEIGHT = DRAWER_HANDLE_HEIGHT + DRAWER_CRUMB_HEIGHT +
  * reduction: V1.8's floor was `44 + 44 * 2` and delivered about one row of
  * file, because 37px of the body it left was the file-type strip stuck to the
  * top of it. This is the number that was always true, written down.
+ *
+ * V2.0 VB-72 — WHERE THE TWENTY PIXELS GO, AND WHY NOT HERE. The band above the
+ * trail gave up `DRAWER_HANDLE_OVERHANG`, and the drawer could have given them
+ * up too: 156px instead of 176. It does not, and that is the decision rather
+ * than an oversight. The floor and the peek below are the two numbers V1.1
+ * fixed and V1.9 kept to the pixel against real pressure, and V1.9's own note
+ * above records what paid for the two new bands — the FILE, down from about two
+ * rows of it to one. VB-72 is the refund on that, so it goes where the debt is:
+ * same drawer, same composition, more file inside it.
  */
-export const DRAWER_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + DRAWER_ROW_HEIGHT;
+export const DRAWER_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + DRAWER_ROW_HEIGHT + DRAWER_HANDLE_OVERHANG;
 
 /**
  * Where it starts, every session — 186px, the peek V1.1 shipped and V1.2 kept
@@ -130,9 +198,10 @@ export const DRAWER_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + DRAWER_ROW_HEIGHT;
  * The terms have changed and the total has not, which is the whole point: see
  * the note above for what the ceiling on this number is and why it is not
  * negotiable. VB-12 changed how the drawer is resized, V1.9 changed what is
- * inside it, and neither changed what it looks like when nobody has touched it.
+ * inside it, V2.0 VB-72 changed how much of it is empty, and none of them
+ * changed what it looks like when nobody has touched it.
  */
-export const DRAWER_REST_HEIGHT = DRAWER_CHROME_HEIGHT + DRAWER_ROW_HEIGHT + 10;
+export const DRAWER_REST_HEIGHT = DRAWER_MIN_HEIGHT + 10;
 
 /**
  * Space that stays above the drawer no matter what, in px.

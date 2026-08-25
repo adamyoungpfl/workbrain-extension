@@ -3,7 +3,12 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules, contextOutline } from '../../src/core/flow/flow';
-import { DRAWER_CRUMB_NOTE } from '../../src/core/drawer/height';
+import {
+  DRAWER_CRUMB_NOTE,
+  DRAWER_HANDLE_BAND,
+  DRAWER_HANDLE_OVERHANG,
+} from '../../src/core/drawer/height';
+import { FLOW_NAV_CLEARANCE } from '../../src/core/flow/dock';
 import { splitSectionLabel } from '../../src/core/flow/sectionLabel';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
@@ -406,6 +411,130 @@ test.describe('VB-51 — the bottom bar switches view, and only view', () => {
 
     // And there is exactly ONE control anywhere in the drawer that changes file.
     expect(await page.locator('.crumbs-seg[data-seg="file"]').count()).toBe(1);
+
+    await context.close();
+  });
+});
+
+/* ───────────────────────────────── V2.0 VB-72: the air above the trail ─── */
+
+/**
+ * "Reduce the padding above the breadcrumb row in List. Measure against VB-58's
+ * centred save note and VB-41's clearances rather than nudging until it looks
+ * right — those numbers are asserted."
+ *
+ * So this measures both sides of the drawer's top edge in one pass, because the
+ * complaint is a comparison rather than a number: above the seam, V1.7 VB-41
+ * leaves 29px between the nav cluster's painted words and the edge, and 22px
+ * between them and the top of the grip — both still held, in the file that owns
+ * them (tests/e2e/button-cluster.spec.ts), and neither touched here. Below it,
+ * the band under the grip ran the handle's whole 44 and the trail then centred
+ * its words in its own 44, which put 53px of nothing between the grip and the
+ * first word. The wide side of the seam was the empty one.
+ *
+ * VB-58's half of the sentence is the same shape and is asserted in
+ * tests/e2e/save-note.spec.ts: 8px under the note, 25px above the nav's words,
+ * deliberately under VB-41's 29 below them. Nothing here moves either number —
+ * everything VB-72 changes is under the drawer's top edge.
+ */
+test.describe('VB-72 — less air above the breadcrumbs', () => {
+  test('the trail starts one band down, and the handle keeps a 44px target above it', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openDrawer(context, sw, id);
+
+    const g = await page.evaluate(() => {
+      const box = (selector: string) => {
+        const found = document.querySelector(selector);
+        if (!found) return null;
+        const rect = found.getBoundingClientRect();
+        return { top: rect.top, bottom: rect.bottom, left: rect.left, right: rect.right, height: rect.height };
+      };
+      return {
+        drawer: box('.filedrawer')!,
+        handle: box('.filedrawer-handle')!,
+        grip: box('.filedrawer-grip')!,
+        crumbs: box('.crumbs-row')!,
+        rung: box('.crumbs-seg.is-here .crumbs-label')!,
+        navHitBottom: Math.max(
+          ...[...document.querySelectorAll('.flow-foot .btn')].map((el) => el.getBoundingClientRect().bottom),
+        ),
+      };
+    });
+
+    // THE BAND IS THE BAND, and the trail begins at the bottom of it.
+    expect(Math.round(g.crumbs.top - g.drawer.top), 'the trail does not start at the band').toBe(
+      DRAWER_HANDLE_BAND,
+    );
+
+    // THE TARGET IS STILL 44, and the rest of it is above the drawer's edge.
+    expect(g.handle.height, 'the handle is under the 44px floor').toBeGreaterThanOrEqual(44);
+    expect(Math.round(g.drawer.top - g.handle.top), 'the handle does not overhang as core says').toBe(
+      DRAWER_HANDLE_OVERHANG,
+    );
+    expect(Math.round(g.handle.height), 'the band and the overhang do not add up to the target').toBe(
+      DRAWER_HANDLE_BAND + DRAWER_HANDLE_OVERHANG,
+    );
+
+    // AND IT TAKES NO PRESS FROM THE CLUSTER. The two targets meet at the row
+    // where the nav's hit boxes end, and never overlap — this is the assertion
+    // that fails if the overhang is ever loosened off VB-41's clearance.
+    expect(g.handle.top, 'the handle reaches into the nav’s own hit boxes').toBeGreaterThanOrEqual(
+      g.navHitBottom - 0.5,
+    );
+    expect(Math.round(g.drawer.top - g.navHitBottom), 'VB-41’s clearance moved').toBe(FLOW_NAV_CLEARANCE);
+
+    // AND THE GRIP DID NOT MOVE: still straddling the edge, half above it.
+    expect(g.grip.top, 'the grip is not straddling the edge').toBeLessThan(g.drawer.top);
+    expect(g.grip.bottom, 'the grip is not straddling the edge').toBeGreaterThan(g.drawer.top);
+    expect(Math.round(g.drawer.top - g.grip.top), 'the grip moved off the seam').toBe(
+      Math.round(g.grip.height / 2),
+    );
+
+    // AND NOTHING WAS TAKEN OFF THE TRAIL to pay for it: every rung is still a
+    // 44px target (core/drawer/height.ts's note on why the band is the floor).
+    for (const rungBox of await page.locator('.crumbs-seg').evaluateAll((els) =>
+      els.map((el) => el.getBoundingClientRect().height),
+    )) {
+      expect(rungBox, 'a rung is under the 44px floor').toBeGreaterThanOrEqual(44);
+    }
+
+    await context.close();
+  });
+
+  test('the air under the grip is no longer twice the air above it', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openDrawer(context, sw, id);
+
+    const measured = await page.evaluate(() => {
+      const grip = document.querySelector('.filedrawer-grip')!.getBoundingClientRect();
+      const word = document.querySelector('.crumbs-seg.is-here .crumbs-label')!.getBoundingClientRect();
+      // The painted box of the nav cluster, which is what VB-41 measures — the
+      // wrapper the ring hugs, not the 44px hit box around it.
+      const cluster = Math.max(
+        ...[...document.querySelectorAll('.flow-foot .navbtn')].map((el) => el.getBoundingClientRect().bottom),
+      );
+      return { above: grip.top - cluster, below: word.top - grip.bottom };
+    });
+
+    // Both are real air, and neither has collapsed: the trail must not end up
+    // welded to the grip either.
+    expect(measured.above, 'the cluster is on top of the grip').toBeGreaterThan(8);
+    expect(measured.below, 'the trail is welded to the grip').toBeGreaterThan(8);
+
+    // THE COMPLAINT, MEASURED. It was 53px against VB-41's 22 — two and a half
+    // times as much air on the side with nothing in it. The bound is stated
+    // against the number VB-41 asserts rather than against a number that looked
+    // right, so tightening one side tightens this too.
+    expect(
+      measured.below,
+      `${Math.round(measured.below)}px under the grip against ${Math.round(measured.above)}px above it`,
+    ).toBeLessThan(measured.above * 2);
+
+    console.log(
+      `\n  VB-72 either side of the seam — ${Math.round(measured.above)}px above the grip, ${Math.round(
+        measured.below,
+      )}px below it\n`,
+    );
 
     await context.close();
   });

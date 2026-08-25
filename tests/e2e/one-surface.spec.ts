@@ -209,11 +209,30 @@ function heightsFor(mode: 'brain' | 'list'): { name: string; height: number }[] 
 
 /* ── 1. ONE COLOUR ───────────────────────────────────────────────────────── */
 
-test('the drawer is one colour, sampled every third pixel of its height, in both modes (VB-50)', async () => {
+/**
+ * V2.0 VB-72 MADE THIS WALK EXACT INSTEAD OF LUCKY, AND FOUND OUT WHY.
+ *
+ * It used to step three pixels at a time and assert every sample was the field.
+ * That passed for two versions because of an alignment nobody chose: the list's
+ * rows are 44 tall with a 1px rule between them, so the rules landed on
+ * y ≡ 0 (mod 3) and the walk read y ≡ 1. VB-72 lifts the whole body twenty
+ * pixels and the same rule starts landing on them.
+ *
+ * The rules are not a regression and never were. `--dock-line` is the drawer's
+ * declared hairline (core/drawer/chrome.ts's `DOCK_LINE_TOKEN`) and the one
+ * thing in here deliberately under 3:1, because a divider carries no meaning —
+ * VB-50 removed grounds, not rules. So the walk now reads EVERY pixel and holds
+ * a stricter claim than the one it was making: each one is the field, or it is
+ * that hairline and it is exactly one pixel of it. A pane, a tint or a two-pixel
+ * band all fail; the rule between two rows does not.
+ */
+test('the drawer is one colour, every pixel of its height, in both modes (VB-50)', async () => {
   const { context, sw, id } = await launchExtension();
   const page = await openQuestion(context, sw, id);
   const field = await tokenColor(page, '--globe-field');
   const canvas = await tokenColor(page, '--canvas');
+  // `--dock-line` is declared as this token, in Flow.css, on the shell.
+  const line = await tokenColor(page, '--globe-edge-far');
   const measured: string[] = [];
 
   for (const mode of ['list', 'brain'] as const) {
@@ -227,20 +246,39 @@ test('the drawer is one colour, sampled every third pixel of its height, in both
       // That is the handle band, the breadcrumb, the visual, the view bar and
       // — where V1.6 VB-29's frame used to be — the bottom edge itself.
       const column: { x: number; y: number }[] = [];
-      for (let y = Math.round(drawer.y) + 1; y < PANEL.height; y += 3) {
+      for (let y = Math.round(drawer.y) + 1; y < PANEL.height; y += 1) {
         column.push({ x: GROUND_X, y });
       }
       const painted = await pixels(page, column);
       let worst = 0;
+      let run = 0;
+      let rules = 0;
+      const closeRun = (at: number) => {
+        if (run === 0) return;
+        expect(run, `${where}: a ${run}px band at ${at}px down the drawer, where only a rule may be`).toBeLessThanOrEqual(1);
+        rules += 1;
+        run = 0;
+      };
       painted.forEach((sample, index) => {
+        const down = column[index]!.y - Math.round(drawer.y);
         const distance = channelDistance(sample, field);
-        worst = Math.max(worst, distance);
+        if (distance <= PAINT_TOLERANCE) {
+          worst = Math.max(worst, distance);
+          closeRun(down);
+          return;
+        }
+        // Not the field. The only other thing allowed in this column is the
+        // drawer's own hairline between two rows.
         expect(
-          distance,
-          `${where}: ${column[index]!.y - Math.round(drawer.y)}px down the drawer is not the one colour`,
+          channelDistance(sample, line),
+          `${where}: ${down}px down the drawer is neither the one colour nor its rule`,
         ).toBeLessThanOrEqual(PAINT_TOLERANCE);
+        run += 1;
       });
-      measured.push(`${where} — ${painted.length} samples, worst ${worst} levels off the field`);
+      closeRun(painted.length);
+      measured.push(
+        `${where} — ${painted.length} samples, worst ${worst} levels off the field, ${rules} hairlines`,
+      );
 
       // AND THE FRAME IS REALLY GONE. V1.6 VB-29 put 8px of --canvas down both
       // sides and across the bottom; drawer-frame.spec.ts walked in from the
@@ -479,7 +517,16 @@ interface Control {
 async function controlsInDrawer(page: Page): Promise<Control[]> {
   const drawer = page.locator('.filedrawer');
   const controls: Control[] = [
-    { what: 'the drag handle', locator: page.locator('.filedrawer-handle'), kind: 'glyph' },
+    {
+      what: 'the drag handle',
+      locator: page.locator('.filedrawer-handle'),
+      kind: 'glyph',
+      // V2.0 VB-72: the handle's target reaches above the drawer's top edge for
+      // the last twenty of its 44, where the dock's ring measures 1.69:1 on the
+      // panel's canvas. The ring is on the band inside the drawer — the same
+      // move the chips below make, for the same reason.
+      ring: '.filedrawer-handle-band',
+    },
     {
       what: 'the Work brain rung',
       locator: drawer.getByRole('button', { name: S.crumbWork, exact: true }),

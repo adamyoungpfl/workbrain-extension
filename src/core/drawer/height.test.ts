@@ -1,11 +1,18 @@
 import { describe, it, expect } from 'vitest';
 import {
+  DRAWER_CHROME_HEIGHT,
+  DRAWER_CRUMB_HEIGHT,
+  DRAWER_HANDLE_BAND,
+  DRAWER_HANDLE_HEIGHT,
+  DRAWER_HANDLE_OVERHANG,
   DRAWER_MAX_FRACTION,
   DRAWER_MIN_HEIGHT,
   DRAWER_PAGE_STEP,
   DRAWER_QUESTION_RESERVE,
   DRAWER_REST_HEIGHT,
+  DRAWER_ROW_HEIGHT,
   DRAWER_STEP,
+  DRAWER_VIEW_BAR_HEIGHT,
   clampDrawerHeight,
   drawerBounds,
   drawerHeightForKey,
@@ -13,7 +20,7 @@ import {
   drawerOpenPercent,
   restingDrawerHeight,
 } from './height';
-import { FLOW_NAV_HEIGHT } from '../flow/dock';
+import { FLOW_NAV_CLEARANCE, FLOW_NAV_HEIGHT, FLOW_NAV_TARGET } from '../flow/dock';
 
 /** The real side panel: 400px wide, and about this tall on a laptop. */
 const PANEL = 700;
@@ -57,6 +64,59 @@ describe('drawerBounds', () => {
     // VB-14: "Below ~180px Brain is unusable... At 300px it's excellent."
     // A real panel has to be able to reach that or the globe has nowhere to go.
     expect(drawerBounds(PANEL).max).toBeGreaterThanOrEqual(300);
+  });
+});
+
+/**
+ * V2.0 VB-72 — less air above the breadcrumbs.
+ *
+ * The band under the grip gives up the pixels it had nothing in, and every
+ * number it is allowed to give them up against is asserted somewhere else:
+ * VB-41's clearance above the seam, the 44px floor, and the peek V1.1 fixed.
+ * So this is four claims about how the reduction is BOUNDED, not one about how
+ * much air looks right.
+ */
+describe('VB-72 — the handle’s band, and what it is allowed to cost', () => {
+  it('leaves the handle a real 44px target, in two pieces', () => {
+    expect(DRAWER_HANDLE_BAND + DRAWER_HANDLE_OVERHANG).toBe(DRAWER_HANDLE_HEIGHT);
+    // docs/GUARDRAILS.md's floor, which has no exception for a control that
+    // looks like a rule.
+    expect(DRAWER_HANDLE_HEIGHT).toBeGreaterThanOrEqual(44);
+    // ...and the band is a real band rather than a hairline the grip hangs off.
+    expect(DRAWER_HANDLE_BAND).toBeGreaterThan(0);
+  });
+
+  it('reaches no further up than the room VB-41 already leaves above the drawer', () => {
+    // FLOW_NAV_CLEARANCE is the gap between the nav's hit boxes and the
+    // drawer's top edge. Taking all of it puts the two targets edge to edge and
+    // never one over the other: a press that would have hit Back, Next or Skip
+    // still hits it.
+    expect(DRAWER_HANDLE_OVERHANG).toBeLessThanOrEqual(FLOW_NAV_CLEARANCE);
+    // The grip is 14px and straddles the drawer's edge, so the handle has to
+    // reach at least its top half or it would not cover what a person aims at.
+    expect(DRAWER_HANDLE_OVERHANG).toBeGreaterThanOrEqual(7);
+    // And the bar above is untouched — the same target, the same clearance,
+    // the same height. VB-72 changes what is under the seam, never over it.
+    expect(FLOW_NAV_HEIGHT).toBe(FLOW_NAV_TARGET + FLOW_NAV_CLEARANCE);
+  });
+
+  it('charges the drawer for the band, not for the target', () => {
+    expect(DRAWER_CHROME_HEIGHT).toBe(DRAWER_HANDLE_BAND + DRAWER_CRUMB_HEIGHT + DRAWER_VIEW_BAR_HEIGHT);
+    // The trail starts `DRAWER_HANDLE_OVERHANG` higher than it did, which is
+    // the whole of the complaint.
+    expect(DRAWER_HANDLE_HEIGHT + DRAWER_CRUMB_HEIGHT + DRAWER_VIEW_BAR_HEIGHT - DRAWER_CHROME_HEIGHT).toBe(
+      DRAWER_HANDLE_OVERHANG,
+    );
+  });
+
+  it('spends the refund on the file rather than on the drawer', () => {
+    // The two numbers V1.1 fixed and V1.9 kept to the pixel, unchanged: the
+    // panel's composition is the same before and after this task.
+    expect(DRAWER_MIN_HEIGHT).toBe(176);
+    expect(DRAWER_REST_HEIGHT).toBe(186);
+    // What did change is how much of the drawer is file: one row plus the
+    // pixels the empty band gave back.
+    expect(DRAWER_MIN_HEIGHT - DRAWER_CHROME_HEIGHT).toBe(DRAWER_ROW_HEIGHT + DRAWER_HANDLE_OVERHANG);
   });
 });
 

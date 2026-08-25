@@ -167,14 +167,41 @@ test('the handle clears the 44x44 floor and has a visible focus ring (VB-12)', a
   expect(box.width).toBeGreaterThanOrEqual(44);
 
   expect(await tabToHandle(page), 'Tab never reaches the drag handle').toBe(true);
+
+  /**
+   * V2.0 VB-72 MOVED THE RING, AND THIS READS IT WHERE IT IS.
+   *
+   * The claim is unchanged — focus is visible on this control, and
+   * docs/GUARDRAILS.md's "never `outline: none` without an equal replacement"
+   * is what makes that non-negotiable. What changed is where an equal
+   * replacement can be seen: the handle's 44px target now reaches above the
+   * drawer's top edge, over the panel's canvas, where the dock's ring colour
+   * measures 1.69:1 and a third of the ring would simply not be there. So it
+   * rings its painted box — the band inside the drawer — exactly as the
+   * breadcrumb's file chips ring the chip rather than the button.
+   *
+   * The handle itself is still asked, so a ring on neither still fails.
+   */
   const ring = await handle.evaluate((el) => {
-    const s = getComputedStyle(el);
+    const read = (element: Element) => {
+      const s = getComputedStyle(element);
+      return {
+        outline: s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) >= 2,
+        shadow: s.boxShadow !== 'none',
+      };
+    };
+    const band = el.querySelector('.filedrawer-handle-band');
+    const own = read(el);
+    const painted = band ? read(band) : { outline: false, shadow: false };
     return {
-      outline: s.outlineStyle !== 'none' && parseFloat(s.outlineWidth) > 0,
-      shadow: s.boxShadow !== 'none',
+      visible: own.outline || own.shadow || painted.outline || painted.shadow,
+      // Wherever it is drawn, it has to be inside the drawer: a ring over the
+      // question above would be the invisible one this test exists to catch.
+      inside: band ? band.getBoundingClientRect().top >= el.getBoundingClientRect().top : true,
     };
   });
-  expect(ring.outline || ring.shadow, 'the drag handle has no visible focus ring').toBe(true);
+  expect(ring.visible, 'the drag handle has no visible focus ring').toBe(true);
+  expect(ring.inside, 'the drag handle rings a box outside the drawer').toBe(true);
 
   await context.close();
 });

@@ -97,11 +97,25 @@
   transition: height var(--slow) var(--ease);
 }
 
-/* The 44px band at the top of the drawer. V1.9 VB-52: the handle's, and only
-   the handle's — the two mode buttons went down to the bar along the bottom
-   (VB-51) and the count went onto the trail below (components/Breadcrumb.css).
-   The handle covers the whole band (`inset: 0`), so anything else in here takes
-   pixels off a 44px control, which docs/GUARDRAILS.md has no exception for.
+/* The band at the top of the drawer. V1.9 VB-52: the handle's, and only the
+   handle's — the two mode buttons went down to the bar along the bottom (VB-51)
+   and the count went onto the trail below (components/Breadcrumb.css). The
+   handle covers the whole band, so anything else in here takes pixels off a
+   44px control, which docs/GUARDRAILS.md has no exception for.
+
+   ── V2.0 VB-72: 24px OF DRAWER, 44px OF CONTROL ─────────────────────────
+   It was 44 of both, and 37 of those 44 were empty: the grip straddles the
+   drawer's top edge, so its last painted pixel is 7px down, and the trail below
+   then centres 11.5px words in its own 44. That put 53px of nothing between the
+   grip and the first word of the breadcrumb, against the 22px V1.7 VB-41 leaves
+   between the nav cluster and the grip on the other side of the same seam.
+
+   So the band is `DRAWER_HANDLE_BAND` and the handle keeps its floor by reaching
+   `DRAWER_HANDLE_OVERHANG` px UP, over the panel's canvas, into the clearance
+   VB-41 already measured — see `.filedrawer-handle` for why that is a target
+   and not a paint, and core/drawer/height.ts for why the twenty pixels go to
+   the file rather than to the drawer's total. Nothing above the seam moves: not
+   the bar, not the cluster, not the grip.
 
    V1.6 VB-30 — IT PAINTS ITSELF NOW, AND IT PAINTS ITSELF DARK. Until V1.6
    this band was transparent and took whatever the drawer's own background was,
@@ -248,9 +262,25 @@
    representation and carries WCAG 1.4.11 on its own (see the two bars below).
    This box is the 44x44+ target around it: a control that looks like a mark on
    a surface is still a control (docs/GUARDRAILS.md). */
+/* ── V2.0 VB-72 — THE TARGET, WHICH IS TALLER THAN THE BAND ──────────────
+   `top` is negative by exactly the pixels the band gave up, so the box is still
+   the 44 docs/GUARDRAILS.md asks for while only `--drawer-head-h` of it is
+   drawer. What it reaches into is empty by design: VB-41 leaves
+   `FLOW_NAV_CLEARANCE` px between the nav's own hit boxes and this edge, and
+   core/drawer/height.ts derives the overhang from that constant so the two
+   targets meet and never overlap — a press that would have hit Back, Next or
+   Skip still hits them.
+
+   It paints nothing up there. The grip is pushed back down by the same amount
+   below, so the only thing on screen above the seam is the half-grip that was
+   always there, and tests/e2e/button-cluster.spec.ts's "every row above the
+   drawer is --canvas" still reads canvas. */
 .filedrawer-handle {
   position: absolute;
-  inset: 0;
+  top: calc(-1 * var(--drawer-handle-over, 20px));
+  right: 0;
+  bottom: 0;
+  left: 0;
   display: flex;
   justify-content: center;
   cursor: ns-resize;
@@ -259,7 +289,30 @@
   touch-action: none;
   user-select: none;
 }
+
+/* THE PAINTED BOX: the part of the control that is inside the drawer, and the
+   only part with a ground to ring against. `--dock-accent` measures 11.55:1 on
+   the drawer's field and 1.69:1 on the panel's canvas, so a ring hugging the
+   whole target would have its top third drawn where nobody could see it —
+   which is the same reason the file chips ring the chip rather than the button
+   (components/Breadcrumb.css) and VB-41's nav rings the word rather than the
+   44px box. Everything else about it is inherited: same width, same colour,
+   same 2px at 2px inset. */
+.filedrawer-handle-band {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--drawer-head-h, 24px);
+  pointer-events: none;
+}
 .filedrawer-handle:focus-visible {
+  /* The ring is on the band below, so this is the "equal replacement"
+     docs/GUARDRAILS.md requires when an outline is turned off — the same ring,
+     drawn where it can be seen. */
+  outline: none;
+}
+.filedrawer-handle:focus-visible .filedrawer-handle-band {
   /* Follows the stage, like every other ring in the dock — see
      `.filedrawer-mode:focus-visible`. */
   outline: 2px solid var(--dock-accent, var(--primary));
@@ -270,6 +323,11 @@
 
 .filedrawer-grip {
   position: relative;
+  /* V2.0 VB-72: back down to the drawer's own top edge, which is where the
+     handle's box used to start. The target grew upwards; the grip did not
+     move, and every measurement of it in tests/e2e/button-cluster.spec.ts is
+     the same number it was. */
+  margin-top: var(--drawer-handle-over, 20px);
   width: 44px;
   height: 14px;
   /* Opaque and the stage's own colour (V1.4 VB-22): there is no rule left for

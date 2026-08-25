@@ -14,7 +14,8 @@ import { fileToggle } from '../../core/files/toggle';
 import {
   DRAWER_CRUMB_HEIGHT,
   DRAWER_CRUMB_NOTE,
-  DRAWER_HANDLE_HEIGHT,
+  DRAWER_HANDLE_BAND,
+  DRAWER_HANDLE_OVERHANG,
   DRAWER_VIEW_BAR_HEIGHT,
   clampDrawerHeight,
   drawerBounds,
@@ -756,7 +757,12 @@ export function FileDrawer({
           // decide the drawer's floor, its resting height and the globe's
           // stage size, and a `calc()` with its own copy of 44 is how those
           // four quietly stop agreeing.
-          '--drawer-head-h': `${DRAWER_HANDLE_HEIGHT}px`,
+          // V2.0 VB-72: the BAND, not the handle's target. Twenty of the
+          // handle's 44 hang above the drawer's top edge now, and the
+          // stylesheet reads both terms from here rather than doing that
+          // subtraction itself.
+          '--drawer-head-h': `${DRAWER_HANDLE_BAND}px`,
+          '--drawer-handle-over': `${DRAWER_HANDLE_OVERHANG}px`,
           '--crumb-row-h': `${DRAWER_CRUMB_HEIGHT}px`,
           '--crumb-note-h': `${DRAWER_CRUMB_NOTE}px`,
           '--drawer-crumb-h': `${DRAWER_CRUMB_HEIGHT + crumbNote}px`,
@@ -796,6 +802,15 @@ export function FileDrawer({
           onPointerCancel={endDrag}
           onKeyDown={onHandleKeyDown}
         >
+          {/* V2.0 VB-72 — THE PAINTED BOX, and the only reason it exists.
+              The handle's target now reaches above the drawer's top edge, over
+              the panel's own canvas, where the dock's ring measures 1.69:1 and
+              would simply not be there. So the ring goes on the part of the
+              control that is inside the drawer — the same "ring on the painted
+              box, not on the hit box" the file chips (components/Breadcrumb.css)
+              and V1.7 VB-41's nav cluster already use. Decorative: the name,
+              the role and the value are all on the handle itself. */}
+          <span className="filedrawer-handle-band" aria-hidden="true" />
           <span className="filedrawer-grip" aria-hidden="true" />
         </div>
         {/* V1.9 VB-52 — the count that used to sit at the right of this band
