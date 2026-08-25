@@ -9,8 +9,10 @@ import type { Rgb } from '../../src/core/color/contrast';
  * The unit tests prove the geometry and the component's own wiring. They
  * cannot prove any of the things this feature actually lives or dies by,
  * because jsdom has no layout, no compositor and no pointer: that a drag
- * really turns it, that it coasts and settles, that labels disappear while it
- * moves and come back when it stops, that the fly-in takes the time it is
+ * really turns it, that it coasts and settles, that a label stays legible
+ * through the motion and travels with its own orb (V2.1 VB-77 — this line used
+ * to say the opposite, and BrainGlobe.css records why it changed), that the
+ * fly-in takes the time it is
  * supposed to and the children arrive one after another, and — the one that
  * matters most — that a reduced-motion visitor gets a globe that changes state
  * instantly with no frame loop running behind it at all.
@@ -153,28 +155,80 @@ test.describe('VB-14 — drag to rotate, with momentum and settle', () => {
   });
 });
 
-test.describe('VB-14 — labels hide while moving, fade in when settled', () => {
-  test('a moving globe shows no label, and a settled one shows them again', async ({ page }) => {
+test.describe('V2.1 VB-77 — labels ride their orb and do not blink', () => {
+  /**
+   * THIS TEST IS THE INVERSE OF THE ONE IT REPLACES, deliberately.
+   *
+   * VB-14's version asserted that a moving globe shows no label at all
+   * (`opacity < 0.05` mid-drag) and that the names come back on settle. That
+   * behaviour is gone — see BrainGlobe.css's VB-77 block for why the reason
+   * behind it expired: labels are HTML pins that never receive the camera's
+   * rotation, so nothing tumbles, and the globe drifts by default, so the rule
+   * was hiding the names most of the time.
+   *
+   * What replaces it is the property Adam actually asked for: a name stays
+   * legible THROUGH the motion, and it stays attached to its own orb while it
+   * moves. Both halves are measured here rather than assumed, because "the
+   * label is still on screen" would pass even if it were pinned to the stage
+   * and its orb had slid out from under it.
+   */
+  test('a name stays readable through a drag, and travels with its own orb', async ({ page }) => {
     await open(page);
-    const label = page.locator('.brainglobe-pin[data-label-hidden="false"] .brainglobe-label').first();
+    const pin = page.locator('.brainglobe-pin[data-label-hidden="false"]').first();
+    const label = pin.locator('.brainglobe-label');
     const opacity = () => label.evaluate((el) => Number(getComputedStyle(el).opacity));
 
     await expect.poll(opacity).toBeGreaterThan(0.6);
+    const before = (await pin.boundingBox())!;
 
     const box = (await page.locator('.brainglobe').boundingBox())!;
     await page.mouse.move(box.x + box.width / 2, box.y + box.height / 2);
     await page.mouse.down();
     for (let i = 1; i <= 8; i++) await page.mouse.move(box.x + box.width / 2 + i * 10, box.y + box.height / 2);
 
-    // Mid-drag: real computed opacity, not merely a class that toggled.
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-moving')).toBe('true');
-    await expect
-      .poll(() => page.locator('.brainglobe-label').evaluateAll((els) => Math.max(...els.map((el) => Number(getComputedStyle(el).opacity)))))
-      .toBeLessThan(0.05);
+
+    // Mid-drag, and this is the whole point: real computed opacity, still above
+    // the floor. Not "some label somewhere" — this pin's own name.
+    expect(await opacity()).toBeGreaterThan(0.6);
+
+    // And it moved, so we are not reading a name that simply never went
+    // anywhere. The stage is 400px wide and the drag pushes 80px across it, so
+    // a pin that shifted less than a couple of pixels is a pin that is pinned
+    // to the stage rather than to its orb.
+    const during = (await pin.boundingBox())!;
+    expect(Math.abs(during.x - before.x) + Math.abs(during.y - before.y)).toBeGreaterThan(2);
+
+    // The label sits on its own pin the whole way through — same box, no
+    // separate coordinate system that could drift apart from it under motion.
+    const labelBox = (await label.boundingBox())!;
+    expect(labelBox.y).toBeGreaterThanOrEqual(during.y - 1);
 
     await page.mouse.up();
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-moving'), { timeout: 4000 }).toBe('false');
     await expect.poll(opacity, { timeout: 2000 }).toBeGreaterThan(0.6);
+  });
+
+  /**
+   * The cut at LABEL_DEPTH_FLOOR survives VB-77 and must stay a cut. A label
+   * that cross-fades to nothing paints text below the contrast floor on every
+   * frame of the way down, which docs/GUARDRAILS.md forbids — the same
+   * constraint core/flow/navMelt.ts's header documents. So: every name on
+   * screen is at or above the floor, and the ones below it are not on screen.
+   * There is no in-between, and this asserts there is no in-between.
+   */
+  test('no label is ever painted faint — it is above the floor or it is gone', async ({ page }) => {
+    await open(page);
+    const opacities = await page
+      .locator('.brainglobe-label')
+      .evaluateAll((els) => els.map((el) => Number(getComputedStyle(el).opacity)));
+
+    expect(opacities.length).toBeGreaterThan(0);
+    for (const value of opacities) {
+      const legible = value >= 0.6;
+      const absent = value <= 0.001;
+      expect(legible || absent, `a label was painted at ${value} — neither legible nor gone`).toBe(true);
+    }
   });
 
   test('the fade is the 200ms default, on the one easing curve', async ({ page }) => {

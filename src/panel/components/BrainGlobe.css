@@ -361,15 +361,38 @@
   text-shadow: 0 1px 3px var(--globe-field), 0 0 8px var(--globe-field);
 }
 
-/* LABELS HIDE WHILE IT MOVES. Non-negotiable (VB-14): text tumbling in 3D is
-   unreadable. Higher specificity than the per-node opacity above, so this wins
-   whatever depth the node happens to be at. */
-.brainglobe[data-moving='true'] .brainglobe-pin .brainglobe-label {
-  opacity: 0;
-}
+/* ── V2.1 VB-77 — THE LABELS STOP BLINKING ────────────────────────────────
+   This rule used to be `opacity: 0`, taking every name down for as long as the
+   globe was moving. Adam: "The blinking in and out is distracting and doesn't
+   add any value."
 
-/* ...except on the node you are actually on. A control whose name you cannot
-   see is not a control. */
+   It went because ITS REASON HAD EXPIRED, not because the reason was overruled.
+   VB-14 wrote it as non-negotiable on the grounds that "text tumbling in 3D is
+   unreadable", and that was true of what the stage drew then. It is not true of
+   what it draws now: a label is an HTML pin in an overlay that never receives
+   the camera's rotation. It is placed by `onStage(node.lx, node.ly)` and shifted
+   by `--brainglobe-label-shift`, so as the solid turns its name TRANSLATES and
+   SCALES and stays upright. Nothing tumbles. The rule was protecting against a
+   failure mode the current implementation cannot produce, and the cost of
+   keeping it was paid every frame — the globe drifts by default, so the names
+   were absent most of the time and arrived only once it settled.
+
+   WHAT IS LEFT, AND WHY IT IS NOT THE SAME THING. A label still disappears at
+   `LABEL_DEPTH_FLOOR` when its orb passes behind the solid (BrainGlobe.tsx).
+   That is one name at a time, at the silhouette edge, at the exact moment the
+   orb it belongs to is going out of sight — occlusion, which is what the
+   picture is telling you, rather than the interface blinking at you.
+
+   AND IT CANNOT BE SOFTENED INTO A FADE. This is the constraint that decides
+   it, and it is the same one core/flow/navMelt.ts's header documents: a label
+   that cross-fades to nothing passes through every opacity below its floor on
+   the way, and `LABEL_OPACITY_MIN` is the floor precisely because 0.62 is what
+   measures 8.8:1 on this field. Fading out would paint text under 4.5:1 for
+   real frames, which docs/GUARDRAILS.md forbids without exception. So the cut
+   is abrupt on purpose: never faint text, and never a frame of it. */
+
+/* The name on the node you are actually on, at full strength whatever its
+   depth. A control whose name you cannot see is not a control. */
 .brainglobe .brainglobe-pin:focus-visible .brainglobe-label,
 .brainglobe .brainglobe-pin:hover .brainglobe-label {
   opacity: 1;
@@ -799,7 +822,9 @@
     transition: none;
   }
 
-  .brainglobe[data-moving='true'] .brainglobe-pin .brainglobe-label {
-    opacity: var(--brainglobe-label-opacity, 1);
-  }
+  /* V2.1 VB-77 removed the rule this used to undo. A reduced-motion visitor had
+     to have the labels put back, because the globe does not move for them and a
+     name hidden "while moving" would have been hidden forever. With the hide
+     gone, both audiences now get the same behaviour from the same declaration
+     and there is nothing here to restore. */
 }
