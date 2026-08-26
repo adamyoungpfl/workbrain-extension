@@ -113,11 +113,11 @@ so they do not have to re-explain who they are and how they work every time.
       sibling repo (`../modelcitizen`). Every claim in it was verified against the shipping source
       on 25 August 2026; see `store/PRIVACY.md` for what was checked and the one sentence that was
       wrong.
-- [ ] Privacy policy **deployed** and reachable at the URL above ← *the remaining hard blocker*
+- [x] Privacy policy **deployed** — live and verified 26 August 2026 (HTTP 200, content confirmed)
 - [x] Screenshots regenerated against the current build (V2.2), and all four looked at
 - [x] `npm run check` green — 25 August 2026: typecheck, audit, 1612 unit, 503 e2e, 68 a11y
-- [ ] `npm run zip` produces `dist.zip`
-- [ ] `dist.zip`'s manifest requests exactly `storage` and `sidePanel`
+- [x] `npm run zip` produces `dist.zip` — built 26 August 2026
+- [x] `dist.zip`'s manifest requests exactly `storage` and `sidePanel` — read out of the zip itself, not the source
 - [ ] Version bumped in `manifest.config.ts` if resubmitting
 - [ ] Data disclosure: every category left unticked
 
