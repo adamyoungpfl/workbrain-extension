@@ -553,6 +553,14 @@ test.describe('Example press cue (VB-08 animation)', () => {
   test('reduced motion: nothing moves, but the press still shows itself', async () => {
     const { context, page } = await launchPanel({ reducedMotion: 'reduce' });
     await goToIdeaQuestion(page);
+    // V2.4 VB-108: context_scope became a vertical pick list, which moved its
+    // Next button — and the mouse parks wherever it last clicked, which on
+    // stop_explaining's layout is now over this very button. Chrome applies
+    // the stationary-pointer :hover a beat later, between this test's rest
+    // and settled samples, so rest read white and settled read the hover's
+    // --surface. Park the pointer off the controls: this test is about the
+    // press cue's paint, and a hover is not a press.
+    await page.mouse.move(0, 0);
 
     const field = page.locator('#flow-stop_explaining');
     await expect(field).toHaveValue('');

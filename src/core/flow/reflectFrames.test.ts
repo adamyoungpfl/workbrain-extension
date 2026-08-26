@@ -63,6 +63,14 @@ describe('goalServiceLabelFor', () => {
     expect(goalServiceLabelFor({ answers: { goal_service: 'claude' }, repeatables: {} })).toBe('Claude');
   });
 
+  it('resolves the V2.4 VB-105 additions too — "use your Grok chat" is a sentence', () => {
+    expect(goalServiceLabelFor({ answers: { goal_service: 'grok' }, repeatables: {} })).toBe('Grok');
+    expect(goalServiceLabelFor({ answers: { goal_service: 'perplexity' }, repeatables: {} })).toBe('Perplexity');
+    expect(reflectVoiceLine(goalServiceLabelFor({ answers: { goal_service: 'grok' }, repeatables: {} }))).toContain(
+      'use your Grok chat',
+    );
+  });
+
   it('"other", empty, skipped, and pre-gate files all resolve to nothing', () => {
     // "use your Something else chat" is not a sentence.
     expect(goalServiceLabelFor({ answers: { goal_service: 'other' }, repeatables: {} })).toBeUndefined();

@@ -2,6 +2,7 @@ import { describe, it, expect } from 'vitest';
 import type { Answers } from '../../schema/storage.types';
 import type { AnswerValue, FlowContext, Module, Phrase, RepeatableBlock, Step } from '../../schema/flow.types';
 import { CONTEXT_FILE_OUTLINE, CONTEXT_INTERVIEW_MODULES } from './source';
+import { ALL_PROOF_SERVICES } from './proofAdditions';
 import { contextModules, contextOutline } from './flow';
 import { allOverrideCopy, allOverrideReasons, overrideTargets } from './overrides';
 import { multipleGroups } from './multiples';
@@ -615,6 +616,24 @@ describe('the goal gate opens the flow (VB-93)', () => {
       'goal_service',
       'goal_want',
     ]);
+  });
+
+  /**
+   * V2.4 VB-105 — the gate asks the WHOLE service list: the ported four plus
+   * Grok and Perplexity (proofAdditions.ts, FLAG 3), with "other" last and
+   * relabelled ([DRAFT] "Something Cooler You Don't Even Know About" — the
+   * KEY stays 'other', which is what every stored answer and the attach-tip
+   * fallback run on). Held key-for-key against ALL_PROOF_SERVICES so the
+   * gate's list and the proof loop's can never drift apart.
+   */
+  it("asks with every service the proof loop knows — one list, one look (VB-105)", () => {
+    const gate = step('goal_service');
+    expect(gate.options?.map((o) => o.v)).toEqual(ALL_PROOF_SERVICES.map((s) => s.key));
+    expect(gate.options?.map((o) => o.v)).toEqual(['chatgpt', 'claude', 'gemini', 'copilot', 'grok', 'perplexity', 'other']);
+    const labelFor = (v: string) => gate.options?.find((o) => o.v === v)?.l;
+    expect(labelFor('grok')).toBe('Grok');
+    expect(labelFor('perplexity')).toBe('Perplexity');
+    expect(labelFor('other')).toBe("Something Cooler You Don't Even Know About");
   });
 
   it('a goal answered today prints into the file and survives the roundtrip', () => {

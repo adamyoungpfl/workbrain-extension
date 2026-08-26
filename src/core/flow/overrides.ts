@@ -538,16 +538,24 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
     // [DRAFT — V2.3 copy rule: strings marked for Adam's morning review]
     prompt: () => 'Which AI do you use most?',
     hint: 'Your file works with any of them. Naming yours lets every example speak its language.',
-    // The KEYS are PROOF_SERVICES' own, asserted in overrides.test.ts, so
-    // this answer plugs straight into the proof loop's per-service attach
-    // tips. The labels are authored here because interview wording lives in
-    // core sources and the panel's own list cannot be imported into core.
+    // The KEYS are the service list's own — ALL_PROOF_SERVICES since V2.4
+    // VB-105 added Grok and Perplexity through the additions seam
+    // (proofAdditions.ts; FLAG 3) — asserted in overrides.test.ts, so this
+    // answer plugs straight into the proof loop's per-service attach tips.
+    // The labels are authored here because interview wording lives in core
+    // sources and the panel's own list cannot be imported into core.
+    //
+    // V2.4 VB-105: "other" stops shrugging. [DRAFT] — Adam's own title for
+    // it ("the choice should feel easy and fun"); the KEY stays 'other', so
+    // every stored answer, skip rule and attach-tip fallback is untouched.
     options: [
       { key: 'chatgpt', label: 'ChatGPT' },
       { key: 'claude', label: 'Claude' },
       { key: 'gemini', label: 'Gemini' },
       { key: 'copilot', label: 'Copilot' },
-      { key: 'other', label: 'Something else' },
+      { key: 'grok', label: 'Grok' },
+      { key: 'perplexity', label: 'Perplexity' },
+      { key: 'other', label: "Something Cooler You Don't Even Know About" },
     ],
     skipIf: (ctx) => ctx.answers['goal_service'] === undefined && interviewAlreadyUnderway(ctx),
   },

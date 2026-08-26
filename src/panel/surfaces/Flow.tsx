@@ -68,7 +68,11 @@ import {
 } from '../../core/flow/proofAdapter';
 import { hintStaysVisible } from '../../core/flow/deepDive';
 import { usesOrbChoice } from '../../core/choice/orbs';
+import { personaForService, usesServiceThemes } from '../../core/flow/serviceThemes';
+import { usesVerticalPick } from '../../core/choice/verticalPick';
+import { PERSONA_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
+import { generatedNameAt, usesNameGenerator } from '../../core/flow/nameGenerator';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
@@ -248,6 +252,46 @@ export const IDEA_ICON = (
       <path d="M12 1.2V-0.6" />
       <path d="M14.1 1.9L15.1 0.4" />
       <path d="M15.3 3.3L16.9 2.5" />
+    </g>
+  </svg>
+);
+
+/**
+ * V2.4 VB-109's glyph — a die, drawn to the same convention as IDEA_ICON
+ * above (stroke-based, `currentColor`, `aria-hidden` because the button
+ * around it prints its own label). A die and not a hat or a wand because the
+ * button DEALS: press it and chance hands you a name, press again and it
+ * hands you another — which is the one thing this control does.
+ *
+ * One group, `.namegen-die`, holding the whole drawing: the press cue
+ * (Flow.css) rolls the die as one object — there is no rest/press split like
+ * the bulb's, because nothing here is invisible at rest. The five pips are
+ * filled dots on the REPHRASE_ICON precedent (its question-mark dot): a
+ * 1.1-unit circle stroked at 2 would be a ring with no hole.
+ *
+ * Exported for its unit test, like every drawn glyph on this screen: the
+ * path data is a transcription, and character-for-character is the only
+ * assertion that catches a digit lost in a refactor.
+ */
+export const NAME_DICE_ICON = (
+  <svg
+    width="17"
+    height="17"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <g className="namegen-die">
+      <rect x="4.2" y="4.2" width="15.6" height="15.6" rx="3.4" />
+      <circle cx="8.9" cy="8.9" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="15.1" cy="8.9" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="8.9" cy="15.1" r="1.1" fill="currentColor" stroke="none" />
+      <circle cx="15.1" cy="15.1" r="1.1" fill="currentColor" stroke="none" />
     </g>
   </svg>
 );
@@ -1059,6 +1103,13 @@ function StepView({
   // button. Someone who cannot see the field fill in gets told what landed in
   // it — the same information, at the same moment, without focus moving.
   const [spokenIdea, setSpokenIdea] = useState('');
+  // V2.4 VB-109 — where this screen's name-generator walk starts. Minted per
+  // mount so every visit deals from a fresh spot; the walk itself is
+  // core/flow/nameGenerator.ts's and deterministic from here, which is what
+  // its tests hold. Shares `ideaPresses` (above) on purpose: the generator IS
+  // the ideas mechanic with a different well, and a question only ever
+  // renders one of the two buttons.
+  const [nameSeed] = useState(() => Math.floor(Math.random() * 1_000_000));
   // V2.3 VB-94, reshaped by V2.4 VB-107 — the interview-me POPOVER on open
   // text questions. Plain per-position state like every draft above: a new
   // question starts closed, unpulsed, with nothing copied.
@@ -1630,11 +1681,16 @@ function StepView({
     restartRephraseCue(button);
   }
 
+  // V2.4 VB-109 — the two name questions trade their examples for the
+  // generator (core/flow/nameGenerator.ts says which): the ported `ideas`
+  // stay in the data untouched, but these screens no longer offer them —
+  // "lose examples-as-suggestions" is the spec's own phrase.
+  const nameGenerator = usesNameGenerator(step);
   // V1.1 VB-08. The written starter answers this question carries, if any —
   // 22 of them do, and nothing rendered a single one before now. Which
   // questions qualify is core/flow/ideas.ts's decision, not a condition
   // spelled out here (see `ideasFor` on why `gen` fields are excluded).
-  const ideas = ideasFor(step);
+  const ideas = nameGenerator ? [] : ideasFor(step);
 
   /**
    * Drops the next example into the field the person is already typing in.
@@ -1665,17 +1721,48 @@ function StepView({
     restartIdeaCue(button);
   }
 
+  /**
+   * V2.4 VB-109 — the same drop, dealt from the name pool. Deliberately
+   * dropIdea's twin line for line: lands in `draftText` (ordinary editable
+   * text, committed by the same Next), replaces rather than appends, speaks
+   * what landed, counts the press, plays the press cue. The one difference
+   * is the well the next value comes from.
+   */
+  function dropName(button: HTMLButtonElement) {
+    const name = generatedNameAt(nameSeed, ideaPresses);
+    setDraftText(name);
+    setSpokenIdea(name);
+    setIdeaPresses((n) => n + 1);
+    restartIdeaCue(button);
+  }
+
+  // V2.4 VB-105 — the two service questions (core/flow/serviceThemes.ts says
+  // which) dress their chips in personas: tone class + glyph, DESIGN-ONLY
+  // (FLAG 4). The label is untouched and stays the whole accessible name; a
+  // value with no persona (a custom entry, a corrupted answer) simply renders
+  // the plain pill it always did.
+  const serviceThemed = usesServiceThemes(step);
+  // V2.4 VB-108 — context_scope (and only it; core/choice/verticalPick.ts)
+  // stands its chips up as a vertical pick list with a drawn glyph per
+  // choice. Same group, same keys, same Next — a posture, not a mechanism.
+  const verticalPick = usesVerticalPick(step);
   const pillOptions: PillOption[] =
     step.kind === 'yesno'
       ? [
           { value: 'yes', label: S.yes },
           { value: 'no', label: S.no },
         ]
-      : [...(displayOptions ?? []), ...customOptions].map((o) => ({
-          value: o.v,
-          label: o.l,
-          suggested: o.rec,
-        }));
+      : [...(displayOptions ?? []), ...customOptions].map((o) => {
+          const persona = serviceThemed ? personaForService(o.v) : undefined;
+          if (persona) return { value: o.v, label: o.l, suggested: o.rec, tone: persona, glyph: PERSONA_GLYPHS[persona] };
+          const scopeGlyph = verticalPick ? SCOPE_GLYPHS[o.v] : undefined;
+          return {
+            value: o.v,
+            label: o.l,
+            suggested: o.rec,
+            ...(scopeGlyph ? { glyph: scopeGlyph } : {}),
+          };
+        });
 
   return (
     <form
@@ -1795,6 +1882,27 @@ function StepView({
                 margins, so the row LAYS OUT at exactly the height it did
                 before and the landmine above stays defused. */}
             <div className="flow-idea-row">
+              {/* V2.4 VB-109 — on the two name questions, the example button's
+                  seat is the generator's: same secondary weight, same row,
+                  same drop-into-the-field mechanic, same live region. Never
+                  both — `ideas` is emptied above wherever this renders. */}
+              {nameGenerator && (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="flow-idea flow-namegen"
+                    onClick={(e) => dropName(e.currentTarget)}
+                  >
+                    {NAME_DICE_ICON}
+                    {S.makeUpName}
+                  </Button>
+                  <span className="flow-idea-live" role="status">
+                    {spokenIdea}
+                  </span>
+                </>
+              )}
               {ideas.length > 0 && (
                 <>
                   <Button
@@ -1966,6 +2074,7 @@ function StepView({
                 value={draftValues}
                 onChange={answerValues}
                 onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
+                variant={verticalPick ? 'vertical' : undefined}
               />
             )}
             {customOpen && (

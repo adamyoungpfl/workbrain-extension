@@ -73,6 +73,15 @@ export const S = {
    */
   giveExample: 'Give me an example',
   /**
+   * [DRAFT] V2.4 VB-109 — the name generator on the two name questions
+   * (core/flow/nameGenerator.ts). Same register as `giveExample` above: a
+   * verb the person stuck at the box would say out loud — and on a name
+   * question, "one" can only mean a name. The button drops a made-up famous
+   * mashup into the field via the exact ideas mechanic; pressing again deals
+   * the next one.
+   */
+  makeUpName: 'Make one up for me',
+  /**
    * [DRAFT] V2.3 VB-94 — the interview-me prompt on open text questions:
    * the person's own AI interviews them and hands back a finished answer
    * in one fenced block, pasted into the same field. The button label is a
@@ -596,16 +605,25 @@ export const S = {
   proofCta: 'Prove it works',
   proofFinished: "That's the whole loop.",
   // Chip labels for the service picker — key order matches
-  // manifest.config.ts's optional_host_permissions (chatgpt.com, claude.ai,
-  // gemini.google.com, copilot.microsoft.com), confirmed in
-  // proofAdapter.test.ts. Labels only — the attach instructions for each
-  // service are ported verbatim, see src/core/flow/proofSource.ts.
+  // core/flow/proofAdditions.ts's ALL_PROOF_SERVICES: the manifest's four
+  // named origins (confirmed in proofAdapter.test.ts), then V2.4 VB-105's
+  // additions, then "other" last. Labels only — the attach instructions for
+  // each service are ported verbatim (src/core/flow/proofSource.ts) or
+  // authored in that voice (src/core/flow/proofAdditions.ts). The census in
+  // src/panel/serviceChips.test.tsx holds this list, the goal gate's, and
+  // the persona map to the same seven keys.
+  //
+  // [DRAFT] V2.4 VB-105 — the 'other' label is Adam's own title for it;
+  // the KEY stays 'other', so stored answers and the attach-tip fallback
+  // are untouched.
   proofServiceOptions: [
     { key: 'chatgpt', label: 'ChatGPT' },
     { key: 'claude', label: 'Claude' },
     { key: 'gemini', label: 'Gemini' },
     { key: 'copilot', label: 'Copilot' },
-    { key: 'other', label: 'Something else' },
+    { key: 'grok', label: 'Grok' },
+    { key: 'perplexity', label: 'Perplexity' },
+    { key: 'other', label: "Something Cooler You Don't Even Know About" },
   ] as const,
   proofScoreBaselineLabel: 'Score for the first answer, out of 10',
   proofScoreContextLabel: 'Score for the second answer, out of 10',

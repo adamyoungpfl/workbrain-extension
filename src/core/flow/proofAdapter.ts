@@ -1,4 +1,5 @@
-import { PROOF_SERVICES, BASELINE_PROMPT, ATTACH_FALLBACK_SUFFIX, evaluationPrompt } from './proofSource';
+import { BASELINE_PROMPT, ATTACH_FALLBACK_SUFFIX, evaluationPrompt } from './proofSource';
+import { ALL_PROOF_SERVICES } from './proofAdditions';
 import type { FlowContext, Module, Option, Step } from '../../schema/flow.types';
 
 /**
@@ -25,8 +26,10 @@ export const PROOF_SERVICE_KEY = 'proof_service';
 
 const EYEBROW = 'PROOF';
 
-/** `Option.v` order/values must match `PROOF_SERVICES` — asserted in
- * proofAdapter.test.ts so the two can never silently drift apart. */
+/** `Option.v` order/values must match `ALL_PROOF_SERVICES` (the ported list
+ * plus V2.4 VB-105's additions, proofAdditions.ts) — asserted in
+ * src/panel/serviceChips.test.tsx, which holds the panel's chip labels, the
+ * goal gate's options and the persona map to the same seven keys. */
 export function serviceStepOptions(labels: { key: string; label: string }[]): Option[] {
   return labels.map((l) => ({ v: l.key, l: l.label }));
 }
@@ -178,7 +181,11 @@ export function proofServiceFor(ctx: FlowContext): string | undefined {
 }
 
 export function attachHintFor(serviceKey: string | undefined): string {
-  const fallback = PROOF_SERVICES[PROOF_SERVICES.length - 1]!; // 'other'
-  const info = PROOF_SERVICES.find((s) => s.key === serviceKey) ?? fallback;
+  // V2.4 VB-105 (FLAG 3): resolved against the MERGED list — the ported four
+  // plus this repo's additions (proofAdditions.ts) — so Grok and Perplexity
+  // get their authored tips without the snapshot being touched. 'other' is
+  // still the final entry and still the fallback, by that file's own contract.
+  const fallback = ALL_PROOF_SERVICES[ALL_PROOF_SERVICES.length - 1]!; // 'other'
+  const info = ALL_PROOF_SERVICES.find((s) => s.key === serviceKey) ?? fallback;
   return `${info.attachTip} ${ATTACH_FALLBACK_SUFFIX}`;
 }

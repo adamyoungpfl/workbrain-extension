@@ -282,6 +282,12 @@ test.describe('The proof loop (R1-11)', () => {
     await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
 
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_service');
+    // V2.4 VB-105: the picker asks with the same merged, persona-dressed list
+    // as the goal gate — seven chips, one look (service-chips.spec.ts drives
+    // the gate side; this is the proof-picker side of "one list").
+    await expect(page.locator('.flow .pillgroup .pill')).toHaveCount(7);
+    await expect(page.getByRole('button', { name: 'Grok', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Claude', exact: true })).toHaveClass(/\bpill-theme-scholar\b/);
     await page.getByRole('button', { name: 'Claude', exact: true }).click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
 
