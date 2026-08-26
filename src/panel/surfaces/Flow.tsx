@@ -68,6 +68,7 @@ import {
 import { hintStaysVisible } from '../../core/flow/deepDive';
 import { usesOrbChoice } from '../../core/choice/orbs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
+import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
 import { NARRATION_COPY } from '../voice/copy';
@@ -1027,6 +1028,10 @@ function StepView({
   // button. Someone who cannot see the field fill in gets told what landed in
   // it — the same information, at the same moment, without focus moving.
   const [spokenIdea, setSpokenIdea] = useState('');
+  // V2.3 VB-94 — the interview-me disclosure on open text questions. Plain
+  // per-position state like every draft above: a new question starts closed.
+  const [askAIOpen, setAskAIOpen] = useState(false);
+  const [askAICopied, setAskAICopied] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   // Doubles as V1.4 VB-20's "what do you call this role?" buffer on a naming
   // add-another screen — same shape (one short typed name, added to a list of
@@ -1677,6 +1682,18 @@ function StepView({
                 onChange={answerText}
                 placeholder={resolveOptionalPhrase(step.ph, ctx)}
                 error={pendingError ?? undefined}
+                onPaste={(e: React.ClipboardEvent) => {
+                  // V2.3 VB-94 — the round trip lands. Only a paste carrying
+                  // the fence signature is touched (an ordinary paste is the
+                  // person's own text and must never be reformatted); the
+                  // reply replaces the field because the prompt asked their
+                  // AI for the WHOLE answer, and what lands stays ordinary
+                  // editable text — click into the frame and type.
+                  const pasted = e.clipboardData?.getData('text') ?? '';
+                  if (!looksLikeFencedReply(pasted)) return;
+                  e.preventDefault();
+                  answerText(normalizePastedReply(pasted));
+                }}
               />
             </div>
             {/* V1.8 VB-49. Under the box, because it is about the box: the
@@ -1696,24 +1713,60 @@ function StepView({
                 per screen) and Next holds that slot on every question. A filled
                 bulb would argue with it. Bordered keeps the control obvious
                 without claiming to be the point of the screen. */}
-            {ideas.length > 0 && (
-              <div className="flow-idea-row">
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  className="flow-idea"
-                  onClick={(e) => dropIdea(e.currentTarget)}
-                >
-                  {IDEA_ICON}
-                  {S.giveExample}
-                </Button>
-                {/* What just landed in the field, for anyone who cannot see it
-                    do so. Polite and out of the way: nothing takes focus, so a
-                    keyboard user can keep pressing to hear the next one. */}
-                <span className="flow-idea-live" role="status">
-                  {spokenIdea}
-                </span>
+            {/* One row of helpers, both writing into the box above. VB-08's
+                example button where the question ships examples, and V2.3
+                VB-94's escape hatch on every open question: the person's own
+                AI interviews them and writes the answer with them, via the
+                same copy/run/paste mechanic the reflect step's "tighten"
+                screen already taught (ReadOnlyBlock) — nothing here is a new
+                grammar. ONE row on purpose: the nav cluster rides in-flow
+                directly below (VB-94's layout), and a second row of chrome
+                pushed it into the drawer's clearance (button-cluster.spec
+                caught it at max height). */}
+            <div className="flow-idea-row">
+              {ideas.length > 0 && (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="flow-idea"
+                    onClick={(e) => dropIdea(e.currentTarget)}
+                  >
+                    {IDEA_ICON}
+                    {S.giveExample}
+                  </Button>
+                  {/* What just landed in the field, for anyone who cannot see it
+                      do so. Polite and out of the way: nothing takes focus, so a
+                      keyboard user can keep pressing to hear the next one. */}
+                  <span className="flow-idea-live" role="status">
+                    {spokenIdea}
+                  </span>
+                </>
+              )}
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                className="flow-askai"
+                aria-expanded={askAIOpen}
+                onClick={() => {
+                  setAskAIOpen((open) => !open);
+                  setAskAICopied(false);
+                }}
+              >
+                {S.interviewMe}
+              </Button>
+              <span className="flow-idea-live" role="status">
+                {askAICopied ? S.copied : ''}
+              </span>
+            </div>
+            {askAIOpen && (
+              <div className="flow-askai-block">
+                <ReadOnlyBlock tag={S.reflectPromptTag} onCopy={() => setAskAICopied(true)}>
+                  {interviewMePrompt(questionText, ctx)}
+                </ReadOnlyBlock>
+                <p className="flow-hint flow-askai-hint">{S.interviewMeHint}</p>
               </div>
             )}
           </>

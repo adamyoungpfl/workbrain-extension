@@ -73,6 +73,15 @@ export const S = {
    */
   giveExample: 'Give me an example',
   /**
+   * [DRAFT] V2.3 VB-94 — the interview-me prompt on open text questions:
+   * the person's own AI interviews them and hands back a finished answer
+   * in one fenced block, pasted into the same field. The button label is a
+   * verb the person would say (design-system §08); the hint says what to
+   * do with the prompt and what the paste will do, nothing else.
+   */
+  interviewMe: 'Let my AI ask me',
+  interviewMeHint: 'Run it in your AI. Paste the reply here — it lands ready to edit.',
+  /**
    * V1.8 VB-42 — the follow-up links under a question.
    *
    * `followUpsLabel` names the group. It is never printed: the links are read

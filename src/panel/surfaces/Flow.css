@@ -412,6 +412,9 @@
 .flow-idea-row {
   display: flex;
   align-items: center;
+  /* VB-94: two helper buttons share this row; the hidden live regions are
+     position:absolute, so the gap only ever lands between the buttons. */
+  gap: 8px;
   margin-top: 12px;
 }
 .flow-idea {
@@ -1169,4 +1172,16 @@
 }
 .flow-reflect-actions .btn {
   width: 100%;
+}
+
+/* V2.3 VB-94 — the interview-me button (in the shared helper row) and its
+   disclosure; the block reuses ReadOnlyBlock's own chrome. */
+.flowshell .flow-askai {
+  flex: 0 0 auto;
+}
+.flowshell .flow-askai-block {
+  margin-top: 8px;
+}
+.flowshell .flow-askai-hint {
+  margin-top: 6px;
 }
