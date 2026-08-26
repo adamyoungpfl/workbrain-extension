@@ -3,6 +3,13 @@
 Run 2026-08-24. **Scoping only. Nothing built. Skills is buildable after two decisions; Actions is
 blocked on a business question, not a design one.**
 
+> **SUPERSEDED IN PART, 2026-08-25.** Adam resolved the business question by cancelling the Actions
+> interview entirely: Actions.md is **derived from Skills.md** (two light per-skill additions carry
+> what the interview would have asked), and the interview flow is two steps. Everything below about
+> the Skills conversion stands; everything about an Actions *interview* — its modules, its ~11
+> questions, its ending — is void. `docs/V2.2-SKILLS-ACTIONS-DECISIONS.md` #1 records the decision,
+> its reasoning, and the two traps.
+
 ---
 
 ## What these files actually are

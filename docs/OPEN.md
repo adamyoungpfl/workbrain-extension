@@ -17,7 +17,10 @@ work that gets thrown away and, worse, ships an opinion nobody agreed to.
 4. **Is the improvement report shareable as a link** (needs hosting) or only as a file?
    Default assumption: file only.
 
-5. **What is a useful ending to the Actions interview** for someone who answers "not sure" twice,
-   beyond an offer of help?
+5. ~~**What is a useful ending to the Actions interview** for someone who answers "not sure" twice,
+   beyond an offer of help?~~ **RESOLVED 2026-08-25 by removing the surface it was about:** there is
+   no Actions interview. Actions.md is derived from Skills.md, and "not sure" is a first-class
+   per-skill answer the generated file prints as a finding — the shortlist of things to find out.
+   See `docs/V2.2-SKILLS-ACTIONS-DECISIONS.md` #1.
 
 6. **Where the civic / after-school programme attaches.** Not in scope for Releases 1–4.
