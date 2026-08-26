@@ -1,3 +1,4 @@
+import type React from 'react';
 import { BrandMark, type BrandMarkSpin, type BrandMarkVariant } from './BrandMark';
 import { TypedModuleLabel } from './Typed';
 import { S } from '../strings';
@@ -70,6 +71,10 @@ export interface FlowProgressProps {
   /** The current module's own title — "Orientation", "How I Communicate".
    * The only text this component renders. */
   title: string;
+  /** V2.4 VB-112 — when present, the MARK (icon only, never the title)
+   * becomes a real button back to the Home page, and the progressbar role
+   * moves off the wrapper so a control never sits inside a value. */
+  onHome?: (() => void) | undefined;
   /** 1-based index of the question on screen, across the whole flow.
    * Computed by the caller (core/flow/runner's `topLevelIndex`) — this
    * component derives nothing and stores nothing. */
@@ -124,11 +129,26 @@ export interface FlowProgressProps {
  * visible inside it is `aria-hidden`, so the title is announced once as the
  * bar's name rather than twice — once as a paragraph and again as a label.
  */
-export function FlowProgress({ title, current, total }: FlowProgressProps) {
+export function FlowProgress({ title, current, total, onHome }: FlowProgressProps) {
   const pct = total > 0 ? Math.min(100, Math.max(0, (current / total) * 100)) : 0;
   const valueText = S.questionOfSr(current, total);
 
-  return (
+  // V2.4 VB-112 — the mark is a door home (Adam: "people instinctively
+  // assume whatever is there will take you home"). The ICON only, never the
+  // title text. A button cannot live inside a progressbar (a control inside
+  // a value), so when the door exists the role moves to an inner wrapper —
+  // same accessible name, same values, announced once as before.
+  const mark = (
+    <BrandMark
+      className="flowprogress-mark"
+      size={STATUS_MARK_SIZE}
+      variant={STATUS_MARK_VARIANT}
+      spin={STATUS_MARK_SPIN}
+      spinCue={title}
+      entrance={false}
+    />
+  );
+  const bar = (barContent: React.ReactNode) => (
     <div
       className="flowprogress"
       role="progressbar"
@@ -143,18 +163,36 @@ export function FlowProgress({ title, current, total }: FlowProgressProps) {
       aria-valuenow={current}
       aria-valuetext={valueText}
     >
+      {barContent}
+    </div>
+  );
+  if (onHome) {
+    return (
+      <div className="flowprogress-shell">
+        <button type="button" className="flowprogress-home" aria-label={S.goHome} onClick={onHome}>
+          {mark}
+        </button>
+        {bar(
+          <>
+            <div className="flowprogress-head">
+              <TypedModuleLabel className="flowprogress-title" title={title} />
+            </div>
+            <div className="flowprogress-track" aria-hidden="true">
+              <span className="flowprogress-fill" style={{ width: `${pct}%` }} />
+            </div>
+          </>,
+        )}
+      </div>
+    );
+  }
+
+  return bar(
+    <>
       {/* The head carries no `aria-hidden` of its own: the mark sets its own,
           and the title keeps the one VB-02 gave it, so the announced tree is
           byte-for-byte what it was before the mark arrived. */}
       <div className="flowprogress-head">
-        <BrandMark
-          className="flowprogress-mark"
-          size={STATUS_MARK_SIZE}
-          variant={STATUS_MARK_VARIANT}
-          spin={STATUS_MARK_SPIN}
-          spinCue={title}
-          entrance={false}
-        />
+        {mark}
         {/* V1.2 VB-10: the label types itself in when the module changes, and
             sits there unchanged for every question inside it. The remount-per-
             question problem `spinCue` solves for the mark is the same one
@@ -167,6 +205,6 @@ export function FlowProgress({ title, current, total }: FlowProgressProps) {
             value on this element that changes per question. */}
         <span className="flowprogress-fill" style={{ width: `${pct}%` }} />
       </div>
-    </div>
+    </>,
   );
 }

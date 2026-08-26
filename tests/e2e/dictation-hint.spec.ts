@@ -127,7 +127,7 @@ async function openPanel(
 /** Home -> the interview -> the question VB-49 puts the hint on. */
 async function reachTheQuestion(page: Page): Promise<void> {
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
   // V2.3 VB-90: the seeded walk-in skips the ladder and the gate, opening
   // on context_scope — one answer from the hint's question.
@@ -201,7 +201,7 @@ test.describe('VB-49 — the dictation hint', () => {
     const page = await openPanel(context, id, 'mac');
 
     await page.getByRole('button', { name: /^Context\.md/ }).click();
-    await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
     await page.waitForSelector('.flow');
 
     // The question before it (VB-90: the seeded walk-in opens here).

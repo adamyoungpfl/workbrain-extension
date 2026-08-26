@@ -95,7 +95,7 @@ async function openList(context: BrowserContext, id: string): Promise<Page> {
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: S.fileGoThrough, exact: true }).click();
+  await page.getByRole('button', { name: S.browseEdit, exact: true }).click();
   await page.waitForSelector('.flow');
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -146,15 +146,16 @@ test.describe('VB-47 — one answers key per file', () => {
     await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeVisible();
     await expect(page.locator('.home-filelist')).not.toContainText(S.notBuiltYet);
 
-    // The file view read them: every section that was answered says so.
+    // The browse canvas read them (V2.4 VB-102 — FileView's heir): every
+    // section that was answered says so.
     await page.getByRole('button', { name: /^Context\.md/ }).click();
-    await page.waitForSelector('.fileview');
-    const done = await page.locator('.fileview [data-health="done"], .fileview [data-health="due"]').count();
+    await page.waitForSelector('.browse');
+    const done = await page.locator('.browse [data-health="done"], .browse [data-health="due"]').count();
     expect(done, 'the seeded sections did not come back').toBeGreaterThan(0);
 
     // And the interview resumed from them rather than from question one: the
     // drawer's own list shows written sections.
-    await page.getByRole('button', { name: S.fileGoThrough, exact: true }).click();
+    await page.getByRole('button', { name: S.browseEdit, exact: true }).click();
     await page.waitForSelector('.filetree-row');
     const written = await page.locator('.filetree-row[data-life="lit"]').count();
     expect(written, 'the drawer shows nothing written — the answers were lost').toBeGreaterThan(0);
@@ -257,7 +258,7 @@ test.describe('VB-47 — the strip is gone; the trail is the switcher', () => {
     await expect(page.locator('.home-filelist')).not.toContainText(S.lockedNeedsFirst(S.fileContext));
 
     await page.getByRole('button', { name: /^Context\.md/ }).click();
-    await page.getByRole('button', { name: S.fileGoThroughAgain, exact: true }).click();
+    await page.getByRole('button', { name: S.browseEdit, exact: true }).click();
     await page.waitForSelector('.filetree-row');
     await page.locator('.crumbs-seg[data-seg="file"]').click();
     // On the trail, the note now explains the first file that is genuinely

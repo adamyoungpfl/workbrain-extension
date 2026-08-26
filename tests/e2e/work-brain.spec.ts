@@ -107,7 +107,10 @@ async function openMidInterview(
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+  // V2.4 VB-102: the browse canvas's Edit button sits mid-panel — park the
+  // pointer so a stationary hover cannot hold a cue (ideas.spec precedent).
+  await page.mouse.move(0, 0);
   await page.waitForSelector('.flow');
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -329,12 +332,13 @@ test.describe('VB-48 — one navigation, two views', () => {
     expect(await tier(page)).toBe('file');
     await tierSettled(page, 1);
 
-    // ...and out again from the way up. V1.9 VB-52 made that the breadcrumb's
-    // first rung, for BOTH views at once — the List's own arrow is gone, and
-    // the trail runs the same `pullBack` it ran (components/Breadcrumb.tsx).
-    await page.locator('.crumbs-seg[data-seg="work"]').click();
-    await expect(page.locator('.workshelf')).toHaveCount(1);
-    expect(await tier(page)).toBe('work');
+    // ...and out again by the ladder — the nav band's Back, which VB-52's
+    // one-navigation rule routes through the same `pullBack`. (V2.4 VB-112
+    // retired the root RUNG as a tier move: it is the door to the Home page
+    // now, asserted in breadcrumb.spec.ts.)
+    await showBrain(page);
+    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+    await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
 
     await context.close();
   });
@@ -604,7 +608,10 @@ test.describe('VB-48 — the complete state, one level up', () => {
     await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
     await page.getByRole('button', { name: /^Context\.md/ }).click();
-    await page.getByRole('button', { name: /^Go through them again$/ }).click();
+    // V2.4 VB-102: one Edit door whatever the file's state — on a finished
+    // file it restarts from question one instead of bouncing off done.
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+    await page.mouse.move(0, 0);
     await page.waitForSelector('.flow');
     if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
       await page.getByRole('button', { name: 'Next', exact: true }).click();

@@ -91,7 +91,7 @@ async function openDrawer(context: BrowserContext, sw: Worker, id: string): Prom
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: S.fileGoThrough, exact: true }).click();
+  await page.getByRole('button', { name: S.browseEdit, exact: true }).click();
   await page.waitForSelector('.flow');
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -181,7 +181,13 @@ test.describe('VB-52 — the breadcrumb is where you are', () => {
     const { context, sw, id } = await launchExtension();
     const page = await openDrawer(context, sw, id);
 
-    await rung(page, 'work').click();
+    // V2.4 VB-112: the root rung is the door HOME now — the work tier is
+    // reached by the ladder (the nav band's Back), the other end of the
+    // same navigation.
+    await page.getByRole('button', { name: S.drawerModeBrain, exact: true }).click();
+    await drawerSettled(page);
+    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+    await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
     await expect(page.locator('.workshelf')).toHaveCount(1);
     await expect(page.locator('.crumbs-seg')).toHaveCount(1);
     await expect(page.locator('.crumbs-seg[data-seg="work"]')).toHaveAttribute('aria-current', 'page');
@@ -205,8 +211,11 @@ test.describe('VB-52 — the trail and the Brain’s zoom are one state', () => 
     await expect.poll(() => page.locator('.filedrawer').getAttribute('data-mode')).toBe('brain');
     expect(await tier(page)).toBe('file');
 
-    // ROUTE ONE: the trail. The globe followed without being told twice.
-    await rung(page, 'work').click();
+    // ROUTE ONE: the ladder — the nav band's Back. The trail followed the
+    // globe without being told twice. (The trail's own root rung stopped
+    // being a tier move at V2.4 VB-112 — it is the door Home now, asserted
+    // in its own test below.)
+    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
     await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
     await expect(page.locator('.crumbs-seg')).toHaveCount(1);
 
@@ -216,11 +225,11 @@ test.describe('VB-52 — the trail and the Brain’s zoom are one state', () => 
     await expect(page.locator('.crumbs-seg[data-seg="file"]')).toHaveCount(1);
     await expect(rung(page, 'file')).toContainText(S.fileContext);
 
-    // ROUTE THREE: the nav band's Back (V2.1 VB-74), the other end of the
-    // same move.
-    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
-    await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
-    await expect(page.locator('.crumbs-seg')).toHaveCount(1);
+    // ROUTE THREE: the root rung — V2.4 VB-112's door. All the way out
+    // means the Home page, from any tier.
+    await rung(page, 'work').click();
+    await expect(page.locator('.home')).toBeVisible();
+    await expect(page.locator('.flowshell')).toHaveCount(0);
 
     await context.close();
   });
@@ -232,9 +241,16 @@ test.describe('VB-52 — the trail and the Brain’s zoom are one state', () => 
     await expect(rung(page, 'file')).toContainText(S.fileContext);
     expect(await page.locator('.filetree-row[data-node-id]').count()).toBe(contextOutline.length);
 
-    // Out to the work brain and back in through the List's own shelf: the trail
-    // is the same three rungs again, naming the same file.
-    await rung(page, 'work').click();
+    // Out to the work brain (the ladder — VB-112 made the root rung the
+    // door Home) and back in through the List's own shelf: the trail is the
+    // same three rungs again, naming the same file.
+    await page.getByRole('button', { name: S.drawerModeBrain, exact: true }).click();
+    await drawerSettled(page);
+    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+    await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
+    // The shelf is the List's work-tier face — flip back to List to use it.
+    await page.getByRole('button', { name: S.drawerModeList, exact: true }).click();
+    await drawerSettled(page);
     await expect(page.locator('.workshelf')).toHaveCount(1);
     await page.locator('.workshelf-row[data-file="context"]').click();
     await expect(page.locator('.filetree-row').first()).toBeVisible();

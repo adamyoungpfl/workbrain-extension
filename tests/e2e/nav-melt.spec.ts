@@ -145,7 +145,7 @@ async function openTransition(context: BrowserContext, sw: Worker, id: string): 
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.filedrawer-handle');
   await expect(page.locator('.flow')).toHaveAttribute('data-position', 'module-intro');
   await settle(page);
@@ -759,7 +759,7 @@ test.describe('VB-53 — the buttons melt into the bar and rise back out', () =>
     await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
     await page.getByRole('button', { name: /^Context\.md/ }).click();
-    await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
     await page.waitForSelector('.filedrawer-handle');
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'module-intro');
 

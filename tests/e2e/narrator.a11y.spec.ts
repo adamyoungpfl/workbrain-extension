@@ -65,7 +65,7 @@ test('axe finds no violations with the narrator off or on (VB-18)', async () => 
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   // V1.7 VB-37: the file row opens the FILE, and the file view is where the
   // interview is entered from — see src/panel/surfaces/FileView.tsx.
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
 
   const toggle = page.getByRole('button', { name: 'Read questions aloud' });
@@ -121,7 +121,7 @@ test('the whole screen stays keyboard-reachable, with the toggle first (VB-18)',
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   // V1.7 VB-37: the file row opens the FILE, and the file view is where the
   // interview is entered from — see src/panel/surfaces/FileView.tsx.
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
 
   // Tab lands on it, Space and Enter both work it, and focus never moves as a

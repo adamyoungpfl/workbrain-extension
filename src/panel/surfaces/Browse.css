@@ -1,0 +1,42 @@
+/* V2.4 VB-102 — the browse canvas: Brain on top, List below, one column on
+   the one app ground (VB-111 — no surface paint of its own). */
+.browse {
+  display: flex;
+  flex-direction: column;
+  min-height: 100dvh;
+  padding: 12px 16px 24px;
+  box-sizing: border-box;
+}
+.browse-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.browse-title {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.browse-stage {
+  display: flex;
+  justify-content: center;
+  margin-top: 4px;
+}
+.browse-actions {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin: 10px 0 6px;
+}
+.browse-list {
+  margin-top: 6px;
+}
+/* VB-103 — the mirrored row: the selection ring, never color alone (the
+   row's aria-pressed carries it out loud). */
+.filetree-row.is-selected {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+  border-radius: var(--r-md, 10px);
+}

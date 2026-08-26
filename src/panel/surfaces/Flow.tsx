@@ -111,6 +111,10 @@ export interface FlowProps {
    * degradation table: a storage failure must never lose an answer quietly).
    */
   onDone?: (() => void) | undefined;
+  /** V2.4 VB-112 — the door to the Home page, threaded to the three
+   * affordances people read as "take me home": the top-left mark, the
+   * trail's root rung, and the globe's drawn house. */
+  onHome?: (() => void) | undefined;
   /** R1-12: deep-links into a specific position instead of the derived
    * "first thing left to do" — e.g. Home's next-move card sending the
    * person straight back to an already-answered `role_durability` field.
@@ -500,7 +504,7 @@ function scoreSubStep(key: string): Step {
  * everything specific to the question on screen lives in `StepView`, mounted
  * fresh per position via `key` — see its own comment for why.
  */
-export function Flow({ modules, renderDone, onDone, initialPosition, outline, answersKey = ANSWERS_KEY.context, fileId, fileCopy }: FlowProps) {
+export function Flow({ modules, renderDone, onDone, onHome, initialPosition, outline, answersKey = ANSWERS_KEY.context, fileId, fileCopy }: FlowProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [declinedBlocks, setDeclinedBlocks] = useState<ReadonlySet<string>>(new Set());
   // V1.1 VB-05: module ids whose transition screen has been continued past
@@ -817,6 +821,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline, an
           brainYielded={brainYielded}
           mode={drawerMode}
           onRequestMode={setRequestedDrawerMode}
+          onHome={onHome}
           onNavigate={(next) => {
             // Exactly what `goBack` does in reverse: remember where we were so
             // Back returns there, then view the requested position. No new
@@ -903,6 +908,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline, an
       onAddAnotherDecision={(blockId, wantsMore, name) =>
         handleAddAnotherDecision(position, blockId, wantsMore, name)
       }
+      onHome={onHome}
     />,
   );
 }
@@ -976,6 +982,7 @@ interface StepViewProps {
   total: number;
   canGoBack: boolean;
   saveError: boolean;
+  onHome?: (() => void) | undefined;
   onBack: () => void;
   onCommit: (next: Answers) => void;
   /** `name` is V1.4 VB-20's: set only when the block names its new records —
@@ -1004,6 +1011,7 @@ function StepView({
   onBack,
   onCommit,
   onAddAnotherDecision,
+  onHome,
 }: StepViewProps) {
   const [draftValues, setDraftValues] = useState<string[]>(() => initialSelection(pos, answers));
   // Doubles as the reflect screen's "Say it again" draft — pre-filled with
@@ -1401,6 +1409,7 @@ function StepView({
         title={moduleFor(modules, pos)?.title ?? ''}
         current={topLevelIndex(modules, pos)}
         total={total}
+        onHome={onHome}
       />
     </>
   );

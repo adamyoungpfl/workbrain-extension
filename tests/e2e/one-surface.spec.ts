@@ -116,7 +116,10 @@ async function openQuestion(context: BrowserContext, sw: Worker, id: string): Pr
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+  // V2.4 VB-102: the browse canvas's Edit button sits mid-panel — park the
+  // pointer so a stationary hover cannot hold a cue (ideas.spec precedent).
+  await page.mouse.move(0, 0);
   await page.waitForSelector('.filedrawer-handle');
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: S.next, exact: true }).click();
@@ -625,8 +628,12 @@ test('every focusable control in the drawer still shows a ring (VB-50)', async (
   }
   await page.keyboard.press('Escape');
 
-  // And the work shelf, which is the list one tier up.
-  await page.getByRole('button', { name: S.crumbWork, exact: true }).click();
+  // And the work shelf, which is the list one tier up — reached by the
+  // ladder now (V2.4 VB-112 made the root rung the door to the Home page):
+  // Brain, band Back, and back to List where the shelf lives.
+  await page.getByRole('button', { name: S.drawerModeBrain, exact: true }).click();
+  await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+  await page.getByRole('button', { name: S.drawerModeList, exact: true }).click();
   await page.waitForSelector('.workshelf-row');
   await check({ what: 'a work shelf row', locator: page.locator('.workshelf-row').first(), kind: 'text' });
 

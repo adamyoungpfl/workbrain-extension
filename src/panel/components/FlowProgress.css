@@ -75,3 +75,34 @@
    The mark is the exception, and it is why it is not a CSS animation: it
    survives those remounts by phasing off the shared clock rather than off its
    own mount. See core/geometry/markSpin's `spinAngleAt`. */
+
+/* V2.4 VB-112 — the mark as a door home: the shell lays the button beside
+   the (now role-bearing) bar; the button is the 44px floor with the mark
+   centered, painted exactly where the mark always sat. */
+.flowprogress-shell {
+  display: flex;
+  align-items: flex-start;
+  gap: 4px;
+}
+.flowprogress-home {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  margin: -10px 0 0 -10px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+}
+.flowprogress-home:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm, 6px);
+}
+.flowprogress-shell .flowprogress {
+  flex: 1 1 auto;
+  min-width: 0;
+}

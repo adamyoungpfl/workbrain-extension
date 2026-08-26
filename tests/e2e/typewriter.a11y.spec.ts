@@ -95,7 +95,7 @@ test('axe finds no violations on a question that is still typing (VB-10)', async
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   // V1.7 VB-37: the file row opens the FILE, and the file view is where the
   // interview is entered from — see src/panel/surfaces/FileView.tsx.
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
   // V2.4: the seeded walk-in opens on context_scope, whose pills now ENTER
   // with VB-108's animation — and this scan runs deliberately mid-motion,

@@ -49,7 +49,10 @@ async function openOnContextScope(
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+  // V2.4 VB-102: the browse canvas's Edit button sits mid-panel — park the
+  // pointer so a stationary hover cannot hold a cue (ideas.spec precedent).
+  await page.mouse.move(0, 0);
   await page.waitForSelector('.flow');
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
   return { context, page };

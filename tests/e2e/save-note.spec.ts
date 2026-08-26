@@ -113,7 +113,7 @@ async function openPanel(context: BrowserContext, sw: Worker, id: string, stepId
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   // V1.7 VB-37: the file row opens the FILE, and the interview is entered from
   // the file view — see src/panel/surfaces/FileView.tsx.
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
   await page.waitForSelector('.filedrawer-handle');
   return page;

@@ -89,12 +89,16 @@ export interface BreadcrumbProps {
    * (core/drawer/mode.ts's `brainStageSize`). */
   filesOpen: boolean;
   onFilesOpen: (open: boolean) => void;
+  /** V2.4 VB-112 — when present, the root "Work brain" rung is a door to the
+   * Home PAGE, not a tier move: people read the trail's root as "all the way
+   * out". */
+  onHome?: (() => void) | undefined;
   /** A move. Always the result of `pullBack` or `chooseNav`, so the rule about
    * what is enterable lives in core and not in this component. */
   onNav: (next: BrainNav) => void;
 }
 
-export function Breadcrumb({ nav, files, section, done, total, filesOpen, onFilesOpen, onNav }: BreadcrumbProps) {
+export function Breadcrumb({ nav, files, section, done, total, filesOpen, onFilesOpen, onNav, onHome }: BreadcrumbProps) {
 
   const trail = breadcrumbTrail(nav, section !== null);
   const open = filesOpen && nav.tier === 'file';
@@ -140,7 +144,10 @@ export function Breadcrumb({ nav, files, section, done, total, filesOpen, onFile
   function press(crumb: Crumb) {
     if (crumb.id === 'work') {
       onFilesOpen(false);
-      onNav(pullBack(nav));
+      // V2.4 VB-112: the root rung is the way all the way out — the Home
+      // page when the caller offers it, the tier ladder otherwise.
+      if (onHome) onHome();
+      else onNav(pullBack(nav));
       return;
     }
     onFilesOpen(!open);

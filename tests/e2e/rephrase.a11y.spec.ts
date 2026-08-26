@@ -47,7 +47,7 @@ test('axe finds no violations on a question carrying the rephrase icon (VB-04)',
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   // V1.7 VB-37: the file row opens the FILE, and the file view is where the
   // interview is entered from — see src/panel/surfaces/FileView.tsx.
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
   // Q1 is the intro; Next lands on context_scope, which has rephrasings.
   await page.getByRole('button', { name: 'Next', exact: true }).click();

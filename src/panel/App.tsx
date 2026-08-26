@@ -1,7 +1,9 @@
 import './tokens.css';
 import './App.css';
 import { useCallback, useEffect, useState } from 'react';
-import { FileView } from './surfaces/FileView';
+import { Browse } from './surfaces/Browse';
+import { generateContextFile, contextFileDate } from '../core/files/generate';
+import { generateSkillsFile } from '../core/files/skillsFile';
 import { Flow } from './surfaces/Flow';
 import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
@@ -224,26 +226,30 @@ export default function App() {
     }
 
     if (surface === 'file') {
-      // V2.2: the same surface, per file — the "one more call site" its own
-      // props comment promised.
+      // V2.4 VB-102: the browse canvas — Brain on top, List below, Edit as
+      // the one door into the interview. FileView is retired (decision 6).
       return fileId === 'skills' ? (
-        <FileView
+        <Browse
           modules={skillsModules}
           outline={skillsOutline}
           answersKey={ANSWERS_KEY.skills}
           name={S.fileSkills}
-          what={S.fileSkillsWhat}
+          generate={(answers) => generateSkillsFile(answers, contextFileDate())}
           onBack={goHome}
-          onOpen={openSkillsAt}
+          onEdit={(startAt) =>
+            openSkillsAt(startAt ? positionForTarget(skillsModules, { in: 'top', questionId: startAt }) : undefined)
+          }
         />
       ) : (
-        <FileView
+        <Browse
           modules={contextModules}
           outline={contextOutline}
           name={S.fileContext}
-          what={S.fileContextWhat}
+          generate={(answers) => generateContextFile(answers, contextFileDate())}
           onBack={goHome}
-          onOpen={openContextAt}
+          onEdit={(startAt) =>
+            openContextAt(startAt ? positionForTarget(contextModules, { in: 'top', questionId: startAt }) : undefined)
+          }
         />
       );
     }
@@ -275,6 +281,7 @@ export default function App() {
       return (
         <Flow
           modules={proofModules}
+          onHome={goHome}
           renderDone={() => (
             <>
               <p className="flow-q">{S.proofFinished}</p>
@@ -300,10 +307,11 @@ export default function App() {
           fileCopy={SKILLS_FILE_COPY}
           initialPosition={jumpTo}
           onDone={goHome}
+          onHome={goHome}
         />
       );
     }
-    return <Flow modules={contextModules} outline={contextOutline} initialPosition={jumpTo} onDone={goHome} />;
+    return <Flow modules={contextModules} outline={contextOutline} initialPosition={jumpTo} onDone={goHome} onHome={goHome} />;
   }
 
   // The surface first, always, and the splash after it — in the markup and in

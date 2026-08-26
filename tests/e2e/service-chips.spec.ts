@@ -47,7 +47,7 @@ async function openOnTheGate(opts: { reducedMotion?: 'reduce' } = {}) {
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
   // The orientation ladder (VB-90): why → canvas → brain → go, Next each.
   for (const rung of ['orientation_ready', 'wb_canvas', 'wb_brain_flip', 'wb_go']) {

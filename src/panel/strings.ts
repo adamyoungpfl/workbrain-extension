@@ -57,6 +57,14 @@ export const S = {
   questionOfSr: (n: number, total: number) => `Question ${n} of ${total}`,
   back: 'Back',
   next: 'Next',
+  /** [DRAFT] V2.4 VB-112 — the one name all three doors home share: the
+   * top-left mark, the breadcrumb root, and the globe's drawn house. */
+  goHome: 'Go to the home screen',
+  /** [DRAFT] V2.4 VB-103 — a browse-canvas row's name: pressing it selects
+   * the section in the Brain above, never jumps into questions. */
+  fileTreeSelect: (title: string) => `Show ${title} in the picture`,
+  /** [DRAFT] V2.4 VB-102 — the browse canvas's one door into the interview. */
+  browseEdit: 'Edit the file',
   skip: 'Skip',
   rephrase: 'Ask me that a different way',
   /**
@@ -664,8 +672,12 @@ export const S = {
    * section opens, it goes.
    */
   fileSectionsLabel: 'Sections',
-  fileGoThrough: 'Go through the questions',
-  fileGoThroughAgain: 'Go through them again',
+  // V2.4 VB-102: retired with FileView — the browse canvas's door is
+  // `browseEdit`. Kept commented for the morning diff, delete after review.
+  // fileGoThrough: 'Go through the questions',
+  // V2.4 VB-102: retired with FileView — Browse has one Edit door whatever
+  // the file's state. Kept commented for the morning diff.
+  // fileGoThroughAgain: 'Go through them again',
   fileSectionsClosed: 'Each section opens once you have answered something in it.',
   download: 'Download your file',
   downloadAgain: 'Download it again',

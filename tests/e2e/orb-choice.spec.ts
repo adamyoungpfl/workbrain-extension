@@ -115,7 +115,12 @@ async function openAtRoleNames(context: BrowserContext, sw: Worker, id: string):
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+  // V2.4 VB-102: the browse canvas's Edit button sits mid-panel, so the
+  // pointer parks exactly where the first orb renders — and a stationary
+  // hover is a HOLD by design. Park it in the corner (Track A's ideas.spec
+  // precedent for the same class).
+  await page.mouse.move(0, 0);
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
   await expect(page.locator('.orbgroup')).toHaveCount(1);
   return page;

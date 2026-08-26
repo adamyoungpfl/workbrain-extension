@@ -119,7 +119,7 @@ async function enterInterview(page: Page): Promise<void> {
     buildAnswersExcept(contextModules, ['role_names']),
   );
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
 }
@@ -223,7 +223,7 @@ async function resumeAt(
   );
   const page = await openPanel(context, id);
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
   // V1.4 VB-20: a fixture with every role answered resumes at the roles loop's
   // "another role?" first. There isn't another; say so and carry on.

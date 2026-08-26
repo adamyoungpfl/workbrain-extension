@@ -375,6 +375,12 @@ interface RowProps {
   expandedId: string | null;
   onToggleExpand: (id: string) => void;
   onNavigate: (questionId: string) => void;
+  /** V2.4 VB-103 — the browse canvas's select mode: when present, a row
+   * press SELECTS its section (one selection, mirrored by the Brain) instead
+   * of jumping into the interview, and `selectedId` marks the mirrored row.
+   * Mid-interview drawers pass neither and keep VB-37's jump exactly. */
+  onSelectSection?: ((sectionId: string) => void) | undefined;
+  selectedId?: string | null | undefined;
 }
 
 /**
@@ -400,6 +406,8 @@ function FileTreeRow({
   expandedId,
   onToggleExpand,
   onNavigate,
+  onSelectSection,
+  selectedId,
 }: RowProps) {
   const state = outlineNodeState(node, answers.values, currentQuestionId);
   // V2.3 VB-96 — the person reads "About Me", not "2. About Me". Ingredients,
@@ -646,7 +654,7 @@ function FileTreeRow({
   return (
     <li className={depth === 0 ? 'filetree-item' : 'filetree-item is-nested'}>
       <div
-        className={`filetree-row is-${state}${depth > 0 ? ' is-child' : ''}`}
+        className={`filetree-row is-${state}${depth > 0 ? ' is-child' : ''}${selectedId === node.id ? ' is-selected' : ''}`}
         data-node-id={node.id}
         data-node-state={state}
         data-life={life}
@@ -663,9 +671,13 @@ function FileTreeRow({
             <button
               type="button"
               className="filetree-nav"
-              aria-label={S.fileTreeGoTo(displayTitle)}
+              // V2.4 VB-103: in the browse canvas a row press SELECTS — the
+              // Brain mirrors it — and never jumps into questions (decision
+              // 7a: entering the interview is the Edit button's one job).
+              aria-label={onSelectSection ? S.fileTreeSelect(displayTitle) : S.fileTreeGoTo(displayTitle)}
+              aria-pressed={onSelectSection ? selectedId === node.id : undefined}
               aria-describedby={metaLine ? metaId : undefined}
-              onClick={() => onNavigate(target)}
+              onClick={() => (onSelectSection ? onSelectSection(node.id) : onNavigate(target))}
             >
               {label}
               {metaLine}
@@ -773,6 +785,8 @@ function FileTreeRow({
               expandedId={expandedId}
               onToggleExpand={onToggleExpand}
               onNavigate={onNavigate}
+              onSelectSection={onSelectSection}
+              selectedId={selectedId}
             />
           ))}
         </ul>
@@ -792,6 +806,9 @@ export interface FileTreeProps {
    * which section is active. */
   currentSectionId: string | null;
   onNavigate: (questionId: string) => void;
+  /** V2.4 VB-103 — browse-canvas select mode; see RowProps' twin fields. */
+  onSelectSection?: ((sectionId: string) => void) | undefined;
+  selectedId?: string | null | undefined;
 }
 
 /**
@@ -805,7 +822,7 @@ export interface FileTreeProps {
  * never a render where the two disagree (the same reasoning behind Flow.tsx's
  * remount-per-position rule).
  */
-export function FileTree({ outline, modules, answers, currentQuestionId, currentSectionId, onNavigate }: FileTreeProps) {
+export function FileTree({ outline, modules, answers, currentQuestionId, currentSectionId, onNavigate, onSelectSection, selectedId }: FileTreeProps) {
   const [override, setOverride] = useState<{ against: string | null; id: string | null } | null>(null);
 
   /**
@@ -871,6 +888,8 @@ export function FileTree({ outline, modules, answers, currentQuestionId, current
             answers={answers}
             currentQuestionId={currentQuestionId}
             health={health}
+            onSelectSection={onSelectSection}
+            selectedId={selectedId}
             expandedId={expandedId}
             onToggleExpand={toggleExpand}
             onNavigate={onNavigate}

@@ -932,6 +932,15 @@ export interface BrainGlobeProps {
    * into, one of its children when a child is picked, null when the globe is
    * back to the whole file. The caller owns what to show for it. */
   onSelect?: (node: FileOutlineNode | null) => void;
+  /** V2.4 VB-112 — when present, the nav band's drawn house leaves for the
+   * Home PAGE instead of climbing the tier ladder, and is active at every
+   * tier. */
+  onHome?: (() => void) | undefined;
+  /** V2.4 VB-103 — programmatic selection: when this changes to a section id
+   * (nonce distinguishes repeat picks of the same id), the globe runs the
+   * same path a pin press runs — centering the orb and opening its summary —
+   * so the List and the Brain stay one selection. */
+  selectRequest?: { id: string; nonce: number } | null | undefined;
   /**
    * V1.8 VB-48 — the files of the work brain, in shelf order:
    * `fileToggle(...)` from core/files/toggle.ts, which is `core/files/slots.ts`
@@ -1189,6 +1198,8 @@ export function BrainGlobe({
   summaries,
   recommendations,
   onSelect,
+  onHome,
+  selectRequest,
   files,
   file = 'context',
   tier = 'file',
@@ -1667,6 +1678,16 @@ export function BrainGlobe({
     runZoom(0);
     onSelect?.(null);
   }, [closeSummary, onSelect, runSplit, runZoom]);
+
+  // V2.4 VB-103 — the List's half of the one selection: a row press arrives
+  // here as a request and runs the same flight a pin press runs. The nonce
+  // is the dependency, so picking the same section twice still answers.
+  useEffect(() => {
+    if (!selectRequest) return;
+    const index = shown.findIndex((node) => node.id === selectRequest.id);
+    if (index >= 0) flyInto(index);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectRequest?.nonce]);
 
   const pickChild = useCallback(
     (child: FileOutlineNode) => {
@@ -2330,6 +2351,13 @@ export function BrainGlobe({
     goWork();
   };
   const navHome = () => {
+    // V2.4 VB-112: the house is the Home PAGE when the caller offers the
+    // door — people instinctively assume it, at every tier including the
+    // top. The tier-ladder climb remains for standalone showcases.
+    if (onHome) {
+      onHome();
+      return;
+    }
     if (tierShown === 'work') return;
     if (flownIndex !== null) flyOut();
     goWork();

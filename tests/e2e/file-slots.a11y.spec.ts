@@ -90,8 +90,9 @@ async function openHome(context: BrowserContext, sw: Worker, id: string): Promis
 }
 
 async function openFile(page: Page): Promise<void> {
+  // V2.4 VB-102: the row opens the browse canvas — FileView's heir.
   await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.waitForSelector('.fileview');
+  await page.waitForSelector('.browse');
 }
 
 /**
@@ -147,10 +148,13 @@ test('axe finds no violations on the file view (VB-37)', async () => {
   await openFile(page);
 
   // Both kinds of row on screen: doors and not-doors.
-  await expect(page.locator('.fileview-row:not(.is-static)')).not.toHaveCount(0);
-  await expect(page.locator('.fileview-row.is-static')).not.toHaveCount(0);
+  // Both kinds of row are on screen: select buttons for reached sections,
+  // static labels for untouched ones (VB-103's select mode keeps VB-37's
+  // reached/unreached split).
+  await expect(page.locator('.browse .filetree-nav')).not.toHaveCount(0);
+  await expect(page.locator('.browse .filetree-static')).not.toHaveCount(0);
 
-  const results = await new AxeBuilder({ page }).include('.fileview').withTags(WCAG).analyze();
+  const results = await new AxeBuilder({ page }).include('.browse').withTags(WCAG).analyze();
   expect(results.violations).toEqual([]);
 
   await context.close();
@@ -180,7 +184,7 @@ test('a section that is not a door is still readable at 4.5:1 (VB-37)', async ()
   const page = await openHome(context, sw, id);
   await openFile(page);
 
-  const { ink, ground } = await inkAndGround(page, '.fileview-row.is-static .nm');
+  const { ink, ground } = await inkAndGround(page, '.browse .filetree-static .filetree-label');
   const ratio = contrastRatio(ink, ground);
   expect(ratio, `an unreached section reads at ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
 
@@ -202,10 +206,10 @@ test('every row and button on both surfaces clears 44px (VB-36, VB-37)', async (
   }
 
   await openFile(page);
-  const controls = page.locator('.fileview-row, .fileview .btn');
+  const controls = page.locator('.browse .filetree-nav, .browse .btn, .browse .filetree-records-toggle, .browse .filetree-toggle');
   for (let i = 0; i < (await controls.count()); i++) {
     const box = (await controls.nth(i).boundingBox())!;
-    expect(box.height, `.fileview control [${i}] is ${box.height}px tall`).toBeGreaterThanOrEqual(TARGET_MIN);
+    expect(box.height, `.browse control [${i}] is ${box.height}px tall`).toBeGreaterThanOrEqual(TARGET_MIN);
   }
 
   await context.close();
@@ -228,19 +232,33 @@ test('the keyboard path never lands on a locked slot, and reaches every door on 
   // On the file view, every door and both buttons are reachable, and the rows
   // that are not doors are not tab stops.
   await openFile(page);
-  const doors = await page.locator('.fileview-row:not(.is-static)').count();
+  // V2.4 VB-102: the browse canvas holds more tab stops than FileView did —
+  // the globe (one stop, roving inside), the record disclosures, two action
+  // buttons — so the walk starts from the top of the document and runs long
+  // enough to cross all of them.
+  await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
+  const doors = await page.locator('.browse .filetree-nav').count();
   const reached = new Set<string>();
   let sawGo = false;
   let sawBack = false;
-  for (let i = 0; i < 30; i++) {
+  for (let i = 0; i < 60; i++) {
     await page.keyboard.press('Tab');
     const focused = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
-      return { cls: el?.className ?? '', section: el?.getAttribute('data-section-id') ?? '', text: el?.textContent ?? '' };
+      // V2.4: the tree's door is a button INSIDE the row — the id lives on
+      // the row (data-node-id), so climb to it. FileView's flat rows carried
+      // it on the control itself.
+      const row = el?.closest('[data-node-id]');
+      const isDoor = el?.classList.contains('filetree-nav') ?? false;
+      return {
+        cls: el?.className ?? '',
+        section: isDoor ? (row?.getAttribute('data-node-id') ?? '') : '',
+        text: el?.textContent ?? '',
+      };
     });
     if (focused.section) reached.add(focused.section);
-    if (focused.text.includes('Go through the questions')) sawGo = true;
-    if (focused.text.includes('Back to your files')) sawBack = true;
+    if (focused.text.includes('Edit the file')) sawGo = true;
+    if (focused.text.includes('Back')) sawBack = true;
     expect(focused.cls).not.toContain('is-static');
   }
   expect(reached.size).toBe(doors);
@@ -248,7 +266,9 @@ test('the keyboard path never lands on a locked slot, and reaches every door on 
 
   // Nothing on either surface announces itself: a shelf and a file are states,
   // not events (docs/GUARDRAILS.md — no nudges, nothing steals focus).
-  await expect(page.locator('.fileview [aria-live]')).toHaveCount(0);
+  // The one polite region on this canvas is the globe's own; the list and
+  // the chrome announce nothing — a file is a state, not an event.
+  await expect(page.locator('.browse .filetree [aria-live], .browse-head [aria-live], .browse-actions [aria-live]')).toHaveCount(0);
 
   await context.close();
 });

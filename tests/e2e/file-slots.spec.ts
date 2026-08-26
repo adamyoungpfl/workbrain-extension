@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules, contextOutline } from '../../src/core/flow/flow';
 import { findPosition } from '../../src/core/flow/runner';
-import { fileSectionRows, fileStartTarget } from '../../src/core/files/fileView';
+import { fileStartTarget } from '../../src/core/files/fileView';
 import { fileFinished } from '../../src/core/files/slots';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
@@ -198,7 +198,7 @@ test.describe('VB-36 — Home is the set of files', () => {
     // test that times out politely.
     await skills.click({ force: true });
     await expect(page.locator('.home')).toBeVisible();
-    await expect(page.locator('.fileview')).toHaveCount(0);
+    await expect(page.locator('.browse')).toHaveCount(0);
     await expect(page.locator('.flow')).toHaveCount(0);
 
     // And it is not in the tab order — a disabled button never is.
@@ -246,51 +246,46 @@ test.describe('VB-36 — Home is the set of files', () => {
   });
 });
 
-// ──────────────────────────────────────────────────────── VB-37, the file view
+// ─────────────────────────────────────────── VB-102/103, the browse canvas
 
-test.describe('VB-37 — the file view', () => {
-  test('an active slot opens the file, and Back returns to the shelf', async () => {
+/**
+ * V2.4 VB-102 retired FileView: a file row on Home opens the BROWSE CANVAS —
+ * the Brain on top, the List below, Edit as the one door into the interview.
+ * VB-103: rows and orbs share one selection; a browse press selects, never
+ * navigates (decision 7a). These are the retired surface's claims, restated
+ * against the surface that replaced it.
+ */
+test.describe('VB-102 — the browse canvas', () => {
+  test('an active slot opens the browse canvas, and Back returns to the shelf', async () => {
     const { context, id } = await launch();
     const page = await openHome(context, id);
 
     await fileRow(page, 'Context\\.md').click();
-    await expect(page.locator('.fileview')).toBeVisible();
+    await expect(page.locator('.browse')).toBeVisible();
     await expect(page.locator('.home')).toHaveCount(0);
-    await expect(page.locator('.fileview-title')).toHaveText('Context.md');
-    // Every section of the file is on it, in file order.
-    const rows = page.locator('.fileview-item');
-    await expect(rows).toHaveCount(contextOutline.length);
-    for (const [index, node] of contextOutline.entries()) {
-      await expect(rows.nth(index).locator('.nm')).toHaveText(node.label);
-    }
+    await expect(page.locator('.browse-title')).toHaveText('Context.md');
+    // The Brain on top, the List below — one canvas, both representations.
+    await expect(page.locator('.browse .brainglobe')).toBeVisible();
+    await expect(page.locator('.browse .filetree-row[data-node-id]')).toHaveCount(contextOutline.length);
 
-    // Back, from the keyboard, lands on the shelf again.
-    const back = page.getByRole('button', { name: 'Back to your files', exact: true });
+    // Back, from the keyboard, lands on the shelf again. Scoped to the
+    // head: the globe's own nav band carries a Back of its own (the ladder).
+    const back = page.locator('.browse-head').getByRole('button', { name: 'Back', exact: true });
     await back.focus();
-    await expect(back).toBeFocused();
     await page.keyboard.press('Enter');
     await expect(page.locator('.home')).toBeVisible();
-    await expect(page.locator('.fileview')).toHaveCount(0);
+    await expect(page.locator('.browse')).toHaveCount(0);
 
     await context.close();
   });
 
-  test('on a file nobody has started, the whole-file door is the only one, and it lands on question one', async () => {
+  test('on a file nobody has started, Edit lands on the flow\'s own first question', async () => {
     const { context, id } = await launch();
     const page = await openHome(context, id);
     await fileRow(page, 'Context\\.md').click();
-    await expect(page.locator('.fileview')).toBeVisible();
+    await expect(page.locator('.browse')).toBeVisible();
 
-    // Nothing has been reached, so no section is a link — and the screen says
-    // why rather than leaving ten inert rows unexplained.
-    await expect(page.locator('.fileview-row.is-static')).toHaveCount(contextOutline.length);
-    await expect(page.locator('.fileview-row:not(.is-static)')).toHaveCount(0);
-    await expect(page.locator('.fileview-hint')).toHaveText(
-      'Each section opens once you have answered something in it.',
-    );
-
-    // The whole file, keyboard-only, landing on the flow's own first question.
-    const go = page.getByRole('button', { name: 'Go through the questions', exact: true });
+    const go = page.getByRole('button', { name: 'Edit the file', exact: true });
     await go.focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('.flow')).toBeVisible();
@@ -299,56 +294,54 @@ test.describe('VB-37 — the file view', () => {
     await context.close();
   });
 
-  test('on a part-written file the two doors go to two different places, and each goes to the right one', async () => {
+  test('a row press SELECTS — the Brain mirrors it, and nothing navigates (VB-103)', async () => {
     const { context, sw, id } = await launch();
-    const answers = partlyWritten();
-    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
-
-    // What the pure fold says should happen, computed before the panel opens.
-    const rows = fileSectionRows(contextOutline, contextModules, answers, new Date());
-    const think = rows.find((r) => r.id === 'sec5')!;
-    const resume = resumeStepId(answers);
-    expect(think.target, 'the fixture no longer reaches 5. How I Think').not.toBe(null);
-    expect(resume, 'the fixture no longer separates the two doors').not.toBe(think.target);
-
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), partlyWritten());
     const page = await openHome(context, id);
     await fileRow(page, 'Context\\.md').click();
-    await expect(page.locator('.fileview')).toBeVisible();
+    await expect(page.locator('.browse')).toBeVisible();
 
-    // --- door one: the section. It opens THAT part, not the resume. ---
-    const section = page.locator('.fileview-row[data-section-id="sec5"]');
-    await expect(section).not.toHaveClass(/is-static/);
-    await section.focus();
-    await page.keyboard.press('Enter');
-    await expect(page.locator('.flow')).toBeVisible();
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', think.target!);
-
-    // --- door two: the whole file. Same screen, and it resumes instead. ---
-    const back = await openHome(context, id);
-    await fileRow(back, 'Context\\.md').click();
-    await expect(back.locator('.fileview')).toBeVisible();
-    await back.getByRole('button', { name: 'Go through the questions', exact: true }).click();
-    await expect(back.locator('.flow')).toHaveAttribute('data-step-id', resume);
+    const row = page.locator('.browse .filetree-row[data-node-id="sec5"] .filetree-nav');
+    await expect(row).toHaveAttribute('aria-pressed', 'false');
+    await row.click();
+    // Still the browse canvas — a browse press never enters the interview.
+    await expect(page.locator('.browse')).toBeVisible();
+    await expect(page.locator('.flow')).toHaveCount(0);
+    // The row lights as the selection…
+    await expect(row).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.browse .filetree-row[data-node-id="sec5"]')).toHaveClass(/is-selected/);
+    // …and the Brain flew into the same section (the pin press path).
+    await expect(page.locator('.browse .brainglobe')).toHaveAttribute('data-inside', 'true');
 
     await context.close();
   });
 
-  test('a file with nothing left to ask offers to go through it again, and really shows a question', async () => {
+  test('on a part-written file, Edit resumes exactly where the interview left off', async () => {
+    const { context, sw, id } = await launch();
+    const answers = partlyWritten();
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
+    const resume = resumeStepId(answers);
+
+    const page = await openHome(context, id);
+    await fileRow(page, 'Context\\.md').click();
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', resume);
+
+    await context.close();
+  });
+
+  test('a file with nothing left to ask restarts from question one rather than bouncing off done', async () => {
     const { context, sw, id } = await launch();
     const answers = nothingLeftToAsk();
-    // The fixture is only interesting if it really is the "nothing to resume
-    // to" state — a resume here would land on `done` and bounce back to Home.
     expect(findPosition(contextModules, answers, new Set(), new Set()).kind).toBe('done');
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
 
     const page = await openHome(context, id);
     await fileRow(page, 'Context\\.md').click();
-    await expect(page.locator('.fileview')).toBeVisible();
-
-    // The button says the true thing, and pressing it lands on a real
-    // question rather than flashing the flow and returning to Home.
-    await expect(page.getByRole('button', { name: 'Go through the questions', exact: true })).toHaveCount(0);
-    await page.getByRole('button', { name: 'Go through them again', exact: true }).click();
+    // One door whatever the file's state (VB-102): Edit, and on a finished
+    // file it shows a real question instead of flashing the flow and
+    // returning to Home.
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
     await expect(page.locator('.flow')).toBeVisible();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', fileStartTarget(contextOutline)!);
     await expect(page.locator('.home')).toHaveCount(0);
@@ -356,49 +349,23 @@ test.describe('VB-37 — the file view', () => {
     await context.close();
   });
 
-  test('a section nobody has reached is not a door, and says so in a word as well as a shade', async () => {
+  test('the browse canvas stores nothing — a reopen lands on Home and re-derives', async () => {
     const { context, sw, id } = await launch();
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), partlyWritten());
     const page = await openHome(context, id);
     await fileRow(page, 'Context\\.md').click();
-    await expect(page.locator('.fileview')).toBeVisible();
-
-    // 6. How I Communicate is untouched in the fixture.
-    const untouched = page.locator('.fileview-row[data-section-id="sec6"]');
-    await expect(untouched).toHaveClass(/is-static/);
-    // Not a button at all, so there is nothing to press and nothing to tab to.
-    expect(await untouched.evaluate((el) => el.tagName)).toBe('DIV');
-    await expect(page.locator('.fileview-item', { has: untouched }).locator('.sectionhealth-pill')).toHaveText(
-      /Not yet/,
-    );
-
-    // While the section that IS reached is a real control with a real name.
-    const reached = page.locator('.fileview-row[data-section-id="sec5"]');
-    expect(await reached.evaluate((el) => el.tagName)).toBe('BUTTON');
-    await expect(reached).toHaveAttribute('aria-label', 'Go to 5. How I Think');
-
-    await context.close();
-  });
-
-  test('the file view stores nothing — a reopen lands on Home and re-derives', async () => {
-    const { context, sw, id } = await launch();
-    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), partlyWritten());
-    const page = await openHome(context, id);
-    await fileRow(page, 'Context\\.md').click();
-    await expect(page.locator('.fileview')).toBeVisible();
+    await expect(page.locator('.browse')).toBeVisible();
 
     const url = page.url();
     const keysWhileOpen = await sw.evaluate(() => chrome.storage.local.get(null));
-    // The only keys are the ones that existed before this surface was opened.
     expect(Object.keys(keysWhileOpen).sort()).toEqual(['wb:answers']);
 
     await page.close();
     const reopened = await context.newPage();
     await reopened.setViewportSize({ width: 400, height: 760 });
     await reopened.goto(url);
-    // Home, not the file — which surface you were on is never written down.
     await expect(reopened.locator('.home')).toBeVisible();
-    await expect(reopened.locator('.fileview')).toHaveCount(0);
+    await expect(reopened.locator('.browse')).toHaveCount(0);
 
     await context.close();
   });

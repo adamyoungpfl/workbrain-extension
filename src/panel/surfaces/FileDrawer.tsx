@@ -259,6 +259,10 @@ export interface FileDrawerProps {
    */
   mode: DrawerMode;
   onRequestMode: (mode: DrawerMode) => void;
+  /** V2.4 VB-112 — the door to the Home PAGE, handed to the trail's root
+   * rung and the globe's drawn house alike, so "all the way out" is one
+   * answer on this screen. */
+  onHome?: (() => void) | undefined;
   /** Navigating from a written row — resolved to a real `Position` here and
    * handed to `Flow`, which already knows how to view an arbitrary position
    * (its `viewing` state, built at R1-12 for Home's deep-link). */
@@ -316,6 +320,7 @@ export function FileDrawer({
   onNavigate,
   mode,
   onRequestMode,
+  onHome,
   file = 'context',
   fileCopy = CONTEXT_FILE_COPY,
   closed = false,
@@ -1040,6 +1045,7 @@ export function FileDrawer({
         filesOpen={filesOpen}
         onFilesOpen={setFilesOpen}
         onNav={setNav}
+        onHome={onHome}
       />
       {/* Brain. Mounted in both modes — see decision 2 in the header — and
           anchored to the top of its box rather than centred, so the globe does
@@ -1056,6 +1062,7 @@ export function FileDrawer({
           summaries={summaries}
           recommendations={recommendations}
           onSelect={handleGlobeSelect}
+          onHome={onHome}
           /* V1.8 VB-48 — the tier above, and the one state both views read.
              The globe is handed the same `toggle` the List's strip is drawn
              from, so "what is locked" is one answer on this screen rather than
