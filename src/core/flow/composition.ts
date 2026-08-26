@@ -91,8 +91,22 @@ export const QUESTION_AREA_CEILING_FRACTION = 0.75;
  * `--flow-area-offset` and Flow.css subtracts it from `100dvh`; the stylesheet
  * adds nothing up, here or anywhere else.
  */
-export function questionAreaOffset(drawerHeight: number): number {
+/**
+ * V2.3 VB-94 note, after a wrong turn worth recording: the cluster moved
+ * in-flow INSIDE the filled area, so this offset needed NO change — the fill
+ * still runs to the note band's gap, with the cluster composing inside it.
+ * An earlier fix added the cluster's band here on a misread of a spec
+ * failure whose real cause was the fixed note being counted as a content
+ * row; the addition broke the fill by exactly the amount it "fixed".
+ * `questionSurfaceOffset` stays as the alias the split introduced, so the
+ * two names cannot drift apart again.
+ */
+export function questionSurfaceOffset(drawerHeight: number): number {
   return flowBottomReserve(drawerHeight) + PANEL_SURFACE_TOP;
+}
+
+export function questionAreaOffset(drawerHeight: number): number {
+  return questionSurfaceOffset(drawerHeight);
 }
 
 /**

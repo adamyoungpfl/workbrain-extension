@@ -729,6 +729,30 @@
    cluster is the shape VB-41 asks for, and the column it lined up with is a
    left margin nothing else in the bar was using. */
 .flowshell .flow-foot {
+  /* ── V2.3 VB-94 — THE SWAP: the cluster leaves the docked band and pins
+     itself directly under the input, where the hand and the eye already are;
+     the save note takes the band it vacates (below). In-flow, so it sits
+     exactly where the content ends — Adam: "pinned below the bottom of the
+     question answer input box." `relative` because the melt layer now
+     overlays THIS box rather than a fixed band — a copy must land on the
+     pixel its original stood on wherever the cluster happens to sit. */
+  position: relative;
+  box-sizing: border-box;
+  height: var(--flow-nav-h, 64px);
+  margin-top: 6px;
+  padding: 0 8px var(--nav-clearance, 20px);
+  border: 0;
+  justify-content: center;
+  gap: 10px;
+  background: var(--canvas);
+}
+
+/* The note, docked into the band the cluster left — fixed above the drawer,
+   travelling with it exactly as the cluster used to. `padding-top` is the
+   handle's overhang (`--nav-clearance`): the grabber's invisible 44px target
+   reaches that far up into this band, and text standing under it would be
+   text under someone's thumb. */
+.flowshell .flow-save {
   position: fixed;
   left: 0;
   right: 0;
@@ -736,16 +760,15 @@
   z-index: 1;
   box-sizing: border-box;
   height: var(--flow-nav-h, 64px);
-  margin-top: 0;
-  /* The clearance is padding-BOTTOM, so the hit boxes sit at the top of the
-     band and the empty space is all between them and the drawer. */
+  margin: 0;
+  /* The clearance is padding-BOTTOM: the handle's 44px target overhangs the
+     DRAWER'S EDGE — the bottom of this band — so the ink lives in the top 44
+     and the empty 20 sits over the grabber's reach. (The first draft padded
+     the top, which pushed the words INTO the handle; caught by VB-41's own
+     clearance assertion, not by eyes.) */
   padding: 0 8px var(--nav-clearance, 20px);
-  /* No rule across the top. The band is the panel continuing; a line would be
-     a container drawn around a cluster that just had its containers taken
-     away. */
-  border: 0;
-  justify-content: center;
-  gap: 10px;
+  align-items: center;
+  align-content: center;
   background: var(--canvas);
 }
 
@@ -911,13 +934,12 @@
        has faded out. It is also the better metaphor — a thing that melts goes
        flat. */
 .flow-melt {
+  /* V2.3 VB-94: the cluster is in-flow and unmounts per question, so this
+     layer (mounted once, outliving it) is placed by NavCluster.tsx at the
+     BOX THE OUTGOING CLUSTER LAST PAINTED IN — inline fixed coordinates,
+     measured at capture. The rules here are only the frame's internals. */
   position: fixed;
-  left: 0;
-  right: 0;
-  bottom: var(--drawer-h, 186px);
-  z-index: 1;
   box-sizing: border-box;
-  height: var(--flow-nav-h, 64px);
   /* The same frame as `.flow-foot`, so a copy lands on the pixel its original
      stood on. Two lists of geometry would be two bars slightly out of step. */
   padding: 0 8px var(--nav-clearance, 20px);
@@ -1022,9 +1044,11 @@
    the bar arrives at the drawer's new edge in one frame instead of travelling
    there — still docked, still attached at rest, one cue less. Degrade, never
    break (docs/GUARDRAILS.md). */
+.flowshell:has(.filedrawer[data-settle='nudge']) .flow-save,
 .flowshell:has(.filedrawer[data-settle='nudge']) .flow-foot {
   transition: bottom var(--base) var(--ease);
 }
+.flowshell:has(.filedrawer[data-settle='jump']) .flow-save,
 .flowshell:has(.filedrawer[data-settle='jump']) .flow-foot {
   transition: bottom var(--slow) var(--ease);
 }
@@ -1045,7 +1069,9 @@
      information is where the drawer's top edge now is, and the bar is sitting
      on it from the first frame. */
   .flowshell:has(.filedrawer[data-settle='nudge']) .flow-foot,
-  .flowshell:has(.filedrawer[data-settle='jump']) .flow-foot {
+  .flowshell:has(.filedrawer[data-settle='jump']) .flow-foot,
+  .flowshell:has(.filedrawer[data-settle='nudge']) .flow-save,
+  .flowshell:has(.filedrawer[data-settle='jump']) .flow-save {
     transition: none;
   }
 

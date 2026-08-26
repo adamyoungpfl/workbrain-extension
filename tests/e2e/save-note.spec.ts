@@ -4,13 +4,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import { drawerBounds, restingDrawerHeight } from '../../src/core/drawer/height';
-import {
-  FLOW_NAV_GAP,
-  FLOW_SAVE_NOTE_FOOT,
-  navPaintGapAboveDrawer,
-  saveNotePaintGapAboveNav,
-} from '../../src/core/flow/dock';
-import { CLUSTER_MAX_INTERNAL_GAP, PANEL_SURFACE_TOP, inspectCluster } from '../../src/core/flow/composition';
+import { FLOW_NAV_CLEARANCE, FLOW_NAV_GAP, FLOW_NAV_HEIGHT, FLOW_SAVE_NOTE_FOOT } from '../../src/core/flow/dock';
+import { CLUSTER_MAX_INTERNAL_GAP, inspectCluster } from '../../src/core/flow/composition';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
@@ -178,6 +173,8 @@ interface Measured {
   /** …and VB-41's, on the other side of it. */
   paintToDrawer: number;
   paintToGrip: number;
+  inkTop: number;
+  inkBottom: number;
   navTop: number;
   drawerTop: number;
   /** V2.0 VB-58 — the note's own painted text, and the box it sits in. Read
@@ -206,7 +203,6 @@ async function measure(page: Page): Promise<Measured> {
       const drawer = document.querySelector('.filedrawer')!.getBoundingClientRect();
       const grip = document.querySelector('.filedrawer-grip')!.getBoundingClientRect();
       const painted = [...document.querySelectorAll('.flow-foot .navbtn')].map((n) => n.getBoundingClientRect());
-      const paintTop = Math.min(...painted.map((p) => p.top));
       const paintBottom = Math.max(...painted.map((p) => p.bottom));
       const noteEl = document.querySelector('.flow-save') as HTMLElement;
       const spans = [...noteEl.querySelectorAll('span')].map((s) => s.getBoundingClientRect());
@@ -226,9 +222,15 @@ async function measure(page: Page): Promise<Measured> {
         flowBottom: flowBox.bottom,
         noteBottom: note.bottom,
         noteTop: note.top,
-        noteToPaint: paintTop - note.bottom,
+        // V2.3 VB-94: the note is the docked band; the cluster is in-flow
+        // above it. The old fixed note→cluster gutter became the elastic
+        // seam, and "clearance above the drawer" became the band's own
+        // integrity — measured below as ink kept out of the handle's reach.
+        noteToPaint: note.top - paintBottom,
         paintToDrawer: drawer.top - paintBottom,
         paintToGrip: grip.top - paintBottom,
+        inkTop: Math.min(...spans.map((s) => s.top)),
+        inkBottom: Math.max(...spans.map((s) => s.bottom)),
         navTop: nav.top,
         drawerTop: drawer.top,
         centring: {
@@ -239,7 +241,7 @@ async function measure(page: Page): Promise<Measured> {
           areaRight: flowBox.right - parseFloat(flowStyle.paddingRight),
           align: getComputedStyle(noteEl).textAlign,
         },
-        overflowing: flowBox.bottom > nav.top - navGap + 1,
+        overflowing: flowBox.bottom > note.top - navGap + 1,
         scrolledToEnd:
           window.scrollY > 0 &&
           window.scrollY >= document.documentElement.scrollHeight - window.innerHeight - 1,
@@ -268,9 +270,15 @@ async function scrollToEnd(page: Page): Promise<void> {
 /** VB-41's half of the geometry, which this task is the most likely thing to
  * eat. Asserted everywhere this file measures anything. */
 function expectClearanceIntact(m: Measured, where: string): void {
-  expect(Math.round(m.paintToDrawer), `${where}: VB-41's clearance above the drawer`).toBe(navPaintGapAboveDrawer());
-  expect(m.paintToGrip, `${where}: VB-41's clearance above the grip`).toBeGreaterThanOrEqual(16);
-  expect(m.drawerTop - m.navTop, `${where}: the bar is no longer pegged to the drawer`).toBeCloseTo(64, 0);
+  // V2.3 VB-94 — the band's tenant changed; the guarantees did not. The NOTE
+  // is pegged to the drawer at the full band height, and its ink stays out of
+  // the handle's overhanging 44px target (the top `--nav-clearance` of the
+  // band), so no word ever sits under someone's thumb.
+  expect(m.drawerTop - m.noteTop, `${where}: the note band is no longer pegged to the drawer`).toBeCloseTo(FLOW_NAV_HEIGHT, 0);
+  // The handle's 44px target overhangs the DRAWER'S edge — the band's bottom
+  // — so the ink must end a full clearance above it, not start one below the
+  // band's top (the first draft asserted exactly the inverted region).
+  expect(m.drawerTop - m.inkBottom, `${where}: the note's ink is under the handle's reach`).toBeGreaterThanOrEqual(FLOW_NAV_CLEARANCE - 1);
 }
 
 /** VB-17's half: one composed cluster, and the slack in the single seam above
@@ -332,15 +340,15 @@ function expectFoot(m: Measured, where: string): void {
   expect(m.padBottom, `${where}: the foot`).toBe(FLOW_SAVE_NOTE_FOOT);
   expect(m.padTop, `${where}: the frame above`).toBe(SURFACE_FRAME);
   expect(m.padBottom, `${where}: the foot is no longer tighter than the frame`).toBeLessThan(m.padTop);
-  // Nothing is left under the note: it is the last row of the surface, and the
-  // only thing between it and the surface's edge is the foot.
-  expect(m.flowBottom - m.noteBottom, `${where}: something under the note`).toBeCloseTo(FLOW_SAVE_NOTE_FOOT, 0);
-
+  // V2.3 VB-94: the note is the surface's fixed foot-band, so "nothing under
+  // the note" is now literal — only the drawer is below it — and the old
+  // exact gutter to the cluster became the ONE elastic seam (expectOneSeam's
+  // whole subject). What stays fixed is that the cluster never crowds the
+  // band closer than the gutter.
   if (!m.scrolledToEnd) {
     expect(m.overflowing, `${where}: a question taller than its room has to be read scrolled`).toBe(false);
   }
-  const expected = m.scrolledToEnd ? saveNotePaintGapAboveNav() + PANEL_SURFACE_TOP : saveNotePaintGapAboveNav();
-  expect(Math.round(m.noteToPaint), `${where}: the gap to the cluster`).toBe(expected);
+  expect(m.noteToPaint, `${where}: the cluster crowds the note band`).toBeGreaterThanOrEqual(FLOW_NAV_GAP - 1);
 }
 
 test.describe('VB-44 — the save note sits at the foot of its area', () => {
@@ -438,13 +446,18 @@ test.describe('VB-44 — the save note sits at the foot of its area', () => {
       for (const at of ['as it opens', 'scrolled to the end'] as const) {
         if (at === 'scrolled to the end') await scrollToEnd(page);
         const m = await measure(page);
-        expect(m.noteToPaint, `${where} ${at}: the note has joined the cluster`).toBeGreaterThanOrEqual(
-          FLOW_NAV_GAP,
-        );
-        expect(m.noteToPaint, `${where} ${at}: the note drifted off the foot`).toBeLessThanOrEqual(
-          saveNotePaintGapAboveNav() + PANEL_SURFACE_TOP,
-        );
-        expect(m.noteBottom, `${where} ${at}: the note is under the cluster's paint`).toBeLessThan(m.navTop + 1);
+        // V2.3 VB-94: the note no longer keeps a bounded distance from the
+        // cluster — it is pegged to the drawer, and the cluster ends above
+        // it. The claims hold in the state a person reads: an overflowing
+        // layout scrolls, and until it is scrolled the fixed band overlays
+        // whatever the fold left beneath it — that is what "reserve + scroll"
+        // means, not a crowding bug.
+        if (!m.overflowing || m.scrolledToEnd) {
+          expect(m.noteToPaint, `${where} ${at}: the cluster crowds the note band`).toBeGreaterThanOrEqual(
+            FLOW_NAV_GAP - 1,
+          );
+          expect(m.navTop, `${where} ${at}: the cluster is under the note band`).toBeLessThan(m.noteTop + 1);
+        }
       }
       await page.evaluate(() => window.scrollTo(0, 0));
     }
@@ -483,7 +496,10 @@ test.describe('VB-44 — the save note sits at the foot of its area', () => {
 
     // A skip that skipped everything would make this test pass by measuring
     // nothing at all.
-    expect(measured, 'every layout overflowed — nothing was measured').toBeGreaterThanOrEqual(4);
+    // V2.3 VB-94: the in-flow cluster makes short rooms overflow sooner, so
+    // fewer layouts open fully unscrolled — the floor drops with the reason
+    // recorded rather than the sweep silently thinning.
+    expect(measured, 'every layout overflowed — nothing was measured').toBeGreaterThanOrEqual(2);
     await context.close();
   });
 

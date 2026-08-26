@@ -183,6 +183,8 @@ interface Composition {
   areaBottom: number;
   areaContentBottom: number;
   contentBottom: number;
+  footTop: number;
+  footBottom: number;
   navTop: number;
   drawerTop: number;
   rows: MeasuredRow[];
@@ -192,7 +194,9 @@ interface Composition {
 async function composition(page: Page): Promise<Composition> {
   return page.evaluate((selectors) => {
     const flow = document.querySelector('.flow') as HTMLElement;
-    const nav = document.querySelector('.flow-foot')!.getBoundingClientRect();
+    // V2.3 VB-94: the surface's bottom chrome is the NOTE band now — the
+    // cluster is a content row and composes with the question above it.
+    const nav = document.querySelector('.flow-save')!.getBoundingClientRect();
     const drawer = document.querySelector('.filedrawer')!.getBoundingClientRect();
     const rows: { name: string; top: number; bottom: number }[] = [];
     for (const selector of selectors) {
@@ -211,6 +215,8 @@ async function composition(page: Page): Promise<Composition> {
       // every screen in this product is drawn inside.
       areaContentBottom: flowBox.bottom - parseFloat(getComputedStyle(flow).paddingBottom),
       contentBottom: rows.length ? rows[rows.length - 1]!.bottom : flowBox.top,
+      footTop: document.querySelector('.flow-foot')?.getBoundingClientRect().top ?? Number.NaN,
+      footBottom: document.querySelector('.flow-foot')?.getBoundingClientRect().bottom ?? Number.NaN,
       navTop: nav.top,
       drawerTop: drawer.top,
       rows,
@@ -303,9 +309,12 @@ test.describe('VB-17 — one composed cluster, and the slack in one place', () =
     const area = c.navTop - c.areaTop;
 
     // 1. The surface really is the room above the dock — not its content's
-    //    natural height, which is what left the strip in the first place.
+    //    natural height. V2.3 VB-94: the cluster now composes INSIDE this
+    //    filled surface, so the fill still runs to the note band's gap, and
+    //    the cluster additionally sits wholly inside it.
     expect(c.areaBottom).toBeGreaterThanOrEqual(c.navTop - FLOW_NAV_GAP - 2);
     expect(c.areaBottom).toBeLessThanOrEqual(c.navTop + 1);
+    expect(c.footBottom, 'the cluster spills out of the surface').toBeLessThanOrEqual(c.areaBottom + 1);
 
     // 2. The cluster is one composed thing, and the slack is below it.
     expectComposedCluster(c, 'preferred_name');
@@ -389,7 +398,7 @@ test.describe('VB-17 — one composed cluster, and the slack in one place', () =
     const last = await box(pills.last());
     const end = await composition(page);
     expect(last.bottom).toBeLessThanOrEqual(end.navTop + 1);
-    expect(end.contentBottom).toBeLessThanOrEqual(end.navTop + 1);
+    expect(end.footBottom, 'the cluster clears the note band at the end of the scroll').toBeLessThanOrEqual(end.navTop + 1);
 
     // And it is answerable from there.
     await options.last().click();
@@ -464,7 +473,9 @@ test.describe('VB-17 — one composed cluster, and the slack in one place', () =
         await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
         await page.waitForTimeout(120);
         const scrolled = await composition(page);
-        expect(scrolled.contentBottom, `last row clear of the bar, ${where}`).toBeLessThanOrEqual(scrolled.navTop + 1);
+        // V2.3 VB-94: the note IS the bar and is fixed, so the last SCROLLING
+        // row that must clear it is the foot.
+        expect(scrolled.footBottom, `last row clear of the bar, ${where}`).toBeLessThanOrEqual(scrolled.navTop + 1);
         await page.evaluate(() => window.scrollTo(0, 0));
 
         expect(await page.getByRole('button', { name: 'Next', exact: true }).isVisible()).toBe(true);

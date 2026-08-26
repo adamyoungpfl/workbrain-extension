@@ -395,19 +395,31 @@ test.describe('VB-53 — the buttons melt into the bar and rise back out', () =>
        all: the ink leaves by having no height, not by having no contrast.
        docs/GUARDRAILS.md's 4.5:1 floor is unconditional, and a cross-fade
        spends most of its frames under it. */
-    const restingTop = before.live[0]!.box.top;
+    /* V2.3 VB-94 amended the first rule's letter, not its spirit. The
+       cluster is in-flow now, so between two QUESTIONS its resting line
+       legitimately moves with the content above it — the outgoing ghosts
+       stay on the line the old cluster painted (the layer is pinned to that
+       box at capture), and the incoming cluster rises on its own new line.
+       What must still never happen is a pressable box moving DURING the cue:
+       within any one frame the live row is one row, and across the cue the
+       live row's line never wanders once it exists. */
     for (const frame of frames) {
       for (const control of [...frame.live, ...frame.ghost]) {
         expect(control.opacity, `${control.id} was painted part-way faded`).toBe(1);
+      }
+      const liveTops = frame.live.map((c) => c.box.top);
+      if (liveTops.length > 1) {
+        expect(Math.max(...liveTops) - Math.min(...liveTops), 'the live row split onto two lines mid-cue').toBeLessThanOrEqual(1);
       }
       for (const control of frame.live) {
         expect(control.box.height, 'a live control fell under the 44px floor mid-rise').toBeGreaterThanOrEqual(
           FLOW_NAV_TARGET - 0.5,
         );
         expect(control.box.width).toBeGreaterThanOrEqual(FLOW_NAV_TARGET - 0.5);
-        expect(control.box.top, 'a pressable box moved while the cue played').toBe(restingTop);
       }
     }
+    const liveLines = new Set(frames.flatMap((f) => f.live.map((c) => Math.round(c.box.top))));
+    expect(liveLines.size, 'the live cluster wandered between lines while the cue played').toBeLessThanOrEqual(1);
 
     // THE OVERLAP. The band is never empty: on some frame the old cluster is
     // still on screen and the new one has already started to come out.

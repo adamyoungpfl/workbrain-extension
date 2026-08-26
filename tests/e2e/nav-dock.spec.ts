@@ -131,7 +131,9 @@ async function box(target: Locator): Promise<Box> {
  * between the two measurements and manufacture a gap that was never on screen. */
 async function seam(page: Page): Promise<{ navBottom: number; drawerTop: number; navTop: number; navHeight: number }> {
   return page.evaluate(() => {
-    const nav = document.querySelector('.flow-foot')!.getBoundingClientRect();
+    // V2.3 VB-94: the docked band above the drawer is the SAVE NOTE now —
+    // the cluster moved in-flow under the input. Same seam, new tenant.
+    const nav = document.querySelector('.flow-save')!.getBoundingClientRect();
     const drawer = document.querySelector('.filedrawer')!.getBoundingClientRect();
     return { navBottom: nav.bottom, drawerTop: drawer.top, navTop: nav.top, navHeight: nav.height };
   });
@@ -172,7 +174,7 @@ test.describe('VB-11 — the nav is docked to the drawer', () => {
     expect(Math.max(...heights)).toBe(BOUNDS.max);
 
     // It spans the panel, like the drawer under it — one docked unit.
-    const nav = await box(page.locator('.flow-foot'));
+    const nav = await box(page.locator('.flow-save'));
     expect(nav.left).toBeCloseTo(0, 0);
     expect(nav.width).toBeCloseTo(PANEL.width, 0);
 
@@ -213,7 +215,7 @@ test.describe('VB-11 — the nav is docked to the drawer', () => {
     // Nothing eases behind the grip — the drag has no transition on either half.
     const durations = await page.evaluate(() => ({
       drawer: getComputedStyle(document.querySelector('.filedrawer')!).transitionDuration,
-      nav: getComputedStyle(document.querySelector('.flow-foot')!).transitionDuration,
+      nav: getComputedStyle(document.querySelector('.flow-save')!).transitionDuration,
     }));
     expect(durations.drawer).toBe('0s');
     expect(durations.nav).toBe('0s');
@@ -247,7 +249,7 @@ test.describe('VB-11 — the nav is docked to the drawer', () => {
     expect(Math.abs((await seam(page)).navBottom - (PANEL.height - BOUNDS.max))).toBeLessThanOrEqual(1);
 
     // The durations really are the system's two, on the system's one curve.
-    const nav = await page.locator('.flow-foot').evaluate((el) => {
+    const nav = await page.locator('.flow-save').evaluate((el) => {
       const s = getComputedStyle(el);
       return { property: s.transitionProperty, duration: s.transitionDuration, easing: s.transitionTimingFunction };
     });
@@ -257,7 +259,7 @@ test.describe('VB-11 — the nav is docked to the drawer', () => {
 
     await page.keyboard.press('ArrowDown');
     await expect
-      .poll(async () => (await page.locator('.flow-foot').evaluate((el) => getComputedStyle(el).transitionDuration)))
+      .poll(async () => (await page.locator('.flow-save').evaluate((el) => getComputedStyle(el).transitionDuration)))
       .toBe('0.2s');
 
     await context.close();
@@ -360,31 +362,36 @@ test.describe('VB-11 — the nav is docked to the drawer', () => {
         const label = (await buttons.nth(i).textContent())?.trim();
         expect(b.height, `${label} height`).toBeGreaterThanOrEqual(44);
         expect(b.width, `${label} width`).toBeGreaterThanOrEqual(44);
-        // Inside the bar, not spilling out of it.
-        const s = await seam(page);
-        expect(b.top, `${label} top`).toBeGreaterThanOrEqual(s.navTop - 1);
-        expect(b.bottom, `${label} bottom`).toBeLessThanOrEqual(s.navBottom + 1);
+        // Inside the CLUSTER's own box — V2.3 VB-94 moved it in-flow, so
+        // "the bar" it must not spill from is its own footer, wherever the
+        // content put it, not the docked band (which is the note's now).
+        const foot = await box(page.locator('.flow-foot'));
+        expect(b.top, `${label} top`).toBeGreaterThanOrEqual(foot.top - 1);
+        expect(b.bottom, `${label} bottom`).toBeLessThanOrEqual(foot.bottom + 1);
       }
     }
 
     await context.close();
   });
 
-  test('the save note left the bar and is still on screen, above it', async () => {
+  test('V2.3 VB-94 — the note IS the docked band now, and the cluster sits above it in the content', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await seedNameQuestion(context, sw, id);
     await setHeight(page, 'Home');
 
+    // This test used to pin the opposite arrangement (note in content, bar
+    // docked). Adam swapped the tenants: the cluster pins under the input,
+    // the note takes the band and rides the drawer.
     const note = page.locator('.flow-save');
     await expect(note).toHaveText(new RegExp(`${S.savedNote}.*${S.privacyNote}`));
-    // Out of the bar entirely, and in the question's own content above it.
     expect(await note.evaluate((el) => !!el.closest('.flow-foot'))).toBe(false);
-    expect(await note.evaluate((el) => !!el.closest('.flow'))).toBe(true);
     const n = await box(note);
     const s = await seam(page);
-    expect(n.bottom).toBeLessThanOrEqual(s.navTop + 1);
-    // One line, not the stacked pair it was in the old right-hand column.
-    expect(n.height).toBeLessThan(24);
+    // Docked: the note's band ends where the drawer begins.
+    expect(Math.abs(n.bottom - s.drawerTop)).toBeLessThanOrEqual(1);
+    // And the cluster is above it, in the content, clear of the band.
+    const foot = await box(page.locator('.flow-foot'));
+    expect(foot.bottom).toBeLessThanOrEqual(n.top + 1);
 
     await context.close();
   });
@@ -450,7 +457,7 @@ test.describe('VB-11 — motion', () => {
     // No transition to be caught inside — on either half.
     const durations = await page.evaluate(() => ({
       drawer: getComputedStyle(document.querySelector('.filedrawer')!).transitionDuration,
-      nav: getComputedStyle(document.querySelector('.flow-foot')!).transitionDuration,
+      nav: getComputedStyle(document.querySelector('.flow-save')!).transitionDuration,
     }));
     expect(durations.drawer).toBe('0s');
     expect(durations.nav).toBe('0s');

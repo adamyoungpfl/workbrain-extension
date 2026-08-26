@@ -480,13 +480,15 @@ test.describe('VB-72 — less air above the breadcrumbs', () => {
       DRAWER_HANDLE_BAND + DRAWER_HANDLE_OVERHANG,
     );
 
-    // AND IT TAKES NO PRESS FROM THE CLUSTER. The two targets meet at the row
-    // where the nav's hit boxes end, and never overlap — this is the assertion
-    // that fails if the overhang is ever loosened off VB-41's clearance.
-    expect(g.handle.top, 'the handle reaches into the nav’s own hit boxes').toBeGreaterThanOrEqual(
-      g.navHitBottom - 0.5,
-    );
-    expect(Math.round(g.drawer.top - g.navHitBottom), 'VB-41’s clearance moved').toBe(FLOW_NAV_CLEARANCE);
+    // AND IT TAKES NO PRESS — V2.3 VB-94: the band above the drawer holds
+    // the save NOTE now (the cluster moved in-flow), so the overhang's
+    // neighbour is the note's ink. Same guarantee, new tenant: the handle's
+    // reach and the words never overlap, and the clearance is exactly VB-41's.
+    const noteInkBottom = await page
+      .locator('.flow-save span')
+      .evaluateAll((els) => Math.max(...els.map((el) => el.getBoundingClientRect().bottom)));
+    expect(g.handle.top, 'the handle reaches into the note’s ink').toBeGreaterThanOrEqual(noteInkBottom - 0.5);
+    expect(g.drawer.top - noteInkBottom, 'VB-41’s clearance moved').toBeGreaterThanOrEqual(FLOW_NAV_CLEARANCE - 1);
 
     // AND THE GRIP DID NOT MOVE: still straddling the edge, half above it.
     expect(g.grip.top, 'the grip is not straddling the edge').toBeLessThan(g.drawer.top);

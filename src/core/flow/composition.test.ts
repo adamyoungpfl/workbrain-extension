@@ -11,6 +11,7 @@ import {
   questionAreaFraction,
   questionAreaHeight,
   questionAreaOffset,
+  questionSurfaceOffset,
   widestGap,
 } from './composition';
 import type { MeasuredRow } from './composition';
@@ -22,11 +23,14 @@ import { DRAWER_MIN_HEIGHT, DRAWER_REST_HEIGHT, drawerBounds } from '../drawer/h
 const PANELS = [600, 700, 800, 900];
 
 describe('questionAreaOffset', () => {
-  it('is the whole dock, its gap, and the margin above the surface', () => {
-    expect(questionAreaOffset(DRAWER_REST_HEIGHT)).toBe(
+  it('is the surface offset plus the in-flow cluster — V2.3 VB-94 split the two', () => {
+    expect(questionSurfaceOffset(DRAWER_REST_HEIGHT)).toBe(
       DRAWER_REST_HEIGHT + FLOW_NAV_HEIGHT + FLOW_NAV_GAP + PANEL_SURFACE_TOP,
     );
-    expect(questionAreaOffset(DRAWER_REST_HEIGHT)).toBe(flowBottomReserve(DRAWER_REST_HEIGHT) + PANEL_SURFACE_TOP);
+    expect(questionSurfaceOffset(DRAWER_REST_HEIGHT)).toBe(flowBottomReserve(DRAWER_REST_HEIGHT) + PANEL_SURFACE_TOP);
+    // The two are the same number — see composition.ts's note on the wrong
+    // turn this aliasing exists to prevent repeating.
+    expect(questionAreaOffset(DRAWER_REST_HEIGHT)).toBe(questionSurfaceOffset(DRAWER_REST_HEIGHT));
   });
 
   it('tracks the drawer one-for-one — the question gives up exactly what the drawer takes', () => {

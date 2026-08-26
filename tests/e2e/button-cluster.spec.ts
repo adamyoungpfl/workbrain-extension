@@ -302,12 +302,23 @@ test('the containers are gone, and the fade with them (VB-41)', async () => {
     for (const { name, height } of heightsFor(mode)) {
       await setHeight(page, height);
       const where = `${mode} at ${name}`;
+      // V2.3 VB-94: the cluster is in content now, so a room shorter than its
+      // question reads scrolled — geometry is taken at the end of the scroll,
+      // the one state every layout is actually read in (save-note.spec's own
+      // rule, applied here for the same reason).
+      await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+      await page.waitForTimeout(120);
       const g = await geometry(page);
 
-      // Still pegged to the drawer's edge — VB-41 changed what the band looks
-      // like, not where it is.
-      expect(Math.round(g.navBottom), where).toBe(Math.round(g.drawerTop));
+      // V2.3 VB-94: the cluster left the docked band for the content, and
+      // the NOTE took its peg — measured in nav-dock.spec now. What this
+      // cluster still owes: its own box keeps the band's height (the 44px
+      // targets plus the clearance below the paint), and it ends clear of
+      // the note's band rather than touching the drawer directly.
       expect(Math.round(g.navBottom - g.navTop), where).toBe(FLOW_NAV_HEIGHT);
+      expect(g.navBottom, `${where}: the cluster runs into the note band`).toBeLessThanOrEqual(
+        g.drawerTop - FLOW_NAV_HEIGHT + 1,
+      );
 
       // NO CONTAINERS: nothing in the cluster has a ground or an edge of its
       // own. This is the assertion that fails if someone puts the boxes back.
@@ -512,10 +523,14 @@ test('the cluster is centred, and clear of the grab handle (VB-41)', async () =>
       const toEdge = g.drawerTop - paintedBottom;
       const toGrip = g.gripTop - paintedBottom;
       measured.push(`${where} — ${Math.round(toEdge)}px to the drawer’s edge, ${Math.round(toGrip)}px to the grip`);
-      expect(Math.round(toEdge), `${where}: the cluster is not clear of the drawer`).toBe(
+      // V2.3 VB-94: the fixed VB-41 clearance now belongs to the note band
+      // (save-note.spec measures it). The cluster's own promise is looser and
+      // still real: its paint never comes within the note band plus the old
+      // clearance of the drawer, so nothing pressable is ever mistaken for
+      // the grip — which now sits a whole band further away than it did.
+      expect(toEdge, `${where}: the cluster is not clear of the drawer`).toBeGreaterThanOrEqual(
         navPaintGapAboveDrawer(),
       );
-      // Two whole 8px gutters between the two things that were being confused.
       expect(toGrip, `${where}: the cluster is not clear of the grip`).toBeGreaterThanOrEqual(16);
       // The grip really is where this thinks it is — a grip that had moved
       // would make the number above true and meaningless.

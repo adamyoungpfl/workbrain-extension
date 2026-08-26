@@ -1357,7 +1357,7 @@ function StepView({
             </div>
           )}
         </AnswerArea>
-        {saveNote}
+        
         <NavCluster cue={cue}>
           {canGoBack && (
             <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
@@ -1368,6 +1368,7 @@ function StepView({
             {S.next}
           </NavButton>
         </NavCluster>
+        {saveNote}
       </form>
     );
   }
@@ -1439,7 +1440,7 @@ function StepView({
                 />
               </div>
             </AnswerArea>
-            {saveNote}
+            
             <NavCluster cue={cue}>
               <NavButton type="button" variant="secondary" direction="back" control="back" onClick={backToView}>
                 {S.back}
@@ -1448,6 +1449,7 @@ function StepView({
                 {S.reflectUseThis}
               </NavButton>
             </NavCluster>
+        {saveNote}
           </form>
         </div>
       );
@@ -1483,7 +1485,7 @@ function StepView({
               />
             </div>
           </AnswerArea>
-          {saveNote}
+          
           <NavCluster cue={cue}>
             <NavButton type="button" variant="secondary" direction="back" control="back" onClick={backToView}>
               {S.back}
@@ -1500,6 +1502,7 @@ function StepView({
               {S.skip}
             </NavButton>
           </NavCluster>
+        {saveNote}
         </form>
       );
     }
@@ -1524,7 +1527,7 @@ function StepView({
             </Button>
           </div>
         </AnswerArea>
-        {saveNote}
+        
         <NavCluster cue={cue}>
           {canGoBack && (
             <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
@@ -1532,6 +1535,7 @@ function StepView({
             </NavButton>
           )}
         </NavCluster>
+        {saveNote}
       </div>
     );
   }
@@ -1834,7 +1838,7 @@ function StepView({
         )}
       </AnswerArea>
 
-      {saveNote}
+      
       <NavCluster cue={cue}>
         {canGoBack && (
           <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
@@ -1850,6 +1854,7 @@ function StepView({
           </NavButton>
         )}
       </NavCluster>
+        {saveNote}
     </form>
   );
 }

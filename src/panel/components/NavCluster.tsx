@@ -305,8 +305,22 @@ export function NavCluster({ cue, children }: NavClusterProps) {
     // React runs the cleanup for a changed dependency before re-running the
     // effect, and the copies above were taken while this cluster was on
     // screen rather than after it had been replaced.
+    // V2.3 VB-94 — the cluster is in-flow now, so the layer must be TOLD
+    // where the outgoing cluster stood: it is mounted once for the whole
+    // interview (the cluster it copies has left the document by the time
+    // anyone could see it leave), and a box measured at capture is the only
+    // truth about where the ghosts belong. Fixed, in viewport coordinates,
+    // exactly the box the footer occupied on its last painted frame.
+    const box = foot.getBoundingClientRect();
     return () => {
-      if (layer) meltIntoBar(layer, copies);
+      if (layer) {
+        layer.style.position = 'fixed';
+        layer.style.left = `${box.left}px`;
+        layer.style.top = `${box.top}px`;
+        layer.style.width = `${box.width}px`;
+        layer.style.height = `${box.height}px`;
+        meltIntoBar(layer, copies);
+      }
     };
   }, [cue]);
 
