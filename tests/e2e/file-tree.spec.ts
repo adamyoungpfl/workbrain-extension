@@ -3,6 +3,7 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules, contextOutline } from '../../src/core/flow/flow';
+import { splitSectionLabel } from '../../src/core/flow/sectionLabel';
 import { DRAWER_REST_HEIGHT } from '../../src/core/drawer/height';
 import { generateContextFile, contextFileDate } from '../../src/core/files/generate';
 import { S } from '../../src/panel/strings';
@@ -415,7 +416,7 @@ test.describe('VB-07 — the terminal aesthetic', () => {
     await openDrawer(page);
 
     const aboutMeLabel = page.locator('.filetree-row[data-node-id="sec2"] .filetree-label');
-    const full = contextOutline[1]!.label;
+    const full = splitSectionLabel(contextOutline[1]!.label).title; // VB-96: the row prints the title
     await expect(aboutMeLabel).toContainText(full);
 
     // Answering the first question of section two moves section one from
@@ -426,7 +427,7 @@ test.describe('VB-07 — the terminal aesthetic', () => {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.filetree-row[data-node-id="sec1"]')).toHaveAttribute('data-node-state', 'reached');
     await expect(page.locator('.filetree-row[data-node-id="sec1"] .filetree-label')).toHaveText(
-      new RegExp(contextOutline[0]!.label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
+      new RegExp(splitSectionLabel(contextOutline[0]!.label).title.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')),
     );
 
     await context.close();
@@ -460,7 +461,7 @@ test.describe('VB-07 — the terminal aesthetic', () => {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.filetree-row[data-node-id="sec2"]')).toHaveAttribute('data-node-state', 'current');
     // However short it was caught, it always finishes whole.
-    await expect(page.locator('.filetree-row[data-node-id="sec2"] .filetree-label')).toContainText(contextOutline[1]!.label);
+    await expect(page.locator('.filetree-row[data-node-id="sec2"] .filetree-label')).toContainText(splitSectionLabel(contextOutline[1]!.label).title); // VB-96
 
     // It started from nothing and printed its way back. Polled rather than
     // read once: the reprint begins a tick after the commit, so a single read
@@ -469,7 +470,7 @@ test.describe('VB-07 — the terminal aesthetic', () => {
     // which the typewriter did not fire at all, and this fails.
     await expect
       .poll(() => page.evaluate(() => (window as unknown as { __wbMinLen: number }).__wbMinLen))
-      .toBeLessThan(contextOutline[1]!.label.length);
+      .toBeLessThan(splitSectionLabel(contextOutline[1]!.label).title.length); // VB-96
 
     await context.close();
   });
@@ -488,7 +489,7 @@ test.describe('VB-07 — the terminal aesthetic', () => {
     const labels = await page.locator('.filetree-row[data-node-id] .filetree-label').allTextContents();
     expect(labels).toHaveLength(contextOutline.length);
     for (const [i, node] of contextOutline.entries()) {
-      expect(labels[i]!.startsWith(node.label), `"${labels[i]}" should already be the whole of "${node.label}"`).toBe(true);
+      expect(labels[i]!.startsWith(splitSectionLabel(node.label).title), `"${labels[i]}" should already be the whole title of "${node.label}"`).toBe(true); // VB-96
     }
 
     await context.close();
@@ -545,7 +546,7 @@ test.describe('VB-07 — the terminal aesthetic', () => {
 
     // Labels are whole, not mid-print, and no preview section is animating.
     const labels = await page.locator('.filetree-row[data-node-id] .filetree-label').allTextContents();
-    for (const [i, node] of contextOutline.entries()) expect(labels[i]!.startsWith(node.label)).toBe(true);
+    for (const [i, node] of contextOutline.entries()) expect(labels[i]!.startsWith(splitSectionLabel(node.label).title)).toBe(true); // VB-96
     const previewAnimations = await page
       .locator('.filepreview-section')
       .evaluateAll((els) => els.map((el) => getComputedStyle(el).animationName));
@@ -610,7 +611,8 @@ test.describe('VB-07b — the live file text', () => {
     await enterInterview(page);
     await openDrawer(page);
 
-    await expect(page.locator('.filepreview-note')).toHaveText(S.filePreviewNote);
+    // V2.3 VB-98: the note became the disclosure toggle's own label.
+    await expect(page.locator('.filepreview-toggle')).toContainText(S.filePreviewNote);
     // Markdown is shown as text, never rendered — a file is text, and this
     // repo renders untrusted-shaped content as text on principle.
     await expect(page.locator('.filepreview-section strong')).toHaveCount(0);

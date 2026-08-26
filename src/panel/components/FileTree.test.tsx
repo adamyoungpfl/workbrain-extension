@@ -196,7 +196,7 @@ describe('FileTree', () => {
     expect(container.querySelectorAll('.filetree-cursor')).toHaveLength(0);
     const live = rowFor(container, 'sec1');
     expect(live.dataset.life).toBe('live');
-    expect(live.querySelector('.filetree-label')!.textContent).toBe('1. About Me');
+    expect(live.querySelector('.filetree-label')!.textContent).toBe('About Me'); // VB-96: title only
     expect(live.querySelector('.filetree-srstate')!.textContent).toBe(S.fileTreeStateCurrent);
   });
 
@@ -305,15 +305,15 @@ describe('FileTree', () => {
   it('gives every disclosure control a real name, not a bare glyph', () => {
     const { container } = renderTree(makeAnswers(), 'name', 'sec1');
     const toggle = rowFor(container, 'sec1').querySelector('.filetree-toggle') as HTMLElement;
-    expect(toggle.getAttribute('aria-label')).toBe(S.fileTreeCollapse('1. About Me'));
+    expect(toggle.getAttribute('aria-label')).toBe(S.fileTreeCollapse('About Me'));
     click(toggle);
-    expect(toggle.getAttribute('aria-label')).toBe(S.fileTreeExpand('1. About Me'));
+    expect(toggle.getAttribute('aria-label')).toBe(S.fileTreeExpand('About Me'));
   });
 
   it('gives every navigate control the section it goes to as its name', () => {
     const { container } = renderTree(makeAnswers({ values: { later: 'x' } }), 'name', 'sec1');
     const nav = rowFor(container, 'sec2').querySelector('.filetree-nav') as HTMLElement;
-    expect(nav.getAttribute('aria-label')).toBe(S.fileTreeGoTo('2. Later'));
+    expect(nav.getAttribute('aria-label')).toBe(S.fileTreeGoTo('Later'));
   });
 });
 
@@ -487,13 +487,14 @@ describe('FileTree — section health (VB-19)', () => {
  * be wrong about is the structure that look is hung on.
  */
 describe('FileTree — the accordion (VB-33)', () => {
-  it('prints a section\'s label whole, with only its numbering set apart', () => {
+  it('prints a section\'s TITLE alone — V2.3 VB-96: the numbering never reaches a reader', () => {
     const { container } = renderTree(makeAnswers(), null, null);
     for (const node of outline) {
       const label = rowFor(container, node.id).querySelector('.filetree-label') as HTMLElement;
-      // The whole title, unchanged — the number is styled, never dropped.
-      expect(label.textContent, node.id).toBe(node.label);
-      expect(label.querySelector('.filetree-num')!.textContent, node.id).toBe(splitSectionLabel(node.label).numeral);
+      // The title only — the numeral survives in the outline and the file,
+      // and never in the row a person reads.
+      expect(label.textContent, node.id).toBe(splitSectionLabel(node.label).title);
+      expect(label.querySelector('.filetree-num'), node.id).toBeNull();
     }
   });
 

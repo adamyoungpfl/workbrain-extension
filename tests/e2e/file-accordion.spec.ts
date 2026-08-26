@@ -500,28 +500,23 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
     await context.close();
   });
 
-  test('the section name is the loud thing and its number is the quiet one', async () => {
+  test('the section name stands alone — V2.3 VB-96: no numeral reaches the row', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
     for (const node of contextOutline) {
       const label = page.locator(`.filetree-row[data-node-id="${node.id}"] .filetree-label`);
-      // The label still prints the section's real title, whole. `startsWith`,
-      // not equality: the section being written also carries the terminal
-      // cursor VB-07 put after its name, which is not part of the label.
-      expect((await label.textContent())!.startsWith(node.label), node.id).toBe(true);
-      const set = await label.evaluate((el) => {
-        const num = el.querySelector('.filetree-num') as HTMLElement;
-        return {
-          numeral: num.textContent,
-          numWeight: Number(getComputedStyle(num).fontWeight),
-          titleWeight: Number(getComputedStyle(el).fontWeight),
-          family: getComputedStyle(el).fontFamily,
-        };
-      });
-      expect(set.numeral, node.id).toBe(splitSectionLabel(node.label).numeral);
-      expect(set.numWeight, node.id).toBeLessThan(set.titleWeight);
+      // The TITLE, whole — ingredients, not requirements. The numeral lives
+      // on in the outline and the generated file; the row a person reads
+      // never shows it, and the quiet-numeral styling this test used to pin
+      // went with it.
+      expect((await label.textContent())!.startsWith(splitSectionLabel(node.label).title), node.id).toBe(true);
+      const set = await label.evaluate((el) => ({
+        hasNum: el.querySelector('.filetree-num') !== null,
+        family: getComputedStyle(el).fontFamily,
+      }));
+      expect(set.hasNum, node.id).toBe(false);
       // The register really changed: a section's name is no longer monospace.
       expect(set.family.toLowerCase(), node.id).not.toContain('mono');
     }

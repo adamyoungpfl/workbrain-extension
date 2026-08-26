@@ -662,7 +662,13 @@
 .brainglobe-nav-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 6px;
+  /* V2.3 VB-91 — icons again, so the width the words used to supply has to
+     be stated (the VB-59 lesson, relearned the same afternoon it was
+     unlearned): an icon-only button collapses to its glyph and fails the
+     floor while looking exactly right. */
+  min-width: var(--target-min);
   height: var(--target-min);
   /* The overhang: the box is 44 tall in a 30 row. The bottom 14px lie over
      the stage's top edge and take the presses that land there; the painted

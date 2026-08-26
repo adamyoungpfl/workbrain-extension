@@ -125,6 +125,19 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  /* V2.3 VB-92 — the trail wears the interface's own label treatment:
+     uppercase with a little tracking, so it reads as wayfinding rather than
+     prose, and as a different system from the nav icons below it. */
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 11.5px;
+}
+
+/* The rungs behind you take the dock's accent — the pressable past — while
+   the crumb you are on stays the plain bright ink. Two colors, two jobs,
+   both already-measured dock tokens (no new floor claims). */
+.crumbs-seg:not(.is-here) .crumbs-label {
+  color: var(--dock-accent, var(--primary));
 }
 
 /* Where you are. Not a control, so no pointer and no hover — and louder than

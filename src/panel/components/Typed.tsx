@@ -135,7 +135,21 @@ const startOnModuleChange: StartFor = (title) => {
 /** Test seam: forget the remembered module label, so specs start clean. */
 export function resetTypedModuleLabelMemory(): void {
   labelCue = null;
+  crumbCue = null;
 }
+
+/** V2.3 VB-92 — the crumb's OWN memory. The first draft shared the module
+ * label's, on the theory that two prints of one arrival were one print. What
+ * that actually did was let whichever rendered first claim the title, leaving
+ * the other complete-on-mount — caught by the module-label e2e, which watched
+ * its label arrive already whole. Separate cue, same mechanics: each types
+ * its own copy on a change, neither replays on a re-render. */
+let crumbCue: PrintCue | null = null;
+
+const startOnCrumbChange: StartFor = (title) => {
+  crumbCue = cueStartedAt(crumbCue, title, clock());
+  return crumbCue.startedAt;
+};
 
 /**
  * The running print for `text`.
@@ -268,6 +282,16 @@ export interface TypedModuleLabelProps {
  * its accessible name, so leaving the paragraph in the tree would announce the
  * module twice. That is V1.1 VB-02's structure, unchanged.
  */
+/**
+ * V2.3 VB-92 — the same change-triggered print, inline and NOT aria-hidden,
+ * for the breadcrumb's current-location crumb, on its own memory (see
+ * `startOnCrumbChange` above for why sharing the module label's was a bug).
+ */
+export function TypedInline({ text }: { text: string }) {
+  const print = usePrint(text, startOnCrumbChange);
+  return <TypedRun text={text} count={print.count} />;
+}
+
 export function TypedModuleLabel({ title, className }: TypedModuleLabelProps) {
   const print = usePrint(title, startOnModuleChange);
   return (

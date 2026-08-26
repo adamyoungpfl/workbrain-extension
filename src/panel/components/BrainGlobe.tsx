@@ -3345,6 +3345,7 @@ export function BrainGlobe({
         <button
           type="button"
           className="brainglobe-nav-btn"
+          aria-label={S.navBack}
           aria-disabled={backTarget ? undefined : 'true'}
           onClick={backTarget ? navBack : undefined}
         >
@@ -3362,16 +3363,30 @@ export function BrainGlobe({
               strokeLinejoin="round"
             />
           </svg>
-          {S.navBack}
         </button>
         {workEnabled && (
           <button
             type="button"
             className="brainglobe-nav-btn"
+            aria-label={S.navHome}
             aria-disabled={tierShown === 'work' ? 'true' : undefined}
             onClick={tierShown === 'work' ? undefined : navHome}
           >
-            {S.navHome}
+            {/* V2.3 VB-91 — a drawn house, same convention as every icon in
+                this product: stroke, currentColor, aria-hidden, the button
+                carries the name. Icons rather than words so the stage never
+                shows a second printed "Back" while the interview's footer
+                shows its own (the V2.2 collision, resolved as Adam asked). */}
+            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false">
+              <path
+                d="M4 11.5 12 5l8 6.5M6.5 10.5V19h11v-8.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
           </button>
         )}
       </div>

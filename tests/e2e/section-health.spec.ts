@@ -3,6 +3,7 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules, contextOutline } from '../../src/core/flow/flow';
+import { splitSectionLabel } from '../../src/core/flow/sectionLabel';
 import { halfLifeFor } from '../../src/core/freshness/halfLives';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
@@ -684,7 +685,7 @@ test.describe('VB-19 — it fits a 400px panel', () => {
     });
 
     expect(geometry.labelClipped, `"${longest.label}" is clipped`).toBe(false);
-    expect(geometry.text, 'the name is printed whole').toBe(longest.label);
+    expect(geometry.text, 'the name is printed whole').toBe(splitSectionLabel(longest.label).title); // VB-96
     // The name ends before the disclosure at the far edge starts, and inside
     // the row — the two things the reserve used to guarantee against the pill.
     expect(geometry.label.right).toBeLessThanOrEqual(geometry.toggle.left + 1);

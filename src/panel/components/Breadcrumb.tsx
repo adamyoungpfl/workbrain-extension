@@ -9,6 +9,7 @@ import { firstLocked } from '../../core/files/toggle';
 import type { FileToggleItem } from '../../core/files/toggle';
 import { LockGlyph, fileName, lockLine } from './fileLabels';
 import { S } from '../strings';
+import { TypedInline } from './Typed';
 import './Breadcrumb.css';
 
 /**
@@ -94,6 +95,7 @@ export interface BreadcrumbProps {
 }
 
 export function Breadcrumb({ nav, files, section, done, total, filesOpen, onFilesOpen, onNav }: BreadcrumbProps) {
+
   const trail = breadcrumbTrail(nav, section !== null);
   const open = filesOpen && nav.tier === 'file';
   const fileRung = useRef<HTMLButtonElement>(null);
@@ -234,7 +236,10 @@ export function Breadcrumb({ nav, files, section, done, total, filesOpen, onFile
                 ) : (
                   <span className="crumbs-seg is-here" data-seg={crumb.id} aria-current="page">
                     <span className="crumbs-label">
-                      {crumb.id === 'work' ? S.crumbWork : crumb.id === 'file' ? fileName(crumb.file) : section}
+                      {/* V2.3 VB-92 — the current-location crumb types in like the questions
+                          do: the change-triggered variant, printing on arrival, never on a
+                          re-render. */}
+                      {crumb.id === 'work' ? S.crumbWork : crumb.id === 'file' ? fileName(crumb.file) : <TypedInline text={section ?? ''} />}
                     </span>
                   </span>
                 )}

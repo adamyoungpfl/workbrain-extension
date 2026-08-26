@@ -929,6 +929,9 @@ export const S = {
   actionsDerivedNote: 'Read straight off your Skills file. Change a skill and this file already knows.',
   actionsDownload: 'Download Actions.md',
   actionsEditSkills: 'Change it in Skills.md',
+  /** [DRAFT] V2.3 VB-98 — the List's file preview grew a download of its own.
+   * Verb-first, names the artifact, same register as Home's. */
+  filePreviewDownload: 'Download',
 
   // ---------------------------------------------------------------- welcome
   // V1.1 VB-01. The first thing a person ever sees. Approved verbatim in

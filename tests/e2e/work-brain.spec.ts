@@ -424,11 +424,14 @@ test.describe('VB-74 — the way out is a band above the stage', () => {
     const back = bandBack(page);
     await expect(back).toBeVisible();
 
-    // THE WORD IS PRINTED — VB-59's disc carried its name as an aria-label
-    // because nothing fit in a disc; the band has room, and a way out you can
-    // read beats one you have to recognise. One name at every depth (see
-    // strings.ts's navBack) with the trail above saying where it lands.
-    expect((await back.textContent())!.trim()).toBe(S.navBack);
+    // V2.3 VB-91 — icons again, one round after the band printed words: two
+    // controls named Back shared the screen (the interview footer's and this),
+    // and Adam resolved it by making the stage side iconic. The NAME survives
+    // as the aria-label (one name at every depth, strings.ts's navBack); the
+    // drawn chevron is aria-hidden, a picture of it, never a second one.
+    expect((await back.textContent())!.trim()).toBe('');
+    expect(await back.getAttribute('aria-label')).toBe(S.navBack);
+    await expect(back.locator('svg')).toHaveCount(1);
 
     // The band's row is 30px; the TARGET is still 44, by overhang — measured,
     // because this split is exactly where a floor quietly goes missing.

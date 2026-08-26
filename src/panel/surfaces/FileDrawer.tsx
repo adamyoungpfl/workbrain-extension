@@ -3,6 +3,7 @@ import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent a
 import { BrainGlobe, FileTree } from '../components';
 import { sectionNodeGradient } from '../components/BrainGlobe';
 import { Breadcrumb } from '../components/Breadcrumb';
+import { fileName } from '../components/fileLabels';
 import { WorkShelf } from '../components/WorkShelf';
 import { BRAIN_NAV_HOME, chooseNav } from '../../core/globe/workBrain';
 import type { BrainNav } from '../../core/globe/workBrain';
@@ -1031,7 +1032,7 @@ export function FileDrawer({
               currentSectionId={currentSectionId}
               onNavigate={handleNavigate}
             />
-            <FilePreview sections={parts.sections} />
+            <FilePreview sections={parts.sections} whole={parts.text} fileLabel={fileName(file)} />
           </>
         )}
       </div>
@@ -1180,7 +1181,23 @@ function ListGlyph() {
  * typewriter. Tracked in a ref rather than state because it must not itself
  * cause a render — it is a record of what has already been shown.
  */
-function FilePreview({ sections }: { sections: ContextFileSection[] }) {
+function FilePreview({ sections, whole, fileLabel }: { sections: ContextFileSection[]; whole: string; fileLabel: string }) {
+  /** V2.3 VB-98 — the assembled file is a disclosure now: an arrow to open or
+   * close it (same grammar as the accordion above it) and a Download for the
+   * current bytes. `whole` is the SAME text the generator hands the download
+   * everywhere else, so the two cannot drift. Open by default: the preview
+   * was always visible before, and a collapse that ships closed would read as
+   * the feature being removed. */
+  const [openPreview, setOpenPreview] = useState(true);
+  function downloadNow() {
+    const blob = new Blob([whole], { type: 'text/markdown;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = fileLabel;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
   const seenRef = useRef<Set<string> | null>(null);
   const [newIds, setNewIds] = useState<ReadonlySet<string>>(() => new Set<string>());
 
@@ -1199,8 +1216,21 @@ function FilePreview({ sections }: { sections: ContextFileSection[] }) {
 
   return (
     <div className="filepreview">
-      <p className="filepreview-note">{S.filePreviewNote}</p>
-      {sections.map((section) => (
+      <div className="filepreview-bar">
+        <button
+          type="button"
+          className="filepreview-toggle"
+          aria-expanded={openPreview}
+          onClick={() => setOpenPreview((v) => !v)}
+        >
+          <span className="filepreview-chevron" data-open={openPreview ? 'true' : 'false'} aria-hidden="true">▾</span>
+          {S.filePreviewNote}
+        </button>
+        <button type="button" className="filepreview-download" onClick={downloadNow}>
+          {S.filePreviewDownload}
+        </button>
+      </div>
+      {openPreview && sections.map((section) => (
         <pre className={newIds.has(section.id) ? 'filepreview-section is-new' : 'filepreview-section'} key={section.id}>
           {section.text}
         </pre>

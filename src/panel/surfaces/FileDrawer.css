@@ -472,7 +472,10 @@
   flex-direction: column;
   justify-content: flex-start;
   align-items: center;
-  padding: 10px;
+  /* V2.3 VB-91 — the band sits closer under the trail. Top-only: the room
+     arithmetic still subtracts BRAIN_STAGE_PAD twice, so the six saved pixels
+     become bottom breathing rather than a clipped globe. */
+  padding: 4px 10px 10px;
   box-sizing: border-box;
   overflow: hidden;
   /* THE ONE SANCTIONED DARK SURFACE (docs/V1.2-REFINEMENT.md, iteration
@@ -899,4 +902,45 @@
   .filepreview-section.is-new {
     animation: none;
   }
+}
+
+/* ── V2.3 VB-98 — the preview is a disclosure with its own download ─────── */
+.filepreview-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.filepreview-toggle,
+.filepreview-download {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: var(--target-min);
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 11.5px;
+  font-weight: 600;
+  color: var(--dock-ink-quiet, var(--ink-2));
+  cursor: pointer;
+}
+.filepreview-toggle:hover,
+.filepreview-download:hover {
+  color: var(--dock-ink, var(--ink));
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-thickness: 1.5px;
+}
+.filepreview-toggle:focus-visible,
+.filepreview-download:focus-visible {
+  outline: 2px solid var(--dock-accent, var(--primary));
+  outline-offset: -2px;
+}
+.filepreview-chevron {
+  transition: transform var(--fast) var(--ease);
+}
+.filepreview-chevron[data-open='false'] {
+  transform: rotate(-90deg);
 }

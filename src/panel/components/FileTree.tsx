@@ -7,7 +7,7 @@ import type { SectionHealth } from '../../core/freshness/sectionHealth';
 import { sectionCompletionPercent, sectionHealthMap } from '../../core/freshness/sectionHealth';
 import type { SectionLife } from '../../core/freshness/sectionLife';
 import { sectionLife } from '../../core/freshness/sectionLife';
-import { splitRevealedSectionLabel } from '../../core/flow/sectionLabel';
+import { splitSectionLabel } from '../../core/flow/sectionLabel';
 import { repeatableRecordTitle } from '../../core/files/generate';
 import { childNodeGradient, sectionNodeGradient } from './BrainGlobe';
 import { HIGHLIGHT_RADIUS, LIMB_INNER, SHADE_RADIUS, orbLight } from '../../core/globe/lighting';
@@ -402,7 +402,12 @@ function FileTreeRow({
   onNavigate,
 }: RowProps) {
   const state = outlineNodeState(node, answers.values, currentQuestionId);
-  const typedLabel = useTypewriterOnChange(node.label, `${node.id}:${state}`);
+  // V2.3 VB-96 — the person reads "About Me", not "2. About Me". Ingredients,
+  // not requirements: the numeral stays in the outline and the generated file
+  // (verbatim-port boundary, round-trip), and disappears everywhere a person
+  // reads. The typewriter now types the title alone.
+  const displayTitle = splitSectionLabel(node.label).title;
+  const typedLabel = useTypewriterOnChange(displayTitle, `${node.id}:${state}`);
   const metaId = useId();
 
   // Records the generated file gives their own titled block — role names,
@@ -434,7 +439,7 @@ function FileTreeRow({
    * `numeral + title` is byte-identical to `typedLabel`, so every assertion
    * that a resumed session shows a whole label still reads one.
    */
-  const { numeral, title } = splitRevealedSectionLabel(node.label, typedLabel);
+  const title = typedLabel;
   /**
    * ── V2.0 VB-56 — THE BLINKING CURSOR IS GONE ─────────────────────────────
    *
@@ -451,7 +456,7 @@ function FileTreeRow({
    */
   const label = (
     <span className="filetree-label">
-      {numeral && <span className="filetree-num">{numeral}</span>}
+
       {title}
     </span>
   );
@@ -631,7 +636,7 @@ function FileTreeRow({
             <button
               type="button"
               className="filetree-nav"
-              aria-label={S.fileTreeGoTo(node.label)}
+              aria-label={S.fileTreeGoTo(displayTitle)}
               aria-describedby={metaLine ? metaId : undefined}
               onClick={() => onNavigate(target)}
             >
@@ -663,7 +668,7 @@ function FileTreeRow({
             type="button"
             className="filetree-toggle"
             aria-expanded={expanded}
-            aria-label={expanded ? S.fileTreeCollapse(node.label) : S.fileTreeExpand(node.label)}
+            aria-label={expanded ? S.fileTreeCollapse(displayTitle) : S.fileTreeExpand(displayTitle)}
             onClick={() => onToggleExpand(node.id)}
           >
             <Chevron open={expanded} />
