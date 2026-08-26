@@ -64,6 +64,12 @@ export function buildProofModule(copy: ProofCopy): Module {
     key: PROOF_SERVICE_KEY,
     options: copy.serviceOptions,
     required: true,
+    // V2.3 VB-93 — the goal gate already asked "which AI do you use most?"
+    // at minute one, from the same service list. Asking again here would be
+    // the demo opening on a question the person already answered, so the
+    // pick only appears for a file from before the gate existed. Changing
+    // the answer stays possible where it lives: section 1 of Context.md.
+    skipIf: (ctx) => typeof ctx.answers['goal_service'] === 'string' && ctx.answers['goal_service'] !== '',
   };
 
   const baseline: Step = {
@@ -128,15 +134,31 @@ export function buildProofModule(copy: ProofCopy): Module {
  * evaluationPrompt's own graceful "[not captured]" fallback (proofSource.ts)
  * for a grade step reached with a skipped baseline/with-context answer —
  * nothing here re-derives that behaviour, it just calls the ported function. */
+/**
+ * V2.3 VB-93 — the goal gate's whole payoff, in one function. The proof loop
+ * reads its answers out of the context file's own store, so the goal the
+ * person named at question two of the interview is sitting right here in
+ * `ctx` — and the baseline becomes THEIR question, verbatim, whenever it
+ * exists. Adam, binding: the gate must "fuel the baseline and prove it at
+ * the end of the flow". The canned line survives only as the fallback for a
+ * pre-gate install that never named one.
+ */
+export function proofQuestion(ctx: FlowContext): string {
+  const want = ctx.answers['goal_want'];
+  return typeof want === 'string' && want.trim() !== '' ? want.trim() : BASELINE_PROMPT;
+}
+
 export function promptFor(genKey: string | undefined, ctx: FlowContext): string {
   if (genKey === 'grade') {
     const before = ctx.answers[PROOF_BASELINE_ANSWER_KEY];
     const after = ctx.answers[PROOF_CONTEXT_ANSWER_KEY];
-    return evaluationPrompt(typeof before === 'string' ? before : '', typeof after === 'string' ? after : '');
+    // The grader is told the truth about what was asked (proofSource.ts's
+    // parameterized PROMPT USED line).
+    return evaluationPrompt(typeof before === 'string' ? before : '', typeof after === 'string' ? after : '', proofQuestion(ctx));
   }
   // 'baseline' and 'withContext' show the exact same prompt — the whole
   // point of the proof is asking it twice, unchanged, once per condition.
-  return BASELINE_PROMPT;
+  return proofQuestion(ctx);
 }
 
 /** The per-service attach instruction plus the fixed fallback sentence,
@@ -144,6 +166,17 @@ export function promptFor(genKey: string | undefined, ctx: FlowContext): string 
  * component falls back to when nothing is selected (proofSource.ts,
  * mirroring WorkBrainContextInterview.tsx's own `?? fallback` at the point
  * it reads `selectedServiceInfo?.attachTip`). */
+/** Which service the proof should speak to: the proof's own pick when the
+ * person was asked here, else the goal gate's minute-one answer (VB-93) —
+ * the same order the flow itself runs in, since the pick step skips itself
+ * exactly when the gate answer exists. */
+export function proofServiceFor(ctx: FlowContext): string | undefined {
+  const picked = ctx.answers[PROOF_SERVICE_KEY];
+  if (typeof picked === 'string' && picked !== '') return picked;
+  const fromGoal = ctx.answers['goal_service'];
+  return typeof fromGoal === 'string' && fromGoal !== '' ? fromGoal : undefined;
+}
+
 export function attachHintFor(serviceKey: string | undefined): string {
   const fallback = PROOF_SERVICES[PROOF_SERVICES.length - 1]!; // 'other'
   const info = PROOF_SERVICES.find((s) => s.key === serviceKey) ?? fallback;

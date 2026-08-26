@@ -406,6 +406,88 @@ export const BLOCK_OVERRIDES: Record<string, BlockOverride> = {
   },
 };
 
+/**
+ * V2.3 VB-93 — the goal gate: the flow's first two questions, before anything
+ * the port asks. "No goal, no go" (Adam), kept inside the product's ethos by
+ * being questions rather than a lock: the person is answering from second
+ * one, and the answer is USED — the proof loop's baseline becomes their goal
+ * verbatim (proofAdapter.ts's promptFor), the grade is framed against the
+ * thing they named, and the reflect script names their service. Adam's own
+ * words, binding (docs/V2.3-REFINEMENT.md VB-93): "We make the user complicit
+ * in personalizing the demo to speak to what matters most to them at the
+ * moment they engage, while they are inspired to act."
+ *
+ * STORED AS CONTEXT ANSWERS, not a separate key — a deliberate deviation from
+ * the spec's first draft (`wb:goal`): the proof loop already reads its pasted
+ * answers out of the context file's own answer store, so two ordinary answers
+ * ride `ctx` into every prompt and template with zero new plumbing, and the
+ * gate is exactly "the first two questions of the flow".
+ *
+ * The service list is PROOF_SERVICES — the one list this product has, reused,
+ * with its own "something else" already in it.
+ */
+export const GOAL_GATE_MODULE_ID = 'orientation';
+
+export const GOAL_GATE_QUESTION_IDS = ['goal_service', 'goal_want'] as const;
+
+/**
+ * The gate is for people STARTING, not a summons for people who already
+ * answered under the old rules — the same contract entities_intro's skipIf
+ * keeps: a file finished yesterday resumes straight to "done", never
+ * reopened onto screens that didn't exist when they finished. "Underway"
+ * means any real answer beyond the gate itself (skips store null, and a
+ * person who only ever skipped hasn't begun in any sense that matters).
+ * Because skipped-questions don't count toward section health — the
+ * declined-gates rule — this one predicate also keeps yesterday's file
+ * reading as finished, not "partly".
+ */
+function interviewAlreadyUnderway(ctx: FlowContext): boolean {
+  if (Object.keys(ctx.repeatables ?? {}).length > 0) return true;
+  return Object.entries(ctx.answers).some(
+    ([id, value]) => !(GOAL_GATE_QUESTION_IDS as readonly string[]).includes(id) && value !== null && value !== undefined,
+  );
+}
+
+export const GOAL_GATE_NODES: SrcFlowNode[] = [
+  {
+    kind: 'question',
+    id: 'goal_service',
+    type: 'single-select',
+    // [DRAFT — V2.3 copy rule: strings marked for Adam's morning review]
+    prompt: () => 'Which AI do you use most?',
+    hint: 'Your file works with any of them. Naming yours lets every example speak its language.',
+    // The KEYS are PROOF_SERVICES' own, asserted in overrides.test.ts, so
+    // this answer plugs straight into the proof loop's per-service attach
+    // tips. The labels are authored here because interview wording lives in
+    // core sources and the panel's own list cannot be imported into core.
+    options: [
+      { key: 'chatgpt', label: 'ChatGPT' },
+      { key: 'claude', label: 'Claude' },
+      { key: 'gemini', label: 'Gemini' },
+      { key: 'copilot', label: 'Copilot' },
+      { key: 'other', label: 'Something else' },
+    ],
+    skipIf: (ctx) => ctx.answers['goal_service'] === undefined && interviewAlreadyUnderway(ctx),
+  },
+  {
+    kind: 'question',
+    id: 'goal_want',
+    type: 'text',
+    multiline: true,
+    // [DRAFT]
+    prompt: () => "What's the one thing you want it to do better today?",
+    hint: 'Be specific and small — one real task from this week beats a wish. At the end, you will run exactly this and watch the difference. Your AI may decline some topics; pick something it can actually do.',
+    placeholder: 'e.g. Draft my Monday status update the way I would',
+    ideas: [
+      'Draft a status update for my manager that sounds like me.',
+      'Triage my inbox and tell me the three that matter.',
+      'Turn my meeting notes into the summary my team expects.',
+      'Write the first reply to a client email in my voice.',
+    ],
+    skipIf: (ctx) => ctx.answers['goal_want'] === undefined && interviewAlreadyUnderway(ctx),
+  },
+];
+
 export const NODE_INSERTIONS: NodeInsertion[] = [
   {
     why:
@@ -427,6 +509,13 @@ export const NODE_INSERTIONS: NodeInsertion[] = [
 ];
 
 export const OUTLINE_OVERRIDES: Record<string, OutlineOverride> = {
+  // V2.3 VB-93 — the goal gate's two answers open section 1 of the FILE as
+  // well as the flow: the first thing any AI reads is what its person wants
+  // it to do better, which is the gate paying for itself in the artifact.
+  sec1: {
+    why: 'V2.3 VB-93 — the goal gate: its two answers open the file as they open the flow.',
+    prependQuestionIds: ['goal_service', 'goal_want'],
+  },
   sec3: {
     why:
       'VB-61: the new framing screen needs a home in section 3, or the adapter refuses it ' +
@@ -608,7 +697,13 @@ export function applyFlowOverrides(modules: SrcModule[]): SrcModule[] {
 
   return modules.map((module) => ({
     ...module,
-    nodes: module.nodes.flatMap((node): SrcFlowNode[] => {
+    // V2.3 VB-93 — the goal gate opens the flow: prepended to the real
+    // flow's first module BY ID, ahead of everything the port asks
+    // (NODE_INSERTIONS can only anchor AFTER a node, and there is no node
+    // before the first). Anchoring on the id, not position, is the same
+    // move the insertions make — synthetic test fixtures pass through
+    // untouched because nothing in them is named 'orientation'.
+    nodes: (module.id === GOAL_GATE_MODULE_ID ? [...GOAL_GATE_NODES] : ([] as SrcFlowNode[])).concat(module.nodes).flatMap((node): SrcFlowNode[] => {
       const overridden = overrideNode(node);
       const inserted = node.kind === 'repeatable' ? undefined : insertionsByAnchor.get(node.id);
       return inserted ? [overridden, ...inserted] : [overridden];
@@ -723,5 +818,16 @@ export function allOverrideCopy(): string[] {
   }
 
   lines.push(AUDIENCES_BLOCK.addAnotherPrompt, AUDIENCES_ADD_ANOTHER_NAME.prompt, AUDIENCES_ADD_ANOTHER_NAME.placeholder);
+
+  // V2.3 VB-93 — the goal gate's copy is authored here too, so it rides the
+  // same reading-grade and sentence-length harness as everything else.
+  for (const node of GOAL_GATE_NODES) {
+    if (node.kind !== 'question') continue;
+    lines.push(node.prompt(bare));
+    if (node.hint) lines.push(node.hint);
+    if (node.placeholder) lines.push(node.placeholder);
+    for (const option of node.options ?? []) lines.push(option.label);
+    lines.push(...(node.ideas ?? []));
+  }
   return lines;
 }

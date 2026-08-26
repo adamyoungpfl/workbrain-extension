@@ -63,7 +63,7 @@ import {
   PROOF_SCORE_BASELINE_KEY,
   PROOF_SCORE_CONTEXT_KEY,
   PROOF_GRADE_TEXT_KEY,
-  PROOF_SERVICE_KEY,
+  proofServiceFor,
 } from '../../core/flow/proofAdapter';
 import { hintStaysVisible } from '../../core/flow/deepDive';
 import { usesOrbChoice } from '../../core/choice/orbs';
@@ -1723,7 +1723,7 @@ function StepView({
           <>
             {step.genKey === 'withContext' && (
               <p className="flow-hint">
-                {attachHintFor(typeof ctx.answers[PROOF_SERVICE_KEY] === 'string' ? (ctx.answers[PROOF_SERVICE_KEY] as string) : undefined)}
+                {attachHintFor(proofServiceFor(ctx))}
               </p>
             )}
             <ReadOnlyBlock tag={S.proofAskThis}>{promptFor(step.genKey, ctx)}</ReadOnlyBlock>

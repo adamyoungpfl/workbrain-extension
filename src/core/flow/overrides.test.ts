@@ -522,8 +522,93 @@ describe('reading level (npm run audit cannot see this file)', () => {
   });
 
   it('asks real questions — every authored prompt ends in a question mark', () => {
-    for (const id of ['entity_type', 'entity_name', 'entity_relevance', 'entity_aliases', 'audience_needs']) {
+    for (const id of ['entity_type', 'entity_name', 'entity_relevance', 'entity_aliases', 'audience_needs', 'goal_service', 'goal_want']) {
       expect(ask(step(id).q).endsWith('?'), id).toBe(true);
     }
+  });
+});
+
+// ── 6 · V2.3 VB-93: the goal gate ──────────────────────────────────────────
+
+/**
+ * "No goal, no go" — the flow's first two questions, Adam's call (CONFIRMED
+ * BINDING, docs/V2.3-REFINEMENT.md VB-93). The gate is questions, not a
+ * lock: a fresh interview OPENS on them, someone mid-gate continues through
+ * them, and — section 5's contract, extended — an interview already underway
+ * before the gate shipped is never summoned back.
+ */
+describe('the goal gate opens the flow (VB-93)', () => {
+  function positionId(a: Answers): string {
+    const position = findPosition(contextModules, a, new Set(), new Set());
+    return position.kind === 'step' ? position.step.id : position.kind;
+  }
+
+  it('a fresh interview opens on the service question, then the want question', () => {
+    expect(positionId(EMPTY)).toBe('goal_service');
+    const midGate: Answers = {
+      values: { goal_service: 'claude' },
+      repeatables: {},
+      answeredAt: { goal_service: YESTERDAY },
+      reflectedAt: {},
+    };
+    expect(positionId(midGate)).toBe('goal_want');
+  });
+
+  it('past the gate, the interview proceeds into the ported flow', () => {
+    const through: Answers = {
+      values: { goal_service: 'claude', goal_want: 'Draft my Monday update.' },
+      repeatables: {},
+      answeredAt: { goal_service: YESTERDAY, goal_want: YESTERDAY },
+      reflectedAt: { goal_want: YESTERDAY },
+    };
+    const id = positionId(through);
+    expect(id).not.toBe('goal_service');
+    expect(id).not.toBe('goal_want');
+    expect(id).not.toBe('done');
+  });
+
+  it('skipping the gate is allowed — a skip is recorded and the flow moves on', () => {
+    // The person's control wins (docs/GUARDRAILS.md): Skip stores null and
+    // the interview continues; the proof loop falls back to the canned line.
+    const skippedGate: Answers = {
+      values: { goal_service: null, goal_want: null },
+      repeatables: {},
+      answeredAt: { goal_service: YESTERDAY, goal_want: YESTERDAY },
+      reflectedAt: {},
+    };
+    const id = positionId(skippedGate);
+    expect(id).not.toBe('goal_service');
+    expect(id).not.toBe('goal_want');
+  });
+
+  it('an interview already underway before the gate shipped skips it entirely', () => {
+    const underway: Answers = {
+      values: { preferred_name: 'Ada' },
+      repeatables: {},
+      answeredAt: { preferred_name: YESTERDAY },
+      reflectedAt: { preferred_name: YESTERDAY },
+    };
+    const id = positionId(underway);
+    expect(id).not.toBe('goal_service');
+    expect(id).not.toBe('goal_want');
+  });
+
+  it('the gate rides section 1 of the outline, first', () => {
+    const sec1 = contextOutline.find((node) => node.id === 'sec1');
+    expect(sec1?.questionIds.slice(0, 2)).toEqual(['goal_service', 'goal_want']);
+  });
+
+  it('a goal answered today prints into the file and survives the roundtrip', () => {
+    const a: Answers = {
+      values: { goal_service: 'claude', goal_want: 'Draft my Monday update.' },
+      repeatables: {},
+      answeredAt: { goal_service: YESTERDAY, goal_want: YESTERDAY },
+      reflectedAt: { goal_want: YESTERDAY },
+    };
+    const file = generateContextFile(a, 'August 26, 2026');
+    expect(file).toContain('Draft my Monday update.');
+    const parsed = parseContextFile(file);
+    expect(parsed.ok).toBe(true);
+    if (parsed.ok) expect(parsed.answers.values['goal_want']).toBe('Draft my Monday update.');
   });
 });

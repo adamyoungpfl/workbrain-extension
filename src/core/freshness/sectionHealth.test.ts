@@ -428,10 +428,14 @@ describe('against the real ported flow', () => {
     for (const node of contextOutline) expect(map[node.id]!.total, node.id).toBeGreaterThan(0);
   });
 
-  it('counts 1. About This Context as its two real questions, not its two beats', () => {
-    // orientation_ready and architecture_orientation are intro steps.
+  it('counts 1. About This Context as its four real questions, not its two beats', () => {
+    // orientation_ready and architecture_orientation are intro steps. The
+    // four that count: V2.3 VB-93's goal gate pair (a fresh interview opens
+    // on them, so they count here; for a file finished before the gate
+    // shipped their skipIf hides them — overrides.test.ts §5 pins that) plus
+    // the section's own two.
     const map = sectionHealthMap(contextOutline, contextModules, empty, null, NOW);
-    expect(map.sec1!.total).toBe(2);
+    expect(map.sec1!.total).toBe(4);
   });
 
   /**

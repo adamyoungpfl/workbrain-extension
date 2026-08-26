@@ -145,18 +145,15 @@ test.describe('The proof loop (R1-11)', () => {
     // definition of done) ---
     await page.getByRole('button', { name: 'Prove it works', exact: true }).focus();
     await page.keyboard.press('Enter');
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_service');
 
-    // --- service picker (existing chips kind, no new rendering), selected
-    // via Space same as flow.spec.ts's own keyboard-only pill selection ---
-    await page.getByRole('button', { name: 'ChatGPT', exact: true }).focus();
-    await page.keyboard.press('Space');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
-
-    // --- baseline: the ported prompt is shown read-only, verbatim ---
+    // --- V2.3 VB-93: no pick-a-service screen — the goal gate answered
+    // "which AI?" at interview minute one (goal_service is in the seed), so
+    // the proof opens straight on the baseline, and the baseline prompt IS
+    // the person's own goal, never the canned status-update line ---
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_baseline');
     const baselinePrompt = await page.locator('.flow .readonly').first().textContent();
-    expect(baselinePrompt).toContain('Draft a status update for my manager.');
+    expect(baselinePrompt).toContain('A test answer for goal_want.');
+    expect(baselinePrompt).not.toContain('Draft a status update for my manager.');
     const baselineAnswer = "Here's the status update with nothing loaded — generic, no specifics.";
     await page.locator('.flow textarea').fill(baselineAnswer);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -169,7 +166,7 @@ test.describe('The proof loop (R1-11)', () => {
     );
     await expect(page.locator('.flow')).toContainText("Or just paste Context.md’s text directly if you don’t see one.");
     const contextPrompt = await page.locator('.flow .readonly').first().textContent();
-    expect(contextPrompt).toContain('Draft a status update for my manager.');
+    expect(contextPrompt).toContain('A test answer for goal_want.'); // same goal, asked twice — the whole point
     const contextAnswer = "Here's the status update with Context.md attached — specific to my actual role and team.";
     await page.locator('.flow textarea').fill(contextAnswer);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -241,10 +238,8 @@ test.describe('The proof loop (R1-11)', () => {
     const page = await openPanel(context, id);
     await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
 
-    await page.getByRole('button', { name: 'Claude', exact: true }).click();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
-
-    // Skip baseline and with-context entirely.
+    // Skip baseline and with-context entirely (VB-93: the seed carries a
+    // goal, so there is no pick-a-service screen to get past first).
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_baseline');
     await page.getByRole('button', { name: 'Skip', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_context');
@@ -262,6 +257,37 @@ test.describe('The proof loop (R1-11)', () => {
     // No score was ever written — nothing was typed to write.
     const stored = await storedLocal(sw);
     expect(stored['wb:report']).toBeUndefined();
+
+    await context.close();
+  });
+
+  /**
+   * V2.3 VB-93 back-compat — a file finished before the goal gate existed
+   * has no goal_service answer, so the proof still opens on its own
+   * pick-a-service screen and runs on the canned baseline line. The pre-gate
+   * path is a permanent resident, not dead code: it serves every file from
+   * before tonight.
+   */
+  test('a pre-gate file still gets the pick-a-service screen and the canned baseline', async () => {
+    const { context, sw, id } = await launchExtension();
+    const seeded = buildDoneAnswers(contextModules);
+    delete seeded.values['goal_service'];
+    delete seeded.values['goal_want'];
+    delete seeded.answeredAt['goal_service'];
+    delete seeded.answeredAt['goal_want'];
+    delete seeded.reflectedAt['goal_want'];
+    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
+
+    const page = await openPanel(context, id);
+    await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
+
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_service');
+    await page.getByRole('button', { name: 'Claude', exact: true }).click();
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_baseline');
+    const baselinePrompt = await page.locator('.flow .readonly').first().textContent();
+    expect(baselinePrompt).toContain('Draft a status update for my manager.');
 
     await context.close();
   });

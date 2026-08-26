@@ -390,7 +390,11 @@ test.describe('VB-48 — nothing below the new tier changed', () => {
     // V2.1 VB-74: one Back, at every level, in the band above the stage —
     // the ladder's shape never changes, only how far up it there is to go.
     // Inside a section it is enabled and one press means one rung.
-    await page.locator('.brainglobe-pin[data-section-id="sec2"]').click();
+    // DOM-level click (tmp-vb74-look.spec.ts's move): the pin orbits, and
+    // after VB-93 grew section 1 its neighbours sit near a z-resort, so
+    // Playwright's stability wait can starve. This test is about the Escape
+    // ladder — pin pointer-actionability is brain-globe.a11y.spec.ts's job.
+    await page.locator('.brainglobe-pin[data-section-id="sec2"]').evaluate((el) => (el as HTMLElement).click());
     await expect(bandBack(page)).toBeVisible();
     expect(await bandBack(page).getAttribute('aria-disabled')).toBeNull();
 

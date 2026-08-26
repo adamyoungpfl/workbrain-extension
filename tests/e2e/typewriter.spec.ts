@@ -56,6 +56,25 @@ async function launchExtension(
     reducedMotion: options.reduce ? 'reduce' : 'no-preference',
   });
   const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+
+  // V2.3 VB-93: the interview now opens on the goal gate. This spec's
+  // subject sits past it, so the walk-in seeds a passed gate — the same two
+  // answers a person gives at minute one — and lands where it always did.
+  await sw.evaluate(async () => {
+    // Write-once: a reopen inside a test must never wipe what the panel has
+    // written since (the mid-reflect resume test reopens through this path).
+    const existing = await chrome.storage.local.get('wb:answers');
+    if (existing['wb:answers']) return;
+    const now = new Date().toISOString();
+    await chrome.storage.local.set({
+      'wb:answers': {
+        values: { goal_service: 'chatgpt', goal_want: 'Draft my Monday status update the way I would.' },
+        repeatables: {},
+        answeredAt: { goal_service: now, goal_want: now },
+        reflectedAt: { goal_want: now },
+      },
+    });
+  });
   const id = new URL(sw.url()).host;
   return { context, sw, id };
 }

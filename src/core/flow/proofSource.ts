@@ -60,12 +60,18 @@ export const BASELINE_PROMPT = 'Draft a status update for my manager.';
  * visitor's actual UI looks like. */
 export const ATTACH_FALLBACK_SUFFIX = "Or just paste Context.md’s text directly if you don’t see one.";
 
-/** The THIRD prompt — a grading prompt embedding both pasted-back answers,
+/** V2.3 VB-93 — `promptUsed` parameterizes the one variable in this ported
+ * template: when the person named a goal at the gate, the proof ran THEIR
+ * question, and the grader must be told the truth about what was asked. The
+ * template's own words are untouched; the default keeps every pre-goal
+ * caller byte-identical.
+ *
+ * The THIRD prompt — a grading prompt embedding both pasted-back answers,
  * asking a fresh, file-free AI session to score them. Rubric point 5 is
  * what makes the recommendations screen possible without this app ever
  * parsing anything itself — it just asks the grading AI to hand back "areas
  * of opportunity," then relays whatever comes back verbatim. */
-export function evaluationPrompt(before: string, after: string): string {
+export function evaluationPrompt(before: string, after: string, promptUsed: string = BASELINE_PROMPT): string {
   return `I ran the exact same prompt through an AI twice — once with nothing loaded, once with my personal Context.md file loaded. Here are both answers. Evaluate them side by side:
 
 1. Which answer is more specific to my actual role, team, and standards — and which parts prove it.
@@ -74,7 +80,7 @@ export function evaluationPrompt(before: string, after: string): string {
 4. A score out of 10 for each, on how ready-to-send it is.
 5. The top 2-3 specific areas of opportunity — what this Context.md file is missing or should clarify to get an even better answer.
 
-PROMPT USED: "${BASELINE_PROMPT}"
+PROMPT USED: "${promptUsed}"
 
 BEFORE (nothing loaded):
 ${before.trim() || '[not captured]'}

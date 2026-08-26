@@ -48,6 +48,25 @@ async function launchExtension(
     reducedMotion,
   });
   const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+
+  // V2.3 VB-93: the interview now opens on the goal gate. This spec's
+  // subject sits past it, so the walk-in seeds a passed gate — the same two
+  // answers a person gives at minute one — and lands where it always did.
+  await sw.evaluate(async () => {
+    // Write-once: a reopen inside a test must never wipe what the panel has
+    // written since (the mid-reflect resume test reopens through this path).
+    const existing = await chrome.storage.local.get('wb:answers');
+    if (existing['wb:answers']) return;
+    const now = new Date().toISOString();
+    await chrome.storage.local.set({
+      'wb:answers': {
+        values: { goal_service: 'chatgpt', goal_want: 'Draft my Monday status update the way I would.' },
+        repeatables: {},
+        answeredAt: { goal_service: now, goal_want: now },
+        reflectedAt: { goal_want: now },
+      },
+    });
+  });
   const id = new URL(sw.url()).host;
   return { context, sw, id };
 }
@@ -954,6 +973,13 @@ test.describe('the deeper-dive follow-ups', () => {
     // `hint` was not removed, only superseded where a deep-dive exists.
     const { context, sw, id } = await launchExtension();
     const seeded = buildAnswersExcept(contextModules, '__nothing__');
+    // V2.3 VB-93: with a goal in the answers the pick-a-service screen skips
+    // itself, so this specimen is only reachable as a pre-gate file.
+    delete seeded.values['goal_service'];
+    delete seeded.values['goal_want'];
+    delete seeded.answeredAt['goal_service'];
+    delete seeded.answeredAt['goal_want'];
+    delete seeded.reflectedAt['goal_want'];
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);

@@ -229,7 +229,12 @@ test.describe('Context interview — flow runner (R1-06)', () => {
   test('answers persist across a panel close/reopen', async () => {
     const { context, page } = await launchPanel();
 
-    // Q1 (intro) -> Q2 (context_scope, a chip)
+    // V2.3 VB-93: the flow opens on the goal gate — service, then want —
+    // then the port's own opening (intro -> context_scope -> stop_explaining).
+    expect(await page.locator('.flow').getAttribute('data-step-id')).toBe('goal_service');
+    await answerCurrentQuestion(page);
+    expect(await page.locator('.flow').getAttribute('data-step-id')).toBe('goal_want');
+    await answerCurrentQuestion(page);
     await answerCurrentQuestion(page);
     const secondStepId = await page.locator('.flow').getAttribute('data-step-id');
     expect(secondStepId).toBe('context_scope');

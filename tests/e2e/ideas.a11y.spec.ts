@@ -20,6 +20,23 @@ test('axe finds no violations on a question offering an example (VB-08)', async 
     args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`],
   });
   const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+
+  // V2.3 VB-93: the interview now opens on the goal gate. This scan's
+  // subject sits past it, so the walk-in seeds a passed gate — the same two
+  // answers a person gives at minute one — and lands where it always did.
+  await sw.evaluate(async () => {
+    const existing = await chrome.storage.local.get('wb:answers');
+    if (existing['wb:answers']) return;
+    const now = new Date().toISOString();
+    await chrome.storage.local.set({
+      'wb:answers': {
+        values: { goal_service: 'chatgpt', goal_want: 'Draft my Monday status update the way I would.' },
+        repeatables: {},
+        answeredAt: { goal_service: now, goal_want: now },
+        reflectedAt: { goal_want: now },
+      },
+    });
+  });
   const id = new URL(sw.url()).host;
   const page = await context.newPage();
   await page.emulateMedia({ reducedMotion: 'reduce' });

@@ -5,6 +5,7 @@ import {
   buildProofModule,
   serviceStepOptions,
   promptFor,
+  proofServiceFor,
   attachHintFor,
   PROOF_BASELINE_ANSWER_KEY,
   PROOF_CONTEXT_ANSWER_KEY,
@@ -122,6 +123,68 @@ describe('promptFor', () => {
     const prompt = promptFor('grade', ctx);
     expect(prompt).toContain('[not captured]');
     expect(prompt).toBe(evaluationPrompt('', ''));
+  });
+});
+
+/**
+ * V2.3 VB-93 — the goal gate's whole payoff, CONFIRMED BINDING by Adam
+ * (docs/V2.3-REFINEMENT.md): the gate must "fuel the baseline and prove it
+ * at the end of the flow". When the interview's first questions captured a
+ * goal, the proof asks THEIR question — never the canned line — in both
+ * conditions, and the grader is told the truth about what was asked.
+ */
+describe('promptFor with a goal from the gate (VB-93)', () => {
+  const goalCtx: FlowContext = {
+    answers: { goal_want: 'Draft my Monday status update the way I would.' },
+    repeatables: {},
+  };
+
+  it('the baseline IS their goal, verbatim, in both conditions', () => {
+    expect(promptFor('baseline', goalCtx)).toBe('Draft my Monday status update the way I would.');
+    expect(promptFor('withContext', goalCtx)).toBe(promptFor('baseline', goalCtx));
+  });
+
+  it('whitespace-padded goals are trimmed; empty or skipped goals fall back to the canned line', () => {
+    const padded: FlowContext = { answers: { goal_want: '  Do the thing.  ' }, repeatables: {} };
+    expect(promptFor('baseline', padded)).toBe('Do the thing.');
+    const blank: FlowContext = { answers: { goal_want: '   ' }, repeatables: {} };
+    expect(promptFor('baseline', blank)).toBe(BASELINE_PROMPT);
+    const skipped: FlowContext = { answers: { goal_want: null }, repeatables: {} };
+    expect(promptFor('baseline', skipped)).toBe(BASELINE_PROMPT);
+  });
+
+  it('the grade names their goal on the PROMPT USED line, not the canned one', () => {
+    const ctx: FlowContext = {
+      answers: {
+        ...goalCtx.answers,
+        [PROOF_BASELINE_ANSWER_KEY]: 'Before text.',
+        [PROOF_CONTEXT_ANSWER_KEY]: 'After text.',
+      },
+      repeatables: {},
+    };
+    const prompt = promptFor('grade', ctx);
+    expect(prompt).toContain('PROMPT USED: "Draft my Monday status update the way I would."');
+    expect(prompt).not.toContain(BASELINE_PROMPT);
+    expect(prompt).toBe(evaluationPrompt('Before text.', 'After text.', 'Draft my Monday status update the way I would.'));
+  });
+
+  it('evaluationPrompt without the new argument is byte-identical to before it existed', () => {
+    expect(evaluationPrompt('a', 'b')).toBe(evaluationPrompt('a', 'b', BASELINE_PROMPT));
+  });
+});
+
+describe('one service answer, not two (VB-93)', () => {
+  it("the pick-a-service screen skips itself when the gate already asked", () => {
+    const service = buildProofModule(fixtureCopy).nodes[0];
+    if (service === undefined || !('kind' in service) || service.kind !== 'chips') throw new Error('expected the chips step first');
+    expect(service.skipIf?.({ answers: {}, repeatables: {} })).toBeFalsy();
+    expect(service.skipIf?.({ answers: { goal_service: 'claude' }, repeatables: {} })).toBe(true);
+  });
+
+  it('proofServiceFor prefers the proof pick, falls back to the gate, then to nothing', () => {
+    expect(proofServiceFor({ answers: { [PROOF_SERVICE_KEY]: 'chatgpt', goal_service: 'claude' }, repeatables: {} })).toBe('chatgpt');
+    expect(proofServiceFor({ answers: { goal_service: 'claude' }, repeatables: {} })).toBe('claude');
+    expect(proofServiceFor({ answers: {}, repeatables: {} })).toBeUndefined();
   });
 });
 

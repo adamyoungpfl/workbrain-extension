@@ -144,14 +144,17 @@ describe('adaptContextFlow — real content (docs/RELEASE-1.md R1-05)', () => {
    * deleted a question would delete somebody's answer with it — so this count
    * only ever grows, and the ported 49 are all still here.
    */
-  it('ports 49 questions and adds V2.0 own 3, across 4 repeatable blocks', () => {
+  it('ports 49 questions and adds our own 5 (V2.0 ×3 + V2.3 goal gate ×2), across 4 repeatable blocks', () => {
     const all = everyStepIncludingRepeatableFields(modules);
-    const authoredHere = ['entities_intro', 'initiatives_intro', 'audience_needs'];
-    expect(all).toHaveLength(52);
+    const authoredHere = ['entities_intro', 'initiatives_intro', 'audience_needs', 'goal_service', 'goal_want'];
+    expect(all).toHaveLength(54);
     for (const id of authoredHere) {
       expect(all.filter((s) => s.id === id), id).toHaveLength(1);
     }
     expect(all.filter((s) => !authoredHere.includes(s.id))).toHaveLength(49);
+    // VB-93: the goal gate is the flow's front door — questions one and two.
+    expect(all[0]?.id).toBe('goal_service');
+    expect(all[1]?.id).toBe('goal_want');
     expect(allRepeatables(modules).map((r) => r.id)).toEqual([
       'roles',
       'entities',
