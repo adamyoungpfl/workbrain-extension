@@ -56,3 +56,13 @@ The service ladder already answers the shape: the fastest *honest* monetization 
 built — every Skills file derives an Actions file that is a statement-of-work generator for TIM.
 Services attach today with zero product forks. App-licensing revenue can wait for proof;
 attachment revenue cannot be replicated by a funded competitor, because it's Adam.
+
+
+## The $42 easter egg (recorded 2026-08-26)
+
+Adam's personal easter egg: consider a **$42 price point** on services or skills packages —
+Hitchhiker's Guide, the answer to the ultimate question of life, the universe, and everything.
+Explore whether 42 can attach to the project as a marketing-and-principles idea (the number
+worked into the product's story somewhere meaningful, not just a price tag). Pricing lives
+portal-side (NORTH-STAR decision 4), so this activates with the pricing/marketing work, not in
+the extension.
