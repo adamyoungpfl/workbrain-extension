@@ -67,6 +67,8 @@ import {
 } from '../../core/flow/proofAdapter';
 import { hintStaysVisible } from '../../core/flow/deepDive';
 import { usesOrbChoice } from '../../core/choice/orbs';
+import { personaForService, usesServiceThemes } from '../../core/flow/serviceThemes';
+import { PERSONA_GLYPHS } from '../components/choiceGlyphs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
@@ -1646,17 +1648,27 @@ function StepView({
     restartIdeaCue(button);
   }
 
+  // V2.4 VB-105 — the two service questions (core/flow/serviceThemes.ts says
+  // which) dress their chips in personas: tone class + glyph, DESIGN-ONLY
+  // (FLAG 4). The label is untouched and stays the whole accessible name; a
+  // value with no persona (a custom entry, a corrupted answer) simply renders
+  // the plain pill it always did.
+  const serviceThemed = usesServiceThemes(step);
   const pillOptions: PillOption[] =
     step.kind === 'yesno'
       ? [
           { value: 'yes', label: S.yes },
           { value: 'no', label: S.no },
         ]
-      : [...(displayOptions ?? []), ...customOptions].map((o) => ({
-          value: o.v,
-          label: o.l,
-          suggested: o.rec,
-        }));
+      : [...(displayOptions ?? []), ...customOptions].map((o) => {
+          const persona = serviceThemed ? personaForService(o.v) : undefined;
+          return {
+            value: o.v,
+            label: o.l,
+            suggested: o.rec,
+            ...(persona ? { tone: persona, glyph: PERSONA_GLYPHS[persona] } : {}),
+          };
+        });
 
   return (
     <form

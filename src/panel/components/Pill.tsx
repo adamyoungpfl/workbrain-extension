@@ -1,5 +1,5 @@
 import { forwardRef, useRef, useState } from 'react';
-import type { ButtonHTMLAttributes, KeyboardEvent } from 'react';
+import type { ButtonHTMLAttributes, KeyboardEvent, ReactNode } from 'react';
 import { rovingTarget, toggleChoice } from '../../core/choice/roving';
 import { S } from '../strings';
 import './Pill.css';
@@ -7,16 +7,31 @@ import './Pill.css';
 export interface PillProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   pressed: boolean;
   suggested?: boolean | undefined;
+  /**
+   * V2.4 VB-105 — the pill's theme, as a class suffix (`pill-theme-scholar`).
+   * Purely a CSS hook: the theme is color + icon and nothing else (FLAG 4),
+   * so nothing about the button's behaviour or accessible name may read it.
+   */
+  tone?: string | undefined;
+  /**
+   * V2.4 VB-105/VB-108 — a small decorative drawing beside the label. The
+   * glyph is `aria-hidden` at the SVG (choiceGlyphs.tsx's convention), so the
+   * button's accessible name stays exactly its printed label.
+   */
+  glyph?: ReactNode | undefined;
 }
 
 /** A single choice pill. Selection is carried by fill + weight + a checkmark — never color alone. */
 export const Pill = forwardRef<HTMLButtonElement, PillProps>(function Pill(
-  { pressed, suggested, className, children, ...rest },
+  { pressed, suggested, tone, glyph, className, children, ...rest },
   ref,
 ) {
-  const classes = ['pill', suggested ? 'suggested' : '', className].filter(Boolean).join(' ');
+  const classes = ['pill', suggested ? 'suggested' : '', tone ? `pill-themed pill-theme-${tone}` : '', className]
+    .filter(Boolean)
+    .join(' ');
   return (
     <button ref={ref} type="button" className={classes} aria-pressed={pressed} {...rest}>
+      {glyph && <span className="pill-glyph">{glyph}</span>}
       {children}
     </button>
   );
@@ -26,6 +41,10 @@ export interface PillOption {
   value: string;
   label: string;
   suggested?: boolean | undefined;
+  /** V2.4 VB-105 — theme class suffix; see `PillProps.tone`. */
+  tone?: string | undefined;
+  /** V2.4 VB-105/VB-108 — decorative drawing; see `PillProps.glyph`. */
+  glyph?: ReactNode | undefined;
 }
 
 export interface PillGroupProps {
@@ -91,6 +110,8 @@ export function PillGroup({ legend, options, mode, value, onChange, onAddOwn }: 
           }}
           pressed={value.includes(option.value)}
           suggested={option.suggested}
+          tone={option.tone}
+          glyph={option.glyph}
           tabIndex={index === rovingIndex ? 0 : -1}
           onClick={() => {
             setRovingIndex(index);

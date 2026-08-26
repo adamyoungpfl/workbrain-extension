@@ -43,3 +43,77 @@
   border-style: dashed;
   color: var(--ink-3);
 }
+
+/* ── V2.4 VB-105: the persona-themed service chips ─────────────────────────
+   ONE grammar for every themed pill, wherever the service list renders (the
+   goal gate and the proof picker both funnel through PillGroup): a theme is
+   two custom properties — the persona's tone and its tint — and seven
+   one-rule classes that set them from the scoped tokens (design/tokens.json's
+   `service` group; VB-01 precedent). Design-only (FLAG 4): the classes below
+   change paint, never meaning — the label is still the whole accessible name,
+   selection is still fill + weight + checkmark, and the rest-state border
+   stays --border-i so the 3:1 boundary is inherited, not re-argued.
+
+   Contrast, measured (tokens.json carries the numbers): every tone is
+   >= 4.5:1 on --canvas, so it holds as the selected fill under --ink-inv text
+   and clears 3:1 as a hover border; tints are washes under --ink text only. */
+.pill-themed {
+  --pill-tone: var(--primary);
+  --pill-tint: var(--primary-tint);
+}
+.pill-theme-aristocrat {
+  --pill-tone: var(--service-aristocrat-tone);
+  --pill-tint: var(--service-aristocrat-tint);
+}
+.pill-theme-scholar {
+  --pill-tone: var(--service-scholar-tone);
+  --pill-tint: var(--service-scholar-tint);
+}
+.pill-theme-muse {
+  --pill-tone: var(--service-muse-tone);
+  --pill-tint: var(--service-muse-tint);
+}
+.pill-theme-colleague {
+  --pill-tone: var(--service-colleague-tone);
+  --pill-tint: var(--service-colleague-tint);
+}
+.pill-theme-investigator {
+  --pill-tone: var(--service-investigator-tone);
+  --pill-tint: var(--service-investigator-tint);
+}
+.pill-theme-explorer {
+  --pill-tone: var(--service-explorer-tone);
+  --pill-tint: var(--service-explorer-tint);
+}
+.pill-theme-innovator {
+  --pill-tone: var(--service-innovator-tone);
+  --pill-tint: var(--service-innovator-tint);
+}
+
+/* The glyph is decorative (aria-hidden at the SVG) and takes the persona's
+   tone at rest; inside a selected pill it inherits the inverse ink like the
+   label and the checkmark, so the whole chip flips as one object. */
+.pill-glyph {
+  display: inline-flex;
+  align-items: center;
+  flex: 0 0 auto;
+  color: var(--pill-tone, currentColor);
+}
+.pill-glyph svg {
+  display: block;
+}
+.pill-themed:hover {
+  border-color: var(--pill-tone);
+  background: var(--pill-tint);
+}
+.pill-themed[aria-pressed='true'] {
+  background: var(--pill-tone);
+  border-color: var(--pill-tone);
+  color: var(--ink-inv);
+}
+.pill-themed[aria-pressed='true'] .pill-glyph {
+  color: var(--ink-inv);
+}
+/* The focus ring stays the system's own (--primary, 2px, offset) — a ring
+   per persona would make "where is my focus" a different question on every
+   chip. Inherited from .pill:focus-visible above; nothing to restate. */
