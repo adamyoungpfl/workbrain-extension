@@ -192,6 +192,19 @@ export const DRAWER_CHROME_HEIGHT = DRAWER_HANDLE_BAND + DRAWER_CRUMB_HEIGHT + D
 export const DRAWER_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + DRAWER_ROW_HEIGHT + DRAWER_HANDLE_OVERHANG;
 
 /**
+ * V2.3 VB-99 — the CLOSED notch, below the peek: the grabber's band plus one
+ * status line (the mark, the current section, X/Y · Z%). It is a resting
+ * state, not a point on the drag range — `clampDrawerHeight` still floors at
+ * `DRAWER_MIN_HEIGHT`, and the drawer reaches closed only by the explicit
+ * moves that mean it (dragging past the floor and releasing, or the keyboard
+ * collapse), so a hand easing the drawer down never falls into it by a pixel.
+ * Clicking or Enter on the grabber from closed opens to the minimum. The flow
+ * surface reserves whatever height this is, exactly as it does for every
+ * other height, so the question area gains the difference.
+ */
+export const DRAWER_CLOSED_HEIGHT = DRAWER_HANDLE_BAND + 26;
+
+/**
  * Where it starts, every session — 186px, the peek V1.1 shipped and V1.2 kept
  * to the pixel (FileDrawer.css's 132px body under a 44px header).
  *
