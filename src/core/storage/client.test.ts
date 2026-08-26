@@ -67,14 +67,14 @@ describe('initStorage', () => {
     const result = await initStorage({ exportBeforeMigrate, backend });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('unreachable');
-    expect(result.data.schemaVersion).toBe(1);
+    expect(result.data.schemaVersion).toBe(2); // V3 slice one bumped the schema
     expect(new Date(result.data.installedAt).toString()).not.toBe('Invalid Date');
     expect(exportBeforeMigrate).not.toHaveBeenCalled();
     expect(await getLocal('wb:meta', backend)).toEqual(result.data);
   });
 
   it('already at the current version: returns the existing meta and writes nothing back', async () => {
-    const meta = { schemaVersion: 1, installedAt: '2020-01-01T00:00:00.000Z' };
+    const meta = { schemaVersion: 2, installedAt: '2020-01-01T00:00:00.000Z' };
     const backend = fakeBackend({ 'wb:meta': meta });
     const setSpy = vi.spyOn(backend, 'set');
     const result = await initStorage({ exportBeforeMigrate: () => {}, backend });
@@ -83,15 +83,16 @@ describe('initStorage', () => {
   });
 
   it('behind the current version: migrates, exports the pre-migration snapshot first, and writes the migrated state back under the same keys', async () => {
-    // SCHEMA_VERSION is really 1, so "behind" here means schemaVersion 0 —
-    // the fixture migration bridges 0 -> 1, matching the real target.
-    const oldMeta = { schemaVersion: 0, installedAt: '2020-01-01T00:00:00.000Z' };
+    // SCHEMA_VERSION is really 2 (V3 slice one), so "behind" here means
+    // schemaVersion 1 — the fixture migration bridges 1 -> 2, matching the
+    // real target.
+    const oldMeta = { schemaVersion: 1, installedAt: '2020-01-01T00:00:00.000Z' };
     const backend = fakeBackend({
       'wb:meta': oldMeta,
       'wb:answers': { values: { name: 'old' }, repeatables: {}, answeredAt: {} },
     });
-    const bumpTo1: Migration = {
-      to: 1,
+    const bumpTo2: Migration = {
+      to: 2,
       up: (s) => {
         const state = s as Record<string, unknown>;
         return {
@@ -105,12 +106,12 @@ describe('initStorage', () => {
     const result = await initStorage({
       exportBeforeMigrate: (s) => snapshots.push(s),
       backend,
-      migrations: [bumpTo1],
+      migrations: [bumpTo2],
     });
 
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('unreachable');
-    expect(result.data.schemaVersion).toBe(1);
+    expect(result.data.schemaVersion).toBe(2);
     expect(result.data.installedAt).toBe(oldMeta.installedAt); // preserved, not reset
 
     // exported before anything changed
@@ -135,7 +136,12 @@ describe('initStorage', () => {
    * rewritten, and the two new keys read as absent rather than as empty answers
    * somebody has to be told about.
    */
-  it('a pre-V1.8 install — only wb:answers — keeps every answer, runs no migration and writes nothing', async () => {
+  it('a pre-V1.8 install — only wb:answers — migrates to v2 keeping every answer, snapshot exported first', async () => {
+    // V3 slice one: schemaVersion 1 is BEHIND now, so this install runs the
+    // real v2 migration. The promise sharpens rather than changes: every
+    // answer comes through byte-identical, the records gain their minted
+    // ids and nothing else, the pre-migration snapshot is written before
+    // any mutation, and the sibling keys still read as absent.
     const meta = { schemaVersion: 1, installedAt: '2024-05-05T00:00:00.000Z' };
     const existing = {
       values: { preferred_name: 'Ada', voice: 'Plain and direct.' },
@@ -144,17 +150,26 @@ describe('initStorage', () => {
       reflectedAt: { voice: '2024-05-06T00:00:00.000Z' },
     };
     const backend = fakeBackend({ 'wb:meta': meta, 'wb:answers': existing });
-    const setSpy = vi.spyOn(backend, 'set');
-    const exportBeforeMigrate = vi.fn();
+    const snapshots: unknown[] = [];
 
-    const result = await initStorage({ exportBeforeMigrate, backend });
+    const result = await initStorage({ exportBeforeMigrate: (s) => snapshots.push(s), backend });
 
-    expect(result).toEqual({ ok: true, data: meta });
-    expect(exportBeforeMigrate).not.toHaveBeenCalled();
-    expect(setSpy, 'an additive key change must not rewrite an existing install').not.toHaveBeenCalled();
+    expect(result.ok).toBe(true);
+    if (!result.ok) throw new Error('unreachable');
+    expect(result.data.schemaVersion).toBe(2);
+    expect(result.data.installedAt).toBe(meta.installedAt); // preserved, not reset
+    expect((snapshots[0] as Record<string, unknown>)['wb:answers']).toEqual(existing);
 
-    // Nothing lost: the same object, field for field, under the same key.
-    expect(await getLocal('wb:answers', backend)).toEqual(existing);
+    const migrated = (await getLocal('wb:answers', backend)) as typeof existing & {
+      recordIds?: Record<string, string[]>;
+    };
+    // Nothing lost: field for field, plus identity and only identity.
+    expect(migrated.values).toEqual(existing.values);
+    expect(migrated.repeatables).toEqual(existing.repeatables);
+    expect(migrated.answeredAt).toEqual(existing.answeredAt);
+    expect(migrated.reflectedAt).toEqual(existing.reflectedAt);
+    expect(migrated.recordIds?.roles).toHaveLength(1);
+    expect(migrated.recordIds?.roles?.[0]).toMatch(/^skl_[a-z2-7]{10}$/);
     // And the new keys are absent, which every reader already treats as
     // "that file has nothing in it" (see core/files/answersKey.ts).
     expect(await getLocal('wb:answers:skills', backend)).toBeUndefined();

@@ -1,10 +1,46 @@
-import type { Migration } from '../../schema/storage.types';
+import type { Answers, Migration } from '../../schema/storage.types';
+import { alignRecordIds } from '../packs/skillIds';
 
 /**
- * Forward-only, one function per version bump. Empty at SCHEMA_VERSION = 1 —
- * there is nothing to migrate from yet. See docs/ARCHITECTURE.md.
+ * Forward-only, one function per version bump. See docs/ARCHITECTURE.md.
+ * `runMigrations` guarantees the pre-migration export hook runs first
+ * (GUARDRAILS' migration law: restore from the snapshot on failure).
  */
-export const migrations: Migration[] = [];
+
+/** Duck-typed, not instanceof: migration state is whatever storage held. */
+function looksLikeAnswers(value: unknown): value is Answers {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    typeof (value as Answers).values === 'object' &&
+    typeof (value as Answers).repeatables === 'object'
+  );
+}
+
+export const migrations: Migration[] = [
+  {
+    // V3 slice one (docs/SKILL-INTERCHANGE.md): mint stable record ids for
+    // every repeatable record already in any answers store — skills first
+    // among equals, but roles/entities/initiatives/audiences get identity by
+    // the same stroke, which is what makes them library-ready later for
+    // free. Index-aligned by construction; nothing else about the store is
+    // touched, and a store with no records gains nothing but stays valid.
+    to: 2,
+    up(state: unknown): unknown {
+      const snapshot = { ...(state as Record<string, unknown>) };
+      for (const key of ['wb:answers', 'wb:answers:skills', 'wb:answers:actions']) {
+        const answers = snapshot[key];
+        if (!looksLikeAnswers(answers)) continue;
+        let next = answers;
+        for (const blockId of Object.keys(answers.repeatables)) {
+          next = alignRecordIds(next, blockId);
+        }
+        snapshot[key] = next;
+      }
+      return snapshot;
+    },
+  },
+];
 
 export type MigrationResult =
   | { ok: true; state: unknown; toVersion: number }

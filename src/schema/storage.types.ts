@@ -1,4 +1,4 @@
-export const SCHEMA_VERSION = 1;
+export const SCHEMA_VERSION = 2;
 
 export interface Meta { schemaVersion: number; installedAt: string; }
 
@@ -18,6 +18,23 @@ export interface Answers {
    * treated as done. Set once the person picks Keep or Tighten; never set
    * by Skip, since there is nothing typed to play back. */
   reflectedAt: Record<string, string>;
+  /**
+   * V3 (docs/SKILL-INTERCHANGE.md) — stable identity for repeatable records,
+   * per block, INDEX-ALIGNED with `repeatables[blockId]`: `recordIds.skills[0]`
+   * names `repeatables.skills[0]`. Minted `skl_…` (core/packs/skillIds.ts),
+   * never re-minted on rename; the compound `answeredAt` keys stay positional
+   * (load-bearing across restore/health/multiples) and the export layer
+   * translates position → id.
+   *
+   * THE INVARIANT: aligned or absent-at-the-tail — `alignRecordIds` mints for
+   * appended records and is idempotent. Safe because record mutations are
+   * APPEND-ONLY today (multiples.ts's applyAddRecord and the seeded adds);
+   * the first delete/reorder feature MUST splice this array in the same
+   * operation, and alignRecordIds's own doc says so again.
+   *
+   * Optional: a pre-v2 store has none until the migration mints them.
+   */
+  recordIds?: Record<string, string[]>;
 }
 
 export interface Skill {

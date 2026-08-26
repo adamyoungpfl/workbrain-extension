@@ -1,5 +1,6 @@
 import type { FileOutlineNode, FlowContext, Module, RepeatableBlock, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
+import { alignRecordIds } from '../packs/skillIds';
 import { buildFlowLookups, keyOf, nameStepFor, resolvePhrase } from '../files/lookups';
 import { applyAnswer, applySeededAddAnother, findSeedStep, seededNameTaken } from './runner';
 import { splitSectionLabel } from './sectionLabel';
@@ -282,7 +283,8 @@ export function applyAddRecord(
     if (!seedStep) return null;
     const next = applySeededAddAnother(answers, block, seedStep, trimmed);
     if (next === answers) return null;
-    return { answers: next, recordIndex };
+    // V3 slice one: a record is born with its identity — see skillIds.ts.
+    return { answers: alignRecordIds(next, blockId), recordIndex };
   }
 
   // Open-ended: the name IS one of the block's questions, so adding a record is
@@ -293,7 +295,8 @@ export function applyAddRecord(
   const nameStep: Step | undefined = nameStepFor(block);
   if (!nameStep) return null;
   return {
-    answers: applyAnswer(answers, nameStep, { in: 'repeatable', blockId, recordIndex }, trimmed),
+    // V3 slice one: identity at birth here too (skillIds.ts).
+    answers: alignRecordIds(applyAnswer(answers, nameStep, { in: 'repeatable', blockId, recordIndex }, trimmed), blockId),
     recordIndex,
   };
 }

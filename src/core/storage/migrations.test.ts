@@ -75,3 +75,58 @@ describe('runMigrations', () => {
     expect(passes).toEqual([2]);
   });
 });
+
+// ── V3 slice one: the v2 migration itself (docs/SKILL-INTERCHANGE.md) ─────
+
+import { migrations } from './migrations';
+import type { Answers } from '../../schema/storage.types';
+
+describe('migration to schema v2 — record ids minted', () => {
+  const v2 = migrations.find((m) => m.to === 2)!;
+
+  function store(records: Record<string, string>[]): Answers {
+    return { values: {}, repeatables: { skills: records }, answeredAt: {}, reflectedAt: {} };
+  }
+
+  it('exists, and is the only migration shipped so far', () => {
+    expect(v2).toBeTruthy();
+    expect(migrations).toHaveLength(1);
+  });
+
+  it('mints index-aligned ids for every answers store with records', () => {
+    const state = {
+      'wb:answers': {
+        values: {},
+        repeatables: { roles: [{ role_name: 'Team lead' }, { role_name: 'Parent' }] },
+        answeredAt: {},
+        reflectedAt: {},
+      },
+      'wb:answers:skills': store([{ skill_name: 'Weekly status' }]),
+    };
+    const out = v2.up(state) as Record<string, Answers>;
+    expect(out['wb:answers']!.recordIds?.roles).toHaveLength(2);
+    expect(out['wb:answers:skills']!.recordIds?.skills).toHaveLength(1);
+    expect(out['wb:answers:skills']!.recordIds?.skills?.[0]).toMatch(/^skl_[a-z2-7]{10}$/);
+    // Nothing else about the stores was touched.
+    expect(out['wb:answers']!.repeatables.roles![0]!.role_name).toBe('Team lead');
+  });
+
+  it('a store with no records, a missing store, and non-answers junk all pass through valid', () => {
+    const state = {
+      'wb:answers': store([]),
+      'wb:meta': { schemaVersion: 1, installedAt: 'x' },
+      'wb:report': { scores: [] },
+    };
+    const out = v2.up(state) as Record<string, unknown>;
+    expect((out['wb:answers'] as Answers).recordIds).toBeUndefined();
+    expect(out['wb:meta']).toEqual({ schemaVersion: 1, installedAt: 'x' });
+    expect(out['wb:report']).toEqual({ scores: [] });
+  });
+
+  it('is idempotent — running it twice mints nothing new', () => {
+    const once = v2.up({ 'wb:answers:skills': store([{ skill_name: 'A' }]) }) as Record<string, Answers>;
+    const id = once['wb:answers:skills']!.recordIds?.skills?.[0];
+    const twice = v2.up(once) as Record<string, Answers>;
+    expect(twice['wb:answers:skills']!.recordIds?.skills?.[0]).toBe(id);
+  });
+});
