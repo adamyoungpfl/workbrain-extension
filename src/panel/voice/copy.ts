@@ -1,4 +1,5 @@
 import type { NarrationCopy } from '../../core/voice/narration';
+import { goalServiceLabelFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
 import { S } from '../strings';
 
 /**
@@ -18,7 +19,9 @@ import { S } from '../strings';
 const INTROS: Record<string, { beats: readonly string[]; preview: readonly string[] }> = S.moduleIntros;
 
 export const NARRATION_COPY: NarrationCopy = {
-  reflectCta: S.narratorReflectCta,
+  // V2.3 VB-95 — computed, not a fixed string: it names the person's own AI
+  // when the goal gate captured which one they use.
+  reflectCta: (ctx) => reflectVoiceLine(goalServiceLabelFor(ctx)),
   /** Both halves of the screen, in the order they are read: the beats, then
    * the preview line under them. A person listening gets the screen, not the
    * top half of it. */

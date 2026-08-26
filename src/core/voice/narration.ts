@@ -32,6 +32,7 @@ import type { FlowContext, Step } from '../../schema/flow.types';
 import type { Position } from '../flow/runner';
 import { existingValue } from '../flow/runner';
 import { beatsPlainText } from '../flow/beats';
+import { reflectLeadFor } from '../flow/reflectFrames';
 import type { VoiceRole } from './roles';
 
 /** One thing to say, and the voice role to say it in. */
@@ -42,9 +43,10 @@ export interface Narration {
 
 /** The panel's own words, for the two screens that speak them. */
 export interface NarrationCopy {
-  /** The reflect screen's ways forward, spoken. Never printed — the buttons
-   * are on screen and say the same thing. */
-  readonly reflectCta: string;
+  /** V2.3 VB-95 — the reflect screen's way forward, spoken AND printed (one
+   * string, so the screen and the voice can never drift), a function of ctx
+   * because it names the person's own AI when the goal gate knows it. */
+  readonly reflectCta: (ctx: FlowContext) => string;
   /** A module transition's approved lines, in reading order, for a module id
    * that has any. Empty for one that does not. */
   readonly moduleIntro: (moduleId: string) => readonly string[];
@@ -156,8 +158,11 @@ export function narrationFor(
     // Nothing typed means nothing to play back, and the buttons on a reflect
     // screen only make sense after the answer they act on.
     if (!raw) return null;
-    const prefix = tidy(position.step.interpret?.reflectPrefix ?? '');
-    const parts = [prefix, raw, tidy(copy.reflectCta)].filter(Boolean);
+    // V2.3 VB-95: the conversational reframe, not the old boxed prefix —
+    // the same lead the screen prints (reflectFrames.ts owns precedence:
+    // bespoke reframe, then a step's own authored prefix, then the default).
+    const prefix = tidy(reflectLeadFor(position.step));
+    const parts = [prefix, raw, tidy(copy.reflectCta(ctx))].filter(Boolean);
     return { role: 'recap', text: parts.join(' ') };
   }
 

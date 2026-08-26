@@ -69,6 +69,7 @@ import { hintStaysVisible } from '../../core/flow/deepDive';
 import { usesOrbChoice } from '../../core/choice/orbs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
+import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
 import { NARRATION_COPY } from '../voice/copy';
@@ -1512,13 +1513,22 @@ function StepView({
       );
     }
 
+    // V2.3 VB-95 — a quick check, spoken like a person: the per-question
+    // reframe, their words quoted back in italic with no box around them
+    // (these are THEIR words, not generated content — ReadOnlyBlock's trust
+    // chrome stays on the tighten screen where AI output lands), and one
+    // way-forward line that names their own AI when the goal gate knows it.
+    // The narrator says exactly these lines (narration.ts reads the same
+    // reflectFrames), so the screen and the voice can never drift.
     return (
       <div className="flow" data-position="reflect" data-step-id={step.id}>
         {errorBanner}
         {topSection}
         <TypedHeading className="flow-q" text={S.reflectHeading} />
         <p className="flow-hint">{S.reflectSub}</p>
-        <ReadOnlyBlock tag={step.interpret?.reflectPrefix ?? ''}>{raw}</ReadOnlyBlock>
+        <p className="flow-reflect-lead">{reflectLeadFor(step)}</p>
+        <blockquote className="flow-reflect-quote">{raw}</blockquote>
+        <p className="flow-hint flow-reflect-cta">{reflectVoiceLine(goalServiceLabelFor(ctx))}</p>
         <AnswerArea>
           <div className="flow-reflect-actions">
             <Button type="button" variant="primary" onClick={commitKeep}>

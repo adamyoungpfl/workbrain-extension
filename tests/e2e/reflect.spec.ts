@@ -101,13 +101,40 @@ async function storedAnswers(page: Page): Promise<{
 }
 
 test.describe('Reflect step (R1-07)', () => {
+  /**
+   * V2.3 VB-95 — the quick check: the per-question reframe leads, the
+   * person's words come back in an italic quote with no box, and the
+   * way-forward line names the AI they picked at the goal gate (the walk-in
+   * seeds chatgpt). One string drives the printed line and the narrator
+   * (reflectFrames.ts), so this pins the printed half.
+   */
+  test('the reflect screen is a quick check in their language, naming their AI', async () => {
+    const { context, page } = await launchPanel();
+    await driveToReflect(page, 'Quarterly roadmap decks.');
+
+    await expect(page.locator('.flow-q')).toHaveText('Just a quick check.');
+    await expect(page.locator('.flow-reflect-lead')).toHaveText(
+      "So you would say that right now, the thing you'd most like to stop explaining is…",
+    );
+    const quote = page.locator('.flow-reflect-quote');
+    await expect(quote).toHaveText('Quarterly roadmap decks.');
+    // Italic and unboxed — their words, not product chrome.
+    expect(await quote.evaluate((el) => getComputedStyle(el).fontStyle)).toBe('italic');
+    expect(await quote.evaluate((el) => getComputedStyle(el).backgroundColor)).toBe('rgba(0, 0, 0, 0)');
+    await expect(page.locator('.flow-reflect-cta')).toContainText('use your ChatGPT chat to tighten it');
+
+    await context.close();
+  });
+
   test('Keep it as-is commits the raw text byte-identically', async () => {
     const { context, page } = await launchPanel();
     const raw = 'The history of a decision I keep  having to re-justify — "budget cuts", mostly.';
     await driveToReflect(page, raw);
 
     // Played back verbatim before any commit happens.
-    const blockText = await page.locator('.flow .readonly').first().textContent();
+    // V2.3 VB-95: the person's words play back in the unboxed quote, not a
+    // ReadOnlyBlock — that chrome is for generated content.
+    const blockText = await page.locator('.flow .flow-reflect-quote').textContent();
     expect(blockText).toContain(raw);
 
     // Keyboard-only through this new screen too, not just a click — CLAUDE.md's
@@ -161,7 +188,7 @@ test.describe('Reflect step (R1-07)', () => {
 
     // Back on the reflect screen, now playing back the NEW text, byte-identically.
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'reflect');
-    const blockText = await page.locator('.flow .readonly').first().textContent();
+    const blockText = await page.locator('.flow .flow-reflect-quote').textContent();
     expect(blockText).toContain(secondDraft);
     expect(blockText).not.toContain(firstDraft);
 
@@ -189,7 +216,7 @@ test.describe('Reflect step (R1-07)', () => {
 
     await expect(reopened.locator('.flow')).toHaveAttribute('data-position', 'reflect');
     await expect(reopened.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
-    const blockText = await reopened.locator('.flow .readonly').first().textContent();
+    const blockText = await reopened.locator('.flow .flow-reflect-quote').textContent();
     expect(blockText).toContain(raw);
 
     // And it is still a live, actionable reflect screen, not a dead end.

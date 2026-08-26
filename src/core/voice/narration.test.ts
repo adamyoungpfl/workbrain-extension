@@ -14,7 +14,9 @@ const makeAnswers = (overrides: Partial<Answers> = {}): Answers => ({
 });
 
 const COPY: NarrationCopy = {
-  reflectCta: 'Keep it as-is, tighten it with your AI, or say it again.',
+  // V2.3 VB-95: a function of ctx in the real panel (it names the person's
+  // own AI); a constant here, because these tests are about assembly.
+  reflectCta: () => 'Keep it as-is, tighten it with your AI, or say it again.',
   moduleIntro: (id) => (id === 'about-me' ? ['Now the __basics__.', 'Not your job title.'] : []),
 };
 

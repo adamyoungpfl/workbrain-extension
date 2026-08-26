@@ -145,10 +145,10 @@ export const S = {
    * the three buttons are on screen saying the same thing, so printing it
    * again would be the same instruction twice. It exists because someone
    * listening has just heard their own answer read back and needs to know what
-   * they can do about it. Ported in spirit from the sibling app's
-   * REFLECT_SPOKEN_CTA, reworded to name this panel's actual buttons.
+   * they can do about it. (V2.3 VB-95: the spoken CTA moved to
+   * core/flow/reflectFrames.ts's reflectVoiceLine — computed, because it
+   * names the person's own AI — injected via src/panel/voice/copy.ts.)
    */
-  narratorReflectCta: 'Keep it as-is, tighten it with your AI, or say it again.',
   addYourOwn: '+ add your own',
   /**
    * V2.0 VB-60 — the same action, on the orb picker, where the `+` is DRAWN.
@@ -540,8 +540,12 @@ export const S = {
   summaryToday: 'written today',
 
   // ---------------------------------------------------------------- reflect
-  reflectHeading: "Here's what I've got.",
-  reflectSub: 'Nothing has been sent anywhere. Keep it, or let your own AI tighten it.',
+  // [DRAFT] V2.3 VB-95 — the reflect step becomes a quick check: heading in
+  // the register of a person confirming, the sub keeps only the trust line
+  // (the ways forward moved into reflectFrames.ts's voice line, printed and
+  // spoken under the quote).
+  reflectHeading: 'Just a quick check.',
+  reflectSub: 'Nothing has been sent anywhere.',
   reflectKeep: 'Keep it as-is',
   reflectTighten: 'Tighten it with my AI',
   reflectRedo: 'Say it again',

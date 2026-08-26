@@ -242,7 +242,8 @@ test.describe('Give me an example (VB-08)', () => {
     // the text there is proof it was written as an ordinary answer.
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'reflect');
-    expect(await page.locator('.flow .readonly').first().textContent()).toContain(edited);
+    // V2.3 VB-95: the played-back words live in the unboxed quote now.
+    expect(await page.locator('.flow .flow-reflect-quote').textContent()).toContain(edited);
 
     // And it is in storage under the question's own key, byte for byte, with
     // nothing marking it as machine-supplied. Once committed there is no way
