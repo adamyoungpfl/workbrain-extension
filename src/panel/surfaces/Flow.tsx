@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useLayoutEffect, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent, ReactNode } from 'react';
 import {
   Beats,
@@ -13,6 +13,7 @@ import {
   NAV_MELT_LAYER_CLASS,
   OrbGroup,
   PillGroup,
+  Popover,
   ReadOnlyBlock,
   TypedHeading,
 } from '../components';
@@ -1038,6 +1039,10 @@ function StepView({
     // Typing, named as itself — the reason FLAG 1 inherited from VB-42, and
     // the one that fires for dictation and paste as well as for a keystroke.
     stopRotating('typing');
+    // VB-106: something landed in the field, so the highlight has done its
+    // job — the pulse points at where the reply goes, never at what is
+    // already there.
+    setInputHighlight(false);
     setDraftText(next);
   }
   function answerValues(next: string[]) {
@@ -1054,10 +1059,26 @@ function StepView({
   // button. Someone who cannot see the field fill in gets told what landed in
   // it — the same information, at the same moment, without focus moving.
   const [spokenIdea, setSpokenIdea] = useState('');
-  // V2.3 VB-94 — the interview-me disclosure on open text questions. Plain
-  // per-position state like every draft above: a new question starts closed.
+  // V2.3 VB-94, reshaped by V2.4 VB-107 — the interview-me POPOVER on open
+  // text questions. Plain per-position state like every draft above: a new
+  // question starts closed, unpulsed, with nothing copied.
   const [askAIOpen, setAskAIOpen] = useState(false);
   const [askAICopied, setAskAICopied] = useState(false);
+  /**
+   * V2.4 VB-107 — the element that opened the popover, captured from its own
+   * click event (the restartCue convention: the element is already in hand)
+   * because `Button` does not forward refs. The popover needs it twice: its
+   * outside-press exclusion, and the focus hand-back on dismissal.
+   */
+  const askAITrigger = useRef<HTMLButtonElement | null>(null);
+  /**
+   * V2.4 VB-106/107 — whether the input wears `.flow-highlight`, the flow's
+   * one sanctioned attention cue. Set in exactly one place (the popover's
+   * copy — "the reply lands HERE") and cleared the moment anything lands in
+   * the field, typed, pasted or dropped. A fenced paste on its own never
+   * sets it: after the reply has landed there is nothing left to point at.
+   */
+  const [inputHighlight, setInputHighlight] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
   // Doubles as V1.4 VB-20's "what do you call this role?" buffer on a naming
   // add-another screen — same shape (one short typed name, added to a list of
@@ -1636,6 +1657,9 @@ function StepView({
     const idea = ideaAt(ideas, ideaPresses);
     if (idea === null) return;
     setDraftText(idea);
+    // VB-106: an example landing in the field ends the highlight for the
+    // same reason typing does — see answerText.
+    setInputHighlight(false);
     setSpokenIdea(idea);
     setIdeaPresses((n) => n + 1);
     restartIdeaCue(button);
@@ -1717,6 +1741,10 @@ function StepView({
                 onChange={answerText}
                 placeholder={resolveOptionalPhrase(step.ph, ctx)}
                 error={pendingError ?? undefined}
+                // V2.4 VB-106/107 — the one sanctioned attention cue, on the
+                // one control the popover's copy points at: "the reply lands
+                // here". State, not a one-shot; answerText takes it off.
+                className={inputHighlight ? 'flow-highlight' : undefined}
                 onPaste={(e: React.ClipboardEvent) => {
                   // V2.3 VB-94 — the round trip lands. Only a paste carrying
                   // the fence signature is touched (an ordinary paste is the
@@ -1757,7 +1785,15 @@ function StepView({
                 grammar. ONE row on purpose: the nav cluster rides in-flow
                 directly below (VB-94's layout), and a second row of chrome
                 pushed it into the drawer's clearance (button-cluster.spec
-                caught it at max height). */}
+                caught it at max height).
+
+                V2.4 VB-106 — the helpers are BUBBLE CHIPS, per Adam's mockup:
+                each button paints as a small pill (`.flow-chip-paint`) inside
+                its own untouched 44px hit box — V1.3 VB-15's painted-vs-
+                pressable split, done the NavButton way (an inner face the
+                paint and the ring belong to) rather than with overhang
+                margins, so the row LAYS OUT at exactly the height it did
+                before and the landmine above stays defused. */}
             <div className="flow-idea-row">
               {ideas.length > 0 && (
                 <>
@@ -1768,8 +1804,10 @@ function StepView({
                     className="flow-idea"
                     onClick={(e) => dropIdea(e.currentTarget)}
                   >
-                    {IDEA_ICON}
-                    {S.giveExample}
+                    <span className="flow-chip-paint">
+                      {IDEA_ICON}
+                      {S.giveExample}
+                    </span>
                   </Button>
                   {/* What just landed in the field, for anyone who cannot see it
                       do so. Polite and out of the way: nothing takes focus, so a
@@ -1785,25 +1823,55 @@ function StepView({
                 size="sm"
                 className="flow-askai"
                 aria-expanded={askAIOpen}
-                onClick={() => {
+                aria-controls={askAIOpen ? 'flow-askai-pop' : undefined}
+                onClick={(e) => {
+                  askAITrigger.current = e.currentTarget;
                   setAskAIOpen((open) => !open);
                   setAskAICopied(false);
                 }}
               >
-                {S.interviewMe}
+                <span className="flow-chip-paint">{S.interviewMe}</span>
               </Button>
               <span className="flow-idea-live" role="status">
                 {askAICopied ? S.copied : ''}
               </span>
+              {/* V2.4 VB-107 — the popover (FLAG 1: anchored and non-modal,
+                  NOT a dialog), replacing VB-94's inline disclosure. Inside
+                  the row on purpose: the row is its anchor (position:
+                  relative, Flow.css) and the document order — trigger, then
+                  popover, then nav — is the whole of the focus story; Tab
+                  walks in one side and out the other with nothing managed.
+                  Opening moves no focus (docs/GUARDRAILS.md: nothing steals
+                  focus); Escape and outside-press dismiss (Popover.tsx);
+                  and COPY is the popover completing its purpose — it
+                  dismisses itself, hands focus home to the trigger, and
+                  lights the one place the reply belongs (the VB-106 pulse
+                  on the input above). The instruction line names THEIR AI —
+                  the goal gate's service, "your AI" when unknown — resolved
+                  by the same goalServiceLabelFor the reflect voice line
+                  uses, so the two screens can never name different AIs. */}
+              {askAIOpen && (
+                <Popover
+                  id="flow-askai-pop"
+                  className="flow-askai-pop"
+                  triggerRef={askAITrigger}
+                  onDismiss={() => setAskAIOpen(false)}
+                >
+                  <ReadOnlyBlock
+                    tag={S.reflectPromptTag}
+                    onCopy={() => {
+                      setAskAICopied(true);
+                      setAskAIOpen(false);
+                      setInputHighlight(true);
+                      askAITrigger.current?.focus();
+                    }}
+                  >
+                    {interviewMePrompt(questionText, ctx)}
+                  </ReadOnlyBlock>
+                  <p className="flow-askai-hint">{S.interviewMeCopy(goalServiceLabelFor(ctx))}</p>
+                </Popover>
+              )}
             </div>
-            {askAIOpen && (
-              <div className="flow-askai-block">
-                <ReadOnlyBlock tag={S.reflectPromptTag} onCopy={() => setAskAICopied(true)}>
-                  {interviewMePrompt(questionText, ctx)}
-                </ReadOnlyBlock>
-                <p className="flow-hint flow-askai-hint">{S.interviewMeHint}</p>
-              </div>
-            )}
           </>
         )}
 
