@@ -45,8 +45,10 @@ export function reflectLeadFor(step: Pick<Step, 'id' | 'interpret'>): string {
 /**
  * Which AI the person said they use most (VB-93's `goal_service`), as its
  * printed label — resolved from GOAL_GATE_NODES so there is one list.
- * `undefined` for "other" on purpose: "use your Something else chat" is not
- * a sentence, so the voice line falls back to "your AI chat".
+ * `undefined` for "other" on purpose: its label is a title, not a name
+ * (V2.4 VB-105 retitled it "Something Cooler You Don't Even Know About"),
+ * and "use your <title> chat" is not a sentence — so the voice line falls
+ * back to "your AI chat".
  */
 export function goalServiceLabelFor(ctx: FlowContext): string | undefined {
   const key = ctx.answers['goal_service'];
