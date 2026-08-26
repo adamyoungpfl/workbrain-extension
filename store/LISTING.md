@@ -98,11 +98,12 @@ so they do not have to re-explain who they are and how they work every time.
 | `3-brain.png` | The file assembling as you answer |
 | `4-proof.png` | The proof loop — same question, with and without the file |
 
-> Regenerated 25 August 2026 against the V2.1 build (commit b4cbc24) and **looked at, all four**
-> — that is not a formality: this pass caught shot 2 parked on a bare yes/no gate, and shot 3
-> photographing the work-tier list because a loose `/brain/i` locator pressed the breadcrumb's
-> "Work brain" rung instead of the Brain toggle. Shot 3 now shows the globe with its always-on
-> labels (VB-77) and the fixed Back/Home band (VB-74) — the current product.
+> Regenerated 26 August 2026 against the V2.2 build and **looked at, all four**. Shot 1 now
+> photographs the three-file shelf as it really ladders: Context current, Skills "Finish
+> Context.md first", Actions "Writes itself from your Skills file" — the derived-file story on the
+> first image. (Looking caught, again: the Actions line wraps to two rows at 400px, against Home's
+> own one-line shelf rule — flagged to Adam, copy is his.) Shot 3 keeps the labelled globe with
+> the fixed Back/Home band.
 >
 > Regenerate again after any visual change: `npm run build && node scripts/store-shots.mjs`,
 > then look at all four.
@@ -113,7 +114,7 @@ so they do not have to re-explain who they are and how they work every time.
       on 25 August 2026; see `store/PRIVACY.md` for what was checked and the one sentence that was
       wrong.
 - [ ] Privacy policy **deployed** and reachable at the URL above ← *the remaining hard blocker*
-- [x] Screenshots regenerated against the current build (V2.1, b4cbc24), and all four looked at
+- [x] Screenshots regenerated against the current build (V2.2), and all four looked at
 - [x] `npm run check` green — 25 August 2026: typecheck, audit, 1612 unit, 503 e2e, 68 a11y
 - [ ] `npm run zip` produces `dist.zip`
 - [ ] `dist.zip`'s manifest requests exactly `storage` and `sidePanel`
