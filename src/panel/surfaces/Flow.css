@@ -403,12 +403,26 @@
   }
 }
 
-/* ── VB-08: "give me an example" ──────────────────────────────────────────
-   Sits under the text field it writes into. `.btn-secondary` gives it the
-   bordered treatment the spec calls for — a solid fill would compete with
-   Next, which is this screen's one primary (docs/design-system.html §04).
-   `.btn-sm` keeps it visually subordinate to the footer's buttons while
-   `.btn` still holds the 44px floor, so the hit target is untouched. */
+/* ── VB-08's example button + VB-94's escape hatch, restyled by V2.4 VB-106:
+   THE HELPER ROW IS BUBBLE CHIPS ──────────────────────────────────────────
+   Per Adam's mockup: the two helper actions under a text question's input
+   ("Give me an example", "Let my AI ask me") paint as small rounded pills —
+   clearly lighter than the answer pills and the footer's words, because they
+   are offers about the box above, not answers and not navigation. A solid
+   fill would compete with Next, this screen's one primary
+   (docs/design-system.html §04), so the bubble keeps the hairline treatment.
+
+   THE PAINT SHRANK; THE TARGET DID NOT. V1.3 VB-15's split, in the NavButton
+   shape rather than the overhang shape: the `.btn` itself goes transparent
+   and keeps its full 44px box in the layout, and everything visible — the
+   pill, its hairline, the press cue's reduced-motion fill, the focus ring —
+   moves to `.flow-chip-paint`, the face inside it. Laying the row out at the
+   full hit box (rather than at the painted 30px with negative margins) is
+   deliberate twice over: the chips' targets cannot overlap the textarea
+   above or the nav cluster's own overhanging targets below, and the row's
+   total height is exactly what it was before VB-106 — the landmine Flow.tsx
+   documents (a taller row pushes the in-flow cluster into the drawer's
+   clearance at max height; button-cluster.spec is the guard). */
 .flow-idea-row {
   display: flex;
   align-items: center;
@@ -419,6 +433,106 @@
 }
 .flow-idea {
   flex: 0 0 auto;
+}
+/* The 44px box you can press, stripped of its own paint — Button.css's
+   secondary dressing moves one element down, exactly as `.flowshell
+   .flow-foot .btn` strips the same component for the nav. `border: 0` rather
+   than transparent for VB-41's reason: a border would make the box 46 and
+   the row two pixels taller than it was. */
+.flow-idea-row .btn {
+  border: 0;
+  background: none;
+  padding: 0;
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+}
+/* The bubble: what a person sees, 30px of pill inside the 44px target.
+   `--border-i` (3.15:1 on the canvas), never `--divider` — an interactive
+   boundary keeps the interactive floor (docs/GUARDRAILS.md). Ink is
+   `--ink-2` (6.96:1): quieter than the footer's Next, over the text floor.
+   The transition matches `.btn`'s own, because the reduced-motion press cue
+   below and the hover both land as colour changes (§06's 120ms). */
+.flow-idea-row .flow-chip-paint {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 5px 12px;
+  border: 1px solid var(--border-i);
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  line-height: 18px;
+  color: var(--ink-2);
+  transition:
+    background var(--fast) var(--ease),
+    border-color var(--fast) var(--ease),
+    color var(--fast) var(--ease);
+}
+/* Hover is the answer pills' own — these are pills now, and two pill hovers
+   on one screen would be two grammars. */
+.flow-idea-row .btn:hover .flow-chip-paint {
+  border-color: var(--primary);
+  background: var(--primary-tint);
+  color: var(--ink);
+}
+/* THE RING GOES ON THE BUBBLE, for the reason the nav's goes on the word
+   (see `.flow-foot .navbtn:has(...)` below): around the 44px box it would be
+   a rectangle floating 7px off the pill it belongs to. No `:has()` needed in
+   this direction — the paint is a child — so there is nothing to degrade:
+   every browser that runs this puts the ring on the pill. */
+.flow-idea-row .btn:focus-visible {
+  outline: none;
+}
+.flow-idea-row .btn:focus-visible .flow-chip-paint {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── V2.4 VB-106: THE HIGHLIGHT PULSE ─────────────────────────────────────
+   The ONE sanctioned way to draw attention to a helper or nav control in the
+   flow. Anything in this surface that wants to say "here, next" wears this
+   class and nothing else — not a new animation, not a banner, not a pointer.
+   It is the recommended-chip mechanic generalised: `.pill.suggested`'s tinted
+   ring (Pill.css), breathing the way the cue verbs' ring does (§06's "press
+   this", cues/verbs.css) — same shape, same colour role, same cadence — so a
+   person who has seen a suggested pill already knows what this means.
+
+   `color-mix` on `--primary` rather than an rgba literal, so the ring is the
+   token wherever the token goes (the OrbGroup halo's own precedent).
+
+   IT IS STATE, NOT A ONE-SHOT: Flow.tsx applies it (today: to the input, the
+   moment the interview-me popover's prompt is copied — VB-107 — so it is
+   obvious where the reply lands) and removes it the moment the person acts on
+   the control it is on. Infinite because the wait it spans is unbounded — the
+   person is off in their AI's tab — and 1.7s with most of it spent near zero
+   is the cue verbs' own "breath, not beacon" pace. Nothing here carries the
+   instruction alone: the words that say what to do are on screen before the
+   pulse starts, and the pulse only says where. */
+.flow-highlight {
+  animation: flow-highlight-pulse 1.7s ease-in-out infinite;
+}
+
+@keyframes flow-highlight-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 color-mix(in srgb, var(--primary) 0%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 0 5px color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+}
+
+/* The still equivalent is the recommended chip's exact mark — a steady 3px
+   `--primary-tint` ring (`.pill.suggested`'s own value) with the border
+   taking the accent, so the highlighted control is highlighted from the
+   first frame and stays that way until the person acts. The instruction
+   survives the animation being removed (docs/GUARDRAILS.md): the ring still
+   says "here", and the words that said what to do were never motion. */
+@media (prefers-reduced-motion: reduce) {
+  .flow-highlight {
+    animation: none;
+    box-shadow: 0 0 0 3px var(--primary-tint);
+    border-color: var(--primary);
+  }
 }
 /* The rays scale to 1.25 about the bulb's top, which puts the tip of the
    upright ray — plus its round cap — just past the top of the 24-unit box.
@@ -534,7 +648,12 @@
   .flow-idea.is-popping .idea-rays {
     animation: none;
   }
-  .flow-idea.is-popping {
+  /* V2.4 VB-106: the accent fill lands on the bubble — the button's visible
+     face since the chips took the painted-vs-pressable split — because a
+     fill on the transparent 44px box would paint a rectangle around the
+     pill rather than the pill. The cue class stays on the button, where
+     restartIdeaCue puts it; only the paint moved. */
+  .flow-idea.is-popping .flow-chip-paint {
     animation: idea-confirm var(--slow) var(--ease) backwards;
   }
   @keyframes idea-confirm {

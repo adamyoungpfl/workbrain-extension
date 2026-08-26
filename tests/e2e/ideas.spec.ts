@@ -146,27 +146,39 @@ test.describe('Give me an example (VB-08)', () => {
     expect(box!.width, 'example button width').toBeGreaterThanOrEqual(44);
     expect(box!.height, 'example button height').toBeGreaterThanOrEqual(44);
 
-    // Reachable by Tab, with a visible focus ring when it lands.
+    // Reachable by Tab, with a visible focus ring when it lands. V2.4 VB-106:
+    // the ring moved from the button to `.flow-chip-paint`, its painted
+    // bubble — same claim (a visible ring on focus), new box, for NavButton's
+    // reason: a ring around the 44px target would float 7px off the pill a
+    // person actually sees. The button's own outline must be off, or there
+    // would be two rings.
     await tabUntilFocused(page, '.flow-idea');
     await expect(button).toBeFocused();
     const ring = await page.evaluate(() => {
       const el = document.activeElement as HTMLElement | null;
       if (!el) return null;
-      const style = getComputedStyle(el);
+      const own = getComputedStyle(el);
+      const face = el.querySelector('.flow-chip-paint');
+      if (!face) return null;
+      const style = getComputedStyle(face);
       const hasOutline = style.outlineStyle !== 'none' && parseFloat(style.outlineWidth) > 0;
       const hasBoxShadow = style.boxShadow !== 'none' && style.boxShadow !== '';
-      return hasOutline || hasBoxShadow;
+      return { onFace: hasOutline || hasBoxShadow, onButton: own.outlineStyle !== 'none' && parseFloat(own.outlineWidth) > 0 };
     });
-    expect(ring, 'the focused example button should show a visible ring').toBe(true);
+    expect(ring?.onFace, 'the focused example button should show a visible ring on its bubble').toBe(true);
+    expect(ring?.onButton, 'and not a second ring around the hit box').toBe(false);
 
     // Bordered, not filled: Next is this screen's one primary
-    // (docs/design-system.html §04) and there must not be a second.
+    // (docs/design-system.html §04) and there must not be a second. V2.4
+    // VB-106: the hairline lives on `.flow-chip-paint` now — the button is a
+    // transparent 44px target and the BUBBLE is the bordered thing — so the
+    // border is measured where it is painted. Same claim, one element down.
     const classes = await page.locator('.flow-idea').getAttribute('class');
     expect(classes).toContain('btn-secondary');
     expect(classes).not.toContain('btn-primary');
     expect(await page.locator('.flow .btn-primary').count()).toBe(1);
     const border = await page.evaluate(() => {
-      const style = getComputedStyle(document.querySelector('.flow-idea')!);
+      const style = getComputedStyle(document.querySelector('.flow-idea .flow-chip-paint')!);
       return { width: parseFloat(style.borderTopWidth), color: style.borderTopColor };
     });
     expect(border.width).toBeGreaterThan(0);
@@ -547,6 +559,11 @@ test.describe('Example press cue (VB-08 animation)', () => {
 
     const cue = await page.evaluate(async ({ glass, rays }) => {
       const button = document.querySelector<HTMLButtonElement>('.flow-idea')!;
+      // V2.4 VB-106: the visible control is `.flow-chip-paint`, the bubble
+      // inside the transparent 44px button — the confirm fill and every
+      // colour this test reads land there now, so that is what gets measured.
+      // Same claims as before the chips; the probe follows the paint.
+      const face = button.querySelector<HTMLElement>('.flow-chip-paint')!;
       const frame = () => new Promise((r) => requestAnimationFrame(() => r(null)));
       const paint = (el: Element) => {
         const style = getComputedStyle(el);
@@ -558,29 +575,29 @@ test.describe('Example press cue (VB-08 animation)', () => {
         };
       };
 
-      const rest = paint(button);
+      const rest = paint(face);
       button.click();
       await frame();
 
-      const pressed = paint(button);
+      const pressed = paint(face);
       const moving = [glass, rays].map((sel) => {
         const el = document.querySelector(sel)!;
         const style = getComputedStyle(el);
         return { anims: el.getAnimations().length, transform: style.transform, opacity: Number(style.opacity) };
       });
-      // Keyframe animations only: the press's colour change rides a .btn
-      // TRANSITION, which getAnimations() also enumerates (as a
+      // Keyframe animations only: the press's colour change rides the face's
+      // own TRANSITION, which getAnimations() also enumerates (as a
       // CSSTransition, animationName undefined) — and the colour change is
       // exactly what reduced motion is allowed to keep.
-      const confirm = button
+      const confirm = face
         .getAnimations()
         .map((a) => (a as CSSAnimation).animationName)
         .filter((name) => typeof name === 'string');
 
-      await Promise.all(button.getAnimations().map((a) => a.finished));
-      // .btn transitions its background, so give the revert a moment to land.
+      await Promise.all(face.getAnimations().map((a) => a.finished));
+      // The face transitions its background, so give the revert a moment to land.
       await new Promise((r) => setTimeout(r, 250));
-      const settled = paint(button);
+      const settled = paint(face);
       return { rest, pressed, moving, confirm, settled };
     }, HALVES);
 

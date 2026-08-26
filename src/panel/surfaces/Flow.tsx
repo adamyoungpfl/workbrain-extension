@@ -1762,7 +1762,15 @@ function StepView({
                 grammar. ONE row on purpose: the nav cluster rides in-flow
                 directly below (VB-94's layout), and a second row of chrome
                 pushed it into the drawer's clearance (button-cluster.spec
-                caught it at max height). */}
+                caught it at max height).
+
+                V2.4 VB-106 — the helpers are BUBBLE CHIPS, per Adam's mockup:
+                each button paints as a small pill (`.flow-chip-paint`) inside
+                its own untouched 44px hit box — V1.3 VB-15's painted-vs-
+                pressable split, done the NavButton way (an inner face the
+                paint and the ring belong to) rather than with overhang
+                margins, so the row LAYS OUT at exactly the height it did
+                before and the landmine above stays defused. */}
             <div className="flow-idea-row">
               {ideas.length > 0 && (
                 <>
@@ -1773,8 +1781,10 @@ function StepView({
                     className="flow-idea"
                     onClick={(e) => dropIdea(e.currentTarget)}
                   >
-                    {IDEA_ICON}
-                    {S.giveExample}
+                    <span className="flow-chip-paint">
+                      {IDEA_ICON}
+                      {S.giveExample}
+                    </span>
                   </Button>
                   {/* What just landed in the field, for anyone who cannot see it
                       do so. Polite and out of the way: nothing takes focus, so a
@@ -1795,7 +1805,7 @@ function StepView({
                   setAskAICopied(false);
                 }}
               >
-                {S.interviewMe}
+                <span className="flow-chip-paint">{S.interviewMe}</span>
               </Button>
               <span className="flow-idea-live" role="status">
                 {askAICopied ? S.copied : ''}
