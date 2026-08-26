@@ -26,6 +26,39 @@ describe('interviewMePrompt', () => {
     // the mechanic, not our constant's name.
     expect(interviewMePrompt('Q?', EMPTY)).toContain('three backticks');
   });
+
+  // ── V2.4 VB-107, decision 5a — the richer template ─────────────────────
+
+  it('asks the AI to gather the concrete specifics before writing (VB-107)', () => {
+    // Names, cadence, artifacts — the detail that separates a usable reply
+    // from a horoscope — asked for in grade-7 words, before the writing.
+    const prompt = interviewMePrompt('Q?', EMPTY);
+    expect(prompt).toContain('Before you write');
+    expect(prompt).toContain('real names');
+    expect(prompt).toContain('how often it happens');
+    expect(prompt).toContain('what the finished work looks like');
+    // And still after the interview contract it rides behind.
+    expect(prompt.indexOf('3 to 5 short questions')).toBeLessThan(prompt.indexOf('Before you write'));
+  });
+
+  it('names their service beside the copy instruction, and degrades to a service-free line (VB-107)', () => {
+    const withService: FlowContext = { answers: { goal_service: 'chatgpt' }, repeatables: {} };
+    expect(interviewMePrompt('Q?', withService)).toContain('The answer leaves ChatGPT');
+    // "other" resolves to no label (goalServiceLabelFor's own rule), and no
+    // service must never mean a broken sentence.
+    for (const ctx of [EMPTY, { answers: { goal_service: 'other' }, repeatables: {} } as FlowContext]) {
+      const prompt = interviewMePrompt('Q?', ctx);
+      expect(prompt).toContain('The answer lands in my own file');
+      expect(prompt).not.toContain('undefined');
+    }
+  });
+
+  it('is ONE template: two services differ by the named service and nothing else (5b stays backlog)', () => {
+    const chatgpt = interviewMePrompt('Q?', { answers: { goal_service: 'chatgpt' }, repeatables: {} });
+    const claude = interviewMePrompt('Q?', { answers: { goal_service: 'claude' }, repeatables: {} });
+    expect(claude).toContain('Claude');
+    expect(claude.replace('Claude', 'ChatGPT')).toBe(chatgpt);
+  });
 });
 
 describe('looksLikeFencedReply', () => {
@@ -103,8 +136,11 @@ function readingGrade(strings: string[]): number {
 }
 
 describe('reading level (npm run audit cannot see this file)', () => {
+  // V2.4 VB-107: measured on the RICHEST variant — goal AND service present
+  // — because that is the longest prompt anybody is ever handed, and a
+  // harness that measured the short form would let the additions drift.
   const lines = interviewMePrompt('What do people ask you to explain?', {
-    answers: { goal_want: 'Draft my Monday update.' },
+    answers: { goal_want: 'Draft my Monday update.', goal_service: 'chatgpt' },
     repeatables: {},
   })
     .split('\n')

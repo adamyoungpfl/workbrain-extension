@@ -76,11 +76,22 @@ export const S = {
    * [DRAFT] V2.3 VB-94 — the interview-me prompt on open text questions:
    * the person's own AI interviews them and hands back a finished answer
    * in one fenced block, pasted into the same field. The button label is a
-   * verb the person would say (design-system §08); the hint says what to
-   * do with the prompt and what the paste will do, nothing else.
+   * verb the person would say (design-system §08).
    */
   interviewMe: 'Let my AI ask me',
-  interviewMeHint: 'Run it in your AI. Paste the reply here — it lands ready to edit.',
+  /**
+   * [DRAFT] V2.4 VB-107 — the instruction line in the interview-me POPOVER
+   * (which replaces VB-94's inline disclosure and its "Run it in your AI"
+   * hint). It NAMES THEIR AI when the goal gate captured one — resolved the
+   * way the reflect voice line resolves it (reflectFrames.ts's
+   * goalServiceLabelFor), "your AI" when unknown — because "paste into
+   * ChatGPT" is a doable step where "run it" was a shrug. The second
+   * sentence says where the reply belongs; the highlight pulse on copy
+   * (VB-106) then points at that same box, so the words carry the
+   * instruction and the pulse only ever carries the where.
+   */
+  interviewMeCopy: (service?: string) =>
+    `Copy this and paste into ${service ?? 'your AI'}. Paste the reply into the answer box — it lands ready to edit.`,
   /**
    * V1.8 VB-42 — the follow-up links under a question.
    *

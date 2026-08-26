@@ -34,6 +34,12 @@ export type { FieldProps } from './Field';
 export { ReadOnlyBlock } from './ReadOnlyBlock';
 export type { ReadOnlyBlockProps } from './ReadOnlyBlock';
 
+/** V2.4 VB-107 — the anchored, non-modal popover (FLAG 1's settlement).
+ * Floats above its caller's positioned container; Escape and outside-press
+ * dismiss it; it never traps focus. See Popover.tsx for the whole contract. */
+export { Popover } from './Popover';
+export type { PopoverProps, PopoverDismissReason } from './Popover';
+
 export { FileRow } from './FileRow';
 export type { FileRowProps, BadgeTone } from './FileRow';
 

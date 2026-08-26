@@ -1,4 +1,5 @@
 import type { FlowContext } from '../../schema/flow.types';
+import { goalServiceLabelFor } from './reflectFrames';
 
 /**
  * V2.3 VB-94 — the interview-me prompt: the escape hatch for a person who
@@ -34,6 +35,23 @@ export const ANSWER_FENCE = '```';
  * question on screen and — when the goal gate captured one (VB-93) — the
  * thing they said they most want their AI to do better, so the interview
  * starts from what matters to them rather than from zero.
+ *
+ * V2.4 VB-107 (decision 5a) makes it richer, in exactly two ways and no
+ * more:
+ *  - the interviewer is told to GATHER THE SPECIFICS before it writes —
+ *    real names, how often it happens, what the finished work looks like
+ *    (names, cadence, artifacts, in grade-7 words) — because the vague
+ *    reply is the failure mode of "interview me" and the fix belongs in
+ *    the prompt, not in us editing what comes back;
+ *  - ONE per-service line beside the copy instruction, naming where the
+ *    answer is being carried off to (the goal gate's service, resolved the
+ *    same way the reflect voice line resolves it), so the AI knows the
+ *    answer must stand alone outside this chat. One template — fully
+ *    bespoke per-LLM prompts are BACKLOG 5b, deliberately not built.
+ *
+ * Everything V2.3 fixed stays fixed: 3 to 5 questions one at a time, the
+ * answer alone in ONE fenced block ("three backticks" — the mechanic, not
+ * our constant's name), first person.
  */
 export function interviewMePrompt(question: string, ctx: FlowContext): string {
   const want = ctx.answers['goal_want'];
@@ -41,13 +59,17 @@ export function interviewMePrompt(question: string, ctx: FlowContext): string {
     typeof want === 'string' && want.trim() !== ''
       ? `\nFor context, the thing I most want you to do better for me: "${want.trim()}"\n`
       : '\n';
+  const service = goalServiceLabelFor(ctx);
+  const fileLine = service
+    ? `The answer leaves ${service} and lands in my own file, so make it stand on its own.`
+    : 'The answer lands in my own file, so make it stand on its own.';
   return `I'm answering this question about how I work, and I'd rather talk it out than write it cold:
 
 "${question}"
 ${goalLine}
-Interview me. Ask me 3 to 5 short questions, one at a time — follow-ups are fine. When you have enough, write my answer for me: first person, my words and details, no preamble.
+Interview me. Ask me 3 to 5 short questions, one at a time — follow-ups are fine. Before you write, gather the concrete details: real names, how often it happens, what the finished work looks like. When you have enough, write my answer for me: first person, my words and details, no preamble.
 
-Put the finished answer alone inside one fenced code block (three backticks) so I can copy it in one click.`;
+Put the finished answer alone inside one fenced code block (three backticks) so I can copy it in one click. ${fileLine}`;
 }
 
 /**

@@ -430,6 +430,11 @@
      position:absolute, so the gap only ever lands between the buttons. */
   gap: 8px;
   margin-top: 12px;
+  /* V2.4 VB-107: the row is the ANCHOR the interview-me popover floats
+     above (components/Popover.css positions against the nearest positioned
+     ancestor). On the row rather than on the trigger so the popover spans
+     the same width as the input it feeds. */
+  position: relative;
 }
 .flow-idea {
   flex: 0 0 auto;
@@ -1293,16 +1298,29 @@
   width: 100%;
 }
 
-/* V2.3 VB-94 — the interview-me button (in the shared helper row) and its
-   disclosure; the block reuses ReadOnlyBlock's own chrome. */
+/* V2.3 VB-94's interview-me button, in the shared helper row. Its inline
+   disclosure (`.flow-askai-block`) is gone — V2.4 VB-107 replaced it with
+   the anchored popover below. */
 .flowshell .flow-askai {
   flex: 0 0 auto;
 }
-.flowshell .flow-askai-block {
-  margin-top: 8px;
+
+/* ── V2.4 VB-107: the interview-me popover's contents ─────────────────────
+   The box, its placement and its dismissal are components/Popover.css and
+   Popover.tsx (FLAG 1's contract); what is dressed HERE is only what is
+   inside this particular one: the prompt in ReadOnlyBlock's own trust
+   chrome, flush to the popover's frame (the block's `.flow` margin is for
+   standing in a page, not in a card), and the instruction line under it —
+   quiet ink, over the text floor (--ink-2, 6.96:1), with the person's own
+   AI named in it (strings.ts's interviewMeCopy). */
+.flow-askai-pop .readonly {
+  margin: 0;
 }
-.flowshell .flow-askai-hint {
-  margin-top: 6px;
+.flow-askai-pop .flow-askai-hint {
+  margin: 8px 2px 0;
+  font-size: 13px;
+  line-height: 1.45;
+  color: var(--ink-2);
 }
 
 /* V2.3 VB-95 — the quick-check reflect: lead, unboxed italic quote, and the
