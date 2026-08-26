@@ -210,14 +210,15 @@ test.describe('V2.1 VB-77 — labels ride their orb and do not blink', () => {
   });
 
   /**
-   * The cut at LABEL_DEPTH_FLOOR survives VB-77 and must stay a cut. A label
-   * that cross-fades to nothing paints text below the contrast floor on every
-   * frame of the way down, which docs/GUARDRAILS.md forbids — the same
-   * constraint core/flow/navMelt.ts's header documents. So: every name on
-   * screen is at or above the floor, and the ones below it are not on screen.
-   * There is no in-between, and this asserts there is no in-between.
+   * V2.3 VB-77 FLAG 3 — the depth cut is retired, and what replaces it is
+   * stricter: every label persists, and every one is at or above the
+   * contrast floor. The cut existed because a cross-fade to nothing paints
+   * sub-floor frames (docs/GUARDRAILS.md; core/flow/navMelt.ts's header) —
+   * a floor-CLAMP has no way down, so the 200ms transition only ever
+   * interpolates between legal values. Far names sit small and
+   * full-strength, which reads as distance: "the illusion of permanence".
    */
-  test('no label is ever painted faint — it is above the floor or it is gone', async ({ page }) => {
+  test('every label persists, and none is ever painted faint (VB-77 FLAG 3)', async ({ page }) => {
     await open(page);
     const opacities = await page
       .locator('.brainglobe-label')
@@ -225,9 +226,7 @@ test.describe('V2.1 VB-77 — labels ride their orb and do not blink', () => {
 
     expect(opacities.length).toBeGreaterThan(0);
     for (const value of opacities) {
-      const legible = value >= 0.6;
-      const absent = value <= 0.001;
-      expect(legible || absent, `a label was painted at ${value} — neither legible nor gone`).toBe(true);
+      expect(value, `a label was painted at ${value} — below the 8.8:1 floor`).toBeGreaterThanOrEqual(0.6);
     }
   });
 

@@ -536,15 +536,18 @@ describe('BrainGlobe — labels key off depth', () => {
     for (const value of shown) expect(value.opacity).toBeGreaterThanOrEqual(0.62);
   });
 
-  it('a label behind the globe is not shown at all, rather than shown too faintly', () => {
+  it('a label behind the globe persists at the floor — small and full-strength, never faint (VB-77 FLAG 3)', () => {
     stubEnvironment({ reduce: false });
     const { container } = render();
     const behind = sectionPins(container).filter((pin) => Number(pin.getAttribute('data-depth')) < 0.5);
     expect(behind.length).toBeGreaterThan(0);
     for (const pin of behind) {
-      expect(pin.getAttribute('data-label-hidden')).toBe('true');
-      expect(pin.style.getPropertyValue('--brainglobe-label-opacity')).toBe('0');
-      // Hidden text, not a control removed: it is still reachable and named.
+      // The old depth cut is gone: the far names stay painted — "the
+      // illusion of permanence" — at or above the 8.8:1 opacity floor and
+      // the 11.2px size floor, which is what reads as distance.
+      expect(pin.getAttribute('data-label-hidden')).toBe('false');
+      expect(Number(pin.style.getPropertyValue('--brainglobe-label-opacity'))).toBeGreaterThanOrEqual(0.62);
+      expect(Number.parseFloat(pin.style.getPropertyValue('--brainglobe-label-size'))).toBeGreaterThanOrEqual(11.2);
       expect(pin.getAttribute('aria-label')).toBeTruthy();
     }
   });

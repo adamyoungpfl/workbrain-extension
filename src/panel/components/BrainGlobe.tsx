@@ -770,10 +770,18 @@ const EDGE_W_SPAN = 1.9;
 const EDGE_BASE_OPACITY_MIN = 0.16;
 const EDGE_BASE_OPACITY_SPAN = 0.22;
 const EDGE_LIT_OPACITY = 0.86;
-/** Below this depth a label is behind the globe and is not shown at all.
- * Anything still shown stays at or above LABEL_OPACITY_MIN, which measures
- * 8.8:1 on the field — dimmer-with-distance must never mean under 4.5:1. */
-const LABEL_DEPTH_FLOOR = 0.5;
+/**
+ * V2.3 VB-77 FLAG 3 — labels persist at the far side. There used to be a
+ * depth floor here (0.5) below which a label was not painted at all; the
+ * cut existed because a label that CROSS-FADES to nothing paints text below
+ * the contrast floor on the way down. Persistence dissolves that reason:
+ * opacity is clamped at LABEL_OPACITY_MIN (8.8:1 on the field) and size at
+ * LABEL_SIZE_MIN, so the far names sit small and full-strength — which
+ * reads as distance — and the 200ms transition only ever interpolates
+ * between legal values. "To maintain the illusion of permanence" (Adam,
+ * docs/V2.3-REFINEMENT.md). If the far side still reads as "disappearing"
+ * in the morning, the remaining lever is SIZE, not opacity.
+ */
 const LABEL_OPACITY_MIN = 0.62;
 /**
  * V1.5 VB-26 — `type.label`, scaled for depth.
@@ -2887,7 +2895,6 @@ export function BrainGlobe({
             const node = frame.nodes[vertexIndex]!;
             const state = stateOf(entry.section);
             const isFlown = entry.index === flownIndex;
-            const visible = reduced || node.t >= LABEL_DEPTH_FLOOR || isFlown;
             // Depth sets a label's opacity; flying into a section also takes
             // the other nine's names down with their spheres, so the one you
             // are inside is the only thing left to read.
@@ -2915,7 +2922,7 @@ export function BrainGlobe({
               left: `${left}%`,
               top: `${pct(at.y)}%`,
               '--brainglobe-hit-size': `${orbPx.toFixed(1)}px`,
-              '--brainglobe-label-opacity': visible ? labelOpacity.toFixed(3) : '0',
+              '--brainglobe-label-opacity': labelOpacity.toFixed(3),
               '--brainglobe-label-size': `${(LABEL_SIZE_MIN + node.t * LABEL_SIZE_SPAN).toFixed(1)}px`,
               '--brainglobe-label-weight': String(
                 Math.round((LABEL_WEIGHT_MIN + node.t * LABEL_WEIGHT_SPAN) / 50) * 50,
@@ -2935,7 +2942,7 @@ export function BrainGlobe({
                 data-section-id={entry.section.id}
                 data-node-state={state}
                 data-depth={node.t.toFixed(3)}
-                data-label-hidden={visible ? 'false' : 'true'}
+                data-label-hidden="false"
                 style={style}
                 // The section you are inside goes too once a sub-node takes
                 // the stage: its orb has faded out, and a control nobody can
