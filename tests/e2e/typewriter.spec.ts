@@ -214,8 +214,8 @@ const watched = (page: Page) =>
  * pills. Q3 is `stop_explaining`, a multiline text field. */
 async function toContextScope(page: Page): Promise<void> {
   await enterInterview(page);
-  await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  // V2.3 VB-90: the seeded walk-in skips the ladder and the gate — the flow
+  // opens here.
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
 }
 

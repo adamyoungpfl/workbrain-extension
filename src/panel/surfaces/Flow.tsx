@@ -551,6 +551,31 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline, an
     };
   }, []);
 
+  /**
+   * V2.3 VB-90 — the orientation ladder's canvas/brain rungs flip the real
+   * drawer while they talk, through the same requested-mode seam the toggle
+   * uses. A request, not a lock: the person's own toggle still works — this
+   * only re-fires when the step on screen changes. The "go" rung requests
+   * List back so the interview proper starts on the default canvas.
+   *
+   * ABOVE the `!answers` early return, unconditionally, because hooks must
+   * run in the same order on every render — the loading render returns
+   * early, and a hook below that line crashes the whole tree with React
+   * error 310 the moment answers arrive (found the hard way tonight). The
+   * id is
+   * derived inline (findPosition is a cheap pure walk) rather than reusing
+   * `position` below, which only exists after the narrowing.
+   */
+  const ladderStepId = (() => {
+    if (!answers) return null;
+    const p = viewing ?? findPosition(modules, answers, declinedBlocks, seenIntros);
+    return p.kind === 'step' ? p.step.id : null;
+  })();
+  useEffect(() => {
+    if (ladderStepId === 'wb_canvas' || ladderStepId === 'wb_go') setRequestedDrawerMode('list');
+    else if (ladderStepId === 'wb_brain_flip') setRequestedDrawerMode('brain');
+  }, [ladderStepId]);
+
   if (!answers) return null;
   // Fresh non-null binding — nested functions below can't rely on the
   // narrowing above (see StepView's persist/handleNext for the same pattern).

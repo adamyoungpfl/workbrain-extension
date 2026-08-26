@@ -104,11 +104,24 @@ async function openPanel(context: BrowserContext, id: string): Promise<Page> {
 }
 
 /** Home -> the Context interview, the same path deep-dive.spec.ts takes. */
+/**
+ * V2.3 VB-90: the opening screen is the orientation ladder now, and the
+ * seeded walk-ins skip it — so the rotation's specimen moves from
+ * `orientation_ready` to `role_names`, the nearest question carrying two
+ * authored follow-ups AND an ordinary `.flow-q` heading (the why screen
+ * reads as beats, which several geometry claims below anchor on). The panel
+ * page is an extension page, so it can seed its own storage: everything
+ * except `role_names` is answered, and the interview resumes right on it.
+ */
 async function enterInterview(page: Page): Promise<void> {
+  await page.evaluate(
+    (answers) => chrome.storage.local.set({ 'wb:answers': answers }),
+    buildAnswersExcept(contextModules, ['role_names']),
+  );
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
   await page.waitForSelector('.flow');
-  await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
+  await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
 }
 
 /**
@@ -227,7 +240,7 @@ async function resumeAt(
 }
 
 /** The approved copy, read from the data rather than retyped. */
-const ORIENTATION = DEEP_DIVE.orientation_ready!;
+const ORIENTATION = DEEP_DIVE.role_names!;
 const link = (page: Page) => page.locator('.flow .deepdive-chip');
 
 /** The visible label, whichever follow-up is showing. */

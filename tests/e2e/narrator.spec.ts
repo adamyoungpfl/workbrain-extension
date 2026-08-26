@@ -215,10 +215,9 @@ async function enterInterview(page: Page): Promise<void> {
 
 const toggle = (page: Page) => page.getByRole('button', { name: 'Read questions aloud' });
 
-/** Q1 is `orientation_ready`, an intro. Q2 is `context_scope`, three pills. */
+/** V2.3 VB-90: the seeded walk-in skips the ladder and the gate — the flow
+ * opens on `context_scope`, three pills. */
 async function toContextScope(page: Page): Promise<void> {
-  await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
 }
 
@@ -436,6 +435,10 @@ test.describe('when it stops', () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
     await enterInterview(page);
+    // V2.3 VB-90: the walk-in opens on context_scope — answer its pill
+    // BEFORE the narrator starts, so the read is still mid-sentence when
+    // Next advances the screen.
+    await page.locator('.flow .pillgroup .pill').first().click();
     await toggle(page).click();
     await expect.poll(() => probeOf(page).then((p) => p.spoken.length)).toBe(1);
 
@@ -443,7 +446,7 @@ test.describe('when it stops', () => {
     expect(await isSpeaking(page)).toBe(true);
 
     await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
     await expect.poll(() => probeOf(page).then((p) => p.spoken.length)).toBe(2);
 
     const probe = await probeOf(page);

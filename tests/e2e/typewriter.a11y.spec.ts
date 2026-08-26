@@ -67,6 +67,21 @@ test('axe finds no violations on a question that is still typing (VB-10)', async
     ],
   });
   const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+
+  // V2.3 VB-90: the fresh opening is the why screen, which reads as beats —
+  // no .flow-q to scan mid-print. Seed a passed gate so the walk-in lands on
+  // an ordinary typing question, same as typewriter.spec.ts.
+  await sw.evaluate(async () => {
+    const now = new Date().toISOString();
+    await chrome.storage.local.set({
+      'wb:answers': {
+        values: { goal_service: 'chatgpt', goal_want: 'Draft my Monday status update the way I would.' },
+        repeatables: {},
+        answeredAt: { goal_service: now, goal_want: now },
+        reflectedAt: { goal_want: now },
+      },
+    });
+  });
   const id = new URL(sw.url()).host;
   const page = await context.newPage();
   await dilateClock(page, 20);

@@ -41,6 +41,7 @@ const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../d
 
 async function launchExtension(
   reducedMotion: 'reduce' | 'no-preference' = 'no-preference',
+  opts: { freshInstall?: boolean } = {},
 ): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
@@ -48,6 +49,13 @@ async function launchExtension(
     reducedMotion,
   });
   const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+  // V2.3 VB-90: a fresh install is the only walk-in that still reaches the
+  // opening why screen (`orientation_ready`) — the ladder skips for the
+  // seeded, gate-passed walk-ins below. Tests about that screen ask for it.
+  if (opts.freshInstall) {
+    const id = new URL(sw.url()).host;
+    return { context, sw, id };
+  }
 
   // V2.3 VB-93: the interview now opens on the goal gate. This spec's
   // subject sits past it, so the walk-in seeds a passed gate — the same two
@@ -272,9 +280,9 @@ function buildAnswersExcept(modules: Module[], leaveUnanswered: string): Answers
  */
 const CHIP_STEP = 'context_scope';
 
-/** One Next from `orientation_ready` to the question that ships a single tag. */
+/** The seeded walk-in opens straight on the question that ships a single
+ * tag (VB-90: the ladder and the gate skip once the gate is answered). */
 async function chipQuestion(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', CHIP_STEP);
   expect(DEEP_DIVE[CHIP_STEP], `${CHIP_STEP} must carry exactly one follow-up`).toHaveLength(1);
   await expect(page.locator('.flow .deepdive-item')).toHaveCount(1);
@@ -292,7 +300,7 @@ test.describe('the deeper-dive follow-ups', () => {
     // the keyboard path, the ARIA and the focus — so the preference costs it
     // nothing, and the list is the presentation these criteria were written
     // for.
-    const { context, id } = await launchExtension('reduce');
+    const { context, id } = await launchExtension('reduce', { freshInstall: true });
     const page = await openPanel(context, id);
     await enterInterview(page);
 
@@ -314,7 +322,9 @@ test.describe('the deeper-dive follow-ups', () => {
     await expect(firstAnswer).toBeHidden();
 
     // --- keyboard: focus the chip, press Enter ---
-    const questionBefore = await page.locator('.flow-q').boundingBox();
+    // V2.3 VB-90: the why screen reads as beats, not a .flow-q heading —
+    // the anchor for "nothing moved" is the beats block itself.
+    const questionBefore = await page.locator('.flow .beats').boundingBox();
     await chips.nth(0).focus();
     await page.keyboard.press('Enter');
 
@@ -328,9 +338,9 @@ test.describe('the deeper-dive follow-ups', () => {
     expect(await page.evaluate(() => document.activeElement?.className)).toContain('deepdive-chip');
 
     // ...and the question itself has not moved or scrolled away under them.
-    const questionAfter = await page.locator('.flow-q').boundingBox();
+    const questionAfter = await page.locator('.flow .beats').boundingBox();
     expect(questionAfter?.y).toBe(questionBefore?.y);
-    await expect(page.locator('.flow-q')).toBeVisible();
+    await expect(page.locator('.flow .beats')).toBeVisible();
 
     // --- and closes again on a second press, focus still put ---
     await page.keyboard.press('Enter');
@@ -348,7 +358,7 @@ test.describe('the deeper-dive follow-ups', () => {
     // this has something to measure. Reduced motion is how the list is
     // reached now; the geometry is identical either way, because nothing here
     // is animated — it is padding, a negative margin and a hit box.
-    const { context, id } = await launchExtension('reduce');
+    const { context, id } = await launchExtension('reduce', { freshInstall: true });
     const page = await openPanel(context, id);
     await enterInterview(page);
     await expect(page.locator('.flow .deepdive-item')).toHaveCount(2);
@@ -399,7 +409,7 @@ test.describe('the deeper-dive follow-ups', () => {
   });
 
   test('axe agrees about the target size, with its own rule switched on', async () => {
-    const { context, id } = await launchExtension('reduce');
+    const { context, id } = await launchExtension('reduce', { freshInstall: true });
     const page = await openPanel(context, id);
     await enterInterview(page);
     await expect(page.locator('.flow .deepdive-chip').first()).toBeVisible();
@@ -626,7 +636,7 @@ test.describe('the deeper-dive follow-ups', () => {
   });
 
   test('reduced motion schedules no shimmer at all, and the chips stay coloured', async () => {
-    const { context, id } = await launchExtension('reduce');
+    const { context, id } = await launchExtension('reduce', { freshInstall: true });
     const page = await context.newPage();
     await traceAnimations(page);
     await page.setViewportSize({ width: 400, height: 700 });
@@ -806,7 +816,7 @@ test.describe('the deeper-dive follow-ups', () => {
   });
 
   test('with motion off it opens and closes at once, and still keeps focus', async () => {
-    const { context, id } = await launchExtension('reduce');
+    const { context, id } = await launchExtension('reduce', { freshInstall: true });
     const page = await openPanel(context, id);
     await enterInterview(page);
 
@@ -901,7 +911,7 @@ test.describe('the deeper-dive follow-ups', () => {
   });
 
   test('axe finds no violations on the question, disclosure closed or open', async () => {
-    const { context, id } = await launchExtension('reduce'); // scan the settled state
+    const { context, id } = await launchExtension('reduce', { freshInstall: true }); // scan the settled state
     const page = await openPanel(context, id);
     await enterInterview(page);
 

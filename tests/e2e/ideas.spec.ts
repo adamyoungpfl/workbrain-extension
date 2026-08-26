@@ -87,7 +87,8 @@ async function launchPanel(
  * lands on `stop_explaining` — the first text question carrying examples.
  */
 async function goToIdeaQuestion(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  // V2.3 VB-90: with the gate seeded, the ladder and the why screen skip —
+  // the walk-in lands straight on context_scope.
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
   await page.locator('.flow .pillgroup .pill').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -114,12 +115,9 @@ test.describe('Give me an example (VB-08)', () => {
 
     const { context, page } = await launchPanel();
 
-    // Q1, the intro: nothing to type into, so nothing to offer.
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
-    await expect(page.locator('.flow-idea')).toHaveCount(0);
-
-    // A pill question already shows every answer it accepts.
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // V2.3 VB-90: the seeded walk-in skips the ladder and the gate, opening
+    // on a pill question — which already shows every answer it accepts, so
+    // no example button.
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
     await expect(page.locator('.flow-idea')).toHaveCount(0);
 
@@ -570,7 +568,14 @@ test.describe('Example press cue (VB-08 animation)', () => {
         const style = getComputedStyle(el);
         return { anims: el.getAnimations().length, transform: style.transform, opacity: Number(style.opacity) };
       });
-      const confirm = button.getAnimations().map((a) => (a as CSSAnimation).animationName);
+      // Keyframe animations only: the press's colour change rides a .btn
+      // TRANSITION, which getAnimations() also enumerates (as a
+      // CSSTransition, animationName undefined) — and the colour change is
+      // exactly what reduced motion is allowed to keep.
+      const confirm = button
+        .getAnimations()
+        .map((a) => (a as CSSAnimation).animationName)
+        .filter((name) => typeof name === 'string');
 
       await Promise.all(button.getAnimations().map((a) => a.finished));
       // .btn transitions its background, so give the revert a moment to land.

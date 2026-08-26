@@ -78,7 +78,8 @@ test.describe('VB-02 — module title + progress bar', () => {
   test('the breadcrumb is gone: a module title and a bar, and no digit on screen', async () => {
     const { context, page } = await launchPanel();
 
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
+    // V2.3 VB-90: the seeded walk-in skips the ladder and the gate.
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
 
     // The first module's own title, verbatim from the ported data.
     await expect(page.locator('.flowprogress-title')).toHaveText('Orientation');
@@ -103,21 +104,23 @@ test.describe('VB-02 — module title + progress bar', () => {
     await expect(bar).toHaveCount(1);
     await expect(bar).toHaveAttribute('aria-valuemin', '0');
     await expect(bar).toHaveAttribute('aria-valuemax', String(TOTAL));
-    // V2.3 VB-93: this walk-in seeds a passed goal gate (questions 1–2), so
-    // the person's first screen is question 3 — the count stays honest.
-    await expect(bar).toHaveAttribute('aria-valuenow', '3');
-    await expect(bar).toHaveAttribute('aria-valuetext', `Question 3 of ${TOTAL}`);
+    // V2.3 VB-90 + VB-93: the seeded walk-in opens past the ladder (4
+    // screens) and the gate (2 questions) — position 7 — and the count
+    // stays honest about everything behind it.
+    await expect(bar).toHaveAttribute('aria-valuenow', '7');
+    await expect(bar).toHaveAttribute('aria-valuetext', `Question 7 of ${TOTAL}`);
     // Named, or a screen reader announces an anonymous bar.
     await expect(bar).toHaveAttribute('aria-label', 'Orientation');
 
     const firstWidth = await fillWidth(page);
 
-    // The intro — Next alone advances it.
+    // The pill question — answer it, and the bar advances.
+    await page.locator('.flow .pillgroup .pill').first().click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 
-    await expect(bar).toHaveAttribute('aria-valuenow', '4');
-    await expect(bar).toHaveAttribute('aria-valuetext', `Question 4 of ${TOTAL}`);
+    await expect(bar).toHaveAttribute('aria-valuenow', '8');
+    await expect(bar).toHaveAttribute('aria-valuetext', `Question 8 of ${TOTAL}`);
     expect(await fillWidth(page)).toBeGreaterThan(firstWidth);
 
     // Still the same module, so the title is unchanged — the bar is what

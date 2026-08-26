@@ -33,7 +33,7 @@ const SCOPE_STEP = contextModules
   .find((step) => step.id === 'context_scope');
 
 async function launchPanel(
-  opts: { reducedMotion?: 'reduce' | 'no-preference' } = {},
+  opts: { reducedMotion?: 'reduce' | 'no-preference'; freshInstall?: boolean } = {},
 ): Promise<{ context: BrowserContext; page: Page }> {
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
@@ -44,7 +44,7 @@ async function launchPanel(
   // V2.3 VB-93: the interview now opens on the goal gate. This spec's
   // subject sits past it, so the walk-in seeds a passed gate — the same two
   // answers a person gives at minute one — and lands where it always did.
-  await sw.evaluate(async () => {
+  if (!opts.freshInstall) await sw.evaluate(async () => {
     // Write-once: a reopen inside a test must never wipe what the panel has
     // written since (the mid-reflect resume test reopens through this path).
     const existing = await chrome.storage.local.get('wb:answers');
@@ -82,7 +82,7 @@ async function launchPanel(
 /** Q1 is the intro (`orientation_ready`); Next alone advances it, landing on
  * `context_scope` — the first question with rephrasings. */
 async function goToRephrasableQuestion(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  // V2.3 VB-90: with the gate seeded the ladder skips — the flow opens here.
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
 }
 
@@ -165,8 +165,10 @@ test.describe('Rephrase icon-button (VB-04)', () => {
   });
 
   test('a question without rephrasings shows no rephrase control', async () => {
-    const { context, page } = await launchPanel();
-    // Q1, the intro, has no rephrasings.
+    // A fresh install: only there is the opening intro still reachable
+    // (VB-90's ladder skips for the seeded, gate-passed walk-ins).
+    const { context, page } = await launchPanel({ freshInstall: true });
+    // Q1, the why screen, has no rephrasings — intros never carry the control.
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
     await expect(page.locator('.flow-rephrase')).toHaveCount(0);
     await context.close();

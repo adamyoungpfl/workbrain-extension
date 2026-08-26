@@ -197,10 +197,10 @@ describe('against the real ported interview', () => {
     const position = findPosition(contextModules, answers, new Set(), new Set());
     const narration = narrationFor(position, answers, COPY);
     expect(position.kind).toBe('step');
-    // V2.3 VB-93: the flow now opens on the goal gate — a real question,
-    // spoken in the question voice, not the intro recap.
-    if (position.kind === 'step') expect(position.step.id).toBe('goal_service');
-    expect(narration?.role).toBe('question');
+    // V2.3 VB-90: the flow opens on the why screen — the patched
+    // orientation_ready — spoken as a recap, beat markers stripped.
+    if (position.kind === 'step') expect(position.step.id).toBe('orientation_ready');
+    expect(narration?.role).toBe('recap');
     expect(narration?.text.length ?? 0).toBeGreaterThan(20);
     expect(narration?.text).not.toContain('__');
   });

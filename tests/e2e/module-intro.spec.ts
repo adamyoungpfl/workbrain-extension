@@ -134,7 +134,9 @@ test.describe('VB-05 — module transition screens', () => {
     await enterInterview(page);
 
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'step');
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
+    // V2.3 VB-90: the seeded walk-in skips the ladder and the gate — still a
+    // plain step, still no module transition in front of module one.
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
     await context.close();
   });
 

@@ -60,7 +60,7 @@ async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
 /** Intro (Next), context_scope (pill + Next) — landing on `stop_explaining`,
  * the first multiline text question. */
 async function goToTextQuestion(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  // V2.3 VB-90: with the gate seeded the ladder skips — context_scope first.
   await page.locator('.flow .pillgroup .pill').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');

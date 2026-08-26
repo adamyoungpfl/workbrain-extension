@@ -192,6 +192,12 @@ export interface OutlineOverride {
   /** Put in FRONT of that section's `questionIds` — which decides what the
    * section's own row navigates to (core/flow/outline.ts). */
   prependQuestionIds?: string[];
+  /** V2.3 VB-90 — spliced in directly after `after`, in order. Exists so an
+   * outline section can keep listing its questions in FLOW order when nodes
+   * are inserted mid-module: `fileStartTarget`/`navigationTargetFor` read
+   * position from this list, and a list that disagrees with the flow sends
+   * navigation somewhere the interview would never start. */
+  insertAfter?: { after: string; questionIds: string[] };
   /** Added at the end, in order. */
   addQuestionIds?: string[];
 }
@@ -284,6 +290,27 @@ const AUDIENCES_ADD_ANOTHER_NAME = {
 };
 
 export const QUESTION_OVERRIDES: Record<string, QuestionOverride> = {
+  orientation_ready: {
+    why:
+      'VB-90: the first screen becomes the "why" — two beats for someone who just ' +
+      'installed it and does not yet see the point, on the beat machinery the port ' +
+      'already ships. The id is kept so a file from before tonight, which has this ' +
+      'screen answered, resumes exactly as it did; like the rest of the ladder it ' +
+      'skips for anyone already past the gate or underway.',
+    patch: (question) => {
+      // Destructure rather than assign `hint: undefined` —
+      // exactOptionalPropertyTypes makes "absent" and "undefined" different
+      // claims, and the ported hint should be absent.
+      const { hint: _hint, ...rest } = question;
+      return {
+        ...rest,
+        beats: ORIENTATION_WHY_BEATS,
+        prompt: () => ORIENTATION_WHY_BEATS.join(' ').replace(/__/g, ''),
+        skipIf: pastTheLadder,
+      };
+    },
+  },
+
   entities_gate: {
     why:
       'VB-61: My World assumes at least one item, so there is no "no" left to give — ' +
@@ -426,9 +453,64 @@ export const BLOCK_OVERRIDES: Record<string, BlockOverride> = {
  * The service list is PROOF_SERVICES — the one list this product has, reused,
  * with its own "something else" already in it.
  */
-export const GOAL_GATE_MODULE_ID = 'orientation';
-
 export const GOAL_GATE_QUESTION_IDS = ['goal_service', 'goal_want'] as const;
+
+/**
+ * V2.3 VB-90 — the orientation ladder: why this file, then a demo of the
+ * canvas, replacing the ported first explainer's flat treatment. Real
+ * interview steps on the same beat machinery, advancing on the same Next —
+ * never a dismissible overlay pointing at UI (docs/GUARDRAILS.md's no-tour
+ * rule, passed on V1.1's in-flow-narrative line; docs/V2.3-REFINEMENT.md
+ * FLAG 1). The canvas and brain steps SHOW the real drawer in both modes
+ * while they talk — Flow.tsx flips the drawer through its existing
+ * requested-mode seam when these steps are on screen.
+ *
+ * The ladder runs ladder → goal gate: Adam's spec has "Go" leading into
+ * "question one (which is now the goal gate)". Everything here skips for an
+ * interview that is already past the gate or underway — orientation is for
+ * someone who just installed it, never a summons back.
+ */
+function pastTheLadder(ctx: FlowContext): boolean {
+  return ctx.answers['goal_want'] !== undefined || interviewAlreadyUnderway(ctx);
+}
+
+/** [DRAFT] The "why" beats — VB-90 step 1, patched onto the ported
+ * `orientation_ready` (the id is load-bearing: a file from before tonight
+ * has it answered, so keeping it means nobody is summoned back). */
+export const ORIENTATION_WHY_BEATS = [
+  'You already carry a way of working. AI starts from __zero__ every time you open a chat.',
+  "We're going to write yours down __once__ — a plain file you hand to any AI you use.",
+];
+
+export const ORIENTATION_LADDER_IDS = ['wb_canvas', 'wb_brain_flip', 'wb_go'] as const;
+
+export const ORIENTATION_LADDER_NODES: SrcFlowNode[] = [
+  {
+    kind: 'question',
+    id: 'wb_canvas',
+    type: 'intro',
+    // [DRAFT] The drawer sits in List for this step (Flow.tsx).
+    prompt: () => 'Answer up here, and watch below — every answer lands in your file as you go.',
+    skipIf: pastTheLadder,
+  },
+  {
+    kind: 'question',
+    id: 'wb_brain_flip',
+    type: 'intro',
+    // [DRAFT] The drawer flips to Brain for this step (Flow.tsx).
+    prompt: () => 'The same file, as a map — every dot is a section, filling in as you answer.',
+    skipIf: pastTheLadder,
+  },
+  {
+    kind: 'question',
+    id: 'wb_go',
+    type: 'intro',
+    // [DRAFT] Sets up the gate that follows — "we set up the need for the
+    // skill that will follow the context" (Adam, VB-93).
+    prompt: () => "That's the whole tour. Two quick questions first — hit Next when you're ready.",
+    skipIf: pastTheLadder,
+  },
+];
 
 /**
  * The gate is for people STARTING, not a summons for people who already
@@ -491,6 +573,25 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
 export const NODE_INSERTIONS: NodeInsertion[] = [
   {
     why:
+      'VB-90: the orientation ladder — canvas, brain flip, go — real steps after the ' +
+      '"why" screen, showing the actual drawer while they talk (FLAG 1: in-flow ' +
+      'narrative, never an overlay).',
+    after: 'orientation_ready',
+    node: ORIENTATION_LADDER_NODES[0]!,
+  },
+  { why: 'VB-90: the brain-flip rung of the same ladder.', after: 'orientation_ready', node: ORIENTATION_LADDER_NODES[1]! },
+  { why: 'VB-90: the go rung of the same ladder.', after: 'orientation_ready', node: ORIENTATION_LADDER_NODES[2]! },
+  {
+    why:
+      'VB-93: the goal gate — the flow\'s first two QUESTIONS, right where the ladder\'s ' +
+      '"go" points ("Two quick questions first"). No goal, no go: the proof loop\'s ' +
+      'baseline becomes this answer verbatim (proofAdapter.ts).',
+    after: 'orientation_ready',
+    node: GOAL_GATE_NODES[0]!,
+  },
+  { why: 'VB-93: the second half of the gate — the thing they want done better today.', after: 'orientation_ready', node: GOAL_GATE_NODES[1]! },
+  {
+    why:
       'VB-61: the framing that replaces the gate for everybody who is not being asked it ' +
       'any more — a screen, not a question, sitting exactly where the gate sat.',
     after: 'entities_gate',
@@ -513,8 +614,13 @@ export const OUTLINE_OVERRIDES: Record<string, OutlineOverride> = {
   // well as the flow: the first thing any AI reads is what its person wants
   // it to do better, which is the gate paying for itself in the artifact.
   sec1: {
-    why: 'V2.3 VB-93 — the goal gate: its two answers open the file as they open the flow.',
-    prependQuestionIds: ['goal_service', 'goal_want'],
+    why:
+      'V2.3 VB-90 + VB-93 — the orientation ladder rides section 1 uncounted (intros ' +
+      'carry no denominator weight, the skills-outline rule), and the goal gate\'s two ' +
+      'answers open the file as they open the flow. Spliced after the why screen, not ' +
+      'prepended, so the outline lists section 1 in FLOW order and fileStartTarget ' +
+      'still lands the flow\'s real first screen.',
+    insertAfter: { after: 'orientation_ready', questionIds: ['wb_canvas', 'wb_brain_flip', 'wb_go', 'goal_service', 'goal_want'] },
   },
   sec3: {
     why:
@@ -697,13 +803,7 @@ export function applyFlowOverrides(modules: SrcModule[]): SrcModule[] {
 
   return modules.map((module) => ({
     ...module,
-    // V2.3 VB-93 — the goal gate opens the flow: prepended to the real
-    // flow's first module BY ID, ahead of everything the port asks
-    // (NODE_INSERTIONS can only anchor AFTER a node, and there is no node
-    // before the first). Anchoring on the id, not position, is the same
-    // move the insertions make — synthetic test fixtures pass through
-    // untouched because nothing in them is named 'orientation'.
-    nodes: (module.id === GOAL_GATE_MODULE_ID ? [...GOAL_GATE_NODES] : ([] as SrcFlowNode[])).concat(module.nodes).flatMap((node): SrcFlowNode[] => {
+    nodes: module.nodes.flatMap((node): SrcFlowNode[] => {
       const overridden = overrideNode(node);
       const inserted = node.kind === 'repeatable' ? undefined : insertionsByAnchor.get(node.id);
       return inserted ? [overridden, ...inserted] : [overridden];
@@ -716,11 +816,16 @@ export function applyFlowOverrides(modules: SrcModule[]): SrcModule[] {
 export function applyOutlineOverrides(outline: SrcFileOutlineNode[]): SrcFileOutlineNode[] {
   const walk = (node: SrcFileOutlineNode): SrcFileOutlineNode => {
     const override = OUTLINE_OVERRIDES[node.id];
+    const spliced = override?.insertAfter
+      ? node.questionIds.flatMap((id) =>
+          id === override.insertAfter!.after ? [id, ...override.insertAfter!.questionIds] : [id],
+        )
+      : node.questionIds;
     const next: SrcFileOutlineNode = {
       ...node,
       questionIds: [
         ...(override?.prependQuestionIds ?? []),
-        ...node.questionIds,
+        ...spliced,
         ...(override?.addQuestionIds ?? []),
       ],
     };
@@ -818,6 +923,13 @@ export function allOverrideCopy(): string[] {
   }
 
   lines.push(AUDIENCES_BLOCK.addAnotherPrompt, AUDIENCES_ADD_ANOTHER_NAME.prompt, AUDIENCES_ADD_ANOTHER_NAME.placeholder);
+
+  // V2.3 VB-90 — the ladder's copy, markers stripped the way prompt() strips
+  // them, plus the why-beats as printed.
+  for (const node of ORIENTATION_LADDER_NODES) {
+    if (node.kind === 'question') lines.push(node.prompt(bare));
+  }
+  lines.push(...ORIENTATION_WHY_BEATS.map((beat) => beat.replace(/__/g, '')));
 
   // V2.3 VB-93 — the goal gate's copy is authored here too, so it rides the
   // same reading-grade and sentence-length harness as everything else.

@@ -129,9 +129,9 @@ async function reachTheQuestion(page: Page): Promise<void> {
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
   await page.waitForSelector('.flow');
-  if ((await page.locator('.flow').getAttribute('data-step-id')) === 'orientation_ready') {
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
+  // V2.3 VB-90: the seeded walk-in skips the ladder and the gate, opening
+  // on context_scope — one answer from the hint's question.
+  if ((await page.locator('.flow').getAttribute('data-step-id')) === 'context_scope') {
     await page.getByRole('button', { name: 'Work', exact: true }).click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
@@ -204,10 +204,7 @@ test.describe('VB-49 — the dictation hint', () => {
     await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
     await page.waitForSelector('.flow');
 
-    // The two questions before it.
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'orientation_ready');
-    await expect(hint(page)).toHaveCount(0);
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // The question before it (VB-90: the seeded walk-in opens here).
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
     await expect(hint(page)).toHaveCount(0);
 

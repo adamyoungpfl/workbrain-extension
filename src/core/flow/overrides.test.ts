@@ -543,10 +543,19 @@ describe('the goal gate opens the flow (VB-93)', () => {
     return position.kind === 'step' ? position.step.id : position.kind;
   }
 
-  it('a fresh interview opens on the service question, then the want question', () => {
-    expect(positionId(EMPTY)).toBe('goal_service');
+  it('a fresh interview opens on the why screen; the ladder leads to the gate (VB-90)', () => {
+    // The first SCREEN is the why (VB-90's ladder); the first QUESTIONS are
+    // still the gate — everything ahead of it is an intro.
+    expect(positionId(EMPTY)).toBe('orientation_ready');
+    const ladderSeen: Answers = {
+      values: { orientation_ready: null, wb_canvas: null, wb_brain_flip: null, wb_go: null },
+      repeatables: {},
+      answeredAt: {},
+      reflectedAt: {},
+    };
+    expect(positionId(ladderSeen)).toBe('goal_service');
     const midGate: Answers = {
-      values: { goal_service: 'claude' },
+      values: { ...ladderSeen.values, goal_service: 'claude' },
       repeatables: {},
       answeredAt: { goal_service: YESTERDAY },
       reflectedAt: {},
@@ -593,9 +602,19 @@ describe('the goal gate opens the flow (VB-93)', () => {
     expect(id).not.toBe('goal_want');
   });
 
-  it('the gate rides section 1 of the outline, first', () => {
+  it('the ladder and the gate ride section 1 of the outline, in flow order', () => {
     const sec1 = contextOutline.find((node) => node.id === 'sec1');
-    expect(sec1?.questionIds.slice(0, 2)).toEqual(['goal_service', 'goal_want']);
+    // FLOW order — the why screen first, then the ladder, then the gate —
+    // so fileStartTarget/navigationTargetFor agree with findPosition about
+    // where a fresh file starts.
+    expect(sec1?.questionIds.slice(0, 6)).toEqual([
+      'orientation_ready',
+      'wb_canvas',
+      'wb_brain_flip',
+      'wb_go',
+      'goal_service',
+      'goal_want',
+    ]);
   });
 
   it('a goal answered today prints into the file and survives the roundtrip', () => {

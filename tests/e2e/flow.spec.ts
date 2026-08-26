@@ -229,13 +229,13 @@ test.describe('Context interview — flow runner (R1-06)', () => {
   test('answers persist across a panel close/reopen', async () => {
     const { context, page } = await launchPanel();
 
-    // V2.3 VB-93: the flow opens on the goal gate — service, then want —
-    // then the port's own opening (intro -> context_scope -> stop_explaining).
-    expect(await page.locator('.flow').getAttribute('data-step-id')).toBe('goal_service');
-    await answerCurrentQuestion(page);
-    expect(await page.locator('.flow').getAttribute('data-step-id')).toBe('goal_want');
-    await answerCurrentQuestion(page);
-    await answerCurrentQuestion(page);
+    // V2.3 VB-90 + VB-93: a fresh interview opens on the why screen, walks
+    // the ladder (canvas, brain, go), then the goal gate — and only then the
+    // port's own opening (context_scope -> stop_explaining).
+    for (const expected of ['orientation_ready', 'wb_canvas', 'wb_brain_flip', 'wb_go', 'goal_service', 'goal_want']) {
+      expect(await page.locator('.flow').getAttribute('data-step-id')).toBe(expected);
+      await answerCurrentQuestion(page);
+    }
     const secondStepId = await page.locator('.flow').getAttribute('data-step-id');
     expect(secondStepId).toBe('context_scope');
     await answerCurrentQuestion(page);

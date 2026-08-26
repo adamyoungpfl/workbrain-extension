@@ -74,9 +74,8 @@ async function openPanel(context: BrowserContext): Promise<Page> {
  * text against it exactly.
  */
 async function driveToReflect(page: Page, raw: string): Promise<void> {
-  // Q1: intro (orientation) — Next alone advances it, nothing to answer.
-  await page.getByRole('button', { name: 'Next', exact: true }).click();
-  // Q2: context_scope, a chip question — first pill ("Work"), keyboard-style.
+  // V2.3 VB-90: with the gate seeded the orientation ladder skips, so the
+  // walk-in opens on context_scope — first pill ("Work"), keyboard-style.
   await page.locator('.flow .pillgroup .pill').first().focus();
   await page.keyboard.press('Space');
   await page.getByRole('button', { name: 'Next', exact: true }).click();
