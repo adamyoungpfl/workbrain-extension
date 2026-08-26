@@ -56,6 +56,13 @@ export interface PillGroupProps {
   onChange: (value: string[]) => void;
   /** every pill row ends with "+ add your own" so the list never becomes a cage */
   onAddOwn?: (() => void) | undefined;
+  /**
+   * V2.4 VB-108 — `'vertical'` stacks the same pills as full-width rows (the
+   * vertical pick list; core/choice/verticalPick.ts says which questions).
+   * A CSS posture only: same roving tabindex (whose arrows already run both
+   * axes — core/choice/roving.ts), same commit-on-Next, same everything.
+   */
+  variant?: 'vertical' | undefined;
 }
 
 /**
@@ -78,7 +85,7 @@ export interface PillGroupProps {
  * Focus stayed here. Moving focus is a DOM act (CLAUDE.md's one architectural
  * rule) — core says which index, this says `.focus()`.
  */
-export function PillGroup({ legend, options, mode, value, onChange, onAddOwn }: PillGroupProps) {
+export function PillGroup({ legend, options, mode, value, onChange, onAddOwn, variant }: PillGroupProps) {
   const itemRefs = useRef<(HTMLButtonElement | null)[]>([]);
   const count = options.length + (onAddOwn ? 1 : 0);
   const selectedIndex = options.findIndex((o) => value.includes(o.value));
@@ -101,7 +108,11 @@ export function PillGroup({ legend, options, mode, value, onChange, onAddOwn }: 
   }
 
   return (
-    <div className="pillgroup" role="group" aria-label={legend}>
+    <div
+      className={variant === 'vertical' ? 'pillgroup pillgroup-vertical' : 'pillgroup'}
+      role="group"
+      aria-label={legend}
+    >
       {options.map((option, index) => (
         <Pill
           key={option.value}

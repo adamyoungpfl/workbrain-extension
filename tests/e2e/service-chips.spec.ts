@@ -59,6 +59,10 @@ test.describe('themed service chips (VB-105)', () => {
     const pills = page.locator('.flow .pillgroup .pill');
     await expect(pills).toHaveCount(EXPECTED.length);
 
+    // V2.4 VB-108 is context_scope-only (decision 10): the gate's chips stay
+    // the wrap they were, not a vertical list.
+    await expect(page.locator('.flow .pillgroup')).not.toHaveClass(/\bpillgroup-vertical\b/);
+
     for (let i = 0; i < EXPECTED.length; i++) {
       const key = EXPECTED[i]!;
       const persona = SERVICE_PERSONAS[key]!;

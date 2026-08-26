@@ -68,7 +68,8 @@ import {
 import { hintStaysVisible } from '../../core/flow/deepDive';
 import { usesOrbChoice } from '../../core/choice/orbs';
 import { personaForService, usesServiceThemes } from '../../core/flow/serviceThemes';
-import { PERSONA_GLYPHS } from '../components/choiceGlyphs';
+import { usesVerticalPick } from '../../core/choice/verticalPick';
+import { PERSONA_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
@@ -1654,6 +1655,10 @@ function StepView({
   // value with no persona (a custom entry, a corrupted answer) simply renders
   // the plain pill it always did.
   const serviceThemed = usesServiceThemes(step);
+  // V2.4 VB-108 — context_scope (and only it; core/choice/verticalPick.ts)
+  // stands its chips up as a vertical pick list with a drawn glyph per
+  // choice. Same group, same keys, same Next — a posture, not a mechanism.
+  const verticalPick = usesVerticalPick(step);
   const pillOptions: PillOption[] =
     step.kind === 'yesno'
       ? [
@@ -1662,11 +1667,13 @@ function StepView({
         ]
       : [...(displayOptions ?? []), ...customOptions].map((o) => {
           const persona = serviceThemed ? personaForService(o.v) : undefined;
+          if (persona) return { value: o.v, label: o.l, suggested: o.rec, tone: persona, glyph: PERSONA_GLYPHS[persona] };
+          const scopeGlyph = verticalPick ? SCOPE_GLYPHS[o.v] : undefined;
           return {
             value: o.v,
             label: o.l,
             suggested: o.rec,
-            ...(persona ? { tone: persona, glyph: PERSONA_GLYPHS[persona] } : {}),
+            ...(scopeGlyph ? { glyph: scopeGlyph } : {}),
           };
         });
 
@@ -1915,6 +1922,7 @@ function StepView({
                 value={draftValues}
                 onChange={answerValues}
                 onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
+                variant={verticalPick ? 'vertical' : undefined}
               />
             )}
             {customOpen && (

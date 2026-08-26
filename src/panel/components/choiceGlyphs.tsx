@@ -83,3 +83,31 @@ export const PERSONA_GLYPHS: Record<ServicePersona, ReactElement> = {
     <path key="flame" d="M12 18.4v2.9" />,
   ]),
 };
+
+/**
+ * V2.4 VB-108 — the three scope glyphs for context_scope's vertical pick
+ * list, one per choice, keyed by the ported option KEYS (source.ts's own
+ * `work` / `personal` / `both` — the values, never the labels, so a reworded
+ * label costs nothing here). Same convention and same decorative contract as
+ * the personas above: the label is the whole accessible name, and the drawing
+ * is the vertical list's "icon per choice" (decision 10). A briefcase for
+ * work, a house for personal, and the two grounds interlocking for both —
+ * "both" is deliberately a picture of overlap rather than a third object,
+ * because that is what the answer means.
+ */
+export const SCOPE_GLYPHS: Record<string, ReactElement> = {
+  work: glyph([
+    <path key="case" d="M4 10.1a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v7.1a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2z" />,
+    <path key="handle" d="M9.4 8.1V6.3a1.7 1.7 0 0 1 1.7-1.7h1.8a1.7 1.7 0 0 1 1.7 1.7v1.8" />,
+    <path key="seam" d="M4 12.9h16" />,
+  ]),
+  personal: glyph([
+    <path key="roof" d="M4.4 11.6L12 4.7l7.6 6.9" />,
+    <path key="walls" d="M6.3 10.4v8.9h11.4v-8.9" />,
+    <path key="door" d="M10.4 19.3v-4.7h3.2v4.7" />,
+  ]),
+  both: glyph([
+    <circle key="left" cx="9.3" cy="12" r="5.5" />,
+    <circle key="right" cx="14.7" cy="12" r="5.5" />,
+  ]),
+};
