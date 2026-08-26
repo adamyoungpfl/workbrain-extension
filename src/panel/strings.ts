@@ -932,6 +932,10 @@ export const S = {
   /** [DRAFT] V2.3 VB-98 — the List's file preview grew a download of its own.
    * Verb-first, names the artifact, same register as Home's. */
   filePreviewDownload: 'Download',
+  /** [DRAFT] V2.3 VB-99 — what the handle announces while the drawer is
+   * closed: the state in a word, since the percent scale it normally speaks
+   * describes a range closed sits outside of. */
+  drawerClosedValue: 'Closed',
 
   // ---------------------------------------------------------------- welcome
   // V1.1 VB-01. The first thing a person ever sees. Approved verbatim in

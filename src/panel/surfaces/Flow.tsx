@@ -24,7 +24,7 @@ import { ANSWERS_KEY } from '../../core/files/answersKey';
 import type { AnswersKey } from '../../core/files/answersKey';
 import type { FileSlotId } from '../../core/files/slots';
 import type { FileCopy } from '../../core/files/source';
-import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
+import { DRAWER_CLOSED_HEIGHT, DRAWER_REST_HEIGHT } from '../../core/drawer/height';
 import { shownDrawerMode } from '../../core/drawer/mode';
 import type { DrawerMode } from '../../core/drawer/mode';
 import {
@@ -482,6 +482,16 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline, an
   // stays the primary object on a 400px panel.
   const [drawerHeight, setDrawerHeight] = useState(DRAWER_REST_HEIGHT);
   /**
+   * V2.3 VB-99 — whether the drawer is CLOSED: below the peek, showing only
+   * the grabber and one status line. A separate boolean rather than a height,
+   * deliberately: the clamp floors every height at the peek, so a closed
+   * "height" would be re-opened by the first panel resize that re-clamps it.
+   * `drawerHeight` keeps the person's open height untouched underneath —
+   * though reopening goes to the MINIMUM (Adam's call), so closing also parks
+   * the height there. Ephemeral like everything beside it.
+   */
+  const [drawerClosed, setDrawerClosed] = useState(false);
+  /**
    * V1.4 VB-22. Which drawer mode was *asked for* — held here rather than
    * inside `FileDrawer` because the drawer's chrome is no longer only the
    * drawer's: the docked bar above it takes the same stage colour and fades it
@@ -672,10 +682,13 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline, an
         data-stage={drawerMode}
         style={
           {
-            '--drawer-h': `${drawerHeight}px`,
+            // V2.3 VB-99 — while CLOSED, everything that reserves for the
+            // drawer reserves the closed face's height instead, so the
+            // question area gains the difference the moment it closes.
+            '--drawer-h': `${drawerClosed ? DRAWER_CLOSED_HEIGHT : drawerHeight}px`,
             '--flow-nav-h': `${FLOW_NAV_HEIGHT}px`,
-            '--flow-reserve': `${flowBottomReserve(drawerHeight)}px`,
-            '--flow-area-offset': `${questionAreaOffset(drawerHeight)}px`,
+            '--flow-reserve': `${flowBottomReserve(drawerClosed ? DRAWER_CLOSED_HEIGHT : drawerHeight)}px`,
+            '--flow-area-offset': `${questionAreaOffset(drawerClosed ? DRAWER_CLOSED_HEIGHT : drawerHeight)}px`,
             // V1.7 VB-41. The button cluster's two boxes, from
             // core/flow/dock.ts: the padding that makes a control 44px tall,
             // the overhang that takes the difference back out of the layout
@@ -726,6 +739,8 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline, an
           fileCopy={fileCopy}
           position={position}
           height={drawerHeight}
+          closed={drawerClosed}
+          onClosed={setDrawerClosed}
           onResize={resizeDrawer}
           brainYielded={brainYielded}
           mode={drawerMode}

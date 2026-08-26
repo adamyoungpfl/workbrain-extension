@@ -3,7 +3,8 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
-import { DRAWER_MIN_HEIGHT, DRAWER_REST_HEIGHT, DRAWER_STEP, drawerBounds } from '../../src/core/drawer/height';
+import { DRAWER_CLOSED_HEIGHT, DRAWER_CLOSE_PULL, DRAWER_MIN_HEIGHT, DRAWER_REST_HEIGHT, DRAWER_STEP, drawerBounds } from '../../src/core/drawer/height';
+import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 
@@ -218,10 +219,19 @@ test.describe('VB-12 — the drawer drags', () => {
     expect(await announcedHeight(page)).toBe(BOUNDS.max);
     expect(await renderedHeight(page)).toBeCloseTo(BOUNDS.max, 0);
 
-    await dragHandleTo(page, PANEL.height + 400);
+    // V2.3 VB-99 split this claim in two. MID-GESTURE the clamp is absolute:
+    // however far down the pointer goes, the drawer never renders below the
+    // floor — the person never sees an in-between.
+    await dragHandleTo(page, PANEL.height + 400, false);
     expect(await announcedHeight(page)).toBe(BOUNDS.min);
     expect(await renderedHeight(page)).toBeCloseTo(BOUNDS.min, 0);
     expect(BOUNDS.min).toBe(DRAWER_MIN_HEIGHT);
+    // AT RELEASE, that same far pull now means what it says: closed. The
+    // clamp was never the promise that the gesture did nothing — it was the
+    // promise that nothing between the floor and closed is ever shown.
+    await page.mouse.up();
+    await expect(page.locator('.filedrawer-closedface')).toHaveCount(1);
+    expect(await renderedHeight(page)).toBe(DRAWER_CLOSED_HEIGHT);
 
     await context.close();
   });
@@ -438,3 +448,73 @@ test.describe('VB-12 — motion', () => {
     await context.close();
   });
 });
+
+// ─────────────────────────────────────────────── V2.3 VB-99: the closed notch
+
+test.describe('VB-99 — the drawer closes, and closed still tells the truth', () => {
+  test('a pull past the floor closes it; easing to the floor does not', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await seedMidInterview(context, sw, id);
+
+    // Ease down to the floor exactly and release: still open, at the floor.
+    await dragHandleTo(page, PANEL.height - DRAWER_MIN_HEIGHT);
+    expect(await renderedHeight(page)).toBe(DRAWER_MIN_HEIGHT);
+    await expect(page.locator('.filedrawer-closedface')).toHaveCount(0);
+
+    // Pull a whole DRAWER_CLOSE_PULL past it and release: closed — the face
+    // is one status line, the height is the closed notch, and the question
+    // area above has gained the difference (the reserve follows).
+    await dragHandleTo(page, PANEL.height - DRAWER_MIN_HEIGHT + DRAWER_CLOSE_PULL + 8);
+    await expect(page.locator('.filedrawer-closedface')).toHaveCount(1);
+    expect(await renderedHeight(page)).toBe(DRAWER_CLOSED_HEIGHT);
+    await expect(page.locator('.filedrawer-handle')).toHaveAttribute('aria-valuetext', S.drawerClosedValue);
+
+    // The status line is live truth, not decoration: the section being
+    // written and reached-of-total, in the closed face itself.
+    await expect(page.locator('.filedrawer-closedcount')).toContainText('/');
+
+    await context.close();
+  });
+
+  test('a click on the grabber reopens to the minimum, and the keyboard has the same doors', async () => {
+    const { context } = await seedClosed();
+    const page = seedClosedPage!;
+
+    // Click: open, at the minimum — Adam's own spec for the grabber. The
+    // reopen rides the drawer's own 'jump' settle (320ms), so the box is
+    // polled to its destination rather than read mid-animation.
+    await page.locator('.filedrawer-handle').click();
+    await expect(page.locator('.filedrawer-closedface')).toHaveCount(0);
+    await expect.poll(() => renderedHeight(page)).toBe(DRAWER_MIN_HEIGHT);
+
+    // Keyboard: from anywhere above the floor, Home parks AT the floor —
+    // and only a SECOND Home closes. Start from the ceiling so the first
+    // press demonstrably parks rather than closes (a drawer already standing
+    // on the floor closes on its first Home, by design — that press IS the
+    // second step).
+    const handle = page.locator('.filedrawer-handle');
+    await handle.focus();
+    await page.keyboard.press('End');
+    await expect.poll(() => renderedHeight(page)).toBe(BOUNDS.max);
+    await page.keyboard.press('Home');
+    await expect(page.locator('.filedrawer-closedface')).toHaveCount(0);
+    await page.keyboard.press('Home');
+    await expect(page.locator('.filedrawer-closedface')).toHaveCount(1);
+    await page.keyboard.press('Enter');
+    await expect(page.locator('.filedrawer-closedface')).toHaveCount(0);
+    await expect.poll(() => renderedHeight(page)).toBe(DRAWER_MIN_HEIGHT);
+
+    await context.close();
+  });
+});
+
+/** A drawer already closed by the pointer, for the reopen test. */
+let seedClosedPage: Page | null = null;
+async function seedClosed(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
+  const { context, sw, id } = await launchExtension();
+  const page = await seedMidInterview(context, sw, id);
+  await dragHandleTo(page, PANEL.height - DRAWER_MIN_HEIGHT + DRAWER_CLOSE_PULL + 8);
+  await page.locator('.filedrawer-closedface').waitFor();
+  seedClosedPage = page;
+  return { context, sw, id };
+}

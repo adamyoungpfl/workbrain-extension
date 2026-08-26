@@ -205,6 +205,35 @@ export const DRAWER_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + DRAWER_ROW_HEIGHT + DRAW
 export const DRAWER_CLOSED_HEIGHT = DRAWER_HANDLE_BAND + 26;
 
 /**
+ * V2.3 VB-99 — how far past the floor a drag must be pulled, at release, to
+ * mean "close" rather than "I stopped at the bottom". The clamp holds the
+ * VISIBLE drawer at the floor the whole time, so this is measured on the
+ * unclamped target — pure intent, invisible until it is acted on. Two
+ * keyboard steps' worth: past a wobble, within a flick.
+ */
+export const DRAWER_CLOSE_PULL = 32; // = DRAWER_STEP * 2, asserted in height.test.ts — the
+// constant is declared later in this file and a forward reference would be a
+// TDZ error, so the relationship is a test rather than an expression.
+
+/**
+ * Whether releasing this drag means CLOSE. The drag's own arithmetic
+ * (`drawerHeightFromDrag`) never returns below the floor — the drawer never
+ * *shows* an in-between — so intent is read from where the unclamped target
+ * would have been: `DRAWER_CLOSE_PULL` or more past the floor at the moment
+ * of release. Easing down to the floor and letting go lands AT the floor,
+ * target == min, and stays open — the contract on `DRAWER_CLOSED_HEIGHT`.
+ */
+export function shouldCloseOnRelease(
+  startHeight: number,
+  startY: number,
+  pointerY: number,
+  bounds: DrawerBounds,
+): boolean {
+  const unclamped = startHeight + (startY - pointerY);
+  return unclamped <= bounds.min - DRAWER_CLOSE_PULL;
+}
+
+/**
  * Where it starts, every session — 186px, the peek V1.1 shipped and V1.2 kept
  * to the pixel (FileDrawer.css's 132px body under a 44px header).
  *
@@ -262,6 +291,11 @@ export type DrawerSettle = 'nudge' | 'jump';
 export interface DrawerKeyChange {
   readonly height: number;
   readonly settle: DrawerSettle;
+  /** V2.3 VB-99 — the key crossed the closed boundary. `close` is only ever
+   * offered from the floor (a second Home), `open` only from closed; neither
+   * is reachable by a nudge, which is the "never by a pixel" contract. */
+  readonly close?: true;
+  readonly open?: true;
 }
 
 function round(value: number): number {
@@ -346,7 +380,30 @@ export function drawerHeightForKey(
   current: number,
   bounds: DrawerBounds,
   restore: number,
+  closed = false,
 ): DrawerKeyChange | null {
+  // V2.3 VB-99 — from CLOSED, every key that means "more drawer" opens to the
+  // minimum (Adam: the grabber "opens to the minimum height it is set at
+  // now"), End goes where End always goes, and the shrinking keys are spent:
+  // there is nowhere further down to be.
+  if (closed) {
+    switch (key) {
+      case 'Enter':
+      case 'ArrowUp':
+      case 'ArrowRight':
+      case 'PageUp':
+      case 'Home':
+        return { height: bounds.min, settle: 'jump', open: true };
+      case 'End':
+        return { height: bounds.max, settle: 'jump', open: true };
+      case 'ArrowDown':
+      case 'ArrowLeft':
+      case 'PageDown':
+        return null;
+      default:
+        return null;
+    }
+  }
   const nudge = (delta: number): DrawerKeyChange => ({
     height: clampDrawerHeight(current + delta, bounds),
     settle: 'nudge',
@@ -368,6 +425,11 @@ export function drawerHeightForKey(
     case 'PageDown':
       return nudge(-DRAWER_PAGE_STEP);
     case 'Home':
+      // V2.3 VB-99 — a second Home, already standing on the floor, is the
+      // keyboard's deliberate step past it: close. One press parks at the
+      // floor; pressing again says you meant lower. Symmetric with the drag's
+      // pull-past-the-floor, and unreachable by any nudge.
+      if (current <= bounds.min) return { height: bounds.min, settle: 'jump', close: true };
       return jump(bounds.min);
     case 'End':
       return jump(bounds.max);

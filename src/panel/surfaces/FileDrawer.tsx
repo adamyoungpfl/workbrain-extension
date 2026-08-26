@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, KeyboardEvent as ReactKeyboardEvent, PointerEvent as ReactPointerEvent } from 'react';
-import { BrainGlobe, FileTree } from '../components';
+import { BrainGlobe, BrandMark, FileTree } from '../components';
 import { sectionNodeGradient } from '../components/BrainGlobe';
 import { Breadcrumb } from '../components/Breadcrumb';
 import { fileName } from '../components/fileLabels';
@@ -15,6 +15,7 @@ import { fileFinished } from '../../core/files/slots';
 import type { FileSlotId } from '../../core/files/slots';
 import { fileToggle } from '../../core/files/toggle';
 import {
+  DRAWER_CLOSED_HEIGHT,
   DRAWER_CRUMB_HEIGHT,
   DRAWER_CRUMB_NOTE,
   DRAWER_HANDLE_BAND,
@@ -26,6 +27,7 @@ import {
   drawerHeightFromDrag,
   drawerOpenPercent,
   restingDrawerHeight,
+  shouldCloseOnRelease,
 } from '../../core/drawer/height';
 import type { DrawerBounds, DrawerSettle } from '../../core/drawer/height';
 import {
@@ -210,6 +212,11 @@ export interface FileDrawerProps {
    * is. */
   file?: FileSlotId | undefined;
   fileCopy?: FileCopy | undefined;
+  /** V2.3 VB-99 — the closed notch. Owned by Flow (beside the height, for the
+   * same reserve reasons); this component reports crossings through
+   * `onClosed` and renders the closed face while it is true. */
+  closed?: boolean | undefined;
+  onClosed?: ((closed: boolean) => void) | undefined;
   /**
    * V1.2 VB-12. How tall the drawer is, in px — owned by `Flow` because the
    * flow surface reserves exactly this much space beneath itself, and
@@ -311,6 +318,8 @@ export function FileDrawer({
   onRequestMode,
   file = 'context',
   fileCopy = CONTEXT_FILE_COPY,
+  closed = false,
+  onClosed,
 }: FileDrawerProps) {
   const rootRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -444,17 +453,43 @@ export function FileDrawer({
     applyHeight(drawerHeightFromDrag(drag.startHeight, drag.startY, event.clientY, bounds), 'none');
   }
 
+  /** V2.3 VB-99 — a drag's pointerup synthesizes a click on the same handle,
+   * and the click-to-reopen handler below would undo a closing drag in the
+   * same breath (observed: the drawer closed and reopened between two frames,
+   * reading as "never closed"). One flag, set on every real drag end, spent
+   * by the next click. */
+  const suppressClickRef = useRef(false);
+
   function endDrag(event: ReactPointerEvent<HTMLDivElement>) {
     if (!dragRef.current) return;
+    const drag = dragRef.current;
     dragRef.current = null;
+    // Armed for the click this pointerup MAY synthesize (it does when the
+    // release lands back on the handle; a pull far past the floor releases
+    // elsewhere and synthesizes nothing). Disarmed by the next pointerdown —
+    // a task-boundary timer was tried first and background-page throttling
+    // held it armed for a full second, eating the person's real click.
+    suppressClickRef.current = true;
     event.currentTarget.releasePointerCapture?.(event.pointerId);
     setDragging(false);
+    // V2.3 VB-99 — intent read at RELEASE, from the unclamped target: a pull
+    // DRAWER_CLOSE_PULL past the floor means close; easing to the floor does
+    // not (core/drawer/height.ts's contract, tested there). Closing parks the
+    // height at the floor so reopening lands on the minimum, which is Adam's
+    // own spec for the grabber.
+    if (!closed && shouldCloseOnRelease(drag.startHeight, drag.startY, event.clientY, bounds)) {
+      applyHeight(bounds.min, 'none');
+      onClosed?.(true);
+    }
   }
 
   function onHandleKeyDown(event: ReactKeyboardEvent<HTMLDivElement>) {
-    const change = drawerHeightForKey(event.key, height, bounds, restoreRef.current);
+    const change = drawerHeightForKey(event.key, height, bounds, restoreRef.current, closed);
     if (!change) return;
     event.preventDefault();
+    // V2.3 VB-99 — the boundary crossings ride the same change object.
+    if (change.close) onClosed?.(true);
+    if (change.open) onClosed?.(false);
     applyHeight(change.height, change.settle);
   }
 
@@ -888,7 +923,7 @@ export function FileDrawer({
       data-morph={morph ? morph.to : 'none'}
       style={
         {
-          '--filedrawer-h': `${height}px`,
+          '--filedrawer-h': `${closed ? DRAWER_CLOSED_HEIGHT : height}px`,
           // V1.9 VB-51/VB-52 — the three bands of the drawer's chrome, from
           // core/drawer/height.ts. The stylesheet positions the two content
           // layers between them and works none of it out: the same numbers
@@ -930,11 +965,29 @@ export function FileDrawer({
           aria-label={S.drawerHandle}
           aria-orientation="horizontal"
           aria-controls={BODY_ID}
-          aria-valuenow={height}
+          aria-valuenow={closed ? DRAWER_CLOSED_HEIGHT : height}
           aria-valuemin={bounds.min}
           aria-valuemax={bounds.max}
-          aria-valuetext={S.drawerHandleValue(drawerOpenPercent(height, bounds))}
-          onPointerDown={onPointerDown}
+          aria-valuetext={closed ? S.drawerClosedValue : S.drawerHandleValue(drawerOpenPercent(height, bounds))}
+          onClick={() => {
+            if (suppressClickRef.current) {
+              suppressClickRef.current = false;
+              return;
+            }
+            // V2.3 VB-99 — from closed, a plain click on the grabber opens to
+            // the minimum (Adam: "if you click the grabber, it opens to the
+            // minimum height it is set at now"). Open-state clicks stay inert:
+            // the handle is a drag control, and a click that resized would
+            // punish the twitch every drag begins with.
+            if (!closed) return;
+            onClosed?.(false);
+            applyHeight(bounds.min, 'jump');
+          }}
+          onPointerDown={(event) => {
+            // Every new gesture disarms the drag-click suppression (above).
+            suppressClickRef.current = false;
+            if (!closed) onPointerDown(event);
+          }}
           onPointerMove={onPointerMove}
           onPointerUp={endDrag}
           onPointerCancel={endDrag}
@@ -958,6 +1011,23 @@ export function FileDrawer({
             of it (`inset: 0`) and anything overlapping it takes pixels off a
             44px control. */}
       </div>
+      {/* V2.3 VB-99 — the closed face: the grabber above, and one status line
+          that keeps tracking the interview — the mark, the section being
+          written (unnumbered, VB-96's rule), and reached-of-total with its
+          percent. Everything else stands down while closed; the layers below
+          are simply not rendered, which is also what keeps the morph from
+          measuring a world that is not on screen. */}
+      {closed && (
+        <div className="filedrawer-closedface">
+          <BrandMark size={18} />
+          <span className="filedrawer-closedlabel">{sectionRung ?? S.fileTreeHeading}</span>
+          <span className="filedrawer-closedcount">
+            {S.crumbCount(reached, outline.length)} · {Math.round((reached / Math.max(1, outline.length)) * 100)}%
+          </span>
+        </div>
+      )}
+      {!closed && (
+      <>
       {/* V1.9 VB-52 — the trail, and the product's only file switcher.
           Handed the same `nav` the globe below is handed, so the two are one
           navigation rather than two that agree today (see the header). */}
@@ -1078,6 +1148,8 @@ export function FileDrawer({
           );
         })}
       </div>
+      </>
+      )}
     </aside>
   );
 }

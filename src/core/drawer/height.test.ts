@@ -249,3 +249,65 @@ describe('drawerOpenPercent', () => {
     expect(drawerOpenPercent(stuck.min, stuck)).toBe(100);
   });
 });
+
+// ─────────────────────────────────────────────── V2.3 VB-99: the closed notch
+import {
+  DRAWER_CLOSED_HEIGHT,
+  DRAWER_CLOSE_PULL,
+  shouldCloseOnRelease,
+} from './height';
+
+describe('VB-99 — closed is reached only by moves that mean it', () => {
+  const B = drawerBounds(700);
+
+  it('the pull constant is two keyboard steps, as the comment claims', () => {
+    expect(DRAWER_CLOSE_PULL).toBe(DRAWER_STEP * 2);
+  });
+
+  it('the closed face is shorter than the floor, and taller than the grip band alone', () => {
+    expect(DRAWER_CLOSED_HEIGHT).toBeLessThan(DRAWER_MIN_HEIGHT);
+    expect(DRAWER_CLOSED_HEIGHT).toBeGreaterThan(DRAWER_HANDLE_BAND);
+  });
+
+  it('easing down to the floor and releasing stays OPEN — never closed by a pixel', () => {
+    // A drag that lands exactly at the floor, and one a hair past it.
+    const startHeight = 300;
+    const startY = 500;
+    const atFloor = startY + (startHeight - B.min);
+    expect(shouldCloseOnRelease(startHeight, startY, atFloor, B)).toBe(false);
+    expect(shouldCloseOnRelease(startHeight, startY, atFloor + DRAWER_CLOSE_PULL - 1, B)).toBe(false);
+  });
+
+  it('a pull a full DRAWER_CLOSE_PULL past the floor means close', () => {
+    const startHeight = 300;
+    const startY = 500;
+    const atFloor = startY + (startHeight - B.min);
+    expect(shouldCloseOnRelease(startHeight, startY, atFloor + DRAWER_CLOSE_PULL, B)).toBe(true);
+  });
+
+  it('Home parks at the floor; Home AGAIN closes — the keyboard’s deliberate step past it', () => {
+    const first = drawerHeightForKey('Home', 300, B, 300)!;
+    expect(first.height).toBe(B.min);
+    expect(first.close).toBeUndefined();
+    const second = drawerHeightForKey('Home', B.min, B, 300)!;
+    expect(second.close).toBe(true);
+  });
+
+  it('no nudge can close it: ArrowDown at the floor clamps and stays open', () => {
+    const change = drawerHeightForKey('ArrowDown', B.min, B, 300)!;
+    expect(change.height).toBe(B.min);
+    expect(change.close).toBeUndefined();
+  });
+
+  it('from closed, every growing key opens to the minimum; shrinking keys are spent', () => {
+    for (const key of ['Enter', 'ArrowUp', 'ArrowRight', 'PageUp', 'Home'] as const) {
+      const change = drawerHeightForKey(key, DRAWER_CLOSED_HEIGHT, B, 300, true)!;
+      expect(change.open, key).toBe(true);
+      expect(change.height, key).toBe(B.min);
+    }
+    expect(drawerHeightForKey('End', DRAWER_CLOSED_HEIGHT, B, 300, true)!.height).toBe(B.max);
+    for (const key of ['ArrowDown', 'ArrowLeft', 'PageDown'] as const) {
+      expect(drawerHeightForKey(key, DRAWER_CLOSED_HEIGHT, B, 300, true), key).toBeNull();
+    }
+  });
+});
