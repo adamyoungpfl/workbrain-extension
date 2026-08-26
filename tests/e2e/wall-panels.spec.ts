@@ -76,14 +76,31 @@ test.describe('VB-97 — the wall panels', () => {
         painted: (el as HTMLCanvasElement).width > 0,
       };
     });
-    // Byte-for-byte the core cap — the stylesheet cannot drift from it.
-    expect(measured.opacity).toBe(WALL_OPACITY_MAX);
+    // V2.4: the cap is baked into the painter's globalAlpha — the element
+    // composites at 1 and the BITMAP itself is faint (axe samples raw
+    // canvas pixels, so the faintness must live in them). Proven below by
+    // reading pixels: every painted channel sits within a whisper of the
+    // ground.
+    expect(measured.opacity).toBe(1);
     expect(measured.pointerEvents).toBe('none');
     // V2.4 VB-111: the wall hoisted to the app-level backdrop — stacking
     // belongs to .app-ground, behind every surface.
     expect(measured.backdropClass).toBe('app-ground');
     expect(measured.backdropZ).toBe('-1');
     expect(measured.painted).toBe(true);
+
+    // The bitmap is faint by construction: sampled RGBA channels deviate
+    // from blank by at most WALL_OPACITY_MAX-scaled ink (alpha ≤ ~0.04*255
+    // plus glow headroom).
+    const maxAlpha = await page.evaluate(() => {
+      const canvas = document.querySelector('.wallpanels') as HTMLCanvasElement;
+      const ctx = canvas.getContext('2d')!;
+      const data = ctx.getImageData(0, 0, Math.min(canvas.width, 200), Math.min(canvas.height, 200)).data;
+      let max = 0;
+      for (let i = 3; i < data.length; i += 4) max = Math.max(max, data[i]!);
+      return max / 255;
+    });
+    expect(maxAlpha).toBeLessThanOrEqual(WALL_OPACITY_MAX * 2 + 0.02); // stroke over fill headroom
 
     // It breathes: two samples a second apart differ.
     const before = await strip(page);

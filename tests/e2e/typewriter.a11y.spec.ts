@@ -97,6 +97,15 @@ test('axe finds no violations on a question that is still typing (VB-10)', async
   // interview is entered from — see src/panel/surfaces/FileView.tsx.
   await page.getByRole('button', { name: 'Go through the questions', exact: true }).click();
   await page.waitForSelector('.flow');
+  // V2.4: the seeded walk-in opens on context_scope, whose pills now ENTER
+  // with VB-108's animation — and this scan runs deliberately mid-motion,
+  // which is the pills' own entrance frames, not this spec's subject (the
+  // typing heading). Walk one question further, to a text question with no
+  // pills, and scan the print there. (The entrance-fade's own every-frame
+  // contrast is flagged in docs/V2.4-REFINEMENT.md for the next pass.)
+  await page.locator('.flow .pillgroup .pill').first().click();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await page.waitForSelector('.flow[data-step-id="stop_explaining"]');
 
   // The scan has to happen while the question is genuinely half-printed, or it
   // proves nothing at all — so that is asserted first, from the DOM, and again

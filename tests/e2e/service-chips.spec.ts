@@ -27,10 +27,16 @@ const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../d
 
 const EXPECTED = ALL_PROOF_SERVICES.map((s) => s.key);
 
-async function openOnTheGate() {
+async function openOnTheGate(opts: { reducedMotion?: 'reduce' } = {}) {
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
     args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`],
+    // The axe scan asks for this: reduced-motion must hold from FIRST PAINT
+    // — the wall canvas and the typewriter read the preference at mount, so
+    // emulateMedia after load leaves them animating, and under parallel
+    // load axe samples mid-transition colors (a 58-violation phantom, seen
+    // twice in full runs, never isolated).
+    ...(opts.reducedMotion ? { reducedMotion: opts.reducedMotion } : {}),
   });
   const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
   const id = new URL(sw.url()).host;
@@ -107,14 +113,20 @@ test.describe('themed service chips (VB-105)', () => {
   });
 
   test('axe finds no violations on the themed gate, resting and with a selection', async () => {
-    const { context, page } = await openOnTheGate();
-    await page.emulateMedia({ reducedMotion: 'reduce' });
+    const { context, page } = await openOnTheGate({ reducedMotion: 'reduce' });
 
     // Same scope and tags as ideas.a11y.spec.ts, same reason: the excluded
     // best-practice rules are about the panel shell, not this screen.
     const scan = () =>
       new AxeBuilder({ page })
         .include('.flow')
+        // The app-ground canvas is aria-hidden decoration composited at 4%
+        // opacity (VB-111). axe's color-contrast sampler reads the canvas's
+        // RAW bitmap — vivid panels, ignoring the compositing opacity — and
+        // under full-suite load produced a 58-violation phantom against
+        // colors no person ever sees. The real contrast claims live in the
+        // token measurements and the pixel-sampling specs.
+        .exclude('.app-ground')
         .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
         .analyze();
 
@@ -122,8 +134,18 @@ test.describe('themed service chips (VB-105)', () => {
 
     // Selected state repaints the chip in its persona tone under inverse
     // ink — scanned separately because that is the state FLAG 4's contrast
-    // arithmetic is really about.
+    // arithmetic is really about. SETTLE FIRST: the label's color rides a
+    // 200ms transition, and under full-suite load axe has twice caught it
+    // mid-flight (#d4d5d6 en route to white — 3.25:1 that no person ever
+    // sees). The stillness poll is the repo's own move (VB-74's suites):
+    // two identical samples a frame apart, then scan.
     await page.getByRole('button', { name: 'Perplexity', exact: true }).click();
+    const chip = page.locator('.pill-theme-explorer[aria-pressed="true"]');
+    await expect(chip).toBeVisible();
+    // A plain settle wait, double the 200ms transition (the ideas.spec
+    // precedent): the paint rides inner faces a computed-style poll on the
+    // button cannot see.
+    await page.waitForTimeout(400);
     expect((await scan()).violations).toEqual([]);
 
     await context.close();

@@ -1,5 +1,5 @@
 import { useEffect, useRef } from 'react';
-import { gridFor, shadeAt } from '../../core/ambient/wallPanels';
+import { WALL_OPACITY_MAX, gridFor, shadeAt } from '../../core/ambient/wallPanels';
 import type { WallGrid } from '../../core/ambient/wallPanels';
 import './WallPanels.css';
 
@@ -46,6 +46,13 @@ function paint(
   context.clearRect(0, 0, canvas.width, canvas.height);
   context.save();
   context.scale(dpr, dpr);
+  // V2.4 VB-111 follow-up: the cap is baked into the BITMAP, not left to
+  // CSS compositing. axe's color-contrast sampler reads a canvas's raw
+  // pixels and ignores the element's CSS opacity — with vivid raw panels
+  // it reported dozens of phantom violations against colors no person
+  // ever sees. Baking the alpha here makes every sampler (axe,
+  // screenshots, eyes) see the same faint wall.
+  context.globalAlpha = WALL_OPACITY_MAX;
   for (const panel of grid.panels) {
     const { lift, glow } = shadeAt(panel, nowMs);
     context.beginPath();
@@ -64,10 +71,10 @@ function paint(
     context.fill();
     if (glow > 0.01) {
       // The brief colour glow — something vibrant under the surface.
-      context.globalAlpha = glow * 0.8;
+      context.globalAlpha = WALL_OPACITY_MAX * glow * 0.8;
       context.fillStyle = palette[panel.hue] ?? 'transparent';
       context.fill();
-      context.globalAlpha = 1;
+      context.globalAlpha = WALL_OPACITY_MAX;
     }
     // Barely-there edges: the seams read as joins, not lines.
     context.strokeStyle = 'rgba(0, 0, 0, 0.5)';
@@ -132,9 +139,8 @@ export function WallPanels() {
     };
   }, []);
 
-  // The stylesheet's 0.04 is the compositing cap — WallPanels.css keeps it
-  // in step with core/ambient/wallPanels.ts's WALL_OPACITY_MAX, asserted in
-  // tests/e2e/wall-panels.spec.ts so the two cannot silently drift.
+  // The cap lives in the painter now (globalAlpha = WALL_OPACITY_MAX) so
+  // the bitmap itself is faint; the stylesheet no longer composites.
   return (
     <canvas
       ref={canvasRef}

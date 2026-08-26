@@ -5,9 +5,11 @@
 .wallpanels {
   position: absolute;
   inset: 0;
-  /* V2.4 VB-111: stacking belongs to .app-ground (z-index -1); the canvas
-     itself just fills its layer. The opacity IS the readability guarantee —
-     keep in step with core WALL_OPACITY_MAX (wall-panels.spec.ts). */
-  opacity: 0.04;
+  /* V2.4 VB-111: stacking belongs to .app-ground (z-index -1). The
+     readability cap is baked into the painter's globalAlpha
+     (WALL_OPACITY_MAX) so the BITMAP is faint — axe samples raw canvas
+     pixels and ignores CSS opacity, which made a compositing-only cap
+     report phantom contrast violations. wall-panels.spec asserts the
+     baked faintness by reading pixels. */
   pointer-events: none;
 }
