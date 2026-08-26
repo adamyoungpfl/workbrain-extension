@@ -1,0 +1,11 @@
+/* V2.3 VB-97 — the wall behind the question area. The opacity here IS the
+   readability guarantee: whatever the painter draws, this is all of it that
+   reaches the surface. Keep in step with core/ambient/wallPanels.ts's
+   WALL_OPACITY_MAX (asserted in wall-panels.spec.ts). */
+.wallpanels {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  opacity: 0.04;
+  pointer-events: none;
+}
