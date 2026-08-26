@@ -73,6 +73,15 @@ export const S = {
    */
   giveExample: 'Give me an example',
   /**
+   * [DRAFT] V2.4 VB-109 — the name generator on the two name questions
+   * (core/flow/nameGenerator.ts). Same register as `giveExample` above: a
+   * verb the person stuck at the box would say out loud — and on a name
+   * question, "one" can only mean a name. The button drops a made-up famous
+   * mashup into the field via the exact ideas mechanic; pressing again deals
+   * the next one.
+   */
+  makeUpName: 'Make one up for me',
+  /**
    * [DRAFT] V2.3 VB-94 — the interview-me prompt on open text questions:
    * the person's own AI interviews them and hands back a finished answer
    * in one fenced block, pasted into the same field. The button label is a

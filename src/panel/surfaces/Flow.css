@@ -520,6 +520,36 @@
   animation: idea-rays-burst calc(var(--fast) * 4 / 3) var(--ease);
 }
 
+/* ── V2.4 VB-109: the name generator's press cue — the die rolls ──────────
+   The same press grammar as the bulb (the shared .flow-idea class carries
+   the sizing, the restart trick and the reduced-motion confirm below): one
+   cue class, one glyph group, no fill mode so it ends where it rests. A
+   tumble rather than a pop — rotate past level, back through, settle —
+   because the button's story is chance dealing you the next one. Same
+   4/3 · --fast length as the rays, for the same "still moving as it lands"
+   reason, not a new duration. */
+.flow-namegen .namegen-die {
+  transform-box: view-box;
+  transform-origin: 12px 12px;
+}
+@keyframes namegen-roll {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  40% {
+    transform: rotate(-16deg) scale(1.12);
+  }
+  75% {
+    transform: rotate(10deg) scale(1.02);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+.flow-namegen.is-popping .namegen-die {
+  animation: namegen-roll calc(var(--fast) * 4 / 3) var(--ease);
+}
+
 /* Reduced motion is not "no feedback" (docs/design-system.html §06): a control
    that does nothing visible when pressed reads as broken. Nothing scales and
    no rays fire — the press instead lands as an instant accent fill. The
@@ -531,7 +561,11 @@
    field, so nothing here is carried by colour alone. */
 @media (prefers-reduced-motion: reduce) {
   .flow-idea.is-popping .idea-glass,
-  .flow-idea.is-popping .idea-rays {
+  .flow-idea.is-popping .idea-rays,
+  /* VB-109: the die holds still too; the button-level confirm below is the
+     cue, and the name landing in the field is the substance — same deal as
+     the bulb, one line up. */
+  .flow-namegen.is-popping .namegen-die {
     animation: none;
   }
   .flow-idea.is-popping {
