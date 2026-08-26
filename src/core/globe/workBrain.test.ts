@@ -53,10 +53,13 @@ describe('VB-48 — the tier rules', () => {
     const at: BrainNav = { tier: 'work', file: 'context' };
     for (const wanted of ['skills', 'actions'] as const) {
       expect(chooseNav(at, wanted, ITEMS), wanted).toEqual(at);
-      // ...and still refuses once Context is finished. Being next in line is
-      // not the same as being built (core/files/slots.ts's BUILT).
-      expect(chooseNav(at, wanted, FINISHED), `${wanted} — finished`).toEqual(at);
     }
+    // V2.2: this used to assert skills STILL refused once Context was
+    // finished ("being next in line is not the same as being built"). Skills
+    // is built now, so finished Context makes it a real door — and Actions,
+    // which is derived rather than built, refuses exactly as before.
+    expect(chooseNav(at, 'skills', FINISHED)).toEqual({ tier: 'file', file: 'skills' });
+    expect(chooseNav(at, 'actions', FINISHED)).toEqual(at);
   });
 
   it('refuses a file that is not on the toggle at all', () => {

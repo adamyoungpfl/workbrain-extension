@@ -9,7 +9,11 @@ import { Splash } from './surfaces/Splash';
 import type { SplashIntent } from './surfaces/Splash';
 import { getSession, setSession } from '../core/storage/client';
 import { Button } from './components';
-import { contextModules, contextOutline, buildProofModules } from '../core/flow/flow';
+import { contextModules, contextOutline, skillsModules, skillsOutline, buildProofModules } from '../core/flow/flow';
+import { SKILLS_FILE_COPY } from '../core/files/skillsFile';
+import { ANSWERS_KEY } from '../core/files/answersKey';
+import type { FileSlotId } from '../core/files/slots';
+import { ActionsFileView } from './surfaces/ActionsFileView';
 import { serviceStepOptions } from '../core/flow/proofAdapter';
 import type { Position } from '../core/flow/runner';
 import { positionForTarget } from '../core/recommend/targets';
@@ -47,8 +51,8 @@ const proofModules = buildProofModules({
  * on Home and re-derives the shelf, the file and the interview's position from
  * `wb:answers`.
  */
-type Surface = 'home' | 'file' | 'flow' | 'multiples';
-type FlowKind = 'context' | 'proof';
+type Surface = 'home' | 'file' | 'flow' | 'multiples' | 'actions';
+type FlowKind = 'context' | 'proof' | 'skills';
 
 /**
  * V1.7 VB-34. Whether the splash is on screen.
@@ -78,6 +82,9 @@ type SplashState = 'asking' | 'showing' | 'gone';
 export default function App() {
   const [surface, setSurface] = useState<Surface>('home');
   const [flowKind, setFlowKind] = useState<FlowKind>('context');
+  /** V2.2 — which file the 'file' surface is showing. In-memory like every
+   * other "where am I" fact (docs/ARCHITECTURE.md). */
+  const [fileId, setFileId] = useState<Exclude<FileSlotId, 'actions'>>('context');
   const [jumpTo, setJumpTo] = useState<Position | undefined>(undefined);
   const [splash, setSplash] = useState<SplashState>('asking');
 
@@ -172,6 +179,13 @@ export default function App() {
     openContextAt(target ? positionForTarget(contextModules, target) : undefined);
   }
 
+  /** V2.2 — the Skills interview's door, the same shape as Context's. */
+  function openSkillsAt(position?: Position) {
+    setFlowKind('skills');
+    setJumpTo(position);
+    setSurface('flow');
+  }
+
   function openProof() {
     setFlowKind('proof');
     setJumpTo(undefined);
@@ -190,7 +204,16 @@ export default function App() {
         <Home
           onStart={() => openContext()}
           onOpenTarget={(target) => openContext(target)}
-          onOpenFile={() => setSurface('file')}
+          onOpenFile={(id) => {
+            // V2.2: Actions is the derived file — its own read-only surface,
+            // never the interview file view.
+            if (id === 'actions') {
+              setSurface('actions');
+              return;
+            }
+            setFileId(id);
+            setSurface('file');
+          }}
           onOpenProof={openProof}
           onOpenMultiples={() => setSurface('multiples')}
           importAsked={importAsked}
@@ -200,7 +223,19 @@ export default function App() {
     }
 
     if (surface === 'file') {
-      return (
+      // V2.2: the same surface, per file — the "one more call site" its own
+      // props comment promised.
+      return fileId === 'skills' ? (
+        <FileView
+          modules={skillsModules}
+          outline={skillsOutline}
+          answersKey={ANSWERS_KEY.skills}
+          name={S.fileSkills}
+          what={S.fileSkillsWhat}
+          onBack={goHome}
+          onOpen={openSkillsAt}
+        />
+      ) : (
         <FileView
           modules={contextModules}
           outline={contextOutline}
@@ -208,6 +243,18 @@ export default function App() {
           what={S.fileContextWhat}
           onBack={goHome}
           onOpen={openContextAt}
+        />
+      );
+    }
+
+    if (surface === 'actions') {
+      return (
+        <ActionsFileView
+          onBack={goHome}
+          onOpenSkills={() => {
+            setFileId('skills');
+            setSurface('file');
+          }}
         />
       );
     }
@@ -242,6 +289,19 @@ export default function App() {
     // V1.1 VB-07: only the Context flow passes an `outline`, because it is the
     // only flow that writes a file. The proof loop above deliberately does not —
     // there is nothing for a file tree to show there.
+    if (flowKind === 'skills') {
+      return (
+        <Flow
+          modules={skillsModules}
+          outline={skillsOutline}
+          answersKey={ANSWERS_KEY.skills}
+          fileId="skills"
+          fileCopy={SKILLS_FILE_COPY}
+          initialPosition={jumpTo}
+          onDone={goHome}
+        />
+      );
+    }
     return <Flow modules={contextModules} outline={contextOutline} initialPosition={jumpTo} onDone={goHome} />;
   }
 

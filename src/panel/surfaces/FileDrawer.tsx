@@ -7,6 +7,8 @@ import { WorkShelf } from '../components/WorkShelf';
 import { BRAIN_NAV_HOME, chooseNav } from '../../core/globe/workBrain';
 import type { BrainNav } from '../../core/globe/workBrain';
 import { contextFileDate, generateContextFileParts } from '../../core/files/generate';
+import { CONTEXT_FILE_COPY } from '../../core/files/source';
+import type { FileCopy } from '../../core/files/source';
 import type { ContextFileSection } from '../../core/files/generate';
 import { fileFinished } from '../../core/files/slots';
 import type { FileSlotId } from '../../core/files/slots';
@@ -200,6 +202,13 @@ export interface FileDrawerProps {
   modules: Module[];
   answers: Answers;
   position: Position;
+  /** V2.2 — which file this drawer is showing, and that file's own copy for
+   * the live preview. Defaulted to Context, which is what every pre-V2.2
+   * caller meant; the Skills flow passes its own pair. One seam, so the
+   * preview, the trail and the work-tier toggle all agree on which file this
+   * is. */
+  file?: FileSlotId | undefined;
+  fileCopy?: FileCopy | undefined;
   /**
    * V1.2 VB-12. How tall the drawer is, in px — owned by `Flow` because the
    * flow surface reserves exactly this much space beneath itself, and
@@ -299,6 +308,8 @@ export function FileDrawer({
   onNavigate,
   mode,
   onRequestMode,
+  file = 'context',
+  fileCopy = CONTEXT_FILE_COPY,
 }: FileDrawerProps) {
   const rootRef = useRef<HTMLElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
@@ -484,8 +495,8 @@ export function FileDrawer({
   // the memo would never hit, which is the specific trap VB-07b calls out.
   const [generatedOn] = useState(contextFileDate);
   const parts = useMemo(
-    () => generateContextFileParts(answers, generatedOn, modules, outline),
-    [answers, generatedOn, modules, outline],
+    () => generateContextFileParts(answers, generatedOn, modules, outline, fileCopy),
+    [answers, generatedOn, modules, outline, fileCopy],
   );
 
   /** Every top-level section's state, for the globe — the same three-way fold
@@ -575,7 +586,9 @@ export function FileDrawer({
    * (docs/ARCHITECTURE.md, "nothing derived is stored"). There is no `wb:tier`
    * key and there must never be one.
    */
-  const [nav, setNav] = useState<BrainNav>(BRAIN_NAV_HOME);
+  // V2.2: home is the file THIS drawer is writing — `BRAIN_NAV_HOME` spelled
+  // per-file rather than hardcoded to Context's.
+  const [nav, setNav] = useState<BrainNav>(file === 'context' ? BRAIN_NAV_HOME : { tier: 'file', file });
   const shownFile: FileSlotId = nav.file;
 
   /**

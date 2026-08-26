@@ -2,6 +2,8 @@ import type { Module, FileOutlineNode } from '../../schema/flow.types';
 import { adaptContextFlow } from './adapter';
 import { buildProofModule } from './proofAdapter';
 import type { ProofCopy } from './proofAdapter';
+import { SKILLS_INTERVIEW_MODULES, SKILLS_FILE_OUTLINE } from './skillsSource';
+import { SKILLS_ADD_ANOTHER } from './addAnother';
 
 /**
  * The Context interview — ported verbatim at R1-05 from
@@ -16,6 +18,18 @@ const { modules, outline } = adaptContextFlow();
 
 export const contextModules: Module[] = modules;
 export const contextOutline: FileOutlineNode[] = outline;
+
+/**
+ * V2.2 VB-81 — the Skills interview, through the SAME adapter. The adapter
+ * was generic over its source from the day it was written (its parameters
+ * were only ever defaulted to Context's content); "adaptContextFlow" is a
+ * historical name, not a constraint. Skills has no deep-dive entries in v1
+ * (an empty map, deliberately) and its own add-another entry.
+ */
+const skillsAdapted = adaptContextFlow(SKILLS_INTERVIEW_MODULES, SKILLS_FILE_OUTLINE, {}, SKILLS_ADD_ANOTHER);
+
+export const skillsModules: Module[] = skillsAdapted.modules;
+export const skillsOutline: FileOutlineNode[] = skillsAdapted.outline;
 
 /**
  * R1-11: the proof loop, one module. Re-exported from here (rather than

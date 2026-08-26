@@ -20,6 +20,10 @@ import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
+import { ANSWERS_KEY } from '../../core/files/answersKey';
+import type { AnswersKey } from '../../core/files/answersKey';
+import type { FileSlotId } from '../../core/files/slots';
+import type { FileCopy } from '../../core/files/source';
 import { DRAWER_REST_HEIGHT } from '../../core/drawer/height';
 import { shownDrawerMode } from '../../core/drawer/mode';
 import type { DrawerMode } from '../../core/drawer/mode';
@@ -114,6 +118,18 @@ export interface FlowProps {
    * file and there is nothing for a tree to show.
    */
   outline?: FileOutlineNode[] | undefined;
+  /**
+   * V2.2 — which storage key this flow's answers live under. Defaults to
+   * Context's, which is what every existing caller means; the Skills flow
+   * passes `ANSWERS_KEY.skills`. The seam V1.8's answersKey table promised —
+   * one prop, and nothing else about the runner knows which file it is
+   * writing.
+   */
+  answersKey?: AnswersKey | undefined;
+  /** V2.2 — the drawer's file identity and copy, alongside the key. Same
+   * default, same reason. */
+  fileId?: FileSlotId | undefined;
+  fileCopy?: FileCopy | undefined;
 }
 
 const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
@@ -437,7 +453,7 @@ function scoreSubStep(key: string): Step {
  * everything specific to the question on screen lives in `StepView`, mounted
  * fresh per position via `key` — see its own comment for why.
  */
-export function Flow({ modules, renderDone, onDone, initialPosition, outline }: FlowProps) {
+export function Flow({ modules, renderDone, onDone, initialPosition, outline, answersKey = ANSWERS_KEY.context, fileId, fileCopy }: FlowProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [declinedBlocks, setDeclinedBlocks] = useState<ReadonlySet<string>>(new Set());
   // V1.1 VB-05: module ids whose transition screen has been continued past
@@ -515,7 +531,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
 
   useEffect(() => {
     let cancelled = false;
-    void getLocal('wb:answers').then((stored) => {
+    void getLocal(answersKey).then((stored) => {
       if (!cancelled) setAnswersState(stored ?? EMPTY_ANSWERS);
     });
     return () => {
@@ -534,7 +550,7 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
   async function persist(next: Answers): Promise<boolean> {
     setAnswersState(next);
     setSavePending(true);
-    const result = await setLocal('wb:answers', next);
+    const result = await setLocal(answersKey, next);
     setSaveError(!result.ok);
     setSavePending(false);
     return result.ok;
@@ -706,6 +722,8 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline }: 
           outline={outline}
           modules={modules}
           answers={ans}
+          file={fileId}
+          fileCopy={fileCopy}
           position={position}
           height={drawerHeight}
           onResize={resizeDrawer}

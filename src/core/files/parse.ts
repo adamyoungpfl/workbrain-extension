@@ -2,7 +2,8 @@ import type { Answers } from '../../schema/storage.types';
 import type { AnswerValue, FileOutlineNode, FlowContext, RepeatableBlock, Step } from '../../schema/flow.types';
 import { contextModules, contextOutline } from '../flow/flow';
 import { bodyFieldsFor, buildFlowLookups, keyOf, nameStepFor, resolvePhrase, type FlowLookups } from './lookups';
-import { SYSTEM_GROUNDING_RULE } from './source';
+import { CONTEXT_FILE_COPY } from './source';
+import type { FileCopy } from './source';
 import { SKIPPED_ANSWER_MARKER } from './generate';
 
 /**
@@ -255,10 +256,14 @@ export function parseContextFile(
   markdown: string,
   modules = contextModules,
   outline: FileOutlineNode[] = contextOutline,
+  copy: FileCopy = CONTEXT_FILE_COPY,
 ): ParseContextFileResult {
   const headings = extractHeadings(markdown);
-  const grounding = headings.find((h) => h.label === 'System Grounding Rule');
-  if (!grounding || grounding.body !== SYSTEM_GROUNDING_RULE.trim()) {
+  // V2.2 VB-80: the validity mark is the file's own grounding heading, not a
+  // hardcoded Context string — a Skills.md is checked against Skills' rule.
+  const groundingLabel = copy.groundingHeading.replace(/^#+\s*/, '');
+  const grounding = headings.find((h) => h.label === groundingLabel);
+  if (!grounding || grounding.body !== copy.groundingRule.trim()) {
     return { ok: false, reason: 'grounding-rule-missing' };
   }
 

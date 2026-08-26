@@ -79,7 +79,22 @@ export const FILE_SLOT_IDS: readonly FileSlotId[] = ['context', 'skills', 'actio
  * is the seam, and it is the only thing in the panel that decides whether a
  * slot is a door or a promise.
  */
-const BUILT: readonly FileSlotId[] = ['context'] as const;
+const BUILT: readonly FileSlotId[] = ['context', 'skills'] as const;
+
+/**
+ * V2.2 — Actions.md is neither a door nor a promise: it is DERIVED. There is
+ * no Actions interview (docs/V2.2-SKILLS-ACTIONS-DECISIONS.md #1 — Adam,
+ * 2026-08-25); the file is generated from the Skills answers
+ * (core/files/deriveActions.ts) the moment there is a finished Skills file to
+ * read. So the slot has a third honest state: locked while Skills is
+ * unfinished, and `generated` — openable, downloadable, never interviewed —
+ * after. Kept as its own predicate rather than a third `FileSlotState`,
+ * because every existing consumer of open/locked keeps meaning exactly what
+ * it meant.
+ */
+export function actionsGenerated(finished: Readonly<Partial<Record<FileSlotId, boolean>>>): boolean {
+  return finished['skills'] === true;
+}
 
 /**
  * The shelf, given which files are finished.
@@ -91,11 +106,17 @@ const BUILT: readonly FileSlotId[] = ['context'] as const;
 export function fileSlots(finished: Readonly<Partial<Record<FileSlotId, boolean>>>): FileSlot[] {
   return FILE_SLOT_IDS.map((id, index) => {
     const after = index === 0 ? null : (FILE_SLOT_IDS[index - 1] as FileSlotId);
+    const afterFinished = after === null ? false : finished[after] === true;
     return {
       id,
-      state: BUILT.includes(id) ? 'open' : 'locked',
+      // V2.2 — BUILT and EARNED are different facts, and a door needs both.
+      // While Context was the only built file the distinction never showed;
+      // the moment Skills shipped, "built" alone would have opened it to
+      // someone who has not finished Context — making "Finish Context.md
+      // first" a lie told by a row that was already pressable.
+      state: BUILT.includes(id) && (after === null || afterFinished) ? 'open' : 'locked',
       after,
-      afterFinished: after === null ? false : finished[after] === true,
+      afterFinished,
     };
   });
 }

@@ -2,7 +2,8 @@ import type { Answers } from '../../schema/storage.types';
 import type { AnswerValue, FileOutlineNode, FlowContext, RepeatableBlock, Step } from '../../schema/flow.types';
 import { contextModules, contextOutline } from '../flow/flow';
 import { bodyFieldsFor, buildFlowLookups, keyOf, nameStepFor, resolvePhrase } from './lookups';
-import { FILE_TITLE, GROUNDING_RULE_HEADING, SYSTEM_GROUNDING_RULE, fileIntroLine } from './source';
+import { CONTEXT_FILE_COPY } from './source';
+import type { FileCopy } from './source';
 
 /**
  * Context.md generation — a reimplementation of generateContextFile()
@@ -100,6 +101,7 @@ function renderFileSection(
   ctx: FlowContext,
   depth: number,
   lookups: ReturnType<typeof buildFlowLookups>,
+  copy: FileCopy,
 ): string {
   const parts: string[] = [];
   const repeatableBlocksSeen = new Set<string>();
@@ -121,10 +123,15 @@ function renderFileSection(
     const block = lookups.repeatableBlocksById.get(blockId);
     if (!block) continue;
     const records = ctx.repeatables[blockId] ?? [];
-    for (const record of records) parts.push(renderRepeatableRecord(block, record, ctx));
+    for (const record of records) {
+      // V2.2 VB-80: a file may bring its own record shape (Skills does — the
+      // approved per-skill section). null falls back to the generic pairs.
+      const shaped = copy.renderRecord?.(blockId, record) ?? null;
+      parts.push(shaped ?? renderRepeatableRecord(block, record, ctx));
+    }
   }
 
-  const childParts = (node.children ?? []).map((child) => renderFileSection(child, ctx, depth + 1, lookups)).filter(Boolean);
+  const childParts = (node.children ?? []).map((child) => renderFileSection(child, ctx, depth + 1, lookups, copy)).filter(Boolean);
   const body = [...parts, ...childParts].join('\n\n');
   if (!body.trim()) return '';
   return `${'#'.repeat(depth + 1)} ${node.label}\n\n${body}`;
@@ -177,21 +184,22 @@ export function generateContextFileParts(
   generatedOn: string,
   modules = contextModules,
   outline: FileOutlineNode[] = contextOutline,
+  copy: FileCopy = CONTEXT_FILE_COPY,
 ): ContextFileParts {
   const lookups = buildFlowLookups(modules);
   const ctx: FlowContext = { answers: answers.values, repeatables: answers.repeatables };
   const sections: ContextFileSection[] = [];
   for (const node of outline) {
-    const text = renderFileSection(node, ctx, 1, lookups);
+    const text = renderFileSection(node, ctx, 1, lookups, copy);
     if (text) sections.push({ id: node.id, label: node.label, text });
   }
 
-  const header = `${FILE_TITLE}
+  const header = `${copy.title}
 
-${fileIntroLine(generatedOn)}`;
-  const footer = `${GROUNDING_RULE_HEADING}
+${copy.introLine(generatedOn)}`;
+  const footer = `${copy.groundingHeading}
 
-${SYSTEM_GROUNDING_RULE}
+${copy.groundingRule}
 `;
   return {
     header,

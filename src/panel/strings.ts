@@ -912,6 +912,24 @@ export const S = {
   splashVoiceOn: 'On',
   splashVoiceOff: 'Off',
 
+  /**
+   * V2.2 — the shelf's three new lines, from the signed-off draft
+   * (docs/V2.2-COPY-DRAFT.md, Adam 2026-08-26). `skillsReady` is the open
+   * Skills slot before its first answer; `actionsWritesItself` replaces
+   * "Finish Skills.md first" on the Actions slot because that instruction is
+   * no longer true — nobody finishes Actions, it is derived
+   * (core/files/deriveActions.ts); `badgeGenerated` is its badge once it is.
+   */
+  skillsReady: 'Ready when you are — about ten minutes',
+  actionsWritesItself: 'Writes itself from your Skills file',
+  badgeGenerated: 'Generated',
+  /** The derived file's own screen — what it is, and its two verbs. The note
+   * repeats the slot's fact where the person can act on it: edit Skills and
+   * this file is already up to date, because it is never stored. */
+  actionsDerivedNote: 'Read straight off your Skills file. Change a skill and this file already knows.',
+  actionsDownload: 'Download Actions.md',
+  actionsEditSkills: 'Change it in Skills.md',
+
   // ---------------------------------------------------------------- welcome
   // V1.1 VB-01. The first thing a person ever sees. Approved verbatim in
   // docs/V1.1-COPY-DRAFT.md — do not reword any of these four lines.

@@ -48,3 +48,34 @@ export const GROUNDING_RULE_HEADING = '## System Grounding Rule';
  * constant, so a mis-copy here would still be caught. */
 export const SYSTEM_GROUNDING_RULE =
   "Responsibilities, expertise, and initiative or project membership described above establish scope and capability — they are not proof that a specific activity occurred in a given time period. When asked about specific work, verify against actual records rather than assuming based on role.";
+
+/**
+ * V2.2 VB-80 — the per-file copy record.
+ *
+ * `generate.ts` and `parse.ts` were already generic over `modules`/`outline`;
+ * what was not generic was four module constants (the title, the intro line,
+ * the grounding heading and its rule) and one hardcoded validity check in
+ * `parse.ts`. This record is those four, threaded as a parameter, so a second
+ * file is a second `FileCopy` rather than a second generator.
+ *
+ * `renderRecord` is the one optional member: a per-file shape for a
+ * repeatable's records in the generated text. Context has none — its records
+ * render as the generic question/answer pairs they always have — and Skills
+ * renders each record as the sibling wizard's own block order (V2.2's
+ * approved per-skill section shape).
+ */
+export interface FileCopy {
+  title: string;
+  introLine: (generatedOn: string) => string;
+  groundingHeading: string;
+  groundingRule: string;
+  renderRecord?: (blockId: string, record: Record<string, unknown>) => string | null;
+}
+
+/** Context.md's own copy — exactly the four constants above, unchanged. */
+export const CONTEXT_FILE_COPY: FileCopy = {
+  title: FILE_TITLE,
+  introLine: fileIntroLine,
+  groundingHeading: GROUNDING_RULE_HEADING,
+  groundingRule: SYSTEM_GROUNDING_RULE,
+};

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FILE_SLOT_IDS, fileFinished, fileSlots } from './slots';
+import { FILE_SLOT_IDS, actionsGenerated, fileFinished, fileSlots } from './slots';
 import { sectionHealthMap } from '../freshness/sectionHealth';
 import { contextModules, contextOutline } from '../flow/flow';
 import type { AnswerValue, FileOutlineNode, Module, RepeatableBlock, Step } from '../../schema/flow.types';
@@ -59,17 +59,31 @@ describe('fileSlots — one slot per file in the work brain', () => {
     expect(FILE_SLOT_IDS).toEqual(['context', 'skills', 'actions']);
   });
 
-  it('Context.md is the only one this release opens; the other two are locked', () => {
-    const slots = fileSlots({});
-    expect(slots.find((s) => s.id === 'context')?.state).toBe('open');
-    expect(slots.find((s) => s.id === 'skills')?.state).toBe('locked');
-    expect(slots.find((s) => s.id === 'actions')?.state).toBe('locked');
+  /** V2.2: Skills joined BUILT (its interview shipped), so two doors and one
+   * lock — and the lock is Actions', which is not a door at all any more but
+   * a derivation (see actionsGenerated below). This test asserted "Context is
+   * the only one" for as long as that was true; the claim moved with the
+   * product. */
+  it('Skills.md is built AND earned: locked behind Context, open once Context is finished', () => {
+    const fresh = fileSlots({});
+    expect(fresh.find((s) => s.id === 'context')?.state).toBe('open');
+    expect(fresh.find((s) => s.id === 'skills')?.state).toBe('locked');
+    expect(fresh.find((s) => s.id === 'actions')?.state).toBe('locked');
+
+    const earned = fileSlots({ context: true });
+    expect(earned.find((s) => s.id === 'skills')?.state).toBe('open');
+    expect(earned.find((s) => s.id === 'actions')?.state).toBe('locked');
   });
 
-  it('finishing Context.md does NOT unlock Skills.md — the lock is "not built", not "not earned"', () => {
+  /** V2.2 — Actions is never an interview: no amount of finishing turns its
+   * slot 'open'. What finishing Skills does instead is make the DERIVED file
+   * available, which is `actionsGenerated`'s answer, not `state`'s. */
+  it('Actions.md never opens as an interview — it generates when Skills is finished', () => {
     const slots = fileSlots({ context: true, skills: true });
-    expect(slots.find((s) => s.id === 'skills')?.state).toBe('locked');
     expect(slots.find((s) => s.id === 'actions')?.state).toBe('locked');
+    expect(actionsGenerated({ skills: true })).toBe(true);
+    expect(actionsGenerated({ skills: false })).toBe(false);
+    expect(actionsGenerated({})).toBe(false);
   });
 
   it('each slot names the file before it, and the first names none', () => {

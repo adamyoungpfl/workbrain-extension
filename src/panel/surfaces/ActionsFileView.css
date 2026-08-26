@@ -1,0 +1,40 @@
+/* V2.2 VB-85 — the derived file's surface. The panel's own light chrome (this
+   is a reading surface, not the drawer's dark stage), everything from tokens. */
+
+.actionsview {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 16px 24px;
+}
+
+.actionsview-title {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--ink);
+}
+
+.actionsview-sub {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* The file, monospace, in its own scroll box — the same posture as the
+   drawer's live preview: the artifact is the interface. */
+.actionsview-text {
+  margin: 0;
+  padding: 12px;
+  max-height: 50vh;
+  overflow: auto;
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12px;
+  line-height: 1.55;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  white-space: pre-wrap;
+}

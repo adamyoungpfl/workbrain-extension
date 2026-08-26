@@ -180,7 +180,10 @@ test.describe('VB-36 — Home is the set of files', () => {
       await expect(rows.nth(n)).not.toHaveAttribute('title', /./);
     }
     await expect(rows.nth(1).locator('.sb')).toHaveText('Finish Context.md first');
-    await expect(rows.nth(2).locator('.sb')).toHaveText('Finish Skills.md first');
+    // V2.2: Actions is derived, never interviewed — its locked line stopped
+    // being an instruction ("Finish Skills.md first") because nobody finishes
+    // Actions; it states the fact instead (docs/V2.2-SKILLS-ACTIONS-DECISIONS.md #1).
+    await expect(rows.nth(2).locator('.sb')).toHaveText('Writes itself from your Skills file');
 
     await context.close();
   });
@@ -213,14 +216,13 @@ test.describe('VB-36 — Home is the set of files', () => {
 
     const page = await openHome(context, id);
     const rows = page.locator('.home-filelist .filerow');
-    // "Finish Context.md first" was true this morning and is an instruction
-    // they have already carried out now, so the row says the thing that is
-    // still true instead. Actions.md keeps waiting on a file that cannot be
-    // finished, so its line does not move.
-    await expect(rows.nth(1).locator('.sb')).toHaveText('Coming later');
-    await expect(rows.nth(2).locator('.sb')).toHaveText('Finish Skills.md first');
-    // Still locked. Finishing the file before it is not what unlocks it.
-    await expect(rows.nth(1)).toBeDisabled();
+    // V2.2 — this test used to pin the OPPOSITE: finished Context left Skills
+    // at "Coming later", because its interview did not exist. It does now, so
+    // finishing Context genuinely opens the door, saying the signed-off line.
+    await expect(rows.nth(1).locator('.sb')).toHaveText('Ready when you are — about ten minutes');
+    await expect(rows.nth(1)).toBeEnabled();
+    // Actions still waits — on Skills now, as a derivation, not an errand.
+    await expect(rows.nth(2).locator('.sb')).toHaveText('Writes itself from your Skills file');
 
     await context.close();
   });

@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { Button } from '../components';
 import { HealthPill, HealthSummary, healthDetail } from '../components/SectionHealth';
 import { getLocal } from '../../core/storage/client';
+import { ANSWERS_KEY } from '../../core/files/answersKey';
+import type { AnswersKey } from '../../core/files/answersKey';
 import { fileCanResume, fileSectionRows, fileStartTarget } from '../../core/files/fileView';
 import { positionForQuestionId } from '../../core/flow/outline';
 import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
@@ -60,6 +62,10 @@ import './FileView.css';
 export interface FileViewProps {
   modules: Module[];
   outline: FileOutlineNode[];
+  /** V2.2 — which key this file's answers live under. The comment on `name`
+   * below promised this day would be one more call site; the key is the one
+   * thing it forgot. Defaulted to Context's. */
+  answersKey?: AnswersKey | undefined;
   /** The file's own name, and what it is for — passed in rather than read from
    * `strings.ts` here, so the day Skills.md opens this same surface it is one
    * more call site rather than a condition inside it. */
@@ -74,12 +80,12 @@ export interface FileViewProps {
   onOpen: (position?: Position) => void;
 }
 
-export function FileView({ modules, outline, name, what, onBack, onOpen }: FileViewProps) {
+export function FileView({ modules, outline, name, what, onBack, onOpen, answersKey = ANSWERS_KEY.context }: FileViewProps) {
   const [answers, setAnswers] = useState<Answers | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    void getLocal('wb:answers').then((stored) => {
+    void getLocal(answersKey).then((stored) => {
       if (!cancelled) setAnswers(stored ?? { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} });
     });
     return () => {

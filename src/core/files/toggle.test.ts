@@ -81,14 +81,18 @@ describe('fileToggle — one item per file', () => {
     expect(items.map((entry) => entry.lock === null)).toEqual([true, false, false]);
   });
 
-  it('changes what a locked file says as the file before it is finished', () => {
+  it('finishing the file before it now UNLOCKS Skills — V2.2, the promise kept', () => {
+    // Until V2.2 this test pinned the opposite: finished Context still left
+    // Skills at {kind:'later'}, because the Skills interview did not exist.
+    // It does now, so "Finish Context.md first" finally does what it says.
     expect(fileToggle('context', {}).find((entry) => entry.id === 'skills')!.lock).toEqual({
       kind: 'needs',
       file: 'context',
     });
-    expect(fileToggle('context', { context: true }).find((entry) => entry.id === 'skills')!.lock).toEqual({
-      kind: 'later',
-    });
+    expect(fileToggle('context', { context: true }).find((entry) => entry.id === 'skills')!.lock).toBeNull();
+    // Actions stays locked either way — it is derived, never entered
+    // (docs/V2.2-SKILLS-ACTIONS-DECISIONS.md #1).
+    expect(fileToggle('context', { context: true }).find((entry) => entry.id === 'actions')!.lock).not.toBeNull();
   });
 });
 

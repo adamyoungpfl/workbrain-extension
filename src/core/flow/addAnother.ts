@@ -51,8 +51,27 @@ export const ADD_ANOTHER: Record<string, AddAnotherCopy> = {
   },
 };
 
+/**
+ * V2.2 VB-82 — Skills' own entry, in its own map so the Context snapshot
+ * test's "no key may name an open-ended block" rule keeps guarding the ported
+ * wording without knowing Skills exists. The copy is the SIGNED-OFF draft's
+ * (docs/V2.2-COPY-DRAFT.md): the yes/no prompt and, for an added record, the
+ * wizard's own [ADAPTED] deliverable question as the name ask. The draft's
+ * two extra hint lines ("Its name becomes the word you'll type to run it" /
+ * "One is enough to finish the file…") have no field on this three-field
+ * screen — recorded here rather than silently dropped; the second line's job
+ * is done by skl3's wrap instead.
+ */
+export const SKILLS_ADD_ANOTHER: Record<string, AddAnotherCopy> = {
+  skills: {
+    prompt: 'Want to add another skill?',
+    namePrompt: "What's the deliverable you're tired of re-explaining?",
+    namePlaceholder: 'Name the deliverable',
+  },
+};
+
 export function addAnotherCopyFor(blockId: string): AddAnotherCopy | undefined {
-  return ADD_ANOTHER[blockId];
+  return ADD_ANOTHER[blockId] ?? SKILLS_ADD_ANOTHER[blockId];
 }
 
 /**

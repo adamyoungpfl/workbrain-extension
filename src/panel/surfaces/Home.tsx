@@ -10,17 +10,18 @@ import {
 } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { computeNextMove, mostRecentAnsweredAt } from '../../core/freshness/nextMove';
+import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
 import { daysSince } from '../../core/freshness/clocks';
 import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { multipleRecordCount } from '../../core/flow/multiples';
-import { fileFinished, fileSlots } from '../../core/files/slots';
-import type { FileSlot } from '../../core/files/slots';
+import { actionsGenerated, fileFinished, fileSlots } from '../../core/files/slots';
+import type { FileSlot, FileSlotId } from '../../core/files/slots';
 import { fileLock } from '../../core/files/toggle';
 // V1.8 VB-47. The file's name, the lock's sentence and the padlock itself,
 // shared with the drawer's toggle so the shelf and the switcher cannot say
 // different things about the same file — see components/fileLabels.tsx.
 import { LockGlyph, fileName, lockLine } from '../components/fileLabels';
-import { contextModules, contextOutline } from '../../core/flow/flow';
+import { contextModules, contextOutline, skillsModules, skillsOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
 import { FileActions } from './FileActions';
@@ -52,11 +53,11 @@ export interface HomeProps {
    * button, which goes straight to the first question because there is nothing
    * in the file to look at yet.
    *
-   * No argument: `core/files/slots.ts`'s `BUILT` says exactly one slot is
-   * open, and every other one is locked and unclickable. The day Skills.md
-   * opens, this grows an id and App.tsx picks the flow data to hand over.
+   * V2.2: the day this comment promised arrived — Skills.md opened, so the
+   * id argument it said would appear has. `'actions'` opens the DERIVED file
+   * (a generated view, not an interview) once Skills is finished.
    */
-  onOpenFile: () => void;
+  onOpenFile: (id: FileSlotId) => void;
   onOpenProof: () => void;
   /**
    * V2.1 VB-73 — the splash's "Load your file" door. `true` asks this surface
@@ -105,6 +106,8 @@ const CONTACT_URL = 'https://www.model-citizen.org/contact';
  * is the ONE LINE rule above, which is a fact about this row and not about the
  * lock.
  */
+const EMPTY_SKILLS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
+
 function lockedReason(slot: FileSlot): string {
   const lock = fileLock(slot);
   // Only ever called for a locked slot, which always has one. "Coming later"
@@ -202,6 +205,11 @@ const PERSON_ICON = (
  */
 export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMultiples, importAsked, onImportAnswered }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
+  /** V2.2 — the second file's answers, for the shelf: whether Skills.md is
+   * finished (which unlocks the DERIVED Actions.md), and what its row says.
+   * Loaded alongside, derived from, stored under its own key — the same
+   * discipline as `answers`, one file over. */
+  const [skillsAnswers, setSkillsAnswers] = useState<Answers>(EMPTY_SKILLS);
   const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
   /**
    * Where focus goes when a recommendation is hidden.
@@ -216,7 +224,8 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([getLocal('wb:answers'), getLocal('wb:recs')]).then(([storedAnswers, storedRecs]) => {
+    void Promise.all([getLocal('wb:answers'), getLocal('wb:recs'), getLocal('wb:answers:skills')]).then(([storedAnswers, storedRecs, storedSkills]) => {
+      setSkillsAnswers(storedSkills ?? EMPTY_SKILLS);
       if (cancelled) return;
       setAnswersState(storedAnswers ?? EMPTY_ANSWERS);
       setDismissals(readDismissals(storedRecs));
@@ -281,7 +290,18 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
    * here on every render, so a locked row cannot go on saying "Finish
    * Context.md first" to somebody who has just finished it.
    */
-  const slots = fileSlots({ context: fileFinished(contextOutline, contextModules, answers, new Date()) });
+  const skillsFinished = fileFinished(skillsOutline, skillsModules, skillsAnswers, new Date());
+  const skillsHealthMap = sectionHealthMap(skillsOutline, skillsModules, skillsAnswers, null, new Date());
+  const skillsHealth = summariseSectionHealth(skillsOutline, skillsHealthMap);
+  const slots = fileSlots({
+    context: fileFinished(contextOutline, contextModules, answers, new Date()),
+    skills: skillsFinished,
+  });
+  const skillsStarted = Object.keys(skillsAnswers.answeredAt).length > 0;
+  // V2.2 — Actions.md is derived, not interviewed: the moment Skills is
+  // finished the slot stops being a lock and becomes the generated file
+  // (core/files/slots.ts's actionsGenerated, core/files/deriveActions.ts).
+  const showActionsGenerated = actionsGenerated({ skills: skillsFinished });
 
   return (
     <div className="home">
@@ -382,26 +402,44 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           this component's — see its header on why that fold is worth a test. */}
       <p className="home-section-label">{S.homeFilesLabel}</p>
       <div className="home-filelist">
-        {slots.map((slot) =>
-          slot.state === 'open' ? (
+        {slots.map((slot) => {
+          // V2.2 — three files, three honest rows. Context keeps its
+          // freshness-derived line; Skills says "ready" until it is started
+          // and its section count after; Actions is the derived file — locked
+          // while Skills is unfinished, "Generated" the moment it is not
+          // (never an interview: docs/V2.2-SKILLS-ACTIONS-DECISIONS.md #1).
+          if (slot.id === 'context') {
+            return slot.state === 'open' ? (
+              <FileRow key={slot.id} name={fileName(slot.id)} subtitle={fileSubtitle} badge={fileBadge} onClick={() => onOpenFile('context')} />
+            ) : (
+              <FileRow key={slot.id} name={fileName(slot.id)} subtitle={lockedReason(slot)} badge={{ label: S.badgeLocked }} icon={LOCK_ICON} locked />
+            );
+          }
+          if (slot.id === 'skills') {
+            return slot.state === 'open' ? (
+              <FileRow
+                key={slot.id}
+                name={fileName(slot.id)}
+                subtitle={skillsStarted ? `${S.fileSkillsWhat} · ${S.sectionsOf(skillsHealth.done, skillsOutline.length)}` : S.skillsReady}
+                badge={skillsFinished ? { label: S.badgeCurrent, tone: 'fresh' as const } : undefined}
+                onClick={() => onOpenFile('skills')}
+              />
+            ) : (
+              <FileRow key={slot.id} name={fileName(slot.id)} subtitle={lockedReason(slot)} badge={{ label: S.badgeLocked }} icon={LOCK_ICON} locked />
+            );
+          }
+          return showActionsGenerated ? (
             <FileRow
               key={slot.id}
               name={fileName(slot.id)}
-              subtitle={fileSubtitle}
-              badge={fileBadge}
-              onClick={onOpenFile}
+              subtitle={S.fileActionsWhat}
+              badge={{ label: S.badgeGenerated, tone: 'fresh' as const }}
+              onClick={() => onOpenFile('actions')}
             />
           ) : (
-            <FileRow
-              key={slot.id}
-              name={fileName(slot.id)}
-              subtitle={lockedReason(slot)}
-              badge={{ label: S.badgeLocked }}
-              icon={LOCK_ICON}
-              locked
-            />
-          ),
-        )}
+            <FileRow key={slot.id} name={fileName(slot.id)} subtitle={S.actionsWritesItself} badge={{ label: S.badgeLocked }} icon={LOCK_ICON} locked />
+          );
+        })}
       </div>
 
       {/* V1.7 VB-38 — the parts of the file there are several of. Derived like

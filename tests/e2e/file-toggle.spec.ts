@@ -249,15 +249,20 @@ test.describe('VB-47 — the strip is gone; the trail is the switcher', () => {
     // is its keyboard exit, and nothing else about this walk-in changed.
     await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
-    // The shelf and the trail must agree, so read the shelf first.
-    await expect(page.locator('.home-filelist')).toContainText(S.lockedComingLater);
+    // The shelf and the trail must agree, so read the shelf first. V2.2:
+    // finished Context now OPENS Skills (its interview shipped), so the shelf
+    // stops saying anything locked about it — the signed-off ready line
+    // stands where "Coming later" did, and no row asks for Context.
+    await expect(page.locator('.home-filelist')).toContainText(S.skillsReady);
     await expect(page.locator('.home-filelist')).not.toContainText(S.lockedNeedsFirst(S.fileContext));
 
     await page.getByRole('button', { name: /^Context\.md/ }).click();
     await page.getByRole('button', { name: S.fileGoThroughAgain, exact: true }).click();
     await page.waitForSelector('.filetree-row');
     await page.locator('.crumbs-seg[data-seg="file"]').click();
-    await expect(page.locator('.crumbs-note')).toHaveText(`${S.fileSkills} · ${S.lockedComingLater}`);
+    // On the trail, the note now explains the first file that is genuinely
+    // locked — Actions, which waits on Skills as a derivation.
+    await expect(page.locator('.crumbs-note')).toHaveText(`${S.fileActions} · ${S.lockedNeedsFirst(S.fileSkills)}`);
 
     await context.close();
   });

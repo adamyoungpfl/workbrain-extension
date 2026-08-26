@@ -81,6 +81,12 @@ export const SECTION_HALF_LIFE_DAYS: Readonly<Record<string, number>> = {
   sec8: 365,
   sec9: 730,
   sec10: 365,
+  // V2.2 — Skills.md's one section. 180 days, Adam's own number (approved
+  // 2026-08-26): skills drift faster than identity, slower than a quarter's
+  // initiatives. `skl` prefix from question one — this map is flat and
+  // shared, and a Skills section named `sec1` would inherit Context's
+  // 365-day clock with no error (docs/V2.2-SKILLS.md, risk 1).
+  skl1: 180,
 };
 
 /** How long this section's answers stay current, in days. */

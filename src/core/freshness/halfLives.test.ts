@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { DEFAULT_HALF_LIFE_DAYS, SECTION_HALF_LIFE_DAYS, halfLifeFor } from './halfLives';
 import { DUE_AFTER_DAYS } from './clocks';
-import { contextOutline } from '../flow/flow';
+import { contextOutline, skillsOutline } from '../flow/flow';
 import type { FileOutlineNode } from '../../schema/flow.types';
 
 function flatten(nodes: FileOutlineNode[]): FileOutlineNode[] {
@@ -16,8 +16,11 @@ describe('the per-section half-life table', () => {
     expect(missing).toEqual([]);
   });
 
-  it('names no section that is not in the outline', () => {
-    const ids = new Set(flatten(contextOutline).map((node) => node.id));
+  it('names no section that is not in an outline', () => {
+    // V2.2: the table serves two files now — every key must belong to one of
+    // the two outlines, and the union rule keeps a typo'd key as loud a
+    // failure as it was when Context was alone.
+    const ids = new Set([...flatten(contextOutline), ...flatten(skillsOutline)].map((node) => node.id));
     expect(Object.keys(SECTION_HALF_LIFE_DAYS).filter((id) => !ids.has(id))).toEqual([]);
   });
 

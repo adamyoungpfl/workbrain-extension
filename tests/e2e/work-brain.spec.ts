@@ -619,9 +619,11 @@ test.describe('VB-48 — the complete state, one level up', () => {
     expect(new Set(nodeFills).size, 'the glow was lost on the way out').toBe(1);
     expect([...new Set(nodeFills)]).toEqual([...new Set(insideFills)]);
 
-    // The file after it stops asking for something already done — the same
-    // swap Home's shelf and the drawer's toggle make, from the same fold.
-    await expect(page.locator('.brainglobe-locknote')).toHaveText(`${S.fileSkills} · ${S.lockedComingLater}`);
+    // V2.2 — finished Context UNLOCKS Skills now, so the stage's lock line
+    // moves along to the first file that is genuinely still locked: Actions,
+    // waiting on Skills as a derivation. Same fold as Home's shelf and the
+    // drawer's toggle, same swap, one file later.
+    await expect(page.locator('.brainglobe-locknote')).toHaveText(`${S.fileActions} · ${S.lockedNeedsFirst(S.fileSkills)}`);
 
     await context.close();
   });
