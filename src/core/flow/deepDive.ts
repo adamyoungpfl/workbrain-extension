@@ -60,14 +60,49 @@ export const DEEP_DIVE: Record<string, DeepDiveEntry[]> = {
       a: "AI starts every conversation knowing nothing about you. This is the part you'd otherwise retype every time.",
     },
   ],
+  // V2.3 VB-89 [DRAFT] — the sweep's additions ride in flow order below.
+  // Per-question judgment, same as V1.1: the factual one-liners
+  // (preferred_name, professional_name, entity_name, initiative_name)
+  // stay bare on purpose — there is only one way to ask what something
+  // is called, and a follow-up would be chrome.
+  goal_want: [
+    {
+      q: 'What makes a good answer?',
+      a: "One real task from this week. Small beats grand — you'll run exactly this at the end and watch the difference.",
+    },
+    {
+      q: 'Can I change it later?',
+      a: "Yes. It's the first thing in your file, and you can edit it there any time.",
+    },
+  ],
   context_scope: [
     {
       q: 'What changes based on my answer?',
       a: 'Only the wording of later questions. Pick "both" if you\'re unsure — nothing gets locked out.',
     },
   ],
+  stop_explaining: [
+    {
+      q: "What if there's more than one thing?",
+      a: 'Pick the one that costs you the most retyping. The rest of the interview will catch the others.',
+    },
+    {
+      q: 'How much detail?',
+      a: "A sentence or two. You're naming the thing, not solving it — the questions after this do the unpacking.",
+    },
+  ],
 
   // ── 2 · About Me ───────────────────────────────────────────────────
+  self_description: [
+    {
+      q: 'My job title, or something else?',
+      a: "Whatever you'd say to a smart stranger at dinner. A title tells AI less than one plain sentence about what you actually do.",
+    },
+    {
+      q: 'Work self or whole self?',
+      a: 'Match the scope you picked earlier. If this file covers both, say both — one line each is plenty.',
+    },
+  ],
   role_names: [
     {
       q: 'What counts as a role?',
@@ -82,6 +117,12 @@ export const DEEP_DIVE: Record<string, DeepDiveEntry[]> = {
     {
       q: "What if it's for more than one?",
       a: "Pick the one you'd name first if someone asked. This just anchors who the role serves — it isn't a contract.",
+    },
+  ],
+  role_mandate: [
+    {
+      q: 'How is this different from my duties?',
+      a: "Duties are the tasks. The mandate is why the role exists — what would go undone if nobody held it.",
     },
   ],
 
@@ -140,6 +181,12 @@ export const DEEP_DIVE: Record<string, DeepDiveEntry[]> = {
       a: 'No. Only the ones AI would need to recognize to be useful. Two or three is plenty.',
     },
   ],
+  entity_relevance: [
+    {
+      q: 'Why does AI need this?',
+      a: 'So it knows what this name means when you drop it into a sentence — the way a colleague already would.',
+    },
+  ],
   entity_aliases: [
     {
       q: 'Why does this matter?',
@@ -160,6 +207,30 @@ export const DEEP_DIVE: Record<string, DeepDiveEntry[]> = {
   ],
 
   // ── 6 · How I Think ────────────────────────────────────────────────
+  initiative_description: [
+    {
+      q: 'How much background?',
+      a: "Two sentences: what it is, and why it matters now. AI can ask you for more when it needs it.",
+    },
+  ],
+  initiative_success: [
+    {
+      q: "What if success isn't defined yet?",
+      a: "Say that — it's real information. Then add what better would look like, even roughly.",
+    },
+  ],
+  initiative_constraints: [
+    {
+      q: 'What counts as a constraint?',
+      a: "Anything fixed that shapes your choices — a date, a budget, a required sign-off, a system you're stuck with.",
+    },
+  ],
+  initiative_not_doing: [
+    {
+      q: 'Why say what this is not?',
+      a: 'Because AI will helpfully suggest it otherwise. A named non-goal saves you the same correction every week.',
+    },
+  ],
   risk_tolerance: [
     {
       q: 'What if it depends on the situation?',
