@@ -343,26 +343,26 @@ test.describe('VB-42 — the rotating follow-up', () => {
         ground = painted(node);
         node = node.parentElement;
       }
-      // Nothing up the chain paints: panel.html sets no background on `body`
-      // or `html`, so the ground is the browser's own canvas, which a
-      // transparent document composites onto — white. Asserted rather than
-      // assumed, because "on white" is the whole claim being measured.
-      const transparentDocument = !painted(document.body) && !painted(document.documentElement);
+      // V2.4 VB-111: the document now PAINTS its ground — body carries
+      // --ground, the one app-wide canvas — so the walk up the chain always
+      // finds a real color. Asserted rather than assumed, because "on the
+      // ground actually painted" is the whole claim being measured.
+      const groundedDocument = painted(document.body) !== null;
       const root = getComputedStyle(document.documentElement);
       return {
         ink: getComputedStyle(chip).color,
         ground: ground ?? 'rgb(255, 255, 255)',
-        transparentDocument,
+        groundedDocument,
         // Both colours VB-42 offered, read from the generated tokens.
         blue: root.getPropertyValue('--primary').trim(),
         green: root.getPropertyValue('--green').trim(),
       };
     });
 
-    // What ships: --primary, on the panel's white canvas.
-    expect(measured.transparentDocument).toBe(true);
+    // What ships: --primary, on the one canvas (VB-111: --ground).
+    expect(measured.groundedDocument).toBe(true);
     expect(measured.ink).toBe('rgb(42, 79, 203)');
-    expect(measured.ground).toBe('rgb(255, 255, 255)');
+    expect(measured.ground).toBe('rgb(246, 247, 249)');
     expect(contrast(measured.ink, measured.ground)).toBeGreaterThanOrEqual(4.5);
 
     // ...and the alternative VB-42 named — "a dark aqua green" — clears it

@@ -295,7 +295,9 @@ async function controls(page: Page): Promise<Control[]> {
 test('the containers are gone, and the fade with them (VB-41)', async () => {
   const { context, sw, id } = await launchExtension();
   const page = await openQuestion(context, sw, id);
-  const canvas = await tokenColor(page, '--canvas');
+  // V2.4 VB-111: the band dresses in --ground now — the one app canvas —
+  // tone-matched instead of reading as a white strip.
+  const canvas = await tokenColor(page, '--ground');
 
   for (const mode of ['list', 'brain'] as const) {
     await chooseMode(page, mode);

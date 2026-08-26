@@ -70,7 +70,6 @@ import { usesOrbChoice } from '../../core/choice/orbs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
-import { WallPanels } from '../components/WallPanels';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
 import { NARRATION_COPY } from '../voice/copy';
@@ -758,10 +757,6 @@ export function Flow({ modules, renderDone, onDone, initialPosition, outline, an
           } as CSSProperties
         }
       >
-        {/* V2.3 VB-97 — the ambient wall, under everything (its own z-index 0;
-            every sibling paints later in source order). Decoration never blocks
-            function: aria-hidden, pointer-events none, capped opacity. */}
-        <WallPanels />
         {screen}
         <FileDrawer
           outline={outline}

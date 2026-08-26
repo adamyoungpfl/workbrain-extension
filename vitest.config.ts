@@ -21,6 +21,10 @@ export default defineConfig({
       '**/.{idea,git,cache,output,temp}/**',
       '**/{karma,rollup,webpack,vite,vitest,jest,ava,babel,nyc,cypress,tsup,build,eslint,prettier}.config.*',
       'tests/e2e/**',
+      // V2.4: agent worktrees check out under .claude/worktrees/ — whole
+      // sibling copies of this repo, each with its own test run. This run
+      // must never sweep theirs.
+      '**/.claude/**',
     ],
   },
 });

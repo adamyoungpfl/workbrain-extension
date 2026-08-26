@@ -67,17 +67,22 @@ test.describe('VB-97 — the wall panels', () => {
 
     const measured = await wall.evaluate((el) => {
       const style = getComputedStyle(el);
+      const backdrop = el.parentElement!;
       return {
         opacity: Number(style.opacity),
         pointerEvents: style.pointerEvents,
-        zIndex: style.zIndex,
+        backdropZ: getComputedStyle(backdrop).zIndex,
+        backdropClass: backdrop.className,
         painted: (el as HTMLCanvasElement).width > 0,
       };
     });
     // Byte-for-byte the core cap — the stylesheet cannot drift from it.
     expect(measured.opacity).toBe(WALL_OPACITY_MAX);
     expect(measured.pointerEvents).toBe('none');
-    expect(measured.zIndex).toBe('0');
+    // V2.4 VB-111: the wall hoisted to the app-level backdrop — stacking
+    // belongs to .app-ground, behind every surface.
+    expect(measured.backdropClass).toBe('app-ground');
+    expect(measured.backdropZ).toBe('-1');
     expect(measured.painted).toBe(true);
 
     // It breathes: two samples a second apart differ.

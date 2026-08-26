@@ -257,17 +257,18 @@ test.describe('VB-33 — a section row says all four things', () => {
         `${S.sectionPercent(percent)} ${S.sectionPercentComplete}`,
       );
 
-      // FRESHNESS — the one clause the bundle cannot carry, and only where
-      // there is one. A section with nothing recorded in it has nothing to
-      // date, and a part-done one reports what was passed on instead, which is
-      // VB-19's "one clause after the count".
+      // FRESHNESS — V2.4 VB-110: a relative date in the bundle at the right
+      // end, on every row with a stamp to report. A section with nothing
+      // recorded in it has nothing to date; a part-done one also reports
+      // what was passed on (the skip clause, the one fact with nowhere else
+      // to live).
       if (state === 'not-yet') {
-        await expect(row.locator('.filetree-detail'), node.id).toHaveCount(0);
+        await expect(row.locator('.filetree-age'), node.id).toHaveCount(0);
         continue;
       }
-      if ((await row.locator('.filetree-detail').count()) === 0) continue;
-      const detail = (await row.locator('.filetree-detail').textContent())!;
-      if (/answered/.test(detail)) withFreshness++;
+      if ((await row.locator('.filetree-age').count()) === 0) continue;
+      const age = (await row.locator('.filetree-age').textContent())!;
+      if (/^(today|\d+(d|w|mo|y))$/.test(age.trim())) withFreshness++;
     }
     expect(withFreshness, 'at least one row reports how long ago it was written').toBeGreaterThan(0);
 
@@ -605,20 +606,23 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
         if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
         await expect(page.locator('.filetree-row.is-child').first()).toBeVisible();
       }
+      // V2.4 VB-110: the ago-clause left the under-label line — the meta
+      // bundle is count + percent + the relative date now, so the widest
+      // row is measured from those three.
       const rows = await page.locator('.filetree-row[data-node-id]').evaluateAll((els) =>
         els
           .map((el) => {
-            const detail = el.querySelector('.filetree-detail') as HTMLElement | null;
             const count = el.querySelector('.filetree-count') as HTMLElement | null;
             const percent = el.querySelector('.filetree-percent') as HTMLElement | null;
-            if (!detail || !count || !percent) return null;
+            const age = el.querySelector('.filetree-age') as HTMLElement | null;
+            if (!count || !percent) return null;
             const over = (node: HTMLElement) => node.scrollWidth > node.clientWidth + 1;
             return {
               id: (el as HTMLElement).dataset.nodeId!,
-              text: `${detail.textContent} ${count.textContent} ${percent.textContent}`,
-              width: detail.scrollWidth,
+              text: `${count.textContent} ${percent.textContent} ${age?.textContent ?? ''}`,
+              width: count.scrollWidth,
               height: Math.round(el.getBoundingClientRect().height),
-              clipped: over(detail) || over(count) || over(percent),
+              clipped: over(count) || over(percent) || (age !== null && over(age)),
             };
           })
           .filter((row): row is NonNullable<typeof row> => row !== null),
@@ -630,11 +634,11 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
       }
     }
 
-    // The fixture really did produce the hard case — two-digit counts and the
-    // longest freshness phrase — rather than passing on short strings.
+    // The fixture really did produce the hard case — two-digit counts and an
+    // aged relative date — rather than passing on short strings.
     const all = widest.map((row) => row.text).join(' | ');
     expect(all, 'the fixture never reached a two-digit count').toMatch(/\d\d of \d\d/);
-    expect(all, 'the fixture never reached a months-old section').toMatch(/answered \d+ months ago/);
+    expect(all, 'the fixture never reached an aged section').toMatch(/\d+(mo|y)/);
 
     await context.close();
   });

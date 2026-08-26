@@ -281,12 +281,18 @@ describe('FileTree', () => {
     expect(rowFor(container, 'sec1-1')).not.toBe(null);
   });
 
-  it('renders each record as its own sub-item, titled the way the file titles it', () => {
+  it('renders each record as its own sub-item behind the disclosure, titled the way the file titles it (VB-110)', () => {
     const answers = makeAnswers({
       values: { role_names: ['a', 'b'] },
       repeatables: { roles: [{ role_name: 'Team lead' }, { role_name: 'Parent' }] },
     });
     const { container } = renderTree(answers, 'role_for', 'sec1');
+    // V2.4 VB-110: records sit behind the one expand/collapse grammar now.
+    const toggle = container.querySelector('.filetree-records-toggle') as HTMLButtonElement;
+    expect(toggle).not.toBe(null);
+    expect(toggle.getAttribute('aria-expanded')).toBe('false');
+    expect(toggle.textContent).toContain('2 items');
+    act(() => toggle.click());
     const records = Array.from(container.querySelectorAll('.filetree-row.is-record .filetree-label')).map((el) => el.textContent);
     expect(records).toEqual(['Team lead', 'Parent']);
   });
@@ -297,6 +303,8 @@ describe('FileTree', () => {
       repeatables: { roles: [{ role_name: 'Team lead' }] },
     });
     const { container } = renderTree(answers, 'role_for', 'sec1');
+    const toggle = container.querySelector('.filetree-records-toggle') as HTMLButtonElement;
+    act(() => toggle.click());
     for (const row of container.querySelectorAll('.filetree-row.is-record')) {
       expect(row.querySelector('button')).toBe(null);
     }
@@ -396,8 +404,12 @@ describe('FileTree — section health (VB-19)', () => {
     expect(meta).not.toBe(null);
     expect(nav.getAttribute('aria-describedby')).toBe(meta.id);
     expect(meta.id.length).toBeGreaterThan(0);
-    expect(meta.querySelector('.filetree-detail')).not.toBe(null);
+    // V2.4 VB-110: the ago-clause left the under-label line for the right
+    // edge — the meta line now carries the count, the percent, and the
+    // relative date, all still bound to the control through this one id.
+    expect(meta.querySelector('.filetree-detail')).toBe(null);
     expect(meta.querySelector('.filetree-percent')).not.toBe(null);
+    expect(meta.querySelector('.filetree-age')?.textContent).toBe('today');
   });
 
   /**

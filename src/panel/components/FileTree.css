@@ -763,3 +763,53 @@
     opacity: 1;
   }
 }
+
+/* ── V2.4 VB-110 — rows, not a spreadsheet ─────────────────────────────────
+   The relative date at the row's right edge. Stale earns the amber ink AND
+   the dot (FLAG 2: color never carries it alone; the accessible name says
+   "time to review"). The light divider separates the status details from
+   the label side without ruling the row into a table. */
+.filetree-age {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 8px;
+  border-left: 1px solid var(--divider);
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.filetree-age.is-stale {
+  color: var(--amber);
+}
+.filetree-age-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--amber-line);
+}
+/* Child rows: the circle marker and the label sit on one vertical center. */
+.filetree-list.is-children .filetree-row {
+  align-items: center;
+}
+/* The record disclosure — the one expand/collapse grammar, at record scale. */
+.filetree-records-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 8px 0 28px;
+  border: 0;
+  background: transparent;
+  font: inherit;
+  font-size: 12px;
+  color: var(--dock-ink-2, var(--ink-2));
+  cursor: pointer;
+}
+.filetree-records-toggle:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.filetree-row.is-record {
+  align-items: center;
+}

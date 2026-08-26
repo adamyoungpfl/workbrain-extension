@@ -247,15 +247,18 @@ const DUE_RING = { style: 'dashed', width: '1px' };
  * property rather than trusting the table: any two states that ended up
  * identical after a change would be two states told apart by colour alone.
  */
+// V2.4 VB-110: the ago-clause left the detail line for the right-edge
+// relative date (`age`); the clause column keeps only the skip fact.
+const AGE = /^(today|\d+(d|w|mo|y))$/;
 const EXPECTED: Record<
   string,
-  { life: string; dueRing: boolean; spoken: string | null; count: RegExp; clause: RegExp | null }
+  { life: string; dueRing: boolean; spoken: string | null; count: RegExp; clause: RegExp | null; age: RegExp | null }
 > = {
-  here: { life: 'live', dueRing: false, spoken: null, count: /^\d+ of \d+$/, clause: null },
-  done: { life: 'lit', dueRing: false, spoken: null, count: /^(\d+) of \1$/, clause: /^answered /},
-  due: { life: 'lit', dueRing: true, spoken: S.sectionStateDue, count: /^(\d+) of \1$/, clause: /^answered / },
-  partly: { life: 'lit', dueRing: false, spoken: null, count: /^\d+ of \d+$/, clause: /skipped$/ },
-  'not-yet': { life: 'dim', dueRing: false, spoken: null, count: /^0 of \d+$/, clause: null },
+  here: { life: 'live', dueRing: false, spoken: null, count: /^\d+ of \d+$/, clause: null, age: null },
+  done: { life: 'lit', dueRing: false, spoken: null, count: /^(\d+) of \1$/, clause: null, age: AGE },
+  due: { life: 'lit', dueRing: true, spoken: S.sectionStateDue, count: /^(\d+) of \1$/, clause: null, age: AGE },
+  partly: { life: 'lit', dueRing: false, spoken: null, count: /^\d+ of \d+$/, clause: /skipped$/, age: AGE },
+  'not-yet': { life: 'dim', dueRing: false, spoken: null, count: /^0 of \d+$/, clause: null, age: null },
 };
 
 test.describe('VB-19 — five states, derived', () => {
@@ -292,6 +295,8 @@ test.describe('VB-19 — five states, derived', () => {
       await expect(row, node.id).toHaveAttribute('data-life', expected.life);
       await expect(row.locator('.filetree-count'), node.id).toHaveText(expected.count);
       if (expected.clause) await expect(row.locator('.filetree-detail'), node.id).toHaveText(expected.clause);
+      else await expect(row.locator('.filetree-detail'), node.id).toHaveCount(0);
+      if (expected.age) await expect(row.locator('.filetree-age'), node.id).toHaveText(expected.age);
       // The one state the picture cannot draw says itself out loud, in the
       // pill's own word, and no other state does (VB-55).
       const spoken = row.locator('[data-health-word]');
@@ -431,9 +436,14 @@ test.describe('VB-19 — five states, derived', () => {
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    // A finished, aged section reports how long ago, and counts at the right.
+    // V2.4 VB-110: the ago-clause left the under-label line for the row's
+    // right edge — a relative date that carries the stale verdict (amber +
+    // dot + "time to review" in the accessible name, never color alone).
     const due = page.locator('.filetree-row[data-health="due"]').first();
-    await expect(due.locator('.filetree-detail')).toHaveText(/^answered .+ ago$/);
+    await expect(due.locator('.filetree-detail')).toHaveCount(0);
+    await expect(due.locator('.filetree-age')).toHaveText(/^(today|\d+(d|w|mo|y))$/);
+    await expect(due.locator('.filetree-age')).toHaveClass(/is-stale/);
+    await expect(due.locator('.filetree-age .filetree-age-dot')).toHaveCount(1);
     await expect(due.locator('.filetree-count')).toHaveText(/^\d+ of \d+$/);
 
     // A part-done one reports what was passed on instead.
@@ -468,13 +478,13 @@ test.describe('VB-19 — five states, derived', () => {
     // `:r1:`, which are legal HTML ids and illegal CSS selectors.
     const described = page.locator(`[id="${describedBy}"]`);
     await expect(described).toHaveClass(/filetree-meta/);
-    const detailText = (await row.locator('.filetree-detail').textContent())!;
+    // V2.4 VB-110: the ago-clause left the line; the bundle now reads
+    // count + percent + the relative date — and the description is still
+    // the WHOLE of it rather than any one part.
     const countText = (await row.locator('.filetree-count').textContent())!;
     const percentText = (await row.locator('.filetree-percent').textContent())!;
-    // V1.8 VB-46 put a third fact on the line — the count, moved out of the
-    // clause and into the bundle — and the description is still the WHOLE of
-    // it rather than any one part.
-    await expect(described).toHaveText(detailText + countText + percentText);
+    const ageText = (await row.locator('.filetree-age').textContent())!;
+    await expect(described).toHaveText(countText + percentText + ageText);
     // And the figure names itself, for anyone who meets it without the count.
     expect(percentText).toMatch(new RegExp(`^\\d+% ${S.sectionPercentComplete}$`));
 

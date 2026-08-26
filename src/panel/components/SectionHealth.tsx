@@ -146,11 +146,10 @@ export function healthFreshness(health: SectionHealth): string | null {
   if (health.total === 0) return null;
   if (health.answered + health.skipped === 0 && health.state !== 'here') return null;
   if (health.skipped > 0) return S.sectionSkipped(health.skipped);
-  if (health.elapsed) {
-    return health.ageDays === 0
-      ? S.sectionAnsweredToday
-      : S.sectionAnsweredAgo(S.agoLabel(health.elapsed.value, health.elapsed.unit));
-  }
+  // V2.4 VB-110: the age clause left this line — it prints as a relative
+  // date at the row's right edge now (FileTree's `age` bundle), where it
+  // can carry the stale verdict. The skip clause above stays: it is the
+  // actionable fact and it has nowhere else to live.
   return null;
 }
 

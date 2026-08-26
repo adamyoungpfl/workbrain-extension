@@ -2,17 +2,17 @@ import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CSSProperties } from 'react';
 import type { FileOutlineNode, Module } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
-import { navigationTargetFor, outlineNodeState, repeatableBlocksForNode } from '../../core/flow/outline';
+import { navigationTargetFor, outlineNodeState } from '../../core/flow/outline';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
 import { sectionCompletionPercent, sectionHealthMap } from '../../core/freshness/sectionHealth';
 import type { SectionLife } from '../../core/freshness/sectionLife';
 import { sectionLife } from '../../core/freshness/sectionLife';
 import { splitSectionLabel } from '../../core/flow/sectionLabel';
-import { repeatableRecordTitle } from '../../core/files/generate';
 import { childNodeGradient, sectionNodeGradient } from './BrainGlobe';
 import { HIGHLIGHT_RADIUS, LIMB_INNER, SHADE_RADIUS, orbLight } from '../../core/globe/lighting';
 import type { OrbLight } from '../../core/globe/lighting';
 import { healthFreshness } from './SectionHealth';
+import { recordChildrenFor, relativeAge } from '../../core/freshness/recordRows';
 import { prefersReducedMotion } from '../cues/verbs';
 import { S } from '../strings';
 import './FileTree.css';
@@ -410,17 +410,22 @@ function FileTreeRow({
   const typedLabel = useTypewriterOnChange(displayTitle, `${node.id}:${state}`);
   const metaId = useId();
 
-  // Records the generated file gives their own titled block — role names,
-  // entity names, initiative names. Shown as sub-items so the tree has the
-  // same shape as the file (core/flow/outline.ts's `repeatableBlocksForNode`).
-  const records: string[] = [];
-  for (const block of repeatableBlocksForNode(modules, node)) {
-    for (const record of answers.repeatables[block.id] ?? []) records.push(repeatableRecordTitle(block, record));
-  }
+  // V2.4 VB-110: records are real sub-rows now — named by the same title
+  // the generated file prints, carrying their own freshness and their own
+  // stale verdict (core/freshness/recordRows.ts).
+  const records = recordChildrenFor(node, modules, answers, new Date());
 
   const childNodes = node.children ?? [];
   const hasChildren = childNodes.length > 0;
   const expanded = hasChildren && expandedId === node.id;
+  // V2.4 VB-110: the expand/collapse grammar generalizes — a row whose
+  // sub-items are RECORDS gets the same disclosure. Local state rather than
+  // the accordion's one-open-id: records hang off child sections too
+  // (roles under About Me's own children), and the accordion only tracks
+  // top-level ids. Open by default where the row is the current section, so
+  // the record being edited is never hidden under a closed toggle.
+  const [recordsOpen, setRecordsOpen] = useState(false);
+  const hasRecords = records.length > 0;
 
   // Only a written or in-progress section is a real link. Jumping ahead to a
   // section nobody has reached would skip past required questions the flow
@@ -567,7 +572,28 @@ function FileTreeRow({
    * vocabulary.
    */
   const sectionHealth = health[node.id];
+  // V2.4 VB-110: the under-label line keeps only the SKIP clause (the
+  // actionable fact); the age moved to the row's right edge as a relative
+  // date — see `age` below.
   const freshness = sectionHealth ? healthFreshness(sectionHealth) : null;
+  // The relative date at the row's right, color-coded past the section's
+  // half-life WITH a second signal (the dot and the word in the accessible
+  // name — V2.4 FLAG 2: never color alone). The seed of the update-and-
+  // prune ritual.
+  const stale =
+    sectionHealth?.ageDays != null && sectionHealth.halfLifeDays != null
+      ? sectionHealth.ageDays >= sectionHealth.halfLifeDays
+      : false;
+  const age =
+    sectionHealth?.lastAnsweredAt != null ? (
+      <span
+        className={stale ? 'filetree-age is-stale' : 'filetree-age'}
+        aria-label={stale ? S.fileTreeAgeStale(relativeAge(sectionHealth.lastAnsweredAt, new Date())) : undefined}
+      >
+        {stale && <span className="filetree-age-dot" aria-hidden="true" />}
+        {relativeAge(sectionHealth.lastAnsweredAt, new Date())}
+      </span>
+    ) : null;
   // Null only where the section genuinely asks nothing: 0% of no questions is
   // not a fact about the file (see `sectionCompletionPercent`).
   const percent = sectionHealth ? sectionCompletionPercent(sectionHealth) : null;
@@ -579,6 +605,7 @@ function FileTreeRow({
           {S.sectionPercent(percent)}
           <span className="filetree-sr"> {S.sectionPercentComplete}</span>
         </span>
+        {age}
       </span>
     ) : null;
   const metaLine =
@@ -677,31 +704,49 @@ function FileTreeRow({
           <span className="filetree-toggle-spacer" aria-hidden="true" />
         )}
       </div>
-      {/* Records are not behind the disclosure — they follow their own row
-          wherever it renders, exactly as the source does. The accordion holds
-          one id at a time, so gating them on it would mean a record under a
-          CHILD section could never be shown at all. */}
-      {records.length > 0 && (
-        <ul className="filetree-list is-records">
-          {records.map((title, i) => (
-            // Not independently clickable. V1.7 VB-38 built the per-record
-            // jump this once said did not exist (core/flow/runner.ts's
-            // `positionForRecord`), but it put it on a screen whose whole job
-            // is choosing between records — and the tree stays what it has
-            // always been, a picture of the file. Two places offering the same
-            // edit would be two places to keep in step.
-            <li className="filetree-item is-nested" key={`${node.id}-record-${i}`}>
-              <div className="filetree-row is-record" data-depth={depth + 1}>
-                {/* A record is a thing the file HOLDS, not a section of it, so
-                    it gets the orb's shape at a smaller size and none of its
-                    colour — it has no sphere in the globe to be the same
-                    object as (FileTree.css). */}
-                <span className="filetree-glyph" data-life="lit" aria-hidden="true" />
-                <span className="filetree-label">{title}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+      {/* V2.4 VB-110: records sit behind the same disclosure grammar every
+          other sub-node uses (Adam's call — one expand/collapse everywhere),
+          via the row's own local toggle rather than the accordion's one open
+          id, since records hang off child sections too. Each row is still
+          not independently clickable (V1.7 VB-38's reasoning stands — the
+          tree is a picture of the file), but it now carries the record's own
+          relative freshness and its stale verdict, which is the prune
+          ritual's surface. */}
+      {hasRecords && (
+        <div className="filetree-records">
+          <button
+            type="button"
+            className="filetree-records-toggle"
+            aria-expanded={recordsOpen}
+            onClick={() => setRecordsOpen((v) => !v)}
+          >
+            <Chevron open={recordsOpen} />
+            <span>{S.fileTreeRecords(records.length)}</span>
+          </button>
+          {recordsOpen && (
+            <ul className="filetree-list is-records">
+              {records.map((row) => (
+                <li className="filetree-item is-nested" key={row.id}>
+                  <div className="filetree-row is-record" data-depth={depth + 1} data-stale={row.stale ? 'true' : 'false'}>
+                    {/* A record is a thing the file HOLDS, not a section of
+                        it — the orb's shape, smaller, uncoloured. */}
+                    <span className="filetree-glyph" data-life="lit" aria-hidden="true" />
+                    <span className="filetree-label">{row.label}</span>
+                    {row.lastAt && (
+                      <span
+                        className={row.stale ? 'filetree-age is-stale' : 'filetree-age'}
+                        aria-label={row.stale ? S.fileTreeAgeStale(relativeAge(row.lastAt, new Date())) : undefined}
+                      >
+                        {row.stale && <span className="filetree-age-dot" aria-hidden="true" />}
+                        {relativeAge(row.lastAt, new Date())}
+                      </span>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       )}
       {expanded && (
         <ul className="filetree-list is-children">

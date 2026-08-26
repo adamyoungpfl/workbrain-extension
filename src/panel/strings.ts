@@ -355,7 +355,16 @@ export const S = {
   sectionSkipped: (n: number) => `${n} skipped`,
   /** `ago` arrives already worded by `agoLabel` — "7 months", "3 days". */
   sectionAnsweredAgo: (ago: string) => `answered ${ago} ago`,
+  // V2.4 VB-110: the age lives at the row's right edge as a relative date
+  // now; this line's subtitle duty retired. Kept for FileView until VB-102
+  // retires that surface.
   sectionAnsweredToday: 'answered today',
+  /** [DRAFT] V2.4 VB-110 — the stale date's accessible name: the word
+   * carries what the color shows (FLAG 2, never color alone). */
+  fileTreeAgeStale: (age: string) => `updated ${age} ago — time to review`,
+  /** [DRAFT] V2.4 VB-110 — the record disclosure's label: what the person
+   * calls them ("3 items"), never "records". */
+  fileTreeRecords: (n: number) => (n === 1 ? '1 item' : `${n} items`),
   /**
    * V1.6 VB-33. The row shows the figure alone, because "7 of 13" is printed
    * an inch to its left and together they can only mean one thing. The word is

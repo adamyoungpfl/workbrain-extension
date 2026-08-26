@@ -233,6 +233,11 @@ test.describe('VB-07 — the living file tree', () => {
     const aboutMe = page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle');
     if ((await aboutMe.getAttribute('aria-expanded')) !== 'true') await aboutMe.click();
 
+    // V2.4 VB-110: records sit behind the one disclosure grammar now, with
+    // their own freshness on the right.
+    const recordsToggle = page.locator('.filetree-records-toggle');
+    await expect(recordsToggle).toHaveText(/2 items/);
+    await recordsToggle.click();
     await expect(page.locator('.filetree-row.is-record .filetree-label')).toHaveText(['Team lead', 'Parent']);
     await expect(page.locator('.filetree-row.is-record button')).toHaveCount(0);
 

@@ -908,8 +908,10 @@
 .filepreview-bar {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 8px;
+  /* V2.4 VB-110: the bar's controls sit centered as one uniform group
+     along the bottom, not flung to the edges. */
+  justify-content: center;
+  gap: 16px;
 }
 .filepreview-toggle,
 .filepreview-download {
@@ -954,7 +956,10 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  height: calc(var(--filedrawer-h, 50px) - var(--drawer-head-h, 24px));
+  /* V2.4 VB-104: the text centers on the whole VISIBLE bar, not the strip
+     under the handle band — full height, and the handle overlays it. */
+  height: var(--filedrawer-h, 50px);
+  margin-top: calc(-1 * var(--drawer-head-h, 24px));
   padding: 0 12px;
   overflow: hidden;
 }

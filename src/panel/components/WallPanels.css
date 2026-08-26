@@ -5,7 +5,9 @@
 .wallpanels {
   position: absolute;
   inset: 0;
-  z-index: 0;
+  /* V2.4 VB-111: stacking belongs to .app-ground (z-index -1); the canvas
+     itself just fills its layer. The opacity IS the readability guarantee —
+     keep in step with core WALL_OPACITY_MAX (wall-panels.spec.ts). */
   opacity: 0.04;
   pointer-events: none;
 }

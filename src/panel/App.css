@@ -34,3 +34,19 @@
   white-space: nowrap;
   border: 0;
 }
+
+/* V2.4 VB-111 — the one canvas. The body paints --ground (so anything that
+   asks "what ground is this text really on" — including the contrast
+   measurements in the e2e suites — finds a real color, never transparent),
+   and the backdrop div holds the wall at negative z-index: above the body's
+   own paint, below every surface. Fixed, full-viewport, inert. */
+html,
+body {
+  background: var(--ground);
+}
+.app-ground {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+}

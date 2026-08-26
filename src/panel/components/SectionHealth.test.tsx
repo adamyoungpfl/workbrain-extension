@@ -76,8 +76,10 @@ describe('HealthPill', () => {
 });
 
 describe('healthDetail', () => {
-  it('says how much of the section is written, and how long ago', () => {
-    expect(healthDetail(health())).toBe(`${S.sectionAnsweredOf(8, 8)} · ${S.sectionAnsweredAgo(S.agoLabel(7, 'month'))}`);
+  it('says how much of the section is written — the age moved to the row edge (VB-110)', () => {
+    // V2.4 VB-110: the age clause left this line for the right-edge relative
+    // date, where it carries the stale verdict. The count stands alone.
+    expect(healthDetail(health())).toBe(S.sectionAnsweredOf(8, 8));
   });
 
   it('says what was passed on instead, when something was — one clause, never two', () => {
@@ -86,10 +88,8 @@ describe('healthDetail', () => {
     expect(detail.split('·')).toHaveLength(2);
   });
 
-  it('says "today" rather than "0 days ago"', () => {
-    expect(healthDetail(health({ ageDays: 0, elapsed: { value: 0, unit: 'day' } }))).toBe(
-      `${S.sectionAnsweredOf(8, 8)} · ${S.sectionAnsweredToday}`,
-    );
+  it('a fresh stamp adds no clause either — the date is the row edge\'s job now (VB-110)', () => {
+    expect(healthDetail(health({ ageDays: 0, elapsed: { value: 0, unit: 'day' } }))).toBe(S.sectionAnsweredOf(8, 8));
   });
 
   it('is just the count when there is no stamp to report', () => {
@@ -118,16 +118,15 @@ describe('healthDetail', () => {
  * cannot word the same clause differently.
  */
 describe('healthFreshness', () => {
-  it('is the clause `healthDetail` prints after the count, and nothing else', () => {
-    for (const state of [
-      health(),
-      health({ state: 'partly', answered: 3, skipped: 2, left: 1, total: 6 }),
-      health({ ageDays: 0, elapsed: { value: 0, unit: 'day' } }),
-    ]) {
-      const clause = healthFreshness(state)!;
-      expect(clause).not.toContain(' of ');
-      expect(healthDetail(state)).toBe(`${S.sectionAnsweredOf(state.answered, state.total)} · ${clause}`);
-    }
+  it('is the clause `healthDetail` prints after the count — the SKIP clause only, since VB-110', () => {
+    // The one clause left with nowhere else to live: what was passed on.
+    const skipped = health({ state: 'partly', answered: 3, skipped: 2, left: 1, total: 6 });
+    const clause = healthFreshness(skipped)!;
+    expect(clause).toBe(S.sectionSkipped(2));
+    expect(healthDetail(skipped)).toBe(`${S.sectionAnsweredOf(3, 6)} · ${clause}`);
+    // Aged and fresh sections alike add none.
+    expect(healthFreshness(health())).toBeNull();
+    expect(healthFreshness(health({ ageDays: 0, elapsed: { value: 0, unit: 'day' } }))).toBeNull();
   });
 
   it('says what was passed on rather than how long ago — one clause, never two', () => {

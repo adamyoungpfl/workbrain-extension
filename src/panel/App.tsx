@@ -6,6 +6,7 @@ import { Flow } from './surfaces/Flow';
 import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
 import { Splash } from './surfaces/Splash';
+import { WallPanels } from './components/WallPanels';
 import type { SplashIntent } from './surfaces/Splash';
 import { getSession, setSession } from '../core/storage/client';
 import { Button } from './components';
@@ -334,6 +335,15 @@ export default function App() {
   const inertWhileCovered = splash === 'showing' ? { inert: '' } : {};
   return (
     <>
+      {/* V2.4 VB-111 — the ONE canvas. The wall (VB-97) hoists from the flow
+          shell to an app-level backdrop, fixed behind every surface at
+          negative z-index (above the body's --ground paint, below all
+          content — no stacking change to <main>, which must stay unstyled;
+          see App.css's header for why). Surfaces sit transparent on it;
+          white survives only inside buttons, inputs and cards. */}
+      <div className="app-ground" aria-hidden="true">
+        <WallPanels />
+      </div>
       <main className="app-main" {...(inertWhileCovered as Record<string, string>)}>
         <h1 className="app-sr">{S.appName}</h1>
         {currentSurface()}

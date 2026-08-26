@@ -286,6 +286,8 @@ test.describe('VB-46 — one rule, and both views obey it', () => {
           counts: pick('.filetree-counts')!,
           count: pick('.filetree-count')!,
           percent: pick('.filetree-percent')!,
+          // V2.4 VB-110: the relative date joined the bundle's right end.
+          age: pick('.filetree-age'),
           pill: pick('.sectionhealth-pill'),
           height: Math.round(el.getBoundingClientRect().height),
         };
@@ -295,8 +297,10 @@ test.describe('VB-46 — one rule, and both views obey it', () => {
     for (const row of rows) {
       // No pill anywhere in the bundle any more (VB-55).
       expect(row.pill, `${row.id} still has a status pill`).toBe(null);
-      // BUNDLED: the two sit in one column, right-aligned to each other.
-      expect(Math.abs(row.counts.right - row.percent.right), `${row.id} column ragged`).toBeLessThanOrEqual(2);
+      // BUNDLED: one column, right-aligned to its own last element — the
+      // relative date when the row has one (VB-110), else the figure.
+      const last = row.age ?? row.percent;
+      expect(Math.abs(row.counts.right - last.right), `${row.id} column ragged`).toBeLessThanOrEqual(2);
       // AT THE RIGHT END: past the middle of the row, and clear of the name.
       expect(row.counts.left, `${row.id} bundle is not at the right end`).toBeGreaterThan(
         row.row.left + row.row.width / 2,

@@ -1005,12 +1005,21 @@ async function bandInk(page: Page): Promise<BandInk> {
     // would swamp the ink the cluster paints and hide any movement in it.
     const grip = document.querySelector('.filedrawer-grip')?.getBoundingClientRect();
     const height = Math.round(grip ? Math.min(band.height, grip.top - band.top - 1) : band.height);
-    const ground = context.getImageData(2, top + 2, 1, 1).data;
+    // V2.4 VB-111: sample INSIDE the band's own box. The app ground is a
+    // breathing textured canvas now — the page margins beside the band show
+    // it, and pixels there read as "ink" against a flat ground sample,
+    // swamping the cluster's signal until the wave measures as invisible
+    // (found as a 0-of-20-frames failure, not reasoned about). The band
+    // itself paints flat --ground and occludes the texture, so the box is
+    // the honest measurement region — same claims, correct ground.
+    const left = Math.max(0, Math.round(band.left));
+    const width = Math.min(canvas.width - left, Math.round(band.width));
+    const ground = context.getImageData(left + 2, top + 2, 1, 1).data;
     const rows: number[] = [];
     let total = 0;
     let weighted = 0;
     for (let row = 0; row < height; row++) {
-      const data = context.getImageData(0, top + row, canvas.width, 1).data;
+      const data = context.getImageData(left, top + row, width, 1).data;
       let count = 0;
       for (let x = 0; x < data.length; x += 4) {
         const off =

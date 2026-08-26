@@ -1,11 +1,12 @@
 /* GENERATED from design/tokens.json by scripts/tokens.mjs — do not edit. */
 :root {
   --canvas: #FFFFFF;
+  --ground: #F6F7F9;
   --surface: #F6F7F9;
   --sunken: #EDEFF3;
   --ink: #15181D;
   --ink-2: #525A67;
-  --ink-3: #6B7484;
+  --ink-3: #646C7B;
   --ink-inv: #FFFFFF;
   --divider: #E2E5EA;
   --border: #D4D8E0;

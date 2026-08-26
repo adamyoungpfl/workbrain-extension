@@ -747,7 +747,10 @@
   border: 0;
   justify-content: center;
   gap: 10px;
-  background: var(--canvas);
+  /* V2.4 VB-111: --ground, not --canvas — opaque on purpose (this band
+     occludes content beneath it), tone-matched to the one canvas so it
+     stops reading as a white strip. */
+  background: var(--ground);
 }
 
 /* The note, docked into the band the cluster left — fixed above the drawer,
@@ -772,7 +775,7 @@
   padding: 0 8px var(--nav-clearance, 20px);
   align-items: center;
   align-content: center;
-  background: var(--canvas);
+  background: var(--ground); /* VB-111: same reasoning as .flow-foot above */
 }
 
 /* ── THE CONTROLS: 26px painted, 44px pressable ──────────────────────────
