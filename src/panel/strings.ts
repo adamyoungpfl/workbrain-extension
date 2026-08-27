@@ -984,30 +984,26 @@ export const S = {
 
   // ---------------------------------------------------------------- splash
   /**
-   * V1.7 VB-34. The one line on the splash, under the lockup. Adam's wording,
-   * quoted in docs/V1.7-REFINEMENT.md — do not reword it.
+   * THE tagline. Adam's exact words, 2026-08-26 (V2.6): "How you do anything
+   * is how your AI does everything. That supersedes all others and is the
+   * standard now." Recorded in docs/NORTH-STAR.md — do not reword it.
    *
-   * It is the whole product in seven words, and it is the reason the splash
-   * is worth a couple of seconds of anyone's session: it says what the deal
-   * is before a single question is asked. Two short sentences, both active,
-   * both second person, no product noun in either.
+   * It replaced V1.7 VB-34's "AI does the work. You do the thinking." here,
+   * and it is the one line the splash and Home's lockup both print — one
+   * standard, said in one string, so the two surfaces cannot drift.
    */
-  splashTagline: 'AI does the work. You do the thinking.',
+  splashTagline: 'How you do anything is how your AI does everything.',
 
-  /**
-   * V2.1 VB-73 — the splash's two doors. Adam's own labels from the VB-73
-   * notes, sentence-cased to match every button in the panel. "Load your
-   * file" and Home's "I already have a file" are two names for one move,
-   * kept deliberately: the splash's pair answers "which door", Home's button
-   * answers "what is true of me", and both land in the same place.
-   */
-  splashBuild: 'Build your file',
-  splashLoad: 'Load your file',
-  /** The voice toggle's printed state. The word, not just a colour or an icon
-   * — the splash is the one surface where a person has never seen the icon
-   * before, so the state is spelled out beside it. */
-  splashVoiceOn: 'On',
-  splashVoiceOff: 'Off',
+  /* V2.6 VB-126: `splashBuild` / `splashLoad` / `splashVoiceOn` /
+     `splashVoiceOff` are deleted with the doors and the voice row they
+     labelled — the splash is pure arrival now (Adam: "any click from the
+     splash page will load to the home page"), held for the wow treatment.
+     The import door's job lives on in `importFile` on Home; the narrator's
+     in the header toggle. Recorded rather than silently dropped, per the
+     `fileTreeRoot` precedent. */
+  /** [DRAFT] V2.6 VB-126 — the splash's one control: a real button stretched
+   * over the whole surface, named for where any press lands. */
+  splashEnter: 'Open your work brain',
 
   /**
    * V2.2 — the shelf's three new lines, from the signed-off draft

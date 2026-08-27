@@ -9,7 +9,6 @@ import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
 import { Splash } from './surfaces/Splash';
 import { WallPanels } from './components/WallPanels';
-import type { SplashIntent } from './surfaces/Splash';
 import { getSession, setSession } from '../core/storage/client';
 import { Button } from './components';
 import { contextModules, contextOutline, skillsModules, skillsOutline, buildProofModules } from '../core/flow/flow';
@@ -122,19 +121,11 @@ export default function App() {
     };
   }, []);
 
-  /**
-   * V2.1 VB-73 — which door the splash was left through. `'load'` asks Home
-   * to open the import picker the moment the splash is gone (Home hands it to
-   * FileActions, which owns the input); anything else is Home as it stands.
-   * One-shot: FileActions reports back through `onDone` below and the flag
-   * drops, so a re-render can never re-open a picker somebody closed.
-   */
-  const [importAsked, setImportAsked] = useState(false);
-
-  /** Stable, so the splash's own listeners are never reset by a re-render. */
-  const endSplash = useCallback((intent: SplashIntent) => {
+  /** Stable, so the splash's own listeners are never reset by a re-render.
+   * V2.6 VB-126: no intent any more — every press on the splash lands on
+   * Home as it stands, and the import door's plumbing left with the door. */
+  const endSplash = useCallback(() => {
     setSplash('gone');
-    if (intent === 'load') setImportAsked(true);
   }, []);
 
   function goHome() {
@@ -219,8 +210,6 @@ export default function App() {
           }}
           onOpenProof={openProof}
           onOpenMultiples={() => setSurface('multiples')}
-          importAsked={importAsked}
-          onImportAnswered={() => setImportAsked(false)}
         />
       );
     }

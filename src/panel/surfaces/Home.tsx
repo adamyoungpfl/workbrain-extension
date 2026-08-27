@@ -60,16 +60,6 @@ export interface HomeProps {
   onOpenFile: (id: FileSlotId) => void;
   onOpenProof: () => void;
   /**
-   * V2.1 VB-73 — the splash's "Load your file" door. `true` asks this surface
-   * to open the import picker on arrival; the answer travels straight through
-   * to FileActions, which owns the input and the whole import flow, and
-   * `onImportAnswered` clears the ask so it can never fire twice. Home is only
-   * the corridor here — it adds nothing to the request and holds no state
-   * about it.
-   */
-  importAsked?: boolean;
-  onImportAnswered?: () => void;
-  /**
    * V1.7 VB-38: opens the list of roles, people and projects — the things the
    * file holds several of. Shown only when there is at least one of them, so
    * the row never offers an empty screen.
@@ -203,7 +193,7 @@ const PERSON_ICON = (
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMultiples, importAsked, onImportAnswered }: HomeProps) {
+export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMultiples }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   /** V2.2 — the second file's answers, for the shelf: whether Skills.md is
    * finished (which unlocks the DERIVED Actions.md), and what its row says.
@@ -468,7 +458,7 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
       )}
 
       {nextMove.kind === 'start' && <p className="home-hint">{S.emptyNewDevice}</p>}
-      <FileActions answers={answers} onImport={persist} pickAsked={importAsked} onPickAnswered={onImportAnswered} />
+      <FileActions answers={answers} onImport={persist} />
 
       <p className="home-section-label">{S.homeHelpLabel}</p>
       <FileRow name={S.homeHelpTitle} subtitle={S.homeHelpSub} icon={PERSON_ICON} iconTone="primary" href={CONTACT_URL} />

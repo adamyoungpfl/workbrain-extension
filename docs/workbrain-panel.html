@@ -1,0 +1,473 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workbrain — side panel</title>
+<style>
+  :root{
+    --ink:#0E1722;
+    --ink-2:#3D4B5A;
+    --ink-3:#6B7A8A;
+    --line:#E3E9EF;
+    --line-strong:#CFD8E1;
+    --surface:#FFFFFF;
+    --surface-2:#F6F8FA;
+    --canvas:#EDF1F5;
+    --brand:#0B5CD5;
+    --context:#0E7A5F;
+    --context-bg:#E8F5F0;
+    --skills:#1F5FC4;
+    --skills-bg:#E9F0FD;
+    --actions:#6544C4;
+    --actions-bg:#EFEBFB;
+    --amber:#B4690E;
+    --shadow:0 1px 2px rgba(14,23,34,.06), 0 4px 14px rgba(14,23,34,.05);
+    --radius:14px;
+    --font:-apple-system, BlinkMacSystemFont, "Segoe UI Variable Text", "Segoe UI", Inter, Roboto, system-ui, sans-serif;
+    --mono:ui-monospace, SFMono-Regular, "Cascadia Mono", Menlo, monospace;
+  }
+  [data-theme="dark"]{
+    --ink:#F2F5F8;
+    --ink-2:#C2CCD6;
+    --ink-3:#8B98A6;
+    --line:#26313D;
+    --line-strong:#33414F;
+    --surface:#151D26;
+    --surface-2:#1B242F;
+    --canvas:#0B1119;
+    --brand:#5B9BFF;
+    --context:#4FCBA5;
+    --context-bg:#123028;
+    --skills:#7FB0FF;
+    --skills-bg:#132639;
+    --actions:#A78BFA;
+    --actions-bg:#1F1A33;
+    --amber:#E0A455;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    font-family:var(--font);
+    background:
+      radial-gradient(1200px 600px at 20% -10%, #F7FAFD 0%, transparent 60%),
+      var(--canvas);
+    color:var(--ink);
+    -webkit-font-smoothing:antialiased;
+    display:flex;
+    justify-content:center;
+    padding:28px 16px 40px;
+    min-height:100vh;
+  }
+  [data-theme="dark"] body{
+    background:radial-gradient(1200px 600px at 20% -10%, #131C27 0%, transparent 60%), var(--canvas);
+  }
+
+  /* ---------- panel shell ---------- */
+  .panel{
+    width:100%;
+    max-width:412px;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:18px;
+    box-shadow:var(--shadow);
+    overflow:hidden;
+  }
+
+  .chrome{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 12px;
+    background:var(--surface-2);
+    border-bottom:1px solid var(--line);
+  }
+  .mark{
+    width:22px;height:22px;flex:0 0 22px;
+    display:grid;place-items:center;
+  }
+  .chrome-name{
+    font-size:13px;font-weight:650;letter-spacing:-.01em;
+  }
+  .chrome-name span{font-weight:450;color:var(--ink-3)}
+  .chrome-actions{margin-left:auto;display:flex;gap:2px}
+  .icon-btn{
+    width:26px;height:26px;border:0;border-radius:7px;background:transparent;
+    color:var(--ink-3);cursor:pointer;display:grid;place-items:center;
+  }
+  .icon-btn:hover{background:rgba(11,92,213,.08);color:var(--brand)}
+  .icon-btn:focus-visible{outline:2px solid var(--brand);outline-offset:1px}
+
+  .body{padding:16px 14px 14px}
+
+  /* ---------- file lockup ---------- */
+  .lockup{
+    display:flex;gap:12px;align-items:center;
+    padding:12px;
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    background:linear-gradient(180deg, var(--surface-2), var(--surface));
+  }
+  .glyph{
+    width:46px;height:46px;flex:0 0 46px;border-radius:13px;
+    background:var(--surface);
+    border:1px solid var(--line-strong);
+    display:grid;place-items:center;
+    box-shadow:0 1px 0 rgba(14,23,34,.04);
+  }
+  .lockup h1{
+    margin:0;font-size:15px;font-weight:680;letter-spacing:-.015em;
+  }
+  .lockup .byline{font-size:11.5px;color:var(--ink-3);margin-top:1px}
+  .meta{
+    margin-top:6px;display:flex;flex-wrap:wrap;gap:4px 8px;
+    font-family:var(--mono);font-size:10.5px;color:var(--ink-3);
+  }
+  .meta b{color:var(--ink-2);font-weight:600}
+  .meta i{font-style:normal;opacity:.45}
+
+  /* ---------- utilization meter (signature) ---------- */
+  .meter{margin:14px 2px 4px}
+  .meter-top{display:flex;align-items:baseline;gap:8px;margin-bottom:7px}
+  .meter-num{
+    font-size:23px;font-weight:700;letter-spacing:-.03em;
+    font-variant-numeric:tabular-nums;
+  }
+  .meter-label{font-size:11.5px;color:var(--ink-3)}
+  .meter-gate{
+    margin-left:auto;font-size:11px;font-weight:600;color:var(--brand);
+  }
+  .track{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:3px;
+  }
+  .seg{height:6px;border-radius:3px;background:var(--canvas);overflow:hidden}
+  [data-theme="dark"] .seg{background:#212C38}
+  .seg i{
+    display:block;height:100%;width:0;border-radius:3px;
+    background:var(--brand);
+    transition:width .9s cubic-bezier(.2,.8,.25,1);
+  }
+  .ticks{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:3px;margin-top:5px;
+    font-size:9.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);
+  }
+  .ticks span{text-align:center}
+  .ticks .on{color:var(--ink-2);font-weight:650}
+
+  /* ---------- section label ---------- */
+  .eyebrow{
+    margin:18px 2px 8px;font-size:10.5px;font-weight:650;letter-spacing:.09em;
+    text-transform:uppercase;color:var(--ink-3);
+  }
+
+  /* ---------- primary cards ---------- */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .card{
+    text-align:left;font:inherit;color:inherit;cursor:pointer;
+    background:var(--surface);
+    border:1px solid var(--line);
+    border-radius:var(--radius);
+    padding:12px;
+    display:flex;flex-direction:column;gap:9px;
+    transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease;
+  }
+  .card:hover{transform:translateY(-1px);box-shadow:var(--shadow);border-color:var(--line-strong)}
+  .card:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+  .card .top{display:flex;align-items:center;gap:8px}
+  .chip{
+    width:28px;height:28px;border-radius:9px;display:grid;place-items:center;flex:0 0 28px;
+  }
+  .card h2{margin:0;font-size:13.5px;font-weight:650;letter-spacing:-.01em}
+  .card .file{font-family:var(--mono);font-size:10px;color:var(--ink-3);margin-top:1px}
+  .status{
+    display:inline-flex;align-items:center;gap:5px;
+    font-size:11px;font-weight:600;
+  }
+  .dot{width:6px;height:6px;border-radius:50%;background:currentColor}
+  .card p{margin:0;font-size:11.5px;line-height:1.45;color:var(--ink-2)}
+  .bar{height:4px;border-radius:2px;background:var(--canvas);overflow:hidden}
+  [data-theme="dark"] .bar{background:#212C38}
+  .bar i{display:block;height:100%;border-radius:2px}
+  .go{
+    margin-top:auto;font-size:11.5px;font-weight:650;display:flex;align-items:center;gap:4px;
+  }
+  .card:hover .go svg{transform:translateX(2px)}
+  .go svg{transition:transform .15s ease}
+
+  .ctx{color:var(--context)} .ctx-chip{background:var(--context-bg);color:var(--context)}
+  .skl{color:var(--skills)} .skl-chip{background:var(--skills-bg);color:var(--skills)}
+  .act{color:var(--actions)} .act-chip{background:var(--actions-bg);color:var(--actions)}
+
+  /* locked row */
+  .locked{
+    width:100%;margin-top:10px;display:flex;align-items:center;gap:10px;
+    padding:11px 12px;border-radius:var(--radius);
+    border:1px dashed var(--line-strong);
+    background:transparent;font:inherit;color:inherit;text-align:left;
+    cursor:not-allowed;
+  }
+  .locked h2{margin:0;font-size:13px;font-weight:600;color:var(--ink-2)}
+  .locked p{margin:1px 0 0;font-size:11.5px;color:var(--ink-3)}
+  .pill{
+    margin-left:auto;font-size:10.5px;font-weight:600;color:var(--ink-3);
+    border:1px solid var(--line);border-radius:999px;padding:3px 8px;background:var(--surface-2);
+  }
+
+  /* ---------- utility tiles ---------- */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+  .tile{
+    font:inherit;color:var(--ink-2);cursor:pointer;
+    background:var(--surface-2);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:10px 6px 9px;
+    display:flex;flex-direction:column;align-items:center;gap:6px;
+    font-size:10.5px;font-weight:600;line-height:1.25;text-align:center;
+    transition:background .15s ease, color .15s ease, transform .15s ease;
+  }
+  .tile:hover{background:var(--surface);color:var(--brand);transform:translateY(-1px);border-color:var(--line-strong)}
+  .tile:focus-visible{outline:2px solid var(--brand);outline-offset:2px}
+
+  /* ---------- CTA ---------- */
+  .cta{
+    margin-top:14px;border-radius:var(--radius);
+    border:1px solid var(--line);
+    background:linear-gradient(135deg, #0B5CD5 0%, #1146A0 100%);
+    color:#fff;padding:13px 14px;
+  }
+  [data-theme="dark"] .cta{background:linear-gradient(135deg,#173A73 0%,#101E36 100%);border-color:#24344B}
+  .cta h3{margin:0;font-size:13px;font-weight:650;letter-spacing:-.01em}
+  .cta p{margin:3px 0 10px;font-size:11.5px;line-height:1.45;color:rgba(255,255,255,.78)}
+  .cta-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .offer{
+    background:rgba(255,255,255,.1);
+    border:1px solid rgba(255,255,255,.16);
+    border-radius:10px;padding:8px 9px;color:#fff;font:inherit;cursor:pointer;text-align:left;
+    transition:background .15s ease;
+  }
+  .offer:hover{background:rgba(255,255,255,.18)}
+  .offer:focus-visible{outline:2px solid #fff;outline-offset:2px}
+  .offer b{display:block;font-size:11.5px;font-weight:650}
+  .offer span{font-size:10.5px;color:rgba(255,255,255,.72);font-family:var(--mono)}
+
+  .foot{
+    margin-top:14px;padding-top:11px;border-top:1px solid var(--line);
+    font-size:10.5px;line-height:1.5;color:var(--ink-3);
+  }
+  .foot a{color:var(--brand);text-decoration:none;font-weight:600}
+  .foot a:hover{text-decoration:underline}
+
+  /* ---------- entrance ---------- */
+  .rise{opacity:0;transform:translateY(6px);animation:rise .5s cubic-bezier(.2,.8,.25,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){
+    .rise{animation:none;opacity:1;transform:none}
+    .seg i{transition:none}
+    .card,.tile,.go svg{transition:none}
+  }
+  @media (max-width:380px){
+    .duo{grid-template-columns:1fr}
+    .tiles{grid-template-columns:repeat(2,1fr)}
+  }
+</style>
+</head>
+<body>
+
+<div class="panel">
+
+  <!-- panel chrome -->
+  <div class="chrome">
+    <div class="mark">
+      <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+        <rect x="1.5" y="1.5" width="17" height="17" rx="5.5" fill="#0B5CD5"/>
+        <circle cx="7" cy="7" r="1.9" fill="#fff"/>
+        <circle cx="13" cy="7" r="1.9" fill="#fff" opacity=".6"/>
+        <circle cx="10" cy="13" r="1.9" fill="#fff" opacity=".8"/>
+        <path d="M7 7L13 7L10 13Z" stroke="#fff" stroke-width="1.1" stroke-opacity=".45" fill="none"/>
+      </svg>
+    </div>
+    <div class="chrome-name">Workbrain <span>· Model Citizen</span></div>
+    <div class="chrome-actions">
+      <button class="icon-btn" id="theme" title="Switch theme" aria-label="Switch theme">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+          <circle cx="8" cy="8" r="3.2"/><path d="M8 1v1.6M8 13.4V15M1 8h1.6M13.4 8H15M3 3l1.1 1.1M11.9 11.9L13 13M13 3l-1.1 1.1M4.1 11.9L3 13"/>
+        </svg>
+      </button>
+      <button class="icon-btn" title="Pin panel" aria-label="Pin panel">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4">
+          <path d="M6 2h4l-.6 4L12 8.4V10H4V8.4L6.6 6 6 2Z"/><path d="M8 10v4"/>
+        </svg>
+      </button>
+      <button class="icon-btn" title="Close" aria-label="Close">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <path d="M4 4l8 8M12 4l-8 8"/>
+        </svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="body">
+
+    <!-- file lockup -->
+    <div class="lockup rise" style="animation-delay:.02s">
+      <div class="glyph">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3.5" y="3.5" width="17" height="17" rx="5" stroke="#0B5CD5" stroke-width="1.5"/>
+          <circle cx="9" cy="9" r="2" fill="#0E7A5F"/>
+          <circle cx="15" cy="9.5" r="2" fill="#1F5FC4"/>
+          <circle cx="12" cy="15" r="2" fill="#6544C4"/>
+          <path d="M9 9l6 .5-3 5.5z" stroke="#0B5CD5" stroke-width="1.1" stroke-opacity=".35"/>
+        </svg>
+      </div>
+      <div>
+        <h1>Your work brain</h1>
+        <div class="byline">The AI operating system that travels with you</div>
+        <div class="meta">
+          <b>workbrain.zip</b><i>·</i>v3<i>·</i>updated today<i>·</i>84 KB
+        </div>
+      </div>
+    </div>
+
+    <!-- signature: utilization meter -->
+    <div class="meter rise" style="animation-delay:.08s">
+      <div class="meter-top">
+        <div class="meter-num" id="pct">0%</div>
+        <div class="meter-label">AI&#8209;utilized</div>
+        <div class="meter-gate">Gate 2 · Repeat</div>
+      </div>
+      <div class="track">
+        <div class="seg"><i data-fill="100%"></i></div>
+        <div class="seg"><i data-fill="45%"></i></div>
+        <div class="seg"><i data-fill="0%"></i></div>
+        <div class="seg"><i data-fill="0%"></i></div>
+      </div>
+      <div class="ticks">
+        <span class="on">Name</span><span class="on">Repeat</span><span>Act</span><span>Compound</span>
+      </div>
+    </div>
+
+    <!-- primary cards -->
+    <div class="eyebrow rise" style="animation-delay:.12s">Your files</div>
+
+    <div class="duo rise" style="animation-delay:.14s">
+      <button class="card">
+        <div class="top">
+          <div class="chip ctx-chip">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M4 2.5h8v11H4z"/><path d="M6 6h4M6 9h3"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Context</h2>
+            <div class="file">context.md</div>
+          </div>
+        </div>
+        <div class="status ctx"><span class="dot"></span>Current</div>
+        <div class="bar"><i class="ctx" style="width:100%;background:currentColor"></i></div>
+        <p>Who you are, how you work, what good looks like.</p>
+        <div class="go ctx">Review
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 2.5L7.5 6 4 9.5"/></svg>
+        </div>
+      </button>
+
+      <button class="card">
+        <div class="top">
+          <div class="chip skl-chip">
+            <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+              <path d="M2.5 4.5 8 2l5.5 2.5L8 7 2.5 4.5Z"/><path d="M2.5 8 8 10.5 13.5 8"/><path d="M2.5 11.5 8 14l5.5-2.5"/>
+            </svg>
+          </div>
+          <div>
+            <h2>Skills</h2>
+            <div class="file">skills.md</div>
+          </div>
+        </div>
+        <div class="status" style="color:var(--amber)"><span class="dot"></span>3 of 6 written</div>
+        <div class="bar"><i style="width:50%;background:var(--amber)"></i></div>
+        <p>The tasks you repeat, written down once and reused.</p>
+        <div class="go skl">Continue
+          <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 2.5L7.5 6 4 9.5"/></svg>
+        </div>
+      </button>
+    </div>
+
+    <button class="locked rise" style="animation-delay:.18s" disabled>
+      <div class="chip act-chip" style="opacity:.55">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5">
+          <rect x="3.5" y="7" width="9" height="6" rx="1.6"/><path d="M5.8 7V5.2a2.2 2.2 0 0 1 4.4 0V7"/>
+        </svg>
+      </div>
+      <div>
+        <h2>Actions</h2>
+        <p>Writes itself once three skills are done.</p>
+      </div>
+      <span class="pill">Locked</span>
+    </button>
+
+    <!-- utility tiles -->
+    <div class="eyebrow rise" style="animation-delay:.22s">Keep it working</div>
+    <div class="tiles rise" style="animation-delay:.24s">
+      <button class="tile">
+        <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 12V3.5M5.8 6.7 9 3.5l3.2 3.2"/><path d="M3.5 12v2.5h11V12"/></svg>
+        Move file
+      </button>
+      <button class="tile">
+        <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M2.8 9.6 6.6 13.4 15.2 4.8"/></svg>
+        Prove it
+      </button>
+      <button class="tile">
+        <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3.5 4.2A2 2 0 0 1 5.5 2.5H9v13H5.5a2 2 0 0 0-2 1.2V4.2Z"/><path d="M14.5 4.2a2 2 0 0 0-2-1.7H9v13h3.5a2 2 0 0 1 2 1.2V4.2Z"/></svg>
+        Skills library
+      </button>
+      <button class="tile">
+        <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="6.6" cy="6" r="2.4"/><path d="M2.6 15c0-2.4 1.8-4 4-4s4 1.6 4 4"/><path d="M12 5.4h3.6M12 8.4h3.6M12 11.4h2.4"/></svg>
+        TiM
+      </button>
+    </div>
+
+    <!-- CTA -->
+    <div class="cta rise" style="animation-delay:.28s">
+      <h3>Want a hand finishing this?</h3>
+      <p>Every gate is free to build on your own. Bring someone in when the wiring gets real.</p>
+      <div class="cta-row">
+        <button class="offer"><b>AI Coaching</b><span>$1,000 / mo</span></button>
+        <button class="offer"><b>Fractional CTO</b><span>$2,500 / mo</span></button>
+      </div>
+    </div>
+
+    <div class="foot rise" style="animation-delay:.32s">
+      Everything here lives in your browser. No account, nothing sent anywhere.
+      <a href="#" onclick="return false">See what's stored</a>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  // Fill the utilization meter once, on load.
+  const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const target = 60;
+  window.requestAnimationFrame(() => {
+    document.querySelectorAll('.seg i').forEach(el => el.style.width = el.dataset.fill);
+  });
+  const pct = document.getElementById('pct');
+  if (reduce) { pct.textContent = target + '%'; }
+  else {
+    let n = 0;
+    const t = setInterval(() => {
+      n += 2;
+      if (n >= target) { n = target; clearInterval(t); }
+      pct.textContent = n + '%';
+    }, 16);
+  }
+
+  // Light-first, dark as a theme.
+  document.getElementById('theme').addEventListener('click', () => {
+    const el = document.documentElement;
+    el.dataset.theme = el.dataset.theme === 'dark' ? 'light' : 'dark';
+  });
+</script>
+</body>
+</html>

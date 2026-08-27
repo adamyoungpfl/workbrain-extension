@@ -1,27 +1,24 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act } from 'react';
-import { Splash, SPLASH_FADE_MS } from './Splash';
+import { Splash, SPLASH_FADE_MS, taglineLines } from './Splash';
 import { S } from '../strings';
 import { mount } from '../components/testUtils';
-import { resetPrefsMemory } from '../voice/prefs';
 
 /**
- * V1.7 VB-34, rebuilt by V2.1 VB-73 — the splash is a doorway now, and its
- * behavioural promises inverted with it. VB-34's version promised it never
- * held anyone up: any input ended it, and it ended on its own. VB-73's version
- * promises the opposite pair, because the surface carries a real choice:
+ * V1.7 VB-34, rebuilt by V2.1 VB-73, simplified by V2.6 VB-126 — the splash
+ * is pure arrival: the mark, the name, the tagline, and one full-surface
+ * control. Its promises now:
  *
- *   - it stays until a click — no dwell timer, no key-skip, no wheel-skip,
- *   - each door hands over with its own intent, the backdrop and Escape with
- *     none,
+ *   - it stays until told to go — no dwell timer, no letter-key skip,
+ *   - any click hands over to Home: the surface, the control, anywhere,
+ *   - Escape still means "close this",
  *   - it hands over exactly once however many of those happen together,
  *   - and under reduced motion it hands over immediately rather than fading
  *     out invisibly with the panel still underneath it (kept from VB-34).
  *
- * The old "is out of the accessibility tree" test is gone with the reason for
- * it: a splash with controls on it must be IN the tree, and the panel under it
- * is what leaves instead (App.tsx marks it `inert` — proven in the e2e spec,
- * where a real accessibility tree exists to ask).
+ * VB-73's doors and voice row are gone (Adam, 2026-08-26): the import door's
+ * job lives on Home ("I already have a file"), the narrator's in the header
+ * toggle, and the surface is held for the wow treatment.
  */
 
 function stubMedia(reduce: boolean) {
@@ -42,23 +39,20 @@ function stubMedia(reduce: boolean) {
 afterEach(() => {
   vi.unstubAllGlobals();
   vi.useRealTimers();
-  resetPrefsMemory();
 });
 
-const door = (container: HTMLElement, label: string) =>
-  [...container.querySelectorAll<HTMLButtonElement>('.splash-doors button')].find(
-    (b) => b.textContent === label,
-  )!;
-
 describe('Splash — what it says', () => {
-  it('shows the mark, the name, the tagline and the two doors', () => {
+  it('shows the mark, the name, the tagline and the one way in', () => {
     stubMedia(false);
     const { container } = mount(<Splash onDone={() => {}} />);
     expect(container.querySelector('.brand-mark')).not.toBeNull();
     expect(container.querySelector('.splash-wordmark')!.textContent).toBe(S.appName);
     expect(container.querySelector('.splash-tagline')!.textContent).toBe(S.splashTagline);
-    expect(door(container, S.splashBuild)).toBeDefined();
-    expect(door(container, S.splashLoad)).toBeDefined();
+    const enter = container.querySelector<HTMLButtonElement>('.splash-enter')!;
+    expect(enter).not.toBeNull();
+    expect(enter.getAttribute('aria-label')).toBe(S.splashEnter);
+    // The doors are gone: one control on the whole surface, nothing else.
+    expect(container.querySelectorAll('.splash button').length).toBe(1);
   });
 
   it('runs the mark on the splash camera, not the logo’s spin', () => {
@@ -67,29 +61,20 @@ describe('Splash — what it says', () => {
     expect(container.querySelector('.brand-mark')!.getAttribute('data-spin')).toBe('orbit');
   });
 
-  it('is in the accessibility tree, because it carries real controls now', () => {
+  it('is in the accessibility tree, because it carries a real control', () => {
     stubMedia(false);
     const { container } = mount(<Splash onDone={() => {}} />);
     const splash = container.querySelector('.splash')!;
-    // VB-34 asserted the exact opposite here, with the exact opposite reason:
-    // it was aria-hidden BECAUSE nothing inside was focusable. VB-73 puts
-    // doors on it, so hiding it would hide the only controls that work while
-    // the panel underneath is inert.
     expect(splash.getAttribute('aria-hidden')).toBeNull();
-    expect(splash.querySelectorAll('button').length).toBeGreaterThanOrEqual(2);
-  });
-
-  it('offers the voice row only where a speech engine exists', () => {
-    stubMedia(false);
-    // jsdom has no speechSynthesis, and the degradation rule says the row is
-    // simply absent — not disabled, not explained.
-    const { container } = mount(<Splash onDone={() => {}} />);
-    expect(container.querySelector('.splash-voice')).toBeNull();
+    // And the text is content beside the control, not trapped inside its
+    // label — a screen reader meets the tagline as a paragraph.
+    expect(splash.querySelector('.splash-enter p')).toBeNull();
+    expect(splash.querySelector('p.splash-tagline')).not.toBeNull();
   });
 });
 
-describe('Splash — it stays until a click', () => {
-  it('does not leave on its own — there is no dwell any more', () => {
+describe('Splash — it stays until told to go', () => {
+  it('does not leave on its own — there is no dwell', () => {
     vi.useFakeTimers();
     stubMedia(false);
     const onDone = vi.fn();
@@ -103,7 +88,7 @@ describe('Splash — it stays until a click', () => {
   });
 
   for (const event of ['pointerdown', 'keydown', 'touchstart', 'wheel'] as const) {
-    it(`is NOT dismissed by a stray ${event} — VB-34's skip is gone with its reason`, () => {
+    it(`is NOT dismissed by a stray ${event} — a stray press still costs nothing`, () => {
       vi.useFakeTimers();
       stubMedia(false);
       const onDone = vi.fn();
@@ -117,7 +102,7 @@ describe('Splash — it stays until a click', () => {
     });
   }
 
-  it('Escape is the one key that closes it, and it closes without a choice', () => {
+  it('Escape closes it', () => {
     vi.useFakeTimers();
     stubMedia(false);
     const onDone = vi.fn();
@@ -128,10 +113,9 @@ describe('Splash — it stays until a click', () => {
       vi.advanceTimersByTime(SPLASH_FADE_MS);
     });
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith(null);
   });
 
-  it('a click on the backdrop dismisses, choosing nothing', () => {
+  it('a click anywhere on the surface hands over', () => {
     vi.useFakeTimers();
     stubMedia(false);
     const onDone = vi.fn();
@@ -142,53 +126,20 @@ describe('Splash — it stays until a click', () => {
       vi.advanceTimersByTime(SPLASH_FADE_MS);
     });
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith(null);
   });
-});
 
-describe('Splash — the doors carry their intent', () => {
-  it('“Build your file” hands over build', () => {
+  it('the enter control itself hands over — the keyboard path', () => {
     vi.useFakeTimers();
     stubMedia(false);
     const onDone = vi.fn();
     const { container } = mount(<Splash onDone={onDone} />);
 
     act(() => {
-      door(container, S.splashBuild).click();
+      // What Enter and Space do to a focused native button.
+      container.querySelector<HTMLButtonElement>('.splash-enter')!.click();
       vi.advanceTimersByTime(SPLASH_FADE_MS);
     });
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith('build');
-  });
-
-  it('“Load your file” hands over load', () => {
-    vi.useFakeTimers();
-    stubMedia(false);
-    const onDone = vi.fn();
-    const { container } = mount(<Splash onDone={onDone} />);
-
-    act(() => {
-      door(container, S.splashLoad).click();
-      vi.advanceTimersByTime(SPLASH_FADE_MS);
-    });
-    expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith('load');
-  });
-
-  it('a door’s click does not double as a backdrop dismissal', () => {
-    vi.useFakeTimers();
-    stubMedia(false);
-    const onDone = vi.fn();
-    const { container } = mount(<Splash onDone={onDone} />);
-
-    act(() => {
-      door(container, S.splashBuild).click();
-      vi.advanceTimersByTime(SPLASH_FADE_MS * 4);
-    });
-    // Once, with the door's intent — never a second null from the backdrop
-    // the door happens to sit on.
-    expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith('build');
   });
 
   it('hands over exactly once, however many things try to end it', () => {
@@ -198,13 +149,12 @@ describe('Splash — the doors carry their intent', () => {
     const { container } = mount(<Splash onDone={onDone} />);
 
     act(() => {
-      door(container, S.splashBuild).click();
-      door(container, S.splashLoad).click();
+      container.querySelector<HTMLButtonElement>('.splash-enter')!.click();
+      container.querySelector<HTMLElement>('.splash')!.click();
       window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
       vi.advanceTimersByTime(SPLASH_FADE_MS * 4);
     });
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith('build');
   });
 
   it('drops its listeners when it goes', () => {
@@ -223,18 +173,17 @@ describe('Splash — the doors carry their intent', () => {
 });
 
 describe('Splash — reduced motion', () => {
-  it('hands over the instant a door is pressed, with no fade to sit through', () => {
+  it('hands over the instant it is pressed, with no fade to sit through', () => {
     vi.useFakeTimers();
     stubMedia(true);
     const onDone = vi.fn();
     const { container } = mount(<Splash onDone={onDone} />);
 
     act(() => {
-      door(container, S.splashBuild).click();
+      container.querySelector<HTMLButtonElement>('.splash-enter')!.click();
     });
     // No 320ms of an invisible overlay between the person and their panel.
     expect(onDone).toHaveBeenCalledTimes(1);
-    expect(onDone).toHaveBeenCalledWith('build');
   });
 
   it('treats a browser with no matchMedia as "reduce"', () => {
@@ -252,20 +201,29 @@ describe('Splash — reduced motion', () => {
 });
 
 describe('Splash — the tagline’s line break', () => {
-  it('breaks between the two sentences, and only there', () => {
+  it('breaks at the mirror’s hinge, and only there', () => {
     stubMedia(false);
     const { container } = mount(<Splash onDone={() => {}} />);
     const lines = [...container.querySelectorAll('.splash-tagline-line')].map((el) =>
       el.textContent!.trim(),
     );
-    expect(lines).toEqual(['AI does the work.', 'You do the thinking.']);
+    expect(lines).toEqual(['How you do anything', 'is how your AI does everything.']);
   });
 
   it('leaves the approved string exactly as strings.ts has it', () => {
     stubMedia(false);
     const { container } = mount(<Splash onDone={() => {}} />);
     // Not "close enough" — the paragraph's own text, character for
-    // character, including the space between the sentences.
+    // character, including the space between the lines.
     expect(container.querySelector('.splash-tagline')!.textContent).toBe(S.splashTagline);
+  });
+
+  it('falls back to sentence ends for a line with no hinge', () => {
+    // The splitter is presentation for whatever the approved string is —
+    // if the tagline ever changes shape again, it must not orphan a word.
+    expect(taglineLines('One sentence. Another one.')).toEqual([
+      'One sentence.',
+      'Another one.',
+    ]);
   });
 });
