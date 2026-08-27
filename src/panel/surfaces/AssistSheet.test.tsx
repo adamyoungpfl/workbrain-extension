@@ -1,8 +1,9 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { act } from 'react';
 import { AssistSheet, ASSIST_PROMPT_ICON, ASSIST_SEND_SCENE } from './AssistSheet';
 import { ASSIST_ICON } from './Flow';
 import { ASSIST_ENCOURAGING_LEAD, ASSIST_LINE_COPY, ASSIST_LINE_RETURN } from '../../core/flow/assistCopy';
+import { resetPrefsMemory, setNarrator } from '../voice/prefs';
 import { mount } from '../components/testUtils';
 import { S } from '../strings';
 
@@ -281,5 +282,87 @@ describe('AssistSheet — the stepped mini-interview', () => {
     expect(container.querySelector('.assist-line')!.textContent).toBe(ASSIST_LINE_COPY);
     // Reading order: the offer, then the instruction.
     expect(lead.nextElementSibling?.classList.contains('assist-line')).toBe(true);
+  });
+});
+
+// ── the narrator pairing ───────────────────────────────────────────────────
+
+/** The speech.test.ts fake, reduced to what the pairing claim needs: what
+ * was spoken, in order. */
+class FakeUtterance {
+  voice: unknown = null;
+  lang = '';
+  rate = 1;
+  pitch = 1;
+  constructor(public text: string) {}
+}
+class FakeSynth {
+  speaking = false;
+  pending = false;
+  spoken: string[] = [];
+  getVoices(): unknown[] {
+    return [];
+  }
+  speak(u: FakeUtterance): void {
+    this.spoken.push(u.text);
+  }
+  cancel(): void {}
+  addEventListener(): void {}
+}
+const speechScope = globalThis as unknown as { speechSynthesis?: unknown; SpeechSynthesisUtterance?: unknown };
+
+describe('AssistSheet — each step line is spoken as printed (the narrator pairing)', () => {
+  afterEach(() => {
+    delete speechScope.speechSynthesis;
+    delete speechScope.SpeechSynthesisUtterance;
+    resetPrefsMemory();
+  });
+
+  it('reads step 1, then step 2 with their AI named, then step 3 — the same strings the screen prints', async () => {
+    stubClipboard();
+    const synth = new FakeSynth();
+    speechScope.speechSynthesis = synth;
+    speechScope.SpeechSynthesisUtterance = FakeUtterance;
+    // The in-memory preference flips on the press (prefs.ts's contract);
+    // the failed jsdom storage write is the degradation path, silently.
+    await act(async () => {
+      await setNarrator(true);
+    });
+
+    const { container } = mount(<AssistSheet {...sheetProps()} />);
+    expect(synth.spoken.at(-1)).toContain(ASSIST_LINE_COPY);
+
+    click(container.querySelector('.assist-copy'));
+    await settle();
+    expect(synth.spoken.at(-1)).toContain('Paste it into ChatGPT.');
+
+    click([...container.querySelectorAll('button')].find((b) => b.textContent === S.assistStarted)!);
+    expect(synth.spoken.at(-1)).toContain(ASSIST_LINE_RETURN);
+  });
+
+  it('the encouraging open reads the offer and the instruction as one utterance, in reading order', async () => {
+    stubClipboard();
+    const synth = new FakeSynth();
+    speechScope.speechSynthesis = synth;
+    speechScope.SpeechSynthesisUtterance = FakeUtterance;
+    await act(async () => {
+      await setNarrator(true);
+    });
+
+    mount(<AssistSheet {...sheetProps({ encouraging: true })} />);
+    const heard = synth.spoken.at(-1) ?? '';
+    expect(heard).toContain(ASSIST_ENCOURAGING_LEAD);
+    expect(heard).toContain(ASSIST_LINE_COPY);
+    expect(heard.indexOf(ASSIST_ENCOURAGING_LEAD)).toBeLessThan(heard.indexOf(ASSIST_LINE_COPY));
+  });
+
+  it('with the narrator off, the sheet touches no speech API at all', () => {
+    stubClipboard();
+    const synth = new FakeSynth();
+    speechScope.speechSynthesis = synth;
+    speechScope.SpeechSynthesisUtterance = FakeUtterance;
+
+    mount(<AssistSheet {...sheetProps()} />);
+    expect(synth.spoken).toEqual([]);
   });
 });
