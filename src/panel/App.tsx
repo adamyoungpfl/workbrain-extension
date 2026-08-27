@@ -10,7 +10,7 @@ import { Multiples } from './surfaces/Multiples';
 import { Splash } from './surfaces/Splash';
 import { WallPanels } from './components/WallPanels';
 import { getSession, setSession } from '../core/storage/client';
-import { Button } from './components';
+import { FeedbackSheet, Button } from './components';
 import { contextModules, contextOutline, skillsModules, skillsOutline, buildProofModules } from '../core/flow/flow';
 import { SKILLS_FILE_COPY } from '../core/files/skillsFile';
 import { ANSWERS_KEY } from '../core/files/answersKey';
@@ -84,6 +84,8 @@ type SplashState = 'asking' | 'showing' | 'gone';
 export default function App() {
   const [surface, setSurface] = useState<Surface>('home');
   const [flowKind, setFlowKind] = useState<FlowKind>('context');
+  /** BS-02 — the feedback sheet the proof's own second offer opens. */
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   /** V2.2 — which file the 'file' surface is showing. In-memory like every
    * other "where am I" fact (docs/ARCHITECTURE.md). */
   const [fileId, setFileId] = useState<Exclude<FileSlotId, 'actions'>>('context');
@@ -275,6 +277,14 @@ export default function App() {
           renderDone={() => (
             <>
               <p className="flow-q">{S.proofFinished}</p>
+              {/* BS-02 — §2: "offer it a second time, once, immediately after
+                  the proof delta", which is the one moment a friend writes a
+                  paragraph unprompted. A real control in the content, not
+                  chrome: this screen has room and the interview's header does
+                  not (docs/BETA-SPRINT.md). */}
+              <Button type="button" variant="primary" onClick={() => setFeedbackOpen(true)}>
+                {S.feedbackOpenLong}
+              </Button>
               <Button type="button" variant="secondary" onClick={goHome}>
                 {S.backToFiles}
               </Button>
@@ -346,6 +356,14 @@ export default function App() {
         <h1 className="app-sr">{S.appName}</h1>
         {currentSurface()}
       </main>
+      {/* BS-02 — the proof's second offer opens this. Mounted at the shell so
+          the sheet outlives the surface that asked for it. */}
+      <FeedbackSheet
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        to={S.feedbackTo}
+        context={{ surface: 'proof' }}
+      />
       {splash === 'showing' && <Splash onDone={endSplash} />}
     </>
   );

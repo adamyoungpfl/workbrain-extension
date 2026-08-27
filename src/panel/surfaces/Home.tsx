@@ -4,6 +4,8 @@ import {
   Banner,
   BrandMark,
   Button,
+  FeedbackDoor,
+  FeedbackSheet,
   FileRow,
   Meter,
   RecommendationHide,
@@ -347,6 +349,8 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   /** V2.6 VB-125c — whether the Move-file sheet is up. In-memory, like every
    * other "where am I" fact: a reopen lands on Home with it closed. */
   const [uploadOpen, setUploadOpen] = useState(false);
+  /** BS-02 — the beta's return channel, in the chrome that already exists. */
+  const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [homeToast, setHomeToast] = useState<string | null>(null);
   /** V2.8 VB-133 — the Skill Redeemer's sheet, and its landed-toast. */
   const [redeemOpen, setRedeemOpen] = useState(false);
@@ -511,6 +515,10 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
         >
           {UPLOAD_ICON}
         </button>
+        {/* BS-02 — reachable in one press from here, and from the interview's
+            own chrome. Not a new band: the review's proposed Home puts it on
+            this bar, and its proposed interview screen has no bar at all. */}
+        <FeedbackDoor onOpen={() => setFeedbackOpen(true)} />
       </header>
       {/* V1.1 VB-01 — the welcome state. Still just the `start` branch of the
           same derived next move, not a surface and not a stored "have I
@@ -812,6 +820,13 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
       {/* V2.9 VB-145 — the upload door's sheet. The download half of the
           old Move sheet became the tile above; what needs a seatbelt is
           only the import, and the seatbelt is the sheet's own warning. */}
+      <FeedbackSheet
+        open={feedbackOpen}
+        onClose={() => setFeedbackOpen(false)}
+        to={S.feedbackTo}
+        context={{ surface: 'home' }}
+      />
+
       <UploadSheet
         open={uploadOpen}
         onClose={() => setUploadOpen(false)}

@@ -21,6 +21,24 @@ than finding a clever way around it.
 | **No modal dialogs.** Sheets only, and only for short self-contained tasks. | Nothing in this product is destructive enough to need confirming. A modal that teaches gets dismissed unread. |
 | **No feature that only works online.** | The product must work on a plane. |
 
+## The one thing the product sends, and who sends it
+
+**BS-02's feedback door (2026-08-27).** The beta exists to collect what testers
+think, and until it shipped there was no way for one to tell us anything. This
+row exists so that is a written decision rather than a quiet exception.
+
+| Rule | Why |
+|---|---|
+| **The feedback door may open the person's own mail client with a draft, and may put a diagnostic block on their clipboard. It may not send anything itself.** No fetch, no beacon, no endpoint — `src/core/feedback/report.ts` returns a `mailto:` string and a block of text, and has no client of any kind. | The rule above is *no silent collection*, not *no collection*. A draft the person reads and presses send on, in their own client, is the opposite of silent. |
+| **The diagnostic block carries build, screen, question id and a timestamp — and nothing the person authored.** Its shape is a closed set of typed fields with nowhere to put an answer, not a filter over free input. | A filter is something somebody forgets to update. A shape with no field for an answer cannot leak one, and `report.test.ts` walks a fully-answered flow to prove it. |
+| **The question ID is in; the question TEXT is out.** | `role_mandate` says where somebody was. The wording says nothing more, and moving interview content around starts a habit. |
+| **The sheet states what the block holds, on the sheet, above the buttons.** | "We take nothing you wrote" is a claim somebody should be able to check before they act, not after. The block itself is four lines and they can read it. |
+
+**Still forbidden, unchanged:** anything that measures without being asked,
+anything that reports on its own schedule, and any count of what the person did
+— including local-only. The test in the next section is what separates them: a
+build number is a fact about the SOFTWARE, and a count of panel opens is not.
+
 ## Degradation is mandatory
 
 Every enhancement falls back to the manual path, **silently**.

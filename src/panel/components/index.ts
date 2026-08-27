@@ -114,3 +114,6 @@ export type { NodeSummaryCardProps } from './NodeSummary';
 // summary renders the same recommendations against the same copy.
 export { RecommendationRow, RecommendationHide, recommendationCopy } from './Recommendation';
 export type { RecommendationRowProps, RecommendationHideProps, RecommendationCopy } from './Recommendation';
+
+export { FeedbackSheet, FeedbackDoor, BuildStamp } from './FeedbackSheet';
+export type { FeedbackSheetProps } from './FeedbackSheet';

@@ -70,6 +70,14 @@
   outline-offset: 2px;
 }
 
+/* BS-02 — the feedback door on this bar. Same trick the upload control
+   above uses: the 44px target is pulled back out of the flow with negative
+   margins, so the guardrail's floor is kept on a control that does not make
+   the identity row two lines tall. */
+.home-chrome .feedback-door {
+  margin: -12px 0;
+}
+
 /* ── V2.6 VB-125 — the file lockup ──────────────────────────────────────── */
 .home-lockup {
   display: flex;

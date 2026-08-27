@@ -280,6 +280,39 @@ the dock's welded set are what the geometry specs mirror, so a raise there is
 what the specs re-measure against — the reverse order leaves the gate red for
 no useful reason.
 
+### BS-02 — where the door actually landed, and the header that would not take it
+
+Shipped: `core/feedback/report.ts` (the block and the `mailto:`),
+`FeedbackSheet` + `FeedbackDoor` + `BuildStamp`, the door on **Home's chrome
+bar**, and §2's second offer **on the proof's done screen** — "the one moment
+a friend will write you a paragraph unprompted", as a real control in the
+content where there is room.
+
+**The interview's header is full, and this is the second thing to prove it.**
+BS-01c could not fit the rephrase button's word in the question row; BS-02
+could not fit the feedback door in the chrome row above it. Both were measured,
+not guessed: the door pushed the question 1px past `question-fill`'s ceiling
+and re-opened a 91px dead band at `terms_depend_on`. The row is `height: 0`
+with `-10px` of margin and `NarratorToggle.css` spends twenty lines explaining
+why that arithmetic is left alone. **§5 rebuilds this header for the beat row —
+the feedback door and the rephrase word both land there**, together, with the
+composition re-derived once instead of three times.
+
+**A trap BS-00 set and BS-02 sprang.** `vite.harness.config.ts` is a THIRD
+build config, and it had no `define`. The moment the feedback door joined
+`components/index.ts`, `__WB_VERSION__` came with it, was undefined there, and
+the whole harness page failed to mount — taking every cue, deep-dive and a11y
+test on it down at once (12 failures, no obvious common cause). Fixed, and
+named in that file: **a build-time constant added to `vite.config.ts` belongs
+in `vitest.config.ts` and `vite.harness.config.ts` too.**
+
+**One cost accepted, not hidden.** Home's chrome now holds two controls, so on
+the welcome screen the CTA is the third tab stop rather than the second. Both
+doors are real first moves for the two people that screen meets — somebody
+arriving with a file from another machine, and a tester whose first experience
+is that something did not work. §6 rebuilds the screen; the ordinal is worth
+re-checking there.
+
 ### BS-01c — where each of the twelve icon-only controls goes
 
 §1 says zero controls communicate by icon alone. Twelve exist (the review said
@@ -324,15 +357,27 @@ welds tracking to size. Map labels are conventionally caps — the review
 concedes it — so the stage is exempt from the sentence-case rule and
 `globeLabels.ts` is untouched. Every other section label converts.
 
-**The chrome bar is app-level, and `drawerBounds` learns about it (O5).**
-§2 asks for a Feedback control "present on every surface", which Home-only does
-not satisfy and drawing-over-the-surface only fakes. The ~50-test cascade is
-real but it is **RETARGET, not REWRITE**: those specs derive their geometry
-from one function. So the chrome height becomes a core constant that
-`drawerBounds(viewportHeight)` subtracts, the eleven spec files that import
-that function inherit the correction for free, and only the specs doing their
-own `PANEL.height` arithmetic need touching. Sized honestly: one constant, one
-signature, and a re-measure — not fifty rewrites.
+**~~The chrome bar is app-level~~ — REVISED at build time (O5).**
+
+My first call was a new app-level 44px band, with `drawerBounds` learning a
+chrome constant. Building it, I went back to the review's own frames: **1b's
+proposed Home carries the Feedback control on the chrome bar, and 1c's
+proposed interview screen has no chrome bar at all.** The prose says "present
+on every surface"; the mocks do not put a band on the tightest surface in the
+product. The acceptance criterion is the tiebreak, and it says *"reachable in
+one press from every surface"* — which is a statement about reach, not about a
+band.
+
+So: **the feedback door is one shared component placed in each surface's
+EXISTING chrome** — Home's `.home-chrome` bar, the flow's progress shell (which
+already carries the home button and the narrator toggle), and the heads that
+Browse and Multiples already draw. Plus the second offer §2 asks for,
+immediately after the proof delta.
+
+This costs **zero new vertical space**, leaves `drawerBounds` alone, and the
+~50-test cascade never fires. §2 is "small" as the spec claims — but only
+under this reading, which is why it was worth resolving before writing code
+rather than after.
 
 **D1's scope note, which is implementation and not a re-decision.**
 `flow-progress.spec.ts:95` asserts no digit in the **whole `.flow` innerText**.

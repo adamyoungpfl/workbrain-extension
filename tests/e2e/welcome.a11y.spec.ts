@@ -91,18 +91,25 @@ test.describe('welcome screen — accessibility', () => {
     await context.close();
   });
 
-  test('a Tab pass reaches the CTA with a visible focus ring, second only to the chrome', async () => {
+  test('a Tab pass reaches the CTA with a visible focus ring, after the two chrome doors', async () => {
     const { context, page } = await openWelcome();
 
-    // V2.9 VB-145 put the upload door at the top of the UI, on the chrome
-    // bar, where Adam asked for it — so it is the first thing Tab reaches
-    // and the CTA is the second. That is the honest order for this screen:
-    // the two things somebody can do on a fresh install are START and BRING
-    // A FILE I ALREADY HAVE (docs/OPEN.md #2's "second machine"), and the
-    // page's own hint says the second one out loud. The door is a named
-    // control, not a bare glyph, so a keyboard user meets a sentence.
+    // The chrome bar comes first, and it now holds two controls: V2.9
+    // VB-145's upload door and BS-02's feedback door. So the CTA is the
+    // THIRD stop, and that is a cost worth naming rather than hiding — on a
+    // first-run screen the primary action is two presses into the tab order.
+    //
+    // It is accepted here because both chrome controls are real first moves
+    // for the two people this screen meets: somebody who already has a file
+    // from another machine (docs/OPEN.md #2), and a beta tester whose first
+    // experience is that something did not work. §6 rebuilds this screen —
+    // the welcome lockup goes and the recommendation becomes the hero — and
+    // the ordinal is worth re-checking there.
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Bring in a file', exact: true })).toBeFocused();
+
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Feedback', exact: true })).toBeFocused();
 
     await page.keyboard.press('Tab');
     const cta = page.getByRole('button', { name: 'Start with a few questions', exact: true });

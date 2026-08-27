@@ -353,7 +353,25 @@
   align-items: flex-start;
   gap: 6px;
 }
-.flow-q-row .flow-q {
+.flow-q-row /* BS-02 — the interview's chrome row: the feedback door and the narrator
+   toggle, hanging together in the empty right-hand end of the header the
+   module label and the bar already occupy. The row's own arithmetic is
+   NarratorToggle.css's, moved up one level and left exactly as it was: the
+   -10px and the -9px are that file's numbers, and the toggle inside gives
+   them up so the pair is measured once rather than twice. */
+.flow-chrome {
+  display: flex;
+  justify-content: flex-end;
+  align-items: flex-start;
+  gap: 2px;
+  height: 0;
+  margin: -10px -9px 0 0;
+}
+.flow-chrome .narrator {
+  margin: 0;
+}
+
+.flow-q {
   flex: 1 1 auto;
   min-width: 0;
 }

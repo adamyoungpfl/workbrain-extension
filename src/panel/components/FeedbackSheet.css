@@ -1,0 +1,79 @@
+/* BS-02 — the feedback door and its sheet. */
+
+.feedback {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.feedback-body {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* The claim, and then the block that proves it. Quieter than the body — this
+   is the small print somebody checks, not the reason they opened the sheet. */
+.feedback-what,
+.feedback-nothing {
+  margin: 0;
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* Four lines, shown as what they are. Monospace because it is machine text
+   and should not be mistaken for the product talking. */
+.feedback-block {
+  margin: 0;
+  padding: 10px 12px;
+  font-family: var(--font-mono);
+  font-size: var(--type-fine);
+  line-height: 1.5;
+  color: var(--ink-2);
+  background: var(--sunken);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.feedback-copied {
+  margin: 0;
+  font-size: var(--type-support);
+  color: var(--green);
+}
+
+/* The door itself, in whichever chrome hosts it. A word, never a glyph
+   (beta review §1) — and the 44px floor on the height, which is the axis the
+   guardrail is about; the width is the word's. */
+.feedback-door {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+  padding: 0 8px;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--type-fine);
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+  border-radius: var(--r-md);
+  transition: color var(--fast) var(--ease);
+}
+.feedback-door:hover {
+  color: var(--primary);
+}
+.feedback-door:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.buildstamp {
+  font-size: var(--type-fine);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--ink-3);
+}

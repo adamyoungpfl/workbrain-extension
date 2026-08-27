@@ -672,6 +672,35 @@ export const S = {
   proofDoneSub: 'Shown exactly as your AI wrote it. The panel never reads or scores it.',
   copyPrompt: 'Copy',
   copyToClipboard: 'Copy to clipboard',
+
+  // ------------------------------------------------------- the feedback door
+  /* BS-02 — the beta's return channel. docs/GUARDRAILS.md does not forbid
+     this; it forbids SILENT collection. So the sheet says plainly what the
+     block holds and what it does not, and the person presses send in their
+     own mail client. [DRAFT] */
+  /* The DOOR is short because it rides a chrome bar beside the product's
+     own name; the SHEET carries the full sentence. Two words for one thing,
+     deliberately — "Tell us how it went" wraps the bar to two lines. */
+  feedbackOpen: 'Feedback',
+  /** The same door, where there is room for the whole sentence — the proof's
+   * own second offer, at the one moment somebody writes a paragraph. */
+  feedbackOpenLong: 'Tell us how that went',
+  feedbackTitle: 'Tell us how it went',
+  feedbackBody:
+    'This is a beta, and what you noticed is the whole point of it. Write as little or as much as you like.',
+  feedbackWrite: 'Write an email',
+  feedbackCopy: 'Copy the build details',
+  feedbackCopied: 'Copied. Paste it anywhere you like.',
+  feedbackWhat: 'The build details say which version you have, which screen you were on, and which question. They carry nothing you wrote.',
+  feedbackNothingSent: 'Nothing is sent from here. Your mail app opens with a draft, and you press send.',
+  /* [DRAFT — ADAM MUST CONFIRM] Where a tester's mail actually goes. A
+     wrong address here means feedback that silently reaches nobody, which is
+     worse than no door at all. Nothing else in this feature depends on the
+     value, so changing it is one line. */
+  feedbackTo: 'beta@model-citizen.org',
+  feedbackSubject: 'Workbrain beta',
+  feedbackLead: 'What happened:',
+  buildStamp: (version: string) => `Beta · ${version}`,
   /* BS-01c — §1: no control communicates by icon alone. These are the WORDS
      that go beside the glyphs that used to stand on their own. Each is the
      shortest true verb, because the controls they label sit in tight rows,
