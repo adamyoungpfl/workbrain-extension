@@ -403,4 +403,65 @@ test.describe('Home surface (R1-12)', () => {
 
     await context.close();
   });
+
+  // ────────────────────────────────────────────────────────── V2.6 VB-127
+  test('"See what\'s stored" lists exactly what exists, in plain words, and stores nothing about looking', async () => {
+    const { context, sw, id } = await launchExtension();
+    // Two context answers, one skill, one typed proof score, one hidden
+    // suggestion — four rows, each a real count of authored things.
+    const now = new Date().toISOString();
+    await sw.evaluate(
+      (seed) => chrome.storage.local.set(seed),
+      {
+        'wb:answers': {
+          values: { orientation_ready: null, professional_name: 'Ada' },
+          repeatables: {},
+          answeredAt: { orientation_ready: now, professional_name: now },
+          reflectedAt: { professional_name: now },
+        },
+        'wb:answers:skills': {
+          values: {},
+          repeatables: { skills: [{ skill_name: 'Weekly status' }] },
+          answeredAt: { 'skills#0#skill_name': now },
+          reflectedAt: {},
+        },
+        'wb:report': { scores: [{ service: 'chatgpt', baseline: 4, withContext: 9, at: now }] },
+        'wb:recs': { dismissed: { 'stale:sec2': now } },
+      },
+    );
+
+    const page = await openPanel(context, id);
+    await page.getByRole('button', { name: "See what's stored", exact: true }).click();
+    const sheet = page.locator('.sheet-card');
+    await expect(sheet).toBeVisible();
+
+    // Every row is a count the person could verify; the whole-list claim
+    // closes it. No key that does not exist gets a row (no version stamp
+    // was seeded, so none is listed).
+    await expect(sheet.getByText('Your Context answers — 2')).toBeVisible();
+    await expect(sheet.getByText('Skills on your list — 1')).toBeVisible();
+    await expect(sheet.getByText('Proof scores you typed — 1')).toBeVisible();
+    await expect(sheet.getByText('Suggestions you hid — 1')).toBeVisible();
+    await expect(sheet.getByText(/version stamp/)).toHaveCount(0);
+    await expect(sheet.getByText('That is the whole list. None of it ever leaves your browser.')).toBeVisible();
+
+    // Looking at the list is not an event: nothing new landed in storage.
+    const keys = await sw.evaluate(async () => Object.keys(await chrome.storage.local.get(null)).sort());
+    expect(keys).toEqual(['wb:answers', 'wb:answers:skills', 'wb:recs', 'wb:report']);
+
+    await context.close();
+  });
+
+  test('on a fresh install the storage sheet says so — "Nothing stored yet."', async () => {
+    const { context, id } = await launchExtension();
+    const page = await openPanel(context, id);
+
+    await page.getByRole('button', { name: "See what's stored", exact: true }).click();
+    const sheet = page.locator('.sheet-card');
+    await expect(sheet).toBeVisible();
+    await expect(sheet.getByText('Nothing stored yet.')).toBeVisible();
+    await expect(sheet.locator('.home-stored-list')).toHaveCount(0);
+
+    await context.close();
+  });
 });

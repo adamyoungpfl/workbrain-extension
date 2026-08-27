@@ -632,6 +632,60 @@
   margin: 0;
 }
 
+/* V2.6 VB-127 — the foot's door: a real button in link clothes, its own
+   row under the trust sentence it substantiates, at the 44px floor like
+   every control. Underlined as well as coloured; the primary blue measures
+   6.8:1 on the shell. */
+.home-foot-link {
+  align-self: flex-start;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+  padding: 0;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 12.5px;
+  color: var(--primary);
+  font-weight: 600;
+  text-decoration: underline;
+  cursor: pointer;
+}
+.home-foot-link:hover {
+  color: var(--primary-hover);
+}
+.home-foot-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
+/* The sheet's list: plain rows, the outro as the claim it all builds to. */
+.home-stored {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.home-stored-list {
+  margin: 0;
+  padding: 0 0 0 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+.home-stored-row {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+.home-stored-outro {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
 /* ── V2.6 VB-125c — the entrance ──────────────────────────────────────────
    One staggered rise for the body's children, once, on mount. `backwards`
    holds the from-state through each child's delay; reduced motion lands

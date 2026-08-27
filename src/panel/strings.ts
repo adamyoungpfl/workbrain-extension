@@ -800,6 +800,25 @@ export const S = {
   offerCoaching: 'AI Coaching',
   offerCto: 'Fractional CTO',
   offerWhere: 'On the site',
+  /**
+   * [DRAFT] V2.6 VB-127 — the trust foot's door and the sheet behind it:
+   * the storage, listed in plain words. Only keys that really exist get a
+   * row (an unwritten default is not "stored", and the outro's "whole
+   * list" claim must be literally true); every count is something the
+   * person authored, derived at open, never kept. The version stamp row
+   * is `wb:meta` — a number about the file format, not about the person —
+   * and it is listed because leaving it off would make the list a lie.
+   */
+  storedLink: "See what's stored",
+  storedTitle: "What's stored on this device",
+  storedContext: (n: number) => `Your Context answers — ${n}`,
+  storedSkills: (n: number) => (n === 1 ? 'Skills on your list — 1' : `Skills on your list — ${n}`),
+  storedScores: (n: number) => `Proof scores you typed — ${n}`,
+  storedHidden: (n: number) => `Suggestions you hid — ${n}`,
+  storedVoice: (on: boolean) => `Read questions aloud — ${on ? 'On' : 'Off'}`,
+  storedMeta: 'A version stamp, so updates go smoothly',
+  storedNone: 'Nothing stored yet.',
+  storedOutro: 'That is the whole list. None of it ever leaves your browser.',
   badgeCurrent: 'Current',
   badgeNext: 'Next',
   badgeLater: 'Later',

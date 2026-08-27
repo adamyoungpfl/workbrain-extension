@@ -11,7 +11,7 @@ import {
   Sheet,
   recommendationCopy,
 } from '../components';
-import { getLocal, setLocal } from '../../core/storage/client';
+import { getLocal, getSync, setLocal } from '../../core/storage/client';
 import { computeNextMove } from '../../core/freshness/nextMove';
 import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
 import { computeUtilization } from '../../core/home/utilization';
@@ -340,6 +340,13 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   /** V2.6 VB-125c — whether the Move-file sheet is up. In-memory, like every
    * other "where am I" fact: a reopen lands on Home with it closed. */
   const [moveOpen, setMoveOpen] = useState(false);
+  /** V2.6 VB-127 — the What's-stored sheet, and the two keys it lists that
+   * nothing else on Home reads: the version stamp and the narrator choice.
+   * `undefined` = the key does not exist, and an absent key gets NO row —
+   * the sheet's "whole list" claim has to be literally true. */
+  const [storedOpen, setStoredOpen] = useState(false);
+  const [metaStored, setMetaStored] = useState(false);
+  const [voicePref, setVoicePref] = useState<boolean | undefined>(undefined);
   const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
   /**
    * Where focus goes when a recommendation is hidden.
@@ -359,10 +366,16 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
       getLocal('wb:recs'),
       getLocal('wb:answers:skills'),
       getLocal('wb:report'),
-    ]).then(([storedAnswers, storedRecs, storedSkills, storedReport]) => {
+      getLocal('wb:meta'),
+      getSync('wb:prefs'),
+    ]).then(([storedAnswers, storedRecs, storedSkills, storedReport, storedMeta, storedPrefs]) => {
       if (cancelled) return;
       setSkillsAnswers(storedSkills ?? EMPTY_SKILLS);
       setReport(storedReport);
+      setMetaStored(storedMeta !== undefined);
+      setVoicePref(
+        storedPrefs && typeof storedPrefs.narrator === 'boolean' ? storedPrefs.narrator : undefined,
+      );
       setAnswersState(storedAnswers ?? EMPTY_ANSWERS);
       setDismissals(readDismissals(storedRecs));
     });
@@ -764,6 +777,9 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
 
       <footer className="home-foot">
         <p className="home-privacy">{S.homePrivacyNote}</p>
+        <button type="button" className="home-foot-link" onClick={() => setStoredOpen(true)}>
+          {S.storedLink}
+        </button>
       </footer>
         </div>
       </div>
@@ -772,6 +788,42 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           errors and toasts — behind the tile, unchanged in behaviour. */}
       <Sheet open={moveOpen} onClose={() => setMoveOpen(false)} title={S.moveSheetTitle}>
         <FileActions answers={answers} onImport={persist} />
+      </Sheet>
+
+      {/* V2.6 VB-127 — the storage, listed in plain words. Rows exist only
+          for keys that exist, every count is authored content, and the
+          outro's "whole list" claim is meant literally — which is why the
+          version stamp gets a row instead of a diplomatic silence. Derived
+          from the same reads the rest of Home already makes; nothing here
+          is stored about having looked. */}
+      <Sheet open={storedOpen} onClose={() => setStoredOpen(false)} title={S.storedTitle}>
+        <div className="home-stored">
+          {(() => {
+            const contextCount = Object.keys(answers.answeredAt).length;
+            const skillCount = (skillsAnswers.repeatables['skills'] ?? []).length;
+            const scoreCount = report?.scores?.length ?? 0;
+            const hiddenCount = Object.keys(dismissals.dismissed).length;
+            const rows: string[] = [];
+            if (contextCount > 0) rows.push(S.storedContext(contextCount));
+            if (skillCount > 0) rows.push(S.storedSkills(skillCount));
+            if (scoreCount > 0) rows.push(S.storedScores(scoreCount));
+            if (hiddenCount > 0) rows.push(S.storedHidden(hiddenCount));
+            if (voicePref !== undefined) rows.push(S.storedVoice(voicePref));
+            if (metaStored) rows.push(S.storedMeta);
+            return rows.length === 0 ? (
+              <p className="home-stored-row">{S.storedNone}</p>
+            ) : (
+              <ul className="home-stored-list">
+                {rows.map((row) => (
+                  <li key={row} className="home-stored-row">
+                    {row}
+                  </li>
+                ))}
+              </ul>
+            );
+          })()}
+          <p className="home-stored-outro">{S.storedOutro}</p>
+        </div>
       </Sheet>
     </div>
   );
