@@ -100,6 +100,16 @@ export const S = {
    */
   assist: 'AI Assist',
   /**
+   * [DRAFT] V2.5 VB-120 — the same chip while a text draft sits under its
+   * kind's character threshold, unassisted (core/flow/assistThresholds.ts,
+   * judged live): the same door, warmly recommended, breathing the one
+   * sanctioned cue. The word is about the OFFER — never "your answer is
+   * too short", never any word about the box (GUARDRAILS' no-guilt-nudges;
+   * the sheet's encouraging lead rides the same law, pinned in
+   * assistCopy.test.ts).
+   */
+  assistRecommended: 'AI Assist (Recommended)',
+  /**
    * [DRAFT] V2.5 VB-119 — step 2's door: opens the AI the person named at
    * the goal gate in the browser. Only ever rendered with a real service
    * name ('other' and an unanswered gate get no link at all —

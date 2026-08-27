@@ -1,5 +1,6 @@
 import type { Answers } from '../../schema/storage.types';
 import type { AnswerValue, FlowContext, Module, RepeatableBlock, Step } from '../../schema/flow.types';
+import { underAssistThreshold } from './assistThresholds';
 
 /**
  * Pure flow-walking logic — no chrome.*, no DOM (docs/ARCHITECTURE.md names this
@@ -47,7 +48,24 @@ function compoundKey(blockId: string, recordIndex: number, key: string): string 
  * "reflect", not "done": R1-07's whole point is that such an answer resumes
  * into the reflect screen on a fresh mount rather than being skipped past.
  * An explicitly skipped field (`null`, via applySkip) never needs reflecting
- * — there is nothing typed to play back. */
+ * — there is nothing typed to play back.
+ *
+ * V2.5 VB-120 rebalances the reflect entry (decision 2, CONFIRMED — both
+ * conditions evaluated LIVE on every derivation, nothing stored beyond the
+ * assisted stamp itself):
+ *  (a) an ASSISTED answer (`assistedAt` carries this key — the VB-119
+ *      sheet landed it) never enters the recheck: the interview trusts
+ *      what the interview built;
+ *  (b) an unassisted answer UNDER its kind's character threshold
+ *      (core/flow/assistThresholds.ts) skips the recheck too — there is
+ *      not enough written for a playback to be worth a screen; the panel's
+ *      nudge, not this walk, is what offers the way up;
+ *  (c) an unassisted answer at or over threshold reflects exactly as
+ *      R1-07 always has.
+ * Back-compat is the absence case: a store from before `assistedAt`
+ * existed reads `undefined` here, which is (b)/(c) — and every finished
+ * file is already `reflectedAt`-stamped, so nothing finished reopens
+ * (overrides.test.ts §5's contract). */
 function actionFor(
   step: Step,
   record: Record<string, AnswerValue>,
@@ -57,7 +75,14 @@ function actionFor(
   const key = storageKeyFor(step);
   if (!(key in record)) return 'step';
   const value = record[key];
-  if (step.kind === 'text' && step.interpret && typeof value === 'string' && !(reflectKey in answers.reflectedAt)) {
+  if (
+    step.kind === 'text' &&
+    step.interpret &&
+    typeof value === 'string' &&
+    !(reflectKey in answers.reflectedAt) &&
+    !(reflectKey in (answers.assistedAt ?? {})) &&
+    !underAssistThreshold(step, value)
+  ) {
     return 'reflect';
   }
   return undefined;
@@ -375,6 +400,40 @@ export function applyReflect(answers: Answers, step: Step, location: StepLocatio
     repeatables: { ...answers.repeatables, [blockId]: nextRecords },
     reflectedAt: { ...answers.reflectedAt, [compoundKey(blockId, recordIndex, key)]: at },
   };
+}
+
+/**
+ * V2.5 VB-120 (FLAG 2) — stamps `assistedAt` for one question: the VB-119
+ * AI Assist sheet landed the answer the person just committed. Called by
+ * the panel's commit path in the same breath as `applyAnswer`, never on
+ * the sheet's own submit — the draft is not an answer until Next stores
+ * it, and a stamp for a value that was never committed would bypass a
+ * recheck the eventual hand-typed answer might deserve.
+ *
+ * Same key convention as `applyReflect` above (plain top-level key,
+ * compound inside a repeatable). The value map is untouched: the answer
+ * itself went through `applyAnswer`, and this only records the how.
+ * Deliberately NOT folded into `applyAnswer` as a flag argument — the
+ * stamp is its own fact with its own reader (`actionFor`'s condition (a)),
+ * exactly as `applyReflect` is not an `applyAnswer` option.
+ */
+export function applyAssisted(answers: Answers, step: Step, location: StepLocation): Answers {
+  const key = storageKeyFor(step);
+  const at = new Date().toISOString();
+  const stampKey = location.in === 'top' ? key : compoundKey(location.blockId, location.recordIndex, key);
+  return { ...answers, assistedAt: { ...(answers.assistedAt ?? {}), [stampKey]: at } };
+}
+
+/**
+ * Whether this question's stored answer was VB-119-assisted — `actionFor`'s
+ * condition (a), exported so the panel's nudge reads the same key the walk
+ * does (the chip must never say "(Recommended)" over an answer the sheet
+ * itself built). Absent map, absent key: false — the pre-V2.5 store.
+ */
+export function hasAssistMark(answers: Answers, step: Step, location: StepLocation): boolean {
+  const key = storageKeyFor(step);
+  const stampKey = location.in === 'top' ? key : compoundKey(location.blockId, location.recordIndex, key);
+  return stampKey in (answers.assistedAt ?? {});
 }
 
 export function applyAddAnother(answers: Answers, blockId: string, wantsMore: boolean): Answers {

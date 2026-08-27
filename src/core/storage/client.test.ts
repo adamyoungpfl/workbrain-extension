@@ -148,6 +148,10 @@ describe('initStorage', () => {
       repeatables: { roles: [{ role_name: 'Founder' }] },
       answeredAt: { preferred_name: '2024-05-05T00:00:00.000Z' },
       reflectedAt: { voice: '2024-05-06T00:00:00.000Z' },
+      // V2.5 VB-120 — the third stamp map rides the same survival promise
+      // as the two above it: a migration may add identity, never drop how
+      // an answer was made.
+      assistedAt: { voice: '2024-05-06T00:00:00.000Z' },
     };
     const backend = fakeBackend({ 'wb:meta': meta, 'wb:answers': existing });
     const snapshots: unknown[] = [];
@@ -168,6 +172,7 @@ describe('initStorage', () => {
     expect(migrated.repeatables).toEqual(existing.repeatables);
     expect(migrated.answeredAt).toEqual(existing.answeredAt);
     expect(migrated.reflectedAt).toEqual(existing.reflectedAt);
+    expect(migrated.assistedAt).toEqual(existing.assistedAt);
     expect(migrated.recordIds?.roles).toHaveLength(1);
     expect(migrated.recordIds?.roles?.[0]).toMatch(/^skl_[a-z2-7]{10}$/);
     // And the new keys are absent, which every reader already treats as

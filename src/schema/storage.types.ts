@@ -19,6 +19,28 @@ export interface Answers {
    * by Skip, since there is nothing typed to play back. */
   reflectedAt: Record<string, string>;
   /**
+   * V2.5 VB-120 (FLAG 2) — which answers the VB-119 AI Assist sheet landed.
+   * Same key convention as `reflectedAt` (plain top-level id, compound
+   * `${blockId}#${recordIndex}#${fieldKey}` inside a repeatable), stamped by
+   * the commit path when a sheet-landed answer is submitted
+   * (core/flow/runner.ts's `applyAssisted`), read by `findPosition`'s
+   * reflect condition: an assisted answer NEVER re-enters the recheck — the
+   * interview trusts what the interview built.
+   *
+   * FLAG 2's line, drawn here on purpose: this is OBSERVED state, and it is
+   * admitted because it is FUNCTIONAL state that drives the flow — exactly
+   * the precedent `reflectedAt` set (also observed, also stored, also
+   * flow-driving). It is never counted, never displayed as a number, and
+   * never printed into the generated file (the file format has no
+   * representation for any of the three stamp maps — see
+   * core/files/restore.ts on what that means for import).
+   *
+   * Optional, like `recordIds`: every store from before V2.5 simply lacks
+   * it, which reads as "nothing was assisted" — true — so there is no
+   * migration and `SCHEMA_VERSION` does not move.
+   */
+  assistedAt?: Record<string, string>;
+  /**
    * V3 (docs/SKILL-INTERCHANGE.md) — stable identity for repeatable records,
    * per block, INDEX-ALIGNED with `repeatables[blockId]`: `recordIds.skills[0]`
    * names `repeatables.skills[0]`. Minted `skl_…` (core/packs/skillIds.ts),

@@ -44,8 +44,10 @@ import {
   applyAnswer,
   applySkip,
   applyReflect,
+  applyAssisted,
   applyAddAnother,
   applySeededAddAnother,
+  hasAssistMark,
   seededNameTaken,
   reconcileSeededRepeatable,
   findSeedTarget,
@@ -55,6 +57,7 @@ import {
   topLevelIndex,
   moduleFor,
 } from '../../core/flow/runner';
+import { underAssistThreshold } from '../../core/flow/assistThresholds';
 import type { Position, StepLocation } from '../../core/flow/runner';
 import { needsName } from '../../core/flow/addAnother';
 import { offListOptions } from '../../core/flow/customOptions';
@@ -1171,6 +1174,16 @@ function StepView({
    * answer, for anyone who cannot see the field fill and the pulse point. */
   const [assistAnnounce, setAssistAnnounce] = useState('');
   /**
+   * V2.5 VB-120 (FLAG 2) — the sheet landed an answer on THIS question,
+   * this visit. Ephemeral like every draft here (reset by the per-position
+   * remount); the durable fact is written at commit, where handleNext
+   * stamps `assistedAt` through core's applyAssisted — never at sheet
+   * submit, because a draft is not an answer until Next stores it. Also
+   * what turns the nudge off the moment the sheet delivers, without
+   * waiting for the commit round-trip.
+   */
+  const [assistedHere, setAssistedHere] = useState(false);
+  /**
    * V2.5 VB-119 — the sheet's submit just landed its answer in the input,
    * so the highlight now on it is the "here it landed" pulse and plays
    * ONCE: the first animationiteration clears the state again (see the
@@ -1413,6 +1426,14 @@ function StepView({
     }
 
     let next = applyAnswer(answers, step, location, isEmpty ? null : value);
+    // V2.5 VB-120 (FLAG 2) — the VB-119 sheet landed this answer, so the
+    // commit records the how beside the what: `assistedAt` is what lets
+    // findPosition's recheck trust what the interview built. Only a real
+    // typed value earns the stamp — an emptied-out field committed as a
+    // skip has nothing for the recheck to trust.
+    if (assistedHere && step.kind === 'text' && !isEmpty) {
+      next = applyAssisted(next, step, location);
+    }
     if (location.in === 'top' && Array.isArray(value)) {
       const seedTarget = findSeedTarget(modules, step.id);
       if (seedTarget) next = reconcileSeededRepeatable(next, seedTarget, step, value);
@@ -1813,6 +1834,9 @@ function StepView({
     setAssistOpen(false);
     setDraftText(text);
     setPendingError(null);
+    // VB-120 (FLAG 2): remember the sheet built this draft, so Next stamps
+    // `assistedAt` and the nudge stands down immediately.
+    setAssistedHere(true);
     assistLanded.current = true;
     setInputHighlight(true);
     setAssistAnnounce(S.assistLanded);
@@ -1828,6 +1852,26 @@ function StepView({
   // stands its chips up as a vertical pick list with a drawn glyph per
   // choice. Same group, same keys, same Next — a posture, not a mechanism.
   const verticalPick = usesVerticalPick(step);
+
+  /**
+   * V2.5 VB-120 (FLAG 3) — whether the AI Assist chip stands recommended:
+   * a text question whose DRAFT sits under its kind's character threshold
+   * (core/flow/assistThresholds.ts — live judgement, never stored) with no
+   * assist anywhere in sight — not this visit (`assistedHere`) and not on
+   * the stored answer (`hasAssistMark`, the same key the runner's recheck
+   * reads). While true the chip reads "AI Assist (Recommended)" and
+   * breathes the one sanctioned cue at its own gentle cadence, and the
+   * sheet it opens leads with the encouraging line — an offer about a
+   * strong start, never a word about what is or is not in the box
+   * (GUARDRAILS' no-guilt-nudges; the wording's no-deficiency law is
+   * pinned in assistCopy.test.ts). Typing past the threshold retires it
+   * mid-keystroke, because the judgement is the draft's, live.
+   */
+  const assistNudged =
+    step.kind === 'text' &&
+    !assistedHere &&
+    !hasAssistMark(answers, step, pos.location) &&
+    underAssistThreshold(step, draftText);
   const pillOptions: PillOption[] =
     step.kind === 'yesno'
       ? [
@@ -2042,9 +2086,12 @@ function StepView({
                 aria-haspopup="dialog"
                 onClick={() => setAssistOpen(true)}
               >
-                <span className="flow-chip-paint">
+                {/* VB-120: while nudged, the paint wears the one sanctioned
+                    cue and the label itself says why — never colour alone
+                    (GUARDRAILS), and never a word about the draft. */}
+                <span className={assistNudged ? 'flow-chip-paint flow-highlight' : 'flow-chip-paint'}>
                   {ASSIST_ICON}
-                  {S.assist}
+                  {assistNudged ? S.assistRecommended : S.assist}
                 </span>
               </Button>
               <span className="flow-idea-live" role="status">
@@ -2055,6 +2102,7 @@ function StepView({
                   prompt={interviewMePrompt(questionText, ctx)}
                   serviceLabel={goalServiceLabelFor(ctx)}
                   serviceUrl={assistServiceUrlFor(ctx)}
+                  encouraging={assistNudged}
                   onClose={() => setAssistOpen(false)}
                   onSubmit={handleAssistSubmit}
                 />

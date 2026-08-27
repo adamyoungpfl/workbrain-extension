@@ -127,6 +127,27 @@ describe('buildImportedAnswers', () => {
     expect(result.answeredAt.stop_thing).toBe(AT);
   });
 
+  /**
+   * V2.5 VB-120 — the deliberate asymmetry with reflectedAt, pinned. The
+   * file carries no stamp maps, so an import cannot know which answers the
+   * AI Assist sheet landed — and it does not need to: every restored
+   * interpret value is reflectedAt-stamped above, and reflectedAt alone
+   * keeps the recheck shut (runner.ts's actionFor checks it first). An
+   * invented assistedAt would be a recorded fact the file never contained.
+   */
+  it('never invents assistedAt — the import records only what the file can actually say (VB-120)', () => {
+    const input = parsed({
+      values: { scope: 'work', stop_thing: 'A long enough answer about meetings and their many recurring costs.' },
+      repeatables: { roles: [{ role_name: 'Employee', role_mandate: 'Keep the reports accurate.' }] },
+    });
+    const result = buildImportedAnswers(input, AT, modules);
+
+    expect(result.assistedAt).toBeUndefined();
+    // And the import still lands "done", not back in the recheck — the
+    // reflectedAt stamp is doing that job on its own.
+    expect(result.reflectedAt.stop_thing).toBe(AT);
+  });
+
   it('stamps compound keys for repeatable fields, reflectedAt only where interpret applies', () => {
     const input = parsed({
       repeatables: {

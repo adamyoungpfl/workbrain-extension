@@ -142,6 +142,26 @@ describe('generateContextFile — always present, regardless of answers', () => 
     expect(file).not.toContain('1. About This Context');
     expect(file).not.toContain('2. About Me');
   });
+
+  /**
+   * V2.5 VB-120 — the file prints WHAT was answered, never HOW. The three
+   * stamp maps have no representation in the format (roundtrip.test.ts's
+   * standing claim for answeredAt/reflectedAt); `assistedAt` joins them:
+   * byte-identical output with the stamp and without it, so the round trip
+   * stays clean and nothing about assist use ever leaves the store.
+   */
+  it('assistedAt never prints — the same file, byte for byte, stamped or not (VB-120)', () => {
+    const values = { scope: 'work', stop_thing: 'The history behind the numbers.' };
+    const plain = generateContextFile(makeAnswers({ values }), '2026-08-20', modules, outline);
+    const stamped = generateContextFile(
+      makeAnswers({ values, assistedAt: { stop_thing: '2026-08-26T00:00:00.000Z' } }),
+      '2026-08-20',
+      modules,
+      outline,
+    );
+    expect(stamped).toBe(plain);
+    expect(stamped).not.toContain('assistedAt');
+  });
 });
 
 describe('generateContextFile — never-reached vs explicitly skipped', () => {

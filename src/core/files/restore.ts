@@ -60,6 +60,18 @@ import type { ParsedAnswers } from './parse';
  *        A `yesno` question no block claims is left alone rather than
  *        guessed at; none exists in real content today.
  *
+ * V2.5 VB-120: `assistedAt` (the third stamp map — which answers the AI
+ * Assist sheet landed) is deliberately NOT stamped here, and that is the
+ * honest mirror of the `reflectedAt` reasoning above rather than a gap in
+ * it. The generated file prints none of the stamp maps, so an import
+ * cannot know which answers were assisted — and unlike `reflectedAt`,
+ * nothing goes wrong by not knowing: every restored interpret-bearing
+ * value gets `reflectedAt` stamped (point 2), and a key present in
+ * `reflectedAt` never re-enters the recheck regardless of `assistedAt`
+ * (core/flow/runner.ts's `actionFor` — reflectedAt is checked first).
+ * Inventing an `assistedAt` stamp would record a fact the file does not
+ * contain; omitting it costs nothing. restore.test.ts pins the omission.
+ *
  * Pure — no chrome.*, no DOM (see CLAUDE.md's core purity rule). `modules`
  * defaults to the real ported flow and is only ever overridden in tests,
  * matching generate.ts/parse.ts's own pattern.

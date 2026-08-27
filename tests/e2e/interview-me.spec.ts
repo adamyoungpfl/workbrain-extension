@@ -118,7 +118,10 @@ test.describe('VB-119 — AI Assist: the paused mini-interview', () => {
     const { context, page } = await launchPanel();
     await goToTextQuestion(page);
 
-    const chip = page.getByRole('button', { name: S.assist, exact: true });
+    // VB-120: with the draft empty — under the multiline threshold,
+    // unassisted — the chip stands in its recommended posture; its plain
+    // name is the over-threshold state, pinned in reflect.spec.ts's (b).
+    const chip = page.getByRole('button', { name: S.assistRecommended, exact: true });
     await expect(chip).toBeVisible();
     // The drawn bubble-and-spark rides inside the chip's paint.
     await expect(page.locator(`${CHIP} .assist-bubble`)).toBeVisible();
@@ -154,6 +157,12 @@ test.describe('VB-119 — AI Assist: the paused mini-interview', () => {
     const { context, page } = await launchPanel();
     await goToTextQuestion(page);
     const question = ((await page.locator('.flow-q').textContent()) ?? '').trim();
+    // VB-120: a draft past the threshold makes this the ORDINARY open —
+    // the encouraging lead belongs to the nudged open alone (its own
+    // claims live in reflect.spec.ts's (b) and below in this file).
+    await page
+      .locator('.flow textarea')
+      .fill('A substantial draft, comfortably past the eighty character bar, kept for the sheet.');
     await openSheet(page);
 
     // The step line — printed exactly as core authors it (the narrator
