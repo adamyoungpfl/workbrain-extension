@@ -58,6 +58,14 @@
   --home-context-tint: #E8F5F0;
   --home-skills: #1F5FC4;
   --home-skills-tint: #E9F0FD;
+  --splash-field: #070A12;
+  --splash-focus: #A8C7FF;
+  --splash-scene-paper: #F6F5F1;
+  --splash-scene-warm-hi: #CAA27A;
+  --splash-scene-warm-lo: #6B4F3A;
+  --splash-scene-cool-hi: #8FA3B8;
+  --splash-scene-cool-lo: #123C6E;
+  --splash-scene-ink: #39434E;
   --globe-node-1-mid: #3E77E8;
   --globe-node-1-deep: #0C1C55;
   --globe-node-2-mid: #16A5BE;

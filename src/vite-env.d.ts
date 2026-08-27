@@ -19,4 +19,15 @@ interface ImportMetaEnv {
 
 interface ImportMeta {
   readonly env: ImportMetaEnv;
+  /**
+   * V2.7 VB-130 — the one glob this repo performs: the splash's bundled
+   * shard photographs, eagerly resolved to emitted URLs. Typed for exactly
+   * that call shape and nothing wider, for the same reason this file
+   * exists at all: `vite/client`'s full ambient surface would quietly make
+   * imports we deliberately do not allow typecheck fine.
+   */
+  glob(
+    pattern: string,
+    options: { eager: true; query: '?url'; import: 'default' },
+  ): Record<string, string>;
 }

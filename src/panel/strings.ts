@@ -1092,9 +1092,27 @@ export const S = {
      The import door's job lives on in `importFile` on Home; the narrator's
      in the header toggle. Recorded rather than silently dropped, per the
      `fileTreeRoot` precedent. */
-  /** [DRAFT] V2.6 VB-126 — the splash's one control: a real button stretched
-   * over the whole surface, named for where any press lands. */
+  /** [DRAFT] V2.6 VB-126 — the splash's way in, and since V2.7 VB-128 the
+   * visible button the reveal lands on. One name for the one move. */
   splashEnter: 'Open your work brain',
+  /**
+   * [DRAFT] V2.7 VB-128 — the ten-count's loading line: action words
+   * cycling, Claude style (Adam's decision 5, docs/V2.7-SPLASH-WOW.md).
+   * Decoration to a screen reader — the button above it is the control and
+   * the hand-off steals no focus. Under reduced motion only the first word
+   * shows, still. Playful is the brief; each stays grade-7 and none names
+   * a thing the person didn't bring.
+   */
+  splashLoading: [
+    'Gathering your shards…',
+    'Waking the brain…',
+    'Connecting the dots…',
+    'Reading the room…',
+    'Lining things up…',
+    'Warming the glow…',
+    'Finding your files…',
+    'Opening the doors…',
+  ] as const,
 
   /**
    * V2.2 — the shelf's three new lines, from the signed-off draft

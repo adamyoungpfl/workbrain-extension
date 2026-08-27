@@ -467,6 +467,13 @@ test.describe('VB-10 — reduced motion', () => {
     await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
 
+    // V2.7 VB-128: under reduced motion the splash legitimately schedules
+    // ONE interval of its own — the ten-count's once-per-second bar stepper
+    // (a progress indicator is information, and a timeout is not a frame).
+    // It is cleared the moment the splash leaves; the claim below is about
+    // the TYPEWRITER, so the walk measures what it schedules from here on.
+    const baselineIntervals = await intervalCount(page);
+
     // Watch from before the interview even opens, so the first question's
     // arrival is inside the window rather than before it.
     await page.evaluate(() => {
@@ -507,11 +514,15 @@ test.describe('VB-10 — reduced motion', () => {
       'a partly-printed heading appeared under prefers-reduced-motion',
     ).toBe(false);
 
-    // The bar: zero. Not "it finishes quickly" — the print is never started,
-    // so the panel schedules no interval at all. Nothing else in the bundle
-    // uses setInterval except the file tree's typewriter, which honours the
-    // same preference.
-    expect(await intervalCount(page), 'a print timer ran under reduced motion').toBe(0);
+    // The bar: zero NEW intervals since the splash left. Not "it finishes
+    // quickly" — the print is never started, so the interview schedules no
+    // interval at all. The only other setInterval in the bundle is the
+    // splash's reduced-motion ten-count stepper, measured out above and
+    // gone with its surface.
+    expect(
+      (await intervalCount(page)) - baselineIntervals,
+      'a print timer ran under reduced motion',
+    ).toBe(0);
 
     await context.close();
   });

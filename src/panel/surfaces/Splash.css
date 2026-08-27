@@ -1,62 +1,81 @@
-/* V1.7 VB-34 — the splash. See Splash.tsx's header for the behaviour; this is
-   only how it looks.
+/* V2.7 VB-128 — the splash show's stage. See Splash.tsx for the behaviour;
+   this is only how it looks.
 
-   IT IS THE PANEL'S OWN CANVAS, NOT A DARK CINEMA CARD.
-   The obvious move for something described as "cinematic" is a dark field —
-   the drawer's globe already has one (`--globe-field`), and the mark reads
-   well on it. It is the wrong move here. This surface is on top of a white
-   400px panel and lasts two seconds, so a dark card means a white panel, a
-   dark flash, and a white panel again, in a strip down the side of somebody's
-   browser. The cinema is the camera move, not the palette. On `--canvas` the
-   splash instead *becomes* Home as it fades, which is what it actually is.
+   THE DARK FIELD IS THE POINT NOW. VB-34 argued the splash should be the
+   panel's own canvas so it could dissolve into Home; VB-128 reverses that
+   deliberately, because the surface's job reversed: it is the show (Adam's
+   Option 1 — the gravity of the work brain), and the show's world is the
+   sanctioned dark stage `--splash-field`, fenced to this surface the way
+   the globe's field is fenced to the drawer. The hand-off to Home is a cut,
+   as movies cut.
 
-   Every value below is a token. No hex may exist outside the generated
-   tokens.css — see docs/GUARDRAILS.md and scripts/audit.mjs rule 2. */
+   Every value below is a token or white-at-a-measured-alpha on the field
+   (all ≥ 4.5:1 on the near-black — full white is ~18:1 there, and nothing
+   drops below 0.6 alpha). No hex outside tokens.css. */
 
 .splash {
   position: fixed;
   inset: 0;
-  /* Above everything the panel can raise. `Sheet` sits at 50 and is the
-     highest surface in the product; the splash covers even that, because it
-     covers the panel as a whole rather than a region of it. */
+  /* Above everything the panel can raise — Sheet sits at 50. */
   z-index: 60;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  background: var(--canvas);
+  background: var(--splash-field);
   transition: opacity var(--slow) var(--ease);
+  /* The clock writes these every frame; everything below only reads them. */
+  --swell: 0;
+  --pull: 0.16;
+  --drain: 0;
 }
 
-/* A breath of the panel's own primary tint behind the mark, so the mark sits
-   in a space rather than on a sheet. `--canvas` at the far stop means the
-   tint has nowhere to end — it dissolves into the same white the panel is. */
-.splash::before {
-  content: '';
+/* ── the show stage ─────────────────────────────────────────────────────── */
+.splash-stage {
   position: absolute;
   inset: 0;
-  background: radial-gradient(78% 42% at 50% 42%, var(--primary-tint), var(--canvas) 68%);
+  display: grid;
+  place-items: center;
 }
 
-/* V2.6 VB-126 — the one control: a real button stretched over the whole
-   surface, named for where it lands. It sits under the lockup (the lockup
-   ignores the pointer, below), so a click on the wordmark is a click on
-   this. The focus frame is drawn inward — a ring outside a full-bleed
-   control would be clipped by the panel's own edge. */
-.splash-enter {
+/* The shard field (VB-129) — under the glow and the mark, over the field. */
+.splash-canvas {
   position: absolute;
   inset: 0;
-  border: 0;
-  background: transparent;
-  cursor: pointer;
-  padding: 0;
-}
-.splash-enter:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: -6px;
-  border-radius: var(--r-lg);
+  width: 100%;
+  height: 100%;
 }
 
+/* The mark's gravity: a bloom that breathes with the pull. The pull value
+   runs ~0.16 → ~3.6, mapped here to a gentle scale and brightening — the
+   acceleration reads in the light before VB-129's shards arrive to prove
+   it. */
+.splash-glow {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 246, 230, 0.92) 0%,
+    rgba(124, 157, 255, 0.32) 34%,
+    rgba(124, 157, 255, 0) 70%
+  );
+  transform: scale(calc(0.72 + var(--pull) * 0.16));
+  opacity: calc(0.5 + var(--pull) * 0.12);
+}
+
+/* ── the swell — core's soft curve, painted ─────────────────────────────── */
+.splash-swell {
+  position: absolute;
+  inset: 0;
+  /* --canvas IS white; the swell borrows the panel's own light. */
+  background: var(--canvas);
+  opacity: var(--swell);
+  pointer-events: none;
+}
+
+/* ── the reveal ─────────────────────────────────────────────────────────── */
 .splash-lockup {
   position: relative;
   display: flex;
@@ -64,66 +83,123 @@
   align-items: center;
   text-align: center;
   gap: 2px;
-  /* The lockup is a picture on top of the one control; the pointer falls
-     through it so the whole surface really is the button it claims to be. */
-  pointer-events: none;
-  /* Off true centre. An optically centred lockup sits slightly high — the
-     tagline's descenders and the eye's own bias both pull the perceived
-     middle down — and this is the whole composition, so it is worth the two
-     percent. */
   transform: translateY(-4%);
 }
 
-/* Matches the welcome screen's wordmark exactly: the same size, the same
-   weight, the same one violet (`--violet`, 6.47:1 on canvas). The splash and
-   the screen it fades into show the same lockup, so the fade is a dissolve
-   between two states of one thing and not a cut between two designs. */
+/* The movie-intro order, in the children's own delays: the mark lands with
+   the reveal, the tagline 0.6s later, the button and the count at 1.2s —
+   the same numbers core's beats hold, so the CSS and the clock agree by
+   construction (taglineAt − revealAt = 0.6, enterAt − revealAt = 1.2). */
+@keyframes splash-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.splash-lockup > * {
+  animation: splash-rise var(--slow) var(--ease) backwards;
+}
+.splash-lockup .splash-tagline {
+  animation-delay: 0.6s;
+}
+.splash-lockup .splash-enter {
+  animation-delay: 1.2s;
+}
+.splash-lockup .splash-idle {
+  animation-delay: 1.2s;
+}
+
 .splash-wordmark {
   font-size: 26px;
   line-height: 1.1;
   font-weight: 680;
   letter-spacing: -0.022em;
-  color: var(--violet);
+  /* White on the field (~18:1). The one violet stays for light surfaces;
+     on the dark stage the name is light itself. */
+  color: var(--ink-inv);
   margin: 14px 0 0;
 }
 
 .splash-tagline {
   font-size: 15px;
   line-height: 1.6;
-  color: var(--ink-2);
+  color: rgba(255, 255, 255, 0.78);
   margin: 10px 0 0;
 }
 
-/* One sentence per line — see `taglineLines` in Splash.tsx for why the break
-   is placed rather than left to the browser. Each line may still wrap on its
-   own if the panel is dragged narrow; this sets where the *first* break goes,
-   it does not forbid a second. */
 .splash-tagline-line {
   display: block;
 }
 
-/* V2.6 VB-126: the doors and the voice row are gone with their rules — the
-   splash is pure arrival now, held for the wow treatment. The narrator
-   preference kept its other control (the header's toggle); the import door
-   kept its other door (Home's "I already have a file"). */
+/* The button: the house primary, sized for the moment, with the dark
+   stage's own focus ring — --primary's ring measures under 3:1 here, the
+   same physics that gave the globe its ring. */
+.splash-enter {
+  margin-top: 26px;
+  min-width: 232px;
+}
+.splash .btn:focus-visible {
+  outline-color: var(--splash-focus);
+}
+
+/* ── the ten-count as a loading line ────────────────────────────────────── */
+.splash-idle {
+  margin-top: 18px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  width: 232px;
+}
+
+.splash-loader {
+  margin: 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.72);
+  animation: splash-word var(--base) var(--ease) backwards;
+}
+@keyframes splash-word {
+  from {
+    opacity: 0;
+  }
+}
+
+.splash-drain {
+  width: 100%;
+  height: 2px;
+  border-radius: 1px;
+  background: rgba(255, 255, 255, 0.18);
+  overflow: hidden;
+}
+.splash-drain i {
+  display: block;
+  height: 100%;
+  width: calc(100% * (1 - var(--drain)));
+  background: rgba(255, 255, 255, 0.66);
+  border-radius: 1px;
+}
 
 /* Leaving. `pointer-events: none` from the first frame of the fade, so the
-   panel underneath is live for the whole 320ms rather than only after it. */
+   panel underneath is live for the whole 320ms rather than after it. */
 .splash[data-leaving='on'] {
   opacity: 0;
   pointer-events: none;
 }
 
-/* The still equivalent carries the same three things — mark, name, tagline —
-   so there is nothing the motion was saying that has to be said another way
-   (docs/GUARDRAILS.md). Two things are switched off here. The camera is
-   stopped in BrandMark, before a frame is ever scheduled. The fade is
-   cancelled here, because a fade the person cannot see is 320ms of an
-   invisible overlay in the way; Splash.tsx hands over immediately instead,
-   and this makes sure nothing lingers if it ever did not. */
+/* The still equivalent is the composed reveal itself — mark, name, tagline,
+   button, the first loading word, the stepping bar — rendered immediately
+   (Splash.tsx mounts phase="reveal" and schedules nothing). What this block
+   removes is every glide: the rises land settled, the word never fades, and
+   the exit is a cut. */
 @media (prefers-reduced-motion: reduce) {
   .splash {
     transition: none;
+  }
+
+  .splash-lockup > *,
+  .splash-loader {
+    animation: none;
   }
 
   .splash[data-leaving='on'] {

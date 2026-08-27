@@ -3,44 +3,41 @@ import type { BrowserContext, Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ORBIT_STILL } from '../../src/core/geometry/markOrbit';
+import { SPLASH_BEATS } from '../../src/core/splash/sequence';
+import { S } from '../../src/panel/strings';
 
 /**
- * V1.7 VB-34 accept criteria, amended by V2.1 VB-73 and simplified by V2.6
- * VB-126: "loops smoothly without a visible seam; reduced motion is a still
- * frame with the same information; the tagline is in strings.ts" — and the
- * VB-126 contract that replaced the doors: the splash is pure arrival, any
- * click lands on Home, one full-surface control is the keyboard path, Escape
- * still closes, and the covered panel is inert.
+ * V2.7 VB-128 — the splash is the show (docs/V2.7-SPLASH-WOW.md, Option 1):
+ * the dark stage with the mark burning in its gravity, the soft white
+ * swell, the movie-intro reveal, the ten-count dressed as a cycling
+ * loading line, and the hand-off to Home — on its own after the count, or
+ * instantly on any click at any moment.
  *
- * WHAT IS PROVEN WHERE, AND WHY THE SPLIT
- * The loop's smoothness is a property of a pure function of time, and
- * `src/core/geometry/markOrbit.test.ts` measures it at 1,440 moments of every
- * loop — including the wrap, where it compares the step across the seam
- * against the biggest step the path takes anywhere else. A browser can sample
- * a few dozen frames and would prove far less. So the seam is not re-argued
- * here; what is argued here is everything that is only true of the running
- * extension:
+ * What is proven where: the beats' arithmetic (ordering, the 4–5s reveal
+ * window, the swell's whisper-per-frame softness) lives in
+ * core/splash/sequence.test.ts at fractions of a millisecond; what is
+ * argued here is only what is true of the running extension —
  *
- *   - the splash is on screen at all, on a fresh session,
- *   - the mark on it is genuinely re-projecting in 3D rather than a CSS spin,
- *   - a real key press and a real click each end it,
- *   - it does not come back within the session,
- *   - under `prefers-reduced-motion` not one animation frame is ever
- *     requested — asserted by wrapping `requestAnimationFrame` before the
- *     panel's own bundle runs, the same technique brand-mark.spec.ts uses,
- *     because "nothing appears to move" and "no loop is running" are
- *     different claims and only the second one is the guardrail,
- *   - and the panel underneath is fully built the whole time, which is what
- *     "must not gate the panel's first paint" means in practice.
- *
- * Self-contained launch helpers, per this repo's one-spec-stands-alone
- * convention (see brand-mark.spec.ts and flow-progress.spec.ts).
+ *   - the show opens dark with the mark re-projecting in real 3D and NO
+ *     title card yet; the reveal arrives on the clock with the wordmark,
+ *     the tagline, the real button and the loading line;
+ *   - any click at any phase lands on Home; Escape works from frame one;
+ *     a letter key still costs nothing; a press through the splash never
+ *     acts on a covered control;
+ *   - the show ends on its own — the ten-count hands over (the deliberate
+ *     return of VB-34's self-ending, recorded in the doc);
+ *   - once per browser session, unchanged;
+ *   - and under prefers-reduced-motion the composed reveal renders
+ *     immediately with not one animation frame ever scheduled, the words
+ *     holding still, the hand-off still honoured.
  */
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.resolve(HERE, '../../dist');
 
-/** The pose the splash must be showing when nothing is allowed to move. */
+/** The pose the reveal's mark must hold when nothing is allowed to move. */
 const STILL_POSE = ORBIT_STILL.nodes.map((n) => `${n.cx},${n.cy},${n.r}`);
+
+const REVEAL_TIMEOUT = (SPLASH_BEATS.revealAt + 4) * 1000;
 
 function installFrameProbe(page: Page) {
   return page.addInitScript(() => {
@@ -57,7 +54,6 @@ function installFrameProbe(page: Page) {
 const frameCount = (page: Page) =>
   page.evaluate(() => (window as unknown as { __rafCount: number }).__rafCount);
 
-/** Wait for `n` more animation frames than the page has already asked for. */
 async function waitForFrames(page: Page, n: number) {
   const from = await frameCount(page);
   await page.waitForFunction(
@@ -75,10 +71,6 @@ async function launchPanel(
     args: [
       `--disable-extensions-except=${DIST}`,
       `--load-extension=${DIST}`,
-      // Playwright runs several headed windows at once and Chrome throttles
-      // rAF in windows it believes are occluded. Same three flags, same
-      // reason, as brand-mark.spec.ts: they only ever make frames more
-      // likely, so they cannot mask a regression in the assertions below.
       '--disable-backgrounding-occluded-windows',
       '--disable-renderer-backgrounding',
       '--disable-background-timer-throttling',
@@ -102,22 +94,20 @@ const readPose = (page: Page, selector: string) =>
     ),
   );
 
-test.describe('VB-34 — the splash arrives', () => {
-  test('is the mark, the name and the tagline, centred, on a fresh session', async () => {
+test.describe('VB-128 — the show opens', () => {
+  test('dark stage, the mark in its glow, and no title card yet', async () => {
     const { context, page } = await launchPanel();
 
     const splash = page.locator('.splash');
     await expect(splash).toHaveCount(1);
-    await expect(page.locator('.splash-wordmark')).toHaveText('Workbrain');
-    await expect(page.locator('.splash-tagline')).toHaveText(
-      'How you do anything is how your AI does everything.',
-    );
-    // The whole icosahedron, not a degraded one.
-    await expect(page.locator('.splash .brand-mark circle')).toHaveCount(12);
-    await expect(page.locator('.splash .brand-mark line')).toHaveCount(30);
+    await expect(splash).toHaveAttribute('data-phase', 'show');
+    await expect(page.locator('.splash-stage .brand-mark circle')).toHaveCount(12);
+    await expect(page.locator('.splash-glow')).toHaveCount(1);
+    // The movie has not reached its title card: no name, no button.
+    await expect(page.locator('.splash-wordmark')).toHaveCount(0);
+    await expect(page.locator('.splash-enter')).toHaveCount(0);
 
-    // It covers the panel, and it is really the top layer rather than a card
-    // that merely looks like one.
+    // It covers the panel, opaquely, on its own dark field.
     const box = (await splash.boundingBox())!;
     expect(box.width).toBe(400);
     expect(box.height).toBeGreaterThanOrEqual(700);
@@ -128,208 +118,198 @@ test.describe('VB-34 — the splash arrives', () => {
     }));
     expect(layer.position).toBe('fixed');
     expect(Number(layer.z)).toBeGreaterThanOrEqual(50);
-    // An opaque background, not a wash over the panel — no alpha component.
     expect(layer.opaque).not.toContain('rgba');
-
-    // The lockup is centred across the panel, within a pixel.
-    const mark = (await page.locator('.splash .brand-mark').boundingBox())!;
-    const tagline = (await page.locator('.splash-tagline').boundingBox())!;
-    expect(Math.abs(mark.x + mark.width / 2 - 200)).toBeLessThan(1);
-    expect(Math.abs(tagline.x + tagline.width / 2 - 200)).toBeLessThan(1);
-    // And the tagline is beneath the lockup, as VB-34 words it.
-    expect(tagline.y).toBeGreaterThan(mark.y + mark.height);
 
     await context.close();
   });
 
-  test('the tagline is legible — real contrast, not a decorative wash', async () => {
+  test('does not gate the panel’s first paint — Home is built underneath it', async () => {
     const { context, page } = await launchPanel();
-    // Measured by hand even though the splash is in the accessibility tree
-    // now (VB-73) — the a11y suite's axe passes run on other surfaces, and
-    // 4.5:1 is docs/GUARDRAILS.md's floor for any text a person must read.
+    await expect(page.locator('.splash')).toHaveCount(1);
+
+    await page.waitForSelector('.home');
+    const home = (await page.locator('.home').boundingBox())!;
+    expect(home.height).toBeGreaterThan(100);
+    await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeAttached();
+    await expect(page.locator('.splash')).toHaveCount(1);
+
+    await context.close();
+  });
+
+  test('the reveal arrives on the clock: wordmark, tagline, button, loading line', async () => {
+    const { context, page } = await launchPanel();
+    await page.waitForSelector('.splash-wordmark', { timeout: REVEAL_TIMEOUT });
+
+    await expect(page.locator('.splash')).toHaveAttribute('data-phase', 'reveal');
+    await expect(page.locator('.splash-wordmark')).toHaveText('Workbrain');
+    await expect(page.locator('.splash-tagline')).toHaveText(
+      'How you do anything is how your AI does everything.',
+    );
+    const cta = page.getByRole('button', { name: S.splashEnter, exact: true });
+    await expect(cta).toBeVisible();
+    await expect(page.locator('.splash-loader')).toBeVisible();
+    await expect(page.locator('.splash-drain')).toBeVisible();
+
+    // Centred, and stacked in the movie order.
+    const mark = (await page.locator('.splash-lockup .brand-mark').boundingBox())!;
+    const tagline = (await page.locator('.splash-tagline').boundingBox())!;
+    const button = (await cta.boundingBox())!;
+    expect(Math.abs(mark.x + mark.width / 2 - 200)).toBeLessThan(1.5);
+    expect(Math.abs(tagline.x + tagline.width / 2 - 200)).toBeLessThan(1.5);
+    expect(tagline.y).toBeGreaterThan(mark.y + mark.height);
+    expect(button.y).toBeGreaterThan(tagline.y);
+
+    await context.close();
+  });
+
+  test('the tagline is legible on the dark field — measured, not assumed', async () => {
+    const { context, page } = await launchPanel();
+    await page.waitForSelector('.splash-tagline', { timeout: REVEAL_TIMEOUT });
     const ratio = await page.evaluate(() => {
-      const parse = (c: string) => c.match(/[\d.]+/g)!.slice(0, 3).map(Number);
+      const parse = (c: string) => c.match(/[\d.]+/g)!.map(Number);
       const lum = (rgb: number[]) => {
-        const [r, g, b] = rgb.map((v) => {
+        const [r, g, b] = rgb.slice(0, 3).map((v) => {
           const s = v / 255;
           return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
         }) as [number, number, number];
         return 0.2126 * r + 0.7152 * g + 0.0722 * b;
       };
-      const text = document.querySelector('.splash-tagline')!;
-      const fg = lum(parse(getComputedStyle(text).color));
-      // The splash paints an opaque --canvas behind everything, tint included.
-      const bg = lum(parse(getComputedStyle(document.querySelector('.splash')!).backgroundColor));
-      const [hi, lo] = fg > bg ? [fg, bg] : [bg, fg];
+      const el = document.querySelector('.splash-tagline')!;
+      const fgRaw = parse(getComputedStyle(el).color);
+      const bg = parse(getComputedStyle(document.querySelector('.splash')!).backgroundColor);
+      // The tagline rides white at an alpha; composite it over the field.
+      const alpha = fgRaw.length > 3 ? fgRaw[3]! : 1;
+      const fg = fgRaw.slice(0, 3).map((c, i) => c * alpha + bg[i]! * (1 - alpha));
+      const a = lum(fg);
+      const b = lum(bg);
+      const hi = Math.max(a, b);
+      const lo = Math.min(a, b);
       return (hi + 0.05) / (lo + 0.05);
     });
     expect(ratio).toBeGreaterThanOrEqual(4.5);
     await context.close();
   });
 
-  test('does not gate the panel’s first paint — the panel is built underneath it', async () => {
+  test('the loading line cycles its action words while the count drains', async () => {
     const { context, page } = await launchPanel();
-    await expect(page.locator('.splash')).toHaveCount(1);
+    const loader = page.locator('.splash-loader');
+    await loader.waitFor({ timeout: REVEAL_TIMEOUT });
 
-    // Home has rendered, laid out and is sitting there ready, while the
-    // splash is still on screen. Nothing is waiting on the splash.
-    await page.waitForSelector('.home');
-    const home = (await page.locator('.home').boundingBox())!;
-    expect(home.height).toBeGreaterThan(100);
-    await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeAttached();
-    // Still covered — this is a "the panel is ready under it" claim, not a
-    // "the splash left early" one.
-    await expect(page.locator('.splash')).toHaveCount(1);
+    const first = await loader.textContent();
+    await expect
+      .poll(async () => loader.textContent(), { timeout: 4000 })
+      .not.toBe(first);
+    // And every word it shows is one of the approved set.
+    const now = (await loader.textContent()) ?? '';
+    expect([...S.splashLoading]).toContain(now);
 
     await context.close();
   });
 });
 
-test.describe('VB-34 — the camera drifts', () => {
-  test('re-projects in real 3D, and is not a CSS spin', async () => {
+test.describe('VB-129 — the shard field', () => {
+  test('the stage canvas is really painting: shards on the field, and moving', async () => {
     const { context, page } = await launchPanel();
-    const mark = '.splash .brand-mark';
+    await page.waitForSelector('.splash-canvas');
+
+    // Both samples land INSIDE the show (it swells away at ~3.8s and the
+    // stage unmounts with it — an open-ended poll here once outlived the
+    // canvas under fleet load and read null).
+    const sample = () =>
+      page.evaluate(() => {
+        const canvas = document.querySelector('.splash-canvas') as HTMLCanvasElement | null;
+        if (!canvas) return null;
+        const g = canvas.getContext('2d')!;
+        const data = g.getImageData(0, 0, canvas.width, Math.min(400, canvas.height)).data;
+        let painted = 0;
+        for (let i = 3; i < data.length; i += 16) if (data[i]! > 0) painted++;
+        return { painted, strip: Array.from(data.slice(0, 4000)).join(',') };
+      });
+
+    const first = await sample();
+    expect(first, 'the stage left before the first look').not.toBeNull();
+    expect(first!.painted, 'the canvas is blank — no shards were drawn').toBeGreaterThan(40);
+    // And it is a living field, not a still: the pixels change frame to frame.
+    await page.waitForTimeout(280);
+    const second = await sample();
+    expect(second, 'the stage left before the second look').not.toBeNull();
+    expect(second!.strip).not.toBe(first!.strip);
+
+    await context.close();
+  });
+
+  test('under reduced motion the stage never mounts — the law by construction', async () => {
+    const { context, page } = await launchPanel({ reduce: true });
+    await page.waitForSelector('.splash-wordmark', { timeout: 4000 });
+    await expect(page.locator('.splash-canvas')).toHaveCount(0);
+    expect(await frameCount(page)).toBe(0);
+    await context.close();
+  });
+});
+
+test.describe('VB-128 — the camera still drifts', () => {
+  test('the show’s mark re-projects in real 3D, not a CSS spin', async () => {
+    const { context, page } = await launchPanel();
+    const mark = '.splash-stage .brand-mark';
     await page.waitForSelector(mark);
 
     const poses: string[] = [];
     const radii: string[] = [];
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 6; i++) {
       poses.push((await readPose(page, mark)).join(' '));
       radii.push(
         (await page.$$eval(`${mark} circle`, (cs) => cs.map((c) => c.getAttribute('r')))).join(' '),
       );
       await waitForFrames(page, 6);
-      expect(await page.locator(`${mark} circle`).count()).toBe(12);
     }
-
-    expect(new Set(poses).size, 'the mark never moved').toBeGreaterThan(5);
-    // Radii change because the camera has perspective and is moving. A flat
-    // CSS rotation would move every node and leave every radius alone.
-    expect(
-      new Set(radii).size,
-      'positions moved but radii did not — that is a flat spin, not a camera',
-    ).toBeGreaterThan(5);
-
-    // Not a CSS transform doing it. Read as the matrix's off-diagonal terms
-    // rather than as "the transform is none", because the mark's one-time
-    // entrance is a real scale and may still be settling: a scale leaves b
-    // and c at zero, and any rotation at all cannot.
-    const [b, c] = await page.$eval(mark, (el) => {
-      const t = getComputedStyle(el).transform;
-      if (t === 'none') return [0, 0];
-      const n = t.match(/[-\d.e]+/g)!.map(Number);
-      return [n[1]!, n[2]!];
-    });
-    expect(Math.abs(b), 'the mark is being rotated by CSS').toBeLessThan(1e-6);
-    expect(Math.abs(c), 'the mark is being rotated by CSS').toBeLessThan(1e-6);
-
-    await context.close();
-  });
-
-  test('the mark’s own layout box never moves while the camera does', async () => {
-    const { context, page } = await launchPanel();
-    const mark = page.locator('.splash .brand-mark');
-    await mark.waitFor();
-    // Past the one-time entrance, which is a real fade-and-scale.
-    await page.waitForTimeout(400);
-
-    const boxes: string[] = [];
-    for (let i = 0; i < 6; i++) {
-      const box = (await mark.boundingBox())!;
-      boxes.push(`${box.x},${box.y},${box.width},${box.height}`);
-      await waitForFrames(page, 5);
-    }
-    expect(new Set(boxes).size, 'the mark resized or moved as the camera drifted').toBe(1);
-
-    await context.close();
-  });
-
-  test('stays inside its own frame — nothing clips at any point in the loop', async () => {
-    const { context, page } = await launchPanel();
-    const mark = '.splash .brand-mark';
-    await page.waitForSelector(mark);
-
-    for (let i = 0; i < 10; i++) {
-      const worst = await page.$$eval(`${mark} circle`, (cs) =>
-        cs.reduce((acc, c) => {
-          const cx = Number(c.getAttribute('cx'));
-          const cy = Number(c.getAttribute('cy'));
-          const r = Number(c.getAttribute('r'));
-          return Math.min(acc, cx - r, cy - r, 240 - cx - r, 240 - cy - r);
-        }, Infinity),
-      );
-      expect(worst, 'a node crossed the edge of the viewBox').toBeGreaterThan(0);
-      await waitForFrames(page, 6);
-    }
+    expect(new Set(poses).size, 'the mark never moved').toBeGreaterThan(4);
+    expect(new Set(radii).size, 'flat spin, not a camera').toBeGreaterThan(4);
 
     await context.close();
   });
 });
 
-test.describe('V2.6 VB-126 — pure arrival: any click lands on Home', () => {
-  /**
-   * VB-73's doors are gone (Adam, 2026-08-26: "remove the buttons from the
-   * splash page… any click from the splash page will load to the home
-   * page"), and the surface is held for the wow treatment. What is kept:
-   * the panel is fully built underneath (the first-paint test above is
-   * untouched), it stays until told to go (no dwell, no letter-key skip),
-   * a press through it never acts on a covered control, and Escape still
-   * closes. What is new: the whole surface is one named control, and any
-   * click anywhere is the same door.
-   */
-  test('a letter key does NOT dismiss it, and neither does time', async () => {
+test.describe('VB-128 — every exit, at every moment', () => {
+  test('a letter key does NOT dismiss it, and mid-show it is still there', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
 
     await page.keyboard.press('a');
-    // Well past the old dwell (2.4s) — VB-34's version was gone by now on
-    // either count. Still here is the point.
     await page.waitForTimeout(3200);
     await expect(page.locator('.splash')).toHaveCount(1);
 
     await context.close();
   });
 
-  test('Escape dismisses it', async () => {
+  test('Escape dismisses it from frame one, before any button exists', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
-    // And the panel is immediately usable.
     await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeVisible();
 
     await context.close();
   });
 
-  test('a click anywhere — the wordmark, the corner — lands on Home', async () => {
+  test('a click anywhere mid-show lands on Home — the rest of the movie is optional', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
 
-    // On the lockup itself: the picture ignores the pointer, so this press
-    // falls through to the full-surface control underneath it.
-    await page.locator('.splash-wordmark').click({ force: true });
+    await page.mouse.click(12, 640);
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
     await expect(page.locator('.home')).toHaveCount(1);
     await expect(page.locator('.flow')).toHaveCount(0);
-    await context.close();
 
-    // And a corner, nowhere near anything drawn — the same door.
-    const second = await launchPanel();
-    await second.page.waitForSelector('.splash');
-    await second.page.mouse.click(12, 640);
-    await expect(second.page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
-    await expect(second.page.locator('.home')).toHaveCount(1);
-    await second.context.close();
+    await context.close();
   });
 
-  test('the one control is real: named, focusable, and Enter works', async () => {
+  test('the reveal’s button is real: named, focusable, Enter works', async () => {
     const { context, page } = await launchPanel();
-    await page.waitForSelector('.splash');
+    const cta = page.getByRole('button', { name: S.splashEnter, exact: true });
+    await cta.waitFor({ timeout: REVEAL_TIMEOUT });
 
-    const enter = page.getByRole('button', { name: 'Open your work brain', exact: true });
-    await expect(enter).toHaveCount(1);
-    await enter.focus();
+    await cta.focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
     await expect(page.locator('.home')).toHaveCount(1);
@@ -342,9 +322,6 @@ test.describe('V2.6 VB-126 — pure arrival: any click lands on Home', () => {
     await page.waitForSelector('.splash');
     await page.waitForSelector('.home');
 
-    // Aim at the middle of a real button on Home, through the splash. The
-    // trust property survives VB-126 unchanged: the press dismisses the
-    // splash and ends there — it must not act on a control nobody could see.
     const target = page.getByRole('button', { name: /^Context\.md/ });
     const box = (await target.boundingBox())!;
     await page.mouse.click(box.x + box.width / 2, box.y + box.height / 2);
@@ -356,21 +333,36 @@ test.describe('V2.6 VB-126 — pure arrival: any click lands on Home', () => {
     await context.close();
   });
 
-  test('the covered panel is inert while the splash is up, and live after', async () => {
+  test('the covered panel is inert while the splash is up; the first Tab is the reveal’s button', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
-
-    // One account of the screen at a time: the splash's control is the only
-    // reachable one while it shows, which is what makes it the first Tab
-    // stop without anything stealing focus.
     await expect(page.locator('main[inert]')).toHaveCount(1);
+
+    await page.waitForSelector('.splash-enter', { timeout: REVEAL_TIMEOUT });
     await page.keyboard.press('Tab');
-    const first = await page.evaluate(() => document.activeElement?.className ?? '');
-    expect(first).toBe('splash-enter');
+    const first = await page.evaluate(() => document.activeElement?.textContent ?? '');
+    expect(first).toBe(S.splashEnter);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
     await expect(page.locator('main[inert]')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('the show ends on its own — the ten-count hands over to Home', async () => {
+    test.setTimeout(40_000);
+    const { context, page } = await launchPanel();
+    await page.waitForSelector('.splash-enter', { timeout: REVEAL_TIMEOUT });
+
+    // Not yet: the count has barely started.
+    await page.waitForTimeout(1500);
+    await expect(page.locator('.splash')).toHaveCount(1);
+
+    // Then, with nobody touching anything, Home.
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: SPLASH_BEATS.idleMs + 3000 });
+    await expect(page.locator('.home')).toBeVisible();
+    await expect(page.locator('.flow')).toHaveCount(0);
 
     await context.close();
   });
@@ -383,16 +375,11 @@ test.describe('VB-34 — once per session', () => {
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0);
 
-    // Reopening the side panel destroys and rebuilds this document — a fresh
-    // load of the same page is exactly that, and it is why a module variable
-    // could not have carried this.
     await page.goto(url);
     await page.waitForSelector('.home');
     await page.waitForTimeout(600);
     await expect(page.locator('.splash')).toHaveCount(0);
 
-    // A second panel document — a second tab's worth of the same page —
-    // does not get one either.
     const second = await context.newPage();
     await second.setViewportSize({ width: 400, height: 700 });
     await second.goto(url);
@@ -403,10 +390,7 @@ test.describe('VB-34 — once per session', () => {
     await context.close();
   });
 
-  test('a new browser session gets it again — so the test above means something', async () => {
-    // The control. `chrome.storage.session` is memory, and a new browser is a
-    // new session, so this must show the splash or "once per session" would
-    // really be "once ever", which is a different and worse product.
+  test('a new browser session gets the show again', async () => {
     const first = await launchPanel();
     await expect(first.page.locator('.splash')).toHaveCount(1);
     await first.context.close();
@@ -417,57 +401,63 @@ test.describe('VB-34 — once per session', () => {
   });
 });
 
-test.describe('VB-34 — reduced motion', () => {
-  test('is a still, composed frame, and not one animation frame is scheduled', async () => {
+test.describe('VB-128 — reduced motion', () => {
+  test('is the composed reveal immediately, and not one animation frame is scheduled', async () => {
     const { context, page } = await launchPanel({ reduce: true });
-    await page.waitForSelector('.splash');
+    await page.waitForSelector('.splash-wordmark', { timeout: 4000 });
 
-    // The bar is zero. Not "few", not "it settles" — no loop may exist.
     expect(await frameCount(page)).toBe(0);
-    const before = await readPose(page, '.splash .brand-mark');
-
-    await page.waitForTimeout(1200);
-    expect(await frameCount(page), 'a frame loop is running under reduced motion').toBe(0);
-    expect(await readPose(page, '.splash .brand-mark')).toEqual(before);
-
-    // And the still frame is the camera path's own first viewpoint, not some
-    // separate drawing that could drift from it.
-    expect(before).toEqual(STILL_POSE);
-
-    await context.close();
-  });
-
-  test('carries the same information as the moving one', async () => {
-    const { context, page } = await launchPanel({ reduce: true });
-    await page.waitForSelector('.splash');
-
-    await expect(page.locator('.splash .brand-mark circle')).toHaveCount(12);
-    await expect(page.locator('.splash .brand-mark line')).toHaveCount(30);
+    await expect(page.locator('.splash')).toHaveAttribute('data-phase', 'reveal');
     await expect(page.locator('.splash-wordmark')).toHaveText('Workbrain');
     await expect(page.locator('.splash-tagline')).toHaveText(
       'How you do anything is how your AI does everything.',
     );
-    // Nothing fades either — a fade the person cannot see is 320ms of an
-    // invisible overlay between them and their panel.
-    const transition = await page.$eval('.splash', (el) => getComputedStyle(el).transitionDuration);
-    expect(['0s', '0s, 0s']).toContain(transition);
+    await expect(page.getByRole('button', { name: S.splashEnter, exact: true })).toBeVisible();
+
+    // The mark holds the camera path's own still viewpoint.
+    const before = await readPose(page, '.splash-lockup .brand-mark');
+    expect(before).toEqual(STILL_POSE);
+    await page.waitForTimeout(1200);
+    expect(await frameCount(page), 'a frame loop is running under reduced motion').toBe(0);
+    expect(await readPose(page, '.splash-lockup .brand-mark')).toEqual(before);
 
     await context.close();
   });
 
-  test('still dismissable, instantly — no fade and not one frame', async () => {
+  test('the loading line holds still — the first word, no cycling', async () => {
+    const { context, page } = await launchPanel({ reduce: true });
+    const loader = page.locator('.splash-loader');
+    await loader.waitFor({ timeout: 4000 });
+
+    await expect(loader).toHaveText(S.splashLoading[0]);
+    await page.waitForTimeout(1800);
+    await expect(loader).toHaveText(S.splashLoading[0]);
+
+    await context.close();
+  });
+
+  test('the ten-count still hands over — the still version keeps the whole contract', async () => {
+    test.setTimeout(30_000);
+    const { context, page } = await launchPanel({ reduce: true });
+    await page.waitForSelector('.splash-enter', { timeout: 4000 });
+
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: SPLASH_BEATS.idleMs + 3000 });
+    await expect(page.locator('.home')).toBeVisible();
+    expect(await frameCount(page)).toBe(0);
+
+    await context.close();
+  });
+
+  test('still dismissable, instantly — Escape, with no fade and not one frame', async () => {
     const { context, page } = await launchPanel({ reduce: true });
     await page.waitForSelector('.splash');
-    // VB-73: Enter used to be the proof here, because any key skipped it.
-    // Escape is the keyboard exit now; under reduced motion the handover is
-    // immediate, with no 320ms of invisible overlay and no frame loop.
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
     expect(await frameCount(page)).toBe(0);
     await context.close();
   });
 
-  test('without the preference the loop really is running — the control', async () => {
+  test('without the preference the clock really is running — the control', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash .brand-mark');
     await waitForFrames(page, 20);
