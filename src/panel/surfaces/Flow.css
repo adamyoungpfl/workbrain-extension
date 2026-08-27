@@ -445,10 +445,10 @@
   align-items: center;
   gap: 6px;
   margin-top: 10px;
-  /* V2.4 VB-107: the row is the ANCHOR the interview-me popover floats
-     above (components/Popover.css positions against the nearest positioned
-     ancestor). On the row rather than on the trigger so the popover spans
-     the same width as the input it feeds. */
+  /* V2.4 VB-107 anchored the interview-me popover on this row; V2.5 VB-119
+     replaced the popover with the AI Assist sheet (position: fixed, no
+     anchor needed). The positioning context stays for the sr-only live
+     regions inside the row, which are position: absolute. */
   position: relative;
 }
 .flow-idea {
@@ -1350,29 +1350,13 @@
   width: 100%;
 }
 
-/* V2.3 VB-94's interview-me button, in the shared helper row. Its inline
-   disclosure (`.flow-askai-block`) is gone — V2.4 VB-107 replaced it with
-   the anchored popover below. */
-.flowshell .flow-askai {
+/* V2.3 VB-94's interview-me button → V2.5 VB-119's AI Assist chip, in the
+   shared helper row. Its inline disclosure died to VB-107's popover, and
+   the popover died to the full-height sheet (surfaces/AssistSheet.tsx —
+   FLAG 1's confirmed treatment); the chip itself keeps the bubble-chip
+   dressing every helper wears. */
+.flowshell .flow-assist {
   flex: 0 0 auto;
-}
-
-/* ── V2.4 VB-107: the interview-me popover's contents ─────────────────────
-   The box, its placement and its dismissal are components/Popover.css and
-   Popover.tsx (FLAG 1's contract); what is dressed HERE is only what is
-   inside this particular one: the prompt in ReadOnlyBlock's own trust
-   chrome, flush to the popover's frame (the block's `.flow` margin is for
-   standing in a page, not in a card), and the instruction line under it —
-   quiet ink, over the text floor (--ink-2, 6.96:1), with the person's own
-   AI named in it (strings.ts's interviewMeCopy). */
-.flow-askai-pop .readonly {
-  margin: 0;
-}
-.flow-askai-pop .flow-askai-hint {
-  margin: 8px 2px 0;
-  font-size: 13px;
-  line-height: 1.45;
-  color: var(--ink-2);
 }
 
 /* V2.3 VB-95 — the quick-check reflect: lead, unboxed italic quote, and the

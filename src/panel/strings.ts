@@ -90,25 +90,34 @@ export const S = {
    */
   makeUpName: 'Make one up for me',
   /**
-   * [DRAFT] V2.3 VB-94 — the interview-me prompt on open text questions:
-   * the person's own AI interviews them and hands back a finished answer
-   * in one fenced block, pasted into the same field. The button label is a
-   * verb the person would say (design-system §08).
+   * [DRAFT] V2.5 VB-119 — "Let my AI ask me" grows up into AI Assist: the
+   * name on the helper chip, and the title of the full-height sheet it
+   * opens (the stepped mini-interview — their own AI interviews them and
+   * hands back a finished answer, landed in the same field). A NAME rather
+   * than V2.3's spoken verb, per Adam's design; the sheet's own step lines
+   * do the talking (core/flow/assistCopy.ts — interview voice lives in
+   * core, chrome lives here).
    */
-  interviewMe: 'Let my AI ask me',
+  assist: 'AI Assist',
   /**
-   * [DRAFT] V2.4 VB-107 — the instruction line in the interview-me POPOVER
-   * (which replaces VB-94's inline disclosure and its "Run it in your AI"
-   * hint). It NAMES THEIR AI when the goal gate captured one — resolved the
-   * way the reflect voice line resolves it (reflectFrames.ts's
-   * goalServiceLabelFor), "your AI" when unknown — because "paste into
-   * ChatGPT" is a doable step where "run it" was a shrug. The second
-   * sentence says where the reply belongs; the highlight pulse on copy
-   * (VB-106) then points at that same box, so the words carry the
-   * instruction and the pulse only ever carries the where.
+   * [DRAFT] V2.5 VB-119 — step 2's door: opens the AI the person named at
+   * the goal gate in the browser. Only ever rendered with a real service
+   * name ('other' and an unanswered gate get no link at all —
+   * core/flow/assistServices.ts).
    */
-  interviewMeCopy: (service?: string) =>
-    `Copy this and paste into ${service ?? 'your AI'}. Paste the reply into the answer box — it lands ready to edit.`,
+  assistOpenService: (service: string) => `Open ${service}`,
+  /** [DRAFT] V2.5 VB-119 — step 2's advance. Their words, not ours: the
+   * button confirms what they just did over in their AI's tab. */
+  assistStarted: "I've started the interview",
+  /** [DRAFT] V2.5 VB-119 — step 3's submit: closes the sheet and lands the
+   * pasted answer in the question's own box, editable. */
+  assistUse: 'Put it in my answer',
+  /** [DRAFT] V2.5 VB-119 — step 3 submitted with nothing in the box. Says
+   * what to do next; the person's own words remain a first-class way out. */
+  assistNeedPaste: 'Paste what your AI wrote, or close this and type your own answer.',
+  /** [DRAFT] V2.5 VB-119 — spoken by the live region as the sheet closes,
+   * for anyone who cannot see the answer land and the input pulse. */
+  assistLanded: 'Your answer is in the box below. You can edit it.',
   /**
    * V1.8 VB-42 — the follow-up links under a question.
    *

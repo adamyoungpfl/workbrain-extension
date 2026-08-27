@@ -98,7 +98,9 @@ test.describe('the name generator (VB-109)', () => {
     await expect(generator).toBeVisible();
     await expect(page.getByRole('button', { name: S.giveExample, exact: true })).toHaveCount(0);
     // The other helper is still there — VB-109 replaces examples, not help.
-    await expect(page.getByRole('button', { name: S.interviewMe, exact: true })).toBeVisible();
+    // (V2.5 VB-119 renamed it AI Assist; VB-121 removes it from the name
+    // questions in its own slice, where this claim flips.)
+    await expect(page.getByRole('button', { name: S.assist, exact: true })).toBeVisible();
 
     // A press lands a name from the pools, as ordinary editable field text.
     await generator.click();

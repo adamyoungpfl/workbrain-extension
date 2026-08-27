@@ -13,12 +13,12 @@ import {
   NAV_MELT_LAYER_CLASS,
   OrbGroup,
   PillGroup,
-  Popover,
   ReadOnlyBlock,
   TypedHeading,
 } from '../components';
 import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
+import { AssistSheet } from './AssistSheet';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { ANSWERS_KEY } from '../../core/files/answersKey';
@@ -74,6 +74,7 @@ import { PERSONA_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { generatedNameAt, usesNameGenerator } from '../../core/flow/nameGenerator';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
+import { assistServiceUrlFor } from '../../core/flow/assistServices';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
@@ -296,6 +297,48 @@ export const NAME_DICE_ICON = (
       <circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none" />
       <circle cx="8.9" cy="15.1" r="1.1" fill="currentColor" stroke="none" />
       <circle cx="15.1" cy="15.1" r="1.1" fill="currentColor" stroke="none" />
+    </g>
+  </svg>
+);
+
+/**
+ * V2.5 VB-119's glyph — a speech bubble carrying a four-point spark, drawn
+ * to the same convention as the three above (stroke-based, `currentColor`,
+ * `aria-hidden` because the chip prints its own label, "AI Assist"). A
+ * bubble because the feature IS a conversation — their own AI interviews
+ * them — and a spark because that conversation is the assisted kind; the
+ * pairing is evocative without borrowing anybody's logo (the spec's "no
+ * vendor iconography": the spark is the industry's shared shorthand, the
+ * way PERSON_ICON's circle-and-arc is everybody's person).
+ *
+ * Two groups on the standing convention (REPHRASE_ICON's reasoning): the
+ * bubble and the spark are separately addressable should a press cue ever
+ * want to move them against each other; today nothing does, and grouping
+ * changes nothing about how it renders.
+ *
+ * Exported for its unit test, like every drawn glyph on this screen: the
+ * path data is a transcription, and character-for-character is the only
+ * assertion that catches a digit lost in a refactor.
+ */
+export const ASSIST_ICON = (
+  <svg
+    width="17"
+    height="17"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    {/* the conversation — a plain bubble, nobody's product */}
+    <g className="assist-bubble">
+      <path d="M5 5h14a2.5 2.5 0 0 1 2.5 2.5V14a2.5 2.5 0 0 1-2.5 2.5h-7.6L7 20v-3.5H5A2.5 2.5 0 0 1 2.5 14V7.5A2.5 2.5 0 0 1 5 5z" />
+    </g>
+    {/* the assist — a small spark inside it */}
+    <g className="assist-spark">
+      <path d="M12 7.1l0.95 2.45 2.45 0.95-2.45 0.95L12 13.9l-0.95-2.45-2.45-0.95 2.45-0.95z" />
     </g>
   </svg>
 );
@@ -1118,24 +1161,34 @@ function StepView({
   // the ideas mechanic with a different well, and a question only ever
   // renders one of the two buttons.
   const [nameSeed] = useState(() => Math.floor(Math.random() * 1_000_000));
-  // V2.3 VB-94, reshaped by V2.4 VB-107 — the interview-me POPOVER on open
-  // text questions. Plain per-position state like every draft above: a new
-  // question starts closed, unpulsed, with nothing copied.
-  const [askAIOpen, setAskAIOpen] = useState(false);
-  const [askAICopied, setAskAICopied] = useState(false);
+  // V2.3 VB-94 → V2.4 VB-107 → V2.5 VB-119: the interview-me escape hatch,
+  // grown up into AI Assist — a full-height sheet (FLAG 1, confirmed)
+  // instead of the anchored popover. Plain per-position state like every
+  // draft above: a new question starts with the sheet closed, and closing
+  // unmounts it, so every open is a fresh three-step walk.
+  const [assistOpen, setAssistOpen] = useState(false);
+  /** V2.5 VB-119 — what the live region says after the sheet lands its
+   * answer, for anyone who cannot see the field fill and the pulse point. */
+  const [assistAnnounce, setAssistAnnounce] = useState('');
   /**
-   * V2.4 VB-107 — the element that opened the popover, captured from its own
-   * click event (the restartCue convention: the element is already in hand)
-   * because `Button` does not forward refs. The popover needs it twice: its
-   * outside-press exclusion, and the focus hand-back on dismissal.
+   * V2.5 VB-119 — the sheet's submit just landed its answer in the input,
+   * so the highlight now on it is the "here it landed" pulse and plays
+   * ONCE: the first animationiteration clears the state again (see the
+   * field wrapper below). A ref, not state — it changes nothing about what
+   * renders, it only says why the highlight is on. Under reduced motion
+   * there are no iterations, and the steady ring simply stays until the
+   * person acts on the field, which is the still form of the same
+   * instruction (docs/GUARDRAILS.md).
    */
-  const askAITrigger = useRef<HTMLButtonElement | null>(null);
+  const assistLanded = useRef(false);
   /**
-   * V2.4 VB-106/107 — whether the input wears `.flow-highlight`, the flow's
-   * one sanctioned attention cue. Set in exactly one place (the popover's
-   * copy — "the reply lands HERE") and cleared the moment anything lands in
-   * the field, typed, pasted or dropped. A fenced paste on its own never
-   * sets it: after the reply has landed there is nothing left to point at.
+   * V2.4 VB-106/107, rewired by V2.5 VB-119 — whether the input wears
+   * `.flow-highlight`, the flow's one sanctioned attention cue. Set in
+   * exactly one place (the assist sheet's submit landing its answer — "it
+   * landed HERE") and cleared by the first pulse iteration or the moment
+   * anything else lands in the field, typed, pasted or dropped. A fenced
+   * paste on its own never sets it: after the reply has landed by hand
+   * there is nothing left to point at.
    */
   const [inputHighlight, setInputHighlight] = useState(false);
   const [customOpen, setCustomOpen] = useState(false);
@@ -1745,6 +1798,26 @@ function StepView({
     restartIdeaCue(button);
   }
 
+  /**
+   * V2.5 VB-119 — the AI Assist sheet's submit lands. The reply becomes the
+   * draft — the same buffer typing writes to, committed by the same Next,
+   * ordinary editable text from the instant it appears (dropIdea's own
+   * contract, one helper over; the fenced-paste normalization already
+   * happened in the sheet, on the existing interviewMe path). The sheet
+   * closes — focus returns to the AI Assist chip, Sheet's contract — and
+   * the input pulses once: the VB-106/107 wiring reused, with
+   * `assistLanded` retiring the pulse after its first breath.
+   */
+  function handleAssistSubmit(text: string) {
+    stopRotating('typing');
+    setAssistOpen(false);
+    setDraftText(text);
+    setPendingError(null);
+    assistLanded.current = true;
+    setInputHighlight(true);
+    setAssistAnnounce(S.assistLanded);
+  }
+
   // V2.4 VB-105 — the two service questions (core/flow/serviceThemes.ts says
   // which) dress their chips in personas: tone class + glyph, DESIGN-ONLY
   // (FLAG 4). The label is untouched and stays the whole accessible name; a
@@ -1828,7 +1901,21 @@ function StepView({
       <AnswerArea>
         {step.kind === 'text' && (
           <>
-            <div className="flow-field-sr-label">
+            <div
+              className="flow-field-sr-label"
+              // V2.5 VB-119 — "the input pulses once": the landing pulse
+              // retires itself after one breath. Animation events bubble,
+              // and the name guard keeps a child's unrelated animation from
+              // ever eating the highlight. Reduced motion has no iterations
+              // — there the steady ring stays until the person acts, the
+              // still form of the same instruction.
+              onAnimationIteration={(e) => {
+                if (assistLanded.current && e.animationName === 'flow-highlight-pulse') {
+                  assistLanded.current = false;
+                  setInputHighlight(false);
+                }
+              }}
+            >
               <Field
                 id={`flow-${step.id}`}
                 label={questionText}
@@ -1837,9 +1924,9 @@ function StepView({
                 onChange={answerText}
                 placeholder={resolveOptionalPhrase(step.ph, ctx)}
                 error={pendingError ?? undefined}
-                // V2.4 VB-106/107 — the one sanctioned attention cue, on the
-                // one control the popover's copy points at: "the reply lands
-                // here". State, not a one-shot; answerText takes it off.
+                // V2.4 VB-106/107, re-aimed by V2.5 VB-119 — the one
+                // sanctioned attention cue, on the box the assist sheet's
+                // answer just landed in. answerText takes it off.
                 className={inputHighlight ? 'flow-highlight' : undefined}
                 onPaste={(e: React.ClipboardEvent) => {
                   // V2.3 VB-94 — the round trip lands. Only a paste carrying
@@ -1934,59 +2021,43 @@ function StepView({
                   </span>
                 </>
               )}
+              {/* V2.5 VB-119 — AI Assist (FLAG 1, sheet CONFIRMED),
+                  replacing VB-107's anchored popover outright. The chip
+                  opens a full-height Sheet — the guardrail-sanctioned
+                  overlay, dimming the app the way Adam's design pauses it —
+                  that walks copy → paste-into-their-AI → paste-back, each
+                  step one narrated line (core/flow/assistCopy.ts). The
+                  sheet is mounted-when-open, right here in the row, so
+                  every open is a fresh walk and dismissal is one state
+                  change; focus goes into the sheet and comes back to this
+                  chip on close (components/Sheet.tsx's contract). Submit
+                  lands the normalized reply in the input above, editable,
+                  with the one sanctioned cue pulsing once to say where —
+                  see handleAssistSubmit. */}
               <Button
                 type="button"
                 variant="secondary"
                 size="sm"
-                className="flow-askai"
-                aria-expanded={askAIOpen}
-                aria-controls={askAIOpen ? 'flow-askai-pop' : undefined}
-                onClick={(e) => {
-                  askAITrigger.current = e.currentTarget;
-                  setAskAIOpen((open) => !open);
-                  setAskAICopied(false);
-                }}
+                className="flow-assist"
+                aria-haspopup="dialog"
+                onClick={() => setAssistOpen(true)}
               >
-                <span className="flow-chip-paint">{S.interviewMe}</span>
+                <span className="flow-chip-paint">
+                  {ASSIST_ICON}
+                  {S.assist}
+                </span>
               </Button>
               <span className="flow-idea-live" role="status">
-                {askAICopied ? S.copied : ''}
+                {assistAnnounce}
               </span>
-              {/* V2.4 VB-107 — the popover (FLAG 1: anchored and non-modal,
-                  NOT a dialog), replacing VB-94's inline disclosure. Inside
-                  the row on purpose: the row is its anchor (position:
-                  relative, Flow.css) and the document order — trigger, then
-                  popover, then nav — is the whole of the focus story; Tab
-                  walks in one side and out the other with nothing managed.
-                  Opening moves no focus (docs/GUARDRAILS.md: nothing steals
-                  focus); Escape and outside-press dismiss (Popover.tsx);
-                  and COPY is the popover completing its purpose — it
-                  dismisses itself, hands focus home to the trigger, and
-                  lights the one place the reply belongs (the VB-106 pulse
-                  on the input above). The instruction line names THEIR AI —
-                  the goal gate's service, "your AI" when unknown — resolved
-                  by the same goalServiceLabelFor the reflect voice line
-                  uses, so the two screens can never name different AIs. */}
-              {askAIOpen && (
-                <Popover
-                  id="flow-askai-pop"
-                  className="flow-askai-pop"
-                  triggerRef={askAITrigger}
-                  onDismiss={() => setAskAIOpen(false)}
-                >
-                  <ReadOnlyBlock
-                    tag={S.reflectPromptTag}
-                    onCopy={() => {
-                      setAskAICopied(true);
-                      setAskAIOpen(false);
-                      setInputHighlight(true);
-                      askAITrigger.current?.focus();
-                    }}
-                  >
-                    {interviewMePrompt(questionText, ctx)}
-                  </ReadOnlyBlock>
-                  <p className="flow-askai-hint">{S.interviewMeCopy(goalServiceLabelFor(ctx))}</p>
-                </Popover>
+              {assistOpen && (
+                <AssistSheet
+                  prompt={interviewMePrompt(questionText, ctx)}
+                  serviceLabel={goalServiceLabelFor(ctx)}
+                  serviceUrl={assistServiceUrlFor(ctx)}
+                  onClose={() => setAssistOpen(false)}
+                  onSubmit={handleAssistSubmit}
+                />
               )}
             </div>
           </>
