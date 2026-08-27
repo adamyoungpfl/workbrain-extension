@@ -32,6 +32,18 @@
     animation: none;
   }
 }
+/* V2.5 VB-119 — the full-height posture: the card fills the panel and the
+   corners square off (a rounded top edge on a card with no gap above it
+   would draw a seam against nothing). Flex column so a caller's contents
+   can pin their own action row while the middle scrolls. */
+.sheet-card--full {
+  height: 100%;
+  max-height: 100%;
+  border-radius: 0;
+  border-top: none;
+  display: flex;
+  flex-direction: column;
+}
 .sheet-head {
   display: flex;
   align-items: flex-start;

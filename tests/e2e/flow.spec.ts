@@ -73,7 +73,11 @@ async function openPanel(context: BrowserContext): Promise<Page> {
  * on the reflect screen — `data-position="reflect"` — instead of continuing;
  * this generic walk always chooses "Keep it as-is" there, since exercising
  * Tighten/Say-it-again byte-identically is reflect.spec.ts's own job, not
- * this full-flow smoke pass's.
+ * this full-flow smoke pass's. (V2.5 VB-120: the walk's 41-character answer
+ * now sits under the multiline threshold, so those six take the recheck
+ * bypass and the branch below usually never fires — it stays because the
+ * walk must survive EITHER truth, and the guard cap's arithmetic below was
+ * always an upper bound.)
  *
  * V1.1 VB-05 added a tenth-and-then-some kind of screen to walk past: a
  * module transition, `data-position="module-intro"`, before each of modules

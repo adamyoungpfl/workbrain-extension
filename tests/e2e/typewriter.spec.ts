@@ -300,7 +300,11 @@ test.describe('VB-10 — the question types itself in', () => {
     await expect(page.locator('.flow-q .typed-rest')).toHaveCount(0);
 
     await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.locator('.flow')).not.toHaveAttribute('data-position', 'step');
+    // The commit moved the interview on. (V2.5 VB-120: an answer this short
+    // now takes the recheck bypass and lands on the NEXT question rather
+    // than the reflect screen this line used to see — the claim was always
+    // "Next commits", and the step-id says so either way.)
+    await expect(page.locator('.flow')).not.toHaveAttribute('data-step-id', 'stop_explaining');
 
     // And it committed correctly — read back out of the person's own storage,
     // not out of the field it was typed into.

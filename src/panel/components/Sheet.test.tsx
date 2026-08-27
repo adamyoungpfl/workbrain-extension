@@ -83,6 +83,19 @@ describe('Sheet', () => {
     expect(document.activeElement).toBe(trigger);
   });
 
+  it('V2.5 VB-119 — the full posture adds its class and keeps the non-modal contract', () => {
+    const { container } = mount(
+      <Sheet open full className="assist-sheet" onClose={() => {}} title="AI Assist" children="body" />,
+    );
+    const card = container.querySelector('.sheet-card')!;
+    expect(card.classList.contains('sheet-card--full')).toBe(true);
+    expect(card.classList.contains('assist-sheet')).toBe(true);
+    // Full-height changes the posture, never the semantics: still the same
+    // non-modal dialog GUARDRAILS sanctions, nothing beyond it.
+    expect(card.getAttribute('role')).toBe('dialog');
+    expect(card.getAttribute('aria-modal')).toBe('false');
+  });
+
   it('traps Tab within the sheet: close button is first in DOM order, #save is last', () => {
     const { container } = mount(<Harness />);
     click(container.querySelector('#trigger') as HTMLButtonElement);

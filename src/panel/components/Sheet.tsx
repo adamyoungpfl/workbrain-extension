@@ -6,6 +6,18 @@ export interface SheetProps {
   open: boolean;
   onClose: () => void;
   title: string;
+  /**
+   * V2.5 VB-119 — the full-height posture: the card runs the whole panel
+   * with the backdrop dimming what little shows behind it, which is Adam's
+   * "the app pauses" built on the sanctioned mechanism rather than beside
+   * it. Everything else — the non-modal dialog semantics, Escape, the focus
+   * hand-back — is identical to the bottom sheet, deliberately: one
+   * component, two heights, zero new overlay grammar.
+   */
+  full?: boolean;
+  /** A hook for the caller's own contents styling (e.g. `.assist-sheet`).
+   * The card's own classes stay — this only ever adds. */
+  className?: string | undefined;
   children: ReactNode;
 }
 
@@ -19,7 +31,7 @@ const FOCUSABLE =
  * pattern for a non-modal overlay: it names the region without telling
  * assistive tech the rest of the page is inert.
  */
-export function Sheet({ open, onClose, title, children }: SheetProps) {
+export function Sheet({ open, onClose, title, full = false, className, children }: SheetProps) {
   const titleId = useId();
   const cardRef = useRef<HTMLDivElement>(null);
   const restoreRef = useRef<HTMLElement | null>(null);
@@ -59,7 +71,7 @@ export function Sheet({ open, onClose, title, children }: SheetProps) {
     <div className="sheet-backdrop" onClick={onClose}>
       <div
         ref={cardRef}
-        className="sheet-card"
+        className={['sheet-card', full ? 'sheet-card--full' : '', className].filter(Boolean).join(' ')}
         role="dialog"
         aria-modal="false"
         aria-labelledby={titleId}

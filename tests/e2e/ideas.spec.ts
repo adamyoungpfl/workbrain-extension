@@ -240,10 +240,13 @@ test.describe('Give me an example (VB-08)', () => {
     await expect(field).toHaveValue(IDEAS[0]!);
 
     // Editing it is just typing — the caret goes to the end and carries on.
-    const edited = `${IDEAS[0]!} And the budget process.`;
+    // (V2.5 VB-120: the suffix carries the whole line past the 80-char
+    // threshold, so the commit below still lands on the reflect screen —
+    // a shorter edit now takes bypass (b) instead. See reflect.spec.ts.)
+    const edited = `${IDEAS[0]!} And the budget process, end to end, every quarter.`;
     await field.click();
     await page.keyboard.press('End');
-    await page.keyboard.type(' And the budget process.');
+    await page.keyboard.type(' And the budget process, end to end, every quarter.');
     await expect(field).toHaveValue(edited);
 
     // Committing it goes through the same path a typed answer does. This
@@ -275,7 +278,8 @@ test.describe('Give me an example (VB-08)', () => {
     const { context, page } = await launchPanel();
     await goToIdeaQuestion(page);
 
-    const typed = 'The context behind my own work, in my own words.';
+    // V2.5 VB-120: long enough to stay a reflect drive (the 80-char bar).
+    const typed = 'The context behind my own work, in my own words, with enough substance to earn the quick check.';
     await page.locator('#flow-stop_explaining').fill(typed);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'reflect');

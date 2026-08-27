@@ -34,11 +34,12 @@ export type { FieldProps } from './Field';
 export { ReadOnlyBlock } from './ReadOnlyBlock';
 export type { ReadOnlyBlockProps } from './ReadOnlyBlock';
 
-/** V2.4 VB-107 — the anchored, non-modal popover (FLAG 1's settlement).
- * Floats above its caller's positioned container; Escape and outside-press
- * dismiss it; it never traps focus. See Popover.tsx for the whole contract. */
-export { Popover } from './Popover';
-export type { PopoverProps, PopoverDismissReason } from './Popover';
+/* V2.4 VB-107's anchored Popover lived here for one round. V2.5 VB-119
+ * replaced its only use — the interview-me flow — with the AI Assist sheet
+ * (surfaces/AssistSheet.tsx on components/Sheet.tsx), and a component with
+ * zero users is a liability, not a library: deleted rather than kept "in
+ * case". Its contract lives on in Sheet, the mechanism GUARDRAILS actually
+ * sanctions. */
 
 export { FileRow } from './FileRow';
 export type { FileRowProps, BadgeTone } from './FileRow';

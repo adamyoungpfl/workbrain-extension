@@ -97,8 +97,16 @@ test.describe('the name generator (VB-109)', () => {
     const generator = page.getByRole('button', { name: S.makeUpName, exact: true });
     await expect(generator).toBeVisible();
     await expect(page.getByRole('button', { name: S.giveExample, exact: true })).toHaveCount(0);
-    // The other helper is still there — VB-109 replaces examples, not help.
-    await expect(page.getByRole('button', { name: S.interviewMe, exact: true })).toBeVisible();
+    // V2.5 VB-121 — the claim VB-109 left here flipped with the sprint: the
+    // name questions travel light. AI Assist (VB-119's rename of "Let my AI
+    // ask me") is gone entirely — the generator is the whole helper set —
+    // and the helper row closes up to the input (`--snug`, the reduced
+    // input-to-lockup padding).
+    await expect(page.locator('.flow-assist')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: S.assist, exact: true })).toHaveCount(0);
+    await expect(page.locator('.flow-idea-row')).toHaveClass(/flow-idea-row--snug/);
+    const snugGap = await page.locator('.flow-idea-row').evaluate((el) => parseFloat(getComputedStyle(el).marginTop));
+    expect(snugGap, 'the input-to-helpers seam tightened (VB-121)').toBeLessThan(10);
 
     // A press lands a name from the pools, as ordinary editable field text.
     await generator.click();
@@ -130,6 +138,10 @@ test.describe('the name generator (VB-109)', () => {
     await expect(page.locator('.flow-q')).toContainText('Leave this blank');
     const field = page.locator('#flow-professional_name');
     await expect(field).toHaveAttribute('placeholder', "Leave blank if it's the same");
+    // V2.5 VB-121: the second name question travels just as light — no AI
+    // Assist here either, and the same tightened seam.
+    await expect(page.locator('.flow-assist')).toHaveCount(0);
+    await expect(page.locator('.flow-idea-row')).toHaveClass(/flow-idea-row--snug/);
 
     // Deal a name, think better of it, clear it — and blank still means
     // same-name: Next advances with no error and no invented requirement.

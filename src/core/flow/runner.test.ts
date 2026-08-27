@@ -7,8 +7,10 @@ import {
   applyAnswer,
   applySkip,
   applyReflect,
+  applyAssisted,
   applyAddAnother,
   applySeededAddAnother,
+  hasAssistMark,
   seededNameTaken,
   reconcileSeededRepeatable,
   findSeedTarget,
@@ -828,6 +830,171 @@ describe('applyReflect', () => {
     expect(existingValue(answers, reflectStep, { in: 'top' })).toBe(raw); // what the reflect screen plays back
     answers = applyReflect(answers, reflectStep, { in: 'top' }, raw); // Keep commits exactly that
     expect(answers.values.q_reflect).toBe(raw);
+  });
+});
+
+// -----------------------------------------------------------------------
+// V2.5 VB-120 — the recheck rebalanced (decision 2, CONFIRMED). Three
+// paths, all judged live on every derivation:
+//   (a) assisted answers (`assistedAt` carries the key) NEVER reflect;
+//   (b) unassisted answers UNDER their kind's threshold
+//       (core/flow/assistThresholds.ts — multiline 80, single-line 0)
+//       skip reflect too;
+//   (c) unassisted answers at/over threshold reflect exactly as R1-07.
+// `reflectStep` above is single-line (threshold 0), which is why every
+// R1-07 test above still holds letter for letter — the rebalance only
+// moves multiline answers. `essayStep` here is the multiline case.
+// -----------------------------------------------------------------------
+
+const essayStep: Step = {
+  id: 'q_essay',
+  module: 1,
+  section: 0,
+  eyebrow: 'E',
+  q: 'Essay?',
+  kind: 'text',
+  key: 'q_essay',
+  multiline: true,
+  interpret: {
+    via: 'ai-assist',
+    reflectPrefix: 'I heard:',
+    buildPrompt: (raw) => `Tighten this: "${raw}"`,
+  },
+};
+const essayModules: Module[] = [
+  { id: 'm-essay', n: 1, title: 'Essay', purpose: 'p', required: true, estimatedMinutes: [1, 1], nodes: [essayStep] },
+];
+const essayBlock: RepeatableBlock = {
+  id: 'essays',
+  addAnotherPrompt: 'Another?',
+  fields: [essayStep],
+};
+const essayBlockModules: Module[] = [
+  { id: 'm-essays', n: 1, title: 'Essays', purpose: 'p', required: true, estimatedMinutes: [1, 1], nodes: [essayBlock] },
+];
+
+/** At the [DRAFT] 80-char bar and under it — the boundary the table draws. */
+const LONG = 'x'.repeat(80);
+const SHORT = 'Just a line.';
+
+describe('findPosition — the recheck rebalanced (V2.5 VB-120)', () => {
+  it('(a) an assisted answer never enters reflect, however substantial it is', () => {
+    const answers = makeAnswers({
+      values: { q_essay: LONG },
+      assistedAt: { q_essay: '2026-08-26T00:00:00.000Z' },
+    });
+    expect(findPosition(essayModules, answers, NONE)).toEqual({ kind: 'done' });
+  });
+
+  it('(a) assisted wins regardless of length — a short assisted answer is done too', () => {
+    const answers = makeAnswers({
+      values: { q_essay: SHORT },
+      assistedAt: { q_essay: '2026-08-26T00:00:00.000Z' },
+    });
+    expect(findPosition(essayModules, answers, NONE)).toEqual({ kind: 'done' });
+  });
+
+  it('(b) an unassisted multiline answer under the threshold skips reflect — the nudge, not a screen, is the way up', () => {
+    const answers = makeAnswers({ values: { q_essay: SHORT } });
+    expect(findPosition(essayModules, answers, NONE)).toEqual({ kind: 'done' });
+  });
+
+  it('(b) the boundary is the table\'s: 79 characters skips, 80 reflects', () => {
+    expect(findPosition(essayModules, makeAnswers({ values: { q_essay: 'x'.repeat(79) } }), NONE)).toEqual({
+      kind: 'done',
+    });
+    expect(findPosition(essayModules, makeAnswers({ values: { q_essay: LONG } }), NONE).kind).toBe('reflect');
+  });
+
+  it('(c) an unassisted answer at or over threshold reflects exactly as R1-07 always has', () => {
+    const answers = makeAnswers({ values: { q_essay: LONG } });
+    expect(findPosition(essayModules, answers, NONE)).toEqual({
+      kind: 'reflect',
+      step: essayStep,
+      location: { in: 'top' },
+    });
+  });
+
+  it('single-line interpret questions are untouched by the rebalance — threshold 0, reflect as today', () => {
+    // The R1-07 block above proves this throughout; stated here once as the
+    // contrast the table draws ("single-line 0 i.e. never nudged").
+    const answers = makeAnswers({ values: { q_reflect: 'hi' } });
+    expect(findPosition(reflectModules, answers, NONE).kind).toBe('reflect');
+  });
+
+  it('back-compat: a store from before assistedAt existed reads (b)/(c) — and a finished file stays finished', () => {
+    // Pre-V2.5 stores simply lack the map (undefined, never migrated).
+    const inFlight = makeAnswers({ values: { q_essay: SHORT } });
+    expect(inFlight.assistedAt).toBeUndefined();
+    expect(findPosition(essayModules, inFlight, NONE)).toEqual({ kind: 'done' }); // (b)
+    const finished = makeAnswers({
+      values: { q_essay: LONG },
+      reflectedAt: { q_essay: '2026-08-25T00:00:00.000Z' },
+    });
+    expect(findPosition(essayModules, finished, NONE)).toEqual({ kind: 'done' }); // reflectedAt still rules first
+  });
+
+  it('(a) inside a repeatable rides the compound key, and a plain key never satisfies it', () => {
+    const marked = makeAnswers({
+      repeatables: { essays: [{ q_essay: LONG }] },
+      assistedAt: { 'essays#0#q_essay': '2026-08-26T00:00:00.000Z' },
+    });
+    expect(findPosition(essayBlockModules, marked, NONE)).toEqual({
+      kind: 'add-another',
+      block: essayBlock,
+      recordIndex: 1,
+    });
+
+    const wrongShape = makeAnswers({
+      repeatables: { essays: [{ q_essay: LONG }] },
+      assistedAt: { q_essay: '2026-08-26T00:00:00.000Z' }, // not "essays#0#q_essay"
+    });
+    expect(findPosition(essayBlockModules, wrongShape, NONE).kind).toBe('reflect');
+  });
+});
+
+describe('applyAssisted / hasAssistMark (VB-120, FLAG 2)', () => {
+  it('stamps the top-level key and touches nothing else — the answer itself is applyAnswer\'s job', () => {
+    const answers = makeAnswers({ values: { q_essay: SHORT }, answeredAt: { q_essay: '2026-08-26T00:00:00.000Z' } });
+    const result = applyAssisted(answers, essayStep, { in: 'top' });
+    expect(typeof result.assistedAt?.q_essay).toBe('string');
+    expect(result.values).toEqual(answers.values);
+    expect(result.answeredAt).toEqual(answers.answeredAt);
+    expect(result.reflectedAt).toEqual(answers.reflectedAt);
+    expect(hasAssistMark(result, essayStep, { in: 'top' })).toBe(true);
+  });
+
+  it('stamps the compound key inside a repeatable, the reflectedAt convention exactly', () => {
+    const answers = makeAnswers({ repeatables: { essays: [{ q_essay: SHORT }] } });
+    const result = applyAssisted(answers, essayStep, { in: 'repeatable', blockId: 'essays', recordIndex: 0 });
+    expect(Object.keys(result.assistedAt ?? {})).toEqual(['essays#0#q_essay']);
+    expect(hasAssistMark(result, essayStep, { in: 'repeatable', blockId: 'essays', recordIndex: 0 })).toBe(true);
+    expect(hasAssistMark(result, essayStep, { in: 'top' })).toBe(false);
+  });
+
+  it('creates the map on a pre-V2.5 store and preserves existing stamps on a current one', () => {
+    const first = applyAssisted(makeAnswers(), essayStep, { in: 'top' });
+    expect(Object.keys(first.assistedAt ?? {})).toEqual(['q_essay']);
+    const second = applyAssisted(
+      { ...first, assistedAt: { ...first.assistedAt, other_key: '2026-08-25T00:00:00.000Z' } },
+      essayStep,
+      { in: 'repeatable', blockId: 'essays', recordIndex: 2 },
+    );
+    expect(Object.keys(second.assistedAt ?? {}).sort()).toEqual(['essays#2#q_essay', 'other_key', 'q_essay']);
+  });
+
+  it('hasAssistMark on an absent map is simply false — the back-compat read', () => {
+    expect(hasAssistMark(makeAnswers(), essayStep, { in: 'top' })).toBe(false);
+  });
+
+  it('the mark survives a later hand edit of the same answer — assisted means the sheet was used here', () => {
+    let answers = applyAnswer(makeAnswers(), essayStep, { in: 'top' }, 'The assisted draft, as landed.');
+    answers = applyAssisted(answers, essayStep, { in: 'top' });
+    // The person edits the landed text and recommits — applyAnswer never
+    // clears a stamp map, so the question stays trusted (VB-120's (a)).
+    answers = applyAnswer(answers, essayStep, { in: 'top' }, 'The assisted draft, edited by hand.');
+    expect(hasAssistMark(answers, essayStep, { in: 'top' })).toBe(true);
+    expect(findPosition(essayModules, answers, NONE)).toEqual({ kind: 'done' });
   });
 });
 
