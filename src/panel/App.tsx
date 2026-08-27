@@ -234,6 +234,7 @@ export default function App() {
           outline={skillsOutline}
           answersKey={ANSWERS_KEY.skills}
           name={S.fileSkills}
+          share
           generate={(answers) => generateSkillsFile(answers, contextFileDate())}
           onBack={goHome}
           onEdit={(startAt) =>

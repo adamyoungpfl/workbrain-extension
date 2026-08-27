@@ -65,6 +65,18 @@ export const S = {
   fileTreeSelect: (title: string) => `Show ${title} in the picture`,
   /** [DRAFT] V2.4 VB-102 — the browse canvas's one door into the interview. */
   browseEdit: 'Edit the file',
+  /** [DRAFT] V2.5 VB-124 — the share/backup row on the skills canvas. The
+   * verbs are the person's ("save a copy", "add from a file"), never
+   * "export"/"import"/"pack". */
+  skillsShareSave: 'Save a copy of my skills',
+  skillsShareAdd: 'Add skills from a file',
+  skillsShareSaved: 'Saved. The copy is in your downloads.',
+  skillsShareAdded: (added: number, skipped: number) =>
+    skipped === 0
+      ? added === 1
+        ? 'Added 1 skill.'
+        : `Added ${added} skills.`
+      : `Added ${added}, and ${skipped} could not come along.`,
   skip: 'Skip',
   rephrase: 'Ask me that a different way',
   /**

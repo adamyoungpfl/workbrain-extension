@@ -1,0 +1,15 @@
+/* V2.5 VB-124 — the share row on the skills browse canvas: quiet siblings
+   under the primary actions, centered like everything on the canvas. */
+.skillsshare {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 2px;
+}
+.skillsshare-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+}

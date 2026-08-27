@@ -5,12 +5,13 @@ import type { OutlineNodeState } from '../../core/flow/outline';
 import { outlineNodeState } from '../../core/flow/outline';
 import { fileCanResume, fileStartTarget } from '../../core/files/fileView';
 import { sectionHealthMap } from '../../core/freshness/sectionHealth';
-import { getLocal } from '../../core/storage/client';
+import { getLocal, setLocal } from '../../core/storage/client';
 import { ANSWERS_KEY, type AnswersKey } from '../../core/files/answersKey';
 import { BrainGlobe } from '../components/BrainGlobe';
 import { FileTree } from '../components/FileTree';
 import { Button } from '../components/Button';
 import { S } from '../strings';
+import { SkillsShare } from './SkillsShare';
 import './Browse.css';
 
 /**
@@ -48,9 +49,12 @@ export interface BrowseProps {
    * land on 'done' and bounce straight back). */
   onEdit: (startAt: string | null) => void;
   onBack: () => void;
+  /** V2.5 VB-124 — the skills canvas carries the share/backup row; other
+   * files do not (App decides). */
+  share?: boolean;
 }
 
-export function Browse({ modules, outline, answersKey = ANSWERS_KEY.context, name, generate, onEdit, onBack }: BrowseProps) {
+export function Browse({ modules, outline, answersKey = ANSWERS_KEY.context, name, generate, onEdit, onBack, share = false }: BrowseProps) {
   const [answers, setAnswers] = useState<Answers | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -124,6 +128,15 @@ export function Browse({ modules, outline, answersKey = ANSWERS_KEY.context, nam
           {S.filePreviewDownload}
         </Button>
       </div>
+      {share && (
+        <SkillsShare
+          answers={ans}
+          onAnswers={(next) => {
+            setAnswers(next);
+            void setLocal(answersKey, next);
+          }}
+        />
+      )}
       {/* The List, below — the same rows the drawer shows, in select mode:
           a press mirrors into the Brain and goes nowhere (VB-103). */}
       <div className="browse-list">
