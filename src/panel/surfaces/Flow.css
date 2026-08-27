@@ -451,6 +451,16 @@
      regions inside the row, which are position: absolute. */
   position: relative;
 }
+/* V2.5 VB-121 — the two name questions travel light: with AI Assist gone
+   (Flow.tsx — the generator is the whole helper set there) the die is an
+   accessory to a two-word box, not a second act, and the seam between the
+   input and the helper/nav lockup closes up. A smaller seam is inside every
+   pinned claim: question-fill's cluster inspection bounds seams from ABOVE
+   (CLUSTER_MAX_INTERNAL_GAP), and save-note measures the foot, not this
+   margin. */
+.flow-idea-row--snug {
+  margin-top: 4px;
+}
 .flow-idea {
   flex: 0 0 auto;
 }

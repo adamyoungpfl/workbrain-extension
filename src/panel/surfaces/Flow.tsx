@@ -2021,7 +2021,13 @@ function StepView({
                 paint and the ring belong to) rather than with overhang
                 margins, so the row LAYS OUT at exactly the height it did
                 before and the landmine above stays defused. */}
-            <div className="flow-idea-row">
+            {/* V2.5 VB-121 — the two name questions travel light: the
+                generator is the whole helper set there (AI Assist gone — an
+                interview about a two-word box is a hammer for a pin), and
+                the seam between the input and the helper/nav lockup closes
+                up (`--snug`, Flow.css). Every other text question keeps the
+                full row. */}
+            <div className={nameGenerator ? 'flow-idea-row flow-idea-row--snug' : 'flow-idea-row'}>
               {/* V2.4 VB-109 — on the two name questions, the example button's
                   seat is the generator's: same secondary weight, same row,
                   same drop-into-the-field mechanic, same live region. Never
@@ -2077,35 +2083,40 @@ function StepView({
                   chip on close (components/Sheet.tsx's contract). Submit
                   lands the normalized reply in the input above, editable,
                   with the one sanctioned cue pulsing once to say where —
-                  see handleAssistSubmit. */}
-              <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                className="flow-assist"
-                aria-haspopup="dialog"
-                onClick={() => setAssistOpen(true)}
-              >
-                {/* VB-120: while nudged, the paint wears the one sanctioned
-                    cue and the label itself says why — never colour alone
-                    (GUARDRAILS), and never a word about the draft. */}
-                <span className={assistNudged ? 'flow-chip-paint flow-highlight' : 'flow-chip-paint'}>
-                  {ASSIST_ICON}
-                  {assistNudged ? S.assistRecommended : S.assist}
-                </span>
-              </Button>
-              <span className="flow-idea-live" role="status">
-                {assistAnnounce}
-              </span>
-              {assistOpen && (
-                <AssistSheet
-                  prompt={interviewMePrompt(questionText, ctx)}
-                  serviceLabel={goalServiceLabelFor(ctx)}
-                  serviceUrl={assistServiceUrlFor(ctx)}
-                  encouraging={assistNudged}
-                  onClose={() => setAssistOpen(false)}
-                  onSubmit={handleAssistSubmit}
-                />
+                  see handleAssistSubmit. VB-121: not on the two name
+                  questions — the generator is their whole helper set. */}
+              {!nameGenerator && (
+                <>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    className="flow-assist"
+                    aria-haspopup="dialog"
+                    onClick={() => setAssistOpen(true)}
+                  >
+                    {/* VB-120: while nudged, the paint wears the one sanctioned
+                        cue and the label itself says why — never colour alone
+                        (GUARDRAILS), and never a word about the draft. */}
+                    <span className={assistNudged ? 'flow-chip-paint flow-highlight' : 'flow-chip-paint'}>
+                      {ASSIST_ICON}
+                      {assistNudged ? S.assistRecommended : S.assist}
+                    </span>
+                  </Button>
+                  <span className="flow-idea-live" role="status">
+                    {assistAnnounce}
+                  </span>
+                  {assistOpen && (
+                    <AssistSheet
+                      prompt={interviewMePrompt(questionText, ctx)}
+                      serviceLabel={goalServiceLabelFor(ctx)}
+                      serviceUrl={assistServiceUrlFor(ctx)}
+                      encouraging={assistNudged}
+                      onClose={() => setAssistOpen(false)}
+                      onSubmit={handleAssistSubmit}
+                    />
+                  )}
+                </>
               )}
             </div>
           </>
