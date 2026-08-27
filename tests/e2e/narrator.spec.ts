@@ -378,7 +378,7 @@ test.describe('what it narrates', () => {
     await enterInterview(page);
     await toContextScope(page);
     // `stop_explaining` is the first question carrying rephrasings.
-    await page.locator('.flow .pillgroup .pill').first().click();
+    await page.locator('.flow .vpick .vpick-tile').first().click(); // VB-118: context_scope is tiles
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 
@@ -438,7 +438,7 @@ test.describe('when it stops', () => {
     // V2.3 VB-90: the walk-in opens on context_scope — answer its pill
     // BEFORE the narrator starts, so the read is still mid-sentence when
     // Next advances the screen.
-    await page.locator('.flow .pillgroup .pill').first().click();
+    await page.locator('.flow .vpick .vpick-tile').first().click(); // VB-118: context_scope is tiles
     await toggle(page).click();
     await expect.poll(() => probeOf(page).then((p) => p.spoken.length)).toBe(1);
 
@@ -540,7 +540,7 @@ test.describe('what it must never do', () => {
     const page = await openPanel(context, id);
     await enterInterview(page);
     await toContextScope(page);
-    await page.locator('.flow .pillgroup .pill').first().click();
+    await page.locator('.flow .vpick .vpick-tile').first().click(); // VB-118: context_scope is tiles
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 

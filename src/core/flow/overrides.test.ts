@@ -483,6 +483,92 @@ describe('a file that was finished yesterday is still finished today', () => {
   });
 });
 
+// ── 5b · V2.5 VB-122: the divided line's option list ───────────────────────
+
+/**
+ * Decision 3 (confirmed): role_for's choices become myself / my family /
+ * my team / my clients / my community, plus add-your-own — drawn as the
+ * divided line (core/choice/dividedLine.ts decides what the line offers;
+ * this section holds the DATA end). BACK-COMPAT IS LAW: the ported keys ride
+ * along unoffered so a pre-VB-122 answer keeps printing the exact bytes it
+ * printed yesterday, and keeps round-tripping to the exact stored string.
+ */
+describe('VB-122 — role_for reshaped, old answers printing as ever', () => {
+  const roleFor = () => step('role_for');
+
+  it('ships decision 3\'s five first, the three unoffered ported keys after', () => {
+    expect(roleFor().options?.map((o) => [o.v, o.l])).toEqual([
+      ['myself', 'Myself'],
+      ['family', 'My family'],
+      ['team', 'My team'],
+      ['my-clients', 'My clients'],
+      ['community', 'My community'],
+      ['employer', 'My employer'],
+      ['clients', 'Clients'],
+      ['organization', 'An organization or nonprofit'],
+    ]);
+    // Everything else about the question is the port's own: the prompt, the
+    // hint, the rephrasings and the add-your-own door are untouched.
+    expect(ask(roleFor().q)).toBe('Who or what is this role for?');
+    expect(roleFor().allowCustom).toBe(true);
+    expect(roleFor().rephrasings?.length).toBe(2);
+  });
+
+  it('prints a pre-VB-122 answer byte-for-byte as it always did, and reads it back', () => {
+    // 'employer' is a key the line no longer offers; 'clients' is the key
+    // whose new label went to a NEW key instead ('my-clients') precisely so
+    // this stored value keeps printing "Clients" and not "My clients".
+    const old: Answers = {
+      values: { role_names: ['employee', 'freelancer'] },
+      repeatables: {
+        roles: [
+          { role_name: 'Employee', role_for: 'employer' },
+          { role_name: 'Freelancer / Contractor', role_for: 'clients' },
+        ],
+      },
+      answeredAt: {},
+      reflectedAt: {},
+    };
+    const file = generateContextFile(old, 'August 26, 2026');
+    expect(file).toContain('My employer');
+    expect(file).toContain('Clients');
+    expect(file).not.toContain('My clients');
+
+    const parsed = parseContextFile(file);
+    if (!parsed.ok) throw new Error(parsed.reason);
+    expect(parsed.answers.repeatables.roles?.[0]?.role_for).toBe('employer');
+    expect(parsed.answers.repeatables.roles?.[1]?.role_for).toBe('clients');
+  });
+
+  it('keeps a free-text answer as the raw string it always was', () => {
+    const old: Answers = {
+      values: { role_names: ['The scout troop'] },
+      repeatables: { roles: [{ role_name: 'The scout troop', role_for: 'The scout troop parents' }] },
+      answeredAt: {},
+      reflectedAt: {},
+    };
+    const file = generateContextFile(old, 'August 26, 2026');
+    expect(file).toContain('The scout troop parents');
+    const parsed = parseContextFile(file);
+    if (!parsed.ok) throw new Error(parsed.reason);
+    expect(parsed.answers.repeatables.roles?.[0]?.role_for).toBe('The scout troop parents');
+  });
+
+  it('prints the two NEW keys under their [DRAFT] labels, round-tripping like any option', () => {
+    const fresh: Answers = {
+      values: { role_names: ['manager'] },
+      repeatables: { roles: [{ role_name: 'Manager / Team Lead', role_for: 'my-clients' }] },
+      answeredAt: {},
+      reflectedAt: {},
+    };
+    const file = generateContextFile(fresh, 'August 26, 2026');
+    expect(file).toContain('My clients');
+    const parsed = parseContextFile(file);
+    if (!parsed.ok) throw new Error(parsed.reason);
+    expect(parsed.answers.repeatables.roles?.[0]?.role_for).toBe('my-clients');
+  });
+});
+
 // ── 6 · reading level, which the audit cannot see ──────────────────────────
 
 /**

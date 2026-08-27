@@ -1392,3 +1392,21 @@
 .flowshell .flow-reflect-cta {
   margin-top: 12px;
 }
+
+/* ── V2.5 VB-123: the merged role screen ───────────────────────────────────
+   Two facets of one screen — the standing tiles and the current-or-past
+   marker row — in the VB-118 grammar twice (VerticalPick.css owns the tiles
+   themselves). The caption names the facet the heading above does not: same
+   ink family as .flow-hint, smaller, because it is a label over a control
+   band rather than a paragraph under a question. */
+.flow-pair {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+.flow-pair-caption {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-2);
+  margin: 0 0 6px;
+}

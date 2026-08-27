@@ -97,7 +97,16 @@ async function answerCurrentQuestion(page: Page): Promise<void> {
 
   const textarea = page.locator('.flow textarea');
   const textInput = page.locator('.flow input.field');
-  const pills = page.locator('.flow .pillgroup .pill, .flow .orbgroup .orbchoice');
+  // V2.5 VB-118/VB-123: the vertical pick's tile groups — context_scope's
+  // single group, and the merged role screen's TWO facets (standing + the
+  // current-or-past mark), which both have to be answered before Next.
+  const facets = page.locator('.flow .vpick');
+  // V2.5 VB-122: role_for's choices are the divided line's options — same
+  // roving tabindex, same Space, different group classes, so the locator has
+  // to find pills, orbs and line options alike (the VB-60 lesson).
+  const pills = page.locator(
+    '.flow .pillgroup .pill, .flow .orbgroup .orbchoice, .flow .dline .dline-opt',
+  );
 
   if (await textarea.count()) {
     await textarea.first().focus();
@@ -105,6 +114,14 @@ async function answerCurrentQuestion(page: Page): Promise<void> {
   } else if (await textInput.count()) {
     await textInput.first().focus();
     await page.keyboard.type('Keyboard answer');
+  } else if (await facets.count()) {
+    // First tile of EACH tile group, keyboard-only — one group on
+    // context_scope, two on VB-123's merged role screen.
+    const groups = await facets.count();
+    for (let i = 0; i < groups; i++) {
+      await facets.nth(i).locator('.vpick-tile').first().focus();
+      await page.keyboard.press('Space');
+    }
   } else if (await pills.count()) {
     await pills.first().focus();
     if (position === 'add-another') await page.keyboard.press('ArrowRight'); // -> "No"
@@ -192,9 +209,16 @@ test.describe('Context interview — flow runner (R1-06)', () => {
     for (const id of ['entities_intro', 'entity_name', 'entity_type', 'initiatives_intro', 'initiative_name']) {
       expect(visited.has(id), `expected to have visited "${id}"`).toBe(true);
     }
-    for (const id of ['role_names', 'role_for', 'role_mandate', 'role_standing', 'role_durability']) {
+    for (const id of ['role_names', 'role_for', 'role_mandate', 'role_standing']) {
       expect(visited.has(id), `expected to have visited "${id}" (seeded roles)`).toBe(true);
     }
+    // V2.5 VB-123: role_durability is answered ON role_standing's screen —
+    // the merged screen commits both keys, so the companion never becomes a
+    // screen of its own on a fresh walk. Its answer landing anyway is
+    // paired-pick.spec.ts's proof; what THIS walk pins is the screen count.
+    expect(visited.has('role_durability'), 'role_durability should ride the merged screen, not get its own').toBe(
+      false,
+    );
     for (const id of ['audiences_list', 'audience_needs']) {
       expect(visited.has(id), `expected to have visited "${id}" (V2.0 VB-64, seeded audiences)`).toBe(true);
     }

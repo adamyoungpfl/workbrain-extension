@@ -194,13 +194,16 @@ test.describe('VB-60 — the option is the brain’s own orb', () => {
     await expect(choices(page)).toHaveCount(6);
     await expect(addOrb(page)).toHaveCount(1);
 
-    // The next question along is still pills. VB-60 named one question and
-    // this is the assertion that keeps it to one.
+    // The next question along is not orbs. VB-60 named one question and this
+    // is the assertion that keeps it to one. Until V2.5 that next screen was
+    // pills; VB-122 made role_for the divided line, so the claim is now
+    // "orbs stop here" — the line's own grammar is divided-line.spec's job.
     await choices(page).first().click();
     await page.getByRole('button', { name: S.next, exact: true }).click();
     await expect(page.locator('.flow')).not.toHaveAttribute('data-step-id', 'role_names');
     await expect(page.locator('.flow .orbgroup')).toHaveCount(0);
-    await expect(page.locator('.flow .pillgroup')).toHaveCount(1);
+    await expect(page.locator('.flow .dline')).toHaveCount(1); // VB-122: role_for
+    await expect(page.locator('.flow .pillgroup')).toHaveCount(0);
 
     await context.close();
   });

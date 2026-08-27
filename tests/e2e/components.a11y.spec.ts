@@ -46,6 +46,27 @@ test.describe('component harness — accessibility', () => {
     await expect(group.getByRole('button', { name: 'Home' })).toBeFocused();
   });
 
+  // V2.5 VB-118 — the tile grammar keeps the same roving contract
+  // (core/choice/roving.ts), proven on its own group the same way.
+  test('arrow keys move focus within the vertical pick tiles', async ({ page }) => {
+    await page.goto('/harness.html');
+    const group = page.getByRole('group', {
+      name: 'Are we building this primarily for your work, personal life, or both?',
+    });
+    // Port 4300 is shared across checkouts and `reuseExistingServer` keeps
+    // whichever harness got there first — during parallel fleets that can be
+    // a checkout from before VB-118, whose harness has no tile group. The
+    // REAL keyboard proof runs against this checkout's own dist in
+    // vertical-pick.spec.ts either way; this harness copy only runs where
+    // the served harness actually carries the section.
+    test.skip((await group.count()) === 0, 'shared harness server predates VB-118');
+    await group.getByRole('button', { name: 'Work' }).focus();
+    await page.keyboard.press('ArrowDown');
+    await expect(group.getByRole('button', { name: 'Personal' })).toBeFocused();
+    await page.keyboard.press('ArrowLeft');
+    await expect(group.getByRole('button', { name: 'Work' })).toBeFocused();
+  });
+
   test('focus is visible on every focusable element after a full Tab pass', async ({ page }) => {
     await page.goto('/harness.html');
     // :not([tabindex="-1"]) must apply to every clause, not just [tabindex] —

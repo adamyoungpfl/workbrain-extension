@@ -221,7 +221,8 @@ async function toContextScope(page: Page): Promise<void> {
 
 async function toStopExplaining(page: Page): Promise<void> {
   await toContextScope(page);
-  await page.locator('.flow .pillgroup .pill').first().click();
+  // V2.5 VB-118: context_scope's choices are icon tiles.
+  await page.locator('.flow .vpick .vpick-tile').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 }
@@ -346,7 +347,8 @@ test.describe('VB-10 — the question types itself in', () => {
     const remaining = page.locator('.flow-q .typed-rest');
     await expect(remaining).toHaveCount(1);
 
-    const firstPill = page.locator('.flow .pillgroup .pill').first();
+    // V2.5 VB-118: context_scope's choices are icon tiles.
+    const firstPill = page.locator('.flow .vpick .vpick-tile').first();
     await firstPill.click();
 
     await expect(remaining).toHaveCount(0, { timeout: 300 });
@@ -428,7 +430,8 @@ test.describe('VB-10 — the module label prints on a change, not on a question'
         await page.getByRole('button', { name: 'Keep it as-is', exact: true }).click();
       } else {
         const textarea = page.locator('.flow textarea');
-        const pills = page.locator('.flow .pillgroup .pill');
+        // VB-118: context_scope's choices are tiles — the walker knows both.
+        const pills = page.locator('.flow .pillgroup .pill, .flow .vpick .vpick-tile');
         if (await textarea.count()) await textarea.first().fill('A short answer for this one.');
         else if (await pills.count()) await pills.first().click();
         await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -492,7 +495,7 @@ test.describe('VB-10 — reduced motion', () => {
     expect((await readText(page, '.flow-q')).shown).toBe(
       await page.locator('.flow-q').textContent(),
     );
-    await page.locator('.flow .pillgroup .pill').first().click();
+    await page.locator('.flow .vpick .vpick-tile').first().click(); // VB-118: tiles
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
     expect((await readText(page, '.flow-q')).shown).toBe(

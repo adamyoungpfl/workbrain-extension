@@ -407,6 +407,40 @@ export const QUESTION_OVERRIDES: Record<string, QuestionOverride> = {
       skipIf: (ctx) => !('audience_variance' in ctx.answers),
     }),
   },
+
+  role_for: {
+    why:
+      "V2.5 VB-122 (decision 3, confirmed): the answer becomes the divided line, and the " +
+      "choices become the person's own circles — myself, my family, my team, my clients, " +
+      'my community — plus add-your-own. The ported six anchored the role to institutions ' +
+      '("My employer", "An organization or nonprofit"); the confirmed five speak in first ' +
+      'person. THE PORTED OPTIONS ARE NOT DELETED: a stored answer resolves to its label ' +
+      "in the generated file (core/files/generate.ts's formatAnswerValue), so dropping " +
+      '"employer" would silently reprint yesterday\'s "My employer" as the raw key — the ' +
+      'file changing for somebody who did nothing. So the three keys the new line does ' +
+      'not offer ride along at the end, unoffered (core/choice/dividedLine.ts decides ' +
+      'what the line offers; an old stored value shows as a crossed held entry), and ' +
+      'myself / family / community keep their ported keys because their ported labels ' +
+      'already read exactly as decision 3 wrote them. "My clients" is a NEW key ' +
+      '(my-clients), not a relabel of the ported "clients": relabelling would change the ' +
+      'printed file of everyone who answered "Clients" under the old list.',
+    patch: (question) => ({
+      ...question,
+      options: [
+        // [DRAFT] decision 3's five, in its own order.
+        { key: 'myself', label: 'Myself' },
+        { key: 'family', label: 'My family' },
+        { key: 'team', label: 'My team' },
+        { key: 'my-clients', label: 'My clients' },
+        { key: 'community', label: 'My community' },
+        // The ported keys the line no longer offers — kept, verbatim, so an
+        // old file keeps printing and round-tripping byte-identically.
+        { key: 'employer', label: 'My employer' },
+        { key: 'clients', label: 'Clients' },
+        { key: 'organization', label: 'An organization or nonprofit' },
+      ],
+    }),
+  },
 };
 
 export const BLOCK_OVERRIDES: Record<string, BlockOverride> = {
@@ -919,6 +953,16 @@ export function allOverrideCopy(): string[] {
     const placeholder = PLACEHOLDERS[id];
     if (placeholder) {
       for (const kind of kinds) lines.push(placeholder.placeholder(ctxWith({ entity_type: kind })));
+    }
+  }
+
+  // V2.5 VB-122 — the divided line reshapes role_for's option list, which
+  // makes every label on it this repo's own copy: measured here like the rest.
+  {
+    const roleFor = QUESTION_OVERRIDES['role_for'];
+    if (roleFor) {
+      const patched = roleFor.patch({ id: 'role_for', type: 'single-select', prompt: () => '' });
+      for (const option of patched.options ?? []) lines.push(option.label);
     }
   }
 

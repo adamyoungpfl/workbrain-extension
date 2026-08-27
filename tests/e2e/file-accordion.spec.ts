@@ -164,7 +164,9 @@ async function answerWhateverIsOnScreen(page: Page): Promise<void> {
   }
   const textarea = page.locator('.flow textarea');
   const textInput = page.locator('.flow input.field');
-  const choices = page.locator('.flow .pillgroup .pill, .flow .orbgroup .orbchoice');
+  // VB-118: the vertical pick's tiles are a third choice grammar the walker
+  // has to know, exactly as VB-60's orbs were the second.
+  const choices = page.locator('.flow .pillgroup .pill, .flow .orbgroup .orbchoice, .flow .vpick .vpick-tile');
   if (await textarea.count()) {
     await textarea.first().focus();
     await page.keyboard.type('A real answer for this question.');

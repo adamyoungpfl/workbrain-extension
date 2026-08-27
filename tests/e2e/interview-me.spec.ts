@@ -88,7 +88,9 @@ async function launchPanel(
  * `stop_explaining`, the first multiline text question. The pointer parks
  * after the screen-swapping click: stationary hover HOLDS cues by design. */
 async function goToTextQuestion(page: Page): Promise<void> {
-  await page.locator('.flow .pillgroup .pill').first().click();
+  // V2.3 VB-90: with the gate seeded the ladder skips — context_scope first.
+  // V2.5 VB-118: its choices are icon tiles.
+  await page.locator('.flow .vpick .vpick-tile').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await page.mouse.move(0, 0);
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');

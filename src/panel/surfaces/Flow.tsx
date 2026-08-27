@@ -5,6 +5,7 @@ import {
   Button,
   DeepDive,
   DictationHint,
+  DividedLine,
   Field,
   FlowProgress,
   NarratorToggle,
@@ -15,6 +16,7 @@ import {
   PillGroup,
   ReadOnlyBlock,
   TypedHeading,
+  VerticalPick,
 } from '../components';
 import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
@@ -73,7 +75,9 @@ import { hintStaysVisible } from '../../core/flow/deepDive';
 import { usesOrbChoice } from '../../core/choice/orbs';
 import { personaForService, usesServiceThemes } from '../../core/flow/serviceThemes';
 import { usesVerticalPick } from '../../core/choice/verticalPick';
-import { PERSONA_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
+import { heldLineOptions, offeredLineOptions, usesDividedLine } from '../../core/choice/dividedLine';
+import { PAIR_CAPTIONS, pairFor, pairedStepsFor, usesPairedPick } from '../../core/choice/pairedPick';
+import { LINE_CUSTOM_GLYPH, PAIR_GLYPHS, PERSONA_GLYPHS, ROLE_FOR_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { generatedNameAt, usesNameGenerator } from '../../core/flow/nameGenerator';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
@@ -1218,6 +1222,44 @@ function StepView({
   const [customOptions, setCustomOptions] = useState<Option[]>(() =>
     pos.kind === 'add-another' ? [] : offListOptions(pos.step, initialSelection(pos, answers)),
   );
+  // V2.5 VB-122 — the divided line's HELD entries: a ported key an old file
+  // stored that the line no longer offers ('employer' and friends). Computed
+  // once at mount against the STORED selection, exactly like customOptions
+  // above and for the same reason: crossing a different option must return
+  // the old answer to the left side, never make it vanish mid-screen.
+  const [lineHeld] = useState<Option[]>(() =>
+    pos.kind === 'add-another' || !usesDividedLine(pos.step)
+      ? []
+      : heldLineOptions(pos.step, initialSelection(pos, answers)),
+  );
+  /**
+   * V2.5 VB-123 — the OTHER half of a paired screen (core/choice/pairedPick.ts;
+   * role_standing + role_durability, one screen, still two stored keys).
+   * `pairedOther` is the companion-of-the-position: whichever half the flow
+   * did NOT land on, resolved from the same modules the runner walks — so a
+   * resume that lands on role_durability standalone gets role_standing as its
+   * rider, pre-filled from the record, and vice versa.
+   */
+  const pairedOther: Step | undefined = (() => {
+    if (pos.kind === 'add-another' || !usesPairedPick(pos.step)) return undefined;
+    const pair = pairFor(pos.step.id);
+    const steps = pair && pairedStepsFor(modules, pair);
+    if (!steps) return undefined;
+    return steps.anchor.id === pos.step.id ? steps.companion : steps.anchor;
+  })();
+  /** The companion facet's draft — the R1-11 grade screen's own shape (two
+   * fields, one commit), seeded from the record like every draft above. A
+   * stored null (an explicit skip) seeds empty: there is nothing to show,
+   * and the commit rules below never re-demand it. */
+  const [draftPair, setDraftPair] = useState<string[]>(() => {
+    if (!pairedOther || pos.kind === 'add-another') return [];
+    const existing = existingValue(answers, pairedOther, pos.location);
+    return typeof existing === 'string' ? [existing] : [];
+  });
+  function answerPair(next: string[]) {
+    stopRotating('typing');
+    setDraftPair(next);
+  }
   const [pendingError, setPendingError] = useState<string | null>(null);
   // Reflect-only sub-screens — never persisted, never part of Position (see
   // core/flow/runner.ts's comment on why position is always derived, never
@@ -1409,6 +1451,36 @@ function StepView({
       return;
     }
 
+    /**
+     * V2.5 VB-123 — the paired screen commits BOTH keys on one Next, the
+     * commitGrade precedent generalised. The rules, pinned by
+     * paired-pick.spec and pairedPick.ts's header:
+     *  - the position facet is required as any chips question is;
+     *  - the companion is required only where it has NO stored entry — an
+     *    answer (or an explicit skip: null IS an entry) is never re-demanded;
+     *  - the companion is written only when its draft CHANGED, so an
+     *    untouched answer never gets a fresh `answeredAt` — the freshness
+     *    clocks read those stamps, and re-stamping would falsify them.
+     */
+    if (pairedOther && step.kind === 'chips') {
+      const own = draftValues[0];
+      const other = draftPair[0];
+      const otherStored = existingValue(answers, pairedOther, location);
+      const needOwn = !own;
+      const needOther = otherStored === undefined && !other;
+      if (needOwn || needOther) {
+        // Both lists empty says "each"; one list empty points at one.
+        setPendingError(needOwn && needOther ? S.errPickBoth : S.errPickOne);
+        return;
+      }
+      let next = applyAnswer(answers, step, location, own);
+      if (other !== undefined && other !== otherStored) {
+        next = applyAnswer(next, pairedOther, location, other);
+      }
+      onCommit(next);
+      return;
+    }
+
     const required = step.required !== false;
     let value: AnswerValue;
     let isEmpty: boolean;
@@ -1443,6 +1515,18 @@ function StepView({
 
   function handleSkip() {
     if (pos.kind !== 'step') return;
+    // V2.5 VB-123: skipping the paired screen skips what is genuinely being
+    // asked — the position facet as ever, and the companion only where it
+    // has no stored entry. A stored companion answer is never overwritten by
+    // a skip the person aimed at the question in the heading.
+    if (pairedOther) {
+      let next = applySkip(answers, pos.step, pos.location);
+      if (existingValue(answers, pairedOther, pos.location) === undefined) {
+        next = applySkip(next, pairedOther, pos.location);
+      }
+      onCommit(next);
+      return;
+    }
     onCommit(applySkip(answers, pos.step, pos.location));
   }
 
@@ -1872,6 +1956,21 @@ function StepView({
     !assistedHere &&
     !hasAssistMark(answers, step, pos.location) &&
     underAssistThreshold(step, draftText);
+
+  // V2.5 VB-122 — role_for (and only it; core/choice/dividedLine.ts) is the
+  // divided line. Its option list is assembled from three provenances: the
+  // five the line OFFERS, any HELD ported key an old file stored (mount-
+  // stable, above), and the session's custom entries — each wearing its
+  // drawn glyph, customs wearing the generic tag. Same draft, same
+  // answerValues, same commit on Next as every chips question.
+  const dividedLine = usesDividedLine(step);
+  const lineOptions: PillOption[] = dividedLine
+    ? [...offeredLineOptions(step), ...lineHeld, ...customOptions].map((o) => ({
+        value: o.v,
+        label: o.l,
+        glyph: ROLE_FOR_GLYPHS[o.v] ?? LINE_CUSTOM_GLYPH,
+      }))
+    : [];
   const pillOptions: PillOption[] =
     step.kind === 'yesno'
       ? [
@@ -2205,6 +2304,65 @@ function StepView({
                 onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
                 stoppedBy={reasonFor(rotation)}
               />
+            ) : pairedOther ? (
+              /* V2.5 VB-123 — the merged role screen: pick the standing AND
+                 mark current-or-past, one screen, two stored keys
+                 (core/choice/pairedPick.ts holds the mechanism note). Both
+                 facets speak VB-118's tile grammar — the pair's anchor at
+                 full size, its companion as the compact marker row. The
+                 facet the flow landed on is the heading above; the other
+                 wears its own [DRAFT] caption (PAIR_CAPTIONS), while its
+                 group's ACCESSIBLE name stays the real ported question. */
+              <div className="flow-pair">
+                {[pairFor(step.id)!.anchorId, pairFor(step.id)!.companionId].map((facetId) => {
+                  const isPosition = facetId === step.id;
+                  const facetStep = isPosition ? step : pairedOther;
+                  const glyphs = PAIR_GLYPHS[facetId] ?? {};
+                  const source = isPosition ? (displayOptions ?? []) : (facetStep.options ?? []);
+                  const facetOptions: PillOption[] = source.map((o) => {
+                    const glyph = glyphs[o.v];
+                    return { value: o.v, label: o.l, ...(glyph ? { glyph } : {}) };
+                  });
+                  return (
+                    <div className="flow-pair-facet" key={facetId}>
+                      {!isPosition && (
+                        <p className="flow-pair-caption">{PAIR_CAPTIONS[facetId] ?? resolvePhrase(facetStep.q, ctx)}</p>
+                      )}
+                      <VerticalPick
+                        legend={resolvePhrase(facetStep.q, ctx)}
+                        options={facetOptions}
+                        value={isPosition ? draftValues : draftPair}
+                        onChange={isPosition ? answerValues : answerPair}
+                        size={facetId === pairFor(step.id)!.companionId ? 'compact' : undefined}
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+            ) : dividedLine ? (
+              /* V2.5 VB-122 — role_for is the divided line (DividedLine.tsx):
+                 crossing the divider is the selection, by drag, click, or
+                 Space/Enter (FLAG 4). Same legend, same draft, same
+                 answerValues, same commit on Next — and add-your-own opens
+                 the same custom field below as every other choice group. */
+              <DividedLine
+                legend={questionText}
+                options={lineOptions}
+                value={draftValues}
+                onChange={answerValues}
+                onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
+              />
+            ) : verticalPick ? (
+              /* V2.5 VB-118 — context_scope stands as icon tiles with a modern
+                 radio mark (VerticalPick.tsx), replacing VB-108's stood-up
+                 pills. Same legend, same draft, same answerValues — so the
+                 same commit on Next, and never an auto-advance. */
+              <VerticalPick
+                legend={questionText}
+                options={pillOptions}
+                value={draftValues}
+                onChange={answerValues}
+              />
             ) : (
               <PillGroup
                 legend={questionText}
@@ -2213,7 +2371,6 @@ function StepView({
                 value={draftValues}
                 onChange={answerValues}
                 onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
-                variant={verticalPick ? 'vertical' : undefined}
               />
             )}
             {customOpen && (

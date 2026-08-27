@@ -55,7 +55,8 @@ test('axe finds no violations on a question offering an example (VB-08)', async 
   // Q1 is the intro; Next lands on context_scope, and answering that lands on
   // stop_explaining — the first question carrying written examples.
   await page.getByRole('button', { name: 'Next', exact: true }).click();
-  await page.locator('.flow .pillgroup .pill').first().click();
+  // V2.5 VB-118: context_scope's choices are icon tiles.
+  await page.locator('.flow .vpick .vpick-tile').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.locator('.flow-idea')).toBeVisible();
 

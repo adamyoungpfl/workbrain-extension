@@ -28,6 +28,20 @@ export type { PillProps, PillOption, PillGroupProps } from './Pill';
 export { OrbGroup } from './OrbGroup';
 export type { OrbGroupProps, OrbOption } from './OrbGroup';
 
+/** V2.5 VB-118 — the vertical pick as icon tiles with a modern radio mark.
+ * Which questions stand this way is core/choice/verticalPick.ts's
+ * `usesVerticalPick`; VB-123's merged role screen reuses the same grammar
+ * (core/choice/pairedPick.ts). */
+export { VerticalPick } from './VerticalPick';
+export type { VerticalPickProps } from './VerticalPick';
+
+/** V2.5 VB-122 — the divided line: options wait dim on the left; crossing
+ * the divider (drag, click, or Space/Enter — FLAG 4) is the answer. Which
+ * questions are drawn this way is core/choice/dividedLine.ts's
+ * `usesDividedLine`. */
+export { DividedLine } from './DividedLine';
+export type { DividedLineProps } from './DividedLine';
+
 export { Field } from './Field';
 export type { FieldProps } from './Field';
 

@@ -1058,6 +1058,11 @@ export const S = {
   errNeedName: 'Add a name so the file has something to call you. First name is plenty.',
   errPickOne: 'Pick one to keep going, or skip this question.',
   errNeedAnswer: 'Answer this to keep going, or skip it.',
+  /** [DRAFT] V2.5 VB-123. The merged role screen asks two things at once —
+   * the standing and the current-or-past mark — so its refusal has to say
+   * "each", or the person hunts for the one they missed. Same register as
+   * errPickOne, same way out. */
+  errPickBoth: 'Pick one of each to keep going, or skip this question.',
   /**
    * V1.4 VB-20. Said when someone picks "Yes" at the end of the roles loop but
    * leaves the name blank. Both ways forward, since either is fine: name it,

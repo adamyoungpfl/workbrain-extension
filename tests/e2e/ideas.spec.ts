@@ -88,9 +88,10 @@ async function launchPanel(
  */
 async function goToIdeaQuestion(page: Page): Promise<void> {
   // V2.3 VB-90: with the gate seeded, the ladder and the why screen skip —
-  // the walk-in lands straight on context_scope.
+  // the walk-in lands straight on context_scope. V2.5 VB-118: its choices
+  // are icon tiles now.
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
-  await page.locator('.flow .pillgroup .pill').first().click();
+  await page.locator('.flow .vpick .vpick-tile').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 }
@@ -116,13 +117,13 @@ test.describe('Give me an example (VB-08)', () => {
     const { context, page } = await launchPanel();
 
     // V2.3 VB-90: the seeded walk-in skips the ladder and the gate, opening
-    // on a pill question — which already shows every answer it accepts, so
-    // no example button.
+    // on a choice question — which already shows every answer it accepts, so
+    // no example button. (V2.5 VB-118: those choices are icon tiles.)
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
     await expect(page.locator('.flow-idea')).toHaveCount(0);
 
     // And the text question that has them does show it.
-    await page.locator('.flow .pillgroup .pill').first().click();
+    await page.locator('.flow .vpick .vpick-tile').first().click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
     await expect(page.locator('.flow-idea')).toHaveCount(1);
