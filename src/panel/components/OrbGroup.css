@@ -48,7 +48,7 @@
 .orbchoice {
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--type-body);
   line-height: 18px;
   min-height: var(--target-min);
   padding: 6px;

@@ -8,7 +8,7 @@
   box-sizing: border-box;
   width: 100%;
   font-family: inherit;
-  font-size: 15px;
+  font-size: var(--type-body);
   line-height: 1.55;
   padding: 13px 15px;
   border-radius: var(--r-md);
@@ -35,13 +35,17 @@ textarea.field {
 }
 .field-label {
   display: block;
-  font-size: 14px;
+  /* A field's label tells somebody what to type. Instructional. */
+  font-size: var(--type-body);
   font-weight: 600;
   margin-bottom: 7px;
   color: var(--ink);
 }
+/* Help and errors are the two most instructional lines in the product —
+   an error says what to do next (docs/design-system.html §08). Both were
+   13px until the beta review's §1 floor. */
 .field-help {
-  font-size: 13px;
+  font-size: var(--type-body);
   color: var(--ink-3);
   margin-top: 7px;
 }
@@ -49,7 +53,7 @@ textarea.field {
   border-color: var(--danger);
 }
 .field-errmsg {
-  font-size: 13px;
+  font-size: var(--type-body);
   color: var(--danger);
   margin-top: 7px;
   display: flex;

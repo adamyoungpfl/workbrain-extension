@@ -59,7 +59,7 @@
   min-height: var(--target-min);
   padding: 6px 10px;
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: var(--type-body);
   text-align: left;
   border: 1px solid var(--select-ring);
   border-radius: var(--r-md);
@@ -137,7 +137,7 @@
   min-height: var(--target-min);
   padding: 8px 14px;
   font-family: inherit;
-  font-size: 13.5px;
+  font-size: var(--type-support);
   border: 1px dashed var(--select-ring);
   border-radius: var(--r-pill);
   background: transparent;

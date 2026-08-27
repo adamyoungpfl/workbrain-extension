@@ -35,7 +35,7 @@ its job; Workbrain+ is a door, not a storefront.
 | **BS-00** | Build identity — one version scheme, stamped and visible | prereq for §2, §9 |
 | **BS-01** | Type and contrast calibration | §1 |
 | BS-01a | Emit the type scale as tokens (it is declared and never written) | §1 |
-| BS-01b | Sweep 116 literal sizes onto the tokens; raise the core geometry constants first | §1 |
+| BS-01b | Sweep the literals onto the tokens — **shared components and surviving surfaces only** (see note) | §1 |
 | BS-01c | Label the 12 icon-only controls; one filled primary per screen | §1 |
 | **BS-02** | Feedback door | §2 |
 | **BS-03** | Proof: round trip and gating | §3 |
@@ -137,13 +137,11 @@ From the change spec's §11, minus the ones now answered:
 | O1 | Does a skipped answer read differently from an unanswered one on the leaf card, or share the empty state? | BS-07c |
 | O2 | Who writes the ~nine purpose lines, and do they ship with the card or behind it? | BS-07d |
 | O3 | `fileFinished` counts a skip as a gap, so one skipped optional question keeps Skills.md locked forever. Intended? | BS-06, and the Skills unlock generally |
-| O4 | Do `reference_example_primary` / `_second` ride along inside prompts, or stay in the file only? | BS-03b, BS-11 |
-| O5 | Is the chrome bar app-level (in flow, ~50 tests) or drawn over / Home-only (~9)? | BS-02 — the sprint's largest cost swing |
-| O6 | D1 — is the ban "no global total" or "no digit at all", and does the screen-reader total survive? | BS-05a |
-| O7 | D3 — labelling the mode and stage controls re-creates VB-91's "two controls named Back". Which wins? | BS-01c, BS-07a |
-| O8 | D4 — what carries "locked" without colour, once dashed means empty? | BS-01, BS-06 |
-| O9 | D6 — VB-50's one-colour drawer versus the leaf card's tinted panel and rule | BS-07c |
-| O10 | §1 says section labels go 13px sentence case; §7.1 says leave the globe's 12px caps. The spec contradicts itself; recommend exempting the globe (see BS-01 notes) | BS-01a, BS-07b |
+| O6b | D1 bans printed digits. The progressbar's spoken count (`aria-valuetext`, "Question 3 of 38") is not printed — assumption is it becomes **run-scoped** rather than global, so a screen-reader user gets what the beat row gives everyone else. Correct if the spoken total should go entirely. | BS-05a |
+
+**Closed since:** O4 (the file carries the reference examples, prompts about
+something else do not), O5 and O10 (taken as calls — see below), O6/O7/O8/O9
+(answered as D1/D3/D4/D6 in the rulings table).
 
 Answered already, recorded here so they are not re-asked: the run shape (D1),
 the micro-proof prompt (D2), `FileOutlineNode` is `{id, label, questionIds,
@@ -256,6 +254,31 @@ comments, several signed by Adam.
    satisfied, and its row updates with the schema (BS-10).
    `S.storedScores` ("Proof scores you typed") is rewritten to match what is
    actually kept.
+
+### BS-01b does not sweep every one of the 116
+
+The spec puts §1 first *"because every other screen inherits it"*, which is
+right — and it is exactly why the sweep should not touch the screens that
+later workstreams **rebuild**. Home is 19 of the sub-13px literals and §6 is
+mostly subtraction; the leaf card's six go with §7.2; FlowProgress's label
+goes with §5; Multiples' rows are shared with §7.2 and rebuilt in §8; the
+splash's loader line is deleted outright by §9. Sweeping those now means
+editing them twice and re-measuring twice.
+
+**So BS-01b is the shared components and the surfaces that survive** — the
+controls every screen inherits (Button, Pill, Field, DeepDive, DividedLine,
+VerticalPick, OrbGroup, ReadOnlyBlock, Toast, DictationHint, Banner, FileRow,
+SectionHealth, Recommendation, WorkShelf, Meter) plus the drawer's List rows.
+Everything else gets its type right **as part of its own workstream**, where
+building against the tokens is free because the markup is being rewritten
+anyway. The floors still land everywhere before the beta; they just land once
+per surface instead of twice.
+
+The order within the sweep is unchanged and still matters: **the core
+constants lead, the CSS follows.** `DRAWER_ROW_HEIGHT`, `FLOW_NAV_TARGET` and
+the dock's welded set are what the geometry specs mirror, so a raise there is
+what the specs re-measure against — the reverse order leaves the gate red for
+no useful reason.
 
 ### Two calls taken under Adam's standing latitude on rendering
 
@@ -454,16 +477,35 @@ rubric asks the AI to judge "anything the with-Context answer invented that the
 file doesn't support" and "what this Context.md is missing" — with the file
 absent from the prompt. §3.1's inlining fixes this for free at the grade step.
 
-### One decision this forces
+### One decision this forced — RESOLVED (Adam, 2026-08-27)
 
-**O4 · Do the reference examples ride along in prompts?**
-`reference_example_primary` and `reference_example_second` are free-text "paste
-something you wrote". They are the single biggest variance in file size and the
-most personal thing in it. The V2.9 answer to the general version of this
-question was "nothing excluded", but that was before the audit named these two
-specifically. Excluding them from *prompts* while keeping them in the *file* is
-coherent — the file is the person's own artifact, a prompt is a thing being
-sent — and it is one line either way.
+**The file carries the reference examples; prompts about something else do
+not.** Not an exclusion — a scope rule, and it needs no new guardrail.
+
+`reference_example_primary` and `reference_example_second`
+(`source.ts:1145`, `:1166`) are the only two questions in the interview whose
+instruction is **paste**, not **describe**. Every other text answer is authored
+on the spot, about the person, in response to our question. These two are a
+real document lifted out of their actual work — and real documents contain
+other people. `docs/GUARDRAILS.md` already draws exactly this line for the one
+other place the product takes a paste: *"the raw chat export never touches
+storage… their history contains other people — pasted emails, client details,
+colleagues."* Same category of input, already treated as its own thing.
+
+They are also the only unbounded fields in the file, and so the single biggest
+variance between a 7.6 KB file and a 29 KB one.
+
+**How it builds:** the two keys carry a `scope: 'file'` marker (or the
+assembler holds the pair by id — decide at BS-03b, it is one line either way).
+The file generator is unaffected. Prompt builders that carry prior context skip
+them. The proof's **with-file** run is not "a prompt about something else" —
+the file is the point there, the person is deliberately handing their AI their
+context, and the examples are exactly what teach it their voice — so it
+carries them, as does anything else that sends the file itself.
+
+The V2.9 decision this refines is `docs/V2.9-REFINEMENT.md`'s decision 5
+(VB-141's comfort check), answered "green light" as *nothing excluded*. That
+answer stands for every other answer in the file.
 
 ---
 

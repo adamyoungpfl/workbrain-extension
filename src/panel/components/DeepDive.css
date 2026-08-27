@@ -67,7 +67,7 @@
 .deepdive-chip {
   box-sizing: border-box;
   font-family: inherit;
-  font-size: 13px;
+  font-size: var(--type-support);
   line-height: 18px;
   min-height: var(--target-min);
   padding: 13px 11px;
@@ -122,7 +122,8 @@
 }
 
 .deepdive-answer {
-  font-size: 14px;
+  /* The answer to a follow-up is the thing the chip promised. */
+  font-size: var(--type-body);
   line-height: 1.45;
   color: var(--ink-2);
   margin: 6px 11px 0;

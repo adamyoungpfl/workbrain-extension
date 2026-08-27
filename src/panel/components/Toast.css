@@ -3,7 +3,7 @@
   color: var(--ink-inv);
   border-radius: var(--r-md);
   padding: 13px 17px;
-  font-size: 14px;
+  font-size: var(--type-support);
   box-shadow: var(--e-3);
   display: inline-flex;
   align-items: center;

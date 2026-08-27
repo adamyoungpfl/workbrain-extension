@@ -5,7 +5,7 @@
 }
 .pill {
   font-family: inherit;
-  font-size: 14px;
+  font-size: var(--type-body);
   padding: 10px 16px;
   border-radius: var(--r-pill);
   min-height: var(--target-min);
@@ -28,6 +28,9 @@
   color: var(--ink-inv);
   font-weight: 600;
 }
+/* A drawn mark, not prose — the §1 floors are about text a person reads, and
+   this is the tick that says "chosen". Sized to the pill's own word rather
+   than to the type scale. */
 .pill[aria-pressed='true']::before {
   content: '✓';
   font-size: 12px;

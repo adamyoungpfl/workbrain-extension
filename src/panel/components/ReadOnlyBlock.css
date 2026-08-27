@@ -5,16 +5,19 @@
   border-radius: 0 var(--r-md) var(--r-md) 0;
   padding: 14px 54px 14px 16px;
   position: relative;
-  font-size: 14.5px;
+  /* The text the person is about to send to their AI. It is read before
+     it goes anywhere, so it takes the instructional step rather than the
+     14.5px it carried. */
+  font-size: var(--type-body);
   line-height: 1.62;
   color: var(--ink);
   white-space: pre-wrap;
 }
 .readonly .tag {
-  font-size: 11px;
-  font-weight: 650;
-  letter-spacing: 0.07em;
-  text-transform: uppercase;
+  /* The tag over the block is a section label: 13px, sentence case.
+     Was 11px uppercase at 0.07em (beta review §1). */
+  font-size: var(--type-label);
+  font-weight: var(--type-label-weight);
   color: var(--violet);
   display: block;
   margin-bottom: 6px;

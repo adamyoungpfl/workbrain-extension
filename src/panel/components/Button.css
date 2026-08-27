@@ -1,6 +1,9 @@
 .btn {
   font-family: inherit;
-  font-size: 14px;
+  /* A button's word is the most instructional text on any screen — the
+     thing the person is being asked to do. It takes the instructional
+     step, not a smaller one (beta review §1). */
+  font-size: var(--type-body);
   font-weight: 600;
   line-height: 1;
   padding: 12px 18px;
@@ -61,5 +64,7 @@
      floor in docs/GUARDRAILS.md. The floor wins. */
   padding: 8px 12px;
   min-height: var(--target-min);
-  font-size: 13px;
+  /* Small is a size, not a demotion: a verb still clears the body
+     floor. Was 13px. */
+  font-size: var(--type-support);
 }
