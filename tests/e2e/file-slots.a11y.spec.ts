@@ -133,8 +133,11 @@ test('axe finds no violations on the shelf, with two locked slots on it (VB-36)'
   const { context, sw, id } = await launch();
   const page = await openHome(context, sw, id);
 
-  // The scan is only worth anything if the locked rows are really rendered.
-  await expect(page.locator('.home-filelist .filerow.locked')).toHaveCount(2);
+  // The scan is only worth anything if the locked slots are really rendered.
+  // V2.6 VB-125b: the shelf wears the card grammar — Skills as a locked
+  // card in the duo, Actions as its own locked row.
+  await expect(page.locator('.home-card.is-locked')).toHaveCount(1);
+  await expect(page.locator('.home-actrow.is-locked')).toHaveCount(1);
 
   const results = await new AxeBuilder({ page }).include('.home').withTags(WCAG).analyze();
   expect(results.violations).toEqual([]);
@@ -166,15 +169,22 @@ test('a locked slot’s name and its unlock line both clear 4.5:1 (VB-36)', asyn
   const { context, sw, id } = await launch();
   const page = await openHome(context, sw, id);
 
-  for (const part of ['.nm', '.sb']) {
-    const { ink, ground } = await inkAndGround(page, `.home-filelist .filerow.locked ${part}`);
+  // The locked card carries three pieces of text — the friendly name, the
+  // mono filename, and the reason — and axe skips all of them because the
+  // card is a disabled control. GUARDRAILS does not.
+  for (const part of ['.home-card-name', '.home-card-file', '.home-card-reason']) {
+    const { ink, ground } = await inkAndGround(page, `.home-card.is-locked ${part}`);
     const ratio = contrastRatio(ink, ground);
-    expect(ratio, `locked row ${part} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+    expect(ratio, `locked card ${part} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
   }
 
-  // And the badge that says "Locked", which sits on its own fill.
-  const badge = await inkAndGround(page, '.home-filelist .filerow.locked .badge');
-  expect(contrastRatio(badge.ink, badge.ground)).toBeGreaterThanOrEqual(4.5);
+  // And the pill that says "Locked", which sits on its own fill.
+  const pill = await inkAndGround(page, '.home-card.is-locked .home-card-pill');
+  expect(contrastRatio(pill.ink, pill.ground)).toBeGreaterThanOrEqual(4.5);
+
+  // Actions' locked row makes the same claims with its own line.
+  const sub = await inkAndGround(page, '.home-actrow.is-locked .home-actrow-sub');
+  expect(contrastRatio(sub.ink, sub.ground)).toBeGreaterThanOrEqual(4.5);
 
   await context.close();
 });
@@ -197,7 +207,7 @@ test('every row and button on both surfaces clears 44px (VB-36, VB-37)', async (
   const { context, sw, id } = await launch();
   const page = await openHome(context, sw, id);
 
-  for (const selector of ['.home-filelist .filerow']) {
+  for (const selector of ['.home-card', '.home-actrow', '.home-filelist .filerow']) {
     const rows = page.locator(selector);
     for (let i = 0; i < (await rows.count()); i++) {
       const box = (await rows.nth(i).boundingBox())!;
@@ -220,14 +230,14 @@ test('the keyboard path never lands on a locked slot, and reaches every door on 
   const page = await openHome(context, sw, id);
 
   // Tab the whole of Home. A disabled control is not a tab stop, so the two
-  // locked rows must never take focus — and the open one must.
+  // locked slots must never take focus — and the open card must.
   const seen: string[] = [];
   for (let i = 0; i < 25; i++) {
     await page.keyboard.press('Tab');
     seen.push(await page.evaluate(() => (document.activeElement as HTMLElement)?.className ?? ''));
   }
-  expect(seen.some((c) => c.includes('filerow') && !c.includes('locked'))).toBe(true);
-  expect(seen.filter((c) => c.includes('locked'))).toEqual([]);
+  expect(seen.some((c) => c.includes('home-card') && !c.includes('is-locked'))).toBe(true);
+  expect(seen.filter((c) => c.includes('is-locked'))).toEqual([]);
 
   // On the file view, every door and both buttons are reachable, and the rows
   // that are not doors are not tab stops.

@@ -753,6 +753,19 @@ export const S = {
   chromeCompany: 'Model Citizen',
   metaFiles: (n: number) => (n === 1 ? '1 file' : `${n} files`),
   metaSize: (kb: number) => `${kb} KB`,
+  /**
+   * [DRAFT] V2.6 VB-125b — the file cards. One verb for every open card,
+   * because one thing happens: the card opens the file's browse canvas
+   * (the state lives in the status line beside it, not in the verb — the
+   * template's Review/Continue flavors fell to the copy law's own example:
+   * buttons are what pressing does). The two descriptions are the
+   * template's sentences, kept: grade-7, second person, no product nouns.
+   * The friendly half of a card's name ("Context") is derived from the
+   * filename, not written here — one name, one source.
+   */
+  cardOpen: 'Open',
+  cardContextDesc: 'Who you are, how you work, what good looks like.',
+  cardSkillsDesc: 'The tasks you repeat, written down once and reused.',
   homeFilesLabel: 'Your files',
   /** V1.7 VB-38's row. Not "Your files" — these are parts of Context.md, not
    * a file of their own, and saying so is what keeps the shelf above it

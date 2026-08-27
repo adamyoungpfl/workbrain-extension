@@ -115,10 +115,262 @@
   margin: 0 0 -10px;
 }
 
+/* Still the multiples row's home (V1.7 VB-38); the three files moved into
+   the card grammar below (V2.6 VB-125b). */
 .home-filelist {
   display: flex;
   flex-direction: column;
   gap: 9px;
+}
+
+/* ── V2.6 VB-125b — the file cards ──────────────────────────────────────────
+   The duo, and Actions' own row. Interactive edges follow the FileRow
+   precedent: the soft hairline at rest, --border-i and a lift on hover, the
+   full --primary ring on focus. The identity accents (--home-context /
+   --home-skills / --violet) dress chips and bars only — state is words. */
+.home-duo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.home-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 8px;
+  padding: 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--canvas);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition:
+    transform var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease),
+    border-color var(--fast) var(--ease);
+}
+.home-card:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--e-1);
+  border-color: var(--border-i);
+}
+.home-card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.home-card-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-card-chip {
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  border-radius: 9px;
+  display: grid;
+  place-items: center;
+}
+.home-card[data-file='context'] .home-card-chip {
+  background: var(--home-context-tint);
+  color: var(--home-context);
+}
+.home-card[data-file='skills'] .home-card-chip {
+  background: var(--home-skills-tint);
+  color: var(--home-skills);
+}
+.home-card-chip.is-act {
+  background: var(--violet-tint);
+  color: var(--violet);
+}
+.home-card.is-locked .home-card-chip,
+.home-actrow.is-locked .home-card-chip {
+  background: var(--surface);
+  color: var(--ink-3);
+}
+
+/* The identity stack: filename FIRST in the DOM (the accessible name the
+   walk-in specs match), friendly word first on screen — column-reverse is
+   the one order-flip in the product, and this comment is its record. */
+.home-card-id {
+  display: flex;
+  flex-direction: column-reverse;
+  min-width: 0;
+}
+.home-card-name {
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.home-card-file {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
+}
+
+.home-card-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 1.35;
+}
+.home-card-status[data-tone='fresh'] {
+  color: var(--green);
+}
+.home-card-status[data-tone='due'] {
+  color: var(--amber);
+}
+.home-card-status[data-tone='quiet'] {
+  color: var(--ink-3);
+}
+.home-card-status[data-tone='ai'] {
+  color: var(--violet);
+}
+.home-card-dot {
+  width: 6px;
+  height: 6px;
+  flex: 0 0 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.home-card-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--sunken);
+  overflow: hidden;
+}
+.home-card-bar i {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+}
+.home-card[data-file='context'] .home-card-bar i {
+  background: var(--home-context);
+}
+.home-card[data-file='skills'] .home-card-bar i {
+  background: var(--home-skills);
+}
+
+.home-card-desc {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+
+.home-card-go {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11.5px;
+  font-weight: 650;
+}
+.home-card[data-file='context'] .home-card-go {
+  color: var(--home-context);
+}
+.home-card[data-file='skills'] .home-card-go {
+  color: var(--home-skills);
+}
+.home-card-go svg {
+  transition: transform var(--fast) var(--ease);
+}
+.home-card:hover .home-card-go svg {
+  transform: translateX(2px);
+}
+
+/* Locked: dashed edge, the reason in the card, the pill — four signals
+   beyond colour (VB-36's own floor), on a genuinely disabled button. */
+.home-card.is-locked {
+  border-style: dashed;
+  border-color: var(--border);
+  background: transparent;
+  cursor: not-allowed;
+}
+.home-card.is-locked:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border);
+}
+.home-card-reason {
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-3);
+}
+.home-card-pill {
+  align-self: flex-start;
+  font-size: 10.5px;
+  font-weight: 600;
+  color: var(--ink-3);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-pill);
+  padding: 3px 8px;
+  background: var(--surface);
+}
+
+/* Actions' own full-width row — the derived file, dressed in the AI's
+   violet when it exists and dashed while it waits. */
+.home-actrow {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 11px 12px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  background: var(--canvas);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-lg);
+  cursor: pointer;
+  transition:
+    transform var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease),
+    border-color var(--fast) var(--ease);
+}
+.home-actrow:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--e-1);
+  border-color: var(--border-i);
+}
+.home-actrow:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.home-actrow.is-locked {
+  border-style: dashed;
+  border-color: var(--border);
+  background: transparent;
+  cursor: not-allowed;
+}
+.home-actrow.is-locked:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: var(--border);
+}
+.home-actrow-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  margin-right: auto;
+}
+.home-actrow-sub {
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+.home-actrow .home-card-status,
+.home-actrow .home-card-pill {
+  flex: 0 0 auto;
+  align-self: center;
 }
 
 /* V1.1 VB-01 — the welcome state, replacing the old `.home-start` card.

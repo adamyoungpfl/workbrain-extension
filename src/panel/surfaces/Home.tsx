@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
+import type { ReactNode } from 'react';
 import {
   Banner,
   BrandMark,
@@ -10,9 +11,8 @@ import {
   recommendationCopy,
 } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
-import { computeNextMove, mostRecentAnsweredAt } from '../../core/freshness/nextMove';
+import { computeNextMove } from '../../core/freshness/nextMove';
 import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
-import { daysSince } from '../../core/freshness/clocks';
 import { computeUtilization } from '../../core/home/utilization';
 import { lockupMeta } from '../../core/home/lockupMeta';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
@@ -122,15 +122,36 @@ const STACK_ICON = (
   </svg>
 );
 
-/** V1.7 VB-36's locked slots — a closed padlock, drawn to the same convention
- * as the two above. The row's badge and subtitle say "Locked" and what unlocks
- * it in words; this is the same fact as a picture, so it is `aria-hidden` and
- * nothing rests on it alone.
- *
- * V1.8 VB-47: the drawing moved to `components/fileLabels.tsx`, where the
- * toggle's own locked segments wear it at 12px. One padlock in the product, at
- * two sizes, rather than two padlocks that drift. */
-const LOCK_ICON = <LockGlyph size={17} stroke={1.7} />;
+/** V2.6 VB-125b — the file cards' chip drawings, in the house stroke style
+ * (currentColor, aria-hidden; the card's own words carry everything). A
+ * document for Context, layered sheets for Skills, a bolt for the generated
+ * Actions; the locked chips wear the one padlock (fileLabels' LockGlyph). */
+const DOC_ICON = (
+  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M4 2.5h8v11H4z" />
+    <path d="M6 6h4M6 9h3" />
+  </svg>
+);
+
+const LAYERS_ICON = (
+  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M2.5 4.5 8 2l5.5 2.5L8 7 2.5 4.5Z" />
+    <path d="M2.5 8 8 10.5 13.5 8" />
+    <path d="M2.5 11.5 8 14l5.5-2.5" />
+  </svg>
+);
+
+const BOLT_ICON = (
+  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M8.8 1.8 3.6 9h3.2l-.6 5.2L11.4 7H8.2z" strokeLinejoin="round" />
+  </svg>
+);
+
+const GO_ARROW = (
+  <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
+    <path d="M4 2.5 7.5 6 4 9.5" />
+  </svg>
+);
 
 const PERSON_ICON = (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
@@ -138,6 +159,82 @@ const PERSON_ICON = (
     <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
   </svg>
 );
+
+/** A card's status: the tone paints the dot and the words, and the WORDS are
+ * the state — the tones reuse the semantic palette (green=current,
+ * amber=due, violet=the AI's derived file), never the identity accents,
+ * which stay decoration (design/tokens.json's `home` group note). */
+interface CardStatus {
+  tone: 'fresh' | 'due' | 'quiet' | 'ai';
+  label: string;
+}
+
+/**
+ * V2.6 VB-125b — one open file card. The identity stack puts the FILENAME
+ * first in the DOM (the accessible name every walk-in spec matches with
+ * /^Context\.md/) and the friendly word first on screen (CSS
+ * column-reverse) — one order per audience, both starting from the same
+ * two strings, and the friendly half is derived from the filename so the
+ * pair cannot drift.
+ */
+function HomeCard(props: {
+  file: FileSlotId;
+  icon: ReactNode;
+  status: CardStatus;
+  barPercent: number;
+  desc: string;
+  onOpen(): void;
+}) {
+  const name = fileName(props.file);
+  return (
+    <button type="button" className="home-card" data-file={props.file} onClick={props.onOpen}>
+      <span className="home-card-top">
+        <span className="home-card-chip" aria-hidden="true">
+          {props.icon}
+        </span>
+        <span className="home-card-id">
+          <span className="home-card-file">{name}</span>
+          <span className="home-card-name">{name.replace(/\.md$/, '')}</span>
+        </span>
+      </span>
+      <span className="home-card-status" data-tone={props.status.tone}>
+        <span className="home-card-dot" aria-hidden="true" />
+        {props.status.label}
+      </span>
+      <span className="home-card-bar" aria-hidden="true">
+        <i style={{ width: `${props.barPercent}%` }} />
+      </span>
+      <span className="home-card-desc">{props.desc}</span>
+      <span className="home-card-go">
+        {S.cardOpen}
+        {GO_ARROW}
+      </span>
+    </button>
+  );
+}
+
+/** A locked card: the same shape wearing the padlock, the reason where the
+ * status would be, and the Locked pill — a disabled real button (the
+ * VB-36 pattern the FileRow shelf pinned: not pressable, not tabbable,
+ * and it says what unlocks it IN the card, never in a tooltip). */
+function LockedCard(props: { file: FileSlotId; reason: string }) {
+  const name = fileName(props.file);
+  return (
+    <button type="button" className="home-card is-locked" data-file={props.file} disabled>
+      <span className="home-card-top">
+        <span className="home-card-chip" aria-hidden="true">
+          <LockGlyph size={15} stroke={1.5} />
+        </span>
+        <span className="home-card-id">
+          <span className="home-card-file">{name}</span>
+          <span className="home-card-name">{name.replace(/\.md$/, '')}</span>
+        </span>
+      </span>
+      <span className="home-card-reason">{props.reason}</span>
+      <span className="home-card-pill">{S.badgeLocked}</span>
+    </button>
+  );
+}
 
 /**
  * docs/RELEASE-1.md R1-12: "Files with freshness, one next-move card, the
@@ -265,24 +362,11 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
 
   const nextMove = computeNextMove(answers);
   const hasStarted = nextMove.kind !== 'start';
-  const lastAnswered = mostRecentAnsweredAt(answers);
-  const ageDays = lastAnswered ? daysSince(lastAnswered, new Date()) : null;
 
   // Derived fresh on every render, exactly like everything else here — the
   // engine holds no state and the dismissal list is a filter over its output.
   const recs = topRecommendations(recommend({ answers, now: new Date(), dismissals }));
   const [top, ...rest] = recs;
-
-  const fileSubtitle = !hasStarted
-    ? S.notBuiltYet
-    : `${S.fileContextWhat} · ${ageDays === 0 ? S.updatedToday : S.daysOld(ageDays ?? 0)}`;
-
-  const fileBadge =
-    nextMove.kind === 'due'
-      ? { label: S.badgeDue(nextMove.items.length), tone: 'due' as const }
-      : nextMove.kind === 'current'
-        ? { label: S.badgeCurrent, tone: 'fresh' as const }
-        : undefined;
 
   const topCopy = top ? recommendationCopy(top) : null;
   const multipleCount = multipleRecordCount(contextModules, contextOutline, answers);
@@ -298,8 +382,15 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   const skillsFinished = fileFinished(skillsOutline, skillsModules, skillsAnswers, new Date());
   const skillsHealthMap = sectionHealthMap(skillsOutline, skillsModules, skillsAnswers, null, new Date());
   const skillsHealth = summariseSectionHealth(skillsOutline, skillsHealthMap);
+  const contextFinished = fileFinished(contextOutline, contextModules, answers, new Date());
+  // V2.6 VB-125b — the Context card's own section count, the same fold the
+  // Skills row has always used, one file over.
+  const contextHealth = summariseSectionHealth(
+    contextOutline,
+    sectionHealthMap(contextOutline, contextModules, answers, null, new Date()),
+  );
   const slots = fileSlots({
-    context: fileFinished(contextOutline, contextModules, answers, new Date()),
+    context: contextFinished,
     skills: skillsFinished,
   });
   const skillsStarted = Object.keys(skillsAnswers.answeredAt).length > 0;
@@ -477,57 +568,94 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
         </section>
       )}
 
-      {/* V1.7 VB-36 — the shelf. One slot per file in the work brain, each with
-          its status and a way in, rather than one file plus a pile of actions.
-
-          Skills.md and Actions.md are here and LOCKED (Adam, 2026-08-24). They
-          are not decoration: they are the way into the Skills and Actions
-          interviews, which will mirror the Context interview's flow, and
-          showing them is what makes Context.md read as step one rather than as
-          the whole product. Which slots exist, which are open and what a
-          locked one may truthfully claim are all core/files/slots.ts's, not
-          this component's — see its header on why that fold is worth a test. */}
+      {/* V1.7 VB-36's shelf, in V2.6 VB-125b's card grammar: the duo (Context
+          and Skills as the template's two-up cards), then Actions as its own
+          full-width row — dashed and locked while Skills is unfinished,
+          the generated file the moment it is not. Every state on every card
+          is the same fold it always was (core/files/slots.ts,
+          sectionHealth, computeNextMove); the cards only changed clothes.
+          The STATE lives in the status words with the semantic tones; the
+          per-file accents are identity only (tokens.json `home` group). */}
       <p className="home-section-label">{S.homeFilesLabel}</p>
-      <div className="home-filelist">
-        {slots.map((slot) => {
-          // V2.2 — three files, three honest rows. Context keeps its
-          // freshness-derived line; Skills says "ready" until it is started
-          // and its section count after; Actions is the derived file — locked
-          // while Skills is unfinished, "Generated" the moment it is not
-          // (never an interview: docs/V2.2-SKILLS-ACTIONS-DECISIONS.md #1).
-          if (slot.id === 'context') {
-            return slot.state === 'open' ? (
-              <FileRow key={slot.id} name={fileName(slot.id)} subtitle={fileSubtitle} badge={fileBadge} onClick={() => onOpenFile('context')} />
-            ) : (
-              <FileRow key={slot.id} name={fileName(slot.id)} subtitle={lockedReason(slot)} badge={{ label: S.badgeLocked }} icon={LOCK_ICON} locked />
-            );
+      <div className="home-duo">
+        <HomeCard
+          file="context"
+          icon={DOC_ICON}
+          status={
+            // R1-12's badge semantics, unchanged by the clothes: due and
+            // Current are FRESHNESS claims (computeNextMove), and only a
+            // file that is neither speaks in section counts.
+            nextMove.kind === 'due'
+              ? { tone: 'due', label: S.badgeDue(nextMove.items.length) }
+              : nextMove.kind === 'current'
+                ? { tone: 'fresh', label: S.badgeCurrent }
+                : hasStarted
+                  ? { tone: 'quiet', label: S.sectionsOf(contextHealth.done, contextOutline.length) }
+                  : { tone: 'quiet', label: S.notBuiltYet }
           }
-          if (slot.id === 'skills') {
-            return slot.state === 'open' ? (
-              <FileRow
-                key={slot.id}
-                name={fileName(slot.id)}
-                subtitle={skillsStarted ? `${S.fileSkillsWhat} · ${S.sectionsOf(skillsHealth.done, skillsOutline.length)}` : S.skillsReady}
-                badge={skillsFinished ? { label: S.badgeCurrent, tone: 'fresh' as const } : undefined}
-                onClick={() => onOpenFile('skills')}
-              />
-            ) : (
-              <FileRow key={slot.id} name={fileName(slot.id)} subtitle={lockedReason(slot)} badge={{ label: S.badgeLocked }} icon={LOCK_ICON} locked />
-            );
-          }
-          return showActionsGenerated ? (
-            <FileRow
-              key={slot.id}
-              name={fileName(slot.id)}
-              subtitle={S.fileActionsWhat}
-              badge={{ label: S.badgeGenerated, tone: 'fresh' as const }}
-              onClick={() => onOpenFile('actions')}
-            />
-          ) : (
-            <FileRow key={slot.id} name={fileName(slot.id)} subtitle={S.actionsWritesItself} badge={{ label: S.badgeLocked }} icon={LOCK_ICON} locked />
-          );
-        })}
+          barPercent={utilization.segments.name}
+          desc={S.cardContextDesc}
+          onOpen={() => onOpenFile('context')}
+        />
+        {slots.find((slot) => slot.id === 'skills')?.state === 'open' ? (
+          <HomeCard
+            file="skills"
+            icon={LAYERS_ICON}
+            status={
+              skillsFinished
+                ? { tone: 'fresh', label: S.badgeCurrent }
+                : skillsStarted
+                  ? { tone: 'quiet', label: S.sectionsOf(skillsHealth.done, skillsOutline.length) }
+                  : { tone: 'quiet', label: S.skillsReady }
+            }
+            barPercent={utilization.segments.repeat}
+            desc={S.cardSkillsDesc}
+            onOpen={() => onOpenFile('skills')}
+          />
+        ) : (
+          <LockedCard
+            file="skills"
+            reason={lockedReason(slots.find((slot) => slot.id === 'skills') as FileSlot)}
+          />
+        )}
       </div>
+      {showActionsGenerated ? (
+        <button
+          type="button"
+          className="home-actrow"
+          data-file="actions"
+          onClick={() => onOpenFile('actions')}
+        >
+          <span className="home-card-chip is-act" aria-hidden="true">
+            {BOLT_ICON}
+          </span>
+          <span className="home-actrow-text">
+            <span className="home-card-id">
+              <span className="home-card-file">{fileName('actions')}</span>
+              <span className="home-card-name">{fileName('actions').replace(/\.md$/, '')}</span>
+            </span>
+            <span className="home-actrow-sub">{S.fileActionsWhat}</span>
+          </span>
+          <span className="home-card-status" data-tone="ai">
+            <span className="home-card-dot" aria-hidden="true" />
+            {S.badgeGenerated}
+          </span>
+        </button>
+      ) : (
+        <button type="button" className="home-actrow is-locked" data-file="actions" disabled>
+          <span className="home-card-chip is-act" aria-hidden="true">
+            <LockGlyph size={15} stroke={1.5} />
+          </span>
+          <span className="home-actrow-text">
+            <span className="home-card-id">
+              <span className="home-card-file">{fileName('actions')}</span>
+              <span className="home-card-name">{fileName('actions').replace(/\.md$/, '')}</span>
+            </span>
+            <span className="home-actrow-sub">{S.actionsWritesItself}</span>
+          </span>
+          <span className="home-card-pill">{S.badgeLocked}</span>
+        </button>
+      )}
 
       {/* V1.7 VB-38 — the parts of the file there are several of. Derived like
           everything else here: the count comes back from the same fold the

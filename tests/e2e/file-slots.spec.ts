@@ -155,43 +155,47 @@ function resumeStepId(answers: Answers): string {
 
 // ─────────────────────────────────────────────────────────── VB-36, the shelf
 
-test.describe('VB-36 — Home is the set of files', () => {
-  test('every file has a slot, with its status: Context.md open, Skills.md and Actions.md locked', async () => {
+test.describe('VB-36 — Home is the set of files (V2.6 VB-125b, the card grammar)', () => {
+  test('every file has its card, with its status: Context.md open, Skills.md and Actions.md locked', async () => {
     const { context, id } = await launch();
     const page = await openHome(context, id);
 
-    const rows = page.locator('.home-filelist .filerow');
-    await expect(rows).toHaveCount(3);
-    // In build order, which is the order they get written in.
-    await expect(rows.nth(0).locator('.nm')).toHaveText('Context.md');
-    await expect(rows.nth(1).locator('.nm')).toHaveText('Skills.md');
-    await expect(rows.nth(2).locator('.nm')).toHaveText('Actions.md');
+    // The duo, then Actions' own row — build order, which is write order.
+    const contextCard = page.locator('.home-card[data-file="context"]');
+    const skillsCard = page.locator('.home-card[data-file="skills"]');
+    const actionsRow = page.locator('.home-actrow[data-file="actions"]');
+    await expect(contextCard).toHaveCount(1);
+    await expect(skillsCard).toHaveCount(1);
+    await expect(actionsRow).toHaveCount(1);
+    await expect(contextCard.locator('.home-card-file')).toHaveText('Context.md');
+    await expect(skillsCard.locator('.home-card-file')).toHaveText('Skills.md');
+    await expect(actionsRow.locator('.home-card-file')).toHaveText('Actions.md');
 
     // The open one is a real control and says where the file stands.
-    await expect(rows.nth(0)).toBeEnabled();
-    await expect(rows.nth(0).locator('.sb')).toHaveText('Not built yet');
+    await expect(contextCard).toBeEnabled();
+    await expect(contextCard.locator('.home-card-status')).toHaveText('Not built yet');
 
-    // The two that are not built are locked, and each says what unlocks it —
-    // in the row, as text, not in a title attribute a pointer has to hover.
-    for (const n of [1, 2]) {
-      await expect(rows.nth(n)).toBeDisabled();
-      await expect(rows.nth(n)).toHaveClass(/locked/);
-      await expect(rows.nth(n).locator('.badge')).toHaveText('Locked');
-      await expect(rows.nth(n)).not.toHaveAttribute('title', /./);
+    // The two that are not built are locked, and each says what holds it —
+    // in the card, as text, not in a title attribute a pointer has to hover.
+    for (const locked of [skillsCard, actionsRow]) {
+      await expect(locked).toBeDisabled();
+      await expect(locked).toHaveClass(/is-locked/);
+      await expect(locked.locator('.home-card-pill')).toHaveText('Locked');
+      await expect(locked).not.toHaveAttribute('title', /./);
     }
-    await expect(rows.nth(1).locator('.sb')).toHaveText('Finish Context.md first');
+    await expect(skillsCard.locator('.home-card-reason')).toHaveText('Finish Context.md first');
     // V2.2: Actions is derived, never interviewed — its locked line stopped
     // being an instruction ("Finish Skills.md first") because nobody finishes
     // Actions; it states the fact instead (docs/V2.2-SKILLS-ACTIONS-DECISIONS.md #1).
-    await expect(rows.nth(2).locator('.sb')).toHaveText('Writes itself from your Skills file');
+    await expect(actionsRow.locator('.home-actrow-sub')).toHaveText('Writes itself from your Skills file');
 
     await context.close();
   });
 
-  test('a locked slot cannot be pressed, cannot be tabbed to, and opens nothing', async () => {
+  test('a locked card cannot be pressed, cannot be tabbed to, and opens nothing', async () => {
     const { context, id } = await launch();
     const page = await openHome(context, id);
-    const skills = page.locator('.home-filelist .filerow').nth(1);
+    const skills = page.locator('.home-card[data-file="skills"]');
 
     // Clicked with the pointer, forced past Playwright's own actionability
     // check so this is a real "what happens if somebody hits it" rather than a
@@ -207,7 +211,7 @@ test.describe('VB-36 — Home is the set of files', () => {
     await context.close();
   });
 
-  test('finishing Context.md stops the next slot telling somebody to finish Context.md', async () => {
+  test('finishing Context.md stops the next card telling somebody to finish Context.md', async () => {
     const { context, sw, id } = await launch();
     const answers = nothingLeftToAsk();
     // The claim only means something if the file really is finished.
@@ -215,32 +219,37 @@ test.describe('VB-36 — Home is the set of files', () => {
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
 
     const page = await openHome(context, id);
-    const rows = page.locator('.home-filelist .filerow');
+    const skillsCard = page.locator('.home-card[data-file="skills"]');
     // V2.2 — this test used to pin the OPPOSITE: finished Context left Skills
     // at "Coming later", because its interview did not exist. It does now, so
     // finishing Context genuinely opens the door, saying the signed-off line.
-    await expect(rows.nth(1).locator('.sb')).toHaveText('Ready when you are — about ten minutes');
-    await expect(rows.nth(1)).toBeEnabled();
+    await expect(skillsCard).toBeEnabled();
+    await expect(skillsCard.locator('.home-card-status')).toHaveText(
+      'Ready when you are — about ten minutes',
+    );
     // Actions still waits — on Skills now, as a derivation, not an errand.
-    await expect(rows.nth(2).locator('.sb')).toHaveText('Writes itself from your Skills file');
+    await expect(page.locator('.home-actrow .home-actrow-sub')).toHaveText(
+      'Writes itself from your Skills file',
+    );
+    // And the finished Context card says so, with its bar genuinely full.
+    await expect(page.locator('.home-card[data-file="context"] .home-card-status')).toHaveText('Current');
 
     await context.close();
   });
 
-  test('the locked rows are told apart by more than colour, and never by colour alone', async () => {
+  test('the locked cards are told apart by more than colour, and never by colour alone', async () => {
     const { context, id } = await launch();
     const page = await openHome(context, id);
-    const rows = page.locator('.home-filelist .filerow');
 
     // Four independent signals, any one of which survives on its own: a word
-    // in the badge, a sentence in the row, a padlock, and a dashed edge.
-    const locked = rows.nth(1);
-    await expect(locked.locator('.badge')).toHaveText('Locked');
-    await expect(locked.locator('.sb')).toHaveText(/Finish/);
-    await expect(locked.locator('.ic svg')).toHaveCount(1);
+    // in the pill, a sentence in the card, a padlock, and a dashed edge.
+    const locked = page.locator('.home-card[data-file="skills"]');
+    await expect(locked.locator('.home-card-pill')).toHaveText('Locked');
+    await expect(locked.locator('.home-card-reason')).toHaveText(/Finish/);
+    await expect(locked.locator('.home-card-chip svg')).toHaveCount(1);
     await expect(locked).toHaveCSS('border-style', 'dashed');
-    // The open row is not dashed, so the edge really is a distinction.
-    await expect(rows.nth(0)).toHaveCSS('border-style', 'solid');
+    // The open card is not dashed, so the edge really is a distinction.
+    await expect(page.locator('.home-card[data-file="context"]')).toHaveCSS('border-style', 'solid');
 
     await context.close();
   });

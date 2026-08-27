@@ -141,10 +141,11 @@ test.describe('VB-47 — one answers key per file', () => {
     await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
 
-    // Home read them: the file row is not the "nothing here yet" state, and it
-    // reports the age of the answers that were seeded.
+    // Home read them: the file card is not the "nothing here yet" state.
+    // (V2.6 VB-125b: the shelf wears the card grammar — the status lives on
+    // the Context card now, and the walk-in selector is unchanged.)
     await expect(page.getByRole('button', { name: /^Context\.md/ })).toBeVisible();
-    await expect(page.locator('.home-filelist')).not.toContainText(S.notBuiltYet);
+    await expect(page.locator('.home-card[data-file="context"]')).not.toContainText(S.notBuiltYet);
 
     // The browse canvas read them (V2.4 VB-102 — FileView's heir): every
     // section that was answered says so.
@@ -253,9 +254,10 @@ test.describe('VB-47 — the strip is gone; the trail is the switcher', () => {
     // The shelf and the trail must agree, so read the shelf first. V2.2:
     // finished Context now OPENS Skills (its interview shipped), so the shelf
     // stops saying anything locked about it — the signed-off ready line
-    // stands where "Coming later" did, and no row asks for Context.
-    await expect(page.locator('.home-filelist')).toContainText(S.skillsReady);
-    await expect(page.locator('.home-filelist')).not.toContainText(S.lockedNeedsFirst(S.fileContext));
+    // stands where "Coming later" did, and no card asks for Context.
+    // (V2.6 VB-125b: the shelf is the card duo now.)
+    await expect(page.locator('.home-card[data-file="skills"]')).toContainText(S.skillsReady);
+    await expect(page.locator('.home-duo')).not.toContainText(S.lockedNeedsFirst(S.fileContext));
 
     await page.getByRole('button', { name: /^Context\.md/ }).click();
     await page.getByRole('button', { name: S.browseEdit, exact: true }).click();
