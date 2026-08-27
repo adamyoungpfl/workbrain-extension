@@ -120,6 +120,10 @@ async function enterInterview(page: Page): Promise<void> {
   );
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+  // V2.5 VB-117: the anchored layout can put the rotating link exactly where
+  // the pointer parks after this click — and a stationary hover is a HOLD by
+  // design. Park it in the corner (the orb-choice precedent).
+  await page.mouse.move(0, 0);
   await page.waitForSelector('.flow');
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
 }
@@ -224,12 +228,20 @@ async function resumeAt(
   const page = await openPanel(context, id);
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+  // V2.5 VB-117: the anchored layout can put the rotating link exactly where
+  // the pointer parks after this click — and a stationary hover is a HOLD by
+  // design. Park it in the corner (the orb-choice precedent).
+  await page.mouse.move(0, 0);
   await page.waitForSelector('.flow');
   // V1.4 VB-20: a fixture with every role answered resumes at the roles loop's
   // "another role?" first. There isn't another; say so and carry on.
   if ((await page.locator('.flow').getAttribute('data-position')) === 'add-another') {
     await page.getByRole('button', { name: 'No', exact: true }).click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // V2.5 VB-117: that Next click parks the pointer where the NEXT screen's
+    // rotating link now renders (the anchored layout stacks tighter) — and a
+    // stationary hover is a hold by design. Park clear.
+    await page.mouse.move(0, 0);
   }
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', stepId);
   // Each question is a fresh mount (Flow.tsx keys StepView by position), so

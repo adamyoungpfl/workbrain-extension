@@ -112,8 +112,13 @@ test.describe('VB-107 — interview-me v2: the anchored popover', () => {
     expect(popBox.y + popBox.height, 'the popover floats above its trigger').toBeLessThanOrEqual(
       trigBox.y + 1,
     );
+    // V2.5 VB-117 widened this: the popover anchors to the helper ROW, and
+    // the row stood up into a column — the trigger can sit a full stacked
+    // row below the popover's bottom edge now. Tolerance covers one 44px
+    // row + gaps; the whole surface is replaced by VB-119's AI Assist sheet
+    // this same sprint, so the looseness dies with the popover.
     expect(popBox.y + popBox.height, 'and stays anchored to it, not far away').toBeGreaterThan(
-      trigBox.y - 40,
+      trigBox.y - 100,
     );
 
     // The prompt, in the ReadOnlyBlock with its copy button: the question

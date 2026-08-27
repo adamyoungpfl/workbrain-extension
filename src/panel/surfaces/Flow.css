@@ -153,8 +153,19 @@
 .flowshell .flow-answer {
   display: flex;
   flex-direction: column;
-  flex: 1 1 auto;
+  /* V2.5 VB-117 — the foot anchors to the INPUT: the answer area hugs its
+     content by default, so the helper/nav stack follows the box and the
+     slack lands BELOW the navigation (Adam: "when the panel collapses and
+     there is more white space than before, I want that space below the
+     navigation, not above it"). The one exception keeps its old meaning:
+     a multiline question's box still grows to use the room — a bigger box
+     is an invitation to write — via the :has chain below, which restores
+     the stretch for exactly those screens. */
+  flex: 0 0 auto;
   min-height: 0;
+}
+.flowshell .flow-answer:has(textarea.field) {
+  flex: 1 1 auto;
 }
 
 /* A text box takes the room instead of the air around it, because a text box
@@ -425,11 +436,15 @@
    clearance at max height; button-cluster.spec is the guard). */
 .flow-idea-row {
   display: flex;
+  /* V2.5 VB-117 — the compromise Adam approved: helpers STACK, each its
+     own vertical row, centered on the input above. The VB-106 height
+     landmine this rule used to guard is DEFUSED by the same slice: the
+     nav cluster anchors to the input now and the slack lands BELOW it, so
+     a taller helper stack pushes slack, never the cluster into the drawer. */
+  flex-direction: column;
   align-items: center;
-  /* VB-94: two helper buttons share this row; the hidden live regions are
-     position:absolute, so the gap only ever lands between the buttons. */
-  gap: 8px;
-  margin-top: 12px;
+  gap: 6px;
+  margin-top: 10px;
   /* V2.4 VB-107: the row is the ANCHOR the interview-me popover floats
      above (components/Popover.css positions against the nearest positioned
      ancestor). On the row rather than on the trigger so the popover spans

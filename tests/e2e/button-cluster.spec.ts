@@ -518,10 +518,22 @@ test('the cluster is centred, and clear of the grab handle (VB-41)', async () =>
       const rightAir = g.navRight - Math.max(...cluster.map((c) => c.hit.right));
       expect(Math.abs(leftAir - rightAir), `${where}: the cluster is not centred`).toBeLessThanOrEqual(1);
 
+      // V2.5 VB-117: the foot anchors to the input — in a TIGHT fit (max
+      // drawer, text question) the area overflows and SCROLLS, the design's
+      // own answer since V1.x ("the foot clears the band at scroll end").
+      // These clearance claims are scroll-end claims, so scroll there and
+      // re-read the cluster before measuring.
+      await page.evaluate(() => {
+        const flow = document.querySelector('.flow');
+        if (flow) flow.scrollTop = flow.scrollHeight;
+        window.scrollTo(0, document.body.scrollHeight);
+      });
+      const clusterAtEnd = await controls(page);
+
       // THE COMPLAINT, MEASURED. The distance from the last painted pixel of
       // the cluster to the drawer's edge, and to the top of the grip — which
       // is the thing the buttons were being mistaken for.
-      const paintedBottom = Math.max(...cluster.map((c) => c.paint.bottom));
+      const paintedBottom = Math.max(...clusterAtEnd.map((c) => c.paint.bottom));
       const toEdge = g.drawerTop - paintedBottom;
       const toGrip = g.gripTop - paintedBottom;
       measured.push(`${where} — ${Math.round(toEdge)}px to the drawer’s edge, ${Math.round(toGrip)}px to the grip`);

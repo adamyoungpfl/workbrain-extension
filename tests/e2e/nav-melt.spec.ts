@@ -990,7 +990,25 @@ interface BandInk {
 async function bandInk(page: Page): Promise<BandInk> {
   const shot = (await page.screenshot()).toString('base64');
   return page.evaluate(async (shot) => {
-    const band = document.querySelector('.flowshell .flow-foot')!.getBoundingClientRect();
+    // V2.5 VB-117: the foot anchors to the input, so its y MOVES between
+    // questions of different content heights. The gesture's ink lives in
+    // the UNION of the incoming foot's box and the melt layer's own box
+    // (pinned at the outgoing foot) — sampling only one of them reads an
+    // empty band mid-wave and cries blink where a person sees a continuous
+    // gesture at the old spot.
+    const footBox = document.querySelector('.flowshell .flow-foot')!.getBoundingClientRect();
+    // The layer is MOUNTED at rest (empty, unpinned — its box is meaningless
+    // then); only a layer actually carrying ghosts names the outgoing region.
+    const meltEl = document.querySelector('.flow-melt');
+    const meltBox = meltEl && meltEl.childElementCount > 0 ? meltEl.getBoundingClientRect() : null;
+    const band = meltBox
+      ? new DOMRect(
+          Math.min(footBox.left, meltBox.left),
+          Math.min(footBox.top, meltBox.top),
+          Math.max(footBox.right, meltBox.right) - Math.min(footBox.left, meltBox.left),
+          Math.max(footBox.bottom, meltBox.bottom) - Math.min(footBox.top, meltBox.top),
+        )
+      : footBox;
     const image = new Image();
     image.src = `data:image/png;base64,${shot}`;
     await image.decode();
