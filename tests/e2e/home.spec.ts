@@ -377,32 +377,30 @@ test.describe('Home surface (R1-12)', () => {
     await context.close();
   });
 
-  test('every human door is a real external link with no prices on it, not a script-driven button', async () => {
-    // V2.6 VB-125c: the "Talk to a person" row became the services card and
-    // the TiM tile. The claim survives the clothes: each door is a REAL
-    // link, to the site, in a new tab — and none of them prints a dollar
-    // figure, because money never enters the extension (NORTH-STAR
-    // decision 4; V2.6 decision 3).
+  test('the Workbrain+ card: a real door, and the price said on purpose', async () => {
+    // V2.8 VB-134: the offer menu became ONE marketing piece, and showing
+    // the price is Adam's explicit reversal of V2.6's no-prices call
+    // (recorded in strings.ts). What has NOT changed: the door is a real
+    // link and the site does the charging — no checkout, no dollar the
+    // extension collects (NORTH-STAR 4).
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
-    const doors: [RegExp, string][] = [
-      [/TiM services/, 'https://www.model-citizen.org/contact'],
-      [/AI Coaching/, 'https://www.model-citizen.org/work-brain/ai-coaching'],
-      [/Fractional CTO/, 'https://www.model-citizen.org/work-brain/fractional-cto'],
-    ];
-    for (const [name, href] of doors) {
-      const link = page.getByRole('link', { name });
-      await expect(link).toBeVisible();
-      await expect(link).toHaveAttribute('href', href);
-      await expect(link).toHaveAttribute('target', '_blank');
-      await expect(link).toHaveAttribute('rel', /noreferrer/);
-    }
+    const link = page.getByRole('link', { name: /See Workbrain\+/ });
+    await expect(link).toBeVisible();
+    await expect(link).toHaveAttribute('href', 'https://www.model-citizen.org/work-brain/plus');
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', /noreferrer/);
 
-    // No price anywhere on the surface — not on the offers, not in a note.
-    const text = await page.locator('.home').innerText();
-    expect(text).not.toMatch(/\$\s*\d/);
-    expect(text.toLowerCase()).not.toMatch(/\/\s*mo\b|per month/);
+    const card = page.locator('.home-cta');
+    await expect(card).toContainText('Workbrain+');
+    await expect(card).toContainText('$42 a day');
+    await expect(card).toContainText('One year of access, billed once on the site.');
+    // The four goods, present as a list.
+    await expect(card.locator('.home-cta-list li')).toHaveCount(4);
+    // And the old menu really is gone.
+    await expect(page.getByText('AI Coaching')).toHaveCount(0);
+    await expect(page.getByText('Fractional CTO')).toHaveCount(0);
 
     await context.close();
   });

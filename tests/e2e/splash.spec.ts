@@ -223,7 +223,12 @@ test.describe('VB-129 — the shard field', () => {
         const data = g.getImageData(0, 0, canvas.width, Math.min(400, canvas.height)).data;
         let painted = 0;
         for (let i = 3; i < data.length; i += 16) if (data[i]! > 0) painted++;
-        return { painted, strip: Array.from(data.slice(0, 4000)).join(',') };
+        // The movement signature samples the WHOLE readback, not a corner —
+        // a corner can be legitimately empty two frames running while the
+        // field tumbles elsewhere (a real flake, caught under fleet load).
+        const sig: number[] = [];
+        for (let i = 0; i < data.length; i += 997) sig.push(data[i]!);
+        return { painted, strip: sig.join(',') };
       });
 
     const first = await sample();

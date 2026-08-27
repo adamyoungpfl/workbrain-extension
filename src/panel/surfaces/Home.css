@@ -547,66 +547,102 @@
   background: var(--canvas);
 }
 
-/* ── V2.6 VB-125c — the services card ─────────────────────────────────────── */
+/* ── V2.8 VB-134 — the Workbrain+ card ──────────────────────────────────────
+   The one marketing piece: the price is the loud thing, the framing line
+   sells it, the four bullets are the goods, the door is real. White alphas
+   on the gradient's lighter stop, measured: 0.9 text = 5.9:1, full white =
+   6.8:1, the 0.55 boundary = 3.3:1 (V2.6's build notes). */
 .home-cta {
   border-radius: var(--r-lg);
   border: 1px solid var(--divider);
   background: linear-gradient(135deg, var(--primary), var(--primary-hover));
   color: var(--ink-inv);
-  padding: 13px 14px;
+  padding: 15px 14px 14px;
 }
 .home-cta h2 {
   margin: 0;
   font-size: 13px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
+  font-weight: 750;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.9);
+}
+.home-cta-price {
+  margin: 6px 0 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 27px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
   color: var(--ink-inv);
+  font-variant-numeric: tabular-nums;
+}
+.home-cta-year {
+  font-size: 11px;
+  font-weight: 450;
+  letter-spacing: 0;
+  line-height: 1.35;
+  color: rgba(255, 255, 255, 0.9);
+  max-width: 17ch;
 }
 .home-cta-body {
-  /* White at 0.9 over the gradient's lighter stop measures 5.9:1 —
-     recorded in docs/V2.6-REFINEMENT.md's build notes; full white is 6.8. */
-  margin: 3px 0 10px;
+  margin: 8px 0 10px;
+  font-size: 12px;
+  line-height: 1.5;
+  font-weight: 600;
+  color: var(--ink-inv);
+}
+.home-cta-list {
+  margin: 0 0 12px;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
   font-size: 11.5px;
   line-height: 1.45;
   color: rgba(255, 255, 255, 0.9);
 }
-.home-cta-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+.home-cta-list li {
+  padding-left: 16px;
+  position: relative;
 }
-.home-offer {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  padding: 8px 9px;
-  min-height: var(--target-min);
+/* A drawn tick, not a bullet — the goods read as included, and the glyph
+   survives greyscale beside its words. */
+.home-cta-list li::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0.42em;
+  width: 8px;
+  height: 5px;
+  border-left: 1.6px solid rgba(255, 255, 255, 0.9);
+  border-bottom: 1.6px solid rgba(255, 255, 255, 0.9);
+  transform: rotate(-48deg);
+}
+.home-plus-go {
+  display: inline-flex;
+  align-items: center;
   justify-content: center;
+  gap: 6px;
+  width: 100%;
+  min-height: var(--target-min);
   border-radius: var(--r-md);
-  background: rgba(255, 255, 255, 0.1);
-  /* White at 0.55 over the gradient's LIGHTER stop composites to ~3.3:1 —
-     the 1.4.11 floor for an interactive boundary, measured, with the darker
-     stop higher still. 0.35 (the template's) read at ~1.8:1 and failed. */
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  color: var(--ink-inv);
+  background: var(--canvas);
+  color: var(--primary);
+  font-size: 13px;
+  font-weight: 650;
   text-decoration: none;
-  transition: background var(--fast) var(--ease);
+  transition: transform var(--fast) var(--ease);
 }
-.home-offer:hover {
-  background: rgba(255, 255, 255, 0.18);
+.home-plus-go:hover {
+  transform: translateY(-1px);
 }
-.home-offer:focus-visible {
+.home-plus-go:focus-visible {
   outline: 2px solid var(--ink-inv);
   outline-offset: 2px;
-}
-.home-offer-name {
-  font-size: 11.5px;
-  font-weight: 650;
-}
-.home-offer-where {
-  font-family: var(--font-mono);
-  font-size: 10.5px;
-  color: rgba(255, 255, 255, 0.9);
 }
 
 /* ── V2.6 VB-125c — the trust foot ────────────────────────────────────────── */

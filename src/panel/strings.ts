@@ -791,18 +791,53 @@ export const S = {
    * the tiles row is the what-now shelf, and the label says so. Printed
    * uppercase by the section-label style. */
   homeKeepLabel: 'Your next move',
+  /**
+   * [DRAFT] V2.8 VB-134 — Workbrain+, the one marketing piece on Home.
+   * Replaces VB-125c's priced-nothing offer menu (`ctaTitle`/`ctaBody`/
+   * `offerCoaching`/`offerCto`/`offerWhere` deleted with it — recorded).
+   * THE PRICE IS SHOWN ON PURPOSE: Adam's V2.8 instruction reverses V2.6
+   * decision 3 ("a vague menu with no prices — which people hate");
+   * NORTH-STAR 4 stands untouched because the money still never enters
+   * the extension — the card links out and the site does the charging.
+   * The 42 is deliberate. Every line grade-7; the bullets are the four
+   * things a member actually gets.
+   */
+  plusTitle: 'Workbrain+',
+  plusPrice: '$42 a day',
+  plusFrame: 'A $5.25-an-hour employee who already knows how you work.',
+  plusYear: 'One year of access, billed once on the site.',
+  plusBullets: [
+    'Ninety minutes a month, one on one, with a TIM',
+    'Workbrain Live: refreshes, alerts, and usage you can see',
+    'Workbrain Certified skills and resources',
+    'The monthly show-and-tell with other members',
+  ] as const,
+  plusGo: 'See Workbrain+',
+  /**
+   * [DRAFT] V2.8 VB-133 — the Skill Redeemer: the tile (a verb, per the
+   * button law), and the sheet behind it. The code arrives with a bought
+   * or commissioned custom skill — the same skill is also in their email
+   * as a file — and redeeming lands it through the pack path. The
+   * failure voices live in core/packs/redeem.ts beside VB-124's, where
+   * every pack refusal already speaks.
+   */
+  tileRedeem: 'Redeem a skill',
+  redeemTitle: 'Redeem a skill code',
+  redeemLabel: 'Your code',
+  redeemHint: 'It came with your custom skill. The same file is in your email.',
+  redeemGo: 'Add it to my file',
+  redeemBusy: 'Checking your code',
   tileMove: 'Move file',
   tileLibrary: 'Skills library',
   tileSoon: 'Soon',
   /** The member gate, said aloud for the tile a pointer cannot press. */
   tileLibraryLocked: 'Skills library — for members, coming soon',
-  tileTim: 'TiM services',
+  /* V2.8 VB-133: `tileTim` ('TiM services') is deleted — the Redeemer tile
+     stands where it stood, and the human door is the Workbrain+ card. */
   moveSheetTitle: 'Move your file',
-  ctaTitle: 'Want a hand finishing this?',
-  ctaBody: 'Every step is free to build on your own. Bring a person in when the wiring gets real.',
-  offerCoaching: 'AI Coaching',
-  offerCto: 'Fractional CTO',
-  offerWhere: 'On the site',
+  /* V2.8 VB-134: the offer-menu strings (`ctaTitle`/`ctaBody`/
+     `offerCoaching`/`offerCto`/`offerWhere`) are deleted with the menu —
+     see `plusTitle` and friends above for what stands there now. */
   /**
    * [DRAFT] V2.6 VB-127 — the trust foot's door and the sheet behind it:
    * the storage, listed in plain words. Only keys that really exist get a

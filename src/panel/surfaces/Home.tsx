@@ -9,6 +9,7 @@ import {
   RecommendationHide,
   RecommendationRow,
   Sheet,
+  Toast,
   recommendationCopy,
 } from '../components';
 import { getLocal, getSync, setLocal } from '../../core/storage/client';
@@ -32,6 +33,7 @@ import { contextModules, contextOutline, skillsModules, skillsOutline } from '..
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
 import { FileActions } from './FileActions';
+import { RedeemSheet } from './RedeemSheet';
 import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
 import './Home.css';
@@ -75,12 +77,11 @@ export interface HomeProps {
 }
 
 const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
-/** V2.6 VB-125c — every door out of the extension, in one place. The offers
- * carry NO prices (decision 3; NORTH-STAR: money never enters the
- * extension) — the site owns money, these are doors to it. */
-const CONTACT_URL = 'https://www.model-citizen.org/contact';
-const COACHING_URL = 'https://www.model-citizen.org/work-brain/ai-coaching';
-const CTO_URL = 'https://www.model-citizen.org/work-brain/fractional-cto';
+/** V2.8 VB-134 — the one door out of the extension: the Workbrain+ page.
+ * The card SHOWS the price (Adam's V2.8 instruction, reversing V2.6's
+ * no-prices call — recorded in strings.ts and the doc); the site still
+ * does all the charging (NORTH-STAR 4, untouched). */
+const PLUS_URL = 'https://www.model-citizen.org/work-brain/plus';
 
 /**
  * What a locked slot says under its name.
@@ -183,11 +184,13 @@ const LIBRARY_ICON = (
   </svg>
 );
 
-const TIM_ICON = (
+/* V2.8 VB-133: TIM_ICON left with its tile; the Redeemer's key stands
+ * there now — a code that opens a skill. */
+const REDEEM_ICON = (
   <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <circle cx="6.6" cy="6" r="2.4" />
-    <path d="M2.6 15c0-2.4 1.8-4 4-4s4 1.6 4 4" />
-    <path d="M12 5.4h3.6M12 8.4h3.6M12 11.4h2.4" />
+    <circle cx="5.8" cy="6.4" r="3.1" />
+    <path d="M8.2 8.8 15.2 15.8" />
+    <path d="M12.4 13l1.9-1.9M14.4 15l1.9-1.9" />
   </svg>
 );
 
@@ -340,6 +343,9 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   /** V2.6 VB-125c — whether the Move-file sheet is up. In-memory, like every
    * other "where am I" fact: a reopen lands on Home with it closed. */
   const [moveOpen, setMoveOpen] = useState(false);
+  /** V2.8 VB-133 — the Skill Redeemer's sheet, and its landed-toast. */
+  const [redeemOpen, setRedeemOpen] = useState(false);
+  const [redeemToast, setRedeemToast] = useState<string | null>(null);
   /** V2.6 VB-127 — the What's-stored sheet, and the two keys it lists that
    * nothing else on Home reads: the version stamp and the narrator choice.
    * `undefined` = the key does not exist, and an absent key gets NO row —
@@ -744,30 +750,35 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
             {S.tileSoon}
           </span>
         </button>
-        <a className="home-tile" href={CONTACT_URL} target="_blank" rel="noreferrer">
-          {TIM_ICON}
-          {S.tileTim}
-        </a>
+        <button type="button" className="home-tile" onClick={() => setRedeemOpen(true)}>
+          {REDEEM_ICON}
+          {S.tileRedeem}
+        </button>
       </div>
 
       {nextMove.kind === 'start' && <p className="home-hint">{S.emptyNewDevice}</p>}
 
-      {/* V2.6 VB-125c — the services card: the human door, naming the two
-          offers, no prices (decision 3). Real links out; the site owns
-          money and scheduling. */}
+      {/* V2.8 VB-134 — Workbrain+, the one marketing piece: the name, the
+          price said plainly (Adam's reversal of V2.6's no-prices call,
+          recorded), the framing line, the four things a member gets, and
+          one real door to the site — which is still where every dollar
+          changes hands (NORTH-STAR 4). */}
       <section className="home-cta" aria-labelledby="home-cta-title">
-        <h2 id="home-cta-title">{S.ctaTitle}</h2>
-        <p className="home-cta-body">{S.ctaBody}</p>
-        <div className="home-cta-row">
-          <a className="home-offer" href={COACHING_URL} target="_blank" rel="noreferrer">
-            <span className="home-offer-name">{S.offerCoaching}</span>
-            <span className="home-offer-where">{S.offerWhere}</span>
-          </a>
-          <a className="home-offer" href={CTO_URL} target="_blank" rel="noreferrer">
-            <span className="home-offer-name">{S.offerCto}</span>
-            <span className="home-offer-where">{S.offerWhere}</span>
-          </a>
-        </div>
+        <h2 id="home-cta-title">{S.plusTitle}</h2>
+        <p className="home-cta-price">
+          {S.plusPrice}
+          <span className="home-cta-year">{S.plusYear}</span>
+        </p>
+        <p className="home-cta-body">{S.plusFrame}</p>
+        <ul className="home-cta-list">
+          {S.plusBullets.map((line) => (
+            <li key={line}>{line}</li>
+          ))}
+        </ul>
+        <a className="home-plus-go" href={PLUS_URL} target="_blank" rel="noreferrer">
+          {S.plusGo}
+          {GO_ARROW}
+        </a>
       </section>
 
       <footer className="home-foot">
@@ -782,6 +793,22 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
       <Sheet open={moveOpen} onClose={() => setMoveOpen(false)} title={S.moveSheetTitle}>
         <FileActions answers={answers} onImport={persist} />
       </Sheet>
+
+      {/* V2.8 VB-133 — the Skill Redeemer: the code from a bought or
+          commissioned skill lands the pack through VB-124's path; the
+          toast speaks the share row's own words. */}
+      <RedeemSheet
+        open={redeemOpen}
+        onClose={() => setRedeemOpen(false)}
+        skills={skillsAnswers}
+        onSkills={async (next) => {
+          setSkillsAnswers(next);
+          const result = await setLocal('wb:answers:skills', next);
+          return result.ok;
+        }}
+        onRedeemed={(added, skipped) => setRedeemToast(S.skillsShareAdded(added, skipped))}
+      />
+      {redeemToast && <Toast message={redeemToast} onDismiss={() => setRedeemToast(null)} />}
 
       {/* V2.6 VB-127 — the storage, listed in plain words. Rows exist only
           for keys that exist, every count is authored content, and the
