@@ -362,4 +362,91 @@ test.describe('The proof loop (R1-11)', () => {
 
     await context.close();
   });
+
+  /* ── BS-03c (§3.2) — the held place ─────────────────────────────────────
+     The panel used to look identical whether somebody was mid-errand in
+     another tab or had not started, so coming back meant re-reading the
+     screen to work out where they were. */
+  test('copying holds the place: a confirmation, a box that wants content, and a way to try again', async () => {
+    const { context, sw, id } = await launchExtension();
+    const seeded = buildDoneAnswers(contextModules);
+    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
+
+    const page = await openPanel(context, id);
+    await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_baseline');
+
+    // Before the copy there is nothing to come back to, so the panel does
+    // not claim a place is held.
+    await expect(page.locator('.proofheld')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Copy the prompt again', exact: true })).toHaveCount(0);
+
+    await page.locator('.readonly .copy').click();
+
+    // Now it does — and it is announced, because somebody who pressed copy
+    // may already be looking at the other tab.
+    const held = page.locator('.proofheld');
+    await expect(held).toBeVisible();
+    await expect(held).toHaveAttribute('role', 'status');
+    await expect(held).toContainText('Copied. Your place is held.');
+    await expect(held).toContainText('When it answers, bring the answer back here.');
+
+    // NOTHING SPINS AND NOTHING COUNTS DOWN (§3.2): there is no call to wait
+    // for, so a spinner would be a lie and a timer would be pressure.
+    await expect(page.locator('.flow [role="progressbar"]:not(.flowprogress)')).toHaveCount(0);
+    const before = await held.textContent();
+    await page.waitForTimeout(1500);
+    expect(await held.textContent()).toBe(before);
+
+    // The empty box visibly wants content — dashed, which is this product's
+    // "empty" since the beta review reassigned it from "locked" (§1).
+    const box = page.locator('.flow-field-sr-label textarea');
+    expect(await box.evaluate((el) => getComputedStyle(el).borderStyle)).toBe('dashed');
+
+    // The commonest real failure has one sentence of advice, and it does not
+    // shout: closed until asked for.
+    const asked = page.locator('.flow-attach').last();
+    await expect(asked).toContainText('It asked me something instead. Now what?');
+    await expect(asked.locator('p')).toBeHidden();
+    await asked.locator('summary').click();
+    await expect(asked.locator('p')).toBeVisible();
+
+    // And the way to try again, which re-copies the same prompt.
+    // Reading the clipboard needs the permission granted, the same way
+    // interview-me.spec.ts grants it for the assist copy.
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await page.getByRole('button', { name: 'Copy the prompt again', exact: true }).click();
+    const clip = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clip).toContain('A test answer for goal_want.');
+
+    // The moment something lands, the box is an answer rather than a gap —
+    // and the held-place state stands down.
+    await box.fill('What the AI wrote back.');
+    await expect(held).toHaveCount(0);
+    expect(await box.evaluate((el) => getComputedStyle(el).borderStyle)).not.toBe('dashed');
+
+    await context.close();
+  });
+
+  test('a fresh step never claims a place is held from the step before it', async () => {
+    const { context, sw, id } = await launchExtension();
+    const seeded = buildDoneAnswers(contextModules);
+    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
+
+    const page = await openPanel(context, id);
+    await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
+    await page.locator('.readonly .copy').click();
+    await expect(page.locator('.proofheld')).toBeVisible();
+
+    await page.locator('.flow textarea').fill('The baseline answer.');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_context');
+
+    // The with-file errand has not been run yet, so nothing is waiting for
+    // an answer. Claiming otherwise would be the panel telling somebody
+    // they had already done something they had not.
+    await expect(page.locator('.proofheld')).toHaveCount(0);
+
+    await context.close();
+  });
 });

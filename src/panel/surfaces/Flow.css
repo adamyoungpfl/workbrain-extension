@@ -270,6 +270,49 @@
    breadcrumb it styled is now components/FlowProgress.tsx, which carries the
    same 12px uppercase treatment for the module title. */
 
+/* ── BS-03c (§3.2) — the held place ──────────────────────────────────────
+   The confirmation somebody comes back to. Green because it is a thing that
+   worked, quiet because it is not the instruction — the box below it is. */
+.proofheld {
+  margin: 4px 0 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--green-tint);
+  /* The tint's own green at full strength, which is what every other
+     tinted panel in the product edges itself with. */
+  border: 1px solid var(--green);
+}
+.proofheld-title {
+  margin: 0 0 4px;
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--ink);
+}
+.proofheld-line {
+  margin: 0;
+  font-size: var(--type-fine);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* THE BOX THAT VISIBLY WANTS CONTENT. A dashed edge is this product's
+   "empty" (beta review §1 reassigned it from "locked" to exactly this), so
+   an empty paste box mid-errand reads as a gap waiting to be filled rather
+   than as a field somebody forgot. It goes solid the moment anything lands,
+   because then it is an answer and not a gap. */
+.flow-field-sr-label.is-hungry textarea {
+  border-style: dashed;
+  border-color: var(--border-i);
+  background: var(--sunken);
+}
+
+.proofheld-doors {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
+}
+
 /* ── BS-03d (§3.3) — the landing, judged by the person ───────────────────
    Two answers side by side at 400px means two narrow columns, so they are
    capped and scrolled rather than allowed to push the ticks off screen: the
@@ -485,6 +528,49 @@
 }
 .flow-chrome .narrator {
   margin: 0;
+}
+
+/* ── BS-03c (§3.2) — the held place ──────────────────────────────────────
+   The confirmation somebody comes back to. Green because it is a thing that
+   worked, quiet because it is not the instruction — the box below it is. */
+.proofheld {
+  margin: 4px 0 10px;
+  padding: 10px 12px;
+  border-radius: var(--r-md);
+  background: var(--green-tint);
+  /* The tint's own green at full strength, which is what every other
+     tinted panel in the product edges itself with. */
+  border: 1px solid var(--green);
+}
+.proofheld-title {
+  margin: 0 0 4px;
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--ink);
+}
+.proofheld-line {
+  margin: 0;
+  font-size: var(--type-fine);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* THE BOX THAT VISIBLY WANTS CONTENT. A dashed edge is this product's
+   "empty" (beta review §1 reassigned it from "locked" to exactly this), so
+   an empty paste box mid-errand reads as a gap waiting to be filled rather
+   than as a field somebody forgot. It goes solid the moment anything lands,
+   because then it is an answer and not a gap. */
+.flow-field-sr-label.is-hungry textarea {
+  border-style: dashed;
+  border-color: var(--border-i);
+  background: var(--sunken);
+}
+
+.proofheld-doors {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-top: 8px;
 }
 
 /* ── BS-03d (§3.3) — the landing, judged by the person ───────────────────

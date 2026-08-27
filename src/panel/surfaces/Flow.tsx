@@ -1180,6 +1180,10 @@ function StepView({
    * like every other draft here; the durable fact is the tally written at
    * commit (`commitJudge`). */
   const [ticked, setTicked] = useState<ProofCheckId[]>([]);
+  /** BS-03c — has the prompt been copied on THIS step. Per-position like
+   * every other draft here, so returning to a step later opens it fresh
+   * rather than claiming a place is held that nobody left. */
+  const [handedOff, setHandedOff] = useState(false);
   const [assistPhase, setAssistPhase] = useState<'idle' | 'activated' | 'returned'>('idle');
   /** V2.5 VB-119 — what the live region says after the sheet lands its
    * answer, for anyone who cannot see the field fill and the pulse point. */
@@ -2298,10 +2302,29 @@ function StepView({
                 </details>
               </>
             )}
-            <ReadOnlyBlock tag={step.genKey === 'withContext' ? S.proofAskWithFile : S.proofAskThis}>
+            <ReadOnlyBlock
+              tag={step.genKey === 'withContext' ? S.proofAskWithFile : S.proofAskThis}
+              onCopy={() => setHandedOff(true)}
+            >
               {promptFor(step.genKey, ctx, contextFileText, S.proofFileLead)}
             </ReadOnlyBlock>
-            <div className="flow-field-sr-label">
+
+            {/* BS-03c (§3.2) — THE HELD PLACE. The panel used to look the
+                same whether somebody was mid-errand in another tab or had
+                not started, so coming back meant re-reading the screen.
+                Nothing spins and nothing counts down: there is no call to
+                wait for, so a spinner would be a lie and a timer would be
+                pressure. The copy IS the confirmation, and the box is the
+                instruction. */}
+            {handedOff && draftText === '' && (
+              <div className="proofheld" role="status">
+                <p className="proofheld-title">{S.proofHeld}</p>
+                <p className="proofheld-line">{S.proofHeldLine}</p>
+                <p className="proofheld-line">{S.proofHeldPaste}</p>
+              </div>
+            )}
+
+            <div className={handedOff && draftText === '' ? 'flow-field-sr-label is-hungry' : 'flow-field-sr-label'}>
               <Field
                 id={`flow-${step.id}-paste`}
                 label={pasteLabelFor(step)}
@@ -2310,6 +2333,29 @@ function StepView({
                 onChange={setDraftText}
               />
             </div>
+
+            {handedOff && draftText === '' && (
+              <div className="proofheld-doors">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    void navigator.clipboard
+                      ?.writeText(promptFor(step.genKey, ctx, contextFileText, S.proofFileLead))
+                      .catch(() => {});
+                  }}
+                >
+                  {S.proofCopyAgain}
+                </Button>
+                {/* The commonest real failure: the AI replies with a
+                    question. One sentence keeps that from ending the run. */}
+                <details className="flow-attach">
+                  <summary>{S.proofAskedBack}</summary>
+                  <p className="flow-hint">{S.proofAskedBackAdvice}</p>
+                </details>
+              </div>
+            )}
             {pendingError && (
               <div role="alert" className="flow-error">
                 {pendingError}

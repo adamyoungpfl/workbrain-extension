@@ -620,6 +620,23 @@ answer stands for every other answer in the file.
 
 ---
 
+## Known flakes, so they are not re-diagnosed every gate
+
+**`work-brain.spec.ts` — "reduced motion: the tier changes instantly"** and
+**"a flow with no drawer…" style tier-clock readbacks.** Seen twice under full
+`npm run check` load (BS-01b's gate, BS-03c's gate), never in isolation:
+passes 3x isolated, passes in its own file, passes on the re-run. It collects
+frames into `window.__wbClock` and asserts the trail contains both `1.000` and
+`0.000`; under parallel load a frame can be missed. **Protocol when it goes
+red: run it 3x isolated. If it passes, re-run the gate and move on** — do not
+edit the assertion, because the claim is true and the readback is the fragile
+part.
+
+**`drawer-modes.spec.ts` — "dragging below the threshold"** timed out once
+under load (BS-01c's gate) and passed 3x isolated. Same protocol.
+
+---
+
 ## Build order
 
 The spec's own order holds, with one change: **§1 is not small.** "No rendered

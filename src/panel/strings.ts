@@ -672,6 +672,21 @@ export const S = {
   /** The secondary route §3.1 keeps for anyone who would rather attach. */
   proofRatherAttach: 'I would rather attach the file',
   proofPaste1: 'Paste its answer here',
+  /* BS-03c (§3.2) — THE WAITING STATE. Until now the panel looked identical
+     whether somebody was mid-errand in another tab or had not started, so
+     coming back meant re-reading the screen to work out where they were.
+     Nothing spins and nothing counts down: there is no server call to wait
+     for, so a spinner would be a lie and a timer would be pressure. The
+     confirmation is the copy, and the box is the instruction. [DRAFT] */
+  proofHeld: 'Copied. Your place is held.',
+  proofHeldLine: 'When it answers, bring the answer back here.',
+  proofHeldPaste: 'Copy what it wrote and paste it below. Nothing else to do.',
+  proofCopyAgain: 'Copy the prompt again',
+  /** The commonest real failure — one disclosure, one sentence, so it does
+   * not end the session (§3.2). */
+  proofAskedBack: 'It asked me something instead. Now what?',
+  proofAskedBackAdvice:
+    'Answer its question in the same chat, then paste what it writes next. You do not need to start over.',
   proofWithFile: 'Now the same question, with your file attached.',
   proofPaste2: 'Paste the second answer here',
   /* BS-03d — the grade step is gone (Adam's P1): the AI is no longer asked
