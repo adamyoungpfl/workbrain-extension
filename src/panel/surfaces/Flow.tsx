@@ -5,6 +5,7 @@ import {
   Button,
   DeepDive,
   DictationHint,
+  DividedLine,
   Field,
   FlowProgress,
   NarratorToggle,
@@ -71,7 +72,8 @@ import { hintStaysVisible } from '../../core/flow/deepDive';
 import { usesOrbChoice } from '../../core/choice/orbs';
 import { personaForService, usesServiceThemes } from '../../core/flow/serviceThemes';
 import { usesVerticalPick } from '../../core/choice/verticalPick';
-import { PERSONA_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
+import { heldLineOptions, offeredLineOptions, usesDividedLine } from '../../core/choice/dividedLine';
+import { LINE_CUSTOM_GLYPH, PERSONA_GLYPHS, ROLE_FOR_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { generatedNameAt, usesNameGenerator } from '../../core/flow/nameGenerator';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
@@ -1153,6 +1155,16 @@ function StepView({
   const [customOptions, setCustomOptions] = useState<Option[]>(() =>
     pos.kind === 'add-another' ? [] : offListOptions(pos.step, initialSelection(pos, answers)),
   );
+  // V2.5 VB-122 — the divided line's HELD entries: a ported key an old file
+  // stored that the line no longer offers ('employer' and friends). Computed
+  // once at mount against the STORED selection, exactly like customOptions
+  // above and for the same reason: crossing a different option must return
+  // the old answer to the left side, never make it vanish mid-screen.
+  const [lineHeld] = useState<Option[]>(() =>
+    pos.kind === 'add-another' || !usesDividedLine(pos.step)
+      ? []
+      : heldLineOptions(pos.step, initialSelection(pos, answers)),
+  );
   const [pendingError, setPendingError] = useState<string | null>(null);
   // Reflect-only sub-screens — never persisted, never part of Position (see
   // core/flow/runner.ts's comment on why position is always derived, never
@@ -1756,6 +1768,20 @@ function StepView({
   // stands its chips up as a vertical pick list with a drawn glyph per
   // choice. Same group, same keys, same Next — a posture, not a mechanism.
   const verticalPick = usesVerticalPick(step);
+  // V2.5 VB-122 — role_for (and only it; core/choice/dividedLine.ts) is the
+  // divided line. Its option list is assembled from three provenances: the
+  // five the line OFFERS, any HELD ported key an old file stored (mount-
+  // stable, above), and the session's custom entries — each wearing its
+  // drawn glyph, customs wearing the generic tag. Same draft, same
+  // answerValues, same commit on Next as every chips question.
+  const dividedLine = usesDividedLine(step);
+  const lineOptions: PillOption[] = dividedLine
+    ? [...offeredLineOptions(step), ...lineHeld, ...customOptions].map((o) => ({
+        value: o.v,
+        label: o.l,
+        glyph: ROLE_FOR_GLYPHS[o.v] ?? LINE_CUSTOM_GLYPH,
+      }))
+    : [];
   const pillOptions: PillOption[] =
     step.kind === 'yesno'
       ? [
@@ -2075,6 +2101,19 @@ function StepView({
                 onChange={answerValues}
                 onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
                 stoppedBy={reasonFor(rotation)}
+              />
+            ) : dividedLine ? (
+              /* V2.5 VB-122 — role_for is the divided line (DividedLine.tsx):
+                 crossing the divider is the selection, by drag, click, or
+                 Space/Enter (FLAG 4). Same legend, same draft, same
+                 answerValues, same commit on Next — and add-your-own opens
+                 the same custom field below as every other choice group. */
+              <DividedLine
+                legend={questionText}
+                options={lineOptions}
+                value={draftValues}
+                onChange={answerValues}
+                onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
               />
             ) : verticalPick ? (
               /* V2.5 VB-118 — context_scope stands as icon tiles with a modern

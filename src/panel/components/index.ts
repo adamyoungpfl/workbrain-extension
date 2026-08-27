@@ -35,6 +35,13 @@ export type { OrbGroupProps, OrbOption } from './OrbGroup';
 export { VerticalPick } from './VerticalPick';
 export type { VerticalPickProps } from './VerticalPick';
 
+/** V2.5 VB-122 — the divided line: options wait dim on the left; crossing
+ * the divider (drag, click, or Space/Enter — FLAG 4) is the answer. Which
+ * questions are drawn this way is core/choice/dividedLine.ts's
+ * `usesDividedLine`. */
+export { DividedLine } from './DividedLine';
+export type { DividedLineProps } from './DividedLine';
+
 export { Field } from './Field';
 export type { FieldProps } from './Field';
 

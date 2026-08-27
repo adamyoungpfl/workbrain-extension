@@ -172,8 +172,9 @@ async function answerCurrent(page: Page): Promise<void> {
   // V2.0 VB-60: a choice is a pill or an orb — `role_names` is asked as orbs
   // now (core/choice/orbs.ts). A walker that knew only pills would leave that
   // question unanswered and still pass, because it is optional.
+  // V2.5 VB-122: role_for is the divided line — a fourth grammar, same rule.
   const pills = page.locator(
-    '.flow .pillgroup .pill:not(.pill-add), .flow .orbgroup .orbchoice:not(.orbchoice-add)',
+    '.flow .pillgroup .pill:not(.pill-add), .flow .orbgroup .orbchoice:not(.orbchoice-add), .flow .dline .dline-opt',
   );
   if (await textarea.count()) await textarea.first().fill('An answer typed on this screen.');
   else if (await pills.count()) await pills.first().click();
@@ -416,10 +417,14 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
     const chosen = seeded.repeatables.roles?.[1]?.role_for as string;
     const roleFor = rolesBlock.fields.find((f) => f.id === 'role_for')!;
     const chosenLabel = roleFor.options!.find((o) => o.v === chosen)!.l;
-    await expect(page.locator('.flow .pillgroup .pill[aria-pressed="true"]')).toHaveText(chosenLabel);
+    // V2.5 VB-122: role_for is the divided line — the stored answer stands
+    // crossed on the right, wearing its own label. The fixture's "last
+    // option" is one of the ported keys the line no longer OFFERS, so this
+    // is also the held-entry back-compat path, walked in a real browser.
+    await expect(page.locator('.flow .dline .dline-opt[aria-pressed="true"]')).toHaveText(chosenLabel);
 
     // Change it, and check the neighbour never moved.
-    const other = page.locator('.flow .pillgroup .pill:not(.pill-add)').first();
+    const other = page.locator('.flow .dline .dline-opt').first();
     await other.click();
     await next(page);
 

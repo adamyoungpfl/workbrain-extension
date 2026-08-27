@@ -1,0 +1,165 @@
+/* ── V2.5 VB-122: the divided line ──────────────────────────────────────────
+   A track split down its middle: the LEFT half is the sunken, waiting side —
+   options rest there dim and black-and-white — and the RIGHT half is the
+   lighter landing ground, where the crossed option stands in full colour.
+   The split is drawn twice on purpose: the ground changes (sunken → canvas)
+   AND a rule runs down the centre, so the line survives any one of them.
+
+   The crossed state is never colour alone: the option is bodily on the other
+   side of the line (position), aria-pressed says so (state), and the label
+   gains weight (shape). The grayscale-to-colour flip is paint on top.
+
+   Boundaries are --select-ring (the selector suite's measured interactive
+   edge — 3.51:1 on --ground, 3.27:1 on --sunken, 3.76:1 on --canvas; see
+   design/tokens.json and dividedLine.test.ts, which re-runs the WCAG
+   arithmetic). Left-side ink is --ink-2 on a --canvas card: 6.96:1. */
+.dline {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.dline-track {
+  position: relative;
+  align-self: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  background: linear-gradient(to right, var(--sunken) 0 50%, var(--canvas) 50% 100%);
+}
+.dline-divider {
+  position: absolute;
+  top: 8px;
+  bottom: 8px;
+  left: 50%;
+  width: 2px;
+  margin-left: -1px;
+  border-radius: 1px;
+  background: var(--select-ring);
+}
+
+/* Each row is two equal columns about the divider; the option lives in the
+   first and CROSSES by translating one column plus the gap — the same
+   distance the drag measures from the DOM, so the glide and the gesture land
+   on the identical spot. */
+.dline-row {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: 28px;
+}
+.dline-opt {
+  grid-column: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: var(--target-min);
+  padding: 6px 10px;
+  font-family: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  border: 1px solid var(--select-ring);
+  border-radius: var(--r-md);
+  background: var(--canvas);
+  color: var(--ink-2);
+  cursor: grab;
+  touch-action: none;
+  transition:
+    transform var(--base) var(--ease),
+    color var(--fast) var(--ease),
+    border-color var(--fast) var(--ease),
+    box-shadow var(--fast) var(--ease);
+}
+.dline-opt:hover {
+  border-color: var(--primary);
+}
+.dline-opt:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+/* Crossed: landed on the lighter side, in colour, carrying weight. The
+   translate is 100% of the option (one equal column) plus the row gap. */
+.dline-opt[aria-pressed='true'] {
+  transform: translateX(calc(100% + 28px));
+  color: var(--ink);
+  font-weight: 600;
+  border-color: var(--primary);
+  cursor: default;
+}
+
+/* Mid-drag the option is in the hand: no transition (it tracks the pointer
+   1:1), a lift shadow, and it rides over its neighbours and the divider. */
+.dline-dragging {
+  transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  cursor: grabbing;
+  z-index: 2;
+  box-shadow: var(--e-2);
+}
+
+/* The waiting side's drawing is literally black-and-white: gray ink plus a
+   grayscale filter, so even a future coloured glyph would rest gray here. */
+.dline-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  flex: 0 0 auto;
+  color: var(--ink-2);
+  filter: grayscale(1);
+  transition: color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.dline-glyph svg {
+  display: block;
+  width: 18px;
+  height: 18px;
+}
+.dline-opt[aria-pressed='true'] .dline-glyph {
+  color: var(--primary);
+  background: var(--primary-tint);
+  filter: none;
+}
+
+.dline-label {
+  overflow-wrap: anywhere;
+}
+
+/* The add-your-own door — the roving order's last stop, dashed like every
+   other add affordance in the system. Sits on the app --ground: --ink-3
+   holds 4.93:1 there and --select-ring 3.51:1 (measured; tokens.json). */
+.dline-add {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+  padding: 8px 14px;
+  font-family: inherit;
+  font-size: 13.5px;
+  border: 1px dashed var(--select-ring);
+  border-radius: var(--r-pill);
+  background: transparent;
+  color: var(--ink-3);
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), background var(--fast) var(--ease);
+}
+.dline-add:hover {
+  border-color: var(--primary);
+  background: var(--primary-tint);
+}
+.dline-add:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Reduced motion: the cross is INSTANT — the transform transition goes, and
+   with it the glide and the snap-back, while every landed state (position,
+   colour, weight, aria-pressed) paints identically. The drag still works;
+   it simply places instead of gliding. */
+@media (prefers-reduced-motion: reduce) {
+  .dline-opt {
+    transition: color var(--fast) var(--ease), border-color var(--fast) var(--ease);
+  }
+}

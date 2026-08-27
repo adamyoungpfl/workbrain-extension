@@ -111,3 +111,75 @@ export const SCOPE_GLYPHS: Record<string, ReactElement> = {
     <circle key="right" cx="14.7" cy="12" r="5.5" />,
   ]),
 };
+
+/**
+ * V2.5 VB-122 — the divided line's drawings, keyed by role_for's option KEYS
+ * (the reshaped list core/flow/overrides.ts authors — the five offered plus
+ * the three ported keys held for old files). Same convention and the same
+ * decorative contract as everything above: the label is the whole accessible
+ * name; the drawing is dim/black-and-white on the line's left and full colour
+ * on its right, but that is CSS's doing (DividedLine.css) — the strokes here
+ * are `currentColor` and say nothing on their own.
+ *
+ * The figures: one for myself; a taller and a smaller for family; three in a
+ * row for a team; two speech bubbles for clients (the relationship is the
+ * conversation, twice over — same drawing for the ported "clients", same
+ * concept); a ring of heads for community. The held employer key reuses the
+ * scope briefcase — an employer IS the work object — and organization is a
+ * columned building.
+ */
+export const ROLE_FOR_GLYPHS: Record<string, ReactElement> = {
+  myself: glyph([
+    <path key="head" d="M12 11.2a3.4 3.4 0 1 0 0-6.8 3.4 3.4 0 0 0 0 6.8z" />,
+    <path key="body" d="M5.6 20.2a6.4 6.4 0 0 1 12.8 0" />,
+  ]),
+  family: glyph([
+    <path key="head" d="M9.4 10.4a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" />,
+    <path key="body" d="M4 20.2a5.4 5.4 0 0 1 10.8 0" />,
+    <path key="head2" d="M17 12.6a2.2 2.2 0 1 0 0-4.4 2.2 2.2 0 0 0 0 4.4z" />,
+    <path key="body2" d="M16.2 15.6a4 4 0 0 1 4 4.6" />,
+  ]),
+  team: glyph([
+    <path key="head" d="M12 9.8a2.6 2.6 0 1 0 0-5.2 2.6 2.6 0 0 0 0 5.2z" />,
+    <path key="body" d="M7.6 18.6a4.6 4.6 0 0 1 8.8 0" />,
+    <path key="head-l" d="M5.4 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />,
+    <path key="body-l" d="M2.2 17.8a3.5 3.5 0 0 1 3.1-2.9" />,
+    <path key="head-r" d="M18.6 11a2 2 0 1 0 0-4 2 2 0 0 0 0 4z" />,
+    <path key="body-r" d="M21.8 17.8a3.5 3.5 0 0 0-3.1-2.9" />,
+  ]),
+  'my-clients': glyph([
+    <path key="bubble" d="M4 5.8h10.4a1.6 1.6 0 0 1 1.6 1.6v4.2a1.6 1.6 0 0 1-1.6 1.6H9.6L6.4 16v-2.8H4a1.6 1.6 0 0 1-1.6-1.6V7.4A1.6 1.6 0 0 1 4 5.8z" />,
+    <path key="reply" d="M18.6 10.2h1.4a1.6 1.6 0 0 1 1.6 1.6v4.2a1.6 1.6 0 0 1-1.6 1.6h-2.4V20l-3.2-2.4h-3" />,
+  ]),
+  community: glyph([
+    <path key="head-t" d="M12 7.6a2.1 2.1 0 1 0 0-4.2 2.1 2.1 0 0 0 0 4.2z" />,
+    <path key="head-l" d="M5.6 15.4a2.1 2.1 0 1 0 0-4.2 2.1 2.1 0 0 0 0 4.2z" />,
+    <path key="head-r" d="M18.4 15.4a2.1 2.1 0 1 0 0-4.2 2.1 2.1 0 0 0 0 4.2z" />,
+    <path key="ring" d="M8.4 19.6a6.9 6.9 0 0 1 7.2 0" />,
+    <path key="link-l" d="M7.4 9.5a7 7 0 0 0-1.5 2.7" />,
+    <path key="link-r" d="M16.6 9.5a7 7 0 0 1 1.5 2.7" />,
+  ]),
+  employer: SCOPE_GLYPHS.work!,
+  clients: glyph([
+    <path key="bubble" d="M4 5.8h10.4a1.6 1.6 0 0 1 1.6 1.6v4.2a1.6 1.6 0 0 1-1.6 1.6H9.6L6.4 16v-2.8H4a1.6 1.6 0 0 1-1.6-1.6V7.4A1.6 1.6 0 0 1 4 5.8z" />,
+    <path key="reply" d="M18.6 10.2h1.4a1.6 1.6 0 0 1 1.6 1.6v4.2a1.6 1.6 0 0 1-1.6 1.6h-2.4V20l-3.2-2.4h-3" />,
+  ]),
+  organization: glyph([
+    <path key="pediment" d="M3.6 8.6L12 3.8l8.4 4.8" />,
+    <path key="base" d="M4.4 20.2h15.2" />,
+    <path key="col1" d="M6.6 11v6.6" />,
+    <path key="col2" d="M10.2 11v6.6" />,
+    <path key="col3" d="M13.8 11v6.6" />,
+    <path key="col4" d="M17.4 11v6.6" />,
+  ]),
+};
+
+/**
+ * VB-122 — the drawing a custom entry wears on the line: a written tag,
+ * because a custom answer is the person's own word for it. One generic glyph
+ * for every custom string, decorative like all the rest.
+ */
+export const LINE_CUSTOM_GLYPH: ReactElement = glyph([
+  <path key="tag" d="M12.8 3.6h6.2a1.4 1.4 0 0 1 1.4 1.4v6.2L11.2 20.4a1.9 1.9 0 0 1-2.7 0l-5-5a1.9 1.9 0 0 1 0-2.7z" />,
+  <circle key="hole" cx="16.3" cy="7.7" r="1.3" />,
+]);

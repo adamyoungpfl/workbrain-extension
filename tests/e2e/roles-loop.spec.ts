@@ -127,8 +127,9 @@ async function answerCurrent(page: Page): Promise<void> {
   // asked as orbs now (core/choice/orbs.ts) and every other question in this
   // loop is still pills. A walker that only knew one of them would answer
   // nothing on the other and pass anyway, because `role_names` is optional.
+  // V2.5 VB-122: role_for is the divided line — a fourth grammar, same rule.
   const choice = page.locator(
-    '.flow .pillgroup .pill:not(.pill-add), .flow .orbgroup .orbchoice:not(.orbchoice-add)',
+    '.flow .pillgroup .pill:not(.pill-add), .flow .orbgroup .orbchoice:not(.orbchoice-add), .flow .dline .dline-opt',
   );
   if (await textarea.count()) await textarea.first().fill('What this role is there to do.');
   else if (await choice.count()) await choice.first().click();
