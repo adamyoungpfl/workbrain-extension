@@ -118,7 +118,7 @@ describe('Splash — the show, under full motion', () => {
 });
 
 describe('Splash — reduced motion is the composed reveal, immediately', () => {
-  it('mounts the whole reveal at once: mark, name, tagline, button, the count', () => {
+  it('mounts the whole reveal at once: mark, name, tagline, the two sentences, the doors', () => {
     vi.useFakeTimers();
     stubMedia(true);
     const { container } = mount(<Splash onDone={() => {}} />);
@@ -128,19 +128,43 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     expect(container.querySelector('.splash-tagline')!.textContent).toBe(S.splashTagline);
     const button = container.querySelector<HTMLButtonElement>('.splash-enter')!;
     expect(button.textContent).toBe(S.splashEnter);
-    // The first loading word, still — no cycling without motion.
-    expect(container.querySelector('.splash-loader')!.textContent).toBe(S.splashLoading[0]);
-    expect(container.querySelector('.splash-drain')).not.toBeNull();
+    // BS-09 (§9): the cycling word and the draining bar are gone, and what
+    // stands in their place is what the held seconds are for.
+    expect(container.querySelector('.splash-loader')).toBeNull();
+    expect(container.querySelector('.splash-drain')).toBeNull();
+    expect(container.querySelector('.splash-cost')!.textContent).toBe(S.splashCost);
+    expect(container.querySelector('.splash-what')!.textContent).toBe(S.splashWhat);
     // And no white layer: there is nothing to swell from.
     expect(container.querySelector('.splash-swell')).toBeNull();
   });
 
-  it('the loading line is decoration; the button is the control', () => {
+  /**
+   * BS-09 — the screen went from one control to three, on purpose, and each
+   * of them is a real choice rather than decoration: enter, skip, or take
+   * the tour. The old claim ("exactly one button, the rest is decoration")
+   * described a screen whose only other thing was a loading line.
+   */
+  it('every control on it is a real one — enter, skip, and the tour when it is offered', () => {
+    vi.useFakeTimers();
+    stubMedia(true);
+    const { container } = mount(<Splash onDone={() => {}} onTour={() => {}} />);
+    const labels = [...container.querySelectorAll('.splash button')].map((b) => b.textContent);
+    expect(labels).toEqual([S.splashSkip, S.splashEnter, S.splashTour]);
+  });
+
+  it('draws no tour door when there is nowhere to take one', () => {
     vi.useFakeTimers();
     stubMedia(true);
     const { container } = mount(<Splash onDone={() => {}} />);
-    expect(container.querySelector('.splash-idle')!.getAttribute('aria-hidden')).toBe('true');
-    expect(container.querySelectorAll('.splash button').length).toBe(1);
+    expect(container.querySelector('.splash-tour')).toBeNull();
+    expect(container.querySelectorAll('.splash button').length).toBe(2);
+  });
+
+  it('says which build it is, because that is the first thing a report needs', () => {
+    vi.useFakeTimers();
+    stubMedia(true);
+    const { container } = mount(<Splash onDone={() => {}} />);
+    expect(container.querySelector('.buildstamp')!.textContent).toMatch(/\d+\.\d+\.\d+/);
   });
 
   it('the button hands over instantly — no fade to sit through', () => {

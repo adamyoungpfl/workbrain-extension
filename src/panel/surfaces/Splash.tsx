@@ -1,11 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
-import { BrandMark, Button } from '../components';
+import { BrandMark, Button, BuildStamp } from '../components';
 import { SplashStage } from './SplashStage';
 import type { SplashStageHandle } from './SplashStage';
 import {
   SPLASH_BEATS,
-  idleProgress,
-  loadingWordIndex,
   pullStrength,
   splashPhase,
   swellOpacity,
@@ -71,9 +69,16 @@ export function taglineLines(text: string): string[] {
 export interface SplashProps {
   /** Called when the splash is finished and may be unmounted. */
   onDone: () => void;
+  /**
+   * BS-09 (§9) — the tour door. Straight into the three slides the interview
+   * already opens with (components/TourSlide.tsx), rather than by way of
+   * Home. Optional: a surface that cannot offer it simply does not, and the
+   * door is not drawn.
+   */
+  onTour?: (() => void) | undefined;
 }
 
-export function Splash({ onDone }: SplashProps) {
+export function Splash({ onDone, onTour }: SplashProps) {
   const [leaving, setLeaving] = useState(false);
   /** Decided during the first render (NarratorToggle's rule): an effect
    * would paint the show a frame late — or paint it at all for someone who
@@ -83,7 +88,6 @@ export function Splash({ onDone }: SplashProps) {
     () => typeof window.matchMedia !== 'function' || window.matchMedia(REDUCE_QUERY).matches,
   );
   const [phase, setPhase] = useState<SplashPhase>(reduced ? 'reveal' : 'show');
-  const [wordIndex, setWordIndex] = useState(0);
 
   const rootRef = useRef<HTMLDivElement | null>(null);
   /** VB-129 — the shard canvas, painted by this component's one clock. */
@@ -92,20 +96,24 @@ export function Splash({ onDone }: SplashProps) {
   const handedOver = useRef(false);
   const idleTimer = useRef<number | undefined>(undefined);
 
-  const leave = useRef(() => {});
-  leave.current = () => {
+  /** BS-09: one handover, and now two possible destinations — Home, or the
+   * tour door's own. The guard and the fade are the same either way, which
+   * is why this takes a `then` rather than growing a second function. */
+  const leave = useRef((_then?: () => void) => {});
+  leave.current = (then?: () => void) => {
     if (handedOver.current) return;
     handedOver.current = true;
     window.clearTimeout(idleTimer.current);
+    const finish = then ?? onDone;
     if (reduced) {
-      onDone();
+      finish();
       return;
     }
     // Fades out, then hands over. `pointer-events` drops for the fade (see
     // Splash.css), so the panel underneath is live from the first frame of
     // the leaving rather than the last.
     setLeaving(true);
-    window.setTimeout(() => onDone(), SPLASH_FADE_MS);
+    window.setTimeout(() => finish(), SPLASH_FADE_MS);
   };
 
   useEffect(() => {
@@ -120,17 +128,13 @@ export function Splash({ onDone }: SplashProps) {
 
   useEffect(() => {
     if (reduced) {
-      // The composed frame, at once — and the ten-count still runs, on a
-      // once-per-second interval (a timeout is not an animation frame; the
-      // zero-rAF law holds). The bar steps rather than glides.
-      const started = Date.now();
+      // The composed frame, at once — and the hold still runs. BS-09 deleted
+      // the draining bar, and the once-per-second stepper that drove it goes
+      // with it: there is nothing left to step, and a timer with no drawing
+      // is a timer nobody asked for. The zero-rAF law is unaffected.
       idleTimer.current = window.setTimeout(() => leave.current(), SPLASH_BEATS.idleMs);
-      const stepper = window.setInterval(() => {
-        rootRef.current?.style.setProperty('--drain', String(idleProgress(Date.now() - started)));
-      }, 1000);
       return () => {
         window.clearTimeout(idleTimer.current);
-        window.clearInterval(stepper);
       };
     }
 
@@ -141,7 +145,6 @@ export function Splash({ onDone }: SplashProps) {
     const t0 = performance.now();
     let raf = 0;
     let lastPhase: SplashPhase = 'show';
-    let lastWord = -1;
     let enterAtMs: number | null = null;
     const tick = (now: number) => {
       const t = (now - t0) / 1000;
@@ -163,13 +166,10 @@ export function Splash({ onDone }: SplashProps) {
           enterAtMs = now;
           idleTimer.current = window.setTimeout(() => leave.current(), SPLASH_BEATS.idleMs);
         }
-        const ms = now - enterAtMs;
-        const w = loadingWordIndex(ms, S.splashLoading.length);
-        if (w !== lastWord) {
-          lastWord = w;
-          setWordIndex(w);
-        }
-        root?.style.setProperty('--drain', idleProgress(ms).toFixed(3));
+        // BS-09: the hold is unchanged (VB-131's six seconds) and nothing
+        // draws it any more. §9: "nothing spins and nothing counts down" —
+        // a bar draining toward a hand-over is pressure applied to a
+        // decision, and the decision is the point of the seconds.
       }
       raf = requestAnimationFrame(tick);
     };
@@ -206,6 +206,19 @@ export function Splash({ onDone }: SplashProps) {
           square wave. Present in the DOM only while it could show. */}
       {!reduced && phase !== 'show' && <div className="splash-swell" aria-hidden="true" />}
 
+      {/* Any click already left; nothing said so, so people sat through it
+          politely (§9). The stamp is BS-00's, here because "which build did
+          you have" is the first question a report raises. Outside the lockup
+          so both pin to the PANEL's corners rather than to the composition's,
+          and so neither costs the lockup a pixel of its vertical rhythm. */}
+      {phase === 'reveal' && (
+        <div className="splash-corners">
+          <BuildStamp />
+          <button type="button" className="splash-skip" onClick={() => leave.current()}>
+            {S.splashSkip}
+          </button>
+        </div>
+      )}
       {phase === 'reveal' && (
         <div className="splash-lockup">
           <BrandMark size={132} spin="orbit" />
@@ -218,21 +231,24 @@ export function Splash({ onDone }: SplashProps) {
               </span>
             ))}
           </p>
+          {/* BS-09 — what the held seconds buy. The tagline is read in two
+              of them; these two lines answer the question somebody is
+              actually asking at this moment, and they are the same promise
+              `welcomeTime` makes one screen later. */}
+          <p className="splash-cost">{S.splashCost}</p>
+          <p className="splash-what">{S.splashWhat}</p>
           <Button type="button" variant="primary" className="splash-enter" onClick={() => leave.current()}>
             {S.splashEnter}
           </Button>
-          {/* The ten-count, dressed as a loading line (decision 5): action
-              words cycling while the thin bar drains, then Home. Decoration
-              — the button above is the control. Under reduced motion the
-              first word holds still and the bar steps by the second. */}
-          <div className="splash-idle" aria-hidden="true">
-            <p className="splash-loader" key={wordIndex}>
-              {S.splashLoading[wordIndex]}
-            </p>
-            <div className="splash-drain">
-              <i />
-            </div>
-          </div>
+          {/* §9's tour door, and D10: the guardrail's ban is on a dismissible
+              overlay pointing at UI, not on orientation somebody asked for.
+              This is the one moment anyone accepts it — after question one,
+              nobody will. */}
+          {onTour && (
+            <button type="button" className="splash-tour" onClick={() => leave.current(onTour)}>
+              {S.splashTour}
+            </button>
+          )}
         </div>
       )}
     </div>

@@ -105,8 +105,14 @@
 .splash-lockup .splash-enter {
   animation-delay: 1.2s;
 }
-.splash-lockup .splash-idle {
-  animation-delay: 1.2s;
+.splash-lockup .splash-cost {
+  animation-delay: 0.9s;
+}
+.splash-lockup .splash-what {
+  animation-delay: 1.05s;
+}
+.splash-lockup .splash-tour {
+  animation-delay: 1.35s;
 }
 
 .splash-wordmark {
@@ -142,42 +148,90 @@
   outline-color: var(--splash-focus);
 }
 
-/* ── the ten-count as a loading line ────────────────────────────────────── */
-.splash-idle {
-  margin-top: 18px;
+/* ── BS-09: what the held seconds buy ───────────────────────────────────
+   V2.7 spent them on a cycling word and a draining bar; both are gone
+   (§9). These two lines answer "what is this and what will it cost me" at
+   the moment the decision is made, and they are the same promise
+   `welcomeTime` makes one screen later.
+
+   White alphas on the near-black field, measured the way the wordmark above
+   was: 0.82 reads at about 14:1, well clear of the floor for body text. */
+.splash-cost,
+.splash-what {
+  margin: 14px 0 0;
+  max-width: 300px;
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+  text-wrap: balance;
+}
+.splash-cost {
+  font-weight: 650;
+  color: var(--ink-inv);
+}
+.splash-what {
+  margin-top: 6px;
+}
+
+/* The tour door — quiet beside the primary, and a real 44px control. */
+.splash-tour {
+  margin-top: 12px;
+  min-height: var(--target-min);
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--type-fine);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+  border-radius: var(--r-md);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.splash-tour:hover {
+  color: var(--ink-inv);
+}
+.splash-tour:focus-visible {
+  outline: 2px solid var(--splash-focus);
+  outline-offset: 2px;
+}
+
+/* The corners: the build stamp somebody can quote in a report, and the way
+   past that was always there and never said so. Absolute, so neither costs
+   the lockup a pixel of its vertical composition. */
+.splash-corners {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  width: 232px;
+  justify-content: space-between;
+  padding: 4px 4px 0;
 }
-
-.splash-loader {
-  margin: 0;
-  font-size: 12.5px;
-  line-height: 1.4;
-  color: rgba(255, 255, 255, 0.72);
-  animation: splash-word var(--base) var(--ease) backwards;
+.splash-corners .buildstamp {
+  padding-left: 8px;
+  color: rgba(255, 255, 255, 0.55);
 }
-@keyframes splash-word {
-  from {
-    opacity: 0;
-  }
+.splash-skip {
+  min-height: var(--target-min);
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--type-fine);
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.82);
+  cursor: pointer;
+  border-radius: var(--r-md);
 }
-
-.splash-drain {
-  width: 100%;
-  height: 2px;
-  border-radius: 1px;
-  background: rgba(255, 255, 255, 0.18);
-  overflow: hidden;
+.splash-skip:hover {
+  color: var(--ink-inv);
 }
-.splash-drain i {
-  display: block;
-  height: 100%;
-  width: calc(100% * (1 - var(--drain)));
-  background: rgba(255, 255, 255, 0.66);
-  border-radius: 1px;
+.splash-skip:focus-visible {
+  outline: 2px solid var(--splash-focus);
+  outline-offset: 2px;
 }
 
 /* Leaving. `pointer-events: none` from the first frame of the fade, so the
@@ -188,7 +242,7 @@
 }
 
 /* The still equivalent is the composed reveal itself — mark, name, tagline,
-   button, the first loading word, the stepping bar — rendered immediately
+   the two sentences, and every door — rendered immediately
    (Splash.tsx mounts phase="reveal" and schedules nothing). What this block
    removes is every glide: the rises land settled, the word never fades, and
    the exit is a cut. */
@@ -197,8 +251,7 @@
     transition: none;
   }
 
-  .splash-lockup > *,
-  .splash-loader {
+  .splash-lockup > * {
     animation: none;
   }
 

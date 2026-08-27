@@ -1218,23 +1218,31 @@ export const S = {
    * visible button the reveal lands on. One name for the one move. */
   splashEnter: 'Open your work brain',
   /**
-   * [DRAFT] V2.7 VB-128 — the ten-count's loading line: action words
-   * cycling, Claude style (Adam's decision 5, docs/V2.7-SPLASH-WOW.md).
-   * Decoration to a screen reader — the button above it is the control and
-   * the hand-off steals no focus. Under reduced motion only the first word
-   * shows, still. Playful is the brief; each stays grade-7 and none names
-   * a thing the person didn't bring.
+   * BS-09 — WHAT THE HELD SECONDS BUY.
+   *
+   * V2.7 VB-128 spent them on a cycling loading line and a draining bar.
+   * The beta review's §9: a first-time tester reads the tagline in two
+   * seconds and then waits, so the seconds should answer the question they
+   * are actually asking — what is this, and what will it cost me. That is
+   * the same thing `welcomeTime` says one screen later; said here, where the
+   * decision is being made.
+   *
+   * `splashLoading` and its cycling are DELETED with the drain bar, recorded
+   * here rather than silently dropped, per the `splashBuild` precedent above.
+   *
+   * TWO FILES, NOT THREE. Actions is hidden for the beta (V2.9 VB-146), so a
+   * promise of three would be the first thing the product got wrong.
+   * [DRAFT]
    */
-  splashLoading: [
-    'Gathering your shards…',
-    'Waking the brain…',
-    'Connecting the dots…',
-    'Reading the room…',
-    'Lining things up…',
-    'Warming the glow…',
-    'Finding your files…',
-    'Opening the doors…',
-  ] as const,
+  splashCost: 'About fifteen minutes, one question at a time.',
+  splashWhat: 'You get plain text files that work with any AI. Nothing leaves your browser, and you can stop anywhere.',
+  /** The way past it, said out loud. Any click already left; nothing said so,
+   * so people sat through it politely (§9). */
+  splashSkip: 'Skip',
+  /** §9's tour door — the one moment somebody accepts an orientation. It
+   * goes straight into the three slides the interview already opens with
+   * (components/TourSlide.tsx), rather than by way of Home. */
+  splashTour: 'Show me around first — 30 seconds',
 
   /**
    * V2.2 — the shelf's three new lines, from the signed-off draft

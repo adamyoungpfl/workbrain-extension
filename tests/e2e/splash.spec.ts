@@ -136,7 +136,7 @@ test.describe('VB-128 — the show opens', () => {
     await context.close();
   });
 
-  test('the reveal arrives on the clock: wordmark, tagline, button, loading line', async () => {
+  test('the reveal arrives on the clock: wordmark, tagline, the two sentences, the doors', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash-wordmark', { timeout: REVEAL_TIMEOUT });
 
@@ -147,8 +147,10 @@ test.describe('VB-128 — the show opens', () => {
     );
     const cta = page.getByRole('button', { name: S.splashEnter, exact: true });
     await expect(cta).toBeVisible();
-    await expect(page.locator('.splash-loader')).toBeVisible();
-    await expect(page.locator('.splash-drain')).toBeVisible();
+    // BS-09 (§9): the cycling word and the drain bar are replaced by the
+    // two sentences that answer "what is this and what will it cost me".
+    await expect(page.locator('.splash-cost')).toBeVisible();
+    await expect(page.locator('.splash-what')).toBeVisible();
 
     // Centred, and stacked in the movie order.
     const mark = (await page.locator('.splash-lockup .brand-mark').boundingBox())!;
@@ -158,6 +160,11 @@ test.describe('VB-128 — the show opens', () => {
     expect(Math.abs(tagline.x + tagline.width / 2 - 200)).toBeLessThan(1.5);
     expect(tagline.y).toBeGreaterThan(mark.y + mark.height);
     expect(button.y).toBeGreaterThan(tagline.y);
+    // The sentences land between the tagline and the button — read after the
+    // promise, before the decision.
+    const cost = (await page.locator('.splash-cost').boundingBox())!;
+    expect(cost.y).toBeGreaterThan(tagline.y);
+    expect(cost.y).toBeLessThan(button.y);
 
     await context.close();
   });
@@ -190,18 +197,48 @@ test.describe('VB-128 — the show opens', () => {
     await context.close();
   });
 
-  test('the loading line cycles its action words while the count drains', async () => {
+  /* BS-09 (§9) — THE CYCLING LOADING LINE IS GONE, and so is the drain bar
+     it cycled beside. A first-time tester reads the tagline in two seconds
+     and then waits; the held seconds now answer the question they are
+     actually asking. What replaces the old test is the claim below. */
+  test('the held seconds carry the decision: what it costs, what you get, and a way past', async () => {
     const { context, page } = await launchPanel();
-    const loader = page.locator('.splash-loader');
-    await loader.waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-lockup').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    const first = await loader.textContent();
-    await expect
-      .poll(async () => loader.textContent(), { timeout: 4000 })
-      .not.toBe(first);
-    // And every word it shows is one of the approved set.
-    const now = (await loader.textContent()) ?? '';
-    expect([...S.splashLoading]).toContain(now);
+    // Nothing draining, nothing cycling — §9: "nothing spins and nothing
+    // counts down", because a bar draining toward a hand-over is pressure
+    // applied to the decision the seconds exist for.
+    await expect(page.locator('.splash-loader')).toHaveCount(0);
+    await expect(page.locator('.splash-drain')).toHaveCount(0);
+
+    // The two sentences, and they are the same promise the welcome screen
+    // makes one screen later.
+    await expect(page.locator('.splash-cost')).toHaveText(S.splashCost);
+    await expect(page.locator('.splash-what')).toHaveText(S.splashWhat);
+
+    // And the product does not promise a file it hides: Actions is out for
+    // the beta (V2.9 VB-146), so no count of files is claimed here at all.
+    expect(S.splashWhat).not.toMatch(/\bthree\b/i);
+
+    // The way past, said out loud rather than merely available.
+    await expect(page.getByRole('button', { name: S.splashSkip, exact: true })).toBeVisible();
+
+    await context.close();
+  });
+
+  test('the tour door is offered, and it goes somewhere other than Home', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-lockup').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    const tour = page.getByRole('button', { name: S.splashTour, exact: true });
+    await expect(tour).toBeVisible();
+    await tour.click();
+
+    // Straight into the interview's own first slides, not by way of Home —
+    // §9: this is the one moment anybody accepts an orientation.
+    await page.waitForSelector('.flow', { timeout: 10_000 });
+    await expect(page.locator('.tourslide')).toHaveCount(1);
+    await expect(page.locator('.home')).toHaveCount(0);
 
     await context.close();
   });
@@ -338,15 +375,22 @@ test.describe('VB-128 — every exit, at every moment', () => {
     await context.close();
   });
 
-  test('the covered panel is inert while the splash is up; the first Tab is the reveal’s button', async () => {
+  test('the covered panel is inert while the splash is up; Tab walks the three doors in order', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
     await expect(page.locator('main[inert]')).toHaveCount(1);
 
     await page.waitForSelector('.splash-enter', { timeout: REVEAL_TIMEOUT });
-    await page.keyboard.press('Tab');
-    const first = await page.evaluate(() => document.activeElement?.textContent ?? '');
-    expect(first).toBe(S.splashEnter);
+    // BS-09 (§9): the screen went from one control to three. Skip comes
+    // first because it is drawn first — it is the corner a person reaches
+    // for when they do not want the movie, and making them tab past the
+    // thing they are declining would be the wrong order.
+    const order: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      await page.keyboard.press('Tab');
+      order.push(await page.evaluate(() => document.activeElement?.textContent ?? ''));
+    }
+    expect(order).toEqual([S.splashSkip, S.splashEnter, S.splashTour]);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
@@ -429,14 +473,19 @@ test.describe('VB-128 — reduced motion', () => {
     await context.close();
   });
 
-  test('the loading line holds still — the first word, no cycling', async () => {
+  test('reduced motion: the two sentences and the way past are all there, still', async () => {
     const { context, page } = await launchPanel({ reduce: true });
-    const loader = page.locator('.splash-loader');
-    await loader.waitFor({ timeout: 4000 });
+    await page.locator('.splash-lockup').waitFor({ timeout: 4000 });
 
-    await expect(loader).toHaveText(S.splashLoading[0]);
-    await page.waitForTimeout(1800);
-    await expect(loader).toHaveText(S.splashLoading[0]);
+    // BS-09 deleted the drain bar AND the once-per-second stepper that drove
+    // it under reduced motion — there is nothing left to step. What the
+    // still version has to keep is the instruction, and it does: both
+    // sentences, the button, the skip and the tour door.
+    await expect(page.locator('.splash-cost')).toHaveText(S.splashCost);
+    await expect(page.locator('.splash-what')).toHaveText(S.splashWhat);
+    await expect(page.getByRole('button', { name: S.splashEnter, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: S.splashSkip, exact: true })).toBeVisible();
+    await expect(page.locator('.splash-drain')).toHaveCount(0);
 
     await context.close();
   });

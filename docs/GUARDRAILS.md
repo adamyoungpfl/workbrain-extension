@@ -79,7 +79,17 @@ a count of panel opens is not, however local it stays.
 An agent will be tempted by all of these. Do not add them.
 
 - A settings page. Two toggles live in the header; everything else is a default we chose.
-- A tour, a coach-mark overlay, or a "what's new" modal.
+- **A dismissible overlay pointing at UI, or a "what's new" modal.**
+  *Amended 2026-08-27 (BS-09/BS-10, Adam's D10).* This row used to ban "a
+  tour" outright, and had been stale since V2.5 VB-114 shipped the dime tour
+  — three real interview steps, with the narrator reading them and the
+  runner's `skipIf` keeping them away from anyone already underway. That is
+  in-flow orientation, which is what the V1.1 plan argued for when it rejected
+  a coach-mark overlay in the same breath. §9 adds a door to those same slides
+  from the splash, because it is the one moment somebody accepts an
+  orientation. **What stays banned is the overlay:** anything laid over the
+  interface pointing at parts of it, and anything that interrupts to announce
+  itself.
 - Notifications of any kind outside the panel.
 - A confirmation dialog before anything.
 - Auto-advance after selecting a choice — it removes the person's sense of control.

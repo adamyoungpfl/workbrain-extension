@@ -364,7 +364,19 @@ export default function App() {
         to={S.feedbackTo}
         context={{ surface: 'proof' }}
       />
-      {splash === 'showing' && <Splash onDone={endSplash} />}
+      {splash === 'showing' && (
+        <Splash
+          onDone={endSplash}
+          /* BS-09 (§9) — the tour door goes straight into the interview,
+             whose first three steps ARE the tour (components/TourSlide.tsx),
+             rather than by way of Home. The splash ends either way; only the
+             destination differs. */
+          onTour={() => {
+            endSplash();
+            openContext();
+          }}
+        />
+      )}
     </>
   );
 }
