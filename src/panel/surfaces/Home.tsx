@@ -22,7 +22,7 @@ import { generateSkillsFile } from '../../core/files/skillsFile';
 import { deriveActionsFile } from '../../core/files/deriveActions';
 import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { multipleRecordCount } from '../../core/flow/multiples';
-import { actionsGenerated, fileFinished, fileSlots } from '../../core/files/slots';
+import { fileAsked, fileFinished, shownFileSlots } from '../../core/files/slots';
 import type { FileSlot, FileSlotId } from '../../core/files/slots';
 import { fileLock } from '../../core/files/toggle';
 // V1.8 VB-47. The file's name, the lock's sentence and the padlock itself,
@@ -32,7 +32,8 @@ import { LockGlyph, fileName, lockLine } from '../components/fileLabels';
 import { contextModules, contextOutline, skillsModules, skillsOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
-import { FileActions } from './FileActions';
+import { downloadContextFile } from './FileActions';
+import { UploadSheet } from './UploadSheet';
 import { RedeemSheet } from './RedeemSheet';
 import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
@@ -148,11 +149,6 @@ const LAYERS_ICON = (
   </svg>
 );
 
-const BOLT_ICON = (
-  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M8.8 1.8 3.6 9h3.2l-.6 5.2L11.4 7H8.2z" strokeLinejoin="round" />
-  </svg>
-);
 
 const GO_ARROW = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
@@ -164,7 +160,15 @@ const GO_ARROW = (
  * chips: currentColor strokes, aria-hidden, the tile's own word carries it.
  * (VB-125c also retired PERSON_ICON with the "Talk to a person" row — the
  * services card and the TiM tile are the human doors now.) */
-const MOVE_ICON = (
+const DOWNLOAD_ICON = (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M9 3.5V12M5.8 8.8 9 12l3.2-3.2" />
+    <path d="M3.5 12v2.5h11V12" />
+  </svg>
+);
+
+/** VB-145 — the upload door's glyph: the same tray, arrow rising out. */
+const UPLOAD_ICON = (
   <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
     <path d="M9 12V3.5M5.8 6.7 9 3.5l3.2 3.2" />
     <path d="M3.5 12v2.5h11V12" />
@@ -342,7 +346,8 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   const [report, setReport] = useState<ReportState | undefined>(undefined);
   /** V2.6 VB-125c — whether the Move-file sheet is up. In-memory, like every
    * other "where am I" fact: a reopen lands on Home with it closed. */
-  const [moveOpen, setMoveOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [homeToast, setHomeToast] = useState<string | null>(null);
   /** V2.8 VB-133 — the Skill Redeemer's sheet, and its landed-toast. */
   const [redeemOpen, setRedeemOpen] = useState(false);
   const [redeemToast, setRedeemToast] = useState<string | null>(null);
@@ -436,21 +441,25 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   const skillsHealthMap = sectionHealthMap(skillsOutline, skillsModules, skillsAnswers, null, new Date());
   const skillsHealth = summariseSectionHealth(skillsOutline, skillsHealthMap);
   const contextFinished = fileFinished(contextOutline, contextModules, answers, new Date());
+  // V2.9 VB-144 — the graduation gate, and NOT the same question the card
+  // asks. `fileAsked` is "the interview is over"; `fileFinished` is "the file
+  // has no gaps". They differ only on a file with a skip in it, and the
+  // person who passed on an optional question has finished the interview —
+  // see the long note in core/files/slots.ts.
+  const contextComplete = fileAsked(contextOutline, contextModules, answers, new Date());
   // V2.6 VB-125b — the Context card's own section count, the same fold the
   // Skills row has always used, one file over.
   const contextHealth = summariseSectionHealth(
     contextOutline,
     sectionHealthMap(contextOutline, contextModules, answers, null, new Date()),
   );
-  const slots = fileSlots({
+  // V2.9 VB-146: the interface shows the beta's slots — Actions is hidden
+  // (core/files/slots.ts's BETA_HIDDEN_SLOTS carries the story).
+  const slots = shownFileSlots({
     context: contextFinished,
     skills: skillsFinished,
   });
   const skillsStarted = Object.keys(skillsAnswers.answeredAt).length > 0;
-  // V2.2 — Actions.md is derived, not interviewed: the moment Skills is
-  // finished the slot stops being a lock and becomes the generated file
-  // (core/files/slots.ts's actionsGenerated, core/files/deriveActions.ts).
-  const showActionsGenerated = actionsGenerated({ skills: skillsFinished });
 
   // V2.6 VB-125 — the meter's number and the lockup's meta line, derived on
   // every render like everything else here. The meta reuses the download
@@ -473,7 +482,8 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
     contextText: generateContextFile(answers, contextFileDate()),
     skillsText: generateSkillsFile(skillsAnswers, contextFileDate()),
     actionsText: deriveActionsFile(skillsAnswers),
-    actionsOn: showActionsGenerated,
+    // VB-146: the hidden file is not counted while it is hidden.
+    actionsOn: false,
     now: new Date(),
   });
 
@@ -490,6 +500,17 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
         <p className="home-chrome-name">
           {S.appName} <span>· {S.chromeCompany}</span>
         </p>
+        {/* V2.9 VB-145 — the upload door, at the top of the UI where Adam
+            asked for it. It only OPENS a sheet; the sheet carries the
+            replace-warning and the careful path (UploadSheet.tsx). */}
+        <button
+          type="button"
+          className="home-chrome-upload"
+          aria-label={S.uploadOpen}
+          onClick={() => setUploadOpen(true)}
+        >
+          {UPLOAD_ICON}
+        </button>
       </header>
       {/* V1.1 VB-01 — the welcome state. Still just the `start` branch of the
           same derived next move, not a surface and not a stored "have I
@@ -553,6 +574,7 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
         name={S.meterName}
         label={S.meterLabel}
         step={S.stepNamed(utilization.currentStep, S.steps[utilization.currentStep - 1] as string)}
+        current={utilization.currentStep}
         segments={[
           { label: S.steps[0], percent: utilization.segments.name },
           { label: S.steps[1], percent: utilization.segments.repeat },
@@ -667,43 +689,9 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           />
         )}
       </div>
-      {showActionsGenerated ? (
-        <button
-          type="button"
-          className="home-actrow"
-          data-file="actions"
-          onClick={() => onOpenFile('actions')}
-        >
-          <span className="home-card-chip is-act" aria-hidden="true">
-            {BOLT_ICON}
-          </span>
-          <span className="home-actrow-text">
-            <span className="home-card-id">
-              <span className="home-card-file">{fileName('actions')}</span>
-              <span className="home-card-name">{fileName('actions').replace(/\.md$/, '')}</span>
-            </span>
-            <span className="home-actrow-sub">{S.fileActionsWhat}</span>
-          </span>
-          <span className="home-card-status" data-tone="ai">
-            <span className="home-card-dot" aria-hidden="true" />
-            {S.badgeGenerated}
-          </span>
-        </button>
-      ) : (
-        <button type="button" className="home-actrow is-locked" data-file="actions" disabled>
-          <span className="home-card-chip is-act" aria-hidden="true">
-            <LockGlyph size={15} stroke={1.5} />
-          </span>
-          <span className="home-actrow-text">
-            <span className="home-card-id">
-              <span className="home-card-file">{fileName('actions')}</span>
-              <span className="home-card-name">{fileName('actions').replace(/\.md$/, '')}</span>
-            </span>
-            <span className="home-actrow-sub">{S.actionsWritesItself}</span>
-          </span>
-          <span className="home-card-pill">{S.badgeLocked}</span>
-        </button>
-      )}
+      {/* V2.9 VB-146: Actions' row is HIDDEN for the beta — no real builder
+          behind it yet (core/files/slots.ts's BETA_HIDDEN_SLOTS carries the
+          story, and emptying that list brings the row back post-beta). */}
 
       {/* V1.7 VB-38 — the parts of the file there are several of. Derived like
           everything else here: the count comes back from the same fold the
@@ -733,22 +721,35 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           accessible name since a disabled tile meets no pointer (decision
           4 + NORTH-STAR); TiM is a door to the site. */}
       <p className="home-section-label">{S.homeKeepLabel}</p>
-      <div className="home-tiles">
-        <button type="button" className="home-tile" onClick={() => setMoveOpen(true)}>
-          {MOVE_ICON}
-          {S.tileMove}
+      {/* V2.9 VB-147 — three tiles, sized to the space. Download file is
+          the Move tile's heir and DOWNLOADS, plainly; it and Prove it
+          works stand dormant until the Context interview is finished,
+          then in colour and obviously active (VB-144's graduation state,
+          derived from the file's real state — nothing stored). The
+          import door moved to the chrome's upload control (VB-145). */}
+      <div className="home-tiles is-three">
+        <button
+          type="button"
+          className={contextComplete ? 'home-tile is-ready' : 'home-tile'}
+          disabled={!contextComplete}
+          aria-label={contextComplete ? undefined : `${S.tileDownload} — ${S.tileWaitsOnContext}`}
+          onClick={() => {
+            downloadContextFile(answers);
+            setHomeToast(S.toastDownloaded);
+          }}
+        >
+          {DOWNLOAD_ICON}
+          {S.tileDownload}
         </button>
-        <button type="button" className="home-tile" onClick={onOpenProof} disabled={!hasStarted}>
+        <button
+          type="button"
+          className={contextComplete ? 'home-tile is-ready' : 'home-tile'}
+          disabled={!contextComplete}
+          aria-label={contextComplete ? undefined : `${S.proofCta} — ${S.tileWaitsOnContext}`}
+          onClick={onOpenProof}
+        >
           {PROVE_ICON}
           {S.proofCta}
-        </button>
-        <button type="button" className="home-tile is-member" disabled aria-label={S.tileLibraryLocked}>
-          {LIBRARY_ICON}
-          {S.tileLibrary}
-          <span className="home-tile-pill">
-            <LockGlyph size={9} stroke={1.8} />
-            {S.tileSoon}
-          </span>
         </button>
         <button type="button" className="home-tile" onClick={() => setRedeemOpen(true)}>
           {REDEEM_ICON}
@@ -763,6 +764,26 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           recorded), the framing line, the four things a member gets, and
           one real door to the site — which is still where every dollar
           changes hands (NORTH-STAR 4). */}
+      {/* V2.9 VB-147 — Certified Skills, spanning the row like Workbrain+
+          below it: an invitation to explore, not a locked tile waiting to
+          apologise. The library lives on the site; this is its door. */}
+      <section className="home-lib" aria-labelledby="home-lib-title">
+        <span className="home-lib-chip" aria-hidden="true">{LIBRARY_ICON}</span>
+        <div className="home-lib-text">
+          <h2 id="home-lib-title">{S.libTitle}</h2>
+          <p>{S.libBody}</p>
+        </div>
+        <a
+          className="home-lib-go"
+          href="https://www.model-citizen.org/work-brain/skills-library"
+          target="_blank"
+          rel="noreferrer"
+        >
+          {S.libGo}
+          {GO_ARROW}
+        </a>
+      </section>
+
       <section className="home-cta" aria-labelledby="home-cta-title">
         <h2 id="home-cta-title">{S.plusTitle}</h2>
         <p className="home-cta-price">
@@ -788,11 +809,17 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
         </button>
       </footer>
 
-      {/* The Move-file sheet: FileActions whole — download, import, its own
-          errors and toasts — behind the tile, unchanged in behaviour. */}
-      <Sheet open={moveOpen} onClose={() => setMoveOpen(false)} title={S.moveSheetTitle}>
-        <FileActions answers={answers} onImport={persist} />
-      </Sheet>
+      {/* V2.9 VB-145 — the upload door's sheet. The download half of the
+          old Move sheet became the tile above; what needs a seatbelt is
+          only the import, and the seatbelt is the sheet's own warning. */}
+      <UploadSheet
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        answers={answers}
+        onImport={persist}
+        onImported={(count) => setHomeToast(S.toastImported(count))}
+      />
+      {homeToast && <Toast message={homeToast} onDismiss={() => setHomeToast(null)} />}
 
       {/* V2.8 VB-133 — the Skill Redeemer: the code from a bought or
           commissioned skill lands the pack through VB-124's path; the

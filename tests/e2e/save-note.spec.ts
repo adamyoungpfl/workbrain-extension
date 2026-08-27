@@ -73,7 +73,10 @@ async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker;
 
 /** Every answer the flow needs to derive its way to `targetStepId`, and not one
  * more — the same fixture question-fill.spec.ts uses, for the same reason. */
-function answersUpTo(modules: Module[], targetStepId: string): Answers {
+// V2.9: `null` means "answer every question in the flow" — the seed a walk
+// needs now that Home's proof tile waits for the interview to be over
+// (VB-144). Any real step id still stops the builder just before it.
+function answersUpTo(modules: Module[], targetStepId: string | null): Answers {
   const now = new Date().toISOString();
   const values: Record<string, AnswerValue> = {};
   const answeredAt: Record<string, string> = {};
@@ -95,7 +98,8 @@ function answersUpTo(modules: Module[], targetStepId: string): Answers {
       if (typeof value === 'string') reflectedAt[key] = now;
     }
   }
-  throw new Error(`no step called ${targetStepId} in the flow`);
+  if (targetStepId !== null) throw new Error(`no step called ${targetStepId} in the flow`);
+  return { values, repeatables: {}, answeredAt, reflectedAt };
 }
 
 async function openPanel(context: BrowserContext, sw: Worker, id: string, stepId: string): Promise<Page> {
@@ -522,9 +526,13 @@ test.describe('VB-44 — the save note sits at the foot of its area', () => {
    * is nothing under it for the foot to be tight against. */
   test('a flow with no drawer keeps the surface frame', async () => {
     const { context, sw, id } = await launchExtension();
+    // V2.9 VB-144 gates the proof loop behind a finished interview (Home's
+    // tiles are dormant until then), so the seed answers EVERY question —
+    // a step id no module holds means the builder never stops early. What
+    // this test is about is unchanged: the one flow with no drawer under it.
     await sw.evaluate(async (value) => {
       await chrome.storage.local.set({ 'wb:answers': value });
-    }, answersUpTo(contextModules, 'preferred_name'));
+    }, answersUpTo(contextModules, null));
     const page = await context.newPage();
     await page.setViewportSize(PANEL);
     await page.goto(`chrome-extension://${id}/panel.html`);

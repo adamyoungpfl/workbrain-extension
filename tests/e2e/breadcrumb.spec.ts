@@ -264,7 +264,7 @@ test.describe('VB-52 — the trail and the Brain’s zoom are one state', () => 
 /* ─────────────────────────────────── the trail switches files ──────────── */
 
 test.describe('VB-52 — the file rung is the switcher', () => {
-  test('it offers the three files, and choosing the one on screen keeps it', async () => {
+  test('it offers the shown files, and choosing the one on screen keeps it', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openDrawer(context, sw, id);
 
@@ -273,10 +273,13 @@ test.describe('VB-52 — the file rung is the switcher', () => {
     await expect(page.locator('.crumbs-files')).toBeVisible();
     expect(
       await page.locator('.crumbs-file').evaluateAll((els) => els.map((el) => (el as HTMLElement).dataset.file)),
-    ).toEqual(['context', 'skills', 'actions']);
+    // V2.9 VB-146 — Actions is hidden for the beta, from the one list in
+    // core/files/slots.ts that the trail, the shelf and the work tier all
+    // read (BETA_HIDDEN_SLOTS).
+    ).toEqual(['context', 'skills']);
     await expect(chip(page, 'context')).toContainText(S.fileContext);
     await expect(chip(page, 'skills')).toContainText(S.fileSkills);
-    await expect(chip(page, 'actions')).toContainText(S.fileActions);
+    await expect(page.locator('.crumbs-file[data-file="actions"]')).toHaveCount(0);
     // Exactly one file is ever the one on screen.
     expect(await page.locator('.crumbs-file[aria-pressed="true"]').count()).toBe(1);
 
@@ -324,12 +327,8 @@ test.describe('VB-52 — the file rung is the switcher', () => {
       'aria-label',
       S.fileToggleLockedName(S.fileSkills, S.lockedNeedsFirst(S.fileContext)),
     );
-    await expect(chip(page, 'actions')).toHaveAttribute(
-      'aria-label',
-      S.fileToggleLockedName(S.fileActions, S.lockedNeedsFirst(S.fileSkills)),
-    );
 
-    for (const file of ['skills', 'actions']) {
+    for (const file of ['skills']) {
       await expect(chip(page, file)).toHaveAttribute('aria-disabled', 'true');
 
       // Pointer. `force`, because `aria-disabled` is exactly what Playwright
@@ -338,7 +337,7 @@ test.describe('VB-52 — the file rung is the switcher', () => {
       await expect(chip(page, file)).toHaveAttribute('aria-pressed', 'false');
       await expect(chip(page, 'context')).toHaveAttribute('aria-pressed', 'true');
       // It explains ITSELF instead of moving.
-      await expect(note).toContainText(file === 'skills' ? S.fileSkills : S.fileActions);
+      await expect(note).toContainText(S.fileSkills);
 
       // Keyboard — the same refusal, through the other door.
       await chip(page, file).focus();

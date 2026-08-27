@@ -1,4 +1,4 @@
-import { fileSlots } from './slots';
+import { shownFileSlots } from './slots';
 import type { FileSlot, FileSlotId } from './slots';
 
 /**
@@ -75,7 +75,10 @@ export function fileToggle(
   shown: FileSlotId,
   finished: Readonly<Partial<Record<FileSlotId, boolean>>>,
 ): FileToggleItem[] {
-  return fileSlots(finished).map((slot) => ({
+  // V2.9 VB-146: the toggle shows what the interface shows — the trail,
+  // the drawer's switcher and the work tier all derive from here, so the
+  // beta's hidden slot disappears from every one of them in this one line.
+  return shownFileSlots(finished).map((slot) => ({
     id: slot.id,
     shown: slot.id === shown,
     lock: fileLock(slot),

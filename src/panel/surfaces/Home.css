@@ -42,6 +42,34 @@
   color: var(--ink-3);
 }
 
+/* V2.9 VB-145 — the upload door, top of the UI: a quiet icon-button at the
+   chrome's far edge, full 44px target inside the slim bar. */
+.home-chrome-upload {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  margin: -12px -8px -12px auto;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  border-radius: var(--r-md);
+  color: var(--ink-3);
+  cursor: pointer;
+  transition:
+    color var(--fast) var(--ease),
+    background var(--fast) var(--ease);
+}
+.home-chrome-upload:hover {
+  color: var(--primary);
+  background: var(--canvas);
+}
+.home-chrome-upload:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 /* ── V2.6 VB-125 — the file lockup ──────────────────────────────────────── */
 .home-lockup {
   display: flex;
@@ -181,8 +209,7 @@
   background: var(--violet-tint);
   color: var(--violet);
 }
-.home-card.is-locked .home-card-chip,
-.home-actrow.is-locked .home-card-chip {
+.home-card.is-locked .home-card-chip {
   background: var(--surface);
   color: var(--ink-3);
 }
@@ -309,63 +336,6 @@
   background: var(--surface);
 }
 
-/* Actions' own full-width row — the derived file, dressed in the AI's
-   violet when it exists and dashed while it waits. */
-.home-actrow {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 11px 12px;
-  text-align: left;
-  font: inherit;
-  color: inherit;
-  background: var(--canvas);
-  border: 1px solid var(--divider);
-  border-radius: var(--r-lg);
-  cursor: pointer;
-  transition:
-    transform var(--fast) var(--ease),
-    box-shadow var(--fast) var(--ease),
-    border-color var(--fast) var(--ease);
-}
-.home-actrow:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--e-1);
-  border-color: var(--border-i);
-}
-.home-actrow:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-.home-actrow.is-locked {
-  border-style: dashed;
-  border-color: var(--border);
-  background: transparent;
-  cursor: not-allowed;
-}
-.home-actrow.is-locked:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: var(--border);
-}
-.home-actrow-text {
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-  margin-right: auto;
-}
-.home-actrow-sub {
-  font-size: 11.5px;
-  line-height: 1.4;
-  color: var(--ink-3);
-}
-.home-actrow .home-card-status,
-.home-actrow .home-card-pill {
-  flex: 0 0 auto;
-  align-self: center;
-}
-
 /* V1.1 VB-01 — the welcome state, replacing the old `.home-start` card.
    Centred, because this is the one screen in the product with a single thing
    to do and no list to scan; every other screen stays left-aligned.
@@ -483,6 +453,27 @@
   gap: 8px;
 }
 
+/* V2.9 VB-147 — three tiles now (the library grew into its own banner
+   below), so each gets real room and a readable label. */
+.home-tiles.is-three {
+  grid-template-columns: repeat(3, 1fr);
+}
+.home-tiles.is-three .home-tile {
+  font-size: 11px;
+}
+
+/* VB-144's graduation face: after the Context interview finishes, the
+   dormant tiles come up in colour and read obviously active. */
+.home-tile.is-ready {
+  color: var(--primary);
+  background: var(--primary-tint);
+  border-color: var(--border-i);
+}
+.home-tile.is-ready:hover {
+  background: var(--surface);
+  border-color: var(--primary);
+}
+
 .home-tile {
   position: relative;
   display: flex;
@@ -545,6 +536,66 @@
   border-radius: var(--r-pill);
   padding: 1px 6px;
   background: var(--canvas);
+}
+
+/* ── V2.9 VB-147 — the Certified Skills banner ──────────────────────────────
+   Spans the row like Workbrain+ below it, but on the light ground — an
+   invitation, not the pitch: chip, two lines, and a real door to the
+   library on the site. */
+.home-lib {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 6px 12px;
+  align-items: start;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  padding: 14px;
+}
+.home-lib-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  background: var(--primary-tint);
+  color: var(--primary);
+}
+.home-lib-text h2 {
+  margin: 0 0 3px;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+.home-lib-text p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.home-lib-go {
+  grid-column: 2;
+  justify-self: start;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 0 4px;
+  margin: -6px -4px -10px;
+  font-size: 12.5px;
+  font-weight: 650;
+  text-decoration: none;
+  color: var(--primary);
+  border-radius: var(--r-md);
+}
+.home-lib-go:hover {
+  color: var(--primary-hover);
+}
+.home-lib-go:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* ── V2.8 VB-134 — the Workbrain+ card ──────────────────────────────────────

@@ -263,9 +263,14 @@ test.describe('VB-47 — the strip is gone; the trail is the switcher', () => {
     await page.getByRole('button', { name: S.browseEdit, exact: true }).click();
     await page.waitForSelector('.filetree-row');
     await page.locator('.crumbs-seg[data-seg="file"]').click();
-    // On the trail, the note now explains the first file that is genuinely
-    // locked — Actions, which waits on Skills as a derivation.
-    await expect(page.locator('.crumbs-note')).toHaveText(`${S.fileActions} · ${S.lockedNeedsFirst(S.fileSkills)}`);
+    // On the trail: V2.2 unlocked Skills, and V2.9 VB-146 hid Actions — the
+    // one file that was still locked here — for the beta. So with Context
+    // finished, every file the trail OFFERS is open and the note has nothing
+    // to explain. The claim this test exists for is unchanged and now
+    // stronger: no locked line anywhere asks for a file that is finished.
+    await expect(page.locator('.crumbs-file')).toHaveCount(2);
+    await expect(page.locator('.crumbs')).not.toContainText(S.lockedNeedsFirst(S.fileContext));
+    await expect(page.locator('.crumbs-note')).toHaveCount(0);
 
     await context.close();
   });

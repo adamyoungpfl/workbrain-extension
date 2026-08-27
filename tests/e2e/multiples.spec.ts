@@ -240,7 +240,7 @@ async function navigateToSection(
 ): Promise<void> {
   await openDrawer(page);
   if (under) {
-    const toggle = page.locator(`.filetree-row[data-node-id="${under}"] .filetree-toggle`);
+    const toggle = page.locator(`.filetree-row[data-node-id="${under}"] .filetree-orbtoggle`);
     if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
   }
   await page.locator(`.filetree-row[data-node-id="${nodeId}"] .filetree-nav`).click();

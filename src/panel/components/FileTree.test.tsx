@@ -232,7 +232,7 @@ describe('FileTree', () => {
 
   it('opens the section being answered, and only that one', () => {
     const { container } = renderTree(makeAnswers(), 'name', 'sec1');
-    expect(rowFor(container, 'sec1').querySelector('.filetree-toggle')?.getAttribute('aria-expanded')).toBe('true');
+    expect(rowFor(container, 'sec1').querySelector('.filetree-orbtoggle')?.getAttribute('aria-expanded')).toBe('true');
     expect(rowFor(container, 'sec1-1')).not.toBe(null);
   });
 
@@ -242,7 +242,7 @@ describe('FileTree', () => {
 
     // Collapse the auto-opened section: the child disappears, and stays gone
     // across an unrelated re-render.
-    click(rowFor(container, 'sec1').querySelector('.filetree-toggle') as HTMLElement);
+    click(rowFor(container, 'sec1').querySelector('.filetree-orbtoggle') as HTMLElement);
     expect(rowFor(container, 'sec1-1')).toBe(null);
     rerender(
       <FileTree
@@ -312,7 +312,7 @@ describe('FileTree', () => {
 
   it('gives every disclosure control a real name, not a bare glyph', () => {
     const { container } = renderTree(makeAnswers(), 'name', 'sec1');
-    const toggle = rowFor(container, 'sec1').querySelector('.filetree-toggle') as HTMLElement;
+    const toggle = rowFor(container, 'sec1').querySelector('.filetree-orbtoggle') as HTMLElement;
     expect(toggle.getAttribute('aria-label')).toBe(S.fileTreeCollapse('About Me'));
     click(toggle);
     expect(toggle.getAttribute('aria-label')).toBe(S.fileTreeExpand('About Me'));
@@ -510,16 +510,24 @@ describe('FileTree — the accordion (VB-33)', () => {
     }
   });
 
-  it('leads with the state marker and trails with the disclosure', () => {
+  it('leads with the state marker, and the marker IS the disclosure', () => {
+    // V2.9 VB-149 — Adam: "the icons on the left of each item should act as
+    // the carets... remove the down caret on the right hand side." So the
+    // far-edge chevron and its spacer are gone and the orb opens the row.
     const { container } = renderTree(makeAnswers(), null, null);
     const row = rowFor(container, 'sec1');
-    // The marker at the left is where a flying orb lands (core/drawer/mode.ts
-    // measures this element), and the chevron at the far edge is what stops a
-    // 44px control standing between the panel edge and every section name.
-    expect(row.firstElementChild!.classList.contains('filetree-glyph')).toBe(true);
-    expect(row.lastElementChild!.classList.contains('filetree-toggle')).toBe(true);
-    // A childless section keeps the column, so the pills stay in one line.
-    expect(rowFor(container, 'sec2').lastElementChild!.classList.contains('filetree-toggle-spacer')).toBe(true);
+    // A section WITH children leads with the button, and the orb — the thing
+    // core/drawer/mode.ts measures for the morph's landing — is inside it,
+    // still the first painted thing in the row.
+    expect(row.firstElementChild!.classList.contains('filetree-orbtoggle')).toBe(true);
+    expect(row.firstElementChild!.firstElementChild!.classList.contains('filetree-glyph')).toBe(true);
+    // A childless section leads with the bare orb, at the same size.
+    expect(rowFor(container, 'sec2').firstElementChild!.classList.contains('filetree-glyph')).toBe(true);
+    // Nothing trails: no row ends in a disclosure control any more.
+    for (const each of rows(container)) {
+      expect(each.querySelector('.filetree-toggle')).toBe(null);
+      expect(each.querySelector('.filetree-toggle-spacer')).toBe(null);
+    }
   });
 
   it('marks a child row as a card and a top-level row as a plain band', () => {
@@ -535,9 +543,9 @@ describe('FileTree — the accordion (VB-33)', () => {
     // Unchanged by VB-33 and asserted again here on purpose: the restyle sits
     // over VB-07's accordion rather than replacing it.
     const { container } = renderTree(makeAnswers({ values: { name: 'Ada' } }), 'role_names', 'sec1');
-    expect(rowFor(container, 'sec1').querySelector('.filetree-toggle')!.getAttribute('aria-expanded')).toBe('true');
-    click(rowFor(container, 'sec1').querySelector('.filetree-toggle') as HTMLElement);
-    expect(rowFor(container, 'sec1').querySelector('.filetree-toggle')!.getAttribute('aria-expanded')).toBe('false');
+    expect(rowFor(container, 'sec1').querySelector('.filetree-orbtoggle')!.getAttribute('aria-expanded')).toBe('true');
+    click(rowFor(container, 'sec1').querySelector('.filetree-orbtoggle') as HTMLElement);
+    expect(rowFor(container, 'sec1').querySelector('.filetree-orbtoggle')!.getAttribute('aria-expanded')).toBe('false');
     expect(rowFor(container, 'sec1-1')).toBe(null);
   });
 });

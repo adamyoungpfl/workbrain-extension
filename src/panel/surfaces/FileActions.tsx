@@ -1,135 +1,66 @@
-import { useRef, useState } from 'react';
-import type { ChangeEvent } from 'react';
-import { Button, Toast } from '../components';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
 import { parseContextFile } from '../../core/files/parse';
 import { buildImportedAnswers } from '../../core/files/restore';
 import type { Answers } from '../../schema/storage.types';
 import { S } from '../strings';
-import './FileActions.css';
 
-export interface FileActionsProps {
-  answers: Answers;
-  /** Home's own `persist` (setLocal 'wb:answers'), so a failed write here
-   * degrades exactly the way a failed write anywhere else in the panel does
-   * (docs/GUARDRAILS.md's degradation table: keep the in-memory state, tell
-   * them plainly, offer the download). Returns whether the write actually
-   * succeeded, so the toast here only ever confirms a real save. */
-  onImport: (next: Answers) => Promise<boolean>;
-}
+/**
+ * R1-10's download/import machinery, V2.9 VB-145/147: the FileActions
+ * COMPONENT retired — the download became Home's own tile (the Move tile's
+ * heir) and the import moved behind the chrome's upload door with its
+ * replace-warning sheet (UploadSheet.tsx). What lives on here is the
+ * DOM-only machinery both of them share, exported as two helpers so the
+ * tile, the sheet, and any future door produce byte-identical files and
+ * take the same care bringing one back. The string-in/string-out half
+ * (generate/parse/restore) is core/, exactly as it was at R1-09.
+ */
 
 const FILE_NAME = 'Context.md';
 
-/**
- * R1-10's download/import, R1-12's backup story hosted on Home: download the
- * built Context.md, and bring a previously downloaded one back in. Both are
- * DOM-only (Blob/URL/anchor, FileReader/<input type=file>) — the
- * string-in/string-out half (generate/parse) is core/, already built at
- * R1-09.
- *
- * Originally lived on the Context flow's own `done` screen (see git history
- * — this file was `FlowDone.tsx`) because Home didn't exist until R1-12.
- * Moved here, and made always-visible rather than gated behind finishing
- * the interview, because the backup story this is (R1-10's own accept line:
- * "treat a failure here as a release blocker") shouldn't require finishing
- * every question first — a half-finished file is still worth a copy.
- * Scoped to the Context flow specifically (not generic across whatever
- * `modules` a `Flow` might render): `generateContextFile`/`parseContextFile`/
- * `buildImportedAnswers` all default to the real `contextModules`, matching
- * their own established pattern, since a Context.md is the only file format
- * R1-09 built a generator/parser for.
- */
-export function FileActions({ answers, onImport }: FileActionsProps) {
-  const [downloaded, setDownloaded] = useState(false);
-  const [toastMessage, setToastMessage] = useState<string | null>(null);
-  const [importError, setImportError] = useState<string | null>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
+/** Download the built Context.md — the same bytes the drawer previews. */
+export function downloadContextFile(answers: Answers): void {
+  // V1.1 VB-07b moved the date stamp into core/files/generate.ts so the
+  // drawer's live preview and this download produce the same bytes by
+  // construction, not by two copies of the same `toLocaleDateString` call.
+  const markdown = generateContextFile(answers, contextFileDate());
+  const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = FILE_NAME;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  // A same-tick revoke can race the browser's own download start in some
+  // engines — the sibling app hits this same issue and defers the revoke a
+  // beat; matched here for the same reason.
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
-  function handleDownload() {
-    // V1.1 VB-07b moved the date stamp into core/files/generate.ts so the
-    // drawer's live preview and this download produce the same bytes by
-    // construction, not by two copies of the same `toLocaleDateString` call.
-    const markdown = generateContextFile(answers, contextFileDate());
-    const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = FILE_NAME;
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    // A same-tick revoke can race the browser's own download start in some
-    // engines — the sibling app (../modelcitizen) hits this same issue and
-    // defers the revoke a beat; matched here for the same reason.
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+export type ReadContextResult =
+  | { ok: true; answers: Answers; count: number }
+  | { ok: false; reason: string };
 
-    setDownloaded(true);
-    setImportError(null);
-    setToastMessage(S.toastDownloaded);
-  }
-
-  function handleImportClick() {
-    setImportError(null);
-    fileInputRef.current?.click();
-  }
-
-  function handleFileChange(e: ChangeEvent<HTMLInputElement>) {
-    const input = e.target;
-    const file = input.files?.[0];
-    input.value = ''; // lets the same file be picked again later (e.g. after fixing it)
-    if (!file) return;
-
+/** Read a picked file back into answers — every refusal in the degradation
+ * voice, never an error code (docs/GUARDRAILS.md's table). */
+export function readContextFile(file: File): Promise<ReadContextResult> {
+  return new Promise((resolve) => {
     if (!/\.md$/i.test(file.name)) {
-      setImportError(S.errFileWrongKind);
+      resolve({ ok: false, reason: S.errFileWrongKind });
       return;
     }
-
     const reader = new FileReader();
-    reader.onerror = () => setImportError(S.errFileUnreadable);
+    reader.onerror = () => resolve({ ok: false, reason: S.errFileUnreadable });
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
       const parsed = parseContextFile(text);
       if (!parsed.ok) {
-        // docs/GUARDRAILS.md's degradation table, "Export parse fails" —
-        // never an error code, never a stack trace, just what to do next.
-        setImportError(S.errFileUnreadable);
+        resolve({ ok: false, reason: S.errFileUnreadable });
         return;
       }
       const restored = buildImportedAnswers(parsed.answers, new Date().toISOString());
-      const answerCount = Object.keys(restored.answeredAt).length;
-      void onImport(restored).then((ok) => {
-        if (!ok) return; // Home's own saveError handling already covers this — nothing more to say here.
-        setImportError(null);
-        setToastMessage(S.toastImported(answerCount));
-      });
+      resolve({ ok: true, answers: restored, count: Object.keys(restored.answeredAt).length });
     };
     reader.readAsText(file);
-  }
-
-  return (
-    <div className="file-actions">
-      {importError && (
-        <div role="alert" className="file-actions-error">
-          {importError}
-        </div>
-      )}
-      <Button type="button" variant="secondary" onClick={handleDownload}>
-        {downloaded ? S.downloadAgain : S.download}
-      </Button>
-      <Button type="button" variant="secondary" onClick={handleImportClick}>
-        {S.importFile}
-      </Button>
-      <input
-        ref={fileInputRef}
-        type="file"
-        accept=".md,text/markdown"
-        className="file-actions-input"
-        tabIndex={-1}
-        aria-hidden="true"
-        aria-label={S.importPick}
-        onChange={handleFileChange}
-      />
-      {toastMessage && <Toast message={toastMessage} onDismiss={() => setToastMessage(null)} />}
-    </div>
-  );
+  });
 }

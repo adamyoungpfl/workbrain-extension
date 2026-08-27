@@ -635,64 +635,79 @@
   font-weight: 700;
 }
 
-/* ── The disclosure, at the far edge ──────────────────────────────────────
-   44x44 whatever is drawn in it (docs/GUARDRAILS.md), and the spacer keeps a
-   childless row's name ending in the same column as one that has a chevron. */
-.filetree-toggle,
-.filetree-toggle-spacer {
-  flex: none;
-  width: var(--target-min);
-  height: var(--target-min);
-}
+/* ── V2.9 VB-149 — THE DISCLOSURE IS THE ORB ─────────────────────────────
+   Adam: "the icons on the left of each item should act as the carets. Down
+   for open, right for closed, empty for not started. remove the down caret
+   on the right hand side."
 
-.filetree-toggle {
+   So the row's far-edge chevron and its spacer are both gone, and the orb
+   at the left edge — which was already the row's state marker and the
+   morph's landing target — is now the control that opens it.
+
+   THE ORB'S BOX DOES NOT CHANGE. `core/drawer/mode.ts`'s `endOf` sizes every
+   flying node from `min(width, height) / 2` of `.filetree-glyph`, and
+   tests/e2e/drawer-modes.spec.ts pins the landing to a pixel. The button
+   wraps the orb WITHOUT resizing it: it is the full 44px target the
+   guardrails ask for, pulled back out of the layout with negative margins so
+   the orb still occupies exactly 18px in the row's flex line and still
+   centres where it did. The paint is the orb; the target is the button. */
+.filetree-orbtoggle {
   position: relative;
-  display: flex;
+  flex: none;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
+  width: var(--target-min);
+  height: var(--target-min);
+  /* (44 - 18) / 2 = 13px of target on every side, taken back out of the
+     flow so the row's geometry is byte-identical to a childless row's. */
+  margin: -13px -13px -13px -13px;
   appearance: none;
   background: none;
   border: none;
   padding: 0;
-  margin: 0;
-  color: var(--ink-3);
   cursor: pointer;
   border-radius: var(--r-pill);
+  /* The ink the hover ring below is drawn in. The orb's own colours are the
+     orb's (they say which section this is); this one says "you can press
+     me", which is the button's fact and not the orb's. */
+  color: var(--ink-3);
 }
 
-/* THE TARGET IS 44x44 AND THE PAINT IS 30x30. The control has to be 44 square
-   (docs/GUARDRAILS.md) but a 44px block of hover behind a 10px chevron reads
-   as a tile someone dropped on the row. The pseudo-element takes the paint and
-   the button keeps the target, so nothing is traded away. */
-.filetree-toggle::before {
+/* HOVER IS A RING AROUND THE OBJECT, NEVER A GROUND UNDER IT — the drawer's
+   one rule (FileDrawer.css's VB-50 note). The old far-edge chevron hovered
+   with a 2px bar beneath it because a glyph with no word had nothing else to
+   underline; the orb is a round object, so the ring is the same idea in the
+   shape the object already has. Transparent at rest, so nothing is painted
+   around every row of a resting list. */
+.filetree-orbtoggle::after {
   content: '';
   position: absolute;
-  width: 30px;
-  height: 30px;
+  inset: 7px;
   border-radius: var(--r-pill);
-  background: none;
-  transition: background var(--fast) var(--ease);
+  border: 1px solid transparent;
+  transition: border-color var(--fast) var(--ease);
+  pointer-events: none;
 }
-.filetree-toggle:hover {
-  color: var(--ink);
+.filetree-orbtoggle:hover {
+  color: var(--ink-2);
 }
-.filetree-toggle:hover::before {
-  background: var(--sunken);
+.filetree-orbtoggle:hover::after {
+  border-color: currentColor;
 }
-.filetree-toggle:focus-visible {
+.filetree-orbtoggle:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
 
-/* Points down when closed, up when open — the chevron sits at the right of a
-   row it opens downward, so it turns through the same 180° a select does
-   rather than the 90° a tree arrow does. */
-.filetree-chevron {
+/* The caret inside a disclosure orb: right when closed, down when open —
+   the tree-arrow 90°, not the select's 180°, because it now sits at the
+   left of the rows it reveals rather than at their right edge. */
+.filetree-mark.is-caret {
   transition: transform var(--base) var(--ease);
-  transform: rotate(90deg);
 }
-.filetree-chevron.is-open {
-  transform: rotate(-90deg);
+.filetree-mark.is-caret.is-down {
+  transform: rotate(90deg);
 }
 
 /* ── What an open section reveals ─────────────────────────────────────────
@@ -714,14 +729,10 @@
   padding: 0 8px;
 }
 
-/* A card has no disclosure of its own — nothing in the outline nests three
-   deep — so it does not keep the 44px column that holds one. Reserving it
-   would cost the card an eighth of its width and truncate the very meta line
-   the card exists to show; the reference right-aligns a child's values to the
-   CARD's edge for the same reason. */
-.filetree-row.is-child > .filetree-toggle-spacer {
-  display: none;
-}
+/* V2.9 VB-149 retired `.filetree-toggle-spacer` along with the far-edge
+   chevron: with the disclosure on the orb there is no right-hand column to
+   reserve, so a childless row and a card both end their meta line at the
+   row's own edge with nothing to hide. */
 .filetree-row[data-depth='1'] {
   margin-left: 12px;
 }
@@ -731,8 +742,7 @@
 
 /* Inside a card the ground is already grey, so the hover has to lift rather
    than sink — the same correction FileDrawer.css makes for the stage. */
-.filetree-row.is-child .filetree-nav:hover,
-.filetree-row.is-child .filetree-toggle:hover {
+.filetree-row.is-child .filetree-nav:hover {
   background: var(--canvas);
 }
 
@@ -776,6 +786,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .filetree-chevron,
+  .filetree-mark.is-caret,
   .filetree-glyph {
     transition: none;
   }
@@ -819,7 +830,20 @@
 .filetree-list.is-children .filetree-row {
   align-items: center;
 }
-/* The record disclosure — the one expand/collapse grammar, at record scale. */
+/* The record disclosure — the one expand/collapse grammar, at record scale.
+
+   V2.9 VB-149: this chevron always sat at the LEFT of what it reveals, which
+   is the grammar the section rows just adopted, so it keeps the drawn chevron
+   and turns through the tree-arrow's 90° — right closed, down open. The rules
+   live here now rather than on `.filetree-chevron` at large, because the
+   far-edge toggle those were written for no longer exists. */
+.filetree-chevron {
+  transition: transform var(--base) var(--ease);
+}
+.filetree-chevron.is-open {
+  transform: rotate(90deg);
+}
+
 .filetree-records-toggle {
   display: inline-flex;
   align-items: center;

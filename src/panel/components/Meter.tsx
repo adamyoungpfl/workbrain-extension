@@ -32,12 +32,17 @@ export interface MeterProps {
   label: string;
   /** "Step 2 · Repeat". */
   step: string;
+  /** V2.9 (Adam, mid-sprint): which step is the STANDING one, 1-based —
+   * the same number the `step` phrase speaks. Its segment wears a slight
+   * tint even at 0%, so a just-unlocked step reads as active-but-not-done
+   * rather than as untouched. */
+  current?: number;
   /** The four steps: Name, Repeat, Act, Share. */
   segments: MeterSegment[];
 }
 
 /** Derived, never stored — see docs/ARCHITECTURE.md ("nothing derived is stored"). */
-export function Meter({ value, name, label, step, segments }: MeterProps) {
+export function Meter({ value, name, label, step, current, segments }: MeterProps) {
   return (
     <div
       className="meter"
@@ -54,13 +59,24 @@ export function Meter({ value, name, label, step, segments }: MeterProps) {
         <span className="meter-step">{step}</span>
       </div>
       <div className="meter-track" aria-hidden="true">
-        {segments.map((segment) => (
-          <i key={segment.label} style={{ '--p': `${segment.percent}%` } as CSSProperties} />
+        {segments.map((segment, index) => (
+          <i
+            key={segment.label}
+            className={index + 1 === current ? 'is-current' : undefined}
+            style={{ '--p': `${segment.percent}%` } as CSSProperties}
+          />
         ))}
       </div>
       <div className="meter-ticks" aria-hidden="true">
-        {segments.map((segment) => (
-          <span key={segment.label} className={segment.percent > 0 ? 'on' : ''}>
+        {segments.map((segment, index) => (
+          <span
+            key={segment.label}
+            className={
+              [segment.percent > 0 ? 'on' : '', index + 1 === current ? 'is-current' : '']
+                .filter(Boolean)
+                .join(' ') || undefined
+            }
+          >
             {segment.label}
           </span>
         ))}

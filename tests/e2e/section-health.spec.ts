@@ -327,6 +327,11 @@ test.describe('VB-19 — five states, derived', () => {
           orbFilled: orbStyle.backgroundColor !== 'rgba(0, 0, 0, 0)',
           // The mark's PATH, so two states sharing one shape is a failure.
           orbMark: mark ? mark.getAttribute('d') : null,
+          // V2.9 VB-149 — whether this orb is also the row's disclosure. On a
+          // section with children the mark says OPEN/CLOSED instead of the
+          // state, so the mark's per-state consistency is asserted within
+          // each kind of row rather than across both.
+          orbIsDisclosure: !!orb.closest('.filetree-orbtoggle'),
           // A ring around the orb — a spread shadow, told apart from the
           // hairline INSIDE the orb that every filled one carries. The colours
           // are folded out first: `rgb(12, 28, 85)` carries commas of its own,
@@ -363,6 +368,16 @@ test.describe('VB-19 — five states, derived', () => {
       // gone: a section with nothing in it is the only hollow, dashed, empty
       // one; the one being written is the only one wearing a solid ring; and no
       // two lives draw the same mark.
+      //
+      // V2.9 VB-149 QUALIFIES THE LAST OF THOSE, AND ONLY THE LAST. The orb is
+      // now the disclosure on any section that has children, so its mark there
+      // is the caret (open/closed) rather than the tick. WHAT CARRIES STATE
+      // WITHOUT COLOUR IS UNCHANGED AND STILL THREE-WAY: hollow+dashed+empty
+      // (dim), filled without a ring (lit), filled inside a ring (live) — plus
+      // the row's spoken word, and the count and figure at its right end. The
+      // mark's consistency is therefore checked per life WITHIN a kind of row,
+      // and the whole-row fingerprint below carries the kind so a disclosure
+      // row and a plain one can never collapse onto each other unnoticed.
       const orb = ORB[row.life!]!;
       expect(Object.keys(ORB), `${row.id} reported life "${row.life}"`).toContain(row.life);
       expect(row.life, `${row.id} life`).toBe(expected.life);
@@ -370,8 +385,9 @@ test.describe('VB-19 — five states, derived', () => {
       expect(row.orbBorderStyle === 'dashed', `${row.id} orb outline`).toBe(!orb.filled);
       expect(row.orbMark === null, `${row.id} orb mark`).toBe(orb.mark === null);
       expect(row.orbRing, `${row.id} orb ring`).toBe(orb.ring);
-      if (marks.has(row.life!)) expect(row.orbMark, `${row.id} mark`).toBe(marks.get(row.life!));
-      marks.set(row.life!, row.orbMark);
+      const markKey = `${row.life}|${row.orbIsDisclosure ? 'disclosure' : 'plain'}`;
+      if (marks.has(markKey)) expect(row.orbMark, `${row.id} mark`).toBe(marks.get(markKey));
+      marks.set(markKey, row.orbMark);
 
       // ── V2.0 VB-55. The fourth treatment, on the one state the three lives
       // cannot separate: a due section is `lit` exactly as a done one is.
@@ -389,6 +405,7 @@ test.describe('VB-19 — five states, derived', () => {
         row.life,
         row.orbFilled,
         row.orbMark,
+        row.orbIsDisclosure,
         row.orbRing,
         row.dueRing ? 'due-ring' : 'no-ring',
         row.spoken ?? '',
@@ -683,12 +700,10 @@ test.describe('VB-19 — it fits a 400px panel', () => {
 
     const geometry = await row.evaluate((el) => {
       const label = el.querySelector('.filetree-label') as HTMLElement;
-      const toggle = el.querySelector('.filetree-toggle, .filetree-toggle-spacer') as HTMLElement;
       const rowBox = el.getBoundingClientRect();
       return {
         label: label.getBoundingClientRect(),
         text: label.textContent,
-        toggle: toggle.getBoundingClientRect(),
         row: rowBox,
         labelClipped: label.scrollWidth > label.clientWidth + 1,
       };
@@ -696,9 +711,10 @@ test.describe('VB-19 — it fits a 400px panel', () => {
 
     expect(geometry.labelClipped, `"${longest.label}" is clipped`).toBe(false);
     expect(geometry.text, 'the name is printed whole').toBe(splitSectionLabel(longest.label).title); // VB-96
-    // The name ends before the disclosure at the far edge starts, and inside
-    // the row — the two things the reserve used to guarantee against the pill.
-    expect(geometry.label.right).toBeLessThanOrEqual(geometry.toggle.left + 1);
+    // V2.9 VB-149 — there is no disclosure at the far edge to end before any
+    // more (the caret moved onto the orb at the row's left), so what is left
+    // of this claim is the one that always mattered: the name prints whole,
+    // inside the row.
     expect(geometry.label.right).toBeLessThanOrEqual(geometry.row.right + 1);
 
     await context.close();

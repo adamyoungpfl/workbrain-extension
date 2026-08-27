@@ -129,15 +129,16 @@ async function inkAndGround(page: Page, selector: string): Promise<{ ink: Rgb; g
 
 // ─────────────────────────────────────────────────────────────── the scans
 
-test('axe finds no violations on the shelf, with two locked slots on it (VB-36)', async () => {
+test('axe finds no violations on the shelf, with a locked slot on it (VB-36)', async () => {
   const { context, sw, id } = await launch();
   const page = await openHome(context, sw, id);
 
-  // The scan is only worth anything if the locked slots are really rendered.
-  // V2.6 VB-125b: the shelf wears the card grammar — Skills as a locked
-  // card in the duo, Actions as its own locked row.
+  // The scan is only worth anything if the locked slot is really rendered.
+  // V2.6 VB-125b: the shelf wears the card grammar — Skills as a locked card
+  // in the duo. V2.9 VB-146 hides Actions for the beta, so the duo is the
+  // whole shelf and there is one lock on it, not two.
   await expect(page.locator('.home-card.is-locked')).toHaveCount(1);
-  await expect(page.locator('.home-actrow.is-locked')).toHaveCount(1);
+  await expect(page.locator('.home-actrow')).toHaveCount(0);
 
   const results = await new AxeBuilder({ page }).include('.home').withTags(WCAG).analyze();
   expect(results.violations).toEqual([]);
@@ -182,9 +183,16 @@ test('a locked slot’s name and its unlock line both clear 4.5:1 (VB-36)', asyn
   const pill = await inkAndGround(page, '.home-card.is-locked .home-card-pill');
   expect(contrastRatio(pill.ink, pill.ground)).toBeGreaterThanOrEqual(4.5);
 
-  // Actions' locked row makes the same claims with its own line.
-  const sub = await inkAndGround(page, '.home-actrow.is-locked .home-actrow-sub');
-  expect(contrastRatio(sub.ink, sub.ground)).toBeGreaterThanOrEqual(4.5);
+  // V2.9 VB-146 — Actions' locked row used to make the same claims with its
+  // own line. The row is hidden for the beta; the claim comes back with it.
+
+  // V2.9 VB-147's dormant tiles are disabled controls, so axe skips their
+  // words for exactly the reason it skips a locked card's. They still have to
+  // be readable: dormant is "not yet", never "unreadable".
+  await expect(page.locator('.home-tile:disabled')).not.toHaveCount(0);
+  const dormant = await inkAndGround(page, '.home-tile:disabled');
+  const dormantRatio = contrastRatio(dormant.ink, dormant.ground);
+  expect(dormantRatio, `a dormant tile reads at ${dormantRatio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
 
   await context.close();
 });
@@ -207,7 +215,7 @@ test('every row and button on both surfaces clears 44px (VB-36, VB-37)', async (
   const { context, sw, id } = await launch();
   const page = await openHome(context, sw, id);
 
-  for (const selector of ['.home-card', '.home-actrow', '.home-filelist .filerow']) {
+  for (const selector of ['.home-card', '.home-tile', '.home-filelist .filerow']) {
     const rows = page.locator(selector);
     for (let i = 0; i < (await rows.count()); i++) {
       const box = (await rows.nth(i).boundingBox())!;
@@ -216,7 +224,7 @@ test('every row and button on both surfaces clears 44px (VB-36, VB-37)', async (
   }
 
   await openFile(page);
-  const controls = page.locator('.browse .filetree-nav, .browse .btn, .browse .filetree-records-toggle, .browse .filetree-toggle');
+  const controls = page.locator('.browse .filetree-nav, .browse .btn, .browse .filetree-records-toggle, .browse .filetree-orbtoggle');
   for (let i = 0; i < (await controls.count()); i++) {
     const box = (await controls.nth(i).boundingBox())!;
     expect(box.height, `.browse control [${i}] is ${box.height}px tall`).toBeGreaterThanOrEqual(TARGET_MIN);

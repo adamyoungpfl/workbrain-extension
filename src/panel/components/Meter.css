@@ -63,6 +63,15 @@
   }
 }
 
+/* V2.9 (Adam, mid-sprint) — the standing step's segment wears a slight
+   colour even before anything fills it: a just-unlocked Repeat is active,
+   not untouched, and an empty grey quarter said the wrong thing. The tint
+   is the track only; the fill above it stays the one primary. Not colour
+   alone — the tick below bolds and speaks too. */
+.meter-track i.is-current {
+  background: var(--primary-tint);
+}
+
 .meter-ticks {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -83,6 +92,13 @@
    regardless. */
 .meter-ticks span.on {
   color: var(--ink-2);
+  font-weight: 650;
+}
+
+/* The standing step's word carries the same "you are here" the segment's
+   tint draws — the pair means the state is never colour alone. */
+.meter-ticks span.is-current {
+  color: var(--primary);
   font-weight: 650;
 }
 

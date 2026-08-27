@@ -230,7 +230,7 @@ test.describe('VB-07 — the living file tree', () => {
     await openDrawer(page);
 
     // 2. About Me holds 2.1 Roles, which holds the records.
-    const aboutMe = page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle');
+    const aboutMe = page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle');
     if ((await aboutMe.getAttribute('aria-expanded')) !== 'true') await aboutMe.click();
 
     // V2.4 VB-110: records sit behind the one disclosure grammar now, with
@@ -250,12 +250,12 @@ test.describe('VB-07 — the living file tree', () => {
     await enterInterview(page);
     await openDrawer(page);
 
-    const expandedToggles = page.locator('.filetree-toggle[aria-expanded="true"]');
+    const expandedToggles = page.locator('.filetree-orbtoggle[aria-expanded="true"]');
     await expect(expandedToggles).toHaveCount(0); // section one has no children
 
     // Opening 2. About Me shows its five sub-sections, and it is the only
     // section open.
-    await page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle').click();
+    await page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle').click();
     await expect(expandedToggles).toHaveCount(1);
     await expect(page.locator('.filetree-row[data-node-id="sec2-1"]')).toHaveCount(1);
 

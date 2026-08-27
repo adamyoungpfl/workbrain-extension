@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { FILE_SLOT_IDS, actionsGenerated, fileFinished, fileSlots } from './slots';
+import { BETA_HIDDEN_SLOTS, FILE_SLOT_IDS, actionsGenerated, fileAsked, fileFinished, fileSlots, shownFileSlots } from './slots';
 import { sectionHealthMap } from '../freshness/sectionHealth';
 import { contextModules, contextOutline } from '../flow/flow';
 import type { AnswerValue, FileOutlineNode, Module, RepeatableBlock, Step } from '../../schema/flow.types';
@@ -236,3 +236,69 @@ function answerEverything(mods: Module[]): Answers {
   }
   return a;
 }
+
+// ───────────────────────────────────────── is the INTERVIEW over (VB-144)
+
+describe('fileAsked — the other question', () => {
+  it('an empty file has not been asked through', () => {
+    expect(fileAsked(outline, modules, answers(), NOW)).toBe(false);
+  });
+
+  it('agrees with fileFinished on every file without a skip in it', () => {
+    const half = answers({ values: { name: 'Ada', things_gate: 'no' } });
+    expect(fileAsked(outline, modules, half, NOW)).toBe(false);
+    expect(fileFinished(outline, modules, half, NOW)).toBe(false);
+
+    const whole = answers({ values: { name: 'Ada', things_gate: 'no', voice: 'plain' } });
+    expect(fileAsked(outline, modules, whole, NOW)).toBe(true);
+    expect(fileFinished(outline, modules, whole, NOW)).toBe(true);
+  });
+
+  /**
+   * THE ONE FILE THEY DISAGREE ABOUT, AND THE REASON BOTH ARE RIGHT.
+   *
+   * V2.9 VB-144 lights Home's download and proof tiles when the INTERVIEW is
+   * over. A skip is an answer to the question "do you want to answer this" —
+   * the question was put and passed on, so there is nothing left to ask — but
+   * it is not content, so the file still has a gap and `fileFinished` still
+   * says so. Gating the graduation on `fileFinished` would leave somebody who
+   * passed on one optional question unable to reach their own download.
+   */
+  it('a skipped question ends the interview without finishing the file', () => {
+    const skipped = answers({ values: { name: null, things_gate: 'no', voice: 'v' } });
+    expect(fileAsked(outline, modules, skipped, NOW)).toBe(true);
+    expect(fileFinished(outline, modules, skipped, NOW)).toBe(false);
+  });
+
+  it('a gate answered "yes" with no record yet is still work left to do', () => {
+    const open = answers({ values: { name: 'A', things_gate: 'yes', voice: 'v' } });
+    expect(fileAsked(outline, modules, open, NOW)).toBe(false);
+  });
+
+  it('an outline with no sections is never complete', () => {
+    expect(fileAsked([], modules, answers(), NOW)).toBe(false);
+  });
+});
+
+// ─────────────────────────────────────── what the interface shows (VB-146)
+
+describe('shownFileSlots — the beta fold', () => {
+  it('drops exactly the hidden slots and keeps the rest in order', () => {
+    expect(shownFileSlots({}).map((slot) => slot.id)).toEqual(['context', 'skills']);
+    expect(BETA_HIDDEN_SLOTS).toEqual(['actions']);
+  });
+
+  it('changes nothing about the slots it keeps', () => {
+    const shown = shownFileSlots({ context: true });
+    const all = fileSlots({ context: true });
+    for (const slot of shown) expect(slot).toEqual(all.find((each) => each.id === slot.id));
+  });
+
+  it('leaves every derivation underneath intact — this is a fold, not a deletion', () => {
+    // The slot, its lock and its generated state all still exist and still
+    // answer; emptying BETA_HIDDEN_SLOTS is all it takes to bring the row back.
+    expect(FILE_SLOT_IDS).toContain('actions');
+    expect(fileSlots({ skills: true }).find((slot) => slot.id === 'actions')).toBeDefined();
+    expect(actionsGenerated({ skills: true })).toBe(true);
+  });
+});

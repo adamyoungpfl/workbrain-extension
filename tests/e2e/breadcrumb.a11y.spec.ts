@@ -130,8 +130,9 @@ test('axe finds no violations on the drawer, trail closed or open (VB-52)', asyn
   expect(closed.violations).toEqual([]);
 
   await page.locator('.crumbs-seg[data-seg="file"]').click();
-  // The scan is only worth anything if the locked chips really rendered.
-  await expect(page.locator('.crumbs-file[aria-disabled="true"]')).toHaveCount(2);
+  // The scan is only worth anything if the locked chip really rendered. One
+  // of them since V2.9 VB-146 hid Actions for the beta.
+  await expect(page.locator('.crumbs-file[aria-disabled="true"]')).toHaveCount(1);
   const open = await new AxeBuilder({ page }).include('.filedrawer').withTags(WCAG).analyze();
   expect(open.violations).toEqual([]);
 
@@ -178,14 +179,14 @@ test('the whole trail is reachable and pressable from the keyboard alone (VB-52)
   // `disabled`: its sentence has to be reachable by somebody who cannot see it.
   await page.keyboard.press('Enter');
   await expect(page.locator('.crumbs-file[data-file="context"]')).toBeFocused();
-  for (const file of ['skills', 'actions']) {
+  for (const file of ['skills']) {
     await page.keyboard.press('Tab');
     await expect(page.locator(`.crumbs-file[data-file="${file}"]`)).toBeFocused();
   }
   // And the whole truth is in the focused control's own name.
-  await expect(page.locator('.crumbs-file[data-file="actions"]')).toHaveAttribute(
+  await expect(page.locator('.crumbs-file[data-file="skills"]')).toHaveAttribute(
     'aria-label',
-    S.fileToggleLockedName(S.fileActions, S.lockedNeedsFirst(S.fileSkills)),
+    S.fileToggleLockedName(S.fileSkills, S.lockedNeedsFirst(S.fileContext)),
   );
 
   // Escape hands the cursor back to the rung that opened them, never to nowhere.
@@ -215,7 +216,7 @@ test('the ring is visible on every rung and on every chip (VB-52)', async () => 
   }
 
   await page.keyboard.press('Enter');
-  for (const file of ['context', 'skills', 'actions']) {
+  for (const file of ['context', 'skills']) {
     const ring = await page.locator(`.crumbs-file[data-file="${file}"]`).evaluate((el) => {
       const chip = getComputedStyle(el.querySelector('.crumbs-chip')!);
       return { width: chip.outlineWidth, style: chip.outlineStyle, button: getComputedStyle(el).outlineStyle };
@@ -226,7 +227,7 @@ test('the ring is visible on every rung and on every chip (VB-52)', async () => 
     expect(parseFloat(ring.width), file).toBeGreaterThanOrEqual(2);
     expect(ring.style, file).toBe('solid');
     expect(ring.button, file).toBe('none');
-    if (file !== 'actions') await page.keyboard.press('Tab');
+    if (file !== 'skills') await page.keyboard.press('Tab');
   }
 
   await context.close();
@@ -254,9 +255,10 @@ test('every control in the two new bands clears the 44px target (VB-51, VB-52)',
   await measure('button.crumbs-seg', 2);
   // The bottom bar's two icons.
   await measure('.filedrawer-mode', 2);
-  // And the three chips, once they are showing.
+  // And the chips the trail shows, once they are showing — two of them since
+  // V2.9 VB-146 hid Actions for the beta.
   await page.locator('.crumbs-seg[data-seg="file"]').click();
-  await measure('.crumbs-file', 3);
+  await measure('.crumbs-file', 2);
 
   await context.close();
 });

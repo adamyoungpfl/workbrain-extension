@@ -69,6 +69,25 @@ export interface FileSlot {
 export const FILE_SLOT_IDS: readonly FileSlotId[] = ['context', 'skills', 'actions'] as const;
 
 /**
+ * V2.9 VB-146 — Actions HIDES for the beta (Adam, 2026-08-27: no real
+ * builder behind it yet, and the skills file doesn't truly build it as the
+ * row claimed — "deal with Actions post beta"). The slot, its derivation
+ * and its storage key all remain intact underneath; this list only decides
+ * what the interface SHOWS, and emptying it brings everything back. The
+ * utilization meter's Act quarter is untouched on purpose: the four steps
+ * are the method, not the files, and Act still fills from the skills'
+ * own authored automation answers (decision 2, docs/V2.9-REFINEMENT.md).
+ */
+export const BETA_HIDDEN_SLOTS: readonly FileSlotId[] = ['actions'] as const;
+
+/** The slots the interface shows — `fileSlots` minus the beta-hidden. */
+export function shownFileSlots(
+  finished: Readonly<Partial<Record<FileSlotId, boolean>>>,
+): FileSlot[] {
+  return fileSlots(finished).filter((slot) => !BETA_HIDDEN_SLOTS.includes(slot.id));
+}
+
+/**
  * The files this release really builds.
  *
  * One entry, on purpose. `src/schema/flow.types.ts` already declares
@@ -171,4 +190,40 @@ export function fileFinished(
   if (outline.length === 0) return false;
   const summary = summariseSectionHealth(outline, sectionHealthMap(outline, modules, answers, null, now));
   return summary.here === 0 && summary.partly === 0 && summary.notYet === 0;
+}
+
+/**
+ * V2.9 VB-144 — THE OTHER QUESTION, AND WHY IT IS A DIFFERENT ONE.
+ *
+ * `fileFinished` above asks *is there anything missing from the file* and
+ * counts a skip as missing, deliberately and at length. VB-144 asks something
+ * else: *is the interview over*. Adam's words are "after the Context Interview
+ * is complete", and an interview where every question has been put — some
+ * answered, some passed on — IS complete. There is nothing left to ask.
+ *
+ * The two folds agree on every file except one kind: the file with a skip in
+ * it. That person has finished the interview and their file has a gap in it,
+ * both at once, and the interface says both things — the tiles wake up
+ * (VB-144, this function) while the card keeps its honest count and the locked
+ * row keeps asking for the missing answer (`fileFinished`, unchanged).
+ *
+ * Gating the graduation on `fileFinished` instead would mean somebody who
+ * passed on one optional question could never reach their own download, which
+ * is the opposite of what a skip is for in this product.
+ *
+ * "Nothing left to ask" is `answered + skipped >= total`, section by section,
+ * over the same map every other fold here reads — not a second walk of the
+ * runner, which would be a second opinion about what the flow does.
+ */
+export function fileAsked(
+  outline: FileOutlineNode[],
+  modules: Module[],
+  answers: Answers,
+  now: Date,
+): boolean {
+  if (outline.length === 0) return false;
+  const health = sectionHealthMap(outline, modules, answers, null, now);
+  const sections = Object.values(health);
+  if (sections.length === 0) return false;
+  return sections.every((section) => section.answered + section.skipped >= section.total);
 }

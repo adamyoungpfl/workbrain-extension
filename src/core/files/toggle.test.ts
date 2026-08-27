@@ -67,8 +67,12 @@ describe('fileLock — what a locked file may truthfully claim', () => {
 });
 
 describe('fileToggle — one item per file', () => {
-  it('is the three files in build order, whichever one is shown', () => {
-    expect(fileToggle('context', {}).map((entry) => entry.id)).toEqual(['context', 'skills', 'actions']);
+  // V2.9 VB-146: the switcher shows the SHOWN slots, and Actions is hidden
+  // for the beta (core/files/slots.ts's BETA_HIDDEN_SLOTS). Every derivation
+  // under it is untouched — these tests moved from three items to two, not
+  // from three files to two.
+  it('is the shown files in build order, whichever one is on screen', () => {
+    expect(fileToggle('context', {}).map((entry) => entry.id)).toEqual(['context', 'skills']);
   });
 
   it('marks exactly one of them as the file on screen', () => {
@@ -76,9 +80,9 @@ describe('fileToggle — one item per file', () => {
     expect(items.filter((entry) => entry.shown).map((entry) => entry.id)).toEqual(['context']);
   });
 
-  it('locks the two files that are not built, and unlocks Context', () => {
+  it('locks the file that is not built, and unlocks Context', () => {
     const items = fileToggle('context', {});
-    expect(items.map((entry) => entry.lock === null)).toEqual([true, false, false]);
+    expect(items.map((entry) => entry.lock === null)).toEqual([true, false]);
   });
 
   it('finishing the file before it now UNLOCKS Skills — V2.2, the promise kept', () => {
@@ -90,9 +94,11 @@ describe('fileToggle — one item per file', () => {
       file: 'context',
     });
     expect(fileToggle('context', { context: true }).find((entry) => entry.id === 'skills')!.lock).toBeNull();
-    // Actions stays locked either way — it is derived, never entered
-    // (docs/V2.2-SKILLS-ACTIONS-DECISIONS.md #1).
-    expect(fileToggle('context', { context: true }).find((entry) => entry.id === 'actions')!.lock).not.toBeNull();
+    // V2.9 VB-146: Actions is not IN the switcher at all now. Its derivation
+    // (locked because it is generated, never entered — docs/V2.2-SKILLS-
+    // ACTIONS-DECISIONS.md #1) is still pinned on `fileSlots` above; what
+    // this asserts is that the hidden file does not reach the interface.
+    expect(fileToggle('context', { context: true }).find((entry) => entry.id === 'actions')).toBeUndefined();
   });
 });
 

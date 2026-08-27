@@ -208,16 +208,26 @@ test.describe('Home surface (R1-12)', () => {
     // welcome lockup — covered in full by the welcome test below.
     await expect(page.getByRole('button', { name: 'Start with a few questions', exact: true })).toBeVisible();
     await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
-    // V2.6 VB-125c: the import door lives in the Move-file sheet now — one
-    // tile press deep, still one press from Home.
-    await page.getByRole('button', { name: 'Move file', exact: true }).click();
-    await expect(page.getByRole('button', { name: 'I already have a file', exact: true })).toBeVisible();
+    // V2.9 VB-145: the import door moved to the top of the UI — an upload
+    // control on the chrome bar, opening a sheet that says the one thing
+    // that matters (the file you bring in replaces what is here) and offers
+    // the careful path beside the quick one.
+    await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
+    await expect(page.getByText('The file you bring in replaces what is here now.')).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Download mine first, then pick', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Just pick a file', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Close', exact: true }).click();
 
     // No due/current banner, and nothing to prove yet — the proof tile is
     // there (the row is the map) but genuinely disabled, the same gate that
-    // used to hide the button.
-    await expect(page.getByRole('button', { name: 'Prove it works', exact: true })).toBeDisabled();
+    // used to hide the button. V2.9 VB-144: a dormant tile SAYS what it is
+    // waiting for in its own accessible name, so the wait is heard and not
+    // only seen.
+    const prove = page.getByRole('button', { name: /^Prove it works/ });
+    await expect(prove).toBeDisabled();
+    await expect(prove).toHaveAccessibleName('Prove it works — Ready when your Context file is finished');
+    // And the download tile, its twin, waits on exactly the same thing.
+    await expect(page.getByRole('button', { name: /^Download file/ })).toBeDisabled();
 
     await context.close();
   });
@@ -394,8 +404,10 @@ test.describe('Home surface (R1-12)', () => {
 
     const card = page.locator('.home-cta');
     await expect(card).toContainText('Workbrain+');
-    await expect(card).toContainText('$42 a day');
-    await expect(card).toContainText('One year of access, billed once on the site.');
+    // V2.9 VB-147 reprices it — Adam: "Under promise, over deliver." The
+    // monthly number stands here; the year's price lives on the billing page.
+    await expect(card).toContainText('Starting at $1K a month');
+    await expect(card).toContainText('Billed monthly on the site.');
     // The four goods, present as a list.
     await expect(card.locator('.home-cta-list li')).toHaveCount(4);
     // And the old menu really is gone.
@@ -462,6 +474,126 @@ test.describe('Home surface (R1-12)', () => {
     await expect(sheet).toBeVisible();
     await expect(sheet.getByText('Nothing stored yet.')).toBeVisible();
     await expect(sheet.locator('.home-stored-list')).toHaveCount(0);
+
+    await context.close();
+  });
+});
+
+/* ── V2.9 VB-147 + VB-144 — the three tiles, and the day they wake up ─────
+   Adam: "Your next move should be 3 tiles... the Download file button and
+   Prove It tiles, previously dormant, are now in color and obviously active
+   after the Context Interview is complete."
+
+   THE STATE IS DERIVED, NEVER STORED. There is no "has graduated" flag: the
+   tiles read the same `fileFinished` fold Home's cards read, so somebody who
+   goes back and empties a section is honestly told the file is unfinished
+   again. `nothingLeftToAsk` is the finished file, built the way
+   file-slots.spec.ts builds it. */
+function nothingLeftToAsk(): Answers {
+  const now = new Date().toISOString();
+  const values: Record<string, AnswerValue> = {};
+  const answeredAt: Record<string, string> = {};
+  const reflectedAt: Record<string, string> = {};
+  for (const module of contextModules) {
+    for (const node of module.nodes) {
+      if ('fields' in node) continue;
+      const key = node.key ?? node.id;
+      let value: AnswerValue;
+      if (node.id === 'entities_gate' || node.id === 'initiatives_gate') value = 'no';
+      else if (node.id === 'role_names') value = [];
+      else if (node.kind === 'intro') value = null;
+      else if (node.kind === 'yesno') value = 'yes';
+      else if (node.kind === 'chips') value = node.options?.[0]?.v ?? 'x';
+      else if (node.kind === 'multi') value = node.options?.length ? [node.options[0]!.v] : [];
+      else value = `A test answer for ${node.id}.`;
+      values[key] = value;
+      answeredAt[key] = now;
+      if (typeof value === 'string') reflectedAt[key] = now;
+    }
+  }
+  return { values, repeatables: {}, answeredAt, reflectedAt };
+}
+
+test.describe('V2.9 — Your next move, and the graduation it waits for', () => {
+  test('three tiles, and the two that wait say what they are waiting for (VB-147)', async () => {
+    const { context, id } = await launchExtension();
+    const page = await openPanel(context, id);
+
+    const tiles = page.locator('.home-tiles .home-tile');
+    await expect(tiles).toHaveCount(3);
+    // The row is three now because the library left it for a banner of its
+    // own, below — a tile could not carry an invitation.
+    await expect(tiles.nth(0)).toHaveAccessibleName(/^Download file/);
+    await expect(tiles.nth(1)).toHaveAccessibleName(/^Prove it works/);
+    await expect(tiles.nth(2)).toHaveAccessibleName('Redeem a skill');
+
+    // Dormant, and honest about why — in the name, so it is heard.
+    for (const index of [0, 1]) {
+      await expect(tiles.nth(index)).toBeDisabled();
+      await expect(tiles.nth(index)).toHaveAccessibleName(/Ready when your Context file is finished$/);
+      await expect(tiles.nth(index)).not.toHaveClass(/is-ready/);
+    }
+    // The third never waits on anything: a code from a bought skill works on
+    // day one, before there is a file at all.
+    await expect(tiles.nth(2)).toBeEnabled();
+
+    await context.close();
+  });
+
+  test('finishing the Context file lights both dormant tiles, and the light is derived (VB-144)', async () => {
+    const { context, sw, id } = await launchExtension();
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), nothingLeftToAsk());
+
+    const page = await openPanel(context, id);
+    const download = page.getByRole('button', { name: 'Download file', exact: true });
+    const prove = page.getByRole('button', { name: 'Prove it works', exact: true });
+
+    // In colour and obviously active — and the name loses the waiting clause,
+    // because there is nothing left to wait for.
+    for (const tile of [download, prove]) {
+      await expect(tile).toBeEnabled();
+      await expect(tile).toHaveClass(/is-ready/);
+    }
+
+    // "In colour" is a real measurement, not a class: the ready tile's ground
+    // and ink both move off the resting tile's, and the ink still clears the
+    // 4.5:1 floor on the ground it is actually painted on.
+    const look = await download.evaluate((el) => {
+      const style = getComputedStyle(el);
+      return { background: style.backgroundColor, color: style.color };
+    });
+    const resting = await page
+      .getByRole('button', { name: 'Redeem a skill', exact: true })
+      .evaluate((el) => getComputedStyle(el).backgroundColor);
+    expect(look.background).not.toBe(resting);
+
+    // And it really downloads — one press, no sheet.
+    const downloadPromise = page.waitForEvent('download');
+    await download.click();
+    expect((await downloadPromise).suggestedFilename()).toBe('Context.md');
+    await expect(page.getByText('Downloaded. Keep it somewhere you will find it.')).toBeVisible();
+
+    await context.close();
+  });
+
+  test('the Certified Skills banner spans the page and its door is real (VB-147)', async () => {
+    const { context, id } = await launchExtension();
+    const page = await openPanel(context, id);
+
+    const banner = page.locator('.home-lib');
+    await expect(banner).toContainText('Workbrain Certified Skills');
+    const link = banner.getByRole('link', { name: /Explore Certified Skills/ });
+    await expect(link).toHaveAttribute('href', 'https://www.model-citizen.org/work-brain/skills-library');
+    await expect(link).toHaveAttribute('target', '_blank');
+    await expect(link).toHaveAttribute('rel', /noreferrer/);
+
+    // It spans, like the Workbrain+ card under it — an invitation, not a
+    // quarter-tile with a "Soon" pill on it (V2.6's locked library tile,
+    // which this replaces).
+    const width = await banner.evaluate((el) => el.getBoundingClientRect().width);
+    const tile = await page.locator('.home-tile').first().evaluate((el) => el.getBoundingClientRect().width);
+    expect(width).toBeGreaterThan(tile * 2);
+    await expect(page.locator('.home-tile-pill')).toHaveCount(0);
 
     await context.close();
   });

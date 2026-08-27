@@ -583,7 +583,6 @@
 .filedrawer .filetree-num,
 .filedrawer .filetree-detail,
 .filedrawer .filetree-count,
-.filedrawer .filetree-toggle,
 .filedrawer .filetree-row[data-life='dim'] .filetree-label,
 .filedrawer .filetree-row[data-life='dim'] .filetree-percent,
 .filedrawer .filetree-row.is-record .filetree-label {
@@ -607,25 +606,20 @@
   background: none;
 }
 
-/* The disclosure is a glyph with no word, so it takes the glyph form of the
-   same idea: a 2px bar under it, in place of the 30px tinted disc it used to
-   fill. The pseudo-element that painted that disc becomes the bar, so there is
-   still exactly one painted thing inside a 44px target (V1.3 VB-15's split is
-   untouched — the box you press has not moved a pixel).
+/* V2.9 VB-149 — THE DISCLOSURE'S HOVER BAR RETIRED WITH THE CHEVRON.
+   The far-edge glyph had no word of its own, so V1.9 gave it a 2px bar in
+   place of the 30px tinted disc. The control is the ORB now, which is an
+   object with its own fill, edge and ring — a bar under it would be a
+   second hover language on a row that already has one (the name's
+   underline). What is left is the ring, below. */
 
-   `bottom` alone: with `left` left at `auto` the bar keeps the static position
-   the flex centring gave it, which is what centres it under the chevron. */
-.filedrawer .filetree-toggle::before {
-  width: 22px;
-  height: 2px;
-  top: auto;
-  bottom: 7px;
-  border-radius: 1px;
+/* The disclosure's ink on the dock's field: the quiet role, exactly as the
+   far-edge chevron wore it, and it is real paint — the hover ring around the
+   orb is drawn in `currentColor` (FileTree.css). */
+.filedrawer .filetree-orbtoggle {
+  color: var(--dock-ink-quiet);
 }
-.filedrawer .filetree-toggle:hover::before {
-  background: currentColor;
-}
-.filedrawer .filetree-toggle:hover {
+.filedrawer .filetree-orbtoggle:hover {
   color: var(--dock-ink);
 }
 
@@ -639,7 +633,7 @@
    these sit inside a scrolling box with room around them, so the ring can be
    drawn outside the control where it belongs. */
 .filedrawer .filetree-nav:focus-visible,
-.filedrawer .filetree-toggle:focus-visible {
+.filedrawer .filetree-orbtoggle:focus-visible {
   outline-color: var(--dock-accent);
 }
 
@@ -679,8 +673,7 @@
 }
 /* The card's own two hover corrections go with the card: inside it, hover is
    the same underline it is anywhere else in this list. */
-.filedrawer .filetree-row.is-child .filetree-nav:hover,
-.filedrawer .filetree-row.is-child .filetree-toggle:hover {
+.filedrawer .filetree-row.is-child .filetree-nav:hover {
   background: none;
 }
 

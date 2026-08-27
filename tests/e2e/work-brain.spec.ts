@@ -147,7 +147,7 @@ async function pullBack(page: Page): Promise<void> {
 }
 
 test.describe('VB-48 — the top tier is the work brain', () => {
-  test('three file nodes, and the one with content IS its own solid', async () => {
+  test('a node per SHOWN file, and the one with content IS its own solid', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openMidInterview(context, sw, id);
     await showBrain(page);
@@ -159,11 +159,13 @@ test.describe('VB-48 — the top tier is the work brain', () => {
     await pullBack(page);
     expect(await tier(page)).toBe('work');
 
-    // One node per file, named, in shelf order.
+    // One node per SHOWN file, named, in shelf order. V2.9 VB-146 hides
+    // Actions for the beta from the one list in core/files/slots.ts, and the
+    // work tier reads the same fold Home and the trail do.
     const names = await page.locator('.brainglobe-pin.is-file').evaluateAll((nodes) =>
       nodes.map((node) => node.getAttribute('data-file-id')),
     );
-    expect(names).toEqual(['context', 'skills', 'actions']);
+    expect(names).toEqual(['context', 'skills']);
 
     // The Context node is not a drawing of a brain — it is the brain, shrunk.
     // Its twelve real orbs are on the stage, inside its own node's footprint.
@@ -239,13 +241,15 @@ test.describe('VB-48 — the top tier is the work brain', () => {
       'aria-label',
       S.fileToggleLockedName(S.fileSkills, S.lockedNeedsFirst(S.fileContext)),
     );
-    await expect(fileNode(page, 'actions')).toHaveAttribute('aria-disabled', 'true');
+    await expect(fileNode(page, 'skills')).toHaveAttribute('aria-disabled', 'true');
+    // V2.9 VB-146: the hidden file has no node to press.
+    await expect(page.locator('.brainglobe-pin.is-file[data-file-id="actions"]')).toHaveCount(0);
 
     // Pressing one explains THAT one and moves nothing. `force`, because
     // Playwright refuses to click an `aria-disabled` control — which is the
     // point of it being marked that way.
-    await fileNode(page, 'actions').click({ force: true });
-    await expect(note).toHaveText(`${S.fileActions} · ${S.lockedNeedsFirst(S.fileSkills)}`);
+    await fileNode(page, 'skills').click({ force: true });
+    await expect(note).toHaveText(`${S.fileSkills} · ${S.lockedNeedsFirst(S.fileContext)}`);
     expect(await tier(page)).toBe('work');
 
     // The keyboard cannot get in either, and the node is still REACHABLE —
@@ -255,8 +259,9 @@ test.describe('VB-48 — the top tier is the work brain', () => {
     await page.keyboard.press('Enter');
     expect(await tier(page)).toBe('work');
 
-    // The empty files are told apart by shape, not by colour alone: a dashed
-    // rim with nothing in it, against a solid that is really there.
+    // The empty file is told apart by shape, not by colour alone: a dashed
+    // rim with nothing in it, against a solid that is really there. One of
+    // them now rather than two — V2.9 VB-146 hides Actions for the beta.
     const dashes = await page
       .locator('.brainglobe-file-node[data-locked="true"] .brainglobe-file-shell')
       .evaluateAll((circles) =>
@@ -265,7 +270,7 @@ test.describe('VB-48 — the top tier is the work brain', () => {
           return { dash: style.strokeDasharray, fill: style.fill };
         }),
       );
-    expect(dashes.length).toBe(2);
+    expect(dashes.length).toBe(1);
     for (const shell of dashes) {
       expect(shell.dash).not.toBe('none');
       expect(shell.fill).toBe('none');
@@ -287,7 +292,7 @@ test.describe('VB-48 — the top tier is the work brain', () => {
     await showBrain(page);
     await pullBack(page);
 
-    for (const file of ['context', 'skills', 'actions']) {
+    for (const file of ['context', 'skills']) {
       const hit = (await page.locator(`.brainglobe-pin.is-file[data-file-id="${file}"] .brainglobe-hit`).boundingBox())!;
       expect(hit.width, file).toBeGreaterThanOrEqual(44);
       expect(hit.height, file).toBeGreaterThanOrEqual(44);
@@ -633,11 +638,11 @@ test.describe('VB-48 — the complete state, one level up', () => {
     expect(new Set(nodeFills).size, 'the glow was lost on the way out').toBe(1);
     expect([...new Set(nodeFills)]).toEqual([...new Set(insideFills)]);
 
-    // V2.2 — finished Context UNLOCKS Skills now, so the stage's lock line
-    // moves along to the first file that is genuinely still locked: Actions,
-    // waiting on Skills as a derivation. Same fold as Home's shelf and the
-    // drawer's toggle, same swap, one file later.
-    await expect(page.locator('.brainglobe-locknote')).toHaveText(`${S.fileActions} · ${S.lockedNeedsFirst(S.fileSkills)}`);
+    // V2.2 — finished Context UNLOCKS Skills now. V2.9 VB-146 hides Actions,
+    // which was the one file still locked at this point, so with Context
+    // finished there is nothing left on the work tier to explain and the lock
+    // line has nothing to say. The same fold as Home's shelf and the trail.
+    await expect(page.locator('.brainglobe-locknote')).toHaveCount(0);
 
     await context.close();
   });

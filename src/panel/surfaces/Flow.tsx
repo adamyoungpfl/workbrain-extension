@@ -1935,6 +1935,13 @@ function StepView({
     assistLanded.current = true;
     setInputHighlight(true);
     setAssistAnnounce(`${S.copied}. ${ASSIST_LINE_RETURN}`);
+    // V2.9 VB-148 — the paste spot stays WARM: the reopened box takes the
+    // cursor (a response to the person's own press, not a steal) and holds
+    // it while they run the interview in their AI's tab — returning is
+    // just pasting. Next frame, because the box remounts on this render.
+    requestAnimationFrame(() => {
+      document.getElementById(`flow-${step.id}`)?.focus();
+    });
   }
 
   // V2.4 VB-105 — the two service questions (core/flow/serviceThemes.ts says

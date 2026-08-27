@@ -3,7 +3,8 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
-import { contextModules } from '../../src/core/flow/flow';
+import { contextModules, contextOutline } from '../../src/core/flow/flow';
+import { fileAsked, fileFinished } from '../../src/core/files/slots';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 
@@ -173,19 +174,25 @@ test.describe('Download and import (R1-10)', () => {
     // any of R1-10's own code runs.
     expect(seeded.values.professional_name).toBeNull();
     expect(seeded.repeatables.roles?.length).toBe(2);
+    // V2.9 VB-144: this seed is THE file the two folds disagree about. Every
+    // question has been put and one was explicitly skipped, so the interview
+    // is over (`fileAsked` — the graduation gate Home's tiles read) while the
+    // file itself still has a gap in it (`fileFinished` — what the card and
+    // the Skills lock read). Both are true, and this walk proves the person
+    // who skipped can still reach their own download.
+    expect(fileAsked(contextOutline, contextModules, seeded, new Date())).toBe(true);
+    expect(fileFinished(contextOutline, contextModules, seeded, new Date())).toBe(false);
 
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
-    // V2.6 VB-125c: the download/import pair lives in the Move-file sheet —
-    // one tile press deep, then everything below is exactly as it was.
-    await page.getByRole('button', { name: 'Move file', exact: true }).click();
-    await page.waitForSelector('.sheet-card');
-
+    // V2.9 VB-147: the Move-file sheet is retired — the download is Home's
+    // own tile, one press, no sheet.
     // --- export -----------------------------------------------------
-    const downloadButton = page.getByRole('button', { name: 'Download your file', exact: true });
+    const downloadButton = page.getByRole('button', { name: 'Download file', exact: true });
     await expect(downloadButton).toBeVisible();
+    await expect(downloadButton).toBeEnabled();
     const downloadPromise = page.waitForEvent('download');
     await downloadButton.click();
     const download = await downloadPromise;
@@ -198,8 +205,9 @@ test.describe('Download and import (R1-10)', () => {
     // wrong-kind check rejects it on the temp name's missing ".md".
     const downloadedMarkdown = await readFile(downloadPath!, 'utf8');
 
-    // Button relabels for a second download, per strings.ts's downloadAgain.
-    await expect(page.getByRole('button', { name: 'Download it again', exact: true })).toBeVisible();
+    // The tile does not relabel itself for a second download the way the
+    // retired sheet's button did ("Download it again"): a tile in a row of
+    // three says what it is, and the toast says the download happened.
     await expect(page.getByText('Downloaded. Keep it somewhere you will find it.')).toBeVisible();
 
     // --- clear storage ------------------------------------------------
@@ -208,16 +216,20 @@ test.describe('Download and import (R1-10)', () => {
     expect(clearedCheck['wb:answers']).toBeUndefined();
 
     // --- import (still the same mounted Home — no reload happens between
-    // clear and import). The visible Button calls the hidden
-    // <input type=file>'s own .click() (FileActions.tsx) — in a real,
-    // headed browser that opens the OS's native file chooser, which
-    // Playwright must intercept via the 'filechooser' event rather than
-    // driving `setInputFiles` on the input directly, or the still-open
-    // native dialog leaves the page never receiving a 'change' event at
-    // all. ---
+    // clear and import). V2.9 VB-145: the import door is the upload control
+    // at the top of the UI, and its sheet carries the replace-warning. The
+    // visible Button calls the hidden <input type=file>'s own .click()
+    // (UploadSheet.tsx) — in a real, headed browser that opens the OS's
+    // native file chooser, which Playwright must intercept via the
+    // 'filechooser' event rather than driving `setInputFiles` on the input
+    // directly, or the still-open native dialog leaves the page never
+    // receiving a 'change' event at all. ---
+    await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
+    await page.waitForSelector('.sheet-card');
+    await expect(page.getByText('The file you bring in replaces what is here now.')).toBeVisible();
     const [chooser] = await Promise.all([
       page.waitForEvent('filechooser'),
-      page.getByRole('button', { name: 'I already have a file', exact: true }).click(),
+      page.getByRole('button', { name: 'Just pick a file', exact: true }).click(),
     ]);
     await chooser.setFiles({
       name: 'Context.md',
@@ -256,13 +268,13 @@ test.describe('Download and import (R1-10)', () => {
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
-    // V2.6 VB-125c: the download/import pair lives in the Move-file sheet —
-    // one tile press deep, then everything below is exactly as it was.
-    await page.getByRole('button', { name: 'Move file', exact: true }).click();
+    // V2.9 VB-145: the import door is the chrome's upload control, and its
+    // sheet is where a refusal is spoken — everything below is exactly as
+    // it was.
+    await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
     await page.waitForSelector('.sheet-card');
 
-    await page.getByRole('button', { name: 'I already have a file', exact: true }).click();
-    await page.locator('.file-actions-input').setInputFiles({
+    await page.locator('.upload-input').setInputFiles({
       name: 'notes.txt',
       mimeType: 'text/plain',
       buffer: Buffer.from('just some notes, not a Context.md'),
@@ -283,13 +295,13 @@ test.describe('Download and import (R1-10)', () => {
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
-    // V2.6 VB-125c: the download/import pair lives in the Move-file sheet —
-    // one tile press deep, then everything below is exactly as it was.
-    await page.getByRole('button', { name: 'Move file', exact: true }).click();
+    // V2.9 VB-145: the import door is the chrome's upload control, and its
+    // sheet is where a refusal is spoken — everything below is exactly as
+    // it was.
+    await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
     await page.waitForSelector('.sheet-card');
 
-    await page.getByRole('button', { name: 'I already have a file', exact: true }).click();
-    await page.locator('.file-actions-input').setInputFiles({
+    await page.locator('.upload-input').setInputFiles({
       name: 'Context.md',
       mimeType: 'text/markdown',
       buffer: Buffer.from('# Context.md\n\nSomeone hand-edited this and deleted the grounding rule.\n'),
@@ -299,6 +311,75 @@ test.describe('Download and import (R1-10)', () => {
 
     const stored = await sw.evaluate(() => chrome.storage.local.get('wb:answers'));
     expect(stored['wb:answers']).toEqual(seeded); // untouched — nothing was imported
+
+    await context.close();
+  });
+  /* ── V2.9 VB-145 — the upload door's seatbelt ───────────────────────────
+     Adam: "before you upload, either download the current file or do both in
+     one click." Not a confirmation dialog (docs/GUARDRAILS.md bans those):
+     a sheet with two real verbs, the careful one first. */
+  test('the careful path downloads the current file and opens the picker in ONE press (VB-145)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const seeded = buildDoneAnswers(contextModules);
+    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
+
+    const page = await openPanel(context, id);
+    await expect(page.locator('.home')).toBeVisible();
+    await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
+    await page.waitForSelector('.sheet-card');
+    // The warning is a plain sentence in the sheet, not a title attribute and
+    // not an alert that has to be dismissed before anything can be done.
+    await expect(page.getByText('The file you bring in replaces what is here now.')).toBeVisible();
+
+    // ONE press, TWO things: the file comes down and the picker opens.
+    const [download, chooser] = await Promise.all([
+      page.waitForEvent('download'),
+      page.waitForEvent('filechooser'),
+      page.getByRole('button', { name: 'Download mine first, then pick', exact: true }).click(),
+    ]);
+    expect(download.suggestedFilename()).toBe('Context.md');
+    // And what came down is the real file, byte-for-byte what the file view's
+    // own download produces — both doors call the same helper now
+    // (surfaces/FileActions.ts).
+    const saved = await readFile((await download.path())!, 'utf8');
+    expect(saved).toContain('System Grounding Rule');
+
+    // Backing out of the picker changes nothing at all.
+    await chooser.setFiles([]);
+    const stored = await sw.evaluate(() => chrome.storage.local.get('wb:answers'));
+    expect(stored['wb:answers']).toEqual(seeded);
+
+    await context.close();
+  });
+
+  /* ── V2.9 VB-146 — Actions, folded away for the beta ────────────────────
+     Adam: "let's hide it for now until we get through the Context and Skills
+     flow end to end with final edits and voice recorded so we can get the
+     beta out." One list in core/files/slots.ts does it, so the proof is that
+     the file is nowhere a person can reach — not that three surfaces each
+     remembered to hide it. */
+  test('Actions is nowhere in the interface, on any surface, at any state (VB-146)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const seeded = buildDoneAnswers(contextModules);
+    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
+
+    const page = await openPanel(context, id);
+    await expect(page.locator('.home')).toBeVisible();
+    await expect(page.locator('body')).not.toContainText('Actions.md');
+    await expect(page.locator('[data-file="actions"]')).toHaveCount(0);
+
+    // The file view, and the drawer's own trail inside it.
+    await page.getByRole('button', { name: /^Context\.md/ }).click();
+    await page.waitForSelector('.browse');
+    await expect(page.locator('body')).not.toContainText('Actions.md');
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+    await page.waitForSelector('.flow');
+    if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
+      await page.getByRole('button', { name: 'Next', exact: true }).click();
+    }
+    await page.locator('.crumbs-seg[data-seg="file"]').click();
+    await expect(page.locator('.crumbs-file')).toHaveCount(2);
+    await expect(page.locator('.crumbs')).not.toContainText('Actions.md');
 
     await context.close();
   });

@@ -156,38 +156,36 @@ function resumeStepId(answers: Answers): string {
 // ─────────────────────────────────────────────────────────── VB-36, the shelf
 
 test.describe('VB-36 — Home is the set of files (V2.6 VB-125b, the card grammar)', () => {
-  test('every file has its card, with its status: Context.md open, Skills.md and Actions.md locked', async () => {
+  test('every SHOWN file has its card, with its status: Context.md open, Skills.md locked', async () => {
     const { context, id } = await launch();
     const page = await openHome(context, id);
 
-    // The duo, then Actions' own row — build order, which is write order.
+    // V2.9 VB-146 — Adam: "let's hide it for now until we get through the
+    // Context and Skills flow end to end." Actions' own row is GONE from the
+    // shelf, along with every other place it appeared, from one list in
+    // core/files/slots.ts (BETA_HIDDEN_SLOTS). Its derivations are all still
+    // there and still tested — this is a fold in the interface, not a
+    // deletion of the file.
     const contextCard = page.locator('.home-card[data-file="context"]');
     const skillsCard = page.locator('.home-card[data-file="skills"]');
-    const actionsRow = page.locator('.home-actrow[data-file="actions"]');
     await expect(contextCard).toHaveCount(1);
     await expect(skillsCard).toHaveCount(1);
-    await expect(actionsRow).toHaveCount(1);
+    await expect(page.locator('[data-file="actions"]')).toHaveCount(0);
+    await expect(page.locator('.home')).not.toContainText('Actions.md');
     await expect(contextCard.locator('.home-card-file')).toHaveText('Context.md');
     await expect(skillsCard.locator('.home-card-file')).toHaveText('Skills.md');
-    await expect(actionsRow.locator('.home-card-file')).toHaveText('Actions.md');
 
     // The open one is a real control and says where the file stands.
     await expect(contextCard).toBeEnabled();
     await expect(contextCard.locator('.home-card-status')).toHaveText('Not built yet');
 
-    // The two that are not built are locked, and each says what holds it —
-    // in the card, as text, not in a title attribute a pointer has to hover.
-    for (const locked of [skillsCard, actionsRow]) {
-      await expect(locked).toBeDisabled();
-      await expect(locked).toHaveClass(/is-locked/);
-      await expect(locked.locator('.home-card-pill')).toHaveText('Locked');
-      await expect(locked).not.toHaveAttribute('title', /./);
-    }
+    // The one that is not built is locked, and says what holds it — in the
+    // card, as text, not in a title attribute a pointer has to hover.
+    await expect(skillsCard).toBeDisabled();
+    await expect(skillsCard).toHaveClass(/is-locked/);
+    await expect(skillsCard.locator('.home-card-pill')).toHaveText('Locked');
+    await expect(skillsCard).not.toHaveAttribute('title', /./);
     await expect(skillsCard.locator('.home-card-reason')).toHaveText('Finish Context.md first');
-    // V2.2: Actions is derived, never interviewed — its locked line stopped
-    // being an instruction ("Finish Skills.md first") because nobody finishes
-    // Actions; it states the fact instead (docs/V2.2-SKILLS-ACTIONS-DECISIONS.md #1).
-    await expect(actionsRow.locator('.home-actrow-sub')).toHaveText('Writes itself from your Skills file');
 
     await context.close();
   });
@@ -227,10 +225,9 @@ test.describe('VB-36 — Home is the set of files (V2.6 VB-125b, the card gramma
     await expect(skillsCard.locator('.home-card-status')).toHaveText(
       'Ready when you are — about ten minutes',
     );
-    // Actions still waits — on Skills now, as a derivation, not an errand.
-    await expect(page.locator('.home-actrow .home-actrow-sub')).toHaveText(
-      'Writes itself from your Skills file',
-    );
+    // V2.9 VB-146: and Actions is still nowhere on the page, finished
+    // Context or not.
+    await expect(page.locator('.home')).not.toContainText('Actions.md');
     // And the finished Context card says so, with its bar genuinely full.
     await expect(page.locator('.home-card[data-file="context"] .home-card-status')).toHaveText('Current');
 

@@ -91,11 +91,22 @@ test.describe('welcome screen — accessibility', () => {
     await context.close();
   });
 
-  test('a Tab pass reaches the CTA with a visible focus ring, and reaches it first', async () => {
+  test('a Tab pass reaches the CTA with a visible focus ring, second only to the chrome', async () => {
     const { context, page } = await openWelcome();
+
+    // V2.9 VB-145 put the upload door at the top of the UI, on the chrome
+    // bar, where Adam asked for it — so it is the first thing Tab reaches
+    // and the CTA is the second. That is the honest order for this screen:
+    // the two things somebody can do on a fresh install are START and BRING
+    // A FILE I ALREADY HAVE (docs/OPEN.md #2's "second machine"), and the
+    // page's own hint says the second one out loud. The door is a named
+    // control, not a bare glyph, so a keyboard user meets a sentence.
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: 'Bring in a file', exact: true })).toBeFocused();
+
     await page.keyboard.press('Tab');
     const cta = page.getByRole('button', { name: 'Start with a few questions', exact: true });
-    // First tab stop on the screen: the one thing there is to do.
+    // The first stop in the page itself: the one thing there is to do.
     await expect(cta).toBeFocused();
     // Read the *focused* element's own computed style — pressing Tab is what
     // puts it in :focus-visible, so this is the real ring, not a guess at one.

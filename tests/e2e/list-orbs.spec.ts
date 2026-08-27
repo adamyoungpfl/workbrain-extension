@@ -189,7 +189,9 @@ test.describe('VB-45 — the rows carry the brain’s orbs', () => {
     const orbs = await page.locator('.filetree-row[data-node-id] .filetree-glyph').evaluateAll((els) =>
       els.map((el) => {
         const box = el.getBoundingClientRect();
-        const row = (el.parentElement as HTMLElement).getBoundingClientRect();
+        // V2.9 VB-149 wrapped a disclosure orb in its own button, so the row
+        // is a grandparent on those rows — and the claim is about the ROW.
+        const row = (el.closest('.filetree-row') as HTMLElement).getBoundingClientRect();
         return {
           w: Math.round(box.width),
           h: Math.round(box.height),

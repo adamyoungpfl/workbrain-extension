@@ -61,6 +61,9 @@ async function enterInterview(page: Page): Promise<void> {
 }
 
 /** The same fixture the VB-07 and VB-12 specs use. */
+// V2.9: a stop id no module holds answers the whole flow — the seed a walk
+// needs now that Home's proof tile waits for the interview to be over
+// (VB-144).
 function answersUpToModule(modules: Module[], stopBeforeModuleId: string): Answers {
   const now = new Date().toISOString();
   const values: Record<string, AnswerValue> = {};
@@ -398,10 +401,12 @@ test.describe('VB-11 — the nav is docked to the drawer', () => {
 
   test('a flow with no drawer keeps an ordinary footer', async () => {
     const { context, sw, id } = await launchExtension();
-    // Home only offers the proof loop once there is a real answer behind it.
+    // V2.9 VB-144: Home offers the proof loop once the interview is OVER —
+    // the tile is dormant before that — so the seed answers every question.
+    // A module id no module holds means the builder never stops early.
     await sw.evaluate(async (value) => {
       await chrome.storage.local.set({ 'wb:answers': value });
-    }, answersUpToModule(contextModules, contextModules[3]!.id));
+    }, answersUpToModule(contextModules, '__every_module__'));
     const page = await openPanel(context, id);
     // The proof loop writes no file, so there is nothing to dock to.
     await page.getByRole('button', { name: S.proofCta }).click();

@@ -290,8 +290,26 @@ const LIST_TERMINATOR = 0.85;
  * The class name is unchanged on purpose: `.filetree-glyph` is what
  * `core/drawer/mode.ts`'s morph measures and what four specs find this by.
  */
-function SectionOrb({ life, gradient, light }: { life: SectionLife; gradient: number; light: OrbLight }) {
-  const mark = LIFE_MARK[life];
+function SectionOrb({
+  life,
+  gradient,
+  light,
+  disclosure,
+}: {
+  life: SectionLife;
+  gradient: number;
+  light: OrbLight;
+  /** V2.9 VB-149 — when the orb IS the row's disclosure control, its mark is
+   * a caret instead of the state tick: right closed, down open, and a dim
+   * (untouched) orb stays empty exactly as Adam listed the three faces. The
+   * fill, the ring and the hidden word still carry the state, so nothing the
+   * greyscale guarantee protects moved onto the caret. */
+  disclosure?: { open: boolean };
+}) {
+  const mark = disclosure && life !== 'dim' ? LIFE_MARK.live : LIFE_MARK[life];
+  const markClass = disclosure
+    ? `filetree-mark is-caret${disclosure.open ? ' is-down' : ''}`
+    : 'filetree-mark';
   const half = (fraction: number) => `${(fraction * 50).toFixed(2)}%`;
   const mix = (amount: number) => `${Math.min(100, Math.max(0, amount * 100)).toFixed(1)}%`;
   return (
@@ -322,7 +340,7 @@ function SectionOrb({ life, gradient, light }: { life: SectionLife; gradient: nu
       aria-hidden="true"
     >
       {mark && (
-        <svg className="filetree-mark" viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
+        <svg className={markClass} viewBox="0 0 12 12" width="12" height="12" aria-hidden="true" focusable="false">
           <path d={mark} fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       )}
@@ -661,7 +679,30 @@ function FileTreeRow({
         data-health={sectionHealth?.state}
         data-depth={depth}
       >
-        <SectionOrb life={life} gradient={gradient} light={listOrbLight(place, depth)} />
+        {/* V2.9 VB-149 — the disclosure moved from the row's far edge onto the
+            orb itself: the left icon is the caret now (right closed, down
+            open, empty untouched), and the right-hand chevron is gone. The
+            orb keeps its class and its 18px box because core/drawer/mode.ts
+            measures `.filetree-glyph` for the morph's landing — the button
+            wraps it without resizing it (FileTree.css's negative margins). */}
+        {hasChildren ? (
+          <button
+            type="button"
+            className="filetree-orbtoggle"
+            aria-expanded={expanded}
+            aria-label={expanded ? S.fileTreeCollapse(displayTitle) : S.fileTreeExpand(displayTitle)}
+            onClick={() => onToggleExpand(node.id)}
+          >
+            <SectionOrb
+              life={life}
+              gradient={gradient}
+              light={listOrbLight(place, depth)}
+              disclosure={{ open: expanded }}
+            />
+          </button>
+        ) : (
+          <SectionOrb life={life} gradient={gradient} light={listOrbLight(place, depth)} />
+        )}
         {/* Said out loud for a screen reader, outside the button so it never
             competes with the button's own name. The orb beside it says the
             same thing visually. */}
@@ -702,19 +743,6 @@ function FileTreeRow({
             </span>
           )}
         </span>
-        {hasChildren ? (
-          <button
-            type="button"
-            className="filetree-toggle"
-            aria-expanded={expanded}
-            aria-label={expanded ? S.fileTreeCollapse(displayTitle) : S.fileTreeExpand(displayTitle)}
-            onClick={() => onToggleExpand(node.id)}
-          >
-            <Chevron open={expanded} />
-          </button>
-        ) : (
-          <span className="filetree-toggle-spacer" aria-hidden="true" />
-        )}
       </div>
       {/* V2.4 VB-110: records sit behind the same disclosure grammar every
           other sub-node uses (Adam's call — one expand/collapse everywhere),

@@ -553,7 +553,7 @@ async function controlsInDrawer(page: Page): Promise<Control[]> {
       kind: 'glyph',
     },
     { what: 'a section row', locator: page.locator('.filetree-nav').first(), kind: 'text' },
-    { what: 'a section disclosure', locator: page.locator('.filetree-toggle').first(), kind: 'glyph' },
+    { what: 'a section disclosure', locator: page.locator('.filetree-orbtoggle').first(), kind: 'glyph' },
   ];
   return controls;
 }
@@ -616,7 +616,9 @@ test('every focusable control in the drawer still shows a ring (VB-50)', async (
   // The file chips, which only exist while the trail is offering the files.
   await page.locator('.crumbs-seg[data-seg="file"]').click();
   await expect(page.locator('.crumbs')).toHaveAttribute('data-open', 'true');
-  for (const file of ['context', 'skills', 'actions']) {
+  // V2.9 VB-146: Actions is hidden for the beta, so the trail offers the two
+  // files it shows (core/files/slots.ts's BETA_HIDDEN_SLOTS).
+  for (const file of ['context', 'skills']) {
     await check({
       what: `the ${file} chip`,
       locator: page.locator(`.crumbs-file[data-file="${file}"]`),
@@ -762,7 +764,7 @@ test('hover changes something, and that something is never a ground (VB-50)', as
       inner: null,
     },
     { what: 'a section row', locator: page.locator('.filetree-nav').first(), inner: '.filetree-label' },
-    { what: 'a section disclosure', locator: page.locator('.filetree-toggle').first(), inner: '::self' },
+    { what: 'a section disclosure', locator: page.locator('.filetree-orbtoggle').first(), inner: '::self' },
   ];
 
   for (const control of hoverable) {
@@ -855,7 +857,7 @@ test('nothing in the drawer is clipped, and the edge controls keep their 44px (V
       expect(handle.height, `${where}: the handle's target`).toBeGreaterThanOrEqual(44);
 
       if (mode === 'list') {
-        const toggle = await page.locator('.filetree-toggle').first().boundingBox();
+        const toggle = await page.locator('.filetree-orbtoggle').first().boundingBox();
         if (toggle) {
           expect(toggle.width, `${where}: the disclosure's target`).toBeGreaterThanOrEqual(44);
           expect(toggle.x + toggle.width, `${where}: the disclosure is off the panel`).toBeLessThanOrEqual(

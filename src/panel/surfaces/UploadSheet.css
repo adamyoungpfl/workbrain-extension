@@ -1,0 +1,30 @@
+/* V2.9 VB-145 — the upload door's sheet: the warning as a plain sentence,
+   the careful path first, the quick one beside it. */
+
+.upload {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.upload-warn {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.upload-error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--danger);
+}
+
+.upload-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+}

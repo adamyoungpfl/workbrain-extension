@@ -190,6 +190,16 @@ test.describe('VB-138 — AI Assist, inline and single-step', () => {
     await expect(field).toHaveAttribute('placeholder', ASSIST_LINE_RETURN);
     await expect(field).toHaveClass(/flow-highlight/);
 
+    // V2.9 VB-148 — Adam: "have a glowing highlight on the box and have the
+    // cursor active." The cursor is really IN it: this is the one focus move
+    // docs/GUARDRAILS.md's "nothing steals focus" allows, because it is the
+    // answer to the person's own press — they asked for the prompt, and what
+    // comes back is a box waiting for the paste.
+    await expect(field).toBeFocused();
+    // The glow is painted, not just a class name.
+    const glow = await field.evaluate((el) => getComputedStyle(el).boxShadow);
+    expect(glow).not.toBe('none');
+
     // The round trip: the fenced reply lands normalized, ordinary and
     // editable; the highlight retires when something lands.
     await pasteInto(

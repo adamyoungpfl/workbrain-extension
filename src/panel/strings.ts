@@ -817,9 +817,13 @@ export const S = {
    * things a member actually gets.
    */
   plusTitle: 'Workbrain+',
-  plusPrice: '$42 a day',
-  plusFrame: 'A $5.25-an-hour employee who already knows how you work.',
-  plusYear: 'One year of access, billed once on the site.',
+  /* V2.9 VB-147: repriced at Adam's word — "Starting at $1K / month",
+     billed monthly; the pay-at-once year lives on the billing page only
+     (under promise, over deliver). The $42-a-day framing retired with its
+     price. */
+  plusPrice: 'Starting at $1K a month',
+  plusFrame: 'Real help, every month, from the people who build these.',
+  plusYear: 'Billed monthly on the site.',
   plusBullets: [
     'Ninety minutes a month, one on one, with a TIM',
     'Workbrain Live: refreshes, alerts, and usage you can see',
@@ -841,14 +845,38 @@ export const S = {
   redeemHint: 'It came with your custom skill. The same file is in your email.',
   redeemGo: 'Add it to my file',
   redeemBusy: 'Checking your code',
-  tileMove: 'Move file',
-  tileLibrary: 'Skills library',
-  tileSoon: 'Soon',
-  /** The member gate, said aloud for the tile a pointer cannot press. */
-  tileLibraryLocked: 'Skills library — for members, coming soon',
-  /* V2.8 VB-133: `tileTim` ('TiM services') is deleted — the Redeemer tile
-     stands where it stood, and the human door is the Workbrain+ card. */
-  moveSheetTitle: 'Move your file',
+  /**
+   * [DRAFT] V2.9 VB-147 — the shelf rebalances to THREE tiles: Download
+   * file (the Move tile's heir — it downloads, plainly, and stands
+   * dormant until the Context interview is finished, then in colour),
+   * Prove it works (same gate now), Redeem a skill. The Skills library
+   * left the cluster for its own full-span banner below (`libTitle` and
+   * friends); `tileMove`/`tileLibrary`/`tileSoon`/`tileLibraryLocked`/
+   * `moveSheetTitle` are deleted with the old shapes — recorded per the
+   * fileTreeRoot precedent. The import door moved to the chrome's upload
+   * control (VB-145).
+   */
+  tileDownload: 'Download file',
+  /** The dormant tiles, said aloud: a pointer cannot read grey. */
+  tileWaitsOnContext: 'Ready when your Context file is finished',
+  /**
+   * [DRAFT] V2.9 VB-145 — the upload door at the top of the UI, and its
+   * seatbelt: bringing a file in REPLACES what is here, so the sheet says
+   * so and offers the copy-first path — or both in one press. Never a
+   * confirmation dialog (GUARDRAILS): a sheet with real choices.
+   */
+  uploadOpen: 'Bring in a file',
+  uploadTitle: 'Bring in a file',
+  uploadWarn: 'The file you bring in replaces what is here now.',
+  uploadBoth: 'Download mine first, then pick',
+  uploadJust: 'Just pick a file',
+  /**
+   * [DRAFT] V2.9 VB-147 — the Certified Skills banner: the library's own
+   * full-span invitation, the Workbrain+ grammar one shelf up.
+   */
+  libTitle: 'Workbrain Certified Skills',
+  libBody: 'Skills built and tested by Model Citizen. Explore the library and add what fits your work.',
+  libGo: 'Explore Certified Skills',
   /* V2.8 VB-134: the offer-menu strings (`ctaTitle`/`ctaBody`/
      `offerCoaching`/`offerCto`/`offerWhere`) are deleted with the menu —
      see `plusTitle` and friends above for what stands there now. */

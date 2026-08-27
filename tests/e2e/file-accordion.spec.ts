@@ -328,12 +328,12 @@ test.describe('VB-33 — a section row says all four things', () => {
 });
 
 test.describe('VB-33 — the sections collapse and expand', () => {
-  test('a section opens to its sub-sections and closes again, from the chevron alone', async () => {
+  test('a section opens to its sub-sections and closes again, from the orb caret alone', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle');
+    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle');
     const child = page.locator('.filetree-row[data-node-id="sec2-1"]');
 
     if ((await toggle.getAttribute('aria-expanded')) === 'true') await toggle.click();
@@ -353,29 +353,36 @@ test.describe('VB-33 — the sections collapse and expand', () => {
     await context.close();
   });
 
-  test('the chevron is a real 44px target at the far edge, and it turns', async () => {
+  test('the caret is a real 44px target at the LEFT edge, and it turns (V2.9 VB-149)', async () => {
     const { context, sw, id } = await launchExtension();
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
     const row = page.locator('.filetree-row[data-node-id="sec2"]');
-    const toggle = row.locator('.filetree-toggle');
+    const toggle = row.locator('.filetree-orbtoggle');
     const box = (await toggle.boundingBox())!;
     expect(box.width).toBeGreaterThanOrEqual(44);
     expect(box.height).toBeGreaterThanOrEqual(44);
-    // Hard right: nothing in the row starts after it.
+    // V2.9 VB-149 — the control is the ORB, so it leads the row: nothing in
+    // the row starts before it, and the far edge is now free of controls.
     const rowBox = (await row.boundingBox())!;
-    expect(box.x + box.width).toBeLessThanOrEqual(rowBox.x + rowBox.width + 1);
-    expect(box.x).toBeGreaterThan(rowBox.x + rowBox.width / 2);
+    expect(box.x).toBeLessThan(rowBox.x + rowBox.width / 2);
+    await expect(row.locator('.filetree-toggle')).toHaveCount(0);
+    // The orb inside it keeps its own 18px box — the size core/drawer/mode.ts
+    // sizes a flying node from — rather than growing to the target.
+    const orb = (await row.locator('.filetree-glyph').first().boundingBox())!;
+    expect(Math.round(orb.width)).toBe(18);
+    expect(Math.round(orb.height)).toBe(18);
 
     // The turn is real rotation, not two icons swapped.
     const closedIsOpen = (await toggle.getAttribute('aria-expanded')) === 'true';
     if (closedIsOpen) await toggle.click();
-    const closed = await row.locator('.filetree-chevron').evaluate((el) => getComputedStyle(el).transform);
+    const caret = row.locator('.filetree-mark.is-caret');
+    const closed = await caret.evaluate((el) => getComputedStyle(el).transform);
     await toggle.click();
-    await expect(row.locator('.filetree-chevron')).toHaveClass(/is-open/);
+    await expect(caret).toHaveClass(/is-down/);
     await page.waitForTimeout(260);
-    const open = await row.locator('.filetree-chevron').evaluate((el) => getComputedStyle(el).transform);
+    const open = await caret.evaluate((el) => getComputedStyle(el).transform);
     expect(open).not.toBe(closed);
 
     await context.close();
@@ -387,7 +394,7 @@ test.describe('VB-33 — the sections collapse and expand', () => {
     const page = await openList(context, id);
 
     // Opening a different section overrides the default...
-    const sec2 = page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle');
+    const sec2 = page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle');
     if ((await sec2.getAttribute('aria-expanded')) !== 'true') await sec2.click();
     await expect(sec2).toHaveAttribute('aria-expanded', 'true');
 
@@ -405,7 +412,7 @@ test.describe('VB-33 — the sections collapse and expand', () => {
     }
     await expect(page.locator('.filetree-row[data-node-id="sec5"]')).toHaveAttribute('data-health', 'here');
     await expect(page.locator('.filetree-row[data-health="here"]')).toHaveCount(1);
-    await expect(page.locator('.filetree-toggle[aria-expanded="true"]')).toHaveCount(0);
+    await expect(page.locator('.filetree-orbtoggle[aria-expanded="true"]')).toHaveCount(0);
     await expect(page.locator('.filetree-row.is-child')).toHaveCount(0);
 
     await context.close();
@@ -419,8 +426,8 @@ test.describe('VB-33 — the sections collapse and expand', () => {
     const withChildren = contextOutline.filter((node) => (node.children ?? []).length > 0);
     expect(withChildren.length).toBeGreaterThan(0);
     for (const node of withChildren) {
-      await page.locator(`.filetree-row[data-node-id="${node.id}"] .filetree-toggle`).click();
-      await expect(page.locator('.filetree-toggle[aria-expanded="true"]')).toHaveCount(1);
+      await page.locator(`.filetree-row[data-node-id="${node.id}"] .filetree-orbtoggle`).click();
+      await expect(page.locator('.filetree-orbtoggle[aria-expanded="true"]')).toHaveCount(1);
     }
 
     await context.close();
@@ -476,7 +483,7 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
      * It is written as an assertion that the ground is gone, not merely that a
      * card is optional: a fill creeping back is the regression worth catching.
      */
-    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle');
+    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle');
     if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
     await expect(page.locator('.filetree-row.is-child').first()).toBeVisible();
 
@@ -532,7 +539,7 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle');
+    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle');
     if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
     await expect(page.locator('.filetree-row.is-child').first()).toBeVisible();
 
@@ -606,7 +613,7 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
       if (parent) {
         // Only if it is not already the one open — the accordion defaults to
         // whichever section is being answered, and clicking that one shuts it.
-        const toggle = page.locator(`.filetree-row[data-node-id="${parent.id}"] .filetree-toggle`);
+        const toggle = page.locator(`.filetree-row[data-node-id="${parent.id}"] .filetree-orbtoggle`);
         if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
         await expect(page.locator('.filetree-row.is-child').first()).toBeVisible();
       }
@@ -652,7 +659,7 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
     await seedAnswers(sw, fiveStateAnswers());
     const page = await openList(context, id);
 
-    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle');
+    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle');
     if ((await toggle.getAttribute('aria-expanded')) !== 'true') await toggle.click();
     await expect(page.locator('.filetree-row.is-child').first()).toBeVisible();
 
@@ -680,7 +687,9 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
       .evaluateAll((els) =>
         els.map((el) => {
           const box = el.getBoundingClientRect();
-          const row = (el.parentElement as HTMLElement).getBoundingClientRect();
+          // V2.9 VB-149 wrapped the orb in its own 44px disclosure button, so
+          // the row is a grandparent now — and the claim is about the ROW.
+          const row = (el.closest('.filetree-row') as HTMLElement).getBoundingClientRect();
           return { w: Math.round(box.width), h: Math.round(box.height), fromLeft: Math.round(box.left - row.left) };
         }),
       );
@@ -723,22 +732,23 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
     await page.keyboard.press('End');
     await page.waitForTimeout(400);
 
-    // The chevron still points somewhere and the marker still has its fill;
-    // they simply arrive rather than travel. The instruction survives the
-    // animation being removed, which is what docs/GUARDRAILS.md asks for.
-    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle');
-    const still = await page.locator('.filetree-row[data-node-id="sec2"] .filetree-chevron').evaluate((el) => ({
-      transition: getComputedStyle(el).transitionDuration,
-      transform: getComputedStyle(el).transform,
-    }));
-    expect(still.transition).toBe('0s');
-    expect(still.transform).not.toBe('none');
+    // V2.9 VB-149 — the caret is drawn inside the orb now, and it still
+    // points somewhere while the marker still has its fill; they simply
+    // arrive rather than travel. The instruction survives the animation
+    // being removed, which is what docs/GUARDRAILS.md asks for.
+    const toggle = page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle');
+    const caret = page.locator('.filetree-row[data-node-id="sec2"] .filetree-mark.is-caret');
+    await expect(caret).toHaveCount(1);
+    expect(await caret.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0s');
+    const before = await caret.evaluate((el) => getComputedStyle(el).transform);
     expect(
       await page.locator('.filetree-row[data-node-id="sec1"] .filetree-glyph').evaluate((el) => getComputedStyle(el).transitionDuration),
     ).toBe('0s');
 
-    // And it still opens.
+    // And it still opens — and the caret has really turned, instantly.
     await toggle.click();
+    await expect(caret).toHaveClass(/is-down/);
+    expect(await caret.evaluate((el) => getComputedStyle(el).transform)).not.toBe(before);
     await expect(page.locator('.filetree-row[data-node-id="sec2-1"]')).toHaveCount(1);
     await expect(page.locator('.filetree-row[data-node-id="sec2-1"] .filetree-percent')).toHaveCount(1);
 
@@ -751,8 +761,10 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
     const page = await openList(context, id);
 
     // Tab from the drawer handle until the first section's own two controls
-    // come round, in the order the row draws them: go to the section, then
-    // open it. A control that could not be reached would run this out.
+    // come round, in the order the row draws them. V2.9 VB-149 reverses that
+    // order along with the layout: the disclosure IS the orb at the left
+    // edge now, so it is reached first and the section link second. A control
+    // that could not be reached would run this out.
     await page.locator('.filedrawer-handle').focus();
     const seen: string[] = [];
     for (let i = 0; i < 40 && seen.length < 2; i++) {
@@ -762,23 +774,23 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
         if (!el) return null;
         const row = el.closest('.filetree-row') as HTMLElement | null;
         if (!row || row.dataset.nodeId !== 'sec2') return null;
-        return el.classList.contains('filetree-nav') ? 'nav' : el.classList.contains('filetree-toggle') ? 'toggle' : null;
+        return el.classList.contains('filetree-nav') ? 'nav' : el.classList.contains('filetree-orbtoggle') ? 'toggle' : null;
       });
       if (where && !seen.includes(where)) seen.push(where);
     }
-    expect(seen).toEqual(['nav', 'toggle']);
+    expect(seen).toEqual(['toggle', 'nav']);
 
-    // Both are usable from the keyboard: Enter on the chevron opens it.
-    await page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle').focus();
-    const wasOpen = (await page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle').getAttribute('aria-expanded')) === 'true';
+    // Both are usable from the keyboard: Enter on the orb caret opens it.
+    await page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle').focus();
+    const wasOpen = (await page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle').getAttribute('aria-expanded')) === 'true';
     await page.keyboard.press('Enter');
-    await expect(page.locator('.filetree-row[data-node-id="sec2"] .filetree-toggle')).toHaveAttribute(
+    await expect(page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle')).toHaveAttribute(
       'aria-expanded',
       String(!wasOpen),
     );
 
     // ...and the focus ring is really painted, on both.
-    for (const selector of ['.filetree-nav', '.filetree-toggle']) {
+    for (const selector of ['.filetree-nav', '.filetree-orbtoggle']) {
       const ring = await page.locator(`.filetree-row[data-node-id="sec2"] ${selector}`).evaluate((el) => {
         el.focus();
         const s = getComputedStyle(el);
@@ -787,6 +799,90 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
       expect(ring.style, selector).toBe('solid');
       expect(ring.width, selector).toBeGreaterThanOrEqual(2);
     }
+
+    await context.close();
+  });
+});
+
+/* ── V2.9 VB-149 — the icons on the left ARE the carets ──────────────────
+   Adam: "Down for open, right for closed, empty for not started. remove the
+   down caret on the right hand side." Three faces, and each is a SHAPE, so
+   the list still reads with every hue stripped out — which is the guarantee
+   section-health.spec.ts holds and this one must not quietly undo. */
+test.describe('VB-149 — the row opens from its own orb', () => {
+  test('down when open, right when closed, empty where nothing has started', async () => {
+    const { context, sw, id } = await launchExtension();
+    await seedAnswers(sw, fiveStateAnswers());
+    const page = await openList(context, id);
+
+    const faceOf = (nodeId: string) =>
+      page.locator(`.filetree-row[data-node-id="${nodeId}"]`).evaluate((row) => {
+        const orb = row.querySelector('.filetree-glyph') as HTMLElement;
+        const mark = orb.querySelector('.filetree-mark');
+        return {
+          life: (row as HTMLElement).dataset.life,
+          hasMark: !!mark,
+          down: !!mark?.classList.contains('is-down'),
+          disclosure: !!orb.closest('.filetree-orbtoggle'),
+          rotation: mark ? getComputedStyle(mark).transform : null,
+        };
+      });
+
+    // A section nobody has reached: the orb is EMPTY. Nothing to disclose is
+    // not the same fact as nothing answered, so a dim row with children still
+    // opens — it just has no mark inside it while it is dim.
+    const dim = await faceOf('sec5');
+    expect(dim.life).toBe('dim');
+    expect(dim.hasMark).toBe(false);
+
+    // A reached section, closed: a caret, and it points RIGHT (no rotation).
+    const closed = page.locator('.filetree-row[data-node-id="sec2"] .filetree-orbtoggle');
+    if ((await closed.getAttribute('aria-expanded')) === 'true') await closed.click();
+    const shut = await faceOf('sec2');
+    expect(shut.disclosure).toBe(true);
+    expect(shut.hasMark).toBe(true);
+    expect(shut.down).toBe(false);
+
+    // Opened: the same caret, turned DOWN — one drawing rotated, not two
+    // glyphs swapped, so nothing can drift between the two states.
+    await closed.click();
+    await page.waitForTimeout(260);
+    const open = await faceOf('sec2');
+    expect(open.down).toBe(true);
+    expect(open.rotation).not.toBe(shut.rotation);
+
+    // And nothing at the row's far edge presses any more.
+    await expect(page.locator('.filetree-toggle, .filetree-toggle-spacer')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('the orb is still the one object the mode morph lands on', async () => {
+    // The disclosure button wraps the orb; it must not resize it, because
+    // core/drawer/mode.ts sizes every flying node from `.filetree-glyph`.
+    const { context, sw, id } = await launchExtension();
+    await seedAnswers(sw, fiveStateAnswers());
+    const page = await openList(context, id);
+
+    const sizes = await page.locator('.filetree-row[data-node-id] .filetree-glyph').evaluateAll((els) =>
+      els.map((el) => {
+        const box = el.getBoundingClientRect();
+        return { w: Math.round(box.width), h: Math.round(box.height), inButton: !!el.closest('.filetree-orbtoggle') };
+      }),
+    );
+    // Both kinds of row are on screen, and every orb is the same 18px box.
+    expect(sizes.some((s) => s.inButton)).toBe(true);
+    expect(sizes.some((s) => !s.inButton)).toBe(true);
+    for (const size of sizes) {
+      expect(size.w).toBe(18);
+      expect(size.h).toBe(18);
+    }
+
+    // The orbs stay in one column: a wrapped orb has not stepped sideways.
+    const lefts = await page
+      .locator('.filetree-row[data-depth="0"] .filetree-glyph')
+      .evaluateAll((els) => els.map((el) => Math.round(el.getBoundingClientRect().left)));
+    expect(new Set(lefts).size, `orbs at ${[...new Set(lefts)].join(', ')}`).toBe(1);
 
     await context.close();
   });
