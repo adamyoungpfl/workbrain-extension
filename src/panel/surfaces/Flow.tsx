@@ -18,6 +18,7 @@ import {
   TypedHeading,
   VerticalPick,
 } from '../components';
+import { contextFileDate, generateContextFile } from '../../core/files/generate';
 import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
 import { AssistBar } from './AssistBar';
@@ -1341,6 +1342,14 @@ function StepView({
     ? { answers: answers.values, repeatables: answers.repeatables, record: activeRecord }
     : { answers: answers.values, repeatables: answers.repeatables };
   /**
+   * BS-03b — the bytes the with-file run carries. The same generator the
+   * download and the drawer's preview use, so the three cannot disagree
+   * about what the person's file says. Built here rather than inside core's
+   * `promptFor` because `FlowContext` holds values and repeatables while the
+   * generator wants the whole `Answers` — and this component has it.
+   */
+  const contextFileText = generateContextFile(answers, contextFileDate());
+  /**
    * "Saved on this device / Nothing leaves your browser".
    *
    * V1.2 VB-11 moved it out of the footer, because the footer stopped being a
@@ -2280,12 +2289,21 @@ function StepView({
 
         {step.kind === 'gen' && (
           <>
+            {/* BS-03b (§3.1) — one copy, no attach. The instruction that
+                replaces the attach step, and the attach route kept behind a
+                disclosure for anyone who would rather do it that way. */}
             {step.genKey === 'withContext' && (
-              <p className="flow-hint">
-                {attachHintFor(proofServiceFor(ctx))}
-              </p>
+              <>
+                <p className="flow-hint">{S.proofNoAttach}</p>
+                <details className="flow-attach">
+                  <summary>{S.proofRatherAttach}</summary>
+                  <p className="flow-hint">{attachHintFor(proofServiceFor(ctx))}</p>
+                </details>
+              </>
             )}
-            <ReadOnlyBlock tag={S.proofAskThis}>{promptFor(step.genKey, ctx)}</ReadOnlyBlock>
+            <ReadOnlyBlock tag={step.genKey === 'withContext' ? S.proofAskWithFile : S.proofAskThis}>
+              {promptFor(step.genKey, ctx, contextFileText, S.proofFileLead)}
+            </ReadOnlyBlock>
             <div className="flow-field-sr-label">
               <Field
                 id={`flow-${step.id}-paste`}

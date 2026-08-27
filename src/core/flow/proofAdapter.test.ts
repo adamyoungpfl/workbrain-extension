@@ -11,6 +11,7 @@ import {
   PROOF_CONTEXT_ANSWER_KEY,
   PROOF_GRADE_TEXT_KEY,
   PROOF_SERVICE_KEY,
+  withContextPrompt,
 } from './proofAdapter';
 import type { ProofCopy } from './proofAdapter';
 
@@ -268,5 +269,47 @@ describe('verbatim spot-checks — independently re-typed from reading modelciti
       '',
     );
     expect(fallback).toBe("Or just paste Context.md’s text directly if you don’t see one.");
+  });
+});
+
+/* ── BS-03b (§3.1) — one copy, no attach ────────────────────────────────── */
+
+describe('the file rides inside the with-file prompt', () => {
+  const ctx = { answers: { goal_want: 'Draft a note to my manager.' }, repeatables: {} };
+  const FILE = '# Context.md\n\n**Who I am**\nAda.\n';
+  const LEAD = 'Here is my Context file. Use it to answer the question above.';
+
+  it('THE BASELINE NEVER GETS THE FILE — the proof measures one variable', () => {
+    const baseline = promptFor('baseline', ctx, FILE, LEAD);
+    expect(baseline).toBe('Draft a note to my manager.');
+    expect(baseline).not.toContain('Context.md');
+    expect(baseline).not.toContain('Ada');
+  });
+
+  it('the with-file run carries the whole file, verbatim', () => {
+    const withFile = promptFor('withContext', ctx, FILE, LEAD);
+    expect(withFile).toContain(FILE);
+    expect(withFile).toContain(LEAD);
+  });
+
+  it('asks the identical question in both runs — the file is appended, never edited', () => {
+    const task = promptFor('baseline', ctx, FILE, LEAD);
+    const withFile = promptFor('withContext', ctx, FILE, LEAD);
+    // The with-file prompt STARTS with the baseline's exact text, so nothing
+    // about the ask can drift between the two conditions.
+    expect(withFile.startsWith(task)).toBe(true);
+  });
+
+  it('degrades to the bare task when there is no file to carry', () => {
+    // A caller that cannot build one gets the loop working anyway, silently
+    // (docs/GUARDRAILS.md's degradation table).
+    expect(promptFor('withContext', ctx)).toBe('Draft a note to my manager.');
+    expect(promptFor('withContext', ctx, FILE)).toBe('Draft a note to my manager.');
+  });
+
+  it('composes in one order and one shape, so the AI meets the ask first', () => {
+    const withFile = withContextPrompt('THE ASK', 'THE FILE', 'THE LEAD');
+    expect(withFile).toBe('THE ASK\n\n---\nTHE LEAD\n\nTHE FILE');
+    expect(withFile.indexOf('THE ASK')).toBeLessThan(withFile.indexOf('THE FILE'));
   });
 });

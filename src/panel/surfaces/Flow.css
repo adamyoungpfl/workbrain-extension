@@ -270,6 +270,30 @@
    breadcrumb it styled is now components/FlowProgress.tsx, which carries the
    same 12px uppercase treatment for the module title. */
 
+/* BS-03b (§3.1) — the attach route, kept but demoted. It was the whole
+   instruction; it is now a disclosure under the sentence that says nobody
+   needs it. The 44px floor is on the summary, which is the control. */
+.flow-attach {
+  margin: -8px 0 12px;
+}
+.flow-attach > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--target-min);
+  font-size: var(--type-fine);
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.flow-attach > summary:hover {
+  color: var(--primary);
+}
+.flow-attach > summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}
+
 .flow-q {
   font-size: 22px;
   line-height: 1.25;
@@ -369,6 +393,30 @@
 }
 .flow-chrome .narrator {
   margin: 0;
+}
+
+/* BS-03b (§3.1) — the attach route, kept but demoted. It was the whole
+   instruction; it is now a disclosure under the sentence that says nobody
+   needs it. The 44px floor is on the summary, which is the control. */
+.flow-attach {
+  margin: -8px 0 12px;
+}
+.flow-attach > summary {
+  display: flex;
+  align-items: center;
+  min-height: var(--target-min);
+  font-size: var(--type-fine);
+  font-weight: 600;
+  color: var(--ink-3);
+  cursor: pointer;
+}
+.flow-attach > summary:hover {
+  color: var(--primary);
+}
+.flow-attach > summary:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
 }
 
 .flow-q {

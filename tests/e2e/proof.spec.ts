@@ -158,15 +158,35 @@ test.describe('The proof loop (R1-11)', () => {
     await page.locator('.flow textarea').fill(baselineAnswer);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
 
-    // --- with-context: the SAME prompt again, plus the per-service attach
-    // hint, ported verbatim and chosen by the service picked above ---
+    // --- with-context: the SAME question again, and BS-03b's one paste ---
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_context');
+    // §3.1: the attach step is gone from the main path, and the sentence
+    // that replaces it says so.
     await expect(page.locator('.flow')).toContainText(
-      'Click the + / paperclip near the message box and attach Context.md.',
+      'Your file comes along inside the message. You do not need to attach anything.',
     );
-    await expect(page.locator('.flow')).toContainText("Or just paste Context.md’s text directly if you don’t see one.");
+    // The per-service gesture survives as the secondary route, behind a
+    // disclosure — kept for anyone who would rather attach, per §3.1.
+    const attach = page.locator('.flow-attach');
+    await expect(attach).toHaveCount(1);
+    // Closed, so the gesture is off screen until somebody asks for it.
+    // Asserted by VISIBILITY, not by text: a closed <details> still carries
+    // its content in `textContent`, so `toContainText` would pass either way
+    // and prove nothing.
+    await expect(attach.locator('p')).toBeHidden();
+    await attach.locator('summary').click();
+    await expect(attach.locator('p')).toBeVisible();
+    await expect(attach).toContainText('Click the + / paperclip near the message box and attach Context.md.');
+    await expect(attach).toContainText("Or just paste Context.md’s text directly if you don’t see one.");
+
     const contextPrompt = await page.locator('.flow .readonly').first().textContent();
     expect(contextPrompt).toContain('A test answer for goal_want.'); // same goal, asked twice — the whole point
+    // …and the file itself is in the copy, so one paste carries both.
+    expect(contextPrompt).toContain('System Grounding Rule');
+    expect(contextPrompt).toContain('Here is my Context file.');
+    // The baseline, by contrast, carried none of it — the proof measures one
+    // variable and this is where that is proved end to end.
+    expect(baselinePrompt).not.toContain('System Grounding Rule');
     const contextAnswer = "Here's the status update with Context.md attached — specific to my actual role and team.";
     await page.locator('.flow textarea').fill(contextAnswer);
     await page.getByRole('button', { name: 'Next', exact: true }).click();

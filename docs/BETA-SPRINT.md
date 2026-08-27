@@ -126,6 +126,38 @@ do not grow sharing.
   build + surface + question id and **no authored content**. It passes the
   authorship test; it just is not written down yet.
 
+### BS-03's four, ruled on (Adam, 2026-08-27)
+
+**P1 · The self-grading round trip is deleted.** Proof one is *three* trips
+today — baseline paste, with-file paste, and `proof_grade`, which copies an
+evaluation prompt and asks for the AI's grade back (`proofPaste3`). §3's budget
+is three trips for the WHOLE hour, so proof one drops to two and the step the
+person's ticks replace is the one that goes. `evaluationPrompt`
+(`proofSource.ts:74`) and `scoreDelta` (`scoring.ts:32`) go with it — and so
+does **DEF-2**, the defect where the grader audited a file it had never seen:
+there is no grader.
+
+**P2 · The tick statements are assembled from what they actually said**, with a
+fixed pair as the floor. "Used Priya's name" beats "used my manager's name",
+and it is the same data the micro-proof's fallback ladder already walks. The
+checklist is therefore variable-length, which is why `ScoreEntry` carries `of`
+as well as `value`. When nothing was named, the two context-free statements
+("sounded like me", "asked for the right thing") stand alone.
+
+**P3 · Proof one interrupts, automatically.** Adam: *"error on the side of
+momentum beating a reset."* Finishing Context hands straight into the proof
+rather than landing on Home. The `DoneRedirect` path is what changes.
+
+**P4 · The micro-proof fires at the second run boundary** — the end of
+Orientation, eight answers in, which is what §3's "after run 2" resolves to
+under D1's module-bounded runs (Orientation is 8 = 5 + 3). A boundary rather
+than a flat count of ten, because a count moves when repeatables do, and the
+boundary already has a payoff card to land the wow on.
+
+**Defaulted, not asked:** the receipt is a markdown file in Context.md's own
+voice — the task, both answers verbatim, what they ticked, the date. Their
+content, their file, and D5 keeps it a file rather than a link.
+
 ---
 
 ## Still open — needed before the tasks they block

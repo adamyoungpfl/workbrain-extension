@@ -151,7 +151,38 @@ export function proofQuestion(ctx: FlowContext): string {
   return typeof want === 'string' && want.trim() !== '' ? want.trim() : BASELINE_PROMPT;
 }
 
-export function promptFor(genKey: string | undefined, ctx: FlowContext): string {
+/**
+ * BS-03b (§3.1) — THE FILE RIDES INSIDE THE MESSAGE.
+ *
+ * Attaching a downloaded file in another application is the single hardest
+ * thing the hour asks of anyone, and it is unnecessary: the file is text.
+ * So the with-file run puts the task and the whole of Context.md on the
+ * clipboard together, and the person makes one paste.
+ *
+ * ── THE THREE THINGS THIS MUST NOT GET WRONG ──────────────────────────────
+ *
+ * 1. **The baseline never gets the file.** `promptFor` branches on `genKey`
+ *    below and only the with-file run composes. The proof measures ONE
+ *    variable; a baseline carrying the context would measure nothing, and it
+ *    would do it invisibly.
+ * 2. **The question is byte-identical in both runs.** The task string is
+ *    the same `proofQuestion(ctx)` either way — this function appends, and
+ *    never edits, so nothing about the ask can drift between the two.
+ * 3. **The file is the file.** Not a summary, not a subset:
+ *    `core/files/generate.ts`'s bytes, the same ones the drawer previews and
+ *    the download writes. Including the reference examples, which the
+ *    file always carries — the O4 rule holds prompts about something ELSE
+ *    to a narrower diet, and here the file is the point.
+ *
+ * The lead-in sentence is addressed to the AI rather than to the person: the
+ * person's own instruction ("your file comes along inside the message") is
+ * on screen, where they can read it before they press anything.
+ */
+export function withContextPrompt(task: string, fileText: string, lead: string): string {
+  return `${task}\n\n---\n${lead}\n\n${fileText}`;
+}
+
+export function promptFor(genKey: string | undefined, ctx: FlowContext, fileText?: string, lead?: string): string {
   if (genKey === 'grade') {
     const before = ctx.answers[PROOF_BASELINE_ANSWER_KEY];
     const after = ctx.answers[PROOF_CONTEXT_ANSWER_KEY];
@@ -159,9 +190,15 @@ export function promptFor(genKey: string | undefined, ctx: FlowContext): string 
     // parameterized PROMPT USED line).
     return evaluationPrompt(typeof before === 'string' ? before : '', typeof after === 'string' ? after : '', proofQuestion(ctx));
   }
-  // 'baseline' and 'withContext' show the exact same prompt — the whole
-  // point of the proof is asking it twice, unchanged, once per condition.
-  return proofQuestion(ctx);
+  const task = proofQuestion(ctx);
+  // 'baseline' and 'withContext' ask the exact same question — the whole
+  // point of the proof is putting it twice, unchanged, once per condition.
+  // BS-03b: what the with-file run adds is the FILE, appended, never a
+  // different ask. No file text, no composition: a caller that cannot build
+  // one (a pre-gate install, a test) gets the bare task and the loop still
+  // works, which is the degradation docs/GUARDRAILS.md asks for.
+  if (genKey === 'withContext' && fileText && lead) return withContextPrompt(task, fileText, lead);
+  return task;
 }
 
 /** The per-service attach instruction plus the fixed fallback sentence,

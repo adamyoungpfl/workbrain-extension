@@ -663,6 +663,14 @@ export const S = {
   proofSub: 'First a baseline: the same question, with nothing loaded.',
   proofPickAI: 'Which AI do you use most?',
   proofAskThis: 'Ask this in a fresh chat, with nothing loaded:',
+  /* BS-03b (§3.1) — the person's own instruction, on screen, where they can
+     read it before they press anything. The lead-in inside the copied text
+     is `proofFileLead` below and is addressed to their AI. [DRAFT] */
+  proofNoAttach: 'Your file comes along inside the message. You do not need to attach anything.',
+  proofFileLead: 'Here is my Context file. Use it to answer the question above.',
+  proofAskWithFile: 'Copy all of this into a fresh chat:',
+  /** The secondary route §3.1 keeps for anyone who would rather attach. */
+  proofRatherAttach: 'I would rather attach the file',
   proofPaste1: 'Paste its answer here',
   proofWithFile: 'Now the same question, with your file attached.',
   proofPaste2: 'Paste the second answer here',
