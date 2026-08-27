@@ -19,9 +19,16 @@
   font-weight: 700;
   color: var(--ink);
 }
+/* V2.8 VB-135 — the globe's own contract, honoured: `.brainglobe-nav`
+   documents "the stage's parent is a flex column" (its order:-1 lifts the
+   band above the picture). This was a flex ROW, so the band and the globe
+   sat SIDE BY SIDE — the globe squeezed to 161px and shoved right, labels
+   clipping the edge (Adam's morning repro). A column gives the band the
+   top and the globe its full square, centred. */
 .browse-stage {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
+  align-items: center;
   margin-top: 4px;
 }
 .browse-actions {

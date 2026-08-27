@@ -956,12 +956,19 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  /* V2.5 VB-116: the face occupies the strip BELOW the handle band and
-     centers there — V2.4's full-height overlay put the face's top half
-     under the band (Adam: "the upper half of the nav bar is covering the
-     upper half of the icon, label and status"). */
-  height: calc(var(--filedrawer-h, 50px) - var(--drawer-head-h, 24px));
-  padding: 0 12px;
+  /* V2.8 VB-136 — centred in the VISIBLE BLACK, which is the whole closed
+     band, not the sub-strip below the handle band (V2.5 VB-116's split
+     left the mark and words hugging the fold — Adam's morning repro). The
+     face overlays the full band ABOVE the head's paint (z-index) so
+     nothing covers its top, with just enough top padding to clear the
+     grip's pill; pointer-events pass through, so the whole strip is still
+     the drag handle it always was. VB-116's own complaint — content under
+     the band's paint — cannot recur: the face now paints over it. */
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  padding: 10px 12px 0;
   overflow: hidden;
 }
 
