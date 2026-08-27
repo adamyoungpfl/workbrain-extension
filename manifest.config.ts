@@ -7,11 +7,27 @@ import { defineManifest } from '@crxjs/vite-plugin';
  * that needs them — never at install. See docs/GUARDRAILS.md, permission tiers.
  * Adding anything here requires an entry in GUARDRAILS.md explaining why.
  */
+/**
+ * BS-00 — THE ONE PLACE THE BUILD NUMBER LIVES.
+ *
+ * The manifest is authoritative: it is what Chrome installs and what a tester
+ * can read off `chrome://extensions`. `vite.config.ts` imports this constant
+ * to define `__WB_VERSION__`, so the number the panel prints and the number
+ * the browser holds are the same by construction rather than by discipline.
+ * `package.json`'s version is cosmetic — the package is `private` and never
+ * published — but it is kept in step so nothing in the repo disagrees.
+ *
+ * 0.1.0 until the beta sprint, while every document said V2.9. A build a
+ * tester cannot identify makes their report unactionable, which is the whole
+ * reason this constant exists.
+ */
+export const VERSION = '2.9.0';
+
 export default defineManifest({
   manifest_version: 3,
   name: 'Workbrain',
   short_name: 'Workbrain',
-  version: '0.1.0',
+  version: VERSION,
   description:
     'Build a file that tells any AI who you are and how you work — so you stop re-explaining yourself.',
   icons: { 16: 'icons/16.png', 32: 'icons/32.png', 48: 'icons/48.png', 128: 'icons/128.png' },

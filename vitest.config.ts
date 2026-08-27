@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vitest/config';
 
 /**
@@ -5,6 +6,24 @@ import { defineConfig } from 'vitest/config';
  * pipeline never runs in the test context.
  */
 export default defineConfig({
+  /**
+   * BS-00 — the same build stamp the real build defines, from the same
+   * literal. Without it `src/core/build.ts` cannot be unit tested at all, and
+   * a stamp nobody tests is a stamp that silently becomes wrong.
+   *
+   * Read as TEXT rather than imported, for the reason this file exists at all
+   * (see the header): importing `manifest.config.ts` pulls @crxjs/vite-plugin
+   * and esbuild into the test context, which is precisely what is being kept
+   * out. `src/core/build.test.ts` extracts the same literal the same way, so
+   * the two cannot disagree about what they are testing.
+   */
+  define: {
+    __WB_VERSION__: JSON.stringify(
+      /export const VERSION = '([^']+)'/.exec(
+        readFileSync(new URL('./manifest.config.ts', import.meta.url), 'utf8'),
+      )?.[1] ?? '0.0.0',
+    ),
+  },
   test: {
     environment: 'jsdom',
     globals: true,

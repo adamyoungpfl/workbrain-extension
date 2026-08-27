@@ -31,3 +31,11 @@ interface ImportMeta {
     options: { eager: true; query: '?url'; import: 'default' },
   ): Record<string, string>;
 }
+
+/**
+ * BS-00 — the manifest's version, replaced at build time by
+ * `vite.config.ts`'s `define`. Declared here for the same reason the two
+ * `import.meta.env` members above are: name exactly what we use, so the
+ * compiler stays honest about everything we do not.
+ */
+declare const __WB_VERSION__: string;
