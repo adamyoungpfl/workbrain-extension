@@ -9,7 +9,6 @@ import {
   attachHintFor,
   PROOF_BASELINE_ANSWER_KEY,
   PROOF_CONTEXT_ANSWER_KEY,
-  PROOF_GRADE_TEXT_KEY,
   PROOF_SERVICE_KEY,
   withContextPrompt,
 } from './proofAdapter';
@@ -24,7 +23,7 @@ const fixtureCopy: ProofCopy = {
   pickAI: 'Pick AI',
   baselineQ: 'Baseline Q',
   withContextQ: 'With-context Q',
-  gradeQ: 'Grade Q',
+  judgeQ: 'Judge Q',
   doneQ: 'Done Q',
 };
 
@@ -54,7 +53,7 @@ describe('buildProofModule — structure', () => {
     expect(step.required).toBe(true);
   });
 
-  it('steps 2-4 are kind "gen", each with a distinct genKey and outKey', () => {
+  it('the two errand steps are kind "gen"; the landing that follows them is not', () => {
     const [, baseline, withContext, grade] = module.nodes;
     if (!baseline || 'fields' in baseline) throw new Error('unreachable');
     if (!withContext || 'fields' in withContext) throw new Error('unreachable');
@@ -70,10 +69,13 @@ describe('buildProofModule — structure', () => {
     expect(withContext.outKey).toBe(PROOF_CONTEXT_ANSWER_KEY);
     expect(withContext.q).toBe('With-context Q');
 
-    expect(grade.kind).toBe('gen');
-    expect(grade.genKey).toBe('grade');
-    expect(grade.outKey).toBe(PROOF_GRADE_TEXT_KEY);
-    expect(grade.q).toBe('Grade Q');
+    // BS-03d, Adam's P1 — the third errand is gone. What stands in its slot
+    // asks nothing of their AI, so it has no prompt to copy and no answer to
+    // paste: `demo`, not `gen`.
+    expect(grade.kind).toBe('demo');
+    expect(grade.genKey).toBe('judge');
+    expect(grade.outKey).toBeUndefined();
+    expect(grade.q).toBe('Judge Q');
   });
 
   it('step 5 is kind "demo", the recommendations screen — no outKey, nothing to paste', () => {
@@ -97,6 +99,10 @@ describe('buildProofModule — structure', () => {
   });
 });
 
+/* BS-03d deleted three tests with the prompt they were about: the rubric
+   `promptFor('grade')` built, its "[not captured]" degradation, and its
+   PROMPT USED line. The AI is not asked to grade itself any more, so there
+   is no evaluation prompt to build, degrade or parameterise. */
 describe('promptFor', () => {
   const emptyCtx: FlowContext = { answers: {}, repeatables: {} };
 
@@ -111,20 +117,7 @@ describe('promptFor', () => {
     expect(promptFor('nonsense', emptyCtx)).toBe(BASELINE_PROMPT);
   });
 
-  it('"grade" builds the real evaluation prompt from whatever was pasted for baseline/with-context', () => {
-    const ctx: FlowContext = {
-      answers: { [PROOF_BASELINE_ANSWER_KEY]: 'Before text.', [PROOF_CONTEXT_ANSWER_KEY]: 'After text.' },
-      repeatables: {},
-    };
-    expect(promptFor('grade', ctx)).toBe(evaluationPrompt('Before text.', 'After text.'));
-  });
 
-  it('"grade" degrades gracefully when baseline/with-context were skipped (null) or never answered', () => {
-    const ctx: FlowContext = { answers: { [PROOF_BASELINE_ANSWER_KEY]: null }, repeatables: {} };
-    const prompt = promptFor('grade', ctx);
-    expect(prompt).toContain('[not captured]');
-    expect(prompt).toBe(evaluationPrompt('', ''));
-  });
 });
 
 /**
@@ -154,20 +147,6 @@ describe('promptFor with a goal from the gate (VB-93)', () => {
     expect(promptFor('baseline', skipped)).toBe(BASELINE_PROMPT);
   });
 
-  it('the grade names their goal on the PROMPT USED line, not the canned one', () => {
-    const ctx: FlowContext = {
-      answers: {
-        ...goalCtx.answers,
-        [PROOF_BASELINE_ANSWER_KEY]: 'Before text.',
-        [PROOF_CONTEXT_ANSWER_KEY]: 'After text.',
-      },
-      repeatables: {},
-    };
-    const prompt = promptFor('grade', ctx);
-    expect(prompt).toContain('PROMPT USED: "Draft my Monday status update the way I would."');
-    expect(prompt).not.toContain(BASELINE_PROMPT);
-    expect(prompt).toBe(evaluationPrompt('Before text.', 'After text.', 'Draft my Monday status update the way I would.'));
-  });
 
   it('evaluationPrompt without the new argument is byte-identical to before it existed', () => {
     expect(evaluationPrompt('a', 'b')).toBe(evaluationPrompt('a', 'b', BASELINE_PROMPT));

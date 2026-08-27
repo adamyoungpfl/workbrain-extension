@@ -33,7 +33,7 @@ const proofModules = buildProofModules({
   pickAI: S.proofPickAI,
   baselineQ: S.proofSub,
   withContextQ: S.proofWithFile,
-  gradeQ: S.proofGrade,
+  judgeQ: S.proofJudge,
   doneQ: S.proofDone,
 });
 

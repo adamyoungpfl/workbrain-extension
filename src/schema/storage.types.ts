@@ -77,7 +77,22 @@ export interface PackSubscription {
   skills: Skill[];
 }
 
-export interface ScoreEntry { at: string; value: number; }
+/**
+ * BS-03d — what one run of the proof leaves behind.
+ *
+ * `value` was a 0–10 the person typed; it is now the number of statements
+ * they TICKED, and `of` is how many they were offered. Both are still
+ * authored — the count is their observation and the denominator is their own
+ * checklist's length (core/proof/checklist.ts) — so this stays on the right
+ * side of docs/GUARDRAILS.md's authorship test, and that row's wording moved
+ * with this schema rather than after it.
+ *
+ * `of` exists because the checklist is variable-length: somebody who has
+ * named a person and a project ticks against four statements, somebody who
+ * has named neither ticks against two, and "two of two" is not "two of
+ * four". A bare `value` cannot tell them apart.
+ */
+export interface ScoreEntry { at: string; value: number; of: number; }
 
 export interface ReportState {
   /** computed once from a chat export; the "before" */

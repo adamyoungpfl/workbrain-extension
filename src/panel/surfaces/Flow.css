@@ -270,6 +270,98 @@
    breadcrumb it styled is now components/FlowProgress.tsx, which carries the
    same 12px uppercase treatment for the module title. */
 
+/* ── BS-03d (§3.3) — the landing, judged by the person ───────────────────
+   Two answers side by side at 400px means two narrow columns, so they are
+   capped and scrolled rather than allowed to push the ticks off screen: the
+   ticks are the thing this screen is for. */
+.proofjudge {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.proofjudge-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.proofjudge-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+/* The with-file column is the one they are judging; the other is there for
+   comparison. A tint rather than a heavier border, so the pair still reads
+   as a pair. */
+.proofjudge-col.is-with {
+  background: var(--primary-tint);
+  border-color: var(--border-i);
+}
+
+.proofjudge-col-label {
+  margin: 0;
+  font-size: var(--type-fine);
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.proofjudge-answer {
+  margin: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: var(--type-fine);
+  line-height: 1.5;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.proofjudge-checks {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.proofjudge-checks > legend {
+  padding: 0 0 6px;
+  font-size: var(--type-body);
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/* The 44px floor is on the ROW, so the whole line is the target rather than
+   the box alone — these are read and pressed in one motion. */
+.proofjudge-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--target-min);
+  padding: 0 6px;
+  border-radius: var(--r-md);
+  font-size: var(--type-support);
+  color: var(--ink);
+  cursor: pointer;
+}
+.proofjudge-check:hover {
+  background: var(--sunken);
+}
+.proofjudge-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.proofjudge-check:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 /* BS-03b (§3.1) — the attach route, kept but demoted. It was the whole
    instruction; it is now a disclosure under the sentence that says nobody
    needs it. The 44px floor is on the summary, which is the control. */
@@ -393,6 +485,98 @@
 }
 .flow-chrome .narrator {
   margin: 0;
+}
+
+/* ── BS-03d (§3.3) — the landing, judged by the person ───────────────────
+   Two answers side by side at 400px means two narrow columns, so they are
+   capped and scrolled rather than allowed to push the ticks off screen: the
+   ticks are the thing this screen is for. */
+.proofjudge {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.proofjudge-pair {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.proofjudge-col {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  background: var(--surface);
+}
+/* The with-file column is the one they are judging; the other is there for
+   comparison. A tint rather than a heavier border, so the pair still reads
+   as a pair. */
+.proofjudge-col.is-with {
+  background: var(--primary-tint);
+  border-color: var(--border-i);
+}
+
+.proofjudge-col-label {
+  margin: 0;
+  font-size: var(--type-fine);
+  font-weight: 650;
+  color: var(--ink-2);
+}
+
+.proofjudge-answer {
+  margin: 0;
+  max-height: 180px;
+  overflow-y: auto;
+  font-size: var(--type-fine);
+  line-height: 1.5;
+  color: var(--ink);
+  overflow-wrap: anywhere;
+}
+
+.proofjudge-checks {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.proofjudge-checks > legend {
+  padding: 0 0 6px;
+  font-size: var(--type-body);
+  font-weight: 650;
+  color: var(--ink);
+}
+
+/* The 44px floor is on the ROW, so the whole line is the target rather than
+   the box alone — these are read and pressed in one motion. */
+.proofjudge-check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: var(--target-min);
+  padding: 0 6px;
+  border-radius: var(--r-md);
+  font-size: var(--type-support);
+  color: var(--ink);
+  cursor: pointer;
+}
+.proofjudge-check:hover {
+  background: var(--sunken);
+}
+.proofjudge-check input {
+  width: 20px;
+  height: 20px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+.proofjudge-check:focus-within {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }
 
 /* BS-03b (§3.1) — the attach route, kept but demoted. It was the whole

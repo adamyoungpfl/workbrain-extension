@@ -674,8 +674,26 @@ export const S = {
   proofPaste1: 'Paste its answer here',
   proofWithFile: 'Now the same question, with your file attached.',
   proofPaste2: 'Paste the second answer here',
-  proofGrade: 'Have it grade its own two answers.',
-  proofPaste3: 'Paste the grade here',
+  /* BS-03d — the grade step is gone (Adam's P1): the AI is no longer asked
+     to grade itself, so `proofGrade` and `proofPaste3` go with the round
+     trip they belonged to. What stands in that slot is the person's own
+     judgement. [DRAFT] */
+  proofJudge: 'Same question. Two answers.',
+  proofJudgeSub: 'Shown exactly as your AI wrote them. Workbrain never reads or scores them.',
+  proofColNoFile: 'No file',
+  proofColWithFile: 'With your file',
+  proofWhichRight: 'Which of these did the second one get right?',
+  /** The tick statements. Two are filled from what the person named; two are
+   * true of any answer and need no context to judge (core/proof/checklist.ts). */
+  proofCheckPerson: (name: string) => `Used ${name}'s name`,
+  proofCheckProject: (name: string) => `Knew ${name} is mine`,
+  proofCheckVoice: 'Sounded like me',
+  proofCheckAsk: 'Asked for the right thing',
+  /** Written from the count, so they are told what they observed rather than
+   * what the panel thinks of it. */
+  proofTallyLine: (value: number, of: number) => `That is ${wordFor(value)} out of ${wordFor(of)}.`,
+  proofKeepIt: 'Keep it',
+  proofReceipt: 'Save this as a one-page receipt',
   proofDone: 'That difference is your context working.',
   proofDoneSub: 'Shown exactly as your AI wrote it. The panel never reads or scores it.',
   copyPrompt: 'Copy',

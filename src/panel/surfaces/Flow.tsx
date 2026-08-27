@@ -19,6 +19,9 @@ import {
   VerticalPick,
 } from '../components';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
+import { PROOF_BASELINE_ANSWER_KEY, PROOF_CONTEXT_ANSWER_KEY } from '../../core/flow/proofAdapter';
+import { proofChecks, proofTally } from '../../core/proof/checklist';
+import type { ProofCheck, ProofCheckId } from '../../core/proof/checklist';
 import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
 import { AssistBar } from './AssistBar';
@@ -68,9 +71,7 @@ import { offListOptions } from '../../core/flow/customOptions';
 import {
   promptFor,
   attachHintFor,
-  PROOF_SCORE_BASELINE_KEY,
   PROOF_SCORE_CONTEXT_KEY,
-  PROOF_GRADE_TEXT_KEY,
   proofServiceFor,
 } from '../../core/flow/proofAdapter';
 import { hintStaysVisible } from '../../core/flow/deepDive';
@@ -86,7 +87,7 @@ import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '.
 import { assistServiceUrlFor } from '../../core/flow/assistServices';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
 import { TourSlide, usesTourSlide, type TourSlideId } from '../components/TourSlide';
-import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
+import { makeScoreEntry, appendScore } from '../../core/report/scoring';
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
 import { NARRATION_COPY } from '../voice/copy';
 import { useNarration } from '../voice/useNarration';
@@ -535,8 +536,9 @@ function errorFor(step: Step): string {
  * `genKey` the same way `errorFor` above switches on a step's own id, since
  * neither is worth a new Step field just for one flow's three variants. */
 function pasteLabelFor(step: Step): string {
+  // BS-03d: 'grade' is gone — the AI is no longer asked to grade itself, so
+  // there is no third paste to label.
   if (step.genKey === 'withContext') return S.proofPaste2;
-  if (step.genKey === 'grade') return S.proofPaste3;
   return S.proofPaste1; // 'baseline'
 }
 
@@ -979,27 +981,30 @@ function DoneRedirect({ onDone }: { onDone: () => void }) {
 }
 
 /**
- * The proof loop's `kind: 'demo'` recommendations screen (R1-11) — relays
- * whatever was pasted on the grade step back verbatim, read-only, and shows
- * the score difference computed for display only (core/report/scoring.ts's
- * `scoreDelta` — never persisted; only the with-context number itself was
- * ever written to wb:report). If the grade step was skipped, there is
- * nothing to relay or compute — this degrades to the heading/hint alone
- * rather than showing an empty block or a stray "NaN".
+ * The proof loop's closing screen (R1-11 → BS-03d).
+ *
+ * It used to relay the AI's own grade back and print a computed difference
+ * between two typed scores. Neither exists: Adam's P1 deleted the round trip
+ * that produced the grade, and the person's ticks replaced the numbers. What
+ * it says now is the tally they just made — their observation, in their
+ * words' worth of numbers — and it degrades to the heading alone when the
+ * judging step was skipped, exactly as it degraded before.
  */
-function DemoBody({ answers }: { answers: Answers }) {
-  const gradeText = answers.values[PROOF_GRADE_TEXT_KEY];
-  const baselineScore = answers.values[PROOF_SCORE_BASELINE_KEY];
-  const contextScore = answers.values[PROOF_SCORE_CONTEXT_KEY];
-  const hasGrade = typeof gradeText === 'string' && gradeText.trim() !== '';
-  const hasScores = typeof baselineScore === 'string' && typeof contextScore === 'string';
+/** BS-03d — a check's sentence. Core decides WHICH checks are true of this
+ * person and what to fill them with; the words are here, per CLAUDE.md. */
+function checkLabel(check: ProofCheck): string {
+  if (check.id === 'person') return S.proofCheckPerson(check.name ?? '');
+  if (check.id === 'project') return S.proofCheckProject(check.name ?? '');
+  if (check.id === 'voice') return S.proofCheckVoice;
+  return S.proofCheckAsk;
+}
 
-  return (
-    <>
-      {hasScores && <p className="flow-hint">{S.proofScoreDelta(scoreDelta(Number(baselineScore), Number(contextScore)))}</p>}
-      {hasGrade && <ReadOnlyBlock tag={S.proofDoneSub}>{gradeText}</ReadOnlyBlock>}
-    </>
-  );
+function DemoBody({ answers }: { answers: Answers }) {
+  const tallied = answers.values[PROOF_SCORE_CONTEXT_KEY];
+  const value = typeof tallied === 'string' ? Number(tallied) : Number.NaN;
+  const of = proofChecks(answers).length;
+  if (!Number.isFinite(value)) return null;
+  return <p className="flow-hint">{S.proofTallyLine(value, of)}</p>;
 }
 
 /**
@@ -1078,21 +1083,9 @@ function StepView({
     const existing = existingValue(answers, pos.step, pos.location);
     return typeof existing === 'string' ? existing : '';
   });
-  // R1-11: the grade step's two self-reported "out of 10" numbers. Not
-  // modelled as their own Steps — they're genuinely two fields on one
-  // screen, not two more questions — so they get their own draft state and
-  // are persisted via `scoreSubStep` (see above) alongside the pasted
-  // grade text on that one step's Next.
-  const [draftScoreBaseline, setDraftScoreBaseline] = useState(() => {
-    if (pos.kind === 'add-another' || pos.step.genKey !== 'grade') return '';
-    const existing = answers.values[PROOF_SCORE_BASELINE_KEY];
-    return typeof existing === 'string' ? existing : '';
-  });
-  const [draftScoreContext, setDraftScoreContext] = useState(() => {
-    if (pos.kind === 'add-another' || pos.step.genKey !== 'grade') return '';
-    const existing = answers.values[PROOF_SCORE_CONTEXT_KEY];
-    return typeof existing === 'string' ? existing : '';
-  });
+  /* BS-03d deleted the grade step's two self-reported "out of 10" drafts:
+     the person ticks statements now, and `ticked` above is what replaces
+     them. */
   const [rephraseIndex, setRephraseIndex] = useState(0);
   /**
    * V1.8 VB-42, rewritten by V2.0 VB-57 — has the person touched this question
@@ -1183,6 +1176,10 @@ function StepView({
   //               the same place with the paste instruction. Not liking
   //               what came back costs nothing: the chip is right there,
   //               and so is just typing.
+  /** BS-03d — what the person has ticked on the judged landing. Ephemeral
+   * like every other draft here; the durable fact is the tally written at
+   * commit (`commitJudge`). */
+  const [ticked, setTicked] = useState<ProofCheckId[]>([]);
   const [assistPhase, setAssistPhase] = useState<'idle' | 'activated' | 'returned'>('idle');
   /** V2.5 VB-119 — what the live region says after the sheet lands its
    * answer, for anyone who cannot see the field fill and the pulse point. */
@@ -1417,37 +1414,34 @@ function StepView({
     onAddAnotherDecision(pos.block.id, wantsMore);
   }
 
-  /** R1-11's grade step: the pasted grade text plus two required
-   * self-reported "out of 10" scores, all committed together. Writes
-   * exactly one `ScoreEntry` to `wb:report.scores` — the with-context
-   * number only, never the baseline number, never a computed delta (that's
-   * display-only, see core/report/scoring.ts) — and only the first time
-   * this step is actually completed, so navigating Back and resubmitting
-   * the same answers this session doesn't double the history. */
-  async function commitGrade(step: Step, location: StepLocation) {
-    const baselineNum = Number(draftScoreBaseline);
-    const contextNum = Number(draftScoreContext);
-    const validScore = (n: number) => Number.isFinite(n) && n >= 0 && n <= 10;
-
-    if (draftText.trim() === '') {
-      setPendingError(errorFor(step));
-      return;
-    }
-    if (draftScoreBaseline.trim() === '' || draftScoreContext.trim() === '' || !validScore(baselineNum) || !validScore(contextNum)) {
-      setPendingError(S.errNeedScore);
-      return;
-    }
-
+  /**
+   * BS-03d — the judged landing's commit.
+   *
+   * R1-11 asked for a pasted grade and two numbers out of ten. The person
+   * ticks statements now, so what is committed is their tally: how many of
+   * the statements they were offered they said were true. Writes exactly one
+   * `ScoreEntry` — still one number about the with-file answer, still never
+   * the baseline, still never a comparison — and still only the first time
+   * this step is completed, so going Back and resubmitting does not double
+   * the history.
+   *
+   * NOTHING IS REQUIRED HERE. The old step refused to advance without two
+   * numbers; ticking nothing is a real answer ("it got none of these
+   * right"), and refusing to let somebody past their own honest observation
+   * would be the panel arguing with them.
+   */
+  async function commitJudge(step: Step, location: StepLocation) {
+    const offered = proofChecks(answers);
+    const tally = proofTally(ticked, offered);
     const alreadyScored = typeof answers.values[PROOF_SCORE_CONTEXT_KEY] === 'string';
 
-    let next = applyAnswer(answers, step, location, draftText);
-    next = applyAnswer(next, scoreSubStep(PROOF_SCORE_BASELINE_KEY), location, String(baselineNum));
-    next = applyAnswer(next, scoreSubStep(PROOF_SCORE_CONTEXT_KEY), location, String(contextNum));
+    let next = applyAnswer(answers, step, location, String(tally.value));
+    next = applyAnswer(next, scoreSubStep(PROOF_SCORE_CONTEXT_KEY), location, String(tally.value));
     onCommit(next);
 
     if (!alreadyScored) {
       const existingReport = await getLocal('wb:report');
-      const entry = makeScoreEntry(contextNum, new Date().toISOString());
+      const entry = makeScoreEntry(tally.value, tally.of, new Date().toISOString());
       await setLocal('wb:report', appendScore(existingReport, entry));
     }
   }
@@ -1459,13 +1453,16 @@ function StepView({
     }
     const { step, location } = pos;
 
-    if (step.kind === 'intro' || step.kind === 'demo') {
-      onCommit(applySkip(answers, step, location));
+    // BS-03d: before the generic intro/demo skip below — the judge screen is
+    // a `demo` (nothing to copy, nothing to paste) but it is the one that
+    // has something to record.
+    if (step.kind === 'demo' && step.genKey === 'judge') {
+      void commitJudge(step, location);
       return;
     }
 
-    if (step.kind === 'gen' && step.genKey === 'grade') {
-      void commitGrade(step, location);
+    if (step.kind === 'intro' || step.kind === 'demo') {
+      onCommit(applySkip(answers, step, location));
       return;
     }
 
@@ -2313,32 +2310,6 @@ function StepView({
                 onChange={setDraftText}
               />
             </div>
-            {step.genKey === 'grade' && (
-              <div className="flow-scores">
-                <Field
-                  id="flow-proof-score-baseline"
-                  label={S.proofScoreBaselineLabel}
-                  type="number"
-                  min={0}
-                  max={10}
-                  step={0.5}
-                  inputMode="decimal"
-                  value={draftScoreBaseline}
-                  onChange={setDraftScoreBaseline}
-                />
-                <Field
-                  id="flow-proof-score-context"
-                  label={S.proofScoreContextLabel}
-                  type="number"
-                  min={0}
-                  max={10}
-                  step={0.5}
-                  inputMode="decimal"
-                  value={draftScoreContext}
-                  onChange={setDraftScoreContext}
-                />
-              </div>
-            )}
             {pendingError && (
               <div role="alert" className="flow-error">
                 {pendingError}
@@ -2347,7 +2318,44 @@ function StepView({
           </>
         )}
 
-        {step.kind === 'demo' && <DemoBody answers={answers} />}
+        {/* BS-03d (§3.3) — THE LANDING, JUDGED BY THE PERSON.
+            Two answers side by side, verbatim, with the line that says the
+            panel never reads them; then the statements they tick. The
+            primary's label is written from the count, so the button says
+            what they just observed. */}
+        {step.kind === 'demo' && step.genKey === 'judge' && (
+          <div className="proofjudge">
+            <p className="flow-hint">{S.proofJudgeSub}</p>
+            <div className="proofjudge-pair">
+              <div className="proofjudge-col">
+                <p className="proofjudge-col-label">{S.proofColNoFile}</p>
+                <p className="proofjudge-answer">{String(answers.values[PROOF_BASELINE_ANSWER_KEY] ?? '')}</p>
+              </div>
+              <div className="proofjudge-col is-with">
+                <p className="proofjudge-col-label">{S.proofColWithFile}</p>
+                <p className="proofjudge-answer">{String(answers.values[PROOF_CONTEXT_ANSWER_KEY] ?? '')}</p>
+              </div>
+            </div>
+            <fieldset className="proofjudge-checks">
+              <legend>{S.proofWhichRight}</legend>
+              {proofChecks(answers).map((check) => (
+                <label key={check.id} className="proofjudge-check">
+                  <input
+                    type="checkbox"
+                    checked={ticked.includes(check.id)}
+                    onChange={() =>
+                      setTicked((was) =>
+                        was.includes(check.id) ? was.filter((id) => id !== check.id) : [...was, check.id],
+                      )
+                    }
+                  />
+                  <span>{checkLabel(check)}</span>
+                </label>
+              ))}
+            </fieldset>
+          </div>
+        )}
+        {step.kind === 'demo' && step.genKey !== 'judge' && <DemoBody answers={answers} />}
 
         {step.kind !== 'text' && step.kind !== 'intro' && step.kind !== 'gen' && step.kind !== 'demo' && (
           <>

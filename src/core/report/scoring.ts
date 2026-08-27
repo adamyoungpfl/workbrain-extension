@@ -11,11 +11,16 @@ import type { ReportState, ScoreEntry } from '../../schema/storage.types';
  * task brief.
  */
 
-/** `value` is always the with-context score — never the baseline number,
- * never a computed delta (both exist only for on-screen display, computed
- * fresh by `scoreDelta` below, never persisted). */
-export function makeScoreEntry(withContextScore: number, at: string): ScoreEntry {
-  return { at, value: withContextScore };
+/**
+ * BS-03d — the entry is the person's own tally now.
+ *
+ * `value` was the with-context score out of ten; it is the count of what
+ * they ticked, and `of` is how many statements they were offered. The old
+ * rule survives unchanged in spirit: still one number about the with-file
+ * answer, still never the baseline, still never a computed comparison.
+ */
+export function makeScoreEntry(ticked: number, of: number, at: string): ScoreEntry {
+  return { at, value: ticked, of };
 }
 
 /** Appends, never replaces — a person may run the proof loop again months
@@ -27,8 +32,9 @@ export function appendScore(report: ReportState | undefined, entry: ScoreEntry):
   return { ...base, scores: [...base.scores, entry] };
 }
 
-/** Display-only — the on-screen "that difference is your context working"
- * copy is computed from this, never stored (see this file's header). */
-export function scoreDelta(baselineScore: number, withContextScore: number): number {
-  return withContextScore - baselineScore;
-}
+/* BS-03d deleted `scoreDelta`. It subtracted the baseline's number from the
+   with-file number, and neither exists any more: the person ticks statements
+   about the with-file answer alone, so there is no pair to compare. Adam's
+   P1 also deleted the round trip that produced the two numbers — the AI is
+   no longer asked to grade itself. Recorded rather than silently dropped,
+   per the `splashLoading` precedent in strings.ts. */

@@ -1,4 +1,4 @@
-import { BASELINE_PROMPT, ATTACH_FALLBACK_SUFFIX, evaluationPrompt } from './proofSource';
+import { BASELINE_PROMPT, ATTACH_FALLBACK_SUFFIX } from './proofSource';
 import { ALL_PROOF_SERVICES } from './proofAdditions';
 import type { FlowContext, Module, Option, Step } from '../../schema/flow.types';
 
@@ -44,7 +44,7 @@ export interface ProofCopy {
   pickAI: string; // S.proofPickAI
   baselineQ: string; // S.proofSub
   withContextQ: string; // S.proofWithFile
-  gradeQ: string; // S.proofGrade
+  judgeQ: string; // S.proofJudge
   doneQ: string; // S.proofDone
 }
 
@@ -99,16 +99,29 @@ export function buildProofModule(copy: ProofCopy): Module {
     required: true,
   };
 
-  const grade: Step = {
-    id: 'proof_grade',
+  /**
+   * BS-03d (§3.3), Adam's P1 — THE THIRD ROUND TRIP IS GONE.
+   *
+   * This step used to copy an evaluation rubric out, have the AI grade its
+   * own two answers, and ask the person to paste the grade back — a whole
+   * third errand in another tab, for a number. §3's budget is three round
+   * trips for the WHOLE hour (micro-proof, proof one, proof two), so proof
+   * one had to drop to two, and the trip that goes is the one the person's
+   * own eyes replace.
+   *
+   * What stands here now asks nothing of their AI: the two answers side by
+   * side, and a short list of statements they tick. `kind: 'demo'` because
+   * there is no prompt to copy and nothing to paste — the panel is showing
+   * them what they already have and recording what they say about it.
+   */
+  const judge: Step = {
+    id: 'proof_judge',
     module: 1,
     section: -1,
     eyebrow: EYEBROW,
-    q: copy.gradeQ,
-    kind: 'gen',
-    genKey: 'grade',
-    outKey: PROOF_GRADE_TEXT_KEY,
-    required: true,
+    q: copy.judgeQ,
+    kind: 'demo',
+    genKey: 'judge',
   };
 
   const recommendations: Step = {
@@ -128,7 +141,7 @@ export function buildProofModule(copy: ProofCopy): Module {
     purpose: 'Show the file actually changing the answer.',
     required: false,
     estimatedMinutes: [5, 10],
-    nodes: [service, baseline, withContext, grade, recommendations],
+    nodes: [service, baseline, withContext, judge, recommendations],
   };
 }
 
@@ -182,14 +195,12 @@ export function withContextPrompt(task: string, fileText: string, lead: string):
   return `${task}\n\n---\n${lead}\n\n${fileText}`;
 }
 
+/* BS-03d deleted the `grade` branch and, with it, the product's only use of
+   `evaluationPrompt` (proofSource.ts). It also dissolved a defect the prompt
+   audit had just found: the rubric asked the AI to judge "what this
+   Context.md is missing" with the file absent from the prompt. There is no
+   grader to mislead now. */
 export function promptFor(genKey: string | undefined, ctx: FlowContext, fileText?: string, lead?: string): string {
-  if (genKey === 'grade') {
-    const before = ctx.answers[PROOF_BASELINE_ANSWER_KEY];
-    const after = ctx.answers[PROOF_CONTEXT_ANSWER_KEY];
-    // The grader is told the truth about what was asked (proofSource.ts's
-    // parameterized PROMPT USED line).
-    return evaluationPrompt(typeof before === 'string' ? before : '', typeof after === 'string' ? after : '', proofQuestion(ctx));
-  }
   const task = proofQuestion(ctx);
   // 'baseline' and 'withContext' ask the exact same question — the whole
   // point of the proof is putting it twice, unchanged, once per condition.

@@ -124,6 +124,13 @@ function buildDoneAnswers(modules: Module[]): Answers {
     });
   }
 
+  // BS-03d — the judged landing assembles its statements from what the
+  // person named, so this fixture names somebody and something. Without
+  // these the checklist falls to its two-statement floor, which is a real
+  // state but not the one this walk is about.
+  repeatables['entities'] = [{ entity_name: 'Priya' }];
+  repeatables['initiatives_records'] = [{ initiative_name: 'Northstar' }];
+
   return { values, repeatables, answeredAt, reflectedAt };
 }
 
@@ -191,37 +198,55 @@ test.describe('The proof loop (R1-11)', () => {
     await page.locator('.flow textarea').fill(contextAnswer);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
 
-    // --- grade: the generated rubric prompt embeds both pasted answers ---
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_grade');
-    const gradePrompt = await page.locator('.flow .readonly').first().textContent();
-    expect(gradePrompt).toContain('5. The top 2-3 specific areas of opportunity');
-    expect(gradePrompt).toContain(baselineAnswer);
-    expect(gradePrompt).toContain(contextAnswer);
+    // --- judge: no third round trip. The two answers side by side, and the
+    // statements the person ticks (BS-03d, Adam's P1). ---
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_judge');
+    // Nothing to copy and nothing to paste — the errand budget is spent.
+    await expect(page.locator('.flow .readonly')).toHaveCount(0);
+    await expect(page.locator('.flow textarea')).toHaveCount(0);
 
-    const pastedGrade =
-      'Answer 2 is far more specific to your actual role and team. Baseline: 6/10. With Context.md: 9/10. Top opportunity: clarify your manager relationship.';
-    await page.locator('.flow textarea').fill(pastedGrade);
+    // Both answers are shown, verbatim, with the line that says the panel
+    // does not read them.
+    await expect(page.locator('.proofjudge')).toContainText(baselineAnswer);
+    await expect(page.locator('.proofjudge')).toContainText(contextAnswer);
+    await expect(page.locator('.flow')).toContainText(
+      'Shown exactly as your AI wrote them. Workbrain never reads or scores them.',
+    );
 
-    // Required score fields — Next is blocked until both are filled.
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.getByRole('alert')).toBeVisible();
-    const numberInputs = page.locator('.flow input[type="number"]');
-    // Keyboard-only through the two new score fields — CLAUDE.md's
-    // definition of done requires the keyboard-only path on any changed
-    // screen, same standard reflect.spec.ts holds itself to.
-    await numberInputs.nth(0).focus();
-    await page.keyboard.type('6');
+    // The statements are ASSEMBLED from what this person actually said. The
+    // seed names an entity and an initiative, so both specific checks are
+    // offered alongside the two that need no context.
+    const checks = page.locator('.proofjudge-check');
+    await expect(checks).toHaveCount(4);
+    await expect(checks.nth(0)).toContainText("Used Priya's name");
+    await expect(checks.nth(1)).toContainText('Knew Northstar is mine');
+    await expect(checks.nth(2)).toContainText('Sounded like me');
+    await expect(checks.nth(3)).toContainText('Asked for the right thing');
+
+    // Keyboard-only through the ticks — CLAUDE.md's definition of done, the
+    // same standard the numeric fields were held to before they went.
+    await checks.nth(0).locator('input').focus();
+    await page.keyboard.press('Space');
     await page.keyboard.press('Tab');
-    await page.keyboard.type('9');
-    await page.getByRole('button', { name: 'Next', exact: true }).focus();
-    await page.keyboard.press('Enter');
+    await page.keyboard.press('Space');
+    await expect(checks.nth(0).locator('input')).toBeChecked();
+    await expect(checks.nth(1).locator('input')).toBeChecked();
+    await expect(checks.nth(2).locator('input')).not.toBeChecked();
 
-    // --- recommendations: relays the pasted grade text verbatim, read-only,
-    // plus the computed (never persisted) score difference ---
+    // A photograph of the one screen this whole workstream is for — the
+    // house's "for a person to look at" convention (question-fill.spec.ts,
+    // save-note.spec.ts). Taken with two of the four ticked, which is the
+    // state somebody is actually looking at when they decide.
+    await page.screenshot({ path: 'test-results/bs03/judged-landing.png' });
+
+    // Nothing is required: ticking is an observation, and the panel does not
+    // argue with it.
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(page.getByRole('alert')).toHaveCount(0);
+
+    // --- the closing screen says what they observed, in their own tally ---
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_recommendations');
-    await expect(page.locator('.flow')).toContainText('3 points higher with your file.');
-    const relayed = await page.locator('.flow .readonly').first().textContent();
-    expect(relayed).toContain(pastedGrade);
+    await expect(page.locator('.flow')).toContainText('That is two out of four.');
 
     await page.getByRole('button', { name: 'Next', exact: true }).focus();
     await page.keyboard.press('Enter');
@@ -230,27 +255,30 @@ test.describe('The proof loop (R1-11)', () => {
     // --- storage: read directly, not just the UI ---
     const stored = await storedLocal(sw);
     const answers = stored['wb:answers'] as Answers;
-    const report = stored['wb:report'] as { scores: { at: string; value: number }[] } | undefined;
+    const report = stored['wb:report'] as { scores: { at: string; value: number; of: number }[] } | undefined;
 
     expect(report?.scores).toHaveLength(1);
-    expect(report!.scores[0]!.value).toBe(9); // with-context score, never the baseline number
+    // Their tally, and the denominator that makes it mean something.
+    expect(report!.scores[0]!.value).toBe(2);
+    expect(report!.scores[0]!.of).toBe(4);
     expect(typeof report!.scores[0]!.at).toBe('string');
 
-    // The pasted grade text lives only in the one field it was pasted into —
-    // never duplicated into wb:report, never parsed into anything else.
-    expect(answers.values.proof_grade_text).toBe(pastedGrade);
-    expect(JSON.stringify(report)).not.toContain(pastedGrade);
+    // NEITHER ANSWER EVER REACHES THE REPORT. The panel shows them and
+    // records a number the person chose; it never keeps what the AI wrote.
     expect(JSON.stringify(report)).not.toContain(baselineAnswer);
     expect(JSON.stringify(report)).not.toContain(contextAnswer);
 
-    // The two typed scores are exactly what was typed, not derived/rounded.
-    expect(answers.values.proof_score_baseline).toBe('6');
-    expect(answers.values.proof_score_context).toBe('9');
+    // The two pasted answers live where they were pasted, and nowhere else.
+    expect(answers.values.proof_baseline_answer).toBe(baselineAnswer);
+    expect(answers.values.proof_context_answer).toBe(contextAnswer);
+    // And the deleted step leaves no orphan behind: nothing writes
+    // `proof_grade_text` any more, because nothing asks for a grade.
+    expect(answers.values.proof_grade_text).toBeUndefined();
 
     await context.close();
   });
 
-  test('skipping baseline/with-context degrades gracefully — the grade prompt shows "[not captured]", never throws', async () => {
+  test('skipping baseline/with-context degrades gracefully — the landing shows empty columns, never throws', async () => {
     const { context, sw, id } = await launchExtension();
     const seeded = buildDoneAnswers(contextModules);
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
@@ -265,18 +293,35 @@ test.describe('The proof loop (R1-11)', () => {
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_context');
     await page.getByRole('button', { name: 'Skip', exact: true }).click();
 
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_grade');
-    const gradePrompt = await page.locator('.flow .readonly').first().textContent();
-    expect(gradePrompt).toContain('[not captured]');
+    // BS-03d: the grade step and its "[not captured]" rubric are gone with
+    // the round trip. What has to degrade now is the landing — two answers
+    // that were never pasted.
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_judge');
+    // It renders, with empty columns rather than a crash or a stray "undefined".
+    await expect(page.locator('.proofjudge-col')).toHaveCount(2);
+    await expect(page.locator('.proofjudge')).not.toContainText('undefined');
+    // And the statements still stand: they are assembled from the person's
+    // own answers, which exist whether or not the errand was run.
+    await expect(page.locator('.proofjudge-check')).toHaveCount(4);
 
-    // Skip the grade step too — reaching recommendations with nothing pasted.
-    await page.getByRole('button', { name: 'Skip', exact: true }).click();
+    // Past the landing with nothing ticked. There is no Skip here and there
+    // should not be: ticking nothing already means "it got none of these
+    // right", so Next IS the skip, and a second control offering the same
+    // outcome would be the screen asking twice.
+    await expect(page.getByRole('button', { name: 'Skip', exact: true })).toHaveCount(0);
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_recommendations');
     await expect(page.locator('.flow .readonly')).toHaveCount(0);
 
-    // No score was ever written — nothing was typed to write.
+    // A tally of zero out of four IS written, and that is the honest
+    // outcome: they were shown two answers and said none of the statements
+    // were true of the second. The old step wrote nothing here because
+    // nothing had been typed; ticking nothing is an answer, not an absence.
     const stored = await storedLocal(sw);
-    expect(stored['wb:report']).toBeUndefined();
+    const report = stored['wb:report'] as { scores: { value: number; of: number }[] } | undefined;
+    expect(report?.scores).toHaveLength(1);
+    expect(report!.scores[0]!.value).toBe(0);
+    expect(report!.scores[0]!.of).toBe(4);
 
     await context.close();
   });
