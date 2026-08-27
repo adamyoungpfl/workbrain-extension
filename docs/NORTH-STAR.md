@@ -6,10 +6,11 @@ stop and say so — the same rule GUARDRAILS.md carries, one level up.
 
 ## The tagline
 
-> **Workbrain. Making the way you do anything how your AI does every thing.**
+> **How you do anything is how your AI does everything.**
 
-(The anything / every thing mirror is deliberate. Lands on the splash — still pinned — the store
-listing, and the site.)
+(SUPERSEDES all earlier lines — Adam, 2026-08-26, during V2.6: "That supersedes all others and
+is the standard now." It replaced "Workbrain. Making the way you do anything how your AI does
+every thing." Lands on Home's lockup, the splash, the store listing, and the site.)
 
 ## The model
 
