@@ -176,8 +176,14 @@ async function answerCurrent(page: Page): Promise<void> {
   const pills = page.locator(
     '.flow .pillgroup .pill:not(.pill-add), .flow .orbgroup .orbchoice:not(.orbchoice-add), .flow .dline .dline-opt',
   );
+  // V2.5 VB-123: the merged role screen asks two tile facets at once — the
+  // walker answers the first tile of EACH group before Next.
+  const facets = page.locator('.flow .vpick');
   if (await textarea.count()) await textarea.first().fill('An answer typed on this screen.');
-  else if (await pills.count()) await pills.first().click();
+  else if (await facets.count()) {
+    const groups = await facets.count();
+    for (let i = 0; i < groups; i++) await facets.nth(i).locator('.vpick-tile').first().click();
+  } else if (await pills.count()) await pills.first().click();
   else if (await input.count()) await input.first().fill('An answer typed on this screen.');
   await next(page);
 }

@@ -99,8 +99,14 @@ test('axe finds no violations on the "another role?" screen (VB-20)', async () =
       continue;
     }
     const textarea = page.locator('.flow textarea');
+    // V2.5 VB-123: the merged role screen asks two tile facets at once — the
+    // walker answers the first tile of EACH group before Next.
+    const facets = page.locator('.flow .vpick');
     if (await textarea.count()) await textarea.first().fill('What this role is there to do.');
-    else
+    else if (await facets.count()) {
+      const groups = await facets.count();
+      for (let i = 0; i < groups; i++) await facets.nth(i).locator('.vpick-tile').first().click();
+    } else
       // V2.5 VB-122: role_for is the divided line — a fourth choice grammar
       // for the walker, same rule as VB-60's orbs.
       await page

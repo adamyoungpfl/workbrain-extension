@@ -131,8 +131,15 @@ async function answerCurrent(page: Page): Promise<void> {
   const choice = page.locator(
     '.flow .pillgroup .pill:not(.pill-add), .flow .orbgroup .orbchoice:not(.orbchoice-add), .flow .dline .dline-opt',
   );
+  // V2.5 VB-123: the merged role screen asks two tile facets at once —
+  // standing AND the current-or-past mark — so the walker answers the first
+  // tile of EACH group before Next.
+  const facets = page.locator('.flow .vpick');
   if (await textarea.count()) await textarea.first().fill('What this role is there to do.');
-  else if (await choice.count()) await choice.first().click();
+  else if (await facets.count()) {
+    const groups = await facets.count();
+    for (let i = 0; i < groups; i++) await facets.nth(i).locator('.vpick-tile').first().click();
+  } else if (await choice.count()) await choice.first().click();
   await next(page);
 }
 

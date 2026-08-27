@@ -183,3 +183,41 @@ export const LINE_CUSTOM_GLYPH: ReactElement = glyph([
   <path key="tag" d="M12.8 3.6h6.2a1.4 1.4 0 0 1 1.4 1.4v6.2L11.2 20.4a1.9 1.9 0 0 1-2.7 0l-5-5a1.9 1.9 0 0 1 0-2.7z" />,
   <circle key="hole" cx="16.3" cy="7.7" r="1.3" />,
 ]);
+
+/**
+ * V2.5 VB-123 — the merged role screen's drawings, keyed question-then-option
+ * so Flow.tsx can dress either facet from one map. The standing three are one
+ * drawing at three strengths — a share-of-time dial whose filled wedge is the
+ * answer (large, half, sliver): "primary / secondary / occasional" is a size
+ * claim, so the icons make the same claim in the same object. The filled
+ * wedge is the REPHRASE_ICON dot's precedent — a filled sub-shape inside a
+ * stroke drawing. Durability: a clock face for current, an archive box for
+ * history. All decorative; the labels carry the words.
+ */
+export const PAIR_GLYPHS: Record<string, Record<string, ReactElement>> = {
+  role_standing: {
+    primary: glyph([
+      <circle key="dial" cx="12" cy="12" r="8.2" />,
+      <path key="share" d="M12 12V5.2a6.8 6.8 0 1 1-6.3 9.4z" fill="currentColor" stroke="none" />,
+    ]),
+    secondary: glyph([
+      <circle key="dial" cx="12" cy="12" r="8.2" />,
+      <path key="share" d="M12 12V5.2a6.8 6.8 0 0 1 0 13.6z" fill="currentColor" stroke="none" />,
+    ]),
+    occasional: glyph([
+      <circle key="dial" cx="12" cy="12" r="8.2" />,
+      <path key="share" d="M12 12V5.2a6.8 6.8 0 0 1 4.8 2z" fill="currentColor" stroke="none" />,
+    ]),
+  },
+  role_durability: {
+    current: glyph([
+      <circle key="face" cx="12" cy="12" r="8.2" />,
+      <path key="hands" d="M12 7.6V12l3.4 2" />,
+    ]),
+    historical: glyph([
+      <path key="lid" d="M3.8 5.4h16.4v3.8H3.8z" />,
+      <path key="box" d="M5.4 9.2v9a1.6 1.6 0 0 0 1.6 1.6h10a1.6 1.6 0 0 0 1.6-1.6v-9" />,
+      <path key="slot" d="M9.8 13h4.4" />,
+    ]),
+  },
+};
