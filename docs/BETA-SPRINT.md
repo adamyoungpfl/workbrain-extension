@@ -280,6 +280,40 @@ the dock's welded set are what the geometry specs mirror, so a raise there is
 what the specs re-measure against — the reverse order leaves the gate red for
 no useful reason.
 
+### BS-01c — where each of the twelve icon-only controls goes
+
+§1 says zero controls communicate by icon alone. Twelve exist (the review said
+six). Same rule as BS-01b: a control a later workstream **rebuilds** gets its
+word there, not twice.
+
+| Control | Disposition |
+|---|---|
+| `ReadOnlyBlock`'s copy | **Done** — "Copy" beside the glyph; the full sentence stays the accessible name, because three of these can share a screen |
+| `Sheet`'s close | **Done** — "Close" beside the cross. Also lifted the one hard-coded user-facing string in the component tree into `strings.ts` |
+| `NarratorToggle` | **Done** — "Read aloud"; the long sentence stays the accessible name |
+| Flow's rephrase | **Deferred to §5.** Measured, not guessed: adding "Reword" widens the question row enough to open a **103px dead band** between the follow-ups and the helper row on `terms_depend_on` at the resting drawer height, which `save-note.spec.ts`'s seam law catches. That row is the tightest real estate in the product and §5 owns that screen |
+| Home's upload | Deferred to §6 — Home is rebuilt |
+| `Recommendation`'s hide | Deferred to §6, which already replaces the corner cross with a text "Not now" in the review's own mock |
+| `FlowProgress`'s home | Deferred to §5 — the progress shell is rebuilt for the beat row |
+| The two drawer mode buttons | Deferred to §7.1, which makes them labelled pills |
+| The globe's back and home | Deferred to §7.1, which **deletes** them |
+| `BrainTurnCue` | Deferred to §7 |
+| `FileTree`'s orb toggle | **Judgment: it stays.** The rule is about controls a person cannot identify. This one sits immediately beside the section name it opens, its accessible name is "Open *that section*", and there is one per row — a word on each would be a column of "Open" down the drawer. Labelled by adjacency, not unlabelled |
+
+**The census's "two filled primaries on Flow" is wrong, and the correction
+matters.** It counted the `variant` prop, not painted pixels:
+`Flow.css`'s cluster rule sets `border: 0; background: none` on every `.btn`
+inside `.flow-foot`, so Next is **not** filled today — VB-41 took the boxes
+away. There is no violation to fix now. It becomes real at **BS-05b**, which
+makes Next a filled primary, and the resolution then is that Next demotes to
+secondary while the AI Assist bar is standing — because V2.8 already settled
+that *copying is the step*, so the copy button is the primary at that moment.
+
+**One measurement BS-05b needs.** The cluster's own `font-size` moved 14 → 15
+with the rest of the buttons and the geometry held. But the question row above
+it will not take another pixel of width: that is what the rephrase finding
+above proves, and it is the same row §5 adds a beat row and a Skip control to.
+
 ### Two calls taken under Adam's standing latitude on rendering
 
 **The globe keeps its caps (O10).** §1 sends section labels to 13px sentence

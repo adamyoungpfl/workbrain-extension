@@ -1044,7 +1044,13 @@
   min-height: var(--target-min);
   padding: var(--nav-hit-pad, 13px) 10px;
   margin: calc(-1 * var(--nav-paint-inset, 9px)) 0;
-  font-size: 14px;
+  /* BS-01c — Back, Next and Skip are the most-pressed controls in the
+     product, and this rule was holding them one step BELOW every other
+     button in the panel once BS-01b moved `.btn` to the instructional step.
+     The line box is still core's `--nav-label-h`, so the painted face keeps
+     the 26px `navPaintHeight()` the cluster's geometry is welded to — only
+     the glyph inside it grows. */
+  font-size: var(--type-body);
   line-height: var(--nav-label-h, 18px);
   gap: 6px;
   /* 120ms, the system's own duration for a colour change

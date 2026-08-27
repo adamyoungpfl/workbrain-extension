@@ -58,16 +58,24 @@
   flex: 1;
 }
 .sheet-close {
-  width: var(--target-min);
+  /* BS-01c: the cross keeps its meaning and gains its word. Auto width,
+     the 44px floor held on the height. */
+  min-width: var(--target-min);
   height: var(--target-min);
+  padding: 0 10px;
   border-radius: var(--r-sm);
   border: 1px solid transparent;
   background: transparent;
   color: var(--ink-3);
   cursor: pointer;
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   flex: 0 0 auto;
+}
+.sheet-close-word {
+  font-size: var(--type-fine);
+  font-weight: 600;
 }
 .sheet-close:hover {
   background: var(--surface);

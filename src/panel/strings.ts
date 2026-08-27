@@ -672,6 +672,16 @@ export const S = {
   proofDoneSub: 'Shown exactly as your AI wrote it. The panel never reads or scores it.',
   copyPrompt: 'Copy',
   copyToClipboard: 'Copy to clipboard',
+  /* BS-01c — §1: no control communicates by icon alone. These are the WORDS
+     that go beside the glyphs that used to stand on their own. Each is the
+     shortest true verb, because the controls they label sit in tight rows,
+     and each keeps its longer sentence as the accessible name.
+     Flow's rephrase has no entry here on purpose: its word does not fit the
+     question row (docs/BETA-SPRINT.md, BS-01c), and §5 gives it one.
+     [DRAFT] */
+  copyShort: 'Copy',
+  closeShort: 'Close',
+  narratorShort: 'Read aloud',
   copied: 'Copied',
   proofCta: 'Prove it works',
   proofFinished: "That's the whole loop.",

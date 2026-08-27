@@ -26,11 +26,17 @@
   /* docs/design-system.html shows 36x36; the accessibility floor in
      docs/GUARDRAILS.md ("every control >= 44x44, including icon buttons")
      is the hard constraint, so this deviates from the spec's literal figure. */
+  /* BS-01c: the word joined the glyph, so the box is auto-width with the
+     44px floor kept on the height and a minimum on the width. */
   position: absolute;
   top: 8px;
   right: 8px;
-  width: var(--target-min);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: var(--target-min);
   height: var(--target-min);
+  padding: 0 10px;
   border-radius: var(--r-sm);
   background: var(--canvas);
   border: 1px solid var(--border);
@@ -38,6 +44,11 @@
   cursor: pointer;
   display: grid;
   place-items: center;
+}
+.readonly .copy-word {
+  font-size: var(--type-fine);
+  font-weight: 650;
+  letter-spacing: 0.01em;
 }
 .readonly .copy:hover {
   background: var(--violet-tint);

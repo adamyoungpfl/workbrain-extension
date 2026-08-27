@@ -142,6 +142,11 @@ export function NarratorToggle() {
         onClick={() => setOn(!on)}
       >
         {NARRATOR_ICON}
+        {/* BS-01c — §1: no control communicates by icon alone. The full
+            sentence stays on the accessible name; the visible word is the
+            short one, because this rides a header band with a progress bar
+            in it. */}
+        <span className="narrator-word">{S.narratorShort}</span>
       </button>
     </div>
   );

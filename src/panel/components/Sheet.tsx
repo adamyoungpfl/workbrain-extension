@@ -1,5 +1,6 @@
 import { useEffect, useId, useRef } from 'react';
 import type { KeyboardEvent, ReactNode } from 'react';
+import { S } from '../strings';
 import './Sheet.css';
 
 export interface SheetProps {
@@ -80,7 +81,10 @@ export function Sheet({ open, onClose, title, full = false, className, children 
       >
         <div className="sheet-head">
           <h3 id={titleId}>{title}</h3>
-          <button type="button" className="sheet-close" aria-label="Close" onClick={onClose}>
+          {/* BS-01c — the word joins the cross. Also lifts the one hard-coded
+              user-facing string in the component tree into strings.ts, where
+              CLAUDE.md says every one of them lives. */}
+          <button type="button" className="sheet-close" aria-label={S.closeShort} onClick={onClose}>
             <svg
               width="16"
               height="16"
@@ -92,6 +96,7 @@ export function Sheet({ open, onClose, title, full = false, className, children 
             >
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
+            <span className="sheet-close-word">{S.closeShort}</span>
           </button>
         </div>
         {children}

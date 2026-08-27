@@ -23,11 +23,16 @@ export function ReadOnlyBlock({ tag, children, onCopy }: ReadOnlyBlockProps) {
     <div className="readonly">
       <span className="tag">{tag}</span>
       {children}
+      {/* BS-01c — §1: no control communicates by icon alone. The glyph keeps
+          its meaning and gains the word; the full sentence stays on the
+          accessible name, because "Copy" alone is ambiguous when three of
+          these can be on one screen. */}
       <button type="button" className="copy" aria-label={S.copyToClipboard} onClick={copy}>
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
           <rect x="9" y="9" width="12" height="12" rx="2" />
           <path d="M5 15V5a2 2 0 0 1 2-2h10" />
         </svg>
+        <span className="copy-word">{S.copyShort}</span>
       </button>
     </div>
   );
