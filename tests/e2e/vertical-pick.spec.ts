@@ -78,6 +78,21 @@ test.describe('the vertical pick tiles (VB-118)', () => {
     await expect(tiles.nth(1)).toHaveText('Personal');
     await expect(tiles.nth(2)).toHaveText('Both');
 
+    // The claim below is about the SETTLED layout — wait out the staggered
+    // entrance (vpick-arrive translates each tile up into place; measured
+    // mid-flight under machine load, a later tile still carries a few px of
+    // translateY and the baseline assertion reads the animation, not the
+    // design). Settled means every tile's computed transform is identity.
+    await expect
+      .poll(async () =>
+        page.evaluate(() =>
+          [...document.querySelectorAll('.vpick .vpick-tile')].every(
+            (el) => getComputedStyle(el).transform === 'none',
+          ),
+        ),
+      )
+      .toBe(true);
+
     // Tiles, not rows: the three stand side by side on one baseline.
     const boxes = [];
     for (let i = 0; i < 3; i++) boxes.push((await tiles.nth(i).boundingBox())!);
