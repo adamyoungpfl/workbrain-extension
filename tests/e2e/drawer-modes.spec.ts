@@ -537,11 +537,10 @@ test.describe('VB-14b — navigation survives in both modes', () => {
     // The List path, which VB-07 built and which must not regress.
     await page.locator('.filetree-row[data-node-id="sec1"] .filetree-nav').click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', firstQuestion);
-    // Scoped to the interview's footer: V2.1 VB-74's nav band above the globe
-    // also carries a button named Back, and an unscoped role query resolves
-    // both. (That two same-named controls share a screen at all is flagged
-    // for review in docs/V2.1-REFINEMENT.md.)
-    await page.locator('footer').getByRole('button', { name: 'Back', exact: true }).click();
+    // V2.5 VB-114: section one's first question is a tour slide now, whose
+    // nav row sits out — the Back a navigated visitor gets is the slide's
+    // own (.tourslide-back; the room-with-one-door fix).
+    await page.locator('.tourslide-back').click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', before!);
 
     // The Brain path: the same section, the same destination, the same Back.
@@ -554,8 +553,8 @@ test.describe('VB-14b — navigation survives in both modes', () => {
     await page.keyboard.press('Enter');
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', firstQuestion);
 
-    // Scoped like the List path's Back above, for the same VB-74 reason.
-    await page.locator('footer').getByRole('button', { name: 'Back', exact: true }).click();
+    // The slide's own Back again, same as the List path above (VB-114).
+    await page.locator('.tourslide-back').click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', before!);
 
     await context.close();

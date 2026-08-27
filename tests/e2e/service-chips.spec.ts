@@ -49,11 +49,13 @@ async function openOnTheGate(opts: { reducedMotion?: 'reduce' } = {}) {
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
-  // The orientation ladder (VB-90): why → canvas → brain → go, Next each.
-  for (const rung of ['orientation_ready', 'wb_canvas', 'wb_brain_flip', 'wb_go']) {
+  // The dime tour (V2.5 VB-114): three slides, each advanced by the tour's
+  // OWN button — the nav row sits the tour out.
+  for (const rung of ['orientation_ready', 'wb_canvas', 'wb_go']) {
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', rung);
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.locator('.tourslide-advance').click();
   }
+  await page.mouse.move(0, 0);
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'goal_service');
   return { context, page };
 }

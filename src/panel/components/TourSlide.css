@@ -1,0 +1,60 @@
+/* V2.5 VB-114 — the dime tour: the text-and-picture combo takes most of the
+   visual space (Adam's spec), the drawing leading. */
+.tourslide {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  padding: 10px 4px 0;
+}
+.tourslide-art {
+  width: 78%;
+  max-width: 300px;
+  height: auto;
+  color: var(--primary);
+}
+.tourslide-text {
+  font-size: 17px;
+  line-height: 1.5;
+  font-weight: 550;
+  color: var(--ink);
+  text-align: center;
+  text-wrap: balance;
+  max-width: 32ch;
+}
+/* The tour's own door — the one control on a slide. Primary dressing by
+   hand (Button.css's primary), full measure so a thumb cannot miss it. */
+.tourslide-advance {
+  min-height: 44px;
+  padding: 0 26px;
+  border: 0;
+  border-radius: var(--r-md, 10px);
+  background: var(--primary);
+  color: var(--ink-inv);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.tourslide-advance:hover {
+  background: var(--primary-hover);
+}
+.tourslide-advance:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+/* The retreat, for a slide someone navigated back into — quiet, under the
+   one big door. */
+.tourslide-back {
+  min-height: 44px;
+  padding: 0 16px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-2);
+  font: inherit;
+  cursor: pointer;
+}
+.tourslide-back:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm, 6px);
+}

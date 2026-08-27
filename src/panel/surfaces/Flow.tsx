@@ -83,6 +83,7 @@ import { generatedNameAt, usesNameGenerator } from '../../core/flow/nameGenerato
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { assistServiceUrlFor } from '../../core/flow/assistServices';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
+import { TourSlide, usesTourSlide, type TourSlideId } from '../components/TourSlide';
 import { makeScoreEntry, appendScore, scoreDelta } from '../../core/report/scoring';
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
 import { NARRATION_COPY } from '../voice/copy';
@@ -671,8 +672,9 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
     return p.kind === 'step' ? p.step.id : null;
   })();
   useEffect(() => {
+    // V2.5 VB-114: the brain-flip rung consolidated into the canvas slide's
+    // drawing — the real drawer stays in List through the tour.
     if (ladderStepId === 'wb_canvas' || ladderStepId === 'wb_go') setRequestedDrawerMode('list');
-    else if (ladderStepId === 'wb_brain_flip') setRequestedDrawerMode('brain');
   }, [ladderStepId]);
 
   if (!answers) return null;
@@ -1829,6 +1831,9 @@ function StepView({
   // Only an intro reveals itself as beats — every other kind has something
   // to answer, and hiding the question behind a timer would make it harder.
   const beats = step.kind === 'intro' && step.beats?.length ? step.beats : null;
+  // V2.5 VB-114 — the ladder's three screens are slides, advanced by their
+  // own button; the interview's nav row sits every one of them out.
+  const tourSlide = step.kind === 'intro' && usesTourSlide(step.id);
 
   /**
    * The wording changes and the glyph plays its cue. The button element comes
@@ -2010,7 +2015,15 @@ function StepView({
           made of three consecutive sentences is not a heading. Everything
           else — the plain question, the rephrase control — is unchanged for
           every other step, including an intro with no beats. */}
-      {beats ? (
+      {/* V2.5 VB-114 — the dime tour: a ladder step renders as one big
+          slide (drawing + line + the tour's OWN advance) and the standard
+          nav row stays out of it; the advance runs the same commit Next
+          runs, so nothing underneath is a new mechanism. */}
+      {tourSlide ? (
+        <TourSlide slideId={step.id as TourSlideId} onAdvance={handleNext} onBack={canGoBack ? onBack : undefined}>
+          {beats ? <Beats beats={beats} /> : questionText}
+        </TourSlide>
+      ) : beats ? (
         <Beats beats={beats} />
       ) : (
         /* VB-04: the rephrase control sits beside the question, as a sibling of
@@ -2400,21 +2413,25 @@ function StepView({
       </AnswerArea>
 
       
-      <NavCluster cue={cue}>
-        {canGoBack && (
-          <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
-            {S.back}
+      {/* V2.5 VB-114: a tour slide carries its own advance — the nav row
+          would be a second set of controls saying the same thing. */}
+      {!tourSlide && (
+        <NavCluster cue={cue}>
+          {canGoBack && (
+            <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
+              {S.back}
+            </NavButton>
+          )}
+          <NavButton type="submit" variant="primary" direction="next" control="next">
+            {S.next}
           </NavButton>
-        )}
-        <NavButton type="submit" variant="primary" direction="next" control="next">
-          {S.next}
-        </NavButton>
-        {showSkip && (
-          <NavButton type="button" variant="quiet" control="skip" onClick={handleSkip}>
-            {S.skip}
-          </NavButton>
-        )}
-      </NavCluster>
+          {showSkip && (
+            <NavButton type="button" variant="quiet" control="skip" onClick={handleSkip}>
+              {S.skip}
+            </NavButton>
+          )}
+        </NavCluster>
+      )}
         {saveNote}
     </form>
   );

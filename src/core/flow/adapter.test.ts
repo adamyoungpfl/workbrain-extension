@@ -144,29 +144,28 @@ describe('adaptContextFlow — real content (docs/RELEASE-1.md R1-05)', () => {
    * deleted a question would delete somebody's answer with it — so this count
    * only ever grows, and the ported 49 are all still here.
    */
-  it('ports 49 questions and adds our own 8 (V2.0 ×3, V2.3 ladder ×3 + goal gate ×2), across 4 repeatable blocks', () => {
+  it('ports 49 questions and adds our own 7 (V2.0 ×3, the V2.5 dime tour ×2 + goal gate ×2), across 4 repeatable blocks', () => {
+    // V2.5 VB-114 consolidated wb_brain_flip into the canvas slide's drawing.
     const all = everyStepIncludingRepeatableFields(modules);
     const authoredHere = [
       'entities_intro',
       'initiatives_intro',
       'audience_needs',
       'wb_canvas',
-      'wb_brain_flip',
       'wb_go',
       'goal_service',
       'goal_want',
     ];
-    expect(all).toHaveLength(57);
+    expect(all).toHaveLength(56);
     for (const id of authoredHere) {
       expect(all.filter((s) => s.id === id), id).toHaveLength(1);
     }
     expect(all.filter((s) => !authoredHere.includes(s.id))).toHaveLength(49);
     // VB-90 + VB-93: the why screen, the ladder, then the gate — the flow's
     // first QUESTIONS are still the gate; everything before it is a screen.
-    expect(all.slice(0, 6).map((s) => s.id)).toEqual([
+    expect(all.slice(0, 5).map((s) => s.id)).toEqual([
       'orientation_ready',
       'wb_canvas',
-      'wb_brain_flip',
       'wb_go',
       'goal_service',
       'goal_want',

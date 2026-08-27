@@ -694,10 +694,10 @@ describe('the goal gate opens the flow (VB-93)', () => {
     // FLOW order — the why screen first, then the ladder, then the gate —
     // so fileStartTarget/navigationTargetFor agree with findPosition about
     // where a fresh file starts.
-    expect(sec1?.questionIds.slice(0, 6)).toEqual([
+    // V2.5 VB-114: the brain-flip rung consolidated into the canvas slide.
+    expect(sec1?.questionIds.slice(0, 5)).toEqual([
       'orientation_ready',
       'wb_canvas',
-      'wb_brain_flip',
       'wb_go',
       'goal_service',
       'goal_want',

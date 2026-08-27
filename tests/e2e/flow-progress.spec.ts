@@ -104,11 +104,11 @@ test.describe('VB-02 — module title + progress bar', () => {
     await expect(bar).toHaveCount(1);
     await expect(bar).toHaveAttribute('aria-valuemin', '0');
     await expect(bar).toHaveAttribute('aria-valuemax', String(TOTAL));
-    // V2.3 VB-90 + VB-93: the seeded walk-in opens past the ladder (4
-    // screens) and the gate (2 questions) — position 7 — and the count
-    // stays honest about everything behind it.
-    await expect(bar).toHaveAttribute('aria-valuenow', '7');
-    await expect(bar).toHaveAttribute('aria-valuetext', `Question 7 of ${TOTAL}`);
+    // V2.3 VB-90 + VB-93, tightened by V2.5 VB-114 (brain-flip rung
+    // consolidated): past the ladder (3 screens) and the gate (2 questions)
+    // — position 6 — and the count stays honest about everything behind it.
+    await expect(bar).toHaveAttribute('aria-valuenow', '6');
+    await expect(bar).toHaveAttribute('aria-valuetext', `Question 6 of ${TOTAL}`);
     // Named, or a screen reader announces an anonymous bar.
     await expect(bar).toHaveAttribute('aria-label', 'Orientation');
 
@@ -120,8 +120,8 @@ test.describe('VB-02 — module title + progress bar', () => {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 
-    await expect(bar).toHaveAttribute('aria-valuenow', '8');
-    await expect(bar).toHaveAttribute('aria-valuetext', `Question 8 of ${TOTAL}`);
+    await expect(bar).toHaveAttribute('aria-valuenow', '7');
+    await expect(bar).toHaveAttribute('aria-valuetext', `Question 7 of ${TOTAL}`);
     expect(await fillWidth(page)).toBeGreaterThan(firstWidth);
 
     // Still the same module, so the title is unchanged — the bar is what

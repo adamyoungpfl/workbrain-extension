@@ -127,7 +127,13 @@ async function answerCurrentQuestion(page: Page): Promise<void> {
     if (position === 'add-another') await page.keyboard.press('ArrowRight'); // -> "No"
     await page.keyboard.press('Space');
   }
-  // intro: nothing to select, Next alone advances it
+  // intro: nothing to select, Next alone advances it — except a V2.5
+  // VB-114 tour slide, which carries its OWN advance and no nav row.
+  const tourAdvance = page.locator('.tourslide-advance');
+  if (await tourAdvance.count()) {
+    await tourAdvance.click();
+    return;
+  }
 
   await page.getByRole('button', { name: 'Next', exact: true }).click();
 }
@@ -260,7 +266,8 @@ test.describe('Context interview — flow runner (R1-06)', () => {
     // V2.3 VB-90 + VB-93: a fresh interview opens on the why screen, walks
     // the ladder (canvas, brain, go), then the goal gate — and only then the
     // port's own opening (context_scope -> stop_explaining).
-    for (const expected of ['orientation_ready', 'wb_canvas', 'wb_brain_flip', 'wb_go', 'goal_service', 'goal_want']) {
+    // V2.5 VB-114: the brain-flip rung consolidated into the canvas slide.
+    for (const expected of ['orientation_ready', 'wb_canvas', 'wb_go', 'goal_service', 'goal_want']) {
       expect(await page.locator('.flow').getAttribute('data-step-id')).toBe(expected);
       await answerCurrentQuestion(page);
     }

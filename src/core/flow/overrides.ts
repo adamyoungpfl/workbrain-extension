@@ -516,32 +516,36 @@ export const ORIENTATION_WHY_BEATS = [
   "We're going to write yours down __once__ — a plain file you hand to any AI you use.",
 ];
 
-export const ORIENTATION_LADDER_IDS = ['wb_canvas', 'wb_brain_flip', 'wb_go'] as const;
+/**
+ * V2.5 VB-114 — the DIME TOUR: the four-rung ladder tightens to three
+ * slides, each mostly picture (components/TourSlide.tsx draws them), each
+ * advanced by the tour's own button rather than the nav row. wb_brain_flip
+ * is CONSOLIDATED into the canvas slide's illustration — the list and the
+ * map are one drawing now, and the real drawer stays in List (the Brain
+ * introduces itself on the browse canvas and the toggle). A stored
+ * wb_brain_flip null from a V2.3–2.4 install reads as an unknown key and
+ * costs nothing.
+ */
+export const ORIENTATION_LADDER_IDS = ['wb_canvas', 'wb_go'] as const;
 
 export const ORIENTATION_LADDER_NODES: SrcFlowNode[] = [
   {
     kind: 'question',
     id: 'wb_canvas',
     type: 'intro',
-    // [DRAFT] The drawer sits in List for this step (Flow.tsx).
-    prompt: () => 'Answer up here, and watch below — every answer lands in your file as you go.',
-    skipIf: pastTheLadder,
-  },
-  {
-    kind: 'question',
-    id: 'wb_brain_flip',
-    type: 'intro',
-    // [DRAFT] The drawer flips to Brain for this step (Flow.tsx).
-    prompt: () => 'The same file, as a map — every dot is a section, filling in as you answer.',
+    // [DRAFT] Slide two: where answers land — the list AND the map, one
+    // drawing. The real drawer sits in List below it.
+    prompt: () => 'Every answer lands in your file below — a list you can read, and a map that fills in.',
     skipIf: pastTheLadder,
   },
   {
     kind: 'question',
     id: 'wb_go',
     type: 'intro',
-    // [DRAFT] Sets up the gate that follows — "we set up the need for the
-    // skill that will follow the context" (Adam, VB-93).
-    prompt: () => "That's the whole tour. Two quick questions first — hit Next when you're ready.",
+    // [DRAFT] Slide three: how to move — names the nav's own words, then
+    // sets up the gate ("we set up the need for the skill that will follow
+    // the context", Adam, VB-93).
+    prompt: () => 'Back, Next and Skip sit under every question. Two quick questions first — off you go.',
     skipIf: pastTheLadder,
   },
 ];
@@ -621,8 +625,7 @@ export const NODE_INSERTIONS: NodeInsertion[] = [
     after: 'orientation_ready',
     node: ORIENTATION_LADDER_NODES[0]!,
   },
-  { why: 'VB-90: the brain-flip rung of the same ladder.', after: 'orientation_ready', node: ORIENTATION_LADDER_NODES[1]! },
-  { why: 'VB-90: the go rung of the same ladder.', after: 'orientation_ready', node: ORIENTATION_LADDER_NODES[2]! },
+  { why: 'VB-90/VB-114: the go rung of the same ladder.', after: 'orientation_ready', node: ORIENTATION_LADDER_NODES[1]! },
   {
     why:
       'VB-93: the goal gate — the flow\'s first two QUESTIONS, right where the ladder\'s ' +
@@ -662,7 +665,7 @@ export const OUTLINE_OVERRIDES: Record<string, OutlineOverride> = {
       'answers open the file as they open the flow. Spliced after the why screen, not ' +
       'prepended, so the outline lists section 1 in FLOW order and fileStartTarget ' +
       'still lands the flow\'s real first screen.',
-    insertAfter: { after: 'orientation_ready', questionIds: ['wb_canvas', 'wb_brain_flip', 'wb_go', 'goal_service', 'goal_want'] },
+    insertAfter: { after: 'orientation_ready', questionIds: ['wb_canvas', 'wb_go', 'goal_service', 'goal_want'] },
   },
   sec3: {
     why:

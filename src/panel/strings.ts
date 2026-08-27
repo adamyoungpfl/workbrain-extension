@@ -68,6 +68,9 @@ export const S = {
   /** [DRAFT] V2.5 VB-124 — the share/backup row on the skills canvas. The
    * verbs are the person's ("save a copy", "add from a file"), never
    * "export"/"import"/"pack". */
+  /** [DRAFT] V2.5 VB-114 — the dime tour's own advance button, per slide. */
+  tourNext: 'Show me',
+  tourStart: 'Start the questions',
   skillsShareSave: 'Save a copy of my skills',
   skillsShareAdd: 'Add skills from a file',
   skillsShareSaved: 'Saved. The copy is in your downloads.',
