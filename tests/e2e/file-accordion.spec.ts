@@ -575,13 +575,15 @@ test.describe('VB-33 — the restyle is real, and it fits 400px', () => {
         expect(row.percent!.clipped, `${row.id} percentage truncated`).toBe(false);
         // The count ends before the figure starts.
         expect(row.detail.right, `${row.id} count runs into the figure`).toBeLessThanOrEqual(row.percent!.left + 1);
-        // And the NAME clears the meta line vertically: the two lines share
-        // one 44px control (FileTree.css's `.filetree-main`) rather than
-        // stacking two, and if that ever slips they print on top of each other.
-        // V2.0 VB-55 removed the pill this used to measure the same way; the
-        // meta line inherited its column, which is why it now runs to the
-        // row's own right edge.
-        expect(row.label!.bottom, `${row.id} name sits across the meta line`).toBeLessThanOrEqual(row.meta!.top + 1);
+        // V2.5 VB-115 — ONE VISUAL ROW: the name and the meta bundle share
+        // the line now (icon | label | status), so the claims become: they
+        // sit on one vertical center, the name ends before the bundle
+        // starts (ellipsis, never overlap), and the bundle stays inside
+        // the row.
+        const labelMid = (row.label!.top + row.label!.bottom) / 2;
+        const metaMid = (row.meta!.top + row.meta!.bottom) / 2;
+        expect(Math.abs(labelMid - metaMid), `${row.id} name and status are not on one line`).toBeLessThanOrEqual(2);
+        expect(row.label!.right, `${row.id} name runs into the status`).toBeLessThanOrEqual(row.meta!.left + 1);
         expect(row.meta!.right, `${row.id} meta line outside the row`).toBeLessThanOrEqual(row.right + 1);
       }
     }

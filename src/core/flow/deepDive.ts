@@ -50,16 +50,10 @@ export const HINT_STAYS_VISIBLE: readonly string[] = [
 
 export const DEEP_DIVE: Record<string, DeepDiveEntry[]> = {
   // ── 1 · Orientation ────────────────────────────────────────────────
-  orientation_ready: [
-    {
-      q: 'What is a Context file?',
-      a: 'A short, plain-text file — a few pages, not a database. You answer questions here, and the file gets written for you. You download it and hand it to whatever AI you use.',
-    },
-    {
-      q: 'Why would AI need this?',
-      a: "AI starts every conversation knowing nothing about you. This is the part you'd otherwise retype every time.",
-    },
-  ],
+  // V2.5 VB-113 — orientation_ready's two follow-ups RETIRED: the ladder's
+  // dime tour (VB-114) carries the "what is this file / why does AI need
+  // it" answers itself now, and the rotating link had no place on the
+  // opening screen (Adam: "remove the follow up question from the flow").
   // V2.3 VB-89 [DRAFT] — the sweep's additions ride in flow order below.
   // Per-question judgment, same as V1.1: the factual one-liners
   // (preferred_name, professional_name, entity_name, initiative_name)

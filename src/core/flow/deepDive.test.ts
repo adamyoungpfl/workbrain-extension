@@ -34,10 +34,9 @@ describe('deepDive data', () => {
     // and so was not in that tally. The approved copy is the source of
     // truth, not its own count — all 27 sections ship. Flagged in the
     // VB-03 report rather than silently dropping approved copy.
-    // V2.3 VB-89 adds 9 more (the [DRAFT] sweep over the open-text
-    // questions V1.1 left bare — deepDive.ts's own comment lists the
-    // factual one-liners deliberately kept bare).
-    expect(ids).toHaveLength(36);
+    // V2.3 VB-89 added 9 (the [DRAFT] sweep); V2.5 VB-113 retired
+    // orientation_ready's two — the dime tour carries those answers now.
+    expect(ids).toHaveLength(35);
   });
 
   it('every entry has a non-empty question and a non-empty answer', () => {
@@ -192,7 +191,7 @@ function readingGrade(strings: string[]): number {
 describe('reading level (npm run audit cannot see this file)', () => {
   it('reads at grade 7 or below, across every question and answer', () => {
     const all = Object.values(DEEP_DIVE).flatMap((entries) => entries.flatMap((e) => [e.q, e.a]));
-    expect(all).toHaveLength(108);
+    expect(all).toHaveLength(104);
     const grade = readingGrade(all);
     expect(grade, `deepDive.ts reads at grade ${grade.toFixed(1)} — target is 7`).toBeLessThanOrEqual(7);
   });

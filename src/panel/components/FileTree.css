@@ -424,6 +424,25 @@
   min-height: var(--target-min);
 }
 
+/* V2.5 VB-115 — the label shares its line with the bundle: one line,
+   ellipsized, never wrapping under the meta. */
+.filetree-nav .filetree-label,
+.filetree-static .filetree-label {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  /* VB-115: centers with the row — overriding the base rule's
+     align-self: flex-start, which was the stacked layout's vertical
+     companion (the width-hug it protects lives on unchanged). */
+  align-self: center;
+}
+.filetree-meta {
+  flex: 0 0 auto;
+}
+
 /* ── The meta line ────────────────────────────────────────────────────────
    V1.8 VB-46: "Per row, bundle **X of Y**, **%**, and the status pairing at the
    **right end** of the row."
@@ -522,8 +541,11 @@
    pixel-identical at rest. */
 .filetree-static {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
+  /* V2.5 VB-115: same one-row law as .filetree-nav above. */
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   flex: 1;
   min-width: 0;
   padding: 0 2px;
@@ -535,9 +557,14 @@
    than as a stack of buttons. */
 .filetree-nav {
   display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: stretch;
+  /* V2.5 VB-115 — one visual row, finally: icon | label | status share a
+     single line (the column stack put the meta bundle UNDER the label,
+     which is the misalignment Adam called out twice). The label flexes and
+     ellipsizes; the meta keeps its right-end bundle. */
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: center;
+  gap: 8px;
   flex: 1;
   min-width: 0;
   min-height: var(--target-min);
