@@ -341,10 +341,21 @@ test.describe('the deeper-dive follow-ups', () => {
     await expect(chips.nth(0)).toBeFocused();
     expect(await page.evaluate(() => document.activeElement?.className)).toContain('deepdive-chip');
 
-    // ...and the question itself has not moved or scrolled away under them.
+    // V2.8 VB-137: the prompt lives in a zone that yields and scrolls, so
+    // the old "the question has not moved" pin becomes the scroll-world
+    // version of the same care: the pressed chip stays on screen where the
+    // person is reading, and the question is one scroll away, exactly as
+    // far away as the zone says it is — never lost.
+    const chipBox = await chips.nth(0).boundingBox();
+    const zone = await page.locator('.flow-qzone').boundingBox();
+    expect(chipBox!.y + chipBox!.height).toBeGreaterThan(zone!.y);
+    expect(chipBox!.y).toBeLessThan(zone!.y + zone!.height);
+    const displaced = await page.evaluate(() => {
+      const el = document.querySelector('.flow-qzone') as HTMLElement;
+      return el.scrollTop;
+    });
     const questionAfter = await page.locator('.flow-q').boundingBox();
-    expect(questionAfter?.y).toBe(questionBefore?.y);
-    await expect(page.locator('.flow-q')).toBeVisible();
+    expect(Math.round(questionAfter!.y + displaced)).toBe(Math.round(questionBefore!.y));
 
     // --- and closes again on a second press, focus still put ---
     await page.keyboard.press('Enter');
@@ -402,8 +413,14 @@ test.describe('the deeper-dive follow-ups', () => {
 
     // To the pointer, not just to a rectangle: six pixels above the paint,
     // where V1.1 would have had nothing, the press still lands on the chip.
+    // V2.8 VB-137: the probe is about the CONTROL's overhang, so the item
+    // is first scrolled interior to its zone — at a scroll edge the
+    // container clips like every scrolling list in the product (the
+    // drawer's own rows included), which is the container's physics, not
+    // the target's size.
     const hit = await page.evaluate(() => {
       const item = document.querySelector('.flow .deepdive-item')!;
+      item.scrollIntoView({ block: 'center' });
       const box = item.getBoundingClientRect();
       const el = document.elementFromPoint(box.left + box.width / 2, box.top - 6);
       return { tag: el?.tagName, cls: el?.className ?? '' };

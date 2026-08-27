@@ -1,0 +1,82 @@
+/* V2.8 VB-138 — the inline assist bar, standing where the answer box
+   stood. The tag is the marker Adam asked for; the line carries the whole
+   journey; the copy control ends the row; the quiet row underneath holds
+   the expander and the door. */
+
+.assistbar {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* The activated tag: the violet the interface already reserves for "this
+   belongs to your AI", on its own tint — 6.5:1 measured, and the words
+   carry it regardless. */
+.assistbar-tag {
+  align-self: flex-start;
+  margin: 0;
+  padding: 3px 10px;
+  border-radius: var(--r-pill);
+  background: var(--violet-tint);
+  color: var(--violet);
+  font-size: 11.5px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.assistbar-lead {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+.assistbar-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.assistbar-line {
+  flex: 1 1 auto;
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+.assistbar-copy {
+  flex: none;
+}
+
+.assistbar-quiet {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: var(--target-min);
+}
+
+.assistbar-expand,
+.assistbar-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+  min-height: var(--target-min);
+  display: inline-flex;
+  align-items: center;
+}
+
+.assistbar-expand:focus-visible,
+.assistbar-link:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-sm);
+}

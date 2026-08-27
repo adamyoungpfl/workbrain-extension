@@ -28,6 +28,18 @@
  * carry the what and the glow only ever carries the where. */
 export const ASSIST_LINE_COPY = 'Next, hit the copy button below.';
 
+/**
+ * [DRAFT] V2.8 VB-138 — the SINGLE-STEP instruction bar's one line, the
+ * whole journey in a sentence: copy, carry it to their AI, come back. It
+ * replaced the sheet's three step lines when assist went inline (Adam:
+ * "handle it all in the single step"); the copy control sits at the line's
+ * end, icon-led, and the full prompt stays behind an expander — present,
+ * never assumed read.
+ */
+export function assistBarLine(serviceLabel: string | undefined): string {
+  return `Copy this prompt and paste it into ${serviceLabel ?? 'your AI'}.`;
+}
+
 /** [DRAFT] Step 3 — the return trip. The box is in the sheet, highlighted;
  * submit lands the text in the question's own answer field, editable. */
 export const ASSIST_LINE_RETURN = 'Paste what it wrote back into this box.';
@@ -63,5 +75,13 @@ export function assistStepLine(step: AssistStep, serviceLabel: string | undefine
  * reading-grade and sentence-length harness — the overrides.ts convention.
  * The step-2 line rides in its longest real form (a named service). */
 export function allAssistCopy(): string[] {
-  return [ASSIST_LINE_COPY, assistPasteLine('Perplexity'), assistPasteLine(undefined), ASSIST_LINE_RETURN, ASSIST_ENCOURAGING_LEAD];
+  return [
+    ASSIST_LINE_COPY,
+    assistPasteLine('Perplexity'),
+    assistPasteLine(undefined),
+    ASSIST_LINE_RETURN,
+    ASSIST_ENCOURAGING_LEAD,
+    assistBarLine('Perplexity'),
+    assistBarLine(undefined),
+  ];
 }

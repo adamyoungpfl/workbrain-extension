@@ -75,6 +75,11 @@ export const S = {
   /** [DRAFT] V2.4 VB-112 — the one name all three doors home share: the
    * top-left mark, the breadcrumb root, and the globe's drawn house. */
   goHome: 'Go to the home screen',
+  /** [DRAFT] V2.8 VB-137 — the question zone's accessible name: it is a
+   * real scrollable region now (it yields to keep the answer stack above
+   * the dock), so the keyboard can land on it and arrow through a prompt
+   * taller than its room. Never printed. */
+  qzoneLabel: 'The question and its help',
   /** [DRAFT] V2.4 VB-103 — a browse-canvas row's name: pressing it selects
    * the section in the Brain above, never jumps into questions. */
   fileTreeSelect: (title: string) => `Show ${title} in the picture`,
@@ -139,6 +144,15 @@ export const S = {
    * assistCopy.test.ts).
    */
   assistRecommended: 'AI Assist (Recommended)',
+  /**
+   * [DRAFT] V2.8 VB-138 — assist goes inline and single-step: the tag that
+   * marks the collapsed box's spot (Adam's own words for it), and the
+   * expander that holds the full prompt — present, never assumed read.
+   * The bar's instruction line lives in core (assistBarLine), where the
+   * interview's voice speaks.
+   */
+  assistActivated: 'AI Assist Activated',
+  assistReadPrompt: 'Read the whole prompt',
   /**
    * [DRAFT] V2.5 VB-119 — step 2's door: opens the AI the person named at
    * the goal gate in the browser. Only ever rendered with a real service

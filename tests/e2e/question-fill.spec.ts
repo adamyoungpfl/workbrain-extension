@@ -258,7 +258,14 @@ async function setHeight(page: Page, key: string): Promise<number> {
   await page.keyboard.press(key);
   // Let the 320ms jump finish before anything is measured at rest.
   await page.waitForTimeout(420);
-  await page.locator('.flow-q').first().click({ position: { x: 2, y: 2 } }).catch(() => undefined);
+  // Bounded: the question lives in VB-137's scrollable zone now, and a
+  // clipped heading would otherwise hold this settle-click to the test
+  // timeout — the catch only helps once the click actually throws.
+  await page
+    .locator('.flow-q')
+    .first()
+    .click({ position: { x: 2, y: 2 }, timeout: 800 })
+    .catch(() => undefined);
   return Number(await handle.getAttribute('aria-valuenow'));
 }
 
@@ -379,28 +386,37 @@ test.describe('VB-17 — one composed cluster, and the slack in one place', () =
       expect(p.right, `option ${i} inside the panel`).toBeLessThanOrEqual(PANEL.width + 1);
     }
 
-    // Nothing is cut off: where the question is taller than the room the
-    // surface grows past it instead of clipping, and the page scrolls.
+    // V2.8 VB-137 — the law this test holds INVERTED, deliberately: the
+    // step column is CAPPED at the room above the dock and nothing ever
+    // sinks under it. A question taller than the room scrolls INSIDE its
+    // own bands (the prompt zone first, the answer band last), the page
+    // itself no longer scrolls for a step, and the navigation stands
+    // visible the whole time — Adam: "the action buttons are near the
+    // input", on every kind of screen.
     const overflow = await page.evaluate(() => ({
       clipped: getComputedStyle(document.querySelector('.flow') as HTMLElement).overflow,
+      pageScrolls:
+        document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      answerScrolls: (() => {
+        const band = document.querySelector('.flow-answer') as HTMLElement;
+        return band.scrollHeight - band.clientHeight;
+      })(),
     }));
-    expect(overflow.clipped).toBe('visible');
+    expect(overflow.clipped).toBe('hidden');
+    // The tall list is the thing that scrolls; the room it scrolls in is
+    // real (the band is on screen, above the note band and the drawer).
+    expect(overflow.answerScrolls).toBeGreaterThan(0);
 
-    // The last option is reachable, and scrolled to the end of the page it is
-    // clear of the docked bar — the reservation (V1.2 VB-11) still holds under
-    // a surface taller than the panel. Scrolled to the *end*, not
-    // `scrollIntoViewIfNeeded`: the browser stops as soon as an element is
-    // inside the viewport, and the viewport includes the strip the drawer is
-    // painted over. What the reserve promises is that the page can be scrolled
-    // far enough, which is what this measures.
-    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight));
+    // The navigation never left the screen — no scrolling required to act.
+    const next = await box(page.getByRole('button', { name: 'Next', exact: true }));
+    const c2 = await composition(page);
+    expect(next.bottom, 'Next stands clear of the note band with no scroll at all').toBeLessThanOrEqual(c2.navTop + 1);
+
+    // The last option is reachable by scrolling ITS band, and answerable.
+    await options.last().scrollIntoViewIfNeeded();
     await page.waitForTimeout(120);
     const last = await box(pills.last());
-    const end = await composition(page);
-    expect(last.bottom).toBeLessThanOrEqual(end.navTop + 1);
-    expect(end.footBottom, 'the cluster clears the note band at the end of the scroll').toBeLessThanOrEqual(end.navTop + 1);
-
-    // And it is answerable from there.
+    expect(last.bottom).toBeLessThanOrEqual(c2.navTop + 1);
     await options.last().click();
     await expect(options.last()).toHaveAttribute('aria-pressed', 'true');
 
@@ -513,11 +529,15 @@ test.describe('VB-17 — one composed cluster, and the slack in one place', () =
     }
     expect(sawMotion, 'never caught the composition in flight — that is a snap, not a settle').toBe(true);
 
-    // And the thing that must NOT have moved: the cluster is anchored, so the
-    // field is where it was before the drawer took the room. That is the whole
-    // difference from the build this replaces, where the same drag slid the
-    // field up the screen because the slack was being shared around it.
-    expect(await answerTop(page)).toBeCloseTo(startingAnswerTop, -1);
+    // And the cluster stays anchored — V2.8 VB-137's version of the claim:
+    // the column is CAPPED now, so at the ceiling the question zone yields
+    // its few pixels and the field rides UP by exactly that yield — never
+    // down, never under the dock. (The old zero-motion pin assumed the
+    // slack below could absorb the whole drag; the cap spends it.) What the
+    // rework banned stays banned: the field never slides DOWN the screen.
+    const movedAnswerTop = await answerTop(page);
+    expect(movedAnswerTop).toBeLessThanOrEqual(startingAnswerTop + 1);
+    expect(startingAnswerTop - movedAnswerTop, 'the field moved more than the zone could have yielded').toBeLessThanOrEqual(24);
 
     // ...and both ended up where they belong. The surface is at least the room;
     // a question taller than it overflows and scrolls rather than being

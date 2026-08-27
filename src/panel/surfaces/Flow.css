@@ -154,18 +154,66 @@
   display: flex;
   flex-direction: column;
   /* V2.5 VB-117 — the foot anchors to the INPUT: the answer area hugs its
-     content by default, so the helper/nav stack follows the box and the
-     slack lands BELOW the navigation (Adam: "when the panel collapses and
-     there is more white space than before, I want that space below the
-     navigation, not above it"). The one exception keeps its old meaning:
-     a multiline question's box still grows to use the room — a bigger box
-     is an invitation to write — via the :has chain below, which restores
-     the stretch for exactly those screens. */
-  flex: 0 0 auto;
+     content, so the helper/nav stack follows the box and the slack lands
+     BELOW the navigation. V2.8 VB-137 retires VB-117's one exception (the
+     multiline stretch) at Adam's word — a box that grows pushes the
+     buttons away from the typing, and "the action buttons are near the
+     input" outranks "a bigger box is an invitation". The box keeps its
+     own steady height on every screen.
+
+     VB-137 also makes this band the SECOND yielder: when even the shrunk
+     question zone cannot buy enough room (a ten-option list on a short
+     panel), the band scrolls internally rather than pushing the
+     navigation under the dock — shrink weight 1 against the zone's 3, so
+     the prompt always gives way first and the controls give way last. */
+  flex: 0 1 auto;
   min-height: 0;
+  overflow-y: auto;
 }
-.flowshell .flow-answer:has(textarea.field) {
-  flex: 1 1 auto;
+
+/* ── V2.8 VB-137 — the two-zone step ──────────────────────────────────────
+   The step column is CAPPED at the room above the dock (the same offset
+   arithmetic core/flow/composition.ts has always published — nothing new
+   is summed), and the question zone is the part that yields: it shrinks
+   first and scrolls internally when the prompt is taller than the room,
+   so the answer stack — box, chips, navigation, in that order, tight —
+   never sinks under the fixed save band or the drawer. On a roomy panel
+   the zone takes only its content and the slack still falls below the
+   navigation (VB-117's decree, kept). The min-height keeps at least the
+   question's first lines on screen however tight it gets. */
+.flowshell .flow[data-position='step'] {
+  max-height: calc(100dvh - var(--flow-area-offset, 262px));
+  overflow: hidden;
+}
+.flow-qzone {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  /* Shrink weight 3 against the answer band's 1: the prompt yields first,
+     the controls last — and because shrink is proportional the zone never
+     collapses to nothing, so no fixed floor is needed (an 84px floor here
+     put a dead band under every SHORT question, which is VB-17's own
+     banned hole; caught by question-fill.spec the first time round). */
+  flex: 0 3 auto;
+  min-height: 0;
+  overflow-y: auto;
+  /* The focus rings and the rephrase button's hit box overhang the text
+     column; the CONTAINER breathes sideways (net zero for its content) so
+     its scroller never clips them. */
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+/* The zones scroll; their CHILDREN never squeeze. Without this, flex
+   shrink flattened the deep-dive to a 19px sliver and the textarea under
+   its own hint (deep-dive/dictation/follow-up specs, first run) — a
+   scroll container earns its scrollbar precisely by letting content keep
+   its size. Same rule for the capped column's own rows: the nav cluster
+   was losing 5px of its band at the drawer's max. */
+.flow-qzone > *,
+.flowshell .flow-answer > *,
+.flowshell .flow[data-position='step'] > :not(.flow-qzone):not(.flow-answer) {
+  flex-shrink: 0;
 }
 
 /* A text box takes the room instead of the air around it, because a text box
@@ -188,18 +236,17 @@
    — which is why the tall text questions look fuller than `preferred_name`
    does, and why that is right rather than inconsistent: a bigger box is an
    invitation to write, a bigger gap is nothing. */
-.flowshell .flow-answer:has(textarea.field) > .flow-field-sr-label,
-.flowshell .flow-answer:has(textarea.field) > .flow-field-sr-label > div {
-  display: flex;
-  flex-direction: column;
-  flex: 1 1 auto;
-  min-height: 0;
-}
+/* V2.8 VB-137: the rest of the stretch chain, retired with its outer link
+   — the wrapper and the box keep their content height, because the box no
+   longer grows to the room at all ("the action buttons are near the
+   input" outranks "a bigger box is an invitation"). Leaving these two
+   inner links in place while the outer one died let the wrapper SHRINK
+   under the band's new scroll (flex 1 1 auto) while the box's own
+   min-height held — a 128px textarea painting out of a 73px wrapper,
+   straight over the dictation hint (caught live, morning of 2026-08-27). */
 .flowshell .flow-answer textarea.field {
-  flex: 1 1 auto;
   /* Past this it stops being a field and becomes a page. The floor stays
-     `Field.css`'s 96px; this is the ceiling, and anything over it goes back to
-     the air above and below, centred with everything else. */
+     `Field.css`'s 96px; this is the ceiling. */
   max-height: 320px;
 }
 

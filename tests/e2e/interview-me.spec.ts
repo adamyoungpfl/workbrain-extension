@@ -1,50 +1,38 @@
-import { test, expect, chromium, type BrowserContext, type Page } from '@playwright/test';
+import { test, expect, chromium, type BrowserContext, type Page, type Worker } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { S } from '../../src/panel/strings';
-import {
-  ASSIST_ENCOURAGING_LEAD,
-  ASSIST_LINE_COPY,
-  ASSIST_LINE_RETURN,
-  assistPasteLine,
-} from '../../src/core/flow/assistCopy';
+import { ASSIST_ENCOURAGING_LEAD, ASSIST_LINE_RETURN, assistBarLine } from '../../src/core/flow/assistCopy';
+import type { Answers } from '../../src/schema/storage.types';
 
 /**
- * V2.3 VB-94 built interview-me as an inline disclosure; V2.4 VB-107 as an
- * anchored popover; V2.5 VB-119 grows it up into **AI Assist** — the
- * popover's own tolerance note said it would die to this slice, and this
- * file is the prophecy fulfilled. The new truth it pins:
+ * V2.3 VB-94 built interview-me inline; V2.4 VB-107 as a popover; V2.5
+ * VB-119 as a full-height sheet; V2.8 VB-138 brings it HOME — inline and
+ * single-step, the sheet retired (Adam: "handle it all in the single
+ * step"). The truth this file pins now:
  *
- *  - the helper chip is named AI Assist, wears the drawn bubble-and-spark,
- *    and is a real 44px target;
- *  - pressing it DIMS the app and opens a FULL-HEIGHT SHEET — the
- *    guardrail-sanctioned mechanism (components/Sheet.tsx: role="dialog"
- *    aria-modal="false" and nothing beyond it, Escape closes, focus returns
- *    to the chip) — walking a three-step mini-interview, each step one
- *    short narrated line (core/flow/assistCopy.ts);
- *  - step 1 shows the exact prompt (interviewMePrompt, BYTE-IDENTICAL core:
- *    question verbatim, the goal, the concrete-specifics ask, the
- *    per-service line) in ReadOnlyBlock's trust chrome, with the copy
- *    control glowing via the flow's one sanctioned cue; copy auto-advances;
- *  - step 2 names THEIR AI (goalServiceLabelFor — the reflect voice line's
- *    own resolver), opens a plain door to it (assistServices.ts's URL map),
- *    and shows the generic drawn paste-and-send — no vendor UI;
- *  - step 3 takes the reply in a highlighted box IN THE SHEET; submit runs
- *    the existing normalizePastedReply path, closes the sheet, lands the
- *    text in the question's answer input — ordinary editable text — and the
- *    input pulses ONCE (the VB-106/107 wiring, reused and then retired by
- *    its own first iteration);
- *  - the fenced-paste round trip straight into the FIELD is unchanged, an
- *    ordinary paste is never touched, and a hand paste never starts a pulse;
- *  - reduced motion: every cue's still form carries the instruction;
- *  - axe finds nothing wrong with the sheet open.
+ *  - the chip is AI Assist, drawn bubble-and-spark, a real 44px target;
+ *  - pressing it COLLAPSES the answer box and stands the bar in its spot:
+ *    the "AI Assist Activated" tag, one instruction line saying the whole
+ *    journey with the icon-led copy control at its end, a plain door to
+ *    their AI (decision 6), and the FULL prompt behind an expander —
+ *    present, never assumed read, still ReadOnlyBlock's trust chrome;
+ *  - pressing the chip again puts the box back: changing your mind costs
+ *    nothing, at every point;
+ *  - COPYING IS THE STEP: the clipboard really carries the prompt, the tag
+ *    clears, and the box reopens in the same spot wearing the paste
+ *    instruction and the one sanctioned highlight;
+ *  - a fenced paste lands normalized as ordinary editable text; Next
+ *    stamps `assistedAt` at commit (V2.5's semantics, untouched);
+ *  - the fenced-paste path straight into the field is unchanged;
+ *  - reduced motion keeps every instruction; axe finds nothing wrong.
  */
 const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchPanel(
   options: { reducedMotion?: 'reduce' } = {},
-): Promise<{ context: BrowserContext; page: Page }> {
+): Promise<{ context: BrowserContext; page: Page; sw: Worker }> {
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
     args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`],
@@ -55,8 +43,7 @@ async function launchPanel(
 
   // V2.3 VB-93: the interview opens on the goal gate; this spec's subject
   // sits past it, so the walk-in seeds a passed gate — which also gives the
-  // prompt a goal to ground itself in and (VB-119) a service to name and
-  // open.
+  // prompt a goal to ground itself in and a service to name and open.
   await sw.evaluate(async () => {
     const existing = await chrome.storage.local.get('wb:answers');
     if (existing['wb:answers']) return;
@@ -81,15 +68,13 @@ async function launchPanel(
   await page.getByRole('button', { name: /^Context\.md/ }).click();
   await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
   await page.waitForSelector('.flow');
-  return { context, page };
+  return { context, page, sw };
 }
 
-/** Seeded gates land on context_scope (pill + Next) — landing on
+/** Seeded gates land on context_scope (tile + Next) — landing on
  * `stop_explaining`, the first multiline text question. The pointer parks
  * after the screen-swapping click: stationary hover HOLDS cues by design. */
 async function goToTextQuestion(page: Page): Promise<void> {
-  // V2.3 VB-90: with the gate seeded the ladder skips — context_scope first.
-  // V2.5 VB-118: its choices are icon tiles.
   await page.locator('.flow .vpick .vpick-tile').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await page.mouse.move(0, 0);
@@ -106,79 +91,74 @@ async function pasteInto(page: Page, selector: string, text: string): Promise<vo
 }
 
 const CHIP = '.flow-assist';
-const SHEET = '.sheet-card.assist-sheet';
+const BAR = '.assistbar';
 
-/** Open the sheet from the chip. */
-async function openSheet(page: Page): Promise<void> {
+/** Stand the bar from the chip. */
+async function activate(page: Page): Promise<void> {
   await page.locator(CHIP).click();
   await page.mouse.move(0, 0);
-  await expect(page.locator(SHEET)).toBeVisible();
+  await expect(page.locator(BAR)).toBeVisible();
 }
 
-test.describe('VB-119 — AI Assist: the paused mini-interview', () => {
-  test('the chip is AI Assist — drawn icon, 44px target — and opens a full-height sheet that dims the app', async () => {
+test.describe('VB-138 — AI Assist, inline and single-step', () => {
+  test('the chip stands the bar in the box\'s spot — tag, line, collapsed prompt — and is its own way back', async () => {
     const { context, page } = await launchPanel();
     await goToTextQuestion(page);
 
-    // VB-120: with the draft empty — under the multiline threshold,
-    // unassisted — the chip stands in its recommended posture; its plain
-    // name is the over-threshold state, pinned in reflect.spec.ts's (b).
+    // VB-120: with the draft empty the chip stands recommended; the drawn
+    // bubble-and-spark rides in its paint, and the box you press is the
+    // full accessibility floor.
     const chip = page.getByRole('button', { name: S.assistRecommended, exact: true });
     await expect(chip).toBeVisible();
-    // The drawn bubble-and-spark rides inside the chip's paint.
     await expect(page.locator(`${CHIP} .assist-bubble`)).toBeVisible();
     await expect(page.locator(`${CHIP} .assist-spark`)).toBeVisible();
-    // VB-106's split survives the rename: the paint is a bubble chip, the
-    // box you press is still the full accessibility floor.
     const box = await chip.boundingBox();
     expect(box!.height).toBeGreaterThanOrEqual(44);
     expect(box!.width).toBeGreaterThanOrEqual(44);
 
-    await openSheet(page);
+    await activate(page);
 
-    // FULL-HEIGHT: the card runs the whole panel — Adam's pause, built as
-    // the sanctioned sheet rather than beside it.
-    const card = (await page.locator(SHEET).boundingBox())!;
-    const viewport = page.viewportSize()!;
-    expect(card.height).toBeGreaterThanOrEqual(viewport.height - 2);
-    // …and the backdrop dims whatever shows behind it.
-    const dim = await page
-      .locator('.sheet-backdrop')
-      .evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(dim).toMatch(/rgba\(/);
+    // The box collapsed; the tag marks the spot; the line says the whole
+    // journey with their AI named (goalServiceLabelFor's resolution).
+    await expect(page.locator('.flow textarea')).toHaveCount(0);
+    await expect(page.locator('.assistbar-tag')).toHaveText(S.assistActivated);
+    await expect(page.locator('.assistbar-line')).toHaveText(assistBarLine('ChatGPT'));
+    // No sheet, no dialog, no dimming — this all happens in the flow.
+    await expect(page.locator('.sheet-card')).toHaveCount(0);
 
-    // The sanctioned semantics, and NOTHING beyond them: a non-modal
-    // dialog, exactly what Sheet has always been.
-    await expect(page.locator(SHEET)).toHaveAttribute('role', 'dialog');
-    await expect(page.locator(SHEET)).toHaveAttribute('aria-modal', 'false');
+    // The full prompt is PRESENT but never assumed read: behind the
+    // expander, collapsed by default.
+    const expander = page.getByRole('button', { name: S.assistReadPrompt, exact: true });
+    await expect(expander).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator(`${BAR} .readonly`)).toHaveCount(0);
+
+    // The door to their AI: a plain anchor, nothing sent (decision 6).
+    const link = page.locator('.assistbar-link');
+    await expect(link).toHaveText(S.assistOpenService('ChatGPT'));
+    await expect(link).toHaveAttribute('href', 'https://chatgpt.com/');
+    await expect(link).toHaveAttribute('target', '_blank');
+
+    // And the chip is the way back out: press it again, the box returns.
+    await page.locator(CHIP).click();
+    await page.mouse.move(0, 0);
+    await expect(page.locator(BAR)).toHaveCount(0);
+    await expect(page.locator('.flow textarea')).toBeVisible();
 
     await context.close();
   });
 
-  test('step 1 — the line, the exact prompt in trust chrome, the glowing copy control; copy advances', async () => {
+  test('the expander shows the exact prompt in trust chrome — the question verbatim, the goal, the service line', async () => {
     const { context, page } = await launchPanel();
     await goToTextQuestion(page);
     const question = ((await page.locator('.flow-q').textContent()) ?? '').trim();
-    // VB-120: a draft past the threshold makes this the ORDINARY open —
-    // the encouraging lead belongs to the nudged open alone (its own
-    // claims live in reflect.spec.ts's (b) and below in this file).
-    await page
-      .locator('.flow textarea')
-      .fill('A substantial draft, comfortably past the eighty character bar, kept for the sheet.');
-    await openSheet(page);
+    await activate(page);
 
-    // The step line — printed exactly as core authors it (the narrator
-    // reads the same string; the two can never drift).
-    await expect(page.locator(`${SHEET} .assist-line`)).toHaveText(ASSIST_LINE_COPY);
-    // The ordinary open is NOT the encouraging variant (that wording
-    // belongs to VB-120's nudge).
-    await expect(page.locator(`${SHEET} .assist-lead`)).toHaveCount(0);
-
-    // The prompt, seen in full before it goes anywhere (GUARDRAILS), in
-    // ReadOnlyBlock's trust chrome — the question verbatim, the fence
-    // instruction, their goal, and V2.4's additions, all byte-identical
-    // core (interviewMe.ts untouched by this slice).
-    const prompt = (await page.locator(`${SHEET} .readonly`).textContent()) ?? '';
+    await page.getByRole('button', { name: S.assistReadPrompt, exact: true }).click();
+    await expect(page.getByRole('button', { name: S.assistReadPrompt, exact: true })).toHaveAttribute(
+      'aria-expanded',
+      'true',
+    );
+    const prompt = (await page.locator(`${BAR} .readonly`).textContent()) ?? '';
     expect(question.length).toBeGreaterThan(10);
     expect(prompt).toContain(question);
     expect(prompt).toContain('three backticks');
@@ -187,174 +167,96 @@ test.describe('VB-119 — AI Assist: the paused mini-interview', () => {
     expect(prompt).toContain('real names');
     expect(prompt).toContain('ChatGPT');
 
-    // THE ONE SANCTIONED CUE, on the copy control: the words above say
-    // what, the glow says where.
-    const copy = page.locator(`${SHEET} .assist-copy`);
-    await expect(copy).toHaveClass(/flow-highlight/);
-    expect(await copy.evaluate((el) => getComputedStyle(el).animationName)).toBe('flow-highlight-pulse');
+    await context.close();
+  });
 
-    // Copy really copies, and completing the copy completes the step.
-    await copy.click();
+  test('copying is the step: the clipboard carries the prompt, the tag clears, the box reopens as the paste spot', async () => {
+    const { context, page, sw } = await launchPanel();
+    await goToTextQuestion(page);
+    await activate(page);
+
+    await page.locator('.assistbar-copy').click();
     await page.mouse.move(0, 0);
+
+    // The clipboard really carries the prompt.
     const clip = await page.evaluate(() => navigator.clipboard.readText());
     expect(clip).toContain('three backticks');
-    await expect(page.locator(`${SHEET} .assist-steps`)).toHaveAttribute('data-assist-step', '2');
 
-    await context.close();
-  });
-
-  test('step 2 — their AI named, a real door to it, the drawn paste-and-send; started advances', async () => {
-    const { context, page } = await launchPanel();
-    await goToTextQuestion(page);
-    await openSheet(page);
-    await page.locator(`${SHEET} .assist-copy`).click();
-    await page.mouse.move(0, 0);
-
-    // The line names THEIR AI — the goal gate's service, resolved by the
-    // same goalServiceLabelFor the reflect voice line uses.
-    await expect(page.locator(`${SHEET} .assist-line`)).toHaveText(assistPasteLine('ChatGPT'));
-
-    // The door: a plain anchor to the service's public front page, opening
-    // in the browser — never a hand-off, nothing sent (assistServices.ts).
-    const link = page.locator(`${SHEET} .assist-link`);
-    await expect(link).toHaveText(S.assistOpenService('ChatGPT'));
-    await expect(link).toHaveAttribute('href', 'https://chatgpt.com/');
-    await expect(link).toHaveAttribute('target', '_blank');
-    const linkBox = await link.boundingBox();
-    expect(linkBox!.height).toBeGreaterThanOrEqual(44);
-
-    // The GENERIC drawn scene — composer, pasted lines, circled send arrow;
-    // its beats loop (reduced motion gets the finished still — own test).
-    await expect(page.locator(`${SHEET} .assist-scene`)).toBeVisible();
-    const anim = await page
-      .locator(`${SHEET} .assist-scene-paste`)
-      .evaluate((el) => getComputedStyle(el).animationName);
-    expect(anim).toBe('assist-paste-in');
-
-    await page.getByRole('button', { name: S.assistStarted, exact: true }).click();
-    await page.mouse.move(0, 0);
-    await expect(page.locator(`${SHEET} .assist-steps`)).toHaveAttribute('data-assist-step', '3');
-
-    await context.close();
-  });
-
-  test('step 3 — the highlighted box takes the reply; submit lands it in the answer input, editable, one pulse', async () => {
-    const { context, page } = await launchPanel();
-    await goToTextQuestion(page);
+    // The bar and its tag are gone; the box stands in the same spot,
+    // highlighted, wearing the paste instruction.
+    await expect(page.locator(BAR)).toHaveCount(0);
     const field = page.locator('.flow textarea').first();
-    await openSheet(page);
-    await page.locator(`${SHEET} .assist-copy`).click();
-    await page.getByRole('button', { name: S.assistStarted, exact: true }).click();
-    await page.mouse.move(0, 0);
+    await expect(field).toBeVisible();
+    await expect(field).toHaveAttribute('placeholder', ASSIST_LINE_RETURN);
+    await expect(field).toHaveClass(/flow-highlight/);
 
-    await expect(page.locator(`${SHEET} .assist-line`)).toHaveText(ASSIST_LINE_RETURN);
-    const box = page.locator('#assist-reply');
-    // Highlighted while empty — the cue says which box — and focused, so
-    // the very next keystroke is the paste itself.
-    await expect(box).toHaveClass(/flow-highlight/);
-    await expect(box).toBeFocused();
-
-    // The round trip: narration + two fences — the LAST fence is the
-    // answer, bullets come off (normalizePastedReply, the existing path).
+    // The round trip: the fenced reply lands normalized, ordinary and
+    // editable; the highlight retires when something lands.
     await pasteInto(
       page,
-      '#assist-reply',
-      ['Here is a draft:', '```', 'Draft one.', '```', 'Tightened:', '```text', '- I translate vague asks into specs.', '- I keep scope honest.', '```'].join(
-        '\n',
-      ),
+      '.flow textarea',
+      ['Here is a draft:', '```', 'Draft one.', '```', 'Tightened:', '```text', '- I translate vague asks into specs.', '- I keep scope honest.', '```'].join('\n'),
     );
-    await expect(box).not.toHaveClass(/flow-highlight/);
-    await page.getByRole('button', { name: S.assistUse, exact: true }).click();
-    await page.mouse.move(0, 0);
-
-    // The sheet closes; the text lands in the question's own input,
-    // normalized, as ordinary editable text.
-    await expect(page.locator(SHEET)).toHaveCount(0);
     await expect(field).toHaveValue('I translate vague asks into specs.\nI keep scope honest.');
-
-    // THE LANDING PULSE — the VB-106/107 wiring reused: the one sanctioned
-    // cue, saying where the answer landed…
-    await expect(field).toHaveClass(/flow-highlight/);
-    expect(await field.evaluate((el) => getComputedStyle(el).animationName)).toBe('flow-highlight-pulse');
-    // …and it pulses ONCE: the first iteration retires it (1.7s cadence —
-    // give it two).
     await expect(field).not.toHaveClass(/flow-highlight/, { timeout: 5000 });
-
-    // Still an ordinary field: click into the frame and type.
     await field.focus();
     await page.keyboard.press('End');
     await page.keyboard.type(' And I sign my work.');
     await expect(field).toHaveValue(/And I sign my work\.$/);
 
-    await context.close();
-  });
-
-  test('FLAG 1 — the sheet is the sanctioned overlay: Escape closes, backdrop closes, focus returns to the chip', async () => {
-    const { context, page } = await launchPanel();
-    await goToTextQuestion(page);
-    const chip = page.locator(CHIP);
-
-    // Escape, from wherever focus is inside the sheet.
-    await openSheet(page);
-    await page.keyboard.press('Escape');
-    await expect(page.locator(SHEET)).toHaveCount(0);
-    await expect(chip).toBeFocused();
-
-    // The backdrop press is the person moving on.
-    await openSheet(page);
-    await page.locator('.sheet-backdrop').click({ position: { x: 4, y: 4 } });
-    await expect(page.locator(SHEET)).toHaveCount(0);
-
-    // The close control works too, and hands focus home the same way.
-    await openSheet(page);
-    await page.locator('.sheet-close').click();
-    await expect(page.locator(SHEET)).toHaveCount(0);
-    await expect(chip).toBeFocused();
-
-    // And nothing was lost: the question is exactly where they left it.
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
+    // V2.5's semantics, untouched by the new clothes: Next stamps
+    // assistedAt at commit — the durable mark the recheck reads.
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.mouse.move(0, 0);
+    await expect(page.locator('.flow')).not.toHaveAttribute('data-step-id', 'stop_explaining');
+    const stored = (await sw.evaluate(async () => (await chrome.storage.local.get('wb:answers'))['wb:answers'])) as Answers;
+    expect(stored.assistedAt?.['stop_explaining']).toBeTruthy();
 
     await context.close();
   });
 
-  test('keyboard-only: the whole walk, from chip to landed answer', async () => {
+  test('not liking the answer costs nothing: the chip re-activates, and the draft survives the round trip', async () => {
+    const { context, page } = await launchPanel();
+    await goToTextQuestion(page);
+    await activate(page);
+    await page.locator('.assistbar-copy').click();
+    await page.mouse.move(0, 0);
+
+    const field = page.locator('.flow textarea').first();
+    await pasteInto(page, '.flow textarea', 'A first try I do not love.');
+    await expect(field).toHaveValue('A first try I do not love.');
+
+    // Back to the same spot: activate again — the tag stands again…
+    await activate(page);
+    await expect(page.locator('.assistbar-tag')).toHaveText(S.assistActivated);
+    // …and stepping back out returns the box with the draft intact.
+    await page.locator(CHIP).click();
+    await page.mouse.move(0, 0);
+    await expect(field).toHaveValue('A first try I do not love.');
+
+    await context.close();
+  });
+
+  test('keyboard-only: chip to bar to copy to landed paste, no pointer at all', async () => {
     const { context, page } = await launchPanel();
     await goToTextQuestion(page);
 
-    // Reach and open the chip by keyboard.
     await page.locator(CHIP).focus();
     await page.keyboard.press('Enter');
-    await expect(page.locator(SHEET)).toBeVisible();
-
-    // Focus moved into the sheet (Sheet's contract: its first focusable).
-    const inSheet = await page.evaluate(
-      (sel) => document.querySelector(sel)!.contains(document.activeElement),
-      SHEET,
-    );
-    expect(inSheet).toBe(true);
-
-    // Tab to the glowing copy control and press it.
-    await page.locator(`${SHEET} .assist-copy`).focus();
-    await page.keyboard.press('Enter');
-    await expect(page.locator(`${SHEET} .assist-steps`)).toHaveAttribute('data-assist-step', '2');
-
-    // Step 2 rescued focus onto its own advance — Enter continues.
-    await expect(page.getByRole('button', { name: S.assistStarted, exact: true })).toBeFocused();
-    await page.keyboard.press('Enter');
-
-    // Step 3 focused the box itself; type (a paste would do the same).
-    await expect(page.locator('#assist-reply')).toBeFocused();
-    await page.keyboard.type('An answer talked out of me, typed back in.');
-    await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: S.assistUse, exact: true })).toBeFocused();
-    await page.keyboard.press('Enter');
-
-    await expect(page.locator(SHEET)).toHaveCount(0);
-    await expect(page.locator('.flow textarea').first()).toHaveValue(
-      'An answer talked out of me, typed back in.',
-    );
-    // Focus came home to the chip — the person is exactly where they were.
+    await expect(page.locator(BAR)).toBeVisible();
+    // Focus was not stolen by the swap (GUARDRAILS: nothing steals focus).
     await expect(page.locator(CHIP)).toBeFocused();
+
+    // Walk to the copy control and press it.
+    await page.locator('.assistbar-copy').focus();
+    await page.keyboard.press('Enter');
+    await expect(page.locator(BAR)).toHaveCount(0);
+    const clip = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clip).toContain('three backticks');
+
+    // The box is back; paste with the keyboard; the answer lands.
+    await pasteInto(page, '.flow textarea', ['```', 'Typed by keyboard alone.', '```'].join('\n'));
+    await expect(page.locator('.flow textarea').first()).toHaveValue('Typed by keyboard alone.');
 
     await context.close();
   });
@@ -362,108 +264,86 @@ test.describe('VB-119 — AI Assist: the paused mini-interview', () => {
   test('the fenced-paste path into the FIELD is unchanged: plain untouched, fenced normalized, no pulse', async () => {
     const { context, page } = await launchPanel();
     await goToTextQuestion(page);
-    const field = '.flow textarea';
-
-    // Ordinary paste: no fence, no interference — byte-identical.
-    await pasteInto(page, field, 'My own words, pasted plain.');
-    await expect(page.locator(field)).toHaveValue('My own words, pasted plain.');
-
-    // Fenced paste straight into the field (the VB-94 round trip without
-    // the sheet): the LAST fence is the answer, bullets come off, it
-    // REPLACES the field.
-    const reply = ['Sure:', '```', 'Draft.', '```', 'Final:', '```text', '- One.', '- Two.', '```'].join('\n');
-    await pasteInto(page, field, reply);
-    await expect(page.locator(field)).toHaveValue('One.\nTwo.');
-
-    // A hand paste never starts a pulse — the landing pulse belongs to the
-    // sheet's submit alone (VB-119); after a reply has landed by hand there
-    // is nothing left to point at.
-    await expect(page.locator(field)).not.toHaveClass(/flow-highlight/);
-
-    await context.close();
-  });
-
-  test('reduced motion: every cue is a steady mark that still carries the instruction', async () => {
-    const { context, page } = await launchPanel({ reducedMotion: 'reduce' });
-    await goToTextQuestion(page);
-    await openSheet(page);
-
-    // Step 1's copy control: same class, no animation, a steady ring.
-    const copy = page.locator(`${SHEET} .assist-copy`);
-    const still = await copy.evaluate((el) => {
-      const style = getComputedStyle(el);
-      return { animation: style.animationName, shadow: style.boxShadow };
-    });
-    expect(still.animation).toBe('none');
-    expect(still.shadow).not.toBe('none');
-
-    await copy.click();
-    await page.mouse.move(0, 0);
-
-    // Step 2's scene: the loop is off and the finished frame shows both
-    // beats — lines already in the composer, send control present — while
-    // the printed line above carries the instruction in words.
-    for (const part of ['.assist-scene-paste', '.assist-scene-send']) {
-      const anim = await page.locator(`${SHEET} ${part}`).evaluate((el) => getComputedStyle(el).animationName);
-      expect(anim, part).toBe('none');
-      await expect(page.locator(`${SHEET} ${part}`)).toBeVisible();
-    }
-
-    await page.getByRole('button', { name: S.assistStarted, exact: true }).click();
-    await page.locator('#assist-reply').fill('Steady, not spinning.');
-    await page.getByRole('button', { name: S.assistUse, exact: true }).click();
-
-    // The landing mark on the input: the steady ring, present from the
-    // first frame — and with no iterations to retire it, it stays until the
-    // person acts on the field, which is the still form of "it landed
-    // here".
     const field = page.locator('.flow textarea').first();
-    await expect(field).toHaveClass(/flow-highlight/);
-    const fieldStill = await field.evaluate((el) => {
-      const style = getComputedStyle(el);
-      return { animation: style.animationName, shadow: style.boxShadow };
-    });
-    expect(fieldStill.animation).toBe('none');
-    expect(fieldStill.shadow).not.toBe('none');
-    await field.focus();
-    await page.keyboard.press('End');
-    await page.keyboard.type(' More.');
+
+    // A plain paste is the person's own text — byte-untouched.
+    await pasteInto(page, '.flow textarea', 'Just my own words, - dashes and all.');
+    await expect(field).toHaveValue('Just my own words, - dashes and all.');
+    await expect(field).not.toHaveClass(/flow-highlight/);
+
+    // A fenced paste unwraps to the last fence, bullets off — and a hand
+    // paste never starts the landing pulse.
+    await field.fill('');
+    await pasteInto(page, '.flow textarea', ['chatter', '```', '- Line one.', '- Line two.', '```'].join('\n'));
+    await expect(field).toHaveValue('Line one.\nLine two.');
     await expect(field).not.toHaveClass(/flow-highlight/);
 
     await context.close();
   });
 
-  test('axe finds no violations with the sheet open, on every step', async () => {
-    const { context, page } = await launchPanel({ reducedMotion: 'reduce' });
+  test('the nudged open leads with the encouraging line — an offer, never a verdict', async () => {
+    const { context, page } = await launchPanel();
     await goToTextQuestion(page);
-    await openSheet(page);
 
-    // Same tags as rephrase.a11y.spec.ts; the scan covers the whole page —
-    // the open sheet AND the dimmed app behind it.
-    const scan = () =>
-      new AxeBuilder({ page })
-        .include('.flow')
-        .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
-        .analyze();
+    // Draft empty → under the threshold → the chip stands recommended, and
+    // the bar it stands leads with the encouraging line.
+    await expect(page.getByRole('button', { name: S.assistRecommended, exact: true })).toBeVisible();
+    await activate(page);
+    await expect(page.locator('.assistbar-lead')).toHaveText(ASSIST_ENCOURAGING_LEAD);
 
-    expect((await scan()).violations).toEqual([]);
-
-    await page.locator(`${SHEET} .assist-copy`).click();
+    // The ordinary open has no lead: step out, type past the bar, reopen.
+    await page.locator(CHIP).click();
     await page.mouse.move(0, 0);
-    expect((await scan()).violations).toEqual([]);
-
-    await page.getByRole('button', { name: S.assistStarted, exact: true }).click();
-    await page.mouse.move(0, 0);
-    expect((await scan()).violations).toEqual([]);
+    await page
+      .locator('.flow textarea')
+      .fill('A substantial draft, comfortably past the eighty character bar, kept for the assist.');
+    await expect(page.getByRole('button', { name: S.assist, exact: true })).toBeVisible();
+    await activate(page);
+    await expect(page.locator('.assistbar-lead')).toHaveCount(0);
 
     await context.close();
   });
 
-  test('VB-120 preview: the encouraging lead is authored and never shames (wiring lands with the nudge)', async () => {
-    // The wording variant ships with the sheet (assistCopy.ts) and its
-    // no-deficiency law is pinned in assistCopy.test.ts; this line keeps
-    // the e2e layer honest about which register the lead is in.
-    expect(ASSIST_ENCOURAGING_LEAD.toLowerCase()).not.toContain('short');
-    expect(ASSIST_ENCOURAGING_LEAD.toLowerCase()).not.toContain('too');
+  test('reduced motion: the bar stands still and every instruction survives', async () => {
+    const { context, page } = await launchPanel({ reducedMotion: 'reduce' });
+    await goToTextQuestion(page);
+    await activate(page);
+
+    await expect(page.locator('.assistbar-tag')).toHaveText(S.assistActivated);
+    await expect(page.locator('.assistbar-line')).toHaveText(assistBarLine('ChatGPT'));
+
+    await page.locator('.assistbar-copy').click();
+    const field = page.locator('.flow textarea').first();
+    await expect(field).toHaveAttribute('placeholder', ASSIST_LINE_RETURN);
+    // The steady ring is the still form of the landing cue — no iterations
+    // under reduced motion, so it stays until the person acts.
+    await expect(field).toHaveClass(/flow-highlight/);
+    await pasteInto(page, '.flow textarea', 'Landed under reduced motion.');
+    await expect(field).not.toHaveClass(/flow-highlight/);
+
+    await context.close();
+  });
+
+  test('axe finds no violations with the bar standing, collapsed and expanded', async () => {
+    const { context, page } = await launchPanel({ reducedMotion: 'reduce' });
+    await goToTextQuestion(page);
+    await activate(page);
+
+    const closed = await new AxeBuilder({ page })
+      .include('.flow')
+      .exclude('.app-ground')
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze();
+    expect(closed.violations).toEqual([]);
+
+    await page.getByRole('button', { name: S.assistReadPrompt, exact: true }).click();
+    const open = await new AxeBuilder({ page })
+      .include('.flow')
+      .exclude('.app-ground')
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+      .analyze();
+    expect(open.violations).toEqual([]);
+
+    await context.close();
   });
 });

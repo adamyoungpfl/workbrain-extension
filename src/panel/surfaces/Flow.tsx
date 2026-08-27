@@ -20,7 +20,8 @@ import {
 } from '../components';
 import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
-import { AssistSheet } from './AssistSheet';
+import { AssistBar } from './AssistBar';
+import { ASSIST_LINE_RETURN } from '../../core/flow/assistCopy';
 import type { PillOption } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { ANSWERS_KEY } from '../../core/files/answersKey';
@@ -1170,12 +1171,18 @@ function StepView({
   // the ideas mechanic with a different well, and a question only ever
   // renders one of the two buttons.
   const [nameSeed] = useState(() => Math.floor(Math.random() * 1_000_000));
-  // V2.3 VB-94 → V2.4 VB-107 → V2.5 VB-119: the interview-me escape hatch,
-  // grown up into AI Assist — a full-height sheet (FLAG 1, confirmed)
-  // instead of the anchored popover. Plain per-position state like every
-  // draft above: a new question starts with the sheet closed, and closing
-  // unmounts it, so every open is a fresh three-step walk.
-  const [assistOpen, setAssistOpen] = useState(false);
+  // V2.3 VB-94 → V2.4 VB-107 → V2.5 VB-119 → V2.8 VB-138: the interview-me
+  // escape hatch, INLINE and single-step now (Adam: "handle it all in the
+  // single step"; the sheet retired). Three phases, per-position like
+  // every draft above so a new question always opens idle:
+  //   idle      — the box open, the chip offered;
+  //   activated — the box collapsed, the "AI Assist Activated" tag and the
+  //               instruction bar standing in its spot;
+  //   returned  — the copy landed, the tag cleared, the box reopened in
+  //               the same place with the paste instruction. Not liking
+  //               what came back costs nothing: the chip is right there,
+  //               and so is just typing.
+  const [assistPhase, setAssistPhase] = useState<'idle' | 'activated' | 'returned'>('idle');
   /** V2.5 VB-119 — what the live region says after the sheet lands its
    * answer, for anyone who cannot see the field fill and the pulse point. */
   const [assistAnnounce, setAssistAnnounce] = useState('');
@@ -1912,23 +1919,22 @@ function StepView({
    * V2.5 VB-119 — the AI Assist sheet's submit lands. The reply becomes the
    * draft — the same buffer typing writes to, committed by the same Next,
    * ordinary editable text from the instant it appears (dropIdea's own
-   * contract, one helper over; the fenced-paste normalization already
-   * happened in the sheet, on the existing interviewMe path). The sheet
-   * closes — focus returns to the AI Assist chip, Sheet's contract — and
-   * the input pulses once: the VB-106/107 wiring reused, with
-   * `assistLanded` retiring the pulse after its first breath.
+   * contract, one helper over). V2.8 VB-138 — the copy IS the step now:
+   * the bar unmounts, the box reopens in the same spot wearing the paste
+   * instruction and the one sanctioned highlight, and the live region says
+   * what to do for anyone not watching the swap. `assistedHere` marks the
+   * visit at the copy (the person took the prompt to their AI; what comes
+   * back through the box is the assisted answer VB-120 decided never gets
+   * recheck), and Next still stamps `assistedAt` only at commit.
    */
-  function handleAssistSubmit(text: string) {
+  function handleAssistCopied() {
     stopRotating('typing');
-    setAssistOpen(false);
-    setDraftText(text);
+    setAssistPhase('returned');
     setPendingError(null);
-    // VB-120 (FLAG 2): remember the sheet built this draft, so Next stamps
-    // `assistedAt` and the nudge stands down immediately.
     setAssistedHere(true);
     assistLanded.current = true;
     setInputHighlight(true);
-    setAssistAnnounce(S.assistLanded);
+    setAssistAnnounce(`${S.copied}. ${ASSIST_LINE_RETURN}`);
   }
 
   // V2.4 VB-105 — the two service questions (core/flow/serviceThemes.ts says
@@ -2023,33 +2029,52 @@ function StepView({
         <TourSlide slideId={step.id as TourSlideId} onAdvance={handleNext} onBack={canGoBack ? onBack : undefined}>
           {beats ? <Beats beats={beats} /> : questionText}
         </TourSlide>
-      ) : beats ? (
-        <Beats beats={beats} />
       ) : (
-        /* VB-04: the rephrase control sits beside the question, as a sibling of
-           the heading rather than inside it — putting a button inside <h2>
-           would fold its label into the heading's accessible name and change
-           what a screen reader announces when it lands on the question. */
-        <div className="flow-q-row">
-          {/* V1.2 VB-10: the question types itself in on arrival, and on every
-              rephrasing — a new wording is a new sentence arriving, which is
-              the same moment. Skippable and non-blocking; see Typed.tsx. */}
-          <TypedHeading className="flow-q" text={questionText} />
-          {hasRephrasings && (
-            <Button
-              type="button"
-              variant="quiet"
-              className="flow-rephrase"
-              aria-label={S.rephrase}
-              title={S.rephrase}
-              onClick={(e) => cycleRephrase(e.currentTarget)}
-            >
-              {REPHRASE_ICON}
-            </Button>
+        /* V2.8 VB-137 — the question zone: the prompt and its help, in a
+           region that YIELDS when the panel is tight (it shrinks and scrolls
+           internally) so the answer stack below — the box, the helper chips,
+           the navigation — always stands whole above the dock, tight under
+           the input (Adam: "the action buttons are near the input"). On a
+           roomy panel it takes only its content and the slack still falls
+           below the navigation, exactly as VB-117 decreed. Tour slides stay
+           outside it: a slide owns its whole screen.
+
+           A real scroll region needs a keyboard: tabIndex puts it in the
+           tab order so arrows can scroll a prompt taller than its room,
+           and the label says what a screen reader has landed on
+           (axe's scrollable-region-focusable, caught on the name
+           questions — a heading alone is nothing to focus). */
+        <div className="flow-qzone" tabIndex={0} role="group" aria-label={S.qzoneLabel}>
+          {beats ? (
+            <Beats beats={beats} />
+          ) : (
+            /* VB-04: the rephrase control sits beside the question, as a
+               sibling of the heading rather than inside it — putting a button
+               inside <h2> would fold its label into the heading's accessible
+               name and change what a screen reader announces when it lands on
+               the question. */
+            <div className="flow-q-row">
+              {/* V1.2 VB-10: the question types itself in on arrival, and on
+                  every rephrasing — a new wording is a new sentence arriving,
+                  which is the same moment. Skippable and non-blocking. */}
+              <TypedHeading className="flow-q" text={questionText} />
+              {hasRephrasings && (
+                <Button
+                  type="button"
+                  variant="quiet"
+                  className="flow-rephrase"
+                  aria-label={S.rephrase}
+                  title={S.rephrase}
+                  onClick={(e) => cycleRephrase(e.currentTarget)}
+                >
+                  {REPHRASE_ICON}
+                </Button>
+              )}
+            </div>
           )}
+          <QuestionHelp step={step} onDisclose={narrateFollowUp} stoppedBy={reasonFor(rotation)} />
         </div>
       )}
-      <QuestionHelp step={step} onDisclose={narrateFollowUp} stoppedBy={reasonFor(rotation)} />
 
       {/* V1.3 VB-17: every kind's controls in one band, so the room the
           question surface now fills has somewhere deliberate to put its
@@ -2057,6 +2082,20 @@ function StepView({
       <AnswerArea>
         {step.kind === 'text' && (
           <>
+            {assistPhase === 'activated' ? (
+              /* V2.8 VB-138 — the box collapses and the bar stands in its
+                 spot: the Activated tag marks it, the line says the whole
+                 journey, and copying brings the box straight back
+                 (handleAssistCopied). The helper row below stays: the chip
+                 is the way back out. */
+              <AssistBar
+                prompt={interviewMePrompt(questionText, ctx)}
+                serviceLabel={goalServiceLabelFor(ctx)}
+                serviceUrl={assistServiceUrlFor(ctx)}
+                encouraging={assistNudged}
+                onCopied={handleAssistCopied}
+              />
+            ) : (
             <div
               className="flow-field-sr-label"
               // V2.5 VB-119 — "the input pulses once": the landing pulse
@@ -2078,7 +2117,12 @@ function StepView({
                 as={step.multiline ? 'textarea' : 'input'}
                 value={draftText}
                 onChange={answerText}
-                placeholder={resolveOptionalPhrase(step.ph, ctx)}
+                placeholder={
+                  // VB-138: the reopened box says what it is waiting for.
+                  assistPhase === 'returned' && draftText === ''
+                    ? ASSIST_LINE_RETURN
+                    : resolveOptionalPhrase(step.ph, ctx)
+                }
                 error={pendingError ?? undefined}
                 // V2.4 VB-106/107, re-aimed by V2.5 VB-119 — the one
                 // sanctioned attention cue, on the box the assist sheet's
@@ -2098,13 +2142,17 @@ function StepView({
                 }}
               />
             </div>
+            )}
             {/* V1.8 VB-49. Under the box, because it is about the box: the
                 dictation the person's own computer already has types into
                 this field, and nobody knows it. One question, one line, gone
                 for good on the dismiss or on the first thing they type.
                 There is no microphone here and there is no permission — see
-                components/DictationHint.tsx for the four reasons why. */}
-            <DictationHint stepId={step.id} typed={draftText.trim() !== ''} />
+                components/DictationHint.tsx for the four reasons why.
+                VB-138: it stands down while the bar holds the box's spot. */}
+            {assistPhase !== 'activated' && (
+              <DictationHint stepId={step.id} typed={draftText.trim() !== ''} />
+            )}
             {/* V1.1 VB-08. Under the field, not beside the question: this
                 control writes into the box, so it belongs with the box, and
                 the sibling app puts it in the same place. Rendered only where
@@ -2183,20 +2231,17 @@ function StepView({
                   </span>
                 </>
               )}
-              {/* V2.5 VB-119 — AI Assist (FLAG 1, sheet CONFIRMED),
-                  replacing VB-107's anchored popover outright. The chip
-                  opens a full-height Sheet — the guardrail-sanctioned
-                  overlay, dimming the app the way Adam's design pauses it —
-                  that walks copy → paste-into-their-AI → paste-back, each
-                  step one narrated line (core/flow/assistCopy.ts). The
-                  sheet is mounted-when-open, right here in the row, so
-                  every open is a fresh walk and dismissal is one state
-                  change; focus goes into the sheet and comes back to this
-                  chip on close (components/Sheet.tsx's contract). Submit
-                  lands the normalized reply in the input above, editable,
-                  with the one sanctioned cue pulsing once to say where —
-                  see handleAssistSubmit. VB-121: not on the two name
-                  questions — the generator is their whole helper set. */}
+              {/* V2.5 VB-119's sheet, gone INLINE at V2.8 VB-138 (Adam:
+                  "handle it all in the single step"). The chip collapses
+                  the box and stands the AssistBar in its place — the
+                  Activated tag, the one-line journey, the icon-led copy at
+                  its end, the full prompt behind an expander. Copying is
+                  the step: the bar leaves, the box reopens right here with
+                  the paste instruction (see handleAssistCopied). Pressing
+                  the chip while the bar stands puts the box back —
+                  changing your mind costs nothing. VB-121: not on the two
+                  name questions — the generator is their whole helper
+                  set. */}
               {!nameGenerator && (
                 <>
                   <Button
@@ -2204,8 +2249,10 @@ function StepView({
                     variant="secondary"
                     size="sm"
                     className="flow-assist"
-                    aria-haspopup="dialog"
-                    onClick={() => setAssistOpen(true)}
+                    aria-expanded={assistPhase === 'activated'}
+                    onClick={() =>
+                      setAssistPhase((phase) => (phase === 'activated' ? 'idle' : 'activated'))
+                    }
                   >
                     {/* VB-120: while nudged, the paint wears the one sanctioned
                         cue and the label itself says why — never colour alone
@@ -2218,16 +2265,6 @@ function StepView({
                   <span className="flow-idea-live" role="status">
                     {assistAnnounce}
                   </span>
-                  {assistOpen && (
-                    <AssistSheet
-                      prompt={interviewMePrompt(questionText, ctx)}
-                      serviceLabel={goalServiceLabelFor(ctx)}
-                      serviceUrl={assistServiceUrlFor(ctx)}
-                      encouraging={assistNudged}
-                      onClose={() => setAssistOpen(false)}
-                      onSubmit={handleAssistSubmit}
-                    />
-                  )}
                 </>
               )}
             </div>

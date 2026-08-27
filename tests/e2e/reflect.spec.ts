@@ -28,7 +28,7 @@ async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
     channel: 'chromium',
     args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`],
   });
-  // VB-120's (a) test walks the real AI Assist sheet, whose copy step
+  // VB-120 (a) walks the real INLINE assist (V2.8 VB-138), whose copy step
   // writes the clipboard.
   await context.grantPermissions(['clipboard-read', 'clipboard-write']);
   const page = await openPanel(context);
@@ -280,15 +280,17 @@ test.describe('Reflect step (R1-07)', () => {
     const { context, page } = await launchPanel();
     await driveToTextQuestion(page);
 
-    // The real sheet, walked end to end: copy → started → paste back.
+    // V2.8 VB-138 — the real INLINE walk: activate, copy (the step), and
+    // the reopened box takes the reply where the sheet's box used to.
     await page.locator('.flow-assist').click();
-    await page.locator('.assist-sheet .assist-copy').click();
-    await page.getByRole('button', { name: "I've started the interview", exact: true }).click();
+    await page.mouse.move(0, 0);
+    await expect(page.locator('.assistbar')).toBeVisible();
+    await page.locator('.assistbar-copy').click();
+    await page.mouse.move(0, 0);
+    await expect(page.locator('.assistbar')).toHaveCount(0);
     const landed =
       'The project history, who owns which system, and the standing decisions I keep having to re-justify to every new stakeholder.';
-    await page.locator('#assist-reply').fill(landed);
-    await page.getByRole('button', { name: 'Put it in my answer', exact: true }).click();
-    await page.mouse.move(0, 0);
+    await page.locator('.flow textarea').fill(landed);
     await expect(page.locator('.flow textarea')).toHaveValue(landed);
 
     await page.getByRole('button', { name: 'Next', exact: true }).click();
@@ -339,16 +341,21 @@ test.describe('Reflect step (R1-07)', () => {
     await page.locator('.flow textarea').fill(short);
     await expect(chip).toHaveText('AI Assist (Recommended)');
 
-    // The nudged chip opens the SAME sheet in its encouraging register —
-    // an offer about a strong start, never a word about the draft.
+    // V2.8 VB-138 — the nudged chip stands the INLINE bar in its
+    // encouraging register: an offer about a strong start, never a word
+    // about the draft. Pressing the chip again puts the box back, draft
+    // intact.
     await chip.click();
-    const lead = page.locator('.assist-sheet .assist-lead');
+    await page.mouse.move(0, 0);
+    const lead = page.locator('.assistbar-lead');
     await expect(lead).toHaveText('A quick AI interview can give you a strong start.');
     for (const accusation of ['short', 'too', 'more detail']) {
       expect(((await lead.textContent()) ?? '').toLowerCase()).not.toContain(accusation);
     }
-    await page.keyboard.press('Escape');
-    await expect(page.locator('.assist-sheet')).toHaveCount(0);
+    await chip.click();
+    await page.mouse.move(0, 0);
+    await expect(page.locator('.assistbar')).toHaveCount(0);
+    await expect(page.locator('.flow textarea')).toHaveValue(short);
 
     // Submitting the short answer: no recheck — bypass (b) — and nothing
     // pretends otherwise in storage: no reflectedAt, no assistedAt.
