@@ -106,3 +106,50 @@
   flex: 1 1 auto;
   min-width: 0;
 }
+
+/* ── BS-05a (§5) — the run, as marks and words ────────────────────────────
+   The bar showed a fraction of a global total. Five marks show a pace with
+   an end in sight, which is the whole argument: "question 12 of 38" invites
+   bargaining because 38 is far away, and five is not. */
+.flowprogress-run {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.flowprogress-beats {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* THREE STATES, AND NEVER BY COLOUR ALONE. Done is filled, standing is
+   filled AND wider AND ringed, left is a hollow outline. The line beneath
+   says the same thing in words. */
+.flowprogress-beat {
+  height: 4px;
+  width: 18px;
+  border-radius: 2px;
+  background: var(--sunken);
+  box-shadow: inset 0 0 0 1px var(--border);
+  transition:
+    background var(--fast) var(--ease),
+    width var(--base) var(--ease);
+}
+.flowprogress-beat[data-state='done'] {
+  background: var(--primary);
+  box-shadow: none;
+}
+.flowprogress-beat[data-state='here'] {
+  width: 30px;
+  background: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-tint);
+}
+
+
+
+@media (prefers-reduced-motion: reduce) {
+  .flowprogress-beat {
+    transition: none;
+  }
+}

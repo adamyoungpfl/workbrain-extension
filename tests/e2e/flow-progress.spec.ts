@@ -66,13 +66,11 @@ async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
   return { context, page };
 }
 
-/** The rendered width of the fill, in CSS pixels — what a person actually
- * sees, not the inline style string the unit test already covers. */
-async function fillWidth(page: Page): Promise<number> {
-  const box = await page.locator('.flowprogress-fill').boundingBox();
-  expect(box, 'the progress fill is not rendered').not.toBeNull();
-  return box!.width;
-}
+/* BS-05a deleted `fillWidth`. The interview's bar is five marks of a run
+   now, not a fill of a global total, so there is no width to measure — the
+   marks' three states are asserted by `data-state` instead. The bar itself
+   survives on the proof loop, which has no runs, and FlowProgress.test.tsx
+   covers its fill. */
 
 test.describe('VB-02 — module title + progress bar', () => {
   test('the breadcrumb is gone: a module title and a bar, and no digit on screen', async () => {
@@ -97,32 +95,43 @@ test.describe('VB-02 — module title + progress bar', () => {
     await context.close();
   });
 
-  test('the bar carries the count for assistive tech, and moves as the flow advances', async () => {
+  test('the row carries the RUN for assistive tech, and moves as the flow advances', async () => {
     const { context, page } = await launchPanel();
 
+    /**
+     * BS-05a (§5) — the spoken value is run-scoped now.
+     *
+     * V1.1 VB-02 kept the global count for screen-reader users because the
+     * bar drew a fraction of it. The bar is five marks of a RUN, so the
+     * spoken value says the same thing the marks do — and §5's rule is that
+     * no global total appears anywhere, including out loud. A screen-reader
+     * user gets exactly what everybody else gets, which is the point.
+     */
     const bar = page.locator('.flowprogress[role="progressbar"]');
     await expect(bar).toHaveCount(1);
     await expect(bar).toHaveAttribute('aria-valuemin', '0');
-    await expect(bar).toHaveAttribute('aria-valuemax', String(TOTAL));
-    // V2.3 VB-90 + VB-93, tightened by V2.5 VB-114 (brain-flip rung
-    // consolidated): past the ladder (3 screens) and the gate (2 questions)
-    // — position 6 — and the count stays honest about everything behind it.
-    await expect(bar).toHaveAttribute('aria-valuenow', '6');
-    await expect(bar).toHaveAttribute('aria-valuetext', `Question 6 of ${TOTAL}`);
+    // Orientation is four askable questions — its slides are not questions —
+    // so the run is four long and no total of thirty-eight is spoken.
+    await expect(bar).toHaveAttribute('aria-valuemax', '4');
+    await expect(bar).toHaveAttribute('aria-valuenow', '2');
+    await expect(bar).toHaveAttribute('aria-valuetext', 'Two left in this run');
+    await expect(bar).not.toHaveAttribute('aria-valuetext', new RegExp(String(TOTAL)));
     // Named, or a screen reader announces an anonymous bar.
     await expect(bar).toHaveAttribute('aria-label', 'Orientation');
 
-    const firstWidth = await fillWidth(page);
+    // Four marks, and the standing one is where the person is.
+    await expect(page.locator('.flowprogress-beat')).toHaveCount(4);
+    await expect(page.locator('.flowprogress-beat[data-state="here"]')).toHaveCount(1);
 
-    // The choice question — answer it, and the bar advances. (V2.5 VB-118:
+    // The choice question — answer it, and the run advances. (V2.5 VB-118:
     // context_scope's choices are icon tiles.)
     await page.locator('.flow .vpick .vpick-tile').first().click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 
-    await expect(bar).toHaveAttribute('aria-valuenow', '7');
-    await expect(bar).toHaveAttribute('aria-valuetext', `Question 7 of ${TOTAL}`);
-    expect(await fillWidth(page)).toBeGreaterThan(firstWidth);
+    await expect(bar).toHaveAttribute('aria-valuenow', '3');
+    await expect(bar).toHaveAttribute('aria-valuetext', 'One left in this run');
+    await expect(page.locator('.flowprogress-beat[data-state="done"]')).toHaveCount(3);
 
     // Still the same module, so the title is unchanged — the bar is what
     // moved, which is the whole design.

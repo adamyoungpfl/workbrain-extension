@@ -20,6 +20,7 @@ import {
 } from '../components';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
 import { PROOF_BASELINE_ANSWER_KEY, PROOF_CONTEXT_ANSWER_KEY } from '../../core/flow/proofAdapter';
+import { runOf } from '../../core/flow/runs';
 import { proofChecks, proofTally } from '../../core/proof/checklist';
 import type { ProofCheck, ProofCheckId } from '../../core/proof/checklist';
 import { ModuleIntro } from './ModuleIntro';
@@ -1579,6 +1580,22 @@ function StepView({
    * height — see NarratorToggle.css on how a 44×44 target lives in a 24px row,
    * which is what keeps VB-17's composition intact.
    */
+  /**
+   * BS-05a — where this question sits in its run. `null` on anything that is
+   * not an askable node (a module transition, the tour's slides), and null
+   * for a flow with no runs at all — the proof loop keeps the bar it had.
+   */
+  const runBeat = (() => {
+    const nodeId = pos.kind === 'add-another' ? pos.block.id : pos.location.in === 'top' ? pos.step.id : pos.location.blockId;
+    const found = runOf(modules, nodeId);
+    if (!found) return undefined;
+    return {
+      done: found.place,
+      of: found.run.nodeIds.length,
+      label: S.runOfRuns(found.run.index, found.run.of),
+    };
+  })();
+
   const topSection = (
     <>
       <NarratorToggle />
@@ -1587,6 +1604,7 @@ function StepView({
         current={topLevelIndex(modules, pos)}
         total={total}
         onHome={onHome}
+        run={runBeat}
       />
     </>
   );

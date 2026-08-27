@@ -654,6 +654,25 @@ export const S = {
   reflectNeedPaste: 'Paste what your AI said, or go back and keep your own words.',
   reflectUseThis: 'Use this instead',
 
+  // ------------------------------------------------------------ the beat row
+  /* BS-05a (§5) — pace without a finish line to bargain with. V1.1 VB-02's
+     ban stands where it was aimed: no global total, ever. Adam's D1 keeps it
+     strict — NO DIGIT AT ALL in the panel's own voice — so every number here
+     is spelled out. The marks themselves carry the pace; these words are
+     what a screen reader gets and what the eye reads under them. [DRAFT] */
+  runLeft: (n: number) =>
+    n === 0
+      ? 'Last one in this run'
+      : n === 1
+        ? 'One left in this run'
+        : `${capitalise(wordFor(n))} left in this run`,
+  /** Which run of how many, WITHIN this section — the only count that stays
+   * true when a repeatable adds questions. Spelled, never printed as digits. */
+  runOfRuns: (index: number, of: number) =>
+    of === 1 ? '' : `${ordinalWord(index + 1)} run of ${wordFor(of)}`,
+  /** The beat row's accessible name — the marks are decoration over it. */
+  runBeats: 'How far through this run you are',
+
   // ---------------------------------------------------------------- the proof
   // The prompts and per-service tips are ported — see docs/CONTENT-SOURCES.md,
   // R1-11, and src/core/flow/proofSource.ts. Everything below is new panel
@@ -1371,6 +1390,20 @@ export const S = {
 } as const;
 
 /** Small numbers read as words. "Two questions" is easy; "2 questions" is a form. */
+/** BS-05a — "second run of three", never "run 2 of 3" (Adam's D1: no digit
+ * at all in the panel's own voice). Falls back to the cardinal past ten,
+ * where no module goes. */
+/** A spelled number opening a sentence — the beat row's remainder is
+ * announced on its own, so it starts the way a sentence does. */
+function capitalise(word: string): string {
+  return word.charAt(0).toUpperCase() + word.slice(1);
+}
+
+function ordinalWord(n: number): string {
+  const w = ['', 'first', 'second', 'third', 'fourth', 'fifth', 'sixth', 'seventh', 'eighth', 'ninth', 'tenth'];
+  return n >= 1 && n <= 10 ? (w[n] as string) : String(n);
+}
+
 function wordFor(n: number): string {
   const w = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
   return n >= 0 && n <= 10 ? (w[n] as string) : String(n);

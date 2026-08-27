@@ -81,6 +81,16 @@ export interface FlowProgressProps {
   current: number;
   /** Total top-level questions in the flow (`questionCount`). */
   total: number;
+  /**
+   * BS-05a (§5) — where this question sits in its RUN, when the flow has
+   * runs. `done` is how many of the run's questions are behind the person
+   * (0-based place), `of` is how long the run is, and `label` is the
+   * spelled-out "second run of three" — empty when the module is one run,
+   * because "first run of one" says nothing.
+   *
+   * Optional: the proof loop has no runs and keeps the bar it always had.
+   */
+  run?: { done: number; of: number; label: string } | undefined;
 }
 
 /**
@@ -129,9 +139,24 @@ export interface FlowProgressProps {
  * visible inside it is `aria-hidden`, so the title is announced once as the
  * bar's name rather than twice — once as a paragraph and again as a label.
  */
-export function FlowProgress({ title, current, total, onHome }: FlowProgressProps) {
+export function FlowProgress({ title, current, total, onHome, run }: FlowProgressProps) {
   const pct = total > 0 ? Math.min(100, Math.max(0, (current / total) * 100)) : 0;
-  const valueText = S.questionOfSr(current, total);
+  /**
+   * BS-05a (§5) — THE BAR BECOMES A RUN OF FIVE.
+   *
+   * V1.1 VB-02 was right about the number it was aimed at: "question 12 of
+   * 38" invites bargaining because 38 is far away. Five is not. So the bar's
+   * fraction of a global total is replaced by marks a person can count, and
+   * the spoken value goes with it — `aria-valuetext` now says where they are
+   * IN THIS RUN, which is what the marks say to everyone else. No global
+   * total is printed or spoken (Adam's D1, and §5's own rule).
+   *
+   * `run` is optional so a flow with no run machinery behind it — the proof
+   * loop — still renders the bar it always had. Degrade, never break.
+   */
+  const valueText = run
+    ? [S.runLeft(run.of - run.done), run.label].filter(Boolean).join(' · ')
+    : S.questionOfSr(current, total);
 
   // V2.4 VB-112 — the mark is a door home (Adam: "people instinctively
   // assume whatever is there will take you home"). The ICON only, never the
@@ -159,8 +184,8 @@ export function FlowProgress({ title, current, total, onHome }: FlowProgressProp
       // break).
       aria-label={title || valueText}
       aria-valuemin={0}
-      aria-valuemax={total}
-      aria-valuenow={current}
+      aria-valuemax={run ? run.of : total}
+      aria-valuenow={run ? run.done : current}
       aria-valuetext={valueText}
     >
       {barContent}
@@ -176,10 +201,12 @@ export function FlowProgress({ title, current, total, onHome }: FlowProgressProp
           <>
             <div className="flowprogress-head">
               <TypedModuleLabel className="flowprogress-title" title={title} />
-            </div>
-            <div className="flowprogress-track" aria-hidden="true">
-              <span className="flowprogress-fill" style={{ width: `${pct}%` }} />
-            </div>
+                    </div>
+            {run ? <Beats run={run} /> : (
+              <div className="flowprogress-track" aria-hidden="true">
+                <span className="flowprogress-fill" style={{ width: `${pct}%` }} />
+              </div>
+            )}
           </>,
         )}
       </div>
@@ -200,11 +227,58 @@ export function FlowProgress({ title, current, total, onHome }: FlowProgressProp
             module-scope memory of when the current cue started. */}
         <TypedModuleLabel className="flowprogress-title" title={title} />
       </div>
-      <div className="flowprogress-track" aria-hidden="true">
-        {/* Width is set inline because it is data, not design — the one
-            value on this element that changes per question. */}
-        <span className="flowprogress-fill" style={{ width: `${pct}%` }} />
-      </div>
+      {run ? <Beats run={run} /> : (
+        <div className="flowprogress-track" aria-hidden="true">
+          {/* Width is set inline because it is data, not design — the one
+              value on this element that changes per question. */}
+          <span className="flowprogress-fill" style={{ width: `${pct}%` }} />
+        </div>
+      )}
     </>,
+  );
+}
+
+/**
+ * BS-05a — the run, as marks and words.
+ *
+ * FILLED for what is behind them, STANDING for the one they are on, EMPTY
+ * for what is left. Three states told apart by more than colour: the
+ * standing mark is wider and ringed, and the line underneath says the same
+ * thing in words for anyone who cannot see either.
+ *
+ * NO DIGIT (Adam's D1). "Two left in this run", "second run of three" — the
+ * panel's own numbers are spelled, always. The marks are `aria-hidden`
+ * because the progressbar around them already carries the value; this is the
+ * same one-account-per-audience rule `Meter` follows.
+ */
+function Beats({ run }: { run: { done: number; of: number; label: string } }) {
+  return (
+    <div className="flowprogress-run" aria-hidden="true">
+      <div className="flowprogress-beats">
+        {Array.from({ length: run.of }, (_, i) => (
+          <span
+            key={i}
+            className="flowprogress-beat"
+            data-state={i < run.done ? 'done' : i === run.done ? 'here' : 'left'}
+          />
+        ))}
+      </div>
+      {/* NO VISIBLE REMAINDER LINE, AND THE REASON IS MEASURED. §5 asks for
+          the marks "plus a plain-language remainder". The header will not
+          take one: it is the tightest strip in the product — BS-01c measured
+          the rephrase word out of it, BS-02 the feedback door — and a line
+          here, stacked or inline, pushes the tallest question in the flow
+          (`peeves`, seven rows of pills) up under the header.
+
+          Nothing is lost that the guardrails need. The marks are told apart
+          by WIDTH and a RING, never colour alone, and the words themselves
+          are on the progressbar's own `aria-valuetext` — "two left in this
+          run", spoken. One account per audience, which is the rule Meter and
+          this component have followed since V1.1.
+
+          The visible sentence comes back when §5 re-derives the header's
+          composition for the run card; it is recorded in
+          docs/BETA-SPRINT.md so it is a deferral, not a drop. */}
+    </div>
   );
 }

@@ -151,3 +151,63 @@ describe('FlowProgress', () => {
     });
   });
 });
+
+/* ── BS-05a (§5) — the run, as marks ─────────────────────────────────────── */
+
+describe('FlowProgress — a run of five', () => {
+  const run = { done: 1, of: 5, label: 'second run of two' };
+
+  it('draws one mark per question in the run, and no bar', () => {
+    const { container } = mount(<FlowProgress title="About Me" current={3} total={38} run={run} />);
+    expect(container.querySelectorAll('.flowprogress-beat')).toHaveLength(5);
+    expect(container.querySelector('.flowprogress-track')).toBeNull();
+  });
+
+  it('marks what is behind, what they are on, and what is left', () => {
+    const { container } = mount(<FlowProgress title="About Me" current={3} total={38} run={run} />);
+    const states = [...container.querySelectorAll('.flowprogress-beat')].map((b) => b.getAttribute('data-state'));
+    expect(states).toEqual(['done', 'here', 'left', 'left', 'left']);
+  });
+
+  /** D1, held strictly: no digit anywhere in the panel's own voice. */
+  it('still prints no digit — the whole point of the row', () => {
+    const { container } = mount(<FlowProgress title="About Me" current={3} total={38} run={run} />);
+    expect(container.textContent).toBe('About Me');
+    expect(container.textContent).not.toMatch(/\d/);
+  });
+
+  /**
+   * The words §5 asks for are SPOKEN rather than printed — the header will
+   * not take another line (see the component's own note). The marks carry it
+   * for the eye by width and ring, never colour alone.
+   */
+  it('says where they are in the run, in words, to assistive tech', () => {
+    const { container } = mount(<FlowProgress title="About Me" current={3} total={38} run={run} />);
+    const bar = container.querySelector('[role="progressbar"]')!;
+    expect(bar.getAttribute('aria-valuetext')).toBe('Four left in this run · second run of two');
+    expect(bar.getAttribute('aria-valuemax')).toBe('5');
+    expect(bar.getAttribute('aria-valuenow')).toBe('1');
+  });
+
+  it('never speaks a global total when it has a run', () => {
+    const { container } = mount(<FlowProgress title="About Me" current={3} total={38} run={run} />);
+    const bar = container.querySelector('[role="progressbar"]')!;
+    expect(bar.getAttribute('aria-valuetext')).not.toContain('38');
+    expect(bar.getAttribute('aria-valuemax')).not.toBe('38');
+  });
+
+  it('drops the run-of-runs clause when the module is a single run', () => {
+    const { container } = mount(
+      <FlowProgress title="Vocabulary" current={3} total={38} run={{ done: 0, of: 2, label: '' }} />,
+    );
+    expect(container.querySelector('[role="progressbar"]')!.getAttribute('aria-valuetext')).toBe(
+      'Two left in this run',
+    );
+  });
+
+  it('keeps the bar for a flow with no runs — the proof loop', () => {
+    const { container } = mount(<FlowProgress title="The proof" current={2} total={5} />);
+    expect(container.querySelector('.flowprogress-track')).not.toBeNull();
+    expect(container.querySelectorAll('.flowprogress-beat')).toHaveLength(0);
+  });
+});
