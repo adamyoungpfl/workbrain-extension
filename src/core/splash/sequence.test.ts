@@ -30,8 +30,8 @@ describe('the beats', () => {
     expect(SPLASH_BEATS.revealAt).toBeLessThanOrEqual(5);
   });
 
-  it('the idle count is ten seconds, from the button', () => {
-    expect(SPLASH_BEATS.idleMs).toBe(10_000);
+  it('the idle count is six seconds, from the button (VB-131)', () => {
+    expect(SPLASH_BEATS.idleMs).toBe(6_000);
   });
 });
 
@@ -117,10 +117,10 @@ describe('the loading line and the count', () => {
     expect(loadingWordIndex(-50, 8)).toBe(0);
   });
 
-  it('the count drains over exactly the ten seconds', () => {
+  it('the count drains over exactly the idle window', () => {
     expect(idleProgress(0)).toBe(0);
-    expect(idleProgress(5000)).toBeCloseTo(0.5);
-    expect(idleProgress(10_000)).toBe(1);
-    expect(idleProgress(12_000)).toBe(1);
+    expect(idleProgress(SPLASH_BEATS.idleMs / 2)).toBeCloseTo(0.5);
+    expect(idleProgress(SPLASH_BEATS.idleMs)).toBe(1);
+    expect(idleProgress(SPLASH_BEATS.idleMs + 2000)).toBe(1);
   });
 });

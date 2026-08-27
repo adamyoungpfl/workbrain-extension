@@ -360,7 +360,7 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     await context.close();
   });
 
-  test('hiding every one leaves the quiet "your file is current" state, still focusable', async () => {
+  test('hiding every one leaves the region genuinely quiet — and still focusable', async () => {
     const { context, sw, id } = await launchExtension();
     await seed(sw, buildAnswers({ entities: 1 }).answers);
     const page = await openPanel(context, id);
@@ -369,10 +369,13 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     await expect(page.getByText('Most people name three or four here')).toBeVisible();
     await page.getByRole('button', { name: /^Hide this: / }).click();
 
-    await expect(page.getByText('Your file is current')).toBeVisible();
-    await expect(page.getByText('Nothing to do. Come back when something changes at work.')).toBeVisible();
-    // The region survives so focus has somewhere to be.
+    // V2.8 VB-132a: the all-current banner is gone — redundant beside the
+    // Context card's own status. The region survives EMPTY (its box
+    // collapsed) so focus has somewhere to be after the control that was
+    // pressed unmounts.
+    await expect(page.getByText('Your file is current')).toHaveCount(0);
     await expect(page.locator('.home-recs')).toHaveCount(1);
+    await expect(page.locator('.home-recs')).toHaveClass(/is-quiet/);
     const focused = await page.evaluate(() => document.activeElement?.className ?? '');
     expect(focused).toContain('home-recs');
 
@@ -386,7 +389,10 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     const page = await openPanel(context, id);
 
     await expect(page.locator('.rec-row')).toHaveCount(0);
-    await expect(page.getByText('Your file is current')).toBeVisible();
+    // Nothing at all now means exactly that (VB-132a): no banner either —
+    // the card's Current status is the one account of a healthy file.
+    await expect(page.getByText('Your file is current')).toHaveCount(0);
+    await expect(page.locator('.home-recs')).toHaveClass(/is-quiet/);
 
     await context.close();
   });

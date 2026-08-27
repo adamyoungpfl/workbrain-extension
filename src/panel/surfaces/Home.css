@@ -1,39 +1,31 @@
-/* R1-12: Home. Rebuilt by V2.6 VB-125 in the template's card-world language
-   (docs/workbrain-panel.html): one white shell on Home's own cool ground,
-   deliberately differentiated from the interview's textured wall — "a good
-   place to reset from throughout the app" (Adam). Every neutral is an
-   existing token (decision 5: the template was generalizing from
-   screenshots of this very app); only the two file accents are new, scoped
-   in tokens.json's `home` group. */
+/* R1-12: Home. Rebuilt by V2.6 VB-125 in the template's card-world language,
+   DE-FRAMED by V2.8 VB-132b (Adam: "remove the frame within a frame"): the
+   white shell card and Home's own cool ground are gone, and the sections
+   sit directly on the app's one light ground like every other surface —
+   the wall breathing behind them again (VB-111's one canvas). The card
+   grammar itself — white cards on the ground — is the differentiation now.
+   Only the two file accents are non-neutral, scoped in tokens.json's
+   `home` group. */
 
-/* Home's own ground (FLAG 10): a breath of white at the top dissolving into
-   the cool sunken grey, painted opaque OVER the app wall — the wall stays
-   the interview's. Fills the viewport even when the content is short, so
-   the wall never peeks out under a short Home. */
+/* `gap` on the flex container, not per-child margin — deterministic
+   regardless of which component's own CSS file happens to load last, unlike
+   a margin-based reset that a sibling component's own margin could win
+   against depending on import order. */
 .home {
-  min-height: 100vh;
-  padding: 10px 8px 18px;
-  background: radial-gradient(140% 60% at 18% -8%, var(--canvas), var(--sunken) 62%);
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 0 14px 16px;
 }
 
-/* The shell: the template's panel card. Non-interactive, so the hairline
-   edge is honest (--divider is decorative by role); the shadow is the
-   panel-against-page elevation. */
-.home-shell {
-  background: var(--canvas);
-  border: 1px solid var(--divider);
-  border-radius: var(--r-lg);
-  box-shadow: var(--e-2);
-  overflow: hidden;
-}
-
-/* The chrome bar: identity only — the mark and the name, no controls. */
+/* The chrome bar: identity only, flat on the ground — a row, not a lid.
+   Full-bleed hairline via negative margins so the line crosses the panel. */
 .home-chrome {
   display: flex;
   align-items: center;
   gap: 8px;
   padding: 10px 14px;
-  background: var(--surface);
+  margin: 0 -14px;
   border-bottom: 1px solid var(--divider);
 }
 
@@ -48,18 +40,6 @@
 .home-chrome-name span {
   font-weight: 450;
   color: var(--ink-3);
-}
-
-/* `gap` on the flex container, not per-child margin — deterministic
-   regardless of which component's own CSS file happens to load last, unlike
-   a margin-based reset that a sibling component's own margin could win
-   against depending on import order. (The rhythm the old `.home` rule
-   owned, one level down now that the shell wraps it.) */
-.home-body {
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  padding: 16px 14px 14px;
 }
 
 /* ── V2.6 VB-125 — the file lockup ──────────────────────────────────────── */
@@ -106,13 +86,26 @@
   color: var(--ink-3);
 }
 
+/* V2.8 VB-132c — bolder, and in the header colour (Adam): the two shelf
+   labels are wayfinding, not whispers. --primary measures 6.8:1 on the
+   ground. */
 .home-section-label {
   font-size: 12px;
-  font-weight: 650;
+  font-weight: 750;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  color: var(--primary);
   margin: 0 0 -10px;
+}
+
+/* V2.8 VB-132a — the recs region with nothing to say: the element stays
+   (it is where focus lands when the last recommendation is hidden), its
+   box goes. The negative margin swallows the flex gap it would otherwise
+   still occupy, so the quiet state costs no dead band. */
+.home-recs.is-quiet {
+  height: 0;
+  overflow: hidden;
+  margin: -20px 0 0;
 }
 
 /* Still the multiples row's home (V1.7 VB-38); the three files moved into
@@ -696,42 +689,42 @@
     transform: translateY(6px);
   }
 }
-.home-body > * {
+.home > * {
   animation: home-rise var(--slow) var(--ease) backwards;
 }
-.home-body > :nth-child(2) {
+.home > :nth-child(2) {
   animation-delay: 40ms;
 }
-.home-body > :nth-child(3) {
+.home > :nth-child(3) {
   animation-delay: 80ms;
 }
-.home-body > :nth-child(4) {
+.home > :nth-child(4) {
   animation-delay: 120ms;
 }
-.home-body > :nth-child(5) {
+.home > :nth-child(5) {
   animation-delay: 160ms;
 }
-.home-body > :nth-child(6) {
+.home > :nth-child(6) {
   animation-delay: 200ms;
 }
-.home-body > :nth-child(7) {
+.home > :nth-child(7) {
   animation-delay: 240ms;
 }
-.home-body > :nth-child(8) {
+.home > :nth-child(8) {
   animation-delay: 280ms;
 }
-.home-body > :nth-child(9) {
+.home > :nth-child(9) {
   animation-delay: 320ms;
 }
-.home-body > :nth-child(10) {
+.home > :nth-child(10) {
   animation-delay: 360ms;
 }
-.home-body > :nth-child(n + 11) {
+.home > :nth-child(n + 11) {
   animation-delay: 400ms;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home-body > * {
+  .home > * {
     animation: none;
   }
 }

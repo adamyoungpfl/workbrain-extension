@@ -34,14 +34,16 @@ export interface SplashBeats {
 }
 
 /** Reveal lands inside Adam's confirmed 4–5s window (decision 3) — pinned
- * by sequence.test.ts, so a later tuning pass cannot quietly drift it. */
+ * by sequence.test.ts, so a later tuning pass cannot quietly drift it.
+ * V2.8 VB-131: the idle count came down from ten seconds to six (Adam,
+ * 2026-08-27) — the pin in the test moved with it. */
 export const SPLASH_BEATS: SplashBeats = {
   accelAt: 1.2,
   swellAt: 3.8,
   revealAt: 4.35,
   taglineAt: 4.95,
   enterAt: 5.55,
-  idleMs: 10_000,
+  idleMs: 6_000,
 };
 
 export type SplashPhase = 'show' | 'swell' | 'reveal';

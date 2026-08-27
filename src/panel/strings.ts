@@ -787,7 +787,10 @@ export const S = {
    * which owns money. `ctaBody` says "step", never the internal word the
    * template used.
    */
-  homeKeepLabel: 'Keep it working',
+  /** [DRAFT] V2.8 VB-132c — relabelled from 'Keep it working' (Adam):
+   * the tiles row is the what-now shelf, and the label says so. Printed
+   * uppercase by the section-label style. */
+  homeKeepLabel: 'Your next move',
   tileMove: 'Move file',
   tileLibrary: 'Skills library',
   tileSoon: 'Soon',
@@ -992,8 +995,11 @@ export const S = {
   driftBecauseInitiative: (name: string) =>
     `You gave "${name}" success criteria back when you set it up.`,
   driftAction: (n: number) => `Answer ${wordFor(n)} question${n === 1 ? '' : 's'}`,
-  allCurrentHeading: 'Your file is current',
-  allCurrentSub: 'Nothing to do. Come back when something changes at work.',
+  /* V2.8 VB-132a: `allCurrentHeading` / `allCurrentSub` ("Your file is
+     current" / "Nothing to do…") are deleted with the banner they filled —
+     redundant beside the Context card's own Current status (Adam,
+     2026-08-27). The quiet state is now genuinely quiet. Recorded per the
+     `fileTreeRoot` precedent. */
   /** core/freshness's elapsed-time shape, in words — digits, matching the
    * precedent `daysOld` already sets for a measured span rather than a
    * small count (that rule is for things like "Two questions", not a

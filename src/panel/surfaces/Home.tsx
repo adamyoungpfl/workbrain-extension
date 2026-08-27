@@ -473,19 +473,18 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
 
   return (
     <div className="home">
-      {/* V2.6 VB-125 — the chrome bar: the mark and the name, identity only,
-          no controls. The shell under it is the card world the template
-          drew; the cool ground behind both is Home's own (Home.css), which
-          is what makes this surface the reset place against the interview's
-          textured wall (FLAG 10). */}
-      <div className="home-shell">
-        <header className="home-chrome">
-          <BrandMark size={20} spin="none" entrance={false} />
-          <p className="home-chrome-name">
-            {S.appName} <span>· {S.chromeCompany}</span>
-          </p>
-        </header>
-        <div className="home-body">
+      {/* V2.6 VB-125's chrome bar, V2.8 VB-132b's de-frame: the shell card
+          and Home's own cool ground are gone (Adam: "remove the frame
+          within a frame") — the sections sit directly on the app's one
+          light ground like every other surface, the chrome staying as a
+          flat identity row. The card grammar itself is the differentiation
+          now, not a second world behind it. */}
+      <header className="home-chrome">
+        <BrandMark size={20} spin="none" entrance={false} />
+        <p className="home-chrome-name">
+          {S.appName} <span>· {S.chromeCompany}</span>
+        </p>
+      </header>
       {/* V1.1 VB-01 — the welcome state. Still just the `start` branch of the
           same derived next move, not a surface and not a stored "have I
           welcomed them" flag: someone who clears their answers is genuinely
@@ -562,7 +561,7 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           never pushed, and this region is that surface. */}
       {hasStarted && (
         <section
-          className="home-recs"
+          className={top ? 'home-recs' : 'home-recs is-quiet'}
           ref={recsRef}
           tabIndex={-1}
           aria-label={S.recsLabel}
@@ -601,17 +600,13 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
                 </ul>
               )}
             </>
-          ) : (
-            /* Nothing to offer. Said once, as a state, never as praise — the
-               same line R1-12 shipped, now reached whenever the engine is
-               silent. It lives INSIDE this region rather than beside it so
-               that hiding the last recommendation replaces the region's
-               content instead of unmounting the element focus just moved to,
-               and so the live region announces what replaced it. */
-            <Banner variant="good" title={S.allCurrentHeading}>
-              {S.allCurrentSub}
-            </Banner>
-          )}
+          ) : /* V2.8 VB-132a: the all-current banner is GONE (Adam: redundant
+               beside the Context card's own Current status). The region
+               itself survives empty — it is where focus lands when the last
+               recommendation is hidden, and unmounting the element focus
+               just moved to would drop a keyboard user at the top of the
+               document. `is-quiet` collapses its box (Home.css). */
+          null}
         </section>
       )}
 
@@ -781,8 +776,6 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           {S.storedLink}
         </button>
       </footer>
-        </div>
-      </div>
 
       {/* The Move-file sheet: FileActions whole — download, import, its own
           errors and toasts — behind the tile, unchanged in behaviour. */}

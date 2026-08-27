@@ -182,10 +182,13 @@ test.describe('Home surface (R1-12)', () => {
 
     // Every other question in the fixture was already answered, so this
     // was the only thing left — Flow hands back to Home on its own.
+    // V2.8 VB-132a: the all-current banner is gone (redundant beside the
+    // card's own status) — the quiet state is genuinely quiet, and the
+    // card says Current.
     await expect(page.locator('.home')).toBeVisible();
-    await expect(page.getByText('Your file is current')).toBeVisible();
-    await expect(page.getByText('Nothing to do. Come back when something changes at work.')).toBeVisible();
+    await expect(page.getByText('Your file is current')).toHaveCount(0);
     await expect(page.getByText('One part of your file is out of date')).toHaveCount(0);
+    await expect(page.locator('.home-recs')).toHaveClass(/is-quiet/);
     await expect(page.getByText('Current', { exact: true })).toBeVisible(); // the file's own badge, now fresh
 
     // --- storage: the durability answer really did change, nothing else did ---
