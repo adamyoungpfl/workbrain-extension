@@ -28,6 +28,13 @@ export type { PillProps, PillOption, PillGroupProps } from './Pill';
 export { OrbGroup } from './OrbGroup';
 export type { OrbGroupProps, OrbOption } from './OrbGroup';
 
+/** V2.5 VB-118 — the vertical pick as icon tiles with a modern radio mark.
+ * Which questions stand this way is core/choice/verticalPick.ts's
+ * `usesVerticalPick`; VB-123's merged role screen reuses the same grammar
+ * (core/choice/pairedPick.ts). */
+export { VerticalPick } from './VerticalPick';
+export type { VerticalPickProps } from './VerticalPick';
+
 export { Field } from './Field';
 export type { FieldProps } from './Field';
 

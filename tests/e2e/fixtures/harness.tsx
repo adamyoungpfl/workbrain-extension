@@ -4,6 +4,7 @@ import '../../../src/panel/tokens.css';
 import {
   Button,
   PillGroup,
+  VerticalPick,
   Field,
   ReadOnlyBlock,
   FileRow,
@@ -12,6 +13,7 @@ import {
   Toast,
   Sheet,
 } from '../../../src/panel/components';
+import { SCOPE_GLYPHS } from '../../../src/panel/components/choiceGlyphs';
 import { CueAnnouncer, Pointer, useCueChain, useCueTarget } from '../../../src/panel/cues';
 import type { CueLink } from '../../../src/schema/flow.types';
 
@@ -162,6 +164,9 @@ function CrossSurfacePointerDemo() {
 function Harness() {
   const [singlePill, setSinglePill] = useState<string[]>(['both']);
   const [multiPill, setMultiPill] = useState<string[]>(['drafting']);
+  // V2.5 VB-118 — the vertical pick's tile grammar, in the harness for the
+  // same reason the pills are: npm run a11y scans real markup here.
+  const [tilePick, setTilePick] = useState<string[]>(['work']);
   const [notes, setNotes] = useState('');
   const [sheetOpen, setSheetOpen] = useState(false);
 
@@ -205,6 +210,20 @@ function Harness() {
           ]}
           value={multiPill}
           onChange={setMultiPill}
+        />
+      </section>
+
+      <section aria-label="VerticalPick">
+        <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>VerticalPick</p>
+        <VerticalPick
+          legend="Are we building this primarily for your work, personal life, or both?"
+          options={[
+            { value: 'work', label: 'Work', glyph: SCOPE_GLYPHS.work },
+            { value: 'personal', label: 'Personal', glyph: SCOPE_GLYPHS.personal },
+            { value: 'both', label: 'Both', glyph: SCOPE_GLYPHS.both },
+          ]}
+          value={tilePick}
+          onChange={setTilePick}
         />
       </section>
 

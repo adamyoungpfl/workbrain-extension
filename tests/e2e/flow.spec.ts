@@ -93,7 +93,12 @@ async function answerCurrentQuestion(page: Page): Promise<void> {
 
   const textarea = page.locator('.flow textarea');
   const textInput = page.locator('.flow input.field');
-  const pills = page.locator('.flow .pillgroup .pill, .flow .orbgroup .orbchoice');
+  // V2.5 VB-118: context_scope's choices are the vertical pick's tiles now —
+  // same roving tabindex, same Space, a different group class, so the locator
+  // has to find pills, orbs and tiles alike (the VB-60 lesson, third grammar).
+  const pills = page.locator(
+    '.flow .pillgroup .pill, .flow .orbgroup .orbchoice, .flow .vpick .vpick-tile',
+  );
 
   if (await textarea.count()) {
     await textarea.first().focus();

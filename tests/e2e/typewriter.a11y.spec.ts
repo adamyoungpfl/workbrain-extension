@@ -103,7 +103,7 @@ test('axe finds no violations on a question that is still typing (VB-10)', async
   // typing heading). Walk one question further, to a text question with no
   // pills, and scan the print there. (The entrance-fade's own every-frame
   // contrast is flagged in docs/V2.4-REFINEMENT.md for the next pass.)
-  await page.locator('.flow .pillgroup .pill').first().click();
+  await page.locator('.flow .vpick .vpick-tile').first().click(); // VB-118: tiles
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await page.waitForSelector('.flow[data-step-id="stop_explaining"]');
 

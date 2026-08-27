@@ -75,8 +75,9 @@ async function openPanel(context: BrowserContext): Promise<Page> {
  */
 async function driveToReflect(page: Page, raw: string): Promise<void> {
   // V2.3 VB-90: with the gate seeded the orientation ladder skips, so the
-  // walk-in opens on context_scope — first pill ("Work"), keyboard-style.
-  await page.locator('.flow .pillgroup .pill').first().focus();
+  // walk-in opens on context_scope — first tile ("Work"), keyboard-style
+  // (V2.5 VB-118: that question's choices are icon tiles now).
+  await page.locator('.flow .vpick .vpick-tile').first().focus();
   await page.keyboard.press('Space');
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   // Q3: stop_explaining.

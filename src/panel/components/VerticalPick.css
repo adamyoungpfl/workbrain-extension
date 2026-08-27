@@ -1,0 +1,218 @@
+/* ── V2.5 VB-118: the vertical pick, as icon tiles ──────────────────────────
+   Free-standing iconography with a modern radio treatment — deliberately not
+   a button-look. Anatomy per tile: the drawn glyph in a soft disc, the label,
+   and a radio ring whose filled dot is the selected mark. The ring is the
+   interactive affordance (the one control shape that already reads "pick one")
+   and is drawn with --border-i, the 3:1 interactive-boundary token; selection
+   is dot + weight + tint, never colour alone. Contrast is MEASURED, not
+   asserted by adjective — VerticalPick.test.tsx runs the WCAG arithmetic
+   (core/color/contrast.ts) over every ink/ground pair named here.
+
+   One grammar, two scales: the default face is context_scope's three
+   free-standing tiles; `.vpick-compact` is VB-123's marker row (same anatomy,
+   smaller disc, tighter padding), so the merged role screen speaks the same
+   language twice instead of two dialects. */
+.vpick {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  max-width: 360px;
+}
+/* Two options (VB-123's current/past mark) sit two across; the grid reads the
+   count from the DOM rather than a prop, so the component stays paint-free. */
+.vpick:has(> :last-child:nth-child(2)) {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  max-width: 250px;
+}
+.vpick-tile {
+  font-family: inherit;
+  font-size: 13.5px;
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 6px 10px;
+  min-height: var(--target-min);
+  min-width: var(--target-min);
+  border: none;
+  border-radius: var(--r-lg);
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--fast) var(--ease);
+  animation: vpick-arrive var(--slow) var(--ease) backwards;
+}
+.vpick-tile:nth-child(2) {
+  animation-delay: 70ms;
+}
+.vpick-tile:nth-child(3) {
+  animation-delay: 140ms;
+}
+.vpick-tile:hover {
+  background: var(--sunken);
+}
+.vpick-tile:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+/* Selected: a tint wash under the whole tile, the label gaining weight, and
+   the radio dot below — three signals, one of them shape. No fill flip, no
+   border: the not-a-button promise holds in both states. */
+.vpick-tile[aria-pressed='true'] {
+  background: var(--primary-tint);
+}
+.vpick-tile[aria-pressed='true'] .vpick-label {
+  font-weight: 600;
+}
+
+/* The free-standing drawing: a disc so the glyph reads as an object in space
+   rather than a bullet. Non-interactive fill (no boundary claim); the icon is
+   --primary on --primary-tint — 5.89:1, measured (VerticalPick.test.tsx). */
+.vpick-glyph {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  color: var(--primary);
+  background: var(--primary-tint);
+  transition: background var(--fast) var(--ease), color var(--fast) var(--ease);
+}
+.vpick-glyph svg {
+  display: block;
+  width: 26px;
+  height: 26px;
+  /* The idle sway — V2.4's three-things-breathing, carried forward: same
+     easing family, unsynchronized clocks below so the tiles never breathe in
+     step. Information never rides it (docs/GUARDRAILS.md). */
+  animation: vpick-sway 3.6s ease-in-out infinite;
+}
+.vpick-tile:nth-child(2) .vpick-glyph svg {
+  animation-duration: 4.3s;
+  animation-delay: -1.4s;
+}
+.vpick-tile:nth-child(3) .vpick-glyph svg {
+  animation-duration: 5s;
+  animation-delay: -2.6s;
+}
+/* Selected: the disc flips solid so the picked tile carries one strong object
+   — the drawing goes ink-inverse on --primary (both measured). The pop is the
+   VB-118 "show off" moment: one spring, then still. */
+.vpick-tile[aria-pressed='true'] .vpick-glyph {
+  background: var(--primary);
+  color: var(--ink-inv);
+  animation: vpick-pop 260ms var(--ease);
+}
+
+.vpick-label {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+/* The modern radio: ring at rest, ring + dot when picked. Drawn as paint on
+   the tile (aria-hidden), state lives on aria-pressed. --select-ring, not
+   --border-i: the flow sits on the app-wide --ground, where --border-i
+   measures 2.92:1 — under WCAG 1.4.11's 3:1 — so the suite steps down the
+   same neutral ramp the dock edge did (design/tokens.json carries the
+   measured numbers; VerticalPick.test.tsx re-runs the arithmetic). */
+.vpick-radio {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--select-ring);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color var(--fast) var(--ease);
+}
+.vpick-radio::after {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary);
+  transform: scale(0);
+  transition: transform var(--fast) var(--ease);
+}
+.vpick-tile:hover .vpick-radio {
+  border-color: var(--primary);
+}
+.vpick-tile[aria-pressed='true'] .vpick-radio {
+  border-color: var(--primary);
+}
+.vpick-tile[aria-pressed='true'] .vpick-radio::after {
+  transform: scale(1);
+}
+
+/* ── the compact face (V2.5 VB-123's marker row) ───────────────────────────
+   Same anatomy, marker scale: the disc shrinks, the type tightens, the row
+   hugs its two options. Nothing about state or keyboard changes — it is the
+   same component in smaller clothes. */
+.vpick-compact .vpick-tile {
+  padding: 8px 6px;
+  gap: 5px;
+  font-size: 13px;
+}
+.vpick-compact .vpick-glyph {
+  width: 34px;
+  height: 34px;
+}
+.vpick-compact .vpick-glyph svg {
+  width: 20px;
+  height: 20px;
+}
+.vpick-compact .vpick-radio {
+  width: 14px;
+  height: 14px;
+}
+.vpick-compact .vpick-radio::after {
+  width: 6px;
+  height: 6px;
+}
+
+@keyframes vpick-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes vpick-sway {
+  0%,
+  100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-1.4px) rotate(-2.5deg);
+  }
+}
+@keyframes vpick-pop {
+  0% {
+    transform: scale(1);
+  }
+  45% {
+    transform: scale(1.12);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* The still version IS the design minus the drift: tiles, glyphs, labels,
+   rings and the filled dot are all paint, so the same information is on
+   screen from the first frame and the selected state still reads
+   (docs/GUARDRAILS.md: the still version still carries the instruction). */
+@media (prefers-reduced-motion: reduce) {
+  .vpick-tile,
+  .vpick-glyph svg,
+  .vpick-tile[aria-pressed='true'] .vpick-glyph {
+    animation: none;
+  }
+  .vpick-radio::after {
+    transition: none;
+  }
+}

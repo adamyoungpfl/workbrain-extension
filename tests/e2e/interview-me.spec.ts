@@ -70,7 +70,8 @@ async function launchPanel(
  * the first multiline text question. */
 async function goToTextQuestion(page: Page): Promise<void> {
   // V2.3 VB-90: with the gate seeded the ladder skips — context_scope first.
-  await page.locator('.flow .pillgroup .pill').first().click();
+  // V2.5 VB-118: its choices are icon tiles.
+  await page.locator('.flow .vpick .vpick-tile').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 }

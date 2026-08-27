@@ -114,8 +114,9 @@ test.describe('VB-02 — module title + progress bar', () => {
 
     const firstWidth = await fillWidth(page);
 
-    // The pill question — answer it, and the bar advances.
-    await page.locator('.flow .pillgroup .pill').first().click();
+    // The choice question — answer it, and the bar advances. (V2.5 VB-118:
+    // context_scope's choices are icon tiles.)
+    await page.locator('.flow .vpick .vpick-tile').first().click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 
@@ -147,7 +148,8 @@ test.describe('VB-02 — module title + progress bar', () => {
 
       const textarea = page.locator('.flow textarea');
       const textInput = page.locator('.flow input.field');
-      const pills = page.locator('.flow .pillgroup .pill');
+      // VB-118: context_scope's choices are tiles — the walker knows both.
+      const pills = page.locator('.flow .pillgroup .pill, .flow .vpick .vpick-tile');
       if (await textarea.count()) {
         await textarea.first().fill('A short answer for this question.');
       } else if (await textInput.count()) {

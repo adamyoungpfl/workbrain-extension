@@ -16,6 +16,7 @@ import {
   Popover,
   ReadOnlyBlock,
   TypedHeading,
+  VerticalPick,
 } from '../components';
 import { ModuleIntro } from './ModuleIntro';
 import { FileDrawer } from './FileDrawer';
@@ -2075,6 +2076,17 @@ function StepView({
                 onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
                 stoppedBy={reasonFor(rotation)}
               />
+            ) : verticalPick ? (
+              /* V2.5 VB-118 — context_scope stands as icon tiles with a modern
+                 radio mark (VerticalPick.tsx), replacing VB-108's stood-up
+                 pills. Same legend, same draft, same answerValues — so the
+                 same commit on Next, and never an auto-advance. */
+              <VerticalPick
+                legend={questionText}
+                options={pillOptions}
+                value={draftValues}
+                onChange={answerValues}
+              />
             ) : (
               <PillGroup
                 legend={questionText}
@@ -2083,7 +2095,6 @@ function StepView({
                 value={draftValues}
                 onChange={answerValues}
                 onAddOwn={step.allowCustom ? () => setCustomOpen(true) : undefined}
-                variant={verticalPick ? 'vertical' : undefined}
               />
             )}
             {customOpen && (
