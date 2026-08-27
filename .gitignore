@@ -6,3 +6,4 @@ test-results/
 *.local
 .handoff-source.zip
 .claude/
+.DS_Store

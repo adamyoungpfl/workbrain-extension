@@ -62,7 +62,7 @@ export { Banner } from './Banner';
 export type { BannerProps, BannerVariant } from './Banner';
 
 export { Meter } from './Meter';
-export type { MeterProps, MeterStepData } from './Meter';
+export type { MeterProps, MeterSegment } from './Meter';
 
 export { FlowProgress, STATUS_MARK_SPIN } from './FlowProgress';
 export type { FlowProgressProps } from './FlowProgress';

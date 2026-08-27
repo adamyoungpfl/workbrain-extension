@@ -244,13 +244,28 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     await context.close();
   });
 
-  test('no composite score renders anywhere on the screen', async () => {
+  test('the meter is the one percentage on the screen, and nothing grades anything', async () => {
     const { context, sw, id } = await launchExtension();
     await seed(sw, buildAnswers(FOUR_GAPS).answers);
     const page = await openPanel(context, id);
 
     // docs/GUARDRAILS.md: "A composite score out of 100. Real metrics only."
-    const text = (await page.locator('.home').innerText()).toLowerCase();
+    // V2.6 VB-125 drew this test's line where the guardrail draws it (the
+    // same reading V1.6 VB-33 recorded for `sectionPercent`): what is banned
+    // is an invented index dressed as precision, not arithmetic the person
+    // could redo. The utilization meter's percent is four real ratios of
+    // real counts with declared quarters (core/home/utilization.ts, Adam's
+    // decided semantics — docs/V2.6-REFINEMENT.md decision 2), so it is the
+    // ONE sanctioned percentage. Everything else on Home stays number-free:
+    // strip the meter out and the original claim holds verbatim.
+    const text = (await page
+      .locator('.home')
+      .evaluate((el) => {
+        const clone = el.cloneNode(true) as HTMLElement;
+        clone.querySelector('.meter')?.remove();
+        return clone.innerText ?? clone.textContent ?? '';
+      }))
+      .toLowerCase();
     expect(text).not.toMatch(/\d\s*%/);
     expect(text).not.toMatch(/\bscore\b/);
     expect(text).not.toMatch(/\bhealth\b/);
@@ -258,6 +273,13 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     expect(text).not.toMatch(/\d+\s*\/\s*\d+/);
     // What IS on screen is a real metric: a date, in the person's own terms.
     expect(text).toMatch(/\bmonths ago\b/);
+    // And the one percentage there IS says what it measures, in words, and
+    // never the word "score": the meter's own account of itself.
+    const meter = page.locator('.meter');
+    await expect(meter).toHaveCount(1);
+    const valuetext = (await meter.getAttribute('aria-valuetext')) ?? '';
+    expect(valuetext).toMatch(/% set up, Step \d · /);
+    expect(valuetext.toLowerCase()).not.toContain('score');
 
     await context.close();
   });

@@ -44,6 +44,21 @@ export const S = {
   steps: ['Name', 'Repeat', 'Act', 'Share'] as const,
   utilization: (pct: number) => `${pct}% set up`,
   stepOf: (n: number, total: number) => `Step ${n} of ${total}`,
+  /**
+   * [DRAFT] V2.6 VB-125 — the utilization meter's printed pieces, under
+   * Adam's decided semantics (docs/V2.6-REFINEMENT.md, decision 2): the
+   * number measures how much of full utilization is SET UP — Context and
+   * Skills completion first, with Act and Share holding the remainder so
+   * 100% takes outside work. "Set up" and never the template's
+   * "AI-utilized": the product does not watch usage and its meter must not
+   * claim to. `meterLabel` sits after the big number ("60% set up" — the
+   * same claim `utilization` above makes, split for the layout);
+   * `stepNamed` is the standing step, said with its name ("Step 2 ·
+   * Repeat") the way the template's "Gate 2" never may.
+   */
+  meterName: 'How much of your work brain is set up',
+  meterLabel: 'set up',
+  stepNamed: (n: number, label: string) => `Step ${n} · ${label}`,
 
   // ---------------------------------------------------------------- flow runner
   /**
@@ -720,6 +735,24 @@ export const S = {
   keepACopy: 'Your file changed a lot this month. Worth keeping a copy somewhere.',
 
   // ---------------------------------------------------------------- home
+  /**
+   * [DRAFT] V2.6 VB-125 — the chrome bar and the lockup's meta line.
+   *
+   * `chromeCompany` is the quiet half of "Workbrain · Model Citizen"; the
+   * mark and `appName` carry the rest, and the separator is drawn, not said.
+   * It replaced `brandByline` ("by Model Citizen"), which left with the
+   * welcome card's own wordmark — one company name on the screen, in the
+   * chrome, instead of two. Recorded per the `fileTreeRoot` precedent.
+   *
+   * The meta pieces print only what core/home/lockupMeta.ts really derived:
+   * a count of built files, the newest answer's age (said with the shelf's
+   * own `updatedToday`/`daysOld`), and the generated files' real size. The
+   * template mocked "workbrain.zip · v3 · 84 KB"; every claim it invented
+   * is replaced by one a person could check (FLAG 7).
+   */
+  chromeCompany: 'Model Citizen',
+  metaFiles: (n: number) => (n === 1 ? '1 file' : `${n} files`),
+  metaSize: (kb: number) => `${kb} KB`,
   homeFilesLabel: 'Your files',
   /** V1.7 VB-38's row. Not "Your files" — these are parts of Context.md, not
    * a file of their own, and saying so is what keeps the shelf above it
@@ -1038,7 +1071,8 @@ export const S = {
   // is gone: it described a lack, opened with the person's failure to have
   // done something, and told them nothing about what the thing is. The
   // headline below does the same job forwards.
-  brandByline: 'by Model Citizen',
+  /* V2.6 VB-125: `brandByline` ("by Model Citizen") is deleted — the chrome
+     bar's `chromeCompany` says it now, once, for every Home state. */
   welcomeHeadline: 'Teach AI who you are, once.',
   welcomeSub: 'Answer some questions. Get a file. Hand it to whatever AI you already use.',
   /** Structural estimate, not measured — flagged as such in the copy draft.

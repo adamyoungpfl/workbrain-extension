@@ -4,6 +4,7 @@ import {
   BrandMark,
   Button,
   FileRow,
+  Meter,
   RecommendationHide,
   RecommendationRow,
   recommendationCopy,
@@ -12,6 +13,11 @@ import { getLocal, setLocal } from '../../core/storage/client';
 import { computeNextMove, mostRecentAnsweredAt } from '../../core/freshness/nextMove';
 import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
 import { daysSince } from '../../core/freshness/clocks';
+import { computeUtilization } from '../../core/home/utilization';
+import { lockupMeta } from '../../core/home/lockupMeta';
+import { contextFileDate, generateContextFile } from '../../core/files/generate';
+import { generateSkillsFile } from '../../core/files/skillsFile';
+import { deriveActionsFile } from '../../core/files/deriveActions';
 import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { multipleRecordCount } from '../../core/flow/multiples';
 import { actionsGenerated, fileFinished, fileSlots } from '../../core/files/slots';
@@ -25,7 +31,7 @@ import { contextModules, contextOutline, skillsModules, skillsOutline } from '..
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
 import { FileActions } from './FileActions';
-import type { Answers, Dismissals } from '../../schema/storage.types';
+import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
 import './Home.css';
 
@@ -200,6 +206,9 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
    * Loaded alongside, derived from, stored under its own key — the same
    * discipline as `answers`, one file over. */
   const [skillsAnswers, setSkillsAnswers] = useState<Answers>(EMPTY_SKILLS);
+  /** V2.6 VB-125 — the proof loop's typed scores, read for one purpose: the
+   * Share segment of the utilization meter (core/home/utilization.ts). */
+  const [report, setReport] = useState<ReportState | undefined>(undefined);
   const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
   /**
    * Where focus goes when a recommendation is hidden.
@@ -214,9 +223,15 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
 
   useEffect(() => {
     let cancelled = false;
-    void Promise.all([getLocal('wb:answers'), getLocal('wb:recs'), getLocal('wb:answers:skills')]).then(([storedAnswers, storedRecs, storedSkills]) => {
-      setSkillsAnswers(storedSkills ?? EMPTY_SKILLS);
+    void Promise.all([
+      getLocal('wb:answers'),
+      getLocal('wb:recs'),
+      getLocal('wb:answers:skills'),
+      getLocal('wb:report'),
+    ]).then(([storedAnswers, storedRecs, storedSkills, storedReport]) => {
       if (cancelled) return;
+      setSkillsAnswers(storedSkills ?? EMPTY_SKILLS);
+      setReport(storedReport);
       setAnswersState(storedAnswers ?? EMPTY_ANSWERS);
       setDismissals(readDismissals(storedRecs));
     });
@@ -293,8 +308,46 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   // (core/files/slots.ts's actionsGenerated, core/files/deriveActions.ts).
   const showActionsGenerated = actionsGenerated({ skills: skillsFinished });
 
+  // V2.6 VB-125 — the meter's number and the lockup's meta line, derived on
+  // every render like everything else here. The meta reuses the download
+  // generators so its byte count is the download's byte count by
+  // construction, and the meter's formula is core's (see utilization.ts's
+  // header for the decided semantics and the authorship guard).
+  const utilization = computeUtilization({
+    contextOutline,
+    contextModules,
+    context: answers,
+    skillsOutline,
+    skillsModules,
+    skills: skillsAnswers,
+    report,
+    now: new Date(),
+  });
+  const meta = lockupMeta({
+    context: answers,
+    skills: skillsAnswers,
+    contextText: generateContextFile(answers, contextFileDate()),
+    skillsText: generateSkillsFile(skillsAnswers, contextFileDate()),
+    actionsText: deriveActionsFile(skillsAnswers),
+    actionsOn: showActionsGenerated,
+    now: new Date(),
+  });
+
   return (
     <div className="home">
+      {/* V2.6 VB-125 — the chrome bar: the mark and the name, identity only,
+          no controls. The shell under it is the card world the template
+          drew; the cool ground behind both is Home's own (Home.css), which
+          is what makes this surface the reset place against the interview's
+          textured wall (FLAG 10). */}
+      <div className="home-shell">
+        <header className="home-chrome">
+          <BrandMark size={20} spin="none" entrance={false} />
+          <p className="home-chrome-name">
+            {S.appName} <span>· {S.chromeCompany}</span>
+          </p>
+        </header>
+        <div className="home-body">
       {/* V1.1 VB-01 — the welcome state. Still just the `start` branch of the
           same derived next move, not a surface and not a stored "have I
           welcomed them" flag: someone who clears their answers is genuinely
@@ -302,14 +355,40 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           it on Home (the file row, the "bring your file" hint, Import, the
           privacy note) is unchanged and still renders — this replaces the
           bare "You have not started yet." card, not the page. */}
+      {/* V2.6 VB-125 — the file lockup: what this place holds, said as a
+          thing ("Your work brain"), the tagline under it, and a meta line of
+          real derivables (core/home/lockupMeta.ts — FLAG 7: nothing the
+          person could not check). Only once something exists: a fresh
+          install's lockup moment is the welcome card below, and two brand
+          lockups on one screen would be the chrome saying itself twice. */}
+      {hasStarted && (
+        <section className="home-lockup" aria-labelledby="home-lockup-title">
+          <div className="home-glyph">
+            <BrandMark size={30} spin="none" entrance={false} />
+          </div>
+          <div className="home-lockup-text">
+            <h2 id="home-lockup-title">{S.workBrainStage}</h2>
+            <p className="home-lockup-byline">{S.splashTagline}</p>
+            <p className="home-lockup-meta">
+              {meta.files === 0
+                ? S.notBuiltYet
+                : [
+                    S.metaFiles(meta.files),
+                    meta.ageDays === 0 ? S.updatedToday : S.daysOld(meta.ageDays ?? 0),
+                    S.metaSize(meta.kb),
+                  ].join(' · ')}
+            </p>
+          </div>
+        </section>
+      )}
+
       {nextMove.kind === 'start' && (
         <section className="home-welcome" aria-labelledby="home-welcome-headline">
           <BrandMark />
-          {/* Real, selectable text — not an image of a word, and not the mark
-              doing double duty as the name. `appName` is the same string the
-              extension is called everywhere else. */}
-          <p className="home-welcome-wordmark">{S.appName}</p>
-          <p className="home-welcome-byline">{S.brandByline}</p>
+          {/* V2.6 VB-125: the wordmark and byline left this card — the
+              chrome bar above says both now, once, for every Home state.
+              The mark stays: it is the welcome's one warm thing, and the
+              approved copy below is untouched. */}
           <h2 id="home-welcome-headline" className="home-welcome-headline">
             {S.welcomeHeadline}
           </h2>
@@ -320,6 +399,24 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           <p className="home-welcome-time">{S.welcomeTime}</p>
         </section>
       )}
+
+      {/* V2.6 VB-125 — the signature: the utilization meter, on Adam's
+          decided semantics (docs/V2.6-REFINEMENT.md decision 2). Shown at 0%
+          on a fresh install on purpose: the four ticks are the whole journey,
+          and the meter saying "0% set up, Step 1 · Name" is the product's
+          honest map of it. */}
+      <Meter
+        value={utilization.percent}
+        name={S.meterName}
+        label={S.meterLabel}
+        step={S.stepNamed(utilization.currentStep, S.steps[utilization.currentStep - 1] as string)}
+        segments={[
+          { label: S.steps[0], percent: utilization.segments.name },
+          { label: S.steps[1], percent: utilization.segments.repeat },
+          { label: S.steps[2], percent: utilization.segments.act },
+          { label: S.steps[3], percent: utilization.segments.share },
+        ]}
+      />
 
       {/* V1.5 VB-28 — the one "what to do next" region. One card, then at most
           two quiet rows. `aria-live="polite"` announces a hide without moving
@@ -464,6 +561,8 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
       <FileRow name={S.homeHelpTitle} subtitle={S.homeHelpSub} icon={PERSON_ICON} iconTone="primary" href={CONTACT_URL} />
 
       <p className="home-privacy">{S.homePrivacyNote}</p>
+        </div>
+      </div>
     </div>
   );
 }

@@ -244,17 +244,20 @@ test.describe('Home surface (R1-12)', () => {
       .evaluate((el) => getComputedStyle(el).stopColor);
     expect(stopColor).toBe('rgb(47, 95, 230)'); // --brand-node-1-from
 
-    // --- the wordmark: real text, in the one violet ---
-    const wordmark = welcome.getByText('Workbrain', { exact: true });
-    await expect(wordmark).toBeVisible();
-    await expect(welcome.getByText('by Model Citizen', { exact: true })).toBeVisible();
-    const wordmarkStyle = await wordmark.evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { color: s.color, size: s.fontSize, tag: el.tagName };
-    });
-    expect(wordmarkStyle.color).toBe('rgb(106, 63, 209)'); // --violet, not a second violet
-    expect(wordmarkStyle.size).toBe('26px'); // type.wordmark, not type.display's 32px
-    expect(wordmarkStyle.tag).toBe('P'); // text, not an image and not an SVG <text>
+    // --- the name and the company: the chrome bar's, once, as real text ---
+    // V2.6 VB-125: the welcome's own wordmark and byline left the card; the
+    // chrome bar above says both for every Home state, so the brand is said
+    // exactly once on this screen.
+    const chromeBar = page.locator('.home-chrome');
+    await expect(chromeBar).toBeVisible();
+    await expect(chromeBar).toContainText('Workbrain');
+    await expect(chromeBar).toContainText('Model Citizen');
+    await expect(welcome.getByText('by Model Citizen', { exact: true })).toHaveCount(0);
+
+    // --- the meter: present at 0%, the honest map of the journey ---
+    const meter = page.locator('.meter');
+    await expect(meter).toHaveAttribute('aria-valuenow', '0');
+    await expect(meter).toHaveAttribute('aria-valuetext', '0% set up, Step 1 · Name');
 
     // --- the approved copy, verbatim ---
     await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toBeVisible();
@@ -351,10 +354,17 @@ test.describe('Home surface (R1-12)', () => {
     const page = await openPanel(context, id);
     await expect(page.locator('.home-welcome')).toHaveCount(0);
     await expect(page.getByText('Teach AI who you are, once.')).toHaveCount(0);
-    // Scoped to the panel's own surface. V1.7 VB-34's splash draws a mark of
-    // its own, over the top, for the first couple of seconds of a session —
-    // the claim here is that *Home* has no lockup once an answer exists.
-    await expect(page.locator('.home svg.brand-mark')).toHaveCount(0);
+    // V2.6 VB-125: the welcome's big mark is gone WITH the welcome, and the
+    // file lockup stands in its place — the glyph, "Your work brain", the
+    // tagline, and a meta line of real derivables.
+    await expect(page.locator('.home-welcome .brand-mark')).toHaveCount(0);
+    const lockup = page.locator('.home-lockup');
+    await expect(lockup).toBeVisible();
+    await expect(lockup.getByRole('heading', { name: 'Your work brain' })).toBeVisible();
+    await expect(lockup).toContainText('How you do anything is how your AI does everything.');
+    // One answer, stamped today: "1 file · Updated today · 1 KB" — every
+    // claim derivable (FLAG 7), none of the template's invented ones.
+    await expect(lockup.locator('.home-lockup-meta')).toHaveText('1 file · Updated today · 1 KB');
 
     await context.close();
   });

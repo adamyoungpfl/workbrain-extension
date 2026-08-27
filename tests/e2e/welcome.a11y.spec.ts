@@ -122,9 +122,11 @@ test.describe('welcome screen — accessibility', () => {
     const mark = page.locator('.home-welcome svg.brand-mark');
     await expect(mark).toHaveAttribute('aria-hidden', 'true');
     await expect(mark.locator('title')).toHaveCount(0);
-    // What is exposed is text, selectable and translatable.
-    const wordmarkText = await page.locator('.home-welcome-wordmark').textContent();
-    expect(wordmarkText).toBe('Workbrain');
+    // What is exposed is text, selectable and translatable — V2.6 VB-125
+    // moved the name into the chrome bar, where it is said once for every
+    // Home state, beside a mark that is likewise only a picture.
+    await expect(page.locator('.home-chrome-name')).toContainText('Workbrain');
+    await expect(page.locator('.home-chrome svg.brand-mark')).toHaveAttribute('aria-hidden', 'true');
     // And the section it heads is named by the headline, not by the picture.
     await expect(page.locator('.home-welcome')).toHaveAttribute('aria-labelledby', 'home-welcome-headline');
     await expect(page.locator('#home-welcome-headline')).toHaveText('Teach AI who you are, once.');

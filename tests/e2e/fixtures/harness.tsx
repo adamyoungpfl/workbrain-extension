@@ -282,14 +282,15 @@ function Harness() {
       <section aria-label="Meter">
         <p style={{ fontWeight: 700, fontSize: 12, textTransform: "uppercase", letterSpacing: "0.06em", color: "var(--ink-3)" }}>Meter</p>
         <Meter
-          value={60}
-          label="of your AI use, set up"
-          step="Step 1 of 4"
-          steps={[
-            { label: 'Name', state: 'done' },
-            { label: 'Repeat', state: 'current', percent: 35 },
-            { label: 'Act', state: 'upcoming' },
-            { label: 'Share', state: 'upcoming' },
+          value={46}
+          name="How much of your work brain is set up"
+          label="set up"
+          step="Step 2 · Repeat"
+          segments={[
+            { label: 'Name', percent: 100 },
+            { label: 'Repeat', percent: 35 },
+            { label: 'Act', percent: 0 },
+            { label: 'Share', percent: 50 },
           ]}
         />
       </section>

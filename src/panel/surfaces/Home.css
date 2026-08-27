@@ -1,16 +1,109 @@
-/* R1-12: Home. See docs/design-system.html §05 (Patterns) for the mock this
-   follows — the ".steplab" section-label treatment for "Your files" / "If
-   you want a hand" is reproduced here as ".home-section-label". */
+/* R1-12: Home. Rebuilt by V2.6 VB-125 in the template's card-world language
+   (docs/workbrain-panel.html): one white shell on Home's own cool ground,
+   deliberately differentiated from the interview's textured wall — "a good
+   place to reset from throughout the app" (Adam). Every neutral is an
+   existing token (decision 5: the template was generalizing from
+   screenshots of this very app); only the two file accents are new, scoped
+   in tokens.json's `home` group. */
+
+/* Home's own ground (FLAG 10): a breath of white at the top dissolving into
+   the cool sunken grey, painted opaque OVER the app wall — the wall stays
+   the interview's. Fills the viewport even when the content is short, so
+   the wall never peeks out under a short Home. */
+.home {
+  min-height: 100vh;
+  padding: 10px 8px 18px;
+  background: radial-gradient(140% 60% at 18% -8%, var(--canvas), var(--sunken) 62%);
+}
+
+/* The shell: the template's panel card. Non-interactive, so the hairline
+   edge is honest (--divider is decorative by role); the shadow is the
+   panel-against-page elevation. */
+.home-shell {
+  background: var(--canvas);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-lg);
+  box-shadow: var(--e-2);
+  overflow: hidden;
+}
+
+/* The chrome bar: identity only — the mark and the name, no controls. */
+.home-chrome {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--divider);
+}
+
+.home-chrome-name {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--ink);
+}
+
+.home-chrome-name span {
+  font-weight: 450;
+  color: var(--ink-3);
+}
 
 /* `gap` on the flex container, not per-child margin — deterministic
    regardless of which component's own CSS file happens to load last, unlike
    a margin-based reset that a sibling component's own margin could win
-   against depending on import order. */
-.home {
+   against depending on import order. (The rhythm the old `.home` rule
+   owned, one level down now that the shell wraps it.) */
+.home-body {
   display: flex;
   flex-direction: column;
   gap: 20px;
-  padding: 20px 18px;
+  padding: 16px 14px 14px;
+}
+
+/* ── V2.6 VB-125 — the file lockup ──────────────────────────────────────── */
+.home-lockup {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--surface), var(--canvas));
+}
+
+.home-glyph {
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  border-radius: var(--r-md);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  display: grid;
+  place-items: center;
+}
+
+.home-lockup-text h2 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 680;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+
+.home-lockup-byline {
+  margin: 1px 0 0;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
+.home-lockup-meta {
+  margin: 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--ink-3);
 }
 
 .home-section-label {
@@ -49,24 +142,8 @@
   gap: 6px;
 }
 
-.home-welcome-wordmark {
-  font-size: 26px;
-  line-height: 1.1;
-  font-weight: 680;
-  letter-spacing: -0.022em;
-  /* The panel's one violet (--violet, 6.47:1). The marketing site's wordmark
-     uses a lighter, different violet; importing it would put two violets in a
-     system whose whole point is that a colour means one thing. */
-  color: var(--violet);
-  margin: 10px 0 0;
-}
-
-.home-welcome-byline {
-  font-size: 13px;
-  line-height: 1.5;
-  color: var(--ink-3);
-  margin: 0;
-}
+/* V2.6 VB-125: the welcome's wordmark and byline rules left with the text —
+   the chrome bar carries the name and the company now. */
 
 .home-welcome-headline {
   font-size: 17px;

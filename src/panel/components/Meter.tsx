@@ -1,58 +1,67 @@
 import type { CSSProperties } from 'react';
 import './Meter.css';
 
-export interface MeterStepData {
+/**
+ * V2.6 VB-125 — the utilization meter, Home's signature. Built for the
+ * design-system mock long before anything rendered it; this round gives it
+ * Adam's template face (docs/workbrain-panel.html) and its first real home.
+ *
+ * Each of the four segments carries its own fill, because the semantics
+ * demand it (docs/V2.6-REFINEMENT.md decision 2): Share can be half-full
+ * while Act is empty, and a done/current/upcoming model would throw that
+ * truth away. The numbers arrive from core/home/utilization.ts — derived,
+ * never stored, every input authored.
+ *
+ * The whole drawing is `aria-hidden` decoration over one real progressbar
+ * whose `aria-valuetext` says the number, the label and the standing step in
+ * words — the same fact, one account per audience.
+ */
+
+export interface MeterSegment {
   label: string;
-  state: 'done' | 'current' | 'upcoming';
-  /** percent through this step, only meaningful when state === 'current' */
-  percent?: number | undefined;
+  /** 0–100 — how full this step's quarter really is. */
+  percent: number;
 }
 
 export interface MeterProps {
-  /** the headline number, 0-100 */
+  /** The headline number, 0–100. */
   value: number;
-  /** "of your AI use, set up" — never "% AI-utilized" */
+  /** The progressbar's accessible name. */
+  name: string;
+  /** The phrase printed after the number — "set up". */
   label: string;
-  /** "Step 1 of 4" */
+  /** "Step 2 · Repeat". */
   step: string;
-  /** the four steps: Name, Repeat, Act, Share */
-  steps: MeterStepData[];
+  /** The four steps: Name, Repeat, Act, Share. */
+  segments: MeterSegment[];
 }
 
 /** Derived, never stored — see docs/ARCHITECTURE.md ("nothing derived is stored"). */
-export function Meter({ value, label, step, steps }: MeterProps) {
+export function Meter({ value, name, label, step, segments }: MeterProps) {
   return (
     <div
       className="meter"
       role="progressbar"
-      aria-label={label}
+      aria-label={name}
       aria-valuenow={value}
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuetext={`${value}% ${label}, ${step}`}
     >
-      <div className="top" aria-hidden="true">
-        <span className="val">{value}%</span>
-        <span className="lab">{label}</span>
-        <span className="step">{step}</span>
+      <div className="meter-top" aria-hidden="true">
+        <span className="meter-val">{value}%</span>
+        <span className="meter-lab">{label}</span>
+        <span className="meter-step">{step}</span>
       </div>
-      <div className="track" aria-hidden="true">
-        {steps.map((s, i) => (
-          <i
-            key={i}
-            className={s.state === 'done' ? 'on' : s.state === 'current' ? 'part' : ''}
-            style={
-              s.state === 'current' && s.percent != null
-                ? ({ '--p': `${s.percent}%` } as CSSProperties)
-                : undefined
-            }
-          />
+      <div className="meter-track" aria-hidden="true">
+        {segments.map((segment) => (
+          <i key={segment.label} style={{ '--p': `${segment.percent}%` } as CSSProperties} />
         ))}
       </div>
-      <div className="tracklabels" aria-hidden="true">
-        {steps.map((s, i) => (
-          <span key={i} className={s.state === 'done' ? 'on' : ''}>
-            {s.label}
+      <div className="meter-ticks" aria-hidden="true">
+        {segments.map((segment) => (
+          <span key={segment.label} className={segment.percent > 0 ? 'on' : ''}>
+            {segment.label}
           </span>
         ))}
       </div>
