@@ -36,6 +36,12 @@ async function launch(): Promise<{ context: BrowserContext; sw: Worker; id: stri
 
 async function openPanel(context: BrowserContext, id: string): Promise<Page> {
   const page = await context.newPage();
+  // Scanned still, for the reason welcome.a11y.spec.ts documents: axe
+  // measures one instant, and V2.6 VB-125c's rise-in entrance passes the
+  // whole surface through partial opacity on its way in — a mid-fade frame
+  // reads every ink lighter than it settles. Must precede the goto: the
+  // animation starts at mount.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 400, height: 900 });
   await page.goto(`chrome-extension://${id}/panel.html`);
   await page.waitForSelector('.home-recs');

@@ -205,11 +205,16 @@ test.describe('Home surface (R1-12)', () => {
     // welcome lockup — covered in full by the welcome test below.
     await expect(page.getByRole('button', { name: 'Start with a few questions', exact: true })).toBeVisible();
     await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
+    // V2.6 VB-125c: the import door lives in the Move-file sheet now — one
+    // tile press deep, still one press from Home.
+    await page.getByRole('button', { name: 'Move file', exact: true }).click();
     await expect(page.getByRole('button', { name: 'I already have a file', exact: true })).toBeVisible();
+    await page.getByRole('button', { name: 'Close', exact: true }).click();
 
-    // No due/current banner, no "Prove it works" offer — there is nothing to
-    // measure or prove yet.
-    await expect(page.getByRole('button', { name: 'Prove it works', exact: true })).toHaveCount(0);
+    // No due/current banner, and nothing to prove yet — the proof tile is
+    // there (the row is the map) but genuinely disabled, the same gate that
+    // used to hide the button.
+    await expect(page.getByRole('button', { name: 'Prove it works', exact: true })).toBeDisabled();
 
     await context.close();
   });
@@ -369,15 +374,32 @@ test.describe('Home surface (R1-12)', () => {
     await context.close();
   });
 
-  test('the quiet "talk to a person" row is a real external link, not a script-driven button', async () => {
+  test('every human door is a real external link with no prices on it, not a script-driven button', async () => {
+    // V2.6 VB-125c: the "Talk to a person" row became the services card and
+    // the TiM tile. The claim survives the clothes: each door is a REAL
+    // link, to the site, in a new tab — and none of them prints a dollar
+    // figure, because money never enters the extension (NORTH-STAR
+    // decision 4; V2.6 decision 3).
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
-    const link = page.getByRole('link', { name: /Talk to a person/ });
-    await expect(link).toBeVisible();
-    await expect(link).toHaveAttribute('href', 'https://www.model-citizen.org/contact');
-    await expect(link).toHaveAttribute('target', '_blank');
-    await expect(link).toHaveAttribute('rel', 'noopener noreferrer');
+    const doors: [RegExp, string][] = [
+      [/TiM services/, 'https://www.model-citizen.org/contact'],
+      [/AI Coaching/, 'https://www.model-citizen.org/work-brain/ai-coaching'],
+      [/Fractional CTO/, 'https://www.model-citizen.org/work-brain/fractional-cto'],
+    ];
+    for (const [name, href] of doors) {
+      const link = page.getByRole('link', { name });
+      await expect(link).toBeVisible();
+      await expect(link).toHaveAttribute('href', href);
+      await expect(link).toHaveAttribute('target', '_blank');
+      await expect(link).toHaveAttribute('rel', /noreferrer/);
+    }
+
+    // No price anywhere on the surface — not on the offers, not in a note.
+    const text = await page.locator('.home').innerText();
+    expect(text).not.toMatch(/\$\s*\d/);
+    expect(text.toLowerCase()).not.toMatch(/\/\s*mo\b|per month/);
 
     await context.close();
   });

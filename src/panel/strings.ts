@@ -771,9 +771,35 @@ export const S = {
    * a file of their own, and saying so is what keeps the shelf above it
    * meaning one thing. */
   homeMultiplesLabel: 'Also in your file',
-  homeHelpLabel: 'If you want a hand',
-  homeHelpTitle: 'Talk to a person',
-  homeHelpSub: 'Coaching, or help for your team',
+  /**
+   * [DRAFT] V2.6 VB-125c — the utility tiles and the services card.
+   *
+   * The tiles are the keep-it-working row: move the file (the download and
+   * import pair, in a sheet), prove it (the proof loop — `proofCta` is its
+   * name everywhere), the member library (visible, locked for members,
+   * coming soon — NORTH-STAR + decision 4), and TiM (a door to the site;
+   * money never enters the extension).
+   *
+   * The services card replaced the "Talk to a person" row (`homeHelpLabel`
+   * / `homeHelpTitle` / `homeHelpSub` are deleted with it — recorded per
+   * the `fileTreeRoot` precedent): the same human door, now naming the two
+   * offers. NO PRICES, by decision 3 — the offers link out to the site,
+   * which owns money. `ctaBody` says "step", never the internal word the
+   * template used.
+   */
+  homeKeepLabel: 'Keep it working',
+  tileMove: 'Move file',
+  tileLibrary: 'Skills library',
+  tileSoon: 'Soon',
+  /** The member gate, said aloud for the tile a pointer cannot press. */
+  tileLibraryLocked: 'Skills library — for members, coming soon',
+  tileTim: 'TiM services',
+  moveSheetTitle: 'Move your file',
+  ctaTitle: 'Want a hand finishing this?',
+  ctaBody: 'Every step is free to build on your own. Bring a person in when the wiring gets real.',
+  offerCoaching: 'AI Coaching',
+  offerCto: 'Fractional CTO',
+  offerWhere: 'On the site',
   badgeCurrent: 'Current',
   badgeNext: 'Next',
   badgeLater: 'Later',

@@ -480,11 +480,204 @@
 .home-hint {
   font-size: 13px;
   color: var(--ink-3);
-  margin: 0 0 -10px; /* pulls the Import button in FileActions closer — see .home's gap */
+  margin: 0;
+}
+
+/* ── V2.6 VB-125c — the utility tiles ─────────────────────────────────────── */
+.home-tiles {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.home-tile {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 58px;
+  padding: 10px 4px 9px;
+  font-family: var(--font-sans);
+  font-size: 10.5px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  text-decoration: none;
+  color: var(--ink-2);
+  background: var(--surface);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  cursor: pointer;
+  transition:
+    transform var(--fast) var(--ease),
+    background var(--fast) var(--ease),
+    color var(--fast) var(--ease),
+    border-color var(--fast) var(--ease);
+}
+.home-tile:hover {
+  background: var(--canvas);
+  color: var(--primary);
+  border-color: var(--border-i);
+  transform: translateY(-1px);
+}
+.home-tile:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.home-tile:disabled {
+  cursor: not-allowed;
+  color: var(--ink-3);
+  border-style: dashed;
+}
+.home-tile:disabled:hover {
+  background: var(--surface);
+  color: var(--ink-3);
+  border-color: var(--divider);
+  transform: none;
+}
+
+/* The member gate's mark: the padlock and the word, on the tile itself. */
+.home-tile-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 9.5px;
+  font-weight: 650;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+  border: 1px solid var(--divider);
+  border-radius: var(--r-pill);
+  padding: 1px 6px;
+  background: var(--canvas);
+}
+
+/* ── V2.6 VB-125c — the services card ─────────────────────────────────────── */
+.home-cta {
+  border-radius: var(--r-lg);
+  border: 1px solid var(--divider);
+  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+  color: var(--ink-inv);
+  padding: 13px 14px;
+}
+.home-cta h2 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--ink-inv);
+}
+.home-cta-body {
+  /* White at 0.9 over the gradient's lighter stop measures 5.9:1 —
+     recorded in docs/V2.6-REFINEMENT.md's build notes; full white is 6.8. */
+  margin: 3px 0 10px;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.9);
+}
+.home-cta-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.home-offer {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 8px 9px;
+  min-height: var(--target-min);
+  justify-content: center;
+  border-radius: var(--r-md);
+  background: rgba(255, 255, 255, 0.1);
+  /* White at 0.55 over the gradient's LIGHTER stop composites to ~3.3:1 —
+     the 1.4.11 floor for an interactive boundary, measured, with the darker
+     stop higher still. 0.35 (the template's) read at ~1.8:1 and failed. */
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  color: var(--ink-inv);
+  text-decoration: none;
+  transition: background var(--fast) var(--ease);
+}
+.home-offer:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+.home-offer:focus-visible {
+  outline: 2px solid var(--ink-inv);
+  outline-offset: 2px;
+}
+.home-offer-name {
+  font-size: 11.5px;
+  font-weight: 650;
+}
+.home-offer-where {
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  color: rgba(255, 255, 255, 0.9);
+}
+
+/* ── V2.6 VB-125c — the trust foot ────────────────────────────────────────── */
+.home-foot {
+  border-top: 1px solid var(--divider);
+  padding-top: 11px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
 }
 
 .home-privacy {
   font-size: 11.5px;
   color: var(--ink-3);
-  line-height: 1.35;
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── V2.6 VB-125c — the entrance ──────────────────────────────────────────
+   One staggered rise for the body's children, once, on mount. `backwards`
+   holds the from-state through each child's delay; reduced motion lands
+   everything already-risen, and nothing here carries an instruction. */
+@keyframes home-rise {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+.home-body > * {
+  animation: home-rise var(--slow) var(--ease) backwards;
+}
+.home-body > :nth-child(2) {
+  animation-delay: 40ms;
+}
+.home-body > :nth-child(3) {
+  animation-delay: 80ms;
+}
+.home-body > :nth-child(4) {
+  animation-delay: 120ms;
+}
+.home-body > :nth-child(5) {
+  animation-delay: 160ms;
+}
+.home-body > :nth-child(6) {
+  animation-delay: 200ms;
+}
+.home-body > :nth-child(7) {
+  animation-delay: 240ms;
+}
+.home-body > :nth-child(8) {
+  animation-delay: 280ms;
+}
+.home-body > :nth-child(9) {
+  animation-delay: 320ms;
+}
+.home-body > :nth-child(10) {
+  animation-delay: 360ms;
+}
+.home-body > :nth-child(n + 11) {
+  animation-delay: 400ms;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .home-body > * {
+    animation: none;
+  }
 }

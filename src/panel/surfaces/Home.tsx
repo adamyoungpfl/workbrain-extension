@@ -8,6 +8,7 @@ import {
   Meter,
   RecommendationHide,
   RecommendationRow,
+  Sheet,
   recommendationCopy,
 } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
@@ -74,7 +75,12 @@ export interface HomeProps {
 }
 
 const EMPTY_ANSWERS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
+/** V2.6 VB-125c — every door out of the extension, in one place. The offers
+ * carry NO prices (decision 3; NORTH-STAR: money never enters the
+ * extension) — the site owns money, these are doors to it. */
 const CONTACT_URL = 'https://www.model-citizen.org/contact';
+const COACHING_URL = 'https://www.model-citizen.org/work-brain/ai-coaching';
+const CTO_URL = 'https://www.model-citizen.org/work-brain/fractional-cto';
 
 /**
  * What a locked slot says under its name.
@@ -153,10 +159,35 @@ const GO_ARROW = (
   </svg>
 );
 
-const PERSON_ICON = (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-    <path d="M12 13a4 4 0 1 0 0-8 4 4 0 0 0 0 8z" />
-    <path d="M4.5 20a7.5 7.5 0 0 1 15 0" />
+/** V2.6 VB-125c — the utility tiles' drawings, same convention as the card
+ * chips: currentColor strokes, aria-hidden, the tile's own word carries it.
+ * (VB-125c also retired PERSON_ICON with the "Talk to a person" row — the
+ * services card and the TiM tile are the human doors now.) */
+const MOVE_ICON = (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M9 12V3.5M5.8 6.7 9 3.5l3.2 3.2" />
+    <path d="M3.5 12v2.5h11V12" />
+  </svg>
+);
+
+const PROVE_ICON = (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M2.8 9.6 6.6 13.4 15.2 4.8" />
+  </svg>
+);
+
+const LIBRARY_ICON = (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M3.5 4.2A2 2 0 0 1 5.5 2.5H9v13H5.5a2 2 0 0 0-2 1.2V4.2Z" />
+    <path d="M14.5 4.2a2 2 0 0 0-2-1.7H9v13h3.5a2 2 0 0 1 2 1.2V4.2Z" />
+  </svg>
+);
+
+const TIM_ICON = (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <circle cx="6.6" cy="6" r="2.4" />
+    <path d="M2.6 15c0-2.4 1.8-4 4-4s4 1.6 4 4" />
+    <path d="M12 5.4h3.6M12 8.4h3.6M12 11.4h2.4" />
   </svg>
 );
 
@@ -306,6 +337,9 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   /** V2.6 VB-125 — the proof loop's typed scores, read for one purpose: the
    * Share segment of the utilization meter (core/home/utilization.ts). */
   const [report, setReport] = useState<ReportState | undefined>(undefined);
+  /** V2.6 VB-125c — whether the Move-file sheet is up. In-memory, like every
+   * other "where am I" fact: a reopen lands on Home with it closed. */
+  const [moveOpen, setMoveOpen] = useState(false);
   const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
   /**
    * Where focus goes when a recommendation is hidden.
@@ -676,21 +710,69 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
         </>
       )}
 
-      {hasStarted && (
-        <Button type="button" variant="secondary" onClick={onOpenProof}>
+      {/* V2.6 VB-125c — the keep-it-working tiles. Move file holds the
+          download/import pair in a sheet (a short, self-contained task —
+          the sanctioned surface for one); Prove it is the proof loop under
+          its own name, disabled until there is anything to prove (the same
+          gate that used to hide the button); the library tile is the
+          member gate made visible — locked, coming soon, said in its
+          accessible name since a disabled tile meets no pointer (decision
+          4 + NORTH-STAR); TiM is a door to the site. */}
+      <p className="home-section-label">{S.homeKeepLabel}</p>
+      <div className="home-tiles">
+        <button type="button" className="home-tile" onClick={() => setMoveOpen(true)}>
+          {MOVE_ICON}
+          {S.tileMove}
+        </button>
+        <button type="button" className="home-tile" onClick={onOpenProof} disabled={!hasStarted}>
+          {PROVE_ICON}
           {S.proofCta}
-        </Button>
-      )}
+        </button>
+        <button type="button" className="home-tile is-member" disabled aria-label={S.tileLibraryLocked}>
+          {LIBRARY_ICON}
+          {S.tileLibrary}
+          <span className="home-tile-pill">
+            <LockGlyph size={9} stroke={1.8} />
+            {S.tileSoon}
+          </span>
+        </button>
+        <a className="home-tile" href={CONTACT_URL} target="_blank" rel="noreferrer">
+          {TIM_ICON}
+          {S.tileTim}
+        </a>
+      </div>
 
       {nextMove.kind === 'start' && <p className="home-hint">{S.emptyNewDevice}</p>}
-      <FileActions answers={answers} onImport={persist} />
 
-      <p className="home-section-label">{S.homeHelpLabel}</p>
-      <FileRow name={S.homeHelpTitle} subtitle={S.homeHelpSub} icon={PERSON_ICON} iconTone="primary" href={CONTACT_URL} />
+      {/* V2.6 VB-125c — the services card: the human door, naming the two
+          offers, no prices (decision 3). Real links out; the site owns
+          money and scheduling. */}
+      <section className="home-cta" aria-labelledby="home-cta-title">
+        <h2 id="home-cta-title">{S.ctaTitle}</h2>
+        <p className="home-cta-body">{S.ctaBody}</p>
+        <div className="home-cta-row">
+          <a className="home-offer" href={COACHING_URL} target="_blank" rel="noreferrer">
+            <span className="home-offer-name">{S.offerCoaching}</span>
+            <span className="home-offer-where">{S.offerWhere}</span>
+          </a>
+          <a className="home-offer" href={CTO_URL} target="_blank" rel="noreferrer">
+            <span className="home-offer-name">{S.offerCto}</span>
+            <span className="home-offer-where">{S.offerWhere}</span>
+          </a>
+        </div>
+      </section>
 
-      <p className="home-privacy">{S.homePrivacyNote}</p>
+      <footer className="home-foot">
+        <p className="home-privacy">{S.homePrivacyNote}</p>
+      </footer>
         </div>
       </div>
+
+      {/* The Move-file sheet: FileActions whole — download, import, its own
+          errors and toasts — behind the tile, unchanged in behaviour. */}
+      <Sheet open={moveOpen} onClose={() => setMoveOpen(false)} title={S.moveSheetTitle}>
+        <FileActions answers={answers} onImport={persist} />
+      </Sheet>
     </div>
   );
 }

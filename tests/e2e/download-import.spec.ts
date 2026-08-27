@@ -178,6 +178,10 @@ test.describe('Download and import (R1-10)', () => {
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
+    // V2.6 VB-125c: the download/import pair lives in the Move-file sheet —
+    // one tile press deep, then everything below is exactly as it was.
+    await page.getByRole('button', { name: 'Move file', exact: true }).click();
+    await page.waitForSelector('.sheet-card');
 
     // --- export -----------------------------------------------------
     const downloadButton = page.getByRole('button', { name: 'Download your file', exact: true });
@@ -252,6 +256,10 @@ test.describe('Download and import (R1-10)', () => {
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
+    // V2.6 VB-125c: the download/import pair lives in the Move-file sheet —
+    // one tile press deep, then everything below is exactly as it was.
+    await page.getByRole('button', { name: 'Move file', exact: true }).click();
+    await page.waitForSelector('.sheet-card');
 
     await page.getByRole('button', { name: 'I already have a file', exact: true }).click();
     await page.locator('.file-actions-input').setInputFiles({
@@ -275,6 +283,10 @@ test.describe('Download and import (R1-10)', () => {
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
+    // V2.6 VB-125c: the download/import pair lives in the Move-file sheet —
+    // one tile press deep, then everything below is exactly as it was.
+    await page.getByRole('button', { name: 'Move file', exact: true }).click();
+    await page.waitForSelector('.sheet-card');
 
     await page.getByRole('button', { name: 'I already have a file', exact: true }).click();
     await page.locator('.file-actions-input').setInputFiles({
