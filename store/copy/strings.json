@@ -1,0 +1,1838 @@
+[
+ {
+  "id": "s1",
+  "file": "src/core/flow/overrides.ts",
+  "key": "(in place)",
+  "text": "employer\nMy employer\nclients\nClients\norganization\nAn organization or nonprofit",
+  "note": "decision 3's five, in its own order. { key: 'myself', label: 'Myself' }, { key: 'family', label: 'My family' }, { key: 'team', label: 'My team' }, { key: 'my-clients', label: 'My clients' }, { key: 'community', label: 'My community' }, The ported keys the line no longer offers \u2014 kept, verbatim, so an",
+  "section": "Questions we wrote ourselves",
+  "surface": "Questions we wrote ourselves"
+ },
+ {
+  "id": "s2",
+  "file": "src/core/flow/overrides.ts",
+  "key": "ORIENTATION_WHY_BEATS",
+  "text": "You already carry a way of working. AI starts from __zero__ every time you open a chat.",
+  "note": "The \"why\" beats \u2014 VB-90 step 1, patched onto the ported `orientation_ready` (the id is load-bearing: a file from before tonight has it answered, so keeping it means nobody is summoned back). */",
+  "section": "Questions we wrote ourselves",
+  "surface": "Questions we wrote ourselves"
+ },
+ {
+  "id": "s3",
+  "file": "src/core/flow/overrides.ts",
+  "key": "ORIENTATION_WHY_BEATS",
+  "text": "We're going to write yours down __once__ \u2014 a plain file you hand to any AI you use.",
+  "note": "The \"why\" beats \u2014 VB-90 step 1, patched onto the ported `orientation_ready` (the id is load-bearing: a file from before tonight has it answered, so keeping it means nobody is summoned back). */",
+  "section": "Questions we wrote ourselves",
+  "surface": "Questions we wrote ourselves"
+ },
+ {
+  "id": "s4",
+  "file": "src/core/flow/overrides.ts",
+  "key": "prompt",
+  "text": "Every answer lands in your file below \u2014 a list you can read, and a map that fills in.",
+  "note": "Slide two: where answers land \u2014 the list AND the map, one drawing. The real drawer sits in List below it.",
+  "section": "Questions we wrote ourselves",
+  "surface": "Questions we wrote ourselves"
+ },
+ {
+  "id": "s5",
+  "file": "src/core/flow/overrides.ts",
+  "key": "(in place)",
+  "text": "Back, Next and Skip sit under every question. Two quick questions first \u2014 off you go.",
+  "note": "Slide three: how to move \u2014 names the nav's own words, then sets up the gate (\"we set up the need for the skill that will follow",
+  "section": "Questions we wrote ourselves",
+  "surface": "Questions we wrote ourselves"
+ },
+ {
+  "id": "s6",
+  "file": "src/core/flow/overrides.ts",
+  "key": "(in place)",
+  "text": "chatgpt\nChatGPT\nclaude\nClaude\ngemini\nGemini\ncopilot\nCopilot\ngrok\nGrok\nperplexity\nPerplexity\nother\nSomething Cooler You Don't Even Know About\ngoal_service",
+  "note": "V2.4 VB-105: \"other\" stops shrugging.  \u2014 Adam's own title for it (\"the choice should feel easy and fun\"); the KEY stays 'other', so",
+  "section": "Questions we wrote ourselves",
+  "surface": "Questions we wrote ourselves"
+ },
+ {
+  "id": "s7",
+  "file": "src/core/flow/overrides.ts",
+  "key": "(in place)",
+  "text": "V2.3 VB-90 + VB-93 \u2014 the orientation ladder rides section 1 uncounted (intros \ncarry no denominator weight, the skills-outline rule), and the goal gate's two \nanswers open the file as they open the flow. Spliced after the why screen, not \nprepended, so the outline lists section 1 in FLOW order and fileStartTarget \nstill lands the flow's real first screen.\norientation_ready\nwb_canvas\nwb_go\ngoal_service\ngoal_want",
+  "note": "prompt: () => \"What's the one thing you want it to do better today?\", hint: 'Be specific and small \u2014 one real task from this week beats a wish. At the end, you will run exactly this and watch the difference. Your AI may decline some topics; pick something it can actually do.', placeholder: 'e.g. Draft my Monday status update the way I would', ideas: [ 'Draft a status update for my manager that sounds like me.', 'Triage my inbox and tell me the three that matter.', 'Turn my meeting notes into the summary my team expects.', 'Write the first reply to a client email in my voice.', ], skipIf: (ctx) => ctx.answers['goal_want'] === undefined && interviewAlreadyUnderway(ctx), }, ]; export const NODE_INSERTIONS: NodeInsertion[] = [ { why: 'VB-90: the orientation ladder \u2014 canvas, brain flip, go \u2014 real steps after the ' + '\"why\" screen, showing the actual drawer while they talk (FLAG 1: in-flow ' + 'narrative, never an overlay).', after: 'orientation_ready', node: ORIENTATION_LADDER_NODES[0]!, }, { why: 'VB-90/VB-114: the go rung of the same ladder.', after: 'orientation_ready', node: ORIENTATION_LADDER_NODES[1]! }, { why: 'VB-93: the goal gate \u2014 the flow\\'s first two QUESTIONS, right where the ladder\\'s ' + '\"go\" points (\"Two quick questions first\"). No goal, no go: the proof loop\\'s ' + 'baseline becomes this answer verbatim (proofAdapter.ts).', after: 'orientation_ready', node: GOAL_GATE_NODES[0]!, }, { why: 'VB-93: the second half of the gate \u2014 the thing they want done better today.', after: 'orientation_ready', node: GOAL_GATE_NODES[1]! }, { why: 'VB-61: the framing that replaces the gate for everybody who is not being asked it ' + 'any more \u2014 a screen, not a question, sitting exactly where the gate sat.', after: 'entities_gate', node: { kind: 'question', ...ENTITIES_INTRO_QUESTION }, }, { why: 'VB-63: the same, in front of the initiatives block.', after: 'initiatives_gate', node: { kind: 'question', ...INITIATIVES_INTRO_QUESTION }, }, { why: 'VB-64: one record per audience already picked, in place of one text field for all of them.', after: 'audience_variance', node: AUDIENCES_BLOCK, }, ]; export const OUTLINE_OVERRIDES: Record<string, OutlineOverride> = { V2.3 VB-93 \u2014 the goal gate's two answers open section 1 of the FILE as",
+  "section": "Questions we wrote ourselves",
+  "surface": "Questions we wrote ourselves"
+ },
+ {
+  "id": "s8",
+  "file": "src/core/flow/deepDive.ts",
+  "key": "(in place)",
+  "text": "What makes a good answer?\nOne real task from this week. Small beats grand \u2014 you'll run exactly this at the end and watch the difference.\nCan I change it later?\nYes. It's the first thing in your file, and you can edit it there any time.",
+  "note": "V2.3 VB-89  \u2014 the sweep's additions ride in flow order below. Per-question judgment, same as V1.1: the factual one-liners",
+  "section": "Deeper-dive answers",
+  "surface": "Deeper-dive answers"
+ },
+ {
+  "id": "s9",
+  "file": "src/core/choice/pairedPick.ts",
+  "key": "role_standing",
+  "text": "How big a role is this?",
+  "note": "The visible line over a facet when it is not the screen's heading. Keyed by question id; the group's aria-label stays the ported question itself. */",
+  "section": "The paired picker",
+  "surface": "The paired picker"
+ },
+ {
+  "id": "s10",
+  "file": "src/core/choice/pairedPick.ts",
+  "key": "role_durability",
+  "text": "Still current, or useful history?",
+  "note": "The visible line over a facet when it is not the screen's heading. Keyed by question id; the group's aria-label stays the ported question itself. */",
+  "section": "The paired picker",
+  "surface": "The paired picker"
+ },
+ {
+  "id": "s11",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "(in place)",
+  "text": "So you would say that right now, the thing you'd most like to stop explaining is\u2026\nSo when someone asks what you do, you'd put it like this\u2026\nSo this role, at its heart, is here to\u2026\nSo day to day, the work on your plate looks like\u2026\nSo this effort, in your words, is about\u2026\nSo when you use these words, you mean\u2026",
+  "note": "V2.3 VB-95 \u2014 the reflect step becomes a quick check. \"Here's what I've got\" turns into a per-question reframe spoken like a person \u2014 \"So you would say that right now\u2026\" \u2014 with the person's words quoted back in italic, unboxed, and a way-forward line that names their own AI when the goal gate (VB-93) captured which one they use. Templates live here, beside the reflect machinery, per the spec \u2014 not in src/panel/strings.ts \u2014 because they are the interview's voice speaking, same reasoning as overrides.ts's header. All copy  (V2.3's operating rule), measured by this module's own reading-grade harness in reflectFrames.test.ts.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s12",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "stop_explaining",
+  "text": "So you would say that right now, the thing you'd most like to stop explaining is\u2026",
+  "note": "One reframe per interpret-bearing question \u2014 the six R1-07 exercises (runner.test.ts's confirmed list). Same sentiment, slight wording variation, exactly as asked.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s13",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "self_description",
+  "text": "So when someone asks what you do, you'd put it like this\u2026",
+  "note": "One reframe per interpret-bearing question \u2014 the six R1-07 exercises (runner.test.ts's confirmed list). Same sentiment, slight wording variation, exactly as asked.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s14",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "role_mandate",
+  "text": "So this role, at its heart, is here to\u2026",
+  "note": "One reframe per interpret-bearing question \u2014 the six R1-07 exercises (runner.test.ts's confirmed list). Same sentiment, slight wording variation, exactly as asked.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s15",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "responsibilities_list",
+  "text": "So day to day, the work on your plate looks like\u2026",
+  "note": "One reframe per interpret-bearing question \u2014 the six R1-07 exercises (runner.test.ts's confirmed list). Same sentiment, slight wording variation, exactly as asked.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s16",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "initiative_description",
+  "text": "So this effort, in your words, is about\u2026",
+  "note": "One reframe per interpret-bearing question \u2014 the six R1-07 exercises (runner.test.ts's confirmed list). Same sentiment, slight wording variation, exactly as asked.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s17",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "terms_depend_on",
+  "text": "So when you use these words, you mean\u2026",
+  "note": "One reframe per interpret-bearing question \u2014 the six R1-07 exercises (runner.test.ts's confirmed list). Same sentiment, slight wording variation, exactly as asked.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s18",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "DEFAULT_REFLECT_LEAD",
+  "text": "So you would say, in your words\u2026",
+  "note": "For any interpret carrier this file has no bespoke line for. */",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s19",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "reflectVoiceLine",
+  "text": "your ${serviceLabel} chat",
+  "note": "The way forward, printed under the quote and spoken by the narrator \u2014 one string so the screen and the voice can never drift. Adapted from Adam's script (\"If this looks good, click next. If you want to edit it or use your [service] chat to make changes, the buttons are below.\") to name the buttons this screen actually has \u2014 keep / say it again / tighten \u2014 since copy must never point at a control that is not there (design-system \u00a708). Flagged in docs/V2.3-REFINEMENT.md.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s20",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "reflectVoiceLine",
+  "text": "your AI chat",
+  "note": "The way forward, printed under the quote and spoken by the narrator \u2014 one string so the screen and the voice can never drift. Adapted from Adam's script (\"If this looks good, click next. If you want to edit it or use your [service] chat to make changes, the buttons are below.\") to name the buttons this screen actually has \u2014 keep / say it again / tighten \u2014 since copy must never point at a control that is not there (design-system \u00a708). Flagged in docs/V2.3-REFINEMENT.md.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s21",
+  "file": "src/core/flow/reflectFrames.ts",
+  "key": "reflectVoiceLine",
+  "text": "If this sounds like you, keep it. To make changes, say it again \u2014 or use ${chat} to tighten it. The buttons are below.",
+  "note": "The way forward, printed under the quote and spoken by the narrator \u2014 one string so the screen and the voice can never drift. Adapted from Adam's script (\"If this looks good, click next. If you want to edit it or use your [service] chat to make changes, the buttons are below.\") to name the buttons this screen actually has \u2014 keep / say it again / tighten \u2014 since copy must never point at a control that is not there (design-system \u00a708). Flagged in docs/V2.3-REFINEMENT.md.",
+  "section": "The reflect step",
+  "surface": "The reflect step"
+ },
+ {
+  "id": "s22",
+  "file": "src/core/flow/assistCopy.ts",
+  "key": "(in place)",
+  "text": "Next, hit the copy button below.",
+  "note": "V2.5 VB-119 \u2014 what the AI Assist sheet SAYS, step by step. \"Let my AI ask me\" grew up into AI Assist: pressing the control dims the app and runs a stepped mini-interview in a full-height sheet (FLAG 1, confirmed \u2014 the sanctioned sheet mechanism wearing Adam's pause). Each step is one short line, printed AND spoken \u2014 the narrator pairing rides the same seam as every other interview line (core/voice/narration.ts's Narration shape, injected through the panel's useNarration). The lines live HERE, in core, not in src/panel/strings.ts, because they are the interview's voice speaking \u2014 the same reasoning as overrides.ts and reflectFrames.ts's headers. Chrome around them (button labels, the sheet's title) stays in strings.ts. All copy  \u2014 V2.5's operating rule: built tonight, Adam's morning review adjusts words \u2014 measured by this module's own reading-grade harness in assistCopy.test.ts. VB-120 (FLAG 3) adds the ENCOURAGING variant: when the sheet opens from the \"AI Assist (Recommended)\" nudge, step 1 leads with one extra line in the \"a quick AI interview can give you a strong start\" register. The law that line must keep (docs/GUARDRAILS.md, \"no nudges framed as guilt\"): it NEVER names a deficiency \u2014 not \"short\", not \"too\", not \"more detail\". assistCopy.test.ts pins that as an assertion, not a hope.",
+  "section": "AI Assist \u2014 the bar",
+  "surface": "AI Assist \u2014 the bar"
+ },
+ {
+  "id": "s23",
+  "file": "src/core/flow/assistCopy.ts",
+  "key": "ASSIST_LINE_COPY",
+  "text": "Next, hit the copy button below.",
+  "note": "Step 1 \u2014 the copy step. The control it points at is the sheet's one glowing thing (the flow's sanctioned attention cue), so the words carry the what and the glow only ever carries the where. */",
+  "section": "AI Assist \u2014 the bar",
+  "surface": "AI Assist \u2014 the bar"
+ },
+ {
+  "id": "s24",
+  "file": "src/core/flow/assistCopy.ts",
+  "key": "assistBarLine",
+  "text": "Copy this prompt and paste it into ${serviceLabel ?? 'your AI'}.",
+  "note": "V2.8 VB-138 \u2014 the SINGLE-STEP instruction bar's one line, the whole journey in a sentence: copy, carry it to their AI, come back. It replaced the sheet's three step lines when assist went inline (Adam: \"handle it all in the single step\"); the copy control sits at the line's end, icon-led, and the full prompt stays behind an expander \u2014 present, never assumed read.",
+  "section": "AI Assist \u2014 the bar",
+  "surface": "AI Assist \u2014 the bar"
+ },
+ {
+  "id": "s25",
+  "file": "src/core/flow/assistCopy.ts",
+  "key": "ASSIST_LINE_RETURN",
+  "text": "Paste what it wrote back into this box.",
+  "note": "Step 3 \u2014 the return trip. The box is in the sheet, highlighted; submit lands the text in the question's own answer field, editable. */",
+  "section": "AI Assist \u2014 the bar",
+  "surface": "AI Assist \u2014 the bar"
+ },
+ {
+  "id": "s26",
+  "file": "src/core/flow/assistCopy.ts",
+  "key": "ASSIST_ENCOURAGING_LEAD",
+  "text": "A quick AI interview can give you a strong start.",
+  "note": "VB-120's encouraging lead \u2014 the ONLY wording difference between the nudged sheet and the ordinary one. An offer about a strong start, never a verdict about what is already typed. */",
+  "section": "AI Assist \u2014 the bar",
+  "surface": "AI Assist \u2014 the bar"
+ },
+ {
+  "id": "s27",
+  "file": "src/core/flow/assistCopy.ts",
+  "key": "assistPasteLine",
+  "text": "Paste it into ${serviceLabel ?? 'your AI'}.",
+  "note": "Step 2 \u2014 the hand-off. Names THEIR AI when the goal gate captured one (resolved by the caller via reflectFrames.ts's goalServiceLabelFor \u2014 the same resolver the reflect voice line and the old popover used, so no two screens can ever name different AIs), \"your AI\" when unknown.",
+  "section": "AI Assist \u2014 the bar",
+  "surface": "AI Assist \u2014 the bar"
+ },
+ {
+  "id": "s28",
+  "file": "src/core/flow/assistThresholds.ts",
+  "key": "(in place)",
+  "text": "export const ASSIST_THRESHOLD_MULTILINE = 80;",
+  "note": "V2.5 VB-120 (FLAG 3) \u2014 the per-kind character thresholds behind the recheck rebalance and the AI Assist nudge. ONE table, TWO consumers, and the number means the same thing to both: - `findPosition`'s reflect condition (core/flow/runner.ts): an unassisted text answer UNDER its threshold skips the recheck \u2014 there is not enough written for a playback to be worth the screen \u2014 while an answer at or over it reflects exactly as R1-07 always has. - The panel's nudge (Flow.tsx): while a text question's DRAFT is under its threshold and unassisted, the AI Assist chip reads \"AI Assist (Recommended)\" with the one sanctioned cue at its gentle cadence, and opens the sheet in its encouraging wording variant. FLAG 3's law, kept structurally: thresholds are evaluated LIVE \u2014 against the draft as it is typed, against the stored value as it is walked \u2014 and NEVER stored. Nothing here writes; nothing anywhere persists a \"was under threshold\" fact; a threshold change in this file re-judges every answer on the next derivation, which is exactly what live means. And the nudge these numbers drive must never shame: the wording lives in assistCopy.ts under its own no-deficiency assertion. THE KINDS ( values \u2014 Adam's morning review adjusts numbers): | kind | threshold | meaning | |---------------------|-----------|------------------------------------| | multiline text | 80 chars | under a sentence or two of substance| | single-line text | 0 chars | never nudged, never skipped \u2014 a | | | | name-length answer IS the answer | | everything else | 0 chars | pills/chips/gen have no draft to | | | | measure | Per-question overrides ride `ASSIST_THRESHOLD_OVERRIDES` \u2014 empty today, present so a future \"this one question deserves a higher bar\" is one data line rather than a second mechanism.",
+  "section": "AI Assist \u2014 when it offers",
+  "surface": "AI Assist \u2014 when it offers"
+ },
+ {
+  "id": "s29",
+  "file": "src/core/flow/assistThresholds.ts",
+  "key": "(in place)",
+  "text": "export const ASSIST_THRESHOLD_MULTILINE = 80;",
+  "note": "A multiline answer under this many characters skips the recheck and earns the nudge. */",
+  "section": "AI Assist \u2014 when it offers",
+  "surface": "AI Assist \u2014 when it offers"
+ },
+ {
+  "id": "s30",
+  "file": "src/core/flow/assistThresholds.ts",
+  "key": "(in place)",
+  "text": "export const ASSIST_THRESHOLD_SINGLE_LINE = 0;",
+  "note": "Single-line text: 0 \u2014 `length < 0` is impossible, so a single-line answer is never under threshold: never nudged, and its recheck behaviour is exactly what it was before V2.5. */",
+  "section": "AI Assist \u2014 when it offers",
+  "surface": "AI Assist \u2014 when it offers"
+ },
+ {
+  "id": "s31",
+  "file": "src/core/flow/assistThresholds.ts",
+  "key": "(in place)",
+  "text": "export const ASSIST_THRESHOLD_OVERRIDES: Record<string, number> = {};",
+  "note": "Per-question exceptions, by step id. Empty on purpose \u2014 the seam, not a policy. */",
+  "section": "AI Assist \u2014 when it offers",
+  "surface": "AI Assist \u2014 when it offers"
+ },
+ {
+  "id": "s32",
+  "file": "src/core/flow/interviewMe.ts",
+  "key": "(in place)",
+  "text": "```",
+  "note": "V2.3 VB-94 \u2014 the interview-me prompt: the escape hatch for a person who freezes at an open text box. Their own AI interviews them \u2014 a few short questions, follow-ups allowed \u2014 and hands back a finished answer inside one fenced block, which they copy once and paste into the waiting input. Two halves, both pure: - `interviewMePrompt` builds the prompt (copy below is  \u2014 V2.3's operating rule: built tonight, Adam's morning review adjusts words; it lives in core beside the other prompt builders, same reasoning as `overrides.ts`'s header \u2014 interview wording is not panel chrome). - `normalizePastedReply` lands the paste \u2014 the sibling repo's `parseStepLines` move (WorkBrainSkillsBuilder.tsx) generalized from \"a list of steps\" to \"any answer\": unwrap the fence, strip the bullets, settle the whitespace. What lands is editable text in the ordinary field \u2014 click into the frame and type, no edit button. The trust line this file must never cross (docs/GUARDRAILS.md): the pasted reply is the person's own content, typed into a field they can see and edit. Nothing here stores, scores, or transmits anything.",
+  "section": "AI Assist \u2014 the prompt",
+  "surface": "AI Assist \u2014 the prompt"
+ },
+ {
+  "id": "s33",
+  "file": "src/core/flow/interviewMe.ts",
+  "key": "interviewMePrompt",
+  "text": "\n      ? `\nFor context, the thing I most want you to do better for me: \"${want.trim()}\"\n`\n      : ",
+  "note": "The prompt a person copies into their own AI. Grounded in the question on screen and \u2014 when the goal gate captured one (VB-93) \u2014 the thing they said they most want their AI to do better, so the interview starts from what matters to them rather than from zero. V2.4 VB-107 (decision 5a) makes it richer, in exactly two ways and no more: - the interviewer is told to GATHER THE SPECIFICS before it writes \u2014 real names, how often it happens, what the finished work looks like (names, cadence, artifacts, in grade-7 words) \u2014 because the vague reply is the failure mode of \"interview me\" and the fix belongs in the prompt, not in us editing what comes back; - ONE per-service line beside the copy instruction, naming where the answer is being carried off to (the goal gate's service, resolved the same way the reflect voice line resolves it), so the AI knows the answer must stand alone outside this chat. One template \u2014 fully bespoke per-LLM prompts are BACKLOG 5b, deliberately not built. Everything V2.3 fixed stays fixed: 3 to 5 questions one at a time, the answer alone in ONE fenced block (\"three backticks\" \u2014 the mechanic, not our constant's name), first person.",
+  "section": "AI Assist \u2014 the prompt",
+  "surface": "AI Assist \u2014 the prompt"
+ },
+ {
+  "id": "s34",
+  "file": "src/core/flow/interviewMe.ts",
+  "key": "interviewMePrompt",
+  "text": ";\n  const service = goalServiceLabelFor(ctx);\n  const fileLine = service\n    ? `The answer leaves ${service} and lands in my own file, so make it stand on its own.`\n    : ",
+  "note": "The prompt a person copies into their own AI. Grounded in the question on screen and \u2014 when the goal gate captured one (VB-93) \u2014 the thing they said they most want their AI to do better, so the interview starts from what matters to them rather than from zero. V2.4 VB-107 (decision 5a) makes it richer, in exactly two ways and no more: - the interviewer is told to GATHER THE SPECIFICS before it writes \u2014 real names, how often it happens, what the finished work looks like (names, cadence, artifacts, in grade-7 words) \u2014 because the vague reply is the failure mode of \"interview me\" and the fix belongs in the prompt, not in us editing what comes back; - ONE per-service line beside the copy instruction, naming where the answer is being carried off to (the goal gate's service, resolved the same way the reflect voice line resolves it), so the AI knows the answer must stand alone outside this chat. One template \u2014 fully bespoke per-LLM prompts are BACKLOG 5b, deliberately not built. Everything V2.3 fixed stays fixed: 3 to 5 questions one at a time, the answer alone in ONE fenced block (\"three backticks\" \u2014 the mechanic, not our constant's name), first person.",
+  "section": "AI Assist \u2014 the prompt",
+  "surface": "AI Assist \u2014 the prompt"
+ },
+ {
+  "id": "s35",
+  "file": "src/core/flow/interviewMe.ts",
+  "key": "interviewMePrompt",
+  "text": ";\n  return `I",
+  "note": "The prompt a person copies into their own AI. Grounded in the question on screen and \u2014 when the goal gate captured one (VB-93) \u2014 the thing they said they most want their AI to do better, so the interview starts from what matters to them rather than from zero. V2.4 VB-107 (decision 5a) makes it richer, in exactly two ways and no more: - the interviewer is told to GATHER THE SPECIFICS before it writes \u2014 real names, how often it happens, what the finished work looks like (names, cadence, artifacts, in grade-7 words) \u2014 because the vague reply is the failure mode of \"interview me\" and the fix belongs in the prompt, not in us editing what comes back; - ONE per-service line beside the copy instruction, naming where the answer is being carried off to (the goal gate's service, resolved the same way the reflect voice line resolves it), so the AI knows the answer must stand alone outside this chat. One template \u2014 fully bespoke per-LLM prompts are BACKLOG 5b, deliberately not built. Everything V2.3 fixed stays fixed: 3 to 5 questions one at a time, the answer alone in ONE fenced block (\"three backticks\" \u2014 the mechanic, not our constant's name), first person.",
+  "section": "AI Assist \u2014 the prompt",
+  "surface": "AI Assist \u2014 the prompt"
+ },
+ {
+  "id": "s36",
+  "file": "src/core/flow/interviewMe.ts",
+  "key": "interviewMePrompt",
+  "text": "${question}",
+  "note": "The prompt a person copies into their own AI. Grounded in the question on screen and \u2014 when the goal gate captured one (VB-93) \u2014 the thing they said they most want their AI to do better, so the interview starts from what matters to them rather than from zero. V2.4 VB-107 (decision 5a) makes it richer, in exactly two ways and no more: - the interviewer is told to GATHER THE SPECIFICS before it writes \u2014 real names, how often it happens, what the finished work looks like (names, cadence, artifacts, in grade-7 words) \u2014 because the vague reply is the failure mode of \"interview me\" and the fix belongs in the prompt, not in us editing what comes back; - ONE per-service line beside the copy instruction, naming where the answer is being carried off to (the goal gate's service, resolved the same way the reflect voice line resolves it), so the AI knows the answer must stand alone outside this chat. One template \u2014 fully bespoke per-LLM prompts are BACKLOG 5b, deliberately not built. Everything V2.3 fixed stays fixed: 3 to 5 questions one at a time, the answer alone in ONE fenced block (\"three backticks\" \u2014 the mechanic, not our constant's name), first person.",
+  "section": "AI Assist \u2014 the prompt",
+  "surface": "AI Assist \u2014 the prompt"
+ },
+ {
+  "id": "s37",
+  "file": "src/core/flow/assistServices.ts",
+  "key": "(in place)",
+  "text": "export const ASSIST_SERVICE_URLS: Record<string, string> = {",
+  "note": "V2.5 VB-119 \u2014 where each AI service LIVES, so the assist sheet's step 2 can hand the person a door as well as an instruction (\"Paste it into ChatGPT\" + a link that opens ChatGPT in the browser). Authored beside the service-additions seam (proofAdditions.ts) on the same reasoning: the ported snapshot stays byte-identical, and everything this repo adds about a service joins through its own module. The KEYS are the one service list's own keys (ALL_PROOF_SERVICES / the goal gate's options \u2014 asserted in assistServices.test.ts), so a stored `goal_service` answer resolves here with no mapping layer. 'other' has NO entry, deliberately: its label is a title, not a name (V2.4 VB-105), and there is nowhere to open. The sheet renders no link \u2014 the instruction alone still works, which is the degradation rule (docs/GUARDRAILS.md: the panel simply does less, and says nothing). These are  public front doors, not deep links \u2014 each one is the address a person would type, loads signed-out, and lands on the composer or the service's own way there. Nothing here is fetched: the map is data, the panel renders a plain anchor, and the person's own click is what leaves the panel (no fetch, no beacon, nothing observed).",
+  "section": "AI Assist \u2014 services",
+  "surface": "AI Assist \u2014 services"
+ },
+ {
+  "id": "s38",
+  "file": "src/core/flow/proofAdditions.ts",
+  "key": "(in place)",
+  "text": "grok\nClick the paperclip icon near the message box and attach Context.md.",
+  "note": "V2.4 VB-105 \u2014 authored, not ported; same voice as the four tips in proofSource.ts. Adam's morning review adjusts words.",
+  "section": "The proof \u2014 services",
+  "surface": "The proof \u2014 services"
+ },
+ {
+  "id": "s39",
+  "file": "src/core/flow/proofAdditions.ts",
+  "key": "(in place)",
+  "text": "export const ALL_PROOF_SERVICES: ProofService[] = [\n  ...PROOF_SERVICES.slice(0, -1),\n  ...PROOF_SERVICE_ADDITIONS,\n  PROOF_SERVICES[PROOF_SERVICES.length - 1]!",
+  "note": "{ key: 'perplexity', attachTip: 'Click the + near the message box and attach Context.md.' }, ]; The one service list the rest of the product should read: the ported four, then the additions, then the ported \"other\" \u2014 kept LAST on purpose, because `attachHintFor` (proofAdapter.ts) and the upstream component both treat the final entry as the fallback for an unknown or unselected service. Order matches the spec's own roll-call (VB-105: ChatGPT \u00b7 Claude \u00b7 Gemini \u00b7 Copilot \u00b7 Grok \u00b7 Perplexity \u00b7 Other) and is asserted in proofAdditions.test.ts so a careless merge cannot quietly demote \"other\" from its fallback seat.",
+  "section": "The proof \u2014 services",
+  "surface": "The proof \u2014 services"
+ },
+ {
+  "id": "s40",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Wolfgang",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s41",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Cleopatra",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s42",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Elvis",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s43",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Frida",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s44",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Sherlock",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s45",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Hermione",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s46",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Napoleon",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s47",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Amelia",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s48",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Galileo",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s49",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Beatrix",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s50",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Wednesday",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s51",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_FIRSTS",
+  "text": "Leonardo",
+  "note": "V2.4 VB-109 \u2014 famous first names. 12 entries; see the header before adding one, and add its well-known bearers to nameGenerator.test.ts's audit maps in the same change. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s52",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Einstein",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s53",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Shakespeare",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s54",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Tesla",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s55",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Picasso",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s56",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Houdini",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s57",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Newton",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s58",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Darwin",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s59",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Austen",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s60",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Dickinson",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s61",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Chaplin",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s62",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Nightingale",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s63",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Magellan",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s64",
+  "file": "src/core/flow/nameGenerator.ts",
+  "key": "FAMOUS_LASTS",
+  "text": "Copernicus",
+  "note": "V2.4 VB-109 \u2014 famous last names. 13 entries; same rule. */",
+  "section": "Generated names",
+  "surface": "Generated names"
+ },
+ {
+  "id": "s65",
+  "file": "src/panel/strings.ts",
+  "key": "meterName",
+  "text": "How much of your work brain is set up",
+  "note": "V2.6 VB-125 \u2014 the utilization meter's printed pieces, under Adam's decided semantics (docs/V2.6-REFINEMENT.md, decision 2): the number measures how much of full utilization is SET UP \u2014 Context and Skills completion first, with Act and Share holding the remainder so 100% takes outside work. \"Set up\" and never the template's \"AI-utilized\": the product does not watch usage and its meter must not claim to. `meterLabel` sits after the big number (\"60% set up\" \u2014 the same claim `utilization` above makes, split for the layout); `stepNamed` is the standing step, said with its name (\"Step 2 \u00b7 Repeat\") the way the template's \"Gate 2\" never may.",
+  "section": "the four steps",
+  "surface": "The panel"
+ },
+ {
+  "id": "s66",
+  "file": "src/panel/strings.ts",
+  "key": "meterLabel",
+  "text": "set up",
+  "note": "V2.6 VB-125 \u2014 the utilization meter's printed pieces, under Adam's decided semantics (docs/V2.6-REFINEMENT.md, decision 2): the number measures how much of full utilization is SET UP \u2014 Context and Skills completion first, with Act and Share holding the remainder so 100% takes outside work. \"Set up\" and never the template's \"AI-utilized\": the product does not watch usage and its meter must not claim to. `meterLabel` sits after the big number (\"60% set up\" \u2014 the same claim `utilization` above makes, split for the layout); `stepNamed` is the standing step, said with its name (\"Step 2 \u00b7 Repeat\") the way the template's \"Gate 2\" never may.",
+  "section": "the four steps",
+  "surface": "The panel"
+ },
+ {
+  "id": "s67",
+  "file": "src/panel/strings.ts",
+  "key": "meterWhat",
+  "text": "What moves this?",
+  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
+  "section": "the four steps",
+  "surface": "The panel"
+ },
+ {
+  "id": "s68",
+  "file": "src/panel/strings.ts",
+  "key": "meterWhatTitle",
+  "text": "What moves this number",
+  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
+  "section": "the four steps",
+  "surface": "The panel"
+ },
+ {
+  "id": "s69",
+  "file": "src/panel/strings.ts",
+  "key": "meterWhatLead",
+  "text": "Four quarters, one for each step. Each one is a real count of your own answers \u2014 nothing here watches you work.",
+  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
+  "section": "the four steps",
+  "surface": "The panel"
+ },
+ {
+  "id": "s70",
+  "file": "src/panel/strings.ts",
+  "key": "meterWhatFills",
+  "text": "Questions you answer in the Context interview. A question you pass on stays empty.\nQuestions you answer in the Skills interview, the same way.\nSkills that say how much AI may do on its own, and where the data lives. \"Not sure\" leaves the gap.\nProof you ran, and skills you saved or redeemed. Half each.",
+  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
+  "section": "the four steps",
+  "surface": "The panel"
+ },
+ {
+  "id": "s71",
+  "file": "src/panel/strings.ts",
+  "key": "meterWhatCeiling",
+  "text": "The last quarter needs your file out in the world, so 100% takes more than answering questions.",
+  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
+  "section": "the four steps",
+  "surface": "The panel"
+ },
+ {
+  "id": "s72",
+  "file": "src/panel/strings.ts",
+  "key": "stepNamed",
+  "text": "Step ${n} \u00b7 ${label}",
+  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
+  "section": "the four steps",
+  "surface": "The panel"
+ },
+ {
+  "id": "s73",
+  "file": "src/panel/strings.ts",
+  "key": "goHome",
+  "text": "Go to the home screen",
+  "note": "V2.4 VB-112 \u2014 the one name all three doors home share: the top-left mark, the breadcrumb root, and the globe's drawn house. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s74",
+  "file": "src/panel/strings.ts",
+  "key": "qzoneLabel",
+  "text": "The question and its help",
+  "note": "V2.8 VB-137 \u2014 the question zone's accessible name: it is a real scrollable region now (it yields to keep the answer stack above the dock), so the keyboard can land on it and arrow through a prompt taller than its room. Never printed. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s75",
+  "file": "src/panel/strings.ts",
+  "key": "fileTreeSelect",
+  "text": "Show ${title} in the picture",
+  "note": "V2.4 VB-103 \u2014 a browse-canvas row's name: pressing it selects the section in the Brain above, never jumps into questions. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s76",
+  "file": "src/panel/strings.ts",
+  "key": "browseEdit",
+  "text": "Edit the file",
+  "note": "V2.4 VB-102 \u2014 the browse canvas's one door into the interview. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s77",
+  "file": "src/panel/strings.ts",
+  "key": "(in place)",
+  "text": "Show me\nStart the questions\nSave a copy of my skills\nAdd skills from a file\nSaved. The copy is in your downloads.\nAdded 1 skill.\nAdded ${added} skills.",
+  "note": "V2.5 VB-124 \u2014 the share/backup row on the skills canvas. The verbs are the person's (\"save a copy\", \"add from a file\"), never \"export\"/\"import\"/\"pack\". */",
+  "section": "The panel",
+  "surface": "The panel"
+ },
+ {
+  "id": "s78",
+  "file": "src/panel/strings.ts",
+  "key": "tourNext",
+  "text": "Show me",
+  "note": "V2.5 VB-114 \u2014 the dime tour's own advance button, per slide. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s79",
+  "file": "src/panel/strings.ts",
+  "key": "tourStart",
+  "text": "Start the questions",
+  "note": "V2.5 VB-114 \u2014 the dime tour's own advance button, per slide. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s80",
+  "file": "src/panel/strings.ts",
+  "key": "skillsShareSave",
+  "text": "Save a copy of my skills",
+  "note": "V2.5 VB-114 \u2014 the dime tour's own advance button, per slide. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s81",
+  "file": "src/panel/strings.ts",
+  "key": "skillsShareAdd",
+  "text": "Add skills from a file",
+  "note": "V2.5 VB-114 \u2014 the dime tour's own advance button, per slide. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s82",
+  "file": "src/panel/strings.ts",
+  "key": "skillsShareSaved",
+  "text": "Saved. The copy is in your downloads.",
+  "note": "V2.5 VB-114 \u2014 the dime tour's own advance button, per slide. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s83",
+  "file": "src/panel/strings.ts",
+  "key": "skillsShareAdded",
+  "text": "Added 1 skill.\nAdded ${added} skills.\nAdded ${added}, and ${skipped} could not come along.",
+  "note": "V2.5 VB-114 \u2014 the dime tour's own advance button, per slide. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s84",
+  "file": "src/panel/strings.ts",
+  "key": "skip",
+  "text": "Skip",
+  "note": "V2.5 VB-114 \u2014 the dime tour's own advance button, per slide. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s85",
+  "file": "src/panel/strings.ts",
+  "key": "rephrase",
+  "text": "Ask me that a different way",
+  "note": "V2.5 VB-114 \u2014 the dime tour's own advance button, per slide. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s86",
+  "file": "src/panel/strings.ts",
+  "key": "makeUpName",
+  "text": "Make one up for me",
+  "note": "V2.4 VB-109 \u2014 the name generator on the two name questions (core/flow/nameGenerator.ts). Same register as `giveExample` above: a verb the person stuck at the box would say out loud \u2014 and on a name question, \"one\" can only mean a name. The button drops a made-up famous mashup into the field via the exact ideas mechanic; pressing again deals the next one.",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s87",
+  "file": "src/panel/strings.ts",
+  "key": "assist",
+  "text": "AI Assist",
+  "note": "V2.5 VB-119 \u2014 \"Let my AI ask me\" grows up into AI Assist: the name on the helper chip, and the title of the full-height sheet it opens (the stepped mini-interview \u2014 their own AI interviews them and hands back a finished answer, landed in the same field). A NAME rather than V2.3's spoken verb, per Adam's design; the sheet's own step lines do the talking (core/flow/assistCopy.ts \u2014 interview voice lives in core, chrome lives here).",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s88",
+  "file": "src/panel/strings.ts",
+  "key": "assistRecommended",
+  "text": "AI Assist (Recommended)",
+  "note": "V2.5 VB-120 \u2014 the same chip while a text draft sits under its kind's character threshold, unassisted (core/flow/assistThresholds.ts, judged live): the same door, warmly recommended, breathing the one sanctioned cue. The word is about the OFFER \u2014 never \"your answer is too short\", never any word about the box (GUARDRAILS' no-guilt-nudges; the sheet's encouraging lead rides the same law, pinned in assistCopy.test.ts).",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s89",
+  "file": "src/panel/strings.ts",
+  "key": "assistActivated",
+  "text": "AI Assist Activated",
+  "note": "V2.8 VB-138 \u2014 assist goes inline and single-step: the tag that marks the collapsed box's spot (Adam's own words for it), and the expander that holds the full prompt \u2014 present, never assumed read. The bar's instruction line lives in core (assistBarLine), where the interview's voice speaks.",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s90",
+  "file": "src/panel/strings.ts",
+  "key": "assistReadPrompt",
+  "text": "Read the whole prompt",
+  "note": "V2.8 VB-138 \u2014 assist goes inline and single-step: the tag that marks the collapsed box's spot (Adam's own words for it), and the expander that holds the full prompt \u2014 present, never assumed read. The bar's instruction line lives in core (assistBarLine), where the interview's voice speaks.",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s91",
+  "file": "src/panel/strings.ts",
+  "key": "assistOpenService",
+  "text": "Open ${service}",
+  "note": "V2.5 VB-119 \u2014 step 2's door: opens the AI the person named at the goal gate in the browser. Only ever rendered with a real service name ('other' and an unanswered gate get no link at all \u2014 core/flow/assistServices.ts).",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s92",
+  "file": "src/panel/strings.ts",
+  "key": "assistStarted",
+  "text": "I've started the interview",
+  "note": "V2.5 VB-119 \u2014 step 2's advance. Their words, not ours: the button confirms what they just did over in their AI's tab. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s93",
+  "file": "src/panel/strings.ts",
+  "key": "assistUse",
+  "text": "Put it in my answer",
+  "note": "V2.5 VB-119 \u2014 step 3's submit: closes the sheet and lands the pasted answer in the question's own box, editable. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s94",
+  "file": "src/panel/strings.ts",
+  "key": "assistNeedPaste",
+  "text": "Paste what your AI wrote, or close this and type your own answer.",
+  "note": "V2.5 VB-119 \u2014 step 3 submitted with nothing in the box. Says what to do next; the person's own words remain a first-class way out. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s95",
+  "file": "src/panel/strings.ts",
+  "key": "assistLanded",
+  "text": "Your answer is in the box below. You can edit it.",
+  "note": "V2.5 VB-119 \u2014 spoken by the live region as the sheet closes, for anyone who cannot see the answer land and the input pulse. */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s96",
+  "file": "src/panel/strings.ts",
+  "key": "fileTreeAgeStale",
+  "text": "updated ${age} ago \u2014 time to review",
+  "note": "V2.4 VB-110 \u2014 the stale date's accessible name: the word carries what the color shows (FLAG 2, never color alone). */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s97",
+  "file": "src/panel/strings.ts",
+  "key": "fileTreeRecords",
+  "text": "1 item\n${n} items",
+  "note": "V2.4 VB-110 \u2014 the record disclosure's label: what the person calls them (\"3 items\"), never \"records\". */",
+  "section": "flow runner",
+  "surface": "The panel"
+ },
+ {
+  "id": "s98",
+  "file": "src/panel/strings.ts",
+  "key": "(in place)",
+  "text": "S OWN, borrowed rather than written: `Due` is\n     `sectionStateDue` and `Not yet` is `fileTreeStateUntouched`, both already\n     printed on every row of the drawer\nDue",
+  "note": "The five-part card that replaces `brainglobe-detail`'s definition list. \u00a77.2's complaint: \"a leaf holding a list and a leaf holding one answer look identical, a list leaf has no count, and there is no route to the editor or statement of what the field is for.\"  throughout. IT BORROWS THE SUMMARY'S OWN WORDS WHEREVER IT CAN, for the reason the block above states: Brain and List are two views of one file, and a section that reads \"6 of 9 answered\" in the drawer must not read anything else on its own card. `summaryAnswered`, `summaryAge`, `summaryToday`, `sectionSkipped` are all reused verbatim. */",
+  "section": "The panel",
+  "surface": "The panel"
+ },
+ {
+  "id": "s99",
+  "file": "src/panel/strings.ts",
+  "key": "nodePurpose",
+  "text": "What you want AI to stop making you re-explain.\nYour name, and how you would describe yourself to a stranger.\nsec2-1\nThe hats you wear, so AI knows which one you are in.\nsec2-2\nThe work that is yours to deliver, not just to touch.\nsec2-3\nWhere your job stops, so AI stops there too.\nsec2-4\nWhat you can decide alone, and what needs someone else.\nsec2-5\nWhat you know well enough that AI should not explain it.\nThe people, teams and tools AI should already know by name.\nThe named efforts you have underway right now.\nHow you weigh risk and act, so AI matches your judgment.\nHow you sound in writing, so AI writes as you.\nWho you write for, and how each of them differs.\nWords that mean something particular here, and words to avoid.\nWhat AI should never do when it writes as you.",
+  "note": "BS-07d (\u00a77.4) \u2014 THE ONE NEW AUTHORED FIELD, and the count the spec got wrong in both directions.  throughout, all fifteen. \u00a77.4 estimated \"~nine\". The outline has fourteen leaves plus `sec2`, which carries three questions of its own \u2014 fifteen. The card's subject today is only ever a child of `sec2`, which would be five. \u00a77.3's matrix settles it: its List rows can only be reached by nodes that own a repeatable block, and three of those four are childless sections you fly INTO rather than sub-nodes you pick. So the card shows for both, and fifteen is the number. Written up in docs/BETA-SPRINT.md. THE RULE, from \u00a77.4: one sentence, under about twelve words, saying what the field is FOR rather than what it contains. \"Projects\" and \"Guardrails\" are the spec's own examples, kept verbatim. ABSENT IS A LEGAL STATE. A node with no entry here renders no part 2 and the card closes the gap \u2014 \u00a77.4's last line is \"do not ship a placeholder\", so there is no fallback string and `purposeFor` returns undefined rather than something bland. */",
+  "section": "BS-07c (\u00a77.2) the leaf card",
+  "surface": "The panel"
+ },
+ {
+  "id": "s100",
+  "file": "src/panel/strings.ts",
+  "key": "sec10",
+  "text": "Real work of yours, for AI to match rather than guess.",
+  "note": "BS-07d (\u00a77.4) \u2014 THE ONE NEW AUTHORED FIELD, and the count the spec got wrong in both directions.  throughout, all fifteen. \u00a77.4 estimated \"~nine\". The outline has fourteen leaves plus `sec2`, which carries three questions of its own \u2014 fifteen. The card's subject today is only ever a child of `sec2`, which would be five. \u00a77.3's matrix settles it: its List rows can only be reached by nodes that own a repeatable block, and three of those four are childless sections you fly INTO rather than sub-nodes you pick. So the card shows for both, and fifteen is the number. Written up in docs/BETA-SPRINT.md. THE RULE, from \u00a77.4: one sentence, under about twelve words, saying what the field is FOR rather than what it contains. \"Projects\" and \"Guardrails\" are the spec's own examples, kept verbatim. ABSENT IS A LEGAL STATE. A node with no entry here renders no part 2 and the card closes the gap \u2014 \u00a77.4's last line is \"do not ship a placeholder\", so there is no fallback string and `purposeFor` returns undefined rather than something bland. */",
+  "section": "BS-07c (\u00a77.2) the leaf card",
+  "surface": "The panel"
+ },
+ {
+  "id": "s101",
+  "file": "src/panel/strings.ts",
+  "key": "(in place)",
+  "text": "Just a quick check.\nNothing has been sent anywhere.\nKeep it as-is\nTighten it with my AI\nSay it again\nAsk your AI this\nPaste what it says here\nPaste what your AI said, or go back and keep your own words.\nUse this instead",
+  "note": "V2.3 VB-95 \u2014 the reflect step becomes a quick check: heading in the register of a person confirming, the sub keeps only the trust line",
+  "section": "The panel",
+  "surface": "The panel"
+ },
+ {
+  "id": "s102",
+  "file": "src/panel/strings.ts",
+  "key": "runCardLit",
+  "text": "${section} is lit up.",
+  "note": "BS-05d (\u00a75) \u2014 what a run boundary is FOR. \u00a75: \"a card that shows the lines just written, then keep going \u00b7 take a break \u00b7 see your file.\" The explicit stop is a feature: `welcomeTime` promises somebody can stop anywhere and no screen in the interview has ever offered it.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s103",
+  "file": "src/panel/strings.ts",
+  "key": "runCardWrote",
+  "text": "One new line in your file.\n${capitalise(wordFor(lines))} new lines in your file.",
+  "note": "BS-05d (\u00a75) \u2014 what a run boundary is FOR. \u00a75: \"a card that shows the lines just written, then keep going \u00b7 take a break \u00b7 see your file.\" The explicit stop is a feature: `welcomeTime` promises somebody can stop anywhere and no screen in the interview has ever offered it.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s104",
+  "file": "src/panel/strings.ts",
+  "key": "jumpOpen",
+  "text": "Jump to\u2026",
+  "note": "BS-05f (\u00a75) \u2014 \"Jump to\u2026\", a filter over the outline.  \u00a75: \"Forty-nine questions with no search is the one missing utility every comparable browser tool has.\" THE DOOR IS A WORD, not a magnifying glass \u2014 \u00a71's rule that no control communicates by icon alone, and this one sits in a 24px chrome row beside the narrator's own labelled toggle. */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s105",
+  "file": "src/panel/strings.ts",
+  "key": "jumpTitle",
+  "text": "Jump to a question",
+  "note": "BS-05f (\u00a75) \u2014 \"Jump to\u2026\", a filter over the outline.  \u00a75: \"Forty-nine questions with no search is the one missing utility every comparable browser tool has.\" THE DOOR IS A WORD, not a magnifying glass \u2014 \u00a71's rule that no control communicates by icon alone, and this one sits in a 24px chrome row beside the narrator's own labelled toggle. */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s106",
+  "file": "src/panel/strings.ts",
+  "key": "jumpFieldLabel",
+  "text": "Find a question",
+  "note": "BS-05f (\u00a75) \u2014 \"Jump to\u2026\", a filter over the outline.  \u00a75: \"Forty-nine questions with no search is the one missing utility every comparable browser tool has.\" THE DOOR IS A WORD, not a magnifying glass \u2014 \u00a71's rule that no control communicates by icon alone, and this one sits in a 24px chrome row beside the narrator's own labelled toggle. */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s107",
+  "file": "src/panel/strings.ts",
+  "key": "jumpPlaceholder",
+  "text": "A word from the question\u2026",
+  "note": "BS-05f (\u00a75) \u2014 \"Jump to\u2026\", a filter over the outline.  \u00a75: \"Forty-nine questions with no search is the one missing utility every comparable browser tool has.\" THE DOOR IS A WORD, not a magnifying glass \u2014 \u00a71's rule that no control communicates by icon alone, and this one sits in a 24px chrome row beside the narrator's own labelled toggle. */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s108",
+  "file": "src/panel/strings.ts",
+  "key": "runCardKeep",
+  "text": "Keep going",
+  "note": "BS-05c (\u00a75) \u2014 the written-line slip.  \"Show the file writing itself, inline, once per answer... the drawer's payoff delivered where the eye already is.\" ONE LABEL AND NOTHING ELSE. What follows it is the file's own markdown, verbatim (core/files/writtenLine.ts) \u2014 so the only words this product adds are the three that say what the block is. Anything more would be the panel narrating a thing the person can read. */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s109",
+  "file": "src/panel/strings.ts",
+  "key": "runCardRead",
+  "text": "Read my file",
+  "note": "BS-05c (\u00a75) \u2014 the written-line slip.  \"Show the file writing itself, inline, once per answer... the drawer's payoff delivered where the eye already is.\" ONE LABEL AND NOTHING ELSE. What follows it is the file's own markdown, verbatim (core/files/writtenLine.ts) \u2014 so the only words this product adds are the three that say what the block is. Anything more would be the panel narrating a thing the person can read. */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s110",
+  "file": "src/panel/strings.ts",
+  "key": "runCardStop",
+  "text": "Stop here for now",
+  "note": "BS-05c (\u00a75) \u2014 the written-line slip.  \"Show the file writing itself, inline, once per answer... the drawer's payoff delivered where the eye already is.\" ONE LABEL AND NOTHING ELSE. What follows it is the file's own markdown, verbatim (core/files/writtenLine.ts) \u2014 so the only words this product adds are the three that say what the block is. Anything more would be the panel narrating a thing the person can read. */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s111",
+  "file": "src/panel/strings.ts",
+  "key": "runCardStopNote",
+  "text": "Everything is saved. Pick up wherever you like.",
+  "note": "BS-05c (\u00a75) \u2014 the written-line slip.  \"Show the file writing itself, inline, once per answer... the drawer's payoff delivered where the eye already is.\" ONE LABEL AND NOTHING ELSE. What follows it is the file's own markdown, verbatim (core/files/writtenLine.ts) \u2014 so the only words this product adds are the three that say what the block is. Anything more would be the panel narrating a thing the person can read. */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s112",
+  "file": "src/panel/strings.ts",
+  "key": "microOffer",
+  "text": "Want to see it work? One minute.",
+  "note": "BS-03a (\u00a73) \u2014 the micro-proof, offered once at the end of My World. One round trip, no scoring, no comparison: the point is simply that their AI comes back knowing something it could not have known. Adam moved it here from minute six, because a person's name is the thing that lands and nobody has been named before this.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s113",
+  "file": "src/panel/strings.ts",
+  "key": "microOfferGo",
+  "text": "Show me",
+  "note": "BS-03a (\u00a73) \u2014 the micro-proof, offered once at the end of My World. One round trip, no scoring, no comparison: the point is simply that their AI comes back knowing something it could not have known. Adam moved it here from minute six, because a person's name is the thing that lands and nobody has been named before this.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s114",
+  "file": "src/panel/strings.ts",
+  "key": "microTitle",
+  "text": "Send this to your AI.",
+  "note": "BS-03a (\u00a73) \u2014 the micro-proof, offered once at the end of My World. One round trip, no scoring, no comparison: the point is simply that their AI comes back knowing something it could not have known. Adam moved it here from minute six, because a person's name is the thing that lands and nobody has been named before this.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s115",
+  "file": "src/panel/strings.ts",
+  "key": "microLead",
+  "text": "It goes with everything you have told me so far. Watch what comes back.",
+  "note": "BS-03a (\u00a73) \u2014 the micro-proof, offered once at the end of My World. One round trip, no scoring, no comparison: the point is simply that their AI comes back knowing something it could not have known. Adam moved it here from minute six, because a person's name is the thing that lands and nobody has been named before this.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s116",
+  "file": "src/panel/strings.ts",
+  "key": "microPasteLabel",
+  "text": "Paste what it wrote here",
+  "note": "BS-03a (\u00a73) \u2014 the micro-proof, offered once at the end of My World. One round trip, no scoring, no comparison: the point is simply that their AI comes back knowing something it could not have known. Adam moved it here from minute six, because a person's name is the thing that lands and nobody has been named before this.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s117",
+  "file": "src/panel/strings.ts",
+  "key": "microLookFor",
+  "text": "Look for ${name} in the first line.",
+  "note": "BS-03a (\u00a73) \u2014 the micro-proof, offered once at the end of My World. One round trip, no scoring, no comparison: the point is simply that their AI comes back knowing something it could not have known. Adam moved it here from minute six, because a person's name is the thing that lands and nobody has been named before this.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s118",
+  "file": "src/panel/strings.ts",
+  "key": "microLookForSelf",
+  "text": "Look for how much it already knows about your work.",
+  "note": "BS-03a (\u00a73) \u2014 the micro-proof, offered once at the end of My World. One round trip, no scoring, no comparison: the point is simply that their AI comes back knowing something it could not have known. Adam moved it here from minute six, because a person's name is the thing that lands and nobody has been named before this.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s119",
+  "file": "src/panel/strings.ts",
+  "key": "microDone",
+  "text": "That is your file working. Keep going.",
+  "note": "BS-03a (\u00a73) \u2014 the micro-proof, offered once at the end of My World. One round trip, no scoring, no comparison: the point is simply that their AI comes back knowing something it could not have known. Adam moved it here from minute six, because a person's name is the thing that lands and nobody has been named before this.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s120",
+  "file": "src/panel/strings.ts",
+  "key": "microBack",
+  "text": "Back to the questions",
+  "note": "BS-03a (\u00a73) \u2014 the micro-proof, offered once at the end of My World. One round trip, no scoring, no comparison: the point is simply that their AI comes back knowing something it could not have known. Adam moved it here from minute six, because a person's name is the thing that lands and nobody has been named before this.  */",
+  "section": "the run's payoff",
+  "surface": "The panel"
+ },
+ {
+  "id": "s121",
+  "file": "src/panel/strings.ts",
+  "key": "(in place)",
+  "text": "${ordinalWord(index + 1)} run of ${wordFor(of)}",
+  "note": "BS-05a (\u00a75) \u2014 pace without a finish line to bargain with. V1.1 VB-02's ban stands where it was aimed: no global total, ever. Adam's D1 keeps it strict \u2014 NO DIGIT AT ALL in the panel's own voice \u2014 so every number here is spelled out. The marks themselves carry the pace; these words are what a screen reader gets and what the eye reads under them.  */",
+  "section": "The panel",
+  "surface": "The panel"
+ },
+ {
+  "id": "s122",
+  "file": "src/panel/strings.ts",
+  "key": "proofNoAttach",
+  "text": "Your file comes along inside the message. You do not need to attach anything.",
+  "note": "BS-03b (\u00a73.1) \u2014 the person's own instruction, on screen, where they can read it before they press anything. The lead-in inside the copied text is `proofFileLead` below and is addressed to their AI.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s123",
+  "file": "src/panel/strings.ts",
+  "key": "proofFileLead",
+  "text": "Here is my Context file. Use it to answer the question above.",
+  "note": "BS-03b (\u00a73.1) \u2014 the person's own instruction, on screen, where they can read it before they press anything. The lead-in inside the copied text is `proofFileLead` below and is addressed to their AI.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s124",
+  "file": "src/panel/strings.ts",
+  "key": "proofAskWithFile",
+  "text": "Copy all of this into a fresh chat:",
+  "note": "BS-03b (\u00a73.1) \u2014 the person's own instruction, on screen, where they can read it before they press anything. The lead-in inside the copied text is `proofFileLead` below and is addressed to their AI.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s125",
+  "file": "src/panel/strings.ts",
+  "key": "proofHeld",
+  "text": "Copied. Your place is held.",
+  "note": "BS-03c (\u00a73.2) \u2014 THE WAITING STATE. Until now the panel looked identical whether somebody was mid-errand in another tab or had not started, so coming back meant re-reading the screen to work out where they were. Nothing spins and nothing counts down: there is no server call to wait for, so a spinner would be a lie and a timer would be pressure. The confirmation is the copy, and the box is the instruction.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s126",
+  "file": "src/panel/strings.ts",
+  "key": "proofHeldLine",
+  "text": "When it answers, bring the answer back here.",
+  "note": "BS-03c (\u00a73.2) \u2014 THE WAITING STATE. Until now the panel looked identical whether somebody was mid-errand in another tab or had not started, so coming back meant re-reading the screen to work out where they were. Nothing spins and nothing counts down: there is no server call to wait for, so a spinner would be a lie and a timer would be pressure. The confirmation is the copy, and the box is the instruction.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s127",
+  "file": "src/panel/strings.ts",
+  "key": "proofHeldPaste",
+  "text": "Copy what it wrote and paste it below. Nothing else to do.",
+  "note": "BS-03c (\u00a73.2) \u2014 THE WAITING STATE. Until now the panel looked identical whether somebody was mid-errand in another tab or had not started, so coming back meant re-reading the screen to work out where they were. Nothing spins and nothing counts down: there is no server call to wait for, so a spinner would be a lie and a timer would be pressure. The confirmation is the copy, and the box is the instruction.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s128",
+  "file": "src/panel/strings.ts",
+  "key": "proofCopyAgain",
+  "text": "Copy the prompt again",
+  "note": "BS-03c (\u00a73.2) \u2014 THE WAITING STATE. Until now the panel looked identical whether somebody was mid-errand in another tab or had not started, so coming back meant re-reading the screen to work out where they were. Nothing spins and nothing counts down: there is no server call to wait for, so a spinner would be a lie and a timer would be pressure. The confirmation is the copy, and the box is the instruction.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s129",
+  "file": "src/panel/strings.ts",
+  "key": "proofJudge",
+  "text": "Same question. Two answers.",
+  "note": "BS-03d \u2014 the grade step is gone (Adam's P1): the AI is no longer asked to grade itself, so `proofGrade` and `proofPaste3` go with the round trip they belonged to. What stands in that slot is the person's own judgement.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s130",
+  "file": "src/panel/strings.ts",
+  "key": "proofJudgeSub",
+  "text": "Shown exactly as your AI wrote them. Workbrain never reads or scores them.",
+  "note": "BS-03d \u2014 the grade step is gone (Adam's P1): the AI is no longer asked to grade itself, so `proofGrade` and `proofPaste3` go with the round trip they belonged to. What stands in that slot is the person's own judgement.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s131",
+  "file": "src/panel/strings.ts",
+  "key": "proofColNoFile",
+  "text": "No file",
+  "note": "BS-03d \u2014 the grade step is gone (Adam's P1): the AI is no longer asked to grade itself, so `proofGrade` and `proofPaste3` go with the round trip they belonged to. What stands in that slot is the person's own judgement.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s132",
+  "file": "src/panel/strings.ts",
+  "key": "proofColWithFile",
+  "text": "With your file",
+  "note": "BS-03d \u2014 the grade step is gone (Adam's P1): the AI is no longer asked to grade itself, so `proofGrade` and `proofPaste3` go with the round trip they belonged to. What stands in that slot is the person's own judgement.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s133",
+  "file": "src/panel/strings.ts",
+  "key": "proofWhichRight",
+  "text": "Which of these did the second one get right?",
+  "note": "BS-03d \u2014 the grade step is gone (Adam's P1): the AI is no longer asked to grade itself, so `proofGrade` and `proofPaste3` go with the round trip they belonged to. What stands in that slot is the person's own judgement.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s134",
+  "file": "src/panel/strings.ts",
+  "key": "proofIntoSkills",
+  "text": "Now teach it a task you repeat",
+  "note": "BS-03a (\u00a73) \u2014 the proof hands into Skills rather than back to Home, so the hour keeps its momentum.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s135",
+  "file": "src/panel/strings.ts",
+  "key": "proofDone",
+  "text": "That difference is your context working.",
+  "note": "BS-03a (\u00a73) \u2014 the proof hands into Skills rather than back to Home, so the hour keeps its momentum.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s136",
+  "file": "src/panel/strings.ts",
+  "key": "proofDoneSub",
+  "text": "Shown exactly as your AI wrote it. The panel never reads or scores it.",
+  "note": "BS-03a (\u00a73) \u2014 the proof hands into Skills rather than back to Home, so the hour keeps its momentum.  */",
+  "section": "the proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s137",
+  "file": "src/panel/strings.ts",
+  "key": "capHeading",
+  "text": "Now watch it do the job.",
+  "note": "BS-04 (\u00a74) \u2014 \"This is the screen that sells the product and it does not exist. Proof one buys trust; this buys the sentence a tester repeats to a colleague.\" Every line below is  and wants the morning pass. THE VOICE IS DIFFERENT FROM PROOF ONE'S ON PURPOSE. Proof one is careful and even-handed \u2014 it is running a comparison, and the copy must not tip it. This one is not a comparison. Their AI is about to do a job they described, and the words can say so. */",
+  "section": "proof two, the capability proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s138",
+  "file": "src/panel/strings.ts",
+  "key": "capSub",
+  "text": "${capitalise(wordFor(steps))} steps, in your words, and it hands back ${shape.toLowerCase()}.\n${capitalise(wordFor(steps))} steps, in your words.",
+  "note": "BS-04 (\u00a74) \u2014 \"This is the screen that sells the product and it does not exist. Proof one buys trust; this buys the sentence a tester repeats to a colleague.\" Every line below is  and wants the morning pass. THE VOICE IS DIFFERENT FROM PROOF ONE'S ON PURPOSE. Proof one is careful and even-handed \u2014 it is running a comparison, and the copy must not tip it. This one is not a comparison. Their AI is about to do a job they described, and the words can say so. */",
+  "section": "proof two, the capability proof",
+  "surface": "The panel"
+ },
+ {
+  "id": "s139",
+  "file": "src/panel/strings.ts",
+  "key": "(in place)",
+  "text": "Tell us how it went\nFeedback",
+  "note": "BS-02 \u2014 the beta's return channel. docs/GUARDRAILS.md does not forbid this; it forbids SILENT collection. So the sheet says plainly what the block holds and what it does not, and the person presses send in their own mail client.  */",
+  "section": "The panel",
+  "surface": "The panel"
+ },
+ {
+  "id": "s140",
+  "file": "src/panel/strings.ts",
+  "key": "copyShort",
+  "text": "Copy",
+  "note": "BS-01c \u2014 \u00a71: no control communicates by icon alone. These are the WORDS that go beside the glyphs that used to stand on their own. Each is the shortest true verb, because the controls they label sit in tight rows, and each keeps its longer sentence as the accessible name.  */",
+  "section": "the feedback door",
+  "surface": "The panel"
+ },
+ {
+  "id": "s141",
+  "file": "src/panel/strings.ts",
+  "key": "closeShort",
+  "text": "Close",
+  "note": "BS-01c \u2014 \u00a71: no control communicates by icon alone. These are the WORDS that go beside the glyphs that used to stand on their own. Each is the shortest true verb, because the controls they label sit in tight rows, and each keeps its longer sentence as the accessible name.  */",
+  "section": "the feedback door",
+  "surface": "The panel"
+ },
+ {
+  "id": "s142",
+  "file": "src/panel/strings.ts",
+  "key": "narratorShort",
+  "text": "Read aloud",
+  "note": "BS-01c \u2014 \u00a71: no control communicates by icon alone. These are the WORDS that go beside the glyphs that used to stand on their own. Each is the shortest true verb, because the controls they label sit in tight rows, and each keeps its longer sentence as the accessible name.  */",
+  "section": "the feedback door",
+  "surface": "The panel"
+ },
+ {
+  "id": "s143",
+  "file": "src/panel/strings.ts",
+  "key": "rephraseShort",
+  "text": "Reword",
+  "note": "BS-05 (\u00a75) \u2014 the twelfth of BS-01c's icon-only controls, and the last. It went UNDER the glyph rather than beside it: BS-01c measured \"Reword\" into the question row and it opened a 103px dead band, because the row is the question and the question is what gets narrower. Stacked, the control keeps the 44px width it already had and takes its height out of a heading that is two lines or more on every question that has rephrasings.  */",
+  "section": "the feedback door",
+  "surface": "The panel"
+ },
+ {
+  "id": "s144",
+  "file": "src/panel/strings.ts",
+  "key": "homeShort",
+  "text": "Home",
+  "note": "And the last one: the mark in the interview's corner is a door home (V2.5 VB-112), and a mark is an icon however well known it is. Stacked under it for the same reason as `rephraseShort` \u2014 the strip beside it belongs to the module title.  */",
+  "section": "The panel",
+  "surface": "The panel"
+ },
+ {
+  "id": "s145",
+  "file": "src/panel/strings.ts",
+  "key": "copied",
+  "text": "Copied",
+  "note": "And the last one: the mark in the interview's corner is a door home (V2.5 VB-112), and a mark is an icon however well known it is. Stacked under it for the same reason as `rephraseShort` \u2014 the strip beside it belongs to the module title.  */",
+  "section": "the feedback door",
+  "surface": "The panel"
+ },
+ {
+  "id": "s146",
+  "file": "src/panel/strings.ts",
+  "key": "proofCta",
+  "text": "Prove it works",
+  "note": "And the last one: the mark in the interview's corner is a door home (V2.5 VB-112), and a mark is an icon however well known it is. Stacked under it for the same reason as `rephraseShort` \u2014 the strip beside it belongs to the module title.  */",
+  "section": "the feedback door",
+  "surface": "The panel"
+ },
+ {
+  "id": "s147",
+  "file": "src/panel/strings.ts",
+  "key": "proofFinished",
+  "text": "That's the whole loop.",
+  "note": "And the last one: the mark in the interview's corner is a door home (V2.5 VB-112), and a mark is an icon however well known it is. Stacked under it for the same reason as `rephraseShort` \u2014 the strip beside it belongs to the module title.  */",
+  "section": "the feedback door",
+  "surface": "The panel"
+ },
+ {
+  "id": "s148",
+  "file": "src/panel/strings.ts",
+  "key": "(in place)",
+  "text": "chatgpt\nChatGPT\nclaude\nClaude\ngemini\nGemini\ncopilot\nCopilot\ngrok\nGrok\nperplexity\nPerplexity\nother\nSomething Cooler You Don't Even Know About\nScore for the first answer, out of 10",
+  "note": "V2.4 VB-105 \u2014 the 'other' label is Adam's own title for it; the KEY stays 'other', so stored answers and the attach-tip fallback",
+  "section": "The panel",
+  "surface": "The panel"
+ },
+ {
+  "id": "s149",
+  "file": "src/panel/strings.ts",
+  "key": "chromeCompany",
+  "text": "Model Citizen",
+  "note": "V2.6 VB-125 \u2014 the chrome bar and the lockup's meta line. `chromeCompany` is the quiet half of \"Workbrain \u00b7 Model Citizen\"; the mark and `appName` carry the rest, and the separator is drawn, not said. It replaced `brandByline` (\"by Model Citizen\"), which left with the welcome card's own wordmark \u2014 one company name on the screen, in the chrome, instead of two. Recorded per the `fileTreeRoot` precedent. The meta pieces print only what core/home/lockupMeta.ts really derived: a count of built files, the newest answer's age (said with the shelf's own `updatedToday`/`daysOld`), and the generated files' real size. The template mocked \"workbrain.zip \u00b7 v3 \u00b7 84 KB\"; every claim it invented is replaced by one a person could check (FLAG 7).",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s150",
+  "file": "src/panel/strings.ts",
+  "key": "metaFiles",
+  "text": "1 file\n${n} files",
+  "note": "V2.6 VB-125 \u2014 the chrome bar and the lockup's meta line. `chromeCompany` is the quiet half of \"Workbrain \u00b7 Model Citizen\"; the mark and `appName` carry the rest, and the separator is drawn, not said. It replaced `brandByline` (\"by Model Citizen\"), which left with the welcome card's own wordmark \u2014 one company name on the screen, in the chrome, instead of two. Recorded per the `fileTreeRoot` precedent. The meta pieces print only what core/home/lockupMeta.ts really derived: a count of built files, the newest answer's age (said with the shelf's own `updatedToday`/`daysOld`), and the generated files' real size. The template mocked \"workbrain.zip \u00b7 v3 \u00b7 84 KB\"; every claim it invented is replaced by one a person could check (FLAG 7).",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s151",
+  "file": "src/panel/strings.ts",
+  "key": "metaSize",
+  "text": "${kb} KB",
+  "note": "V2.6 VB-125 \u2014 the chrome bar and the lockup's meta line. `chromeCompany` is the quiet half of \"Workbrain \u00b7 Model Citizen\"; the mark and `appName` carry the rest, and the separator is drawn, not said. It replaced `brandByline` (\"by Model Citizen\"), which left with the welcome card's own wordmark \u2014 one company name on the screen, in the chrome, instead of two. Recorded per the `fileTreeRoot` precedent. The meta pieces print only what core/home/lockupMeta.ts really derived: a count of built files, the newest answer's age (said with the shelf's own `updatedToday`/`daysOld`), and the generated files' real size. The template mocked \"workbrain.zip \u00b7 v3 \u00b7 84 KB\"; every claim it invented is replaced by one a person could check (FLAG 7).",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s152",
+  "file": "src/panel/strings.ts",
+  "key": "cardOpen",
+  "text": "Open",
+  "note": "V2.6 VB-125b \u2014 the file cards. One verb for every open card, because one thing happens: the card opens the file's browse canvas (the state lives in the status line beside it, not in the verb \u2014 the template's Review/Continue flavors fell to the copy law's own example: buttons are what pressing does). The two descriptions are the template's sentences, kept: grade-7, second person, no product nouns. The friendly half of a card's name (\"Context\") is derived from the filename, not written here \u2014 one name, one source.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s153",
+  "file": "src/panel/strings.ts",
+  "key": "cardContextDesc",
+  "text": "Who you are, how you work, what good looks like.",
+  "note": "V2.6 VB-125b \u2014 the file cards. One verb for every open card, because one thing happens: the card opens the file's browse canvas (the state lives in the status line beside it, not in the verb \u2014 the template's Review/Continue flavors fell to the copy law's own example: buttons are what pressing does). The two descriptions are the template's sentences, kept: grade-7, second person, no product nouns. The friendly half of a card's name (\"Context\") is derived from the filename, not written here \u2014 one name, one source.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s154",
+  "file": "src/panel/strings.ts",
+  "key": "cardSkillsDesc",
+  "text": "The tasks you repeat, written down once and reused.",
+  "note": "V2.6 VB-125b \u2014 the file cards. One verb for every open card, because one thing happens: the card opens the file's browse canvas (the state lives in the status line beside it, not in the verb \u2014 the template's Review/Continue flavors fell to the copy law's own example: buttons are what pressing does). The two descriptions are the template's sentences, kept: grade-7, second person, no product nouns. The friendly half of a card's name (\"Context\") is derived from the filename, not written here \u2014 one name, one source.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s155",
+  "file": "src/panel/strings.ts",
+  "key": "homeFilesLabel",
+  "text": "Your files",
+  "note": "V2.6 VB-125b \u2014 the file cards. One verb for every open card, because one thing happens: the card opens the file's browse canvas (the state lives in the status line beside it, not in the verb \u2014 the template's Review/Continue flavors fell to the copy law's own example: buttons are what pressing does). The two descriptions are the template's sentences, kept: grade-7, second person, no product nouns. The friendly half of a card's name (\"Context\") is derived from the filename, not written here \u2014 one name, one source.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s156",
+  "file": "src/panel/strings.ts",
+  "key": "(in place)",
+  "text": "Your next move",
+  "note": "V2.6 VB-125c \u2014 the utility tiles and the services card. The tiles are the keep-it-working row: move the file (the download and import pair, in a sheet), prove it (the proof loop \u2014 `proofCta` is its name everywhere), the member library (visible, locked for members, coming soon \u2014 NORTH-STAR + decision 4), and TiM (a door to the site; money never enters the extension). The services card replaced the \"Talk to a person\" row (`homeHelpLabel` / `homeHelpTitle` / `homeHelpSub` are deleted with it \u2014 recorded per the `fileTreeRoot` precedent): the same human door, now naming the two offers. NO PRICES, by decision 3 \u2014 the offers link out to the site, which owns money. `ctaBody` says \"step\", never the internal word the template used.",
+  "section": "The panel",
+  "surface": "The panel"
+ },
+ {
+  "id": "s157",
+  "file": "src/panel/strings.ts",
+  "key": "homeKeepLabel",
+  "text": "Your next move",
+  "note": "V2.8 VB-132c \u2014 relabelled from 'Keep it working' (Adam): the tiles row is the what-now shelf, and the label says so. Printed uppercase by the section-label style. */",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s158",
+  "file": "src/panel/strings.ts",
+  "key": "plusTitle",
+  "text": "Workbrain+",
+  "note": "V2.8 VB-134 \u2014 Workbrain+, the one marketing piece on Home. Replaces VB-125c's priced-nothing offer menu (`ctaTitle`/`ctaBody`/ `offerCoaching`/`offerCto`/`offerWhere` deleted with it \u2014 recorded). THE PRICE IS SHOWN ON PURPOSE: Adam's V2.8 instruction reverses V2.6 decision 3 (\"a vague menu with no prices \u2014 which people hate\"); NORTH-STAR 4 stands untouched because the money still never enters the extension \u2014 the card links out and the site does the charging. The 42 is deliberate. Every line grade-7; the bullets are the four things a member actually gets.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s159",
+  "file": "src/panel/strings.ts",
+  "key": "tileRedeem",
+  "text": "Redeem a skill",
+  "note": "V2.8 VB-133 \u2014 the Skill Redeemer: the tile (a verb, per the button law), and the sheet behind it. The code arrives with a bought or commissioned custom skill \u2014 the same skill is also in their email as a file \u2014 and redeeming lands it through the pack path. The failure voices live in core/packs/redeem.ts beside VB-124's, where every pack refusal already speaks.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s160",
+  "file": "src/panel/strings.ts",
+  "key": "redeemTitle",
+  "text": "Redeem a skill code",
+  "note": "V2.8 VB-133 \u2014 the Skill Redeemer: the tile (a verb, per the button law), and the sheet behind it. The code arrives with a bought or commissioned custom skill \u2014 the same skill is also in their email as a file \u2014 and redeeming lands it through the pack path. The failure voices live in core/packs/redeem.ts beside VB-124's, where every pack refusal already speaks.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s161",
+  "file": "src/panel/strings.ts",
+  "key": "redeemLabel",
+  "text": "Your code",
+  "note": "V2.8 VB-133 \u2014 the Skill Redeemer: the tile (a verb, per the button law), and the sheet behind it. The code arrives with a bought or commissioned custom skill \u2014 the same skill is also in their email as a file \u2014 and redeeming lands it through the pack path. The failure voices live in core/packs/redeem.ts beside VB-124's, where every pack refusal already speaks.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s162",
+  "file": "src/panel/strings.ts",
+  "key": "redeemHint",
+  "text": "It came with your custom skill. The same file is in your email.",
+  "note": "V2.8 VB-133 \u2014 the Skill Redeemer: the tile (a verb, per the button law), and the sheet behind it. The code arrives with a bought or commissioned custom skill \u2014 the same skill is also in their email as a file \u2014 and redeeming lands it through the pack path. The failure voices live in core/packs/redeem.ts beside VB-124's, where every pack refusal already speaks.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s163",
+  "file": "src/panel/strings.ts",
+  "key": "redeemGo",
+  "text": "Add it to my file",
+  "note": "V2.8 VB-133 \u2014 the Skill Redeemer: the tile (a verb, per the button law), and the sheet behind it. The code arrives with a bought or commissioned custom skill \u2014 the same skill is also in their email as a file \u2014 and redeeming lands it through the pack path. The failure voices live in core/packs/redeem.ts beside VB-124's, where every pack refusal already speaks.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s164",
+  "file": "src/panel/strings.ts",
+  "key": "redeemBusy",
+  "text": "Checking your code",
+  "note": "V2.8 VB-133 \u2014 the Skill Redeemer: the tile (a verb, per the button law), and the sheet behind it. The code arrives with a bought or commissioned custom skill \u2014 the same skill is also in their email as a file \u2014 and redeeming lands it through the pack path. The failure voices live in core/packs/redeem.ts beside VB-124's, where every pack refusal already speaks.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s165",
+  "file": "src/panel/strings.ts",
+  "key": "tileDownload",
+  "text": "Download file",
+  "note": "V2.9 VB-147 \u2014 the shelf rebalances to THREE tiles: Download file (the Move tile's heir \u2014 it downloads, plainly, and stands dormant until the Context interview is finished, then in colour), Prove it works (same gate now), Redeem a skill. The Skills library left the cluster for its own full-span banner below (`libTitle` and friends); `tileMove`/`tileLibrary`/`tileSoon`/`tileLibraryLocked`/ `moveSheetTitle` are deleted with the old shapes \u2014 recorded per the fileTreeRoot precedent. The import door moved to the chrome's upload control (VB-145).",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s166",
+  "file": "src/panel/strings.ts",
+  "key": "rowDownloadSub",
+  "text": "The file itself, to keep or to hand over",
+  "note": "BS-06 (\u00a76) \u2014 the tiles became ROWS with subtitles. A three-across icon grid whose labels ran at 11px said less in more height, and two of the three were usually dashed and dead; a dormant item is a row that explains itself, not a disabled square. These are the subtitles that replace the explaining a dashed edge was doing badly.  */",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s167",
+  "file": "src/panel/strings.ts",
+  "key": "rowProveSub",
+  "text": "Two answers, side by side. Two minutes.",
+  "note": "BS-06 (\u00a76) \u2014 the tiles became ROWS with subtitles. A three-across icon grid whose labels ran at 11px said less in more height, and two of the three were usually dashed and dead; a dormant item is a row that explains itself, not a disabled square. These are the subtitles that replace the explaining a dashed edge was doing badly.  */",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s168",
+  "file": "src/panel/strings.ts",
+  "key": "rowRedeemSub",
+  "text": "Add a skill somebody built for you",
+  "note": "BS-06 (\u00a76) \u2014 the tiles became ROWS with subtitles. A three-across icon grid whose labels ran at 11px said less in more height, and two of the three were usually dashed and dead; a dormant item is a row that explains itself, not a disabled square. These are the subtitles that replace the explaining a dashed edge was doing badly.  */",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s169",
+  "file": "src/panel/strings.ts",
+  "key": "rowLibrarySub",
+  "text": "Built and tested by Model Citizen",
+  "note": "BS-06 (\u00a76) \u2014 the tiles became ROWS with subtitles. A three-across icon grid whose labels ran at 11px said less in more height, and two of the three were usually dashed and dead; a dormant item is a row that explains itself, not a disabled square. These are the subtitles that replace the explaining a dashed edge was doing badly.  */",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s170",
+  "file": "src/panel/strings.ts",
+  "key": "uploadOpen",
+  "text": "Bring in a file",
+  "note": "V2.9 VB-145 \u2014 the upload door at the top of the UI, and its seatbelt: bringing a file in REPLACES what is here, so the sheet says so and offers the copy-first path \u2014 or both in one press. Never a confirmation dialog (GUARDRAILS): a sheet with real choices.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s171",
+  "file": "src/panel/strings.ts",
+  "key": "uploadTitle",
+  "text": "Bring in a file",
+  "note": "V2.9 VB-145 \u2014 the upload door at the top of the UI, and its seatbelt: bringing a file in REPLACES what is here, so the sheet says so and offers the copy-first path \u2014 or both in one press. Never a confirmation dialog (GUARDRAILS): a sheet with real choices.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s172",
+  "file": "src/panel/strings.ts",
+  "key": "uploadWarn",
+  "text": "The file you bring in replaces what is here now.",
+  "note": "V2.9 VB-145 \u2014 the upload door at the top of the UI, and its seatbelt: bringing a file in REPLACES what is here, so the sheet says so and offers the copy-first path \u2014 or both in one press. Never a confirmation dialog (GUARDRAILS): a sheet with real choices.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s173",
+  "file": "src/panel/strings.ts",
+  "key": "uploadBoth",
+  "text": "Download mine first, then pick",
+  "note": "V2.9 VB-145 \u2014 the upload door at the top of the UI, and its seatbelt: bringing a file in REPLACES what is here, so the sheet says so and offers the copy-first path \u2014 or both in one press. Never a confirmation dialog (GUARDRAILS): a sheet with real choices.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s174",
+  "file": "src/panel/strings.ts",
+  "key": "uploadJust",
+  "text": "Just pick a file",
+  "note": "V2.9 VB-145 \u2014 the upload door at the top of the UI, and its seatbelt: bringing a file in REPLACES what is here, so the sheet says so and offers the copy-first path \u2014 or both in one press. Never a confirmation dialog (GUARDRAILS): a sheet with real choices.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s175",
+  "file": "src/panel/strings.ts",
+  "key": "libTitle",
+  "text": "Workbrain Certified Skills",
+  "note": "V2.9 VB-147 \u2014 the Certified Skills banner: the library's own full-span invitation, the Workbrain+ grammar one shelf up.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s176",
+  "file": "src/panel/strings.ts",
+  "key": "libBody",
+  "text": "Skills built and tested by Model Citizen. Explore the library and add what fits your work.",
+  "note": "V2.9 VB-147 \u2014 the Certified Skills banner: the library's own full-span invitation, the Workbrain+ grammar one shelf up.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s177",
+  "file": "src/panel/strings.ts",
+  "key": "libGo",
+  "text": "Explore Certified Skills",
+  "note": "V2.9 VB-147 \u2014 the Certified Skills banner: the library's own full-span invitation, the Workbrain+ grammar one shelf up.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s178",
+  "file": "src/panel/strings.ts",
+  "key": "storedLink",
+  "text": "See what's stored",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s179",
+  "file": "src/panel/strings.ts",
+  "key": "storedTitle",
+  "text": "What's stored on this device",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s180",
+  "file": "src/panel/strings.ts",
+  "key": "storedContext",
+  "text": "Your Context answers \u2014 ${n}",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s181",
+  "file": "src/panel/strings.ts",
+  "key": "storedSkills",
+  "text": "Skills on your list \u2014 1\nSkills on your list \u2014 ${n}",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s182",
+  "file": "src/panel/strings.ts",
+  "key": "storedScores",
+  "text": "Proof scores you typed \u2014 ${n}",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s183",
+  "file": "src/panel/strings.ts",
+  "key": "storedHidden",
+  "text": "Suggestions you hid \u2014 ${n}",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s184",
+  "file": "src/panel/strings.ts",
+  "key": "storedVoice",
+  "text": "Read questions aloud \u2014 ${on ? 'On' : 'Off'}",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s185",
+  "file": "src/panel/strings.ts",
+  "key": "storedMeta",
+  "text": "A version stamp, so updates go smoothly",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s186",
+  "file": "src/panel/strings.ts",
+  "key": "storedNone",
+  "text": "Nothing stored yet.",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s187",
+  "file": "src/panel/strings.ts",
+  "key": "storedOutro",
+  "text": "That is the whole list. None of it ever leaves your browser.",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s188",
+  "file": "src/panel/strings.ts",
+  "key": "badgeCurrent",
+  "text": "Current",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s189",
+  "file": "src/panel/strings.ts",
+  "key": "badgeNext",
+  "text": "Next",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s190",
+  "file": "src/panel/strings.ts",
+  "key": "badgeLater",
+  "text": "Later",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s191",
+  "file": "src/panel/strings.ts",
+  "key": "badgeDue",
+  "text": "${n} due",
+  "note": "V2.6 VB-127 \u2014 the trust foot's door and the sheet behind it: the storage, listed in plain words. Only keys that really exist get a row (an unwritten default is not \"stored\", and the outro's \"whole list\" claim must be literally true); every count is something the person authored, derived at open, never kept. The version stamp row is `wb:meta` \u2014 a number about the file format, not about the person \u2014 and it is listed because leaving it off would make the list a lie.",
+  "section": "home",
+  "surface": "The panel"
+ },
+ {
+  "id": "s192",
+  "file": "src/panel/strings.ts",
+  "key": "peekStatus",
+  "text": "${S.sectionsOf(done, total)} \u00b7 ${added} ${added === 1 ? 'line' : 'lines'} just added",
+  "note": "BS-07a (\u00a77.1) \u2014 the peek's status line.  \"'4 of 10 sections \u00b7 1 line just added' says more than a row reading 0 of 6 and 0% under a trail that already names the section.\" Two clauses, both facts, and the second one only when it is true. The line count is a fact about the DOCUMENT \u2014 how many lines their answers have written into the file so far \u2014 computed at render and never stored. It is not a count of anything the person did, which is the line GUARDRAILS' authorship test draws. */",
+  "section": "more than one",
+  "surface": "The panel"
+ },
+ {
+  "id": "s193",
+  "file": "src/panel/strings.ts",
+  "key": "multiplesTitle",
+  "text": "Roles, people and projects",
+  "note": "BS-07a (\u00a77.1) \u2014 the peek's status line.  \"'4 of 10 sections \u00b7 1 line just added' says more than a row reading 0 of 6 and 0% under a trail that already names the section.\" Two clauses, both facts, and the second one only when it is true. The line count is a fact about the DOCUMENT \u2014 how many lines their answers have written into the file so far \u2014 computed at render and never stored. It is not a count of anything the person did, which is the line GUARDRAILS' authorship test draws. */",
+  "section": "more than one",
+  "surface": "The panel"
+ },
+ {
+  "id": "s194",
+  "file": "src/panel/strings.ts",
+  "key": "multiplesSub",
+  "text": "Open one to change it. Or add a new one.",
+  "note": "BS-07a (\u00a77.1) \u2014 the peek's status line.  \"'4 of 10 sections \u00b7 1 line just added' says more than a row reading 0 of 6 and 0% under a trail that already names the section.\" Two clauses, both facts, and the second one only when it is true. The line count is a fact about the DOCUMENT \u2014 how many lines their answers have written into the file so far \u2014 computed at render and never stored. It is not a count of anything the person did, which is the line GUARDRAILS' authorship test draws. */",
+  "section": "more than one",
+  "surface": "The panel"
+ },
+ {
+  "id": "s195",
+  "file": "src/panel/strings.ts",
+  "key": "multiplesCount",
+  "text": "One on your list\n${wordFor(n)} on your list",
+  "note": "BS-07a (\u00a77.1) \u2014 the peek's status line.  \"'4 of 10 sections \u00b7 1 line just added' says more than a row reading 0 of 6 and 0% under a trail that already names the section.\" Two clauses, both facts, and the second one only when it is true. The line count is a fact about the DOCUMENT \u2014 how many lines their answers have written into the file so far \u2014 computed at render and never stored. It is not a count of anything the person did, which is the line GUARDRAILS' authorship test draws. */",
+  "section": "more than one",
+  "surface": "The panel"
+ },
+ {
+  "id": "s196",
+  "file": "src/panel/strings.ts",
+  "key": "multipleAnswered",
+  "text": "${done} of ${total} answered",
+  "note": "BS-08 (\u00a78) \u2014 the row's own words.  `multipleAnswered` used to be the row's SUBTITLE, and \u00a78 names the problem with it exactly: \"'4 of 5 answered' is a fact about the form.\" The subtitle now prints what the record holds; this sentence moved to where a fact about the form belongs \u2014 the accessible name, for anyone who cannot see the ring that draws it. */",
+  "section": "more than one",
+  "surface": "The panel"
+ },
+ {
+  "id": "s197",
+  "file": "src/panel/strings.ts",
+  "key": "recordAnswered",
+  "text": "${done} of ${total} answered",
+  "note": "BS-08 (\u00a78) \u2014 the row's own words.  `multipleAnswered` used to be the row's SUBTITLE, and \u00a78 names the problem with it exactly: \"'4 of 5 answered' is a fact about the form.\" The subtitle now prints what the record holds; this sentence moved to where a fact about the form belongs \u2014 the accessible name, for anyone who cannot see the ring that draws it. */",
+  "section": "more than one",
+  "surface": "The panel"
+ },
+ {
+  "id": "s198",
+  "file": "src/panel/strings.ts",
+  "key": "splashEnter",
+  "text": "Open your work brain",
+  "note": "V2.6 VB-126 \u2014 the splash's way in, and since V2.7 VB-128 the visible button the reveal lands on. One name for the one move. */",
+  "section": "splash",
+  "surface": "The panel"
+ },
+ {
+  "id": "s199",
+  "file": "src/panel/strings.ts",
+  "key": "splashCost",
+  "text": "About fifteen minutes, one question at a time.",
+  "note": "BS-09 \u2014 WHAT THE HELD SECONDS BUY. V2.7 VB-128 spent them on a cycling loading line and a draining bar. The beta review's \u00a79: a first-time tester reads the tagline in two seconds and then waits, so the seconds should answer the question they are actually asking \u2014 what is this, and what will it cost me. That is the same thing `welcomeTime` says one screen later; said here, where the decision is being made. `splashLoading` and its cycling are DELETED with the drain bar, recorded here rather than silently dropped, per the `splashBuild` precedent above. TWO FILES, NOT THREE. Actions is hidden for the beta (V2.9 VB-146), so a promise of three would be the first thing the product got wrong.",
+  "section": "splash",
+  "surface": "The panel"
+ },
+ {
+  "id": "s200",
+  "file": "src/panel/strings.ts",
+  "key": "splashWhat",
+  "text": "You get plain text files that work with any AI. Nothing leaves your browser, and you can stop anywhere.",
+  "note": "BS-09 \u2014 WHAT THE HELD SECONDS BUY. V2.7 VB-128 spent them on a cycling loading line and a draining bar. The beta review's \u00a79: a first-time tester reads the tagline in two seconds and then waits, so the seconds should answer the question they are actually asking \u2014 what is this, and what will it cost me. That is the same thing `welcomeTime` says one screen later; said here, where the decision is being made. `splashLoading` and its cycling are DELETED with the drain bar, recorded here rather than silently dropped, per the `splashBuild` precedent above. TWO FILES, NOT THREE. Actions is hidden for the beta (V2.9 VB-146), so a promise of three would be the first thing the product got wrong.",
+  "section": "splash",
+  "surface": "The panel"
+ },
+ {
+  "id": "s201",
+  "file": "src/panel/strings.ts",
+  "key": "filePreviewDownload",
+  "text": "Download",
+  "note": "V2.3 VB-98 \u2014 the List's file preview grew a download of its own. Verb-first, names the artifact, same register as Home's. */",
+  "section": "splash",
+  "surface": "The panel"
+ },
+ {
+  "id": "s202",
+  "file": "src/panel/strings.ts",
+  "key": "drawerClosedValue",
+  "text": "Closed",
+  "note": "V2.3 VB-99 \u2014 what the handle announces while the drawer is closed: the state in a word, since the percent scale it normally speaks describes a range closed sits outside of. */",
+  "section": "splash",
+  "surface": "The panel"
+ },
+ {
+  "id": "s203",
+  "file": "src/panel/strings.ts",
+  "key": "errPickBoth",
+  "text": "Pick one of each to keep going, or skip this question.",
+  "note": "V2.5 VB-123. The merged role screen asks two things at once \u2014 the standing and the current-or-past mark \u2014 so its refusal has to say \"each\", or the person hunts for the one they missed. Same register as errPickOne, same way out. */",
+  "section": "errors",
+  "surface": "The panel"
+ },
+ {
+  "id": "s204",
+  "file": "src/panel/surfaces/Flow.tsx",
+  "key": "(in place)",
+  "text": "flow-pair",
+  "note": "V2.5 VB-123 \u2014 the merged role screen: pick the standing AND mark current-or-past, one screen, two stored keys (core/choice/pairedPick.ts holds the mechanism note). Both facets speak VB-118's tile grammar \u2014 the pair's anchor at full size, its companion as the compact marker row. The facet the flow landed on is the heading above; the other wears its own  caption (PAIR_CAPTIONS), while its group's ACCESSIBLE name stays the real ported question. */",
+  "section": "The interview surface",
+  "surface": "The interview surface"
+ }
+]

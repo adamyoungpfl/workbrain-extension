@@ -69,13 +69,35 @@ and mixing them is how a register slips:
 
 ### The review page
 
-**https://claude.ai/code/artifact/f7eb11de-ee12-4689-9b97-35900bed1e04**
+**https://claude.ai/code/artifact/7d0863d3-a95a-476d-8b11-292a2ed03152**
 
-All 204 strings, extracted from the source and grouped by slice, rendered in
-the panel's own type stack so a line reads the way it will ship. Each row has
-the string, its key, and its "why" behind a disclosure. OK / Flag per row,
-saved in the device's own storage, and a button that copies the flagged list as
-text to hand back.
+Built twice, and the first one was wrong in a way worth recording.
+
+**The first version listed the strings by the FILE they live in** — the order a
+compiler cares about, and the worst possible order for judging copy. "Later",
+"Keep going" and "Not now" sat next to each other with nothing to say which
+screen each one is the escape hatch on. Adam: *"I can't align the values in
+each row to what each one means contextually in the flow or on the screen."*
+That is not a presentation complaint; a copy decision IS a context decision,
+and a list with the context stripped out cannot be made.
+
+**The second version makes the SCREEN the unit of review.**
+`scripts/copy-shots.mjs` walks the real built extension through thirteen
+screens, screenshots the 400px panel at each, and records where on that
+screenshot every draft string lands. The page then shows the photograph with
+numbered dots on the words themselves, and the matching numbered lines beside
+it — editable in place, in the panel's own type stack, so a line is judged at
+the size and in the face it ships in.
+
+42 of the 204 are photographed. The other 162 are sheets, error states, toasts
+and one-off moments no single walk reaches; they are grouped by the surface and
+the section they belong to (`strings.ts`'s own headings), shown apart rather
+than mixed in, so the page never implies the thirteen screens are the whole
+product.
+
+Edits save on the device and one button copies just what changed, as
+`key / was / now`. A string that appears on several screens appears on each of
+them, and editing it anywhere updates every copy.
 
 The census in this file counts MARKERS (86 real ones). The page counts STRINGS,
 because a marker sits on a comment block that can cover several — 204 is the
