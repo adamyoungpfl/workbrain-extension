@@ -17,17 +17,20 @@ import { S } from '../strings';
 
 const FILE_NAME = 'Context.md';
 
-/** Download the built Context.md — the same bytes the drawer previews. */
-export function downloadContextFile(answers: Answers): void {
-  // V1.1 VB-07b moved the date stamp into core/files/generate.ts so the
-  // drawer's live preview and this download produce the same bytes by
-  // construction, not by two copies of the same `toLocaleDateString` call.
-  const markdown = generateContextFile(answers, contextFileDate());
+/**
+ * Put a markdown file on the person's machine.
+ *
+ * BS-03d extracted this from `downloadContextFile` below, because the proof's
+ * receipt is the second document this product hands over and the two must
+ * behave identically — including the deferred revoke, which is the kind of
+ * detail a second copy gets wrong once and then nobody can reproduce.
+ */
+export function downloadMarkdown(name: string, markdown: string): void {
   const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
-  link.download = FILE_NAME;
+  link.download = name;
   document.body.appendChild(link);
   link.click();
   link.remove();
@@ -35,6 +38,14 @@ export function downloadContextFile(answers: Answers): void {
   // engines — the sibling app hits this same issue and defers the revoke a
   // beat; matched here for the same reason.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Download the built Context.md — the same bytes the drawer previews. */
+export function downloadContextFile(answers: Answers): void {
+  // V1.1 VB-07b moved the date stamp into core/files/generate.ts so the
+  // drawer's live preview and this download produce the same bytes by
+  // construction, not by two copies of the same `toLocaleDateString` call.
+  downloadMarkdown(FILE_NAME, generateContextFile(answers, contextFileDate()));
 }
 
 export type ReadContextResult =

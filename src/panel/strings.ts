@@ -791,11 +791,11 @@ export const S = {
   feedbackCopied: 'Copied. Paste it anywhere you like.',
   feedbackWhat: 'The build details say which version you have, which screen you were on, and which question. They carry nothing you wrote.',
   feedbackNothingSent: 'Nothing is sent from here. Your mail app opens with a draft, and you press send.',
-  /* [DRAFT — ADAM MUST CONFIRM] Where a tester's mail actually goes. A
-     wrong address here means feedback that silently reaches nobody, which is
-     worse than no door at all. Nothing else in this feature depends on the
-     value, so changing it is one line. */
-  feedbackTo: 'beta@model-citizen.org',
+  /* Where a tester's mail goes (Adam, 2026-08-27). It ships in the bundle
+     and shows in every tester's draft, so it is a role address rather than a
+     personal one. Adam: "I can route them with a rule if they become too
+     regular." */
+  feedbackTo: 'adam.young@model-citizen.org',
   feedbackSubject: 'Workbrain beta',
   feedbackLead: 'What happened:',
   buildStamp: (version: string) => `Beta · ${version}`,

@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { readFile } from 'node:fs/promises';
 
 // R1-11 accept criteria (docs/RELEASE-1.md): "Four steps: baseline,
 // with-context, grade, recommendations. Manual copy/paste only. Service
@@ -281,6 +282,26 @@ test.describe('The proof loop (R1-11)', () => {
     // --- the closing screen says what they observed, in their own tally ---
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_recommendations');
     await expect(page.locator('.flow')).toContainText('That is two out of four.');
+
+    // BS-03d (§3.3) — END ON AN ARTIFACT. The delta is the most shareable
+    // thing this product makes, and until now it evaporated.
+    const receiptPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: 'Save this as a one-page receipt', exact: true }).click();
+    const receipt = await receiptPromise;
+    expect(receipt.suggestedFilename()).toMatch(/^Workbrain proof — .+\.md$/);
+    const written = await readFile((await receipt.path())!, 'utf8');
+    // Their words, their AI's words, and their own judgement — the whole
+    // point being that it can be forwarded.
+    expect(written).toContain('A test answer for goal_want.');
+    expect(written).toContain(baselineAnswer);
+    expect(written).toContain(contextAnswer);
+    expect(written).toContain("Used Priya's name");
+    expect(written).toContain('**2 of 4**, judged by me — Workbrain never read either answer.');
+
+    // A FILE, never a link (D5, and docs/OPEN.md #4 still open): nothing
+    // about the receipt is stored, and nothing is uploaded.
+    const afterReceipt = await storedLocal(sw);
+    expect(JSON.stringify(afterReceipt)).not.toContain('Workbrain proof');
 
     await page.getByRole('button', { name: 'Next', exact: true }).focus();
     await page.keyboard.press('Enter');

@@ -22,6 +22,19 @@ export const PROOF_SCORE_CONTEXT_KEY = 'proof_score_context';
 export const PROOF_BASELINE_ANSWER_KEY = 'proof_baseline_answer';
 export const PROOF_CONTEXT_ANSWER_KEY = 'proof_context_answer';
 export const PROOF_GRADE_TEXT_KEY = 'proof_grade_text';
+/**
+ * BS-03d — WHICH statements the person ticked, not just how many.
+ *
+ * The count alone cannot make a receipt: "two of four" is a number, and what
+ * somebody forwards to a colleague is the two. The ids are the panel's own
+ * (`core/proof/checklist.ts`), never authored text, and they are stored for
+ * the same reason the count is — the person made the judgement, so it is
+ * theirs to keep. Held here rather than in component state because the
+ * closing screen is a different position from the judging screen, and
+ * StepView remounts per position: the first draft of the receipt read an
+ * empty list for exactly that reason.
+ */
+export const PROOF_TICKED_KEY = 'proof_ticked';
 export const PROOF_SERVICE_KEY = 'proof_service';
 
 const EYEBROW = 'PROOF';

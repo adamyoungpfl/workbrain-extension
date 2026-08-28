@@ -19,12 +19,19 @@ import {
   VerticalPick,
 } from '../components';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
-import { PROOF_BASELINE_ANSWER_KEY, PROOF_CONTEXT_ANSWER_KEY } from '../../core/flow/proofAdapter';
+import {
+  PROOF_BASELINE_ANSWER_KEY,
+  PROOF_CONTEXT_ANSWER_KEY,
+  PROOF_TICKED_KEY,
+  proofQuestion,
+} from '../../core/flow/proofAdapter';
 import { MICRO_PROOF_MODULE, RUN_CARD_MIN, endsRun, runOf } from '../../core/flow/runs';
 import type { Run } from '../../core/flow/runs';
 import { proofChecks, proofTally } from '../../core/proof/checklist';
+import { buildProofReceipt, proofReceiptName } from '../../core/proof/receipt';
 import type { ProofCheck, ProofCheckId } from '../../core/proof/checklist';
 import { ModuleIntro } from './ModuleIntro';
+import { downloadMarkdown } from './FileActions';
 import { MicroProof } from './MicroProof';
 import { RunCard } from './RunCard';
 import { FileDrawer } from './FileDrawer';
@@ -1129,9 +1136,44 @@ function checkLabel(check: ProofCheck): string {
 function DemoBody({ answers }: { answers: Answers }) {
   const tallied = answers.values[PROOF_SCORE_CONTEXT_KEY];
   const value = typeof tallied === 'string' ? Number(tallied) : Number.NaN;
-  const of = proofChecks(answers).length;
+  const offered = proofChecks(answers);
+  const stored = answers.values[PROOF_TICKED_KEY];
+  const ticked: string[] = Array.isArray(stored) ? stored : [];
   if (!Number.isFinite(value)) return null;
-  return <p className="flow-hint">{S.proofTallyLine(value, of)}</p>;
+
+  /**
+   * BS-03d (§3.3) — END ON AN ARTIFACT.
+   *
+   * "The delta is the single most shareable thing the product produces and
+   * today it evaporates." A file, never a link (D5, and docs/OPEN.md #4
+   * still open): assembled from what is already on screen and handed over.
+   * Nothing is stored and nothing is uploaded.
+   */
+  function save() {
+    const on = contextFileDate();
+    downloadMarkdown(
+      proofReceiptName(on),
+      buildProofReceipt({
+        task: proofQuestion({ answers: answers.values, repeatables: answers.repeatables }),
+        before: String(answers.values[PROOF_BASELINE_ANSWER_KEY] ?? ''),
+        after: String(answers.values[PROOF_CONTEXT_ANSWER_KEY] ?? ''),
+        // The words they ticked, not the ids — the receipt is read by a
+        // person, and by whoever they forward it to.
+        ticked: offered.filter((check) => ticked.includes(check.id)).map(checkLabel),
+        of: offered.length,
+        on,
+      }),
+    );
+  }
+
+  return (
+    <>
+      <p className="flow-hint">{S.proofTallyLine(value, offered.length)}</p>
+      <Button type="button" variant="primary" onClick={save}>
+        {S.proofReceipt}
+      </Button>
+    </>
+  );
 }
 
 /**
@@ -1571,6 +1613,9 @@ function StepView({
 
     let next = applyAnswer(answers, step, location, String(tally.value));
     next = applyAnswer(next, scoreSubStep(PROOF_SCORE_CONTEXT_KEY), location, String(tally.value));
+    // …and WHICH ones, because the receipt is read by a person and "two of
+    // four" is not what anybody forwards.
+    next = applyAnswer(next, scoreSubStep(PROOF_TICKED_KEY), location, [...ticked]);
     onCommit(next);
 
     if (!alreadyScored) {

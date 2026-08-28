@@ -155,9 +155,19 @@ under D1's module-bounded runs (Orientation is 8 = 5 + 3). A boundary rather
 than a flat count of ten, because a count moves when repeatables do, and the
 boundary already has a payoff card to land the wow on.
 
-**Defaulted, not asked:** the receipt is a markdown file in Context.md's own
-voice — the task, both answers verbatim, what they ticked, the date. Their
-content, their file, and D5 keeps it a file rather than a link.
+**Defaulted, not asked, and now BUILT:** the receipt is a markdown file in
+Context.md's own voice — the task, both answers verbatim, what they ticked,
+the date. Their content, their file, and D5 keeps it a file rather than a
+link. Building it forced one small schema addition: `PROOF_TICKED_KEY`, the
+ids they ticked, because the closing screen is a different position from the
+judging screen and StepView remounts per position — the first draft read an
+empty list. The count alone could not make a receipt anyway: "two of four" is
+a number, and what somebody forwards is the two.
+
+**`feedbackTo` is set** (Adam, 2026-08-27): `adam.young@model-citizen.org`, a
+role address rather than a personal one because it ships in the bundle and
+shows in every tester's draft. Adam: "I can route them with a rule if they
+become too regular."
 
 ---
 
