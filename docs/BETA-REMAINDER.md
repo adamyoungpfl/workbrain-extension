@@ -67,6 +67,20 @@ and mixing them is how a register slips:
    ≈142 entries. Split across sittings; the file's own section comments are the
    natural seams.
 
+### The review page
+
+**https://claude.ai/code/artifact/f7eb11de-ee12-4689-9b97-35900bed1e04**
+
+All 204 strings, extracted from the source and grouped by slice, rendered in
+the panel's own type stack so a line reads the way it will ship. Each row has
+the string, its key, and its "why" behind a disclosure. OK / Flag per row,
+saved in the device's own storage, and a button that copies the flagged list as
+text to hand back.
+
+The census in this file counts MARKERS (86 real ones). The page counts STRINGS,
+because a marker sits on a comment block that can cover several — 204 is the
+number of lines somebody actually has to read.
+
 ### How a slice lands
 
 Adam edits in place, or marks a line and I redraft it. Either way the marker
