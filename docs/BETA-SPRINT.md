@@ -313,6 +313,39 @@ the dock's welded set are what the geometry specs mirror, so a raise there is
 what the specs re-measure against — the reverse order leaves the gate red for
 no useful reason.
 
+### BS-03a — half built, and why the other half waits
+
+**Built: proof one interrupts (P3).** Finishing Context hands straight into
+the proof rather than landing on Home, and the proof's own close hands into
+Skills rather than back to Home — §3's "the hour never stalls on a Home
+screen". It fires **once**: a proof already in `wb:report.scores` is not
+offered again, derived from what is stored rather than from a "seen it" flag.
+The Skills door is only drawn when Skills is genuinely open, and it is
+computed on **every** route into the proof, not only the automatic one — a
+door that works only when you arrive one way is worse than no door.
+
+**Not built: the micro-proof, and the reason is a finding.** D2's fallback
+ladder opens with *a named person → a named initiative*. Neither exists at
+the second run boundary: `entities` lives in **My World** (module 4) and
+`initiatives_records` in **Initiatives** (module 5), both *after* About Me.
+So the review's own example — "Draft a note to Priya about Northstar" — cannot
+be assembled at minute six. What IS available by then is `preferred_name`,
+`self_description`, `role_names` and the roles records.
+
+The ladder still holds; it simply resolves to its **role rung** at that
+boundary, and the wow becomes *"it already knows what I do"* rather than
+*"it knows Priya"*. That is a weaker moment than the review imagined, and it
+is worth Adam seeing the choice rather than having it made quietly:
+
+| | |
+|---|---|
+| **Keep minute six** | The task is built from their role and what they do. Earlier, weaker wow. |
+| **Move to the fourth boundary** (end of My World) | A real person's name is available. ~minute twelve, so it buys the back half rather than the front. |
+
+It also needs a host: the offer belongs on §5's run-boundary card (BS-05d),
+which does not exist yet. Building a private interstitial for it now would be
+thrown away when that card lands.
+
 ### BS-05g — the example stops being an answer
 
 Adam, 2026-08-27, mid-sprint: *"change the 'Give me an example' buttons to

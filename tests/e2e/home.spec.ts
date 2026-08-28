@@ -7,6 +7,7 @@ import { DUE_AFTER_DAYS } from '../../src/core/freshness/clocks';
 import { ROLES_BLOCK_ID, ROLE_DURABILITY_KEY, ROLE_NAME_SEED_FIELD } from '../../src/core/freshness/nextMove';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { S } from '../../src/panel/strings';
 
 // R1-12 accept criteria (docs/RELEASE-1.md): "Files with freshness, one
 // next-move card, the quiet 'talk to a person' row. Derived entirely —
@@ -180,8 +181,16 @@ test.describe('Home surface (R1-12)', () => {
     await page.getByRole('button', { name: 'Next', exact: true }).focus();
     await page.keyboard.press('Enter');
 
-    // Every other question in the fixture was already answered, so this
-    // was the only thing left — Flow hands back to Home on its own.
+    // Every other question in the fixture was already answered, so this was
+    // the only thing left and the interview finishes here.
+    //
+    // BS-03a (§3, Adam's P3): finishing Context hands straight into the
+    // proof rather than back to Home — "momentum beating a reset". This
+    // fixture has never run one, so it fires. The way back to Home is the
+    // mark, which is the door VB-112 built for exactly this.
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', /^proof/, { timeout: 10_000 });
+    await page.getByRole('button', { name: S.goHome, exact: true }).click();
+
     // V2.8 VB-132a: the all-current banner is gone (redundant beside the
     // card's own status) — the quiet state is genuinely quiet, and the
     // card says Current.

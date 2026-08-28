@@ -1,4 +1,5 @@
 import { test, expect, chromium } from '@playwright/test';
+import { S } from '../../src/panel/strings';
 import type { BrowserContext, Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -193,6 +194,10 @@ test.describe('Context interview — flow runner (R1-06)', () => {
       await page.waitForSelector('.flow, .home');
       if (await page.locator('.home').count()) break;
       const stepId = await page.locator('.flow').getAttribute('data-step-id');
+      // BS-03a (§3, Adam's P3): finishing Context now hands STRAIGHT into
+      // the proof rather than back to Home — "momentum beating a reset". The
+      // walk is about the interview, so it ends where the interview does.
+      if (stepId?.startsWith('proof')) break;
       if (stepId) {
         visited.add(stepId);
         if (order[order.length - 1] !== stepId) order.push(stepId);
@@ -206,6 +211,10 @@ test.describe('Context interview — flow runner (R1-06)', () => {
       await answerCurrentQuestion(page);
     }
 
+    // Where a finished interview lands, which is the proof and not Home.
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', /^proof/);
+    // …and Home is still one press away, by the door VB-112 built.
+    await page.getByRole('button', { name: S.goHome, exact: true }).click();
     await expect(page.locator('.home')).toBeVisible();
     // The file this interview just finished, freshly reflected on Home.
     await expect(page.getByText('Context.md')).toBeVisible();

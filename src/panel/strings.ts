@@ -735,6 +735,9 @@ export const S = {
   proofTallyLine: (value: number, of: number) => `That is ${wordFor(value)} out of ${wordFor(of)}.`,
   proofKeepIt: 'Keep it',
   proofReceipt: 'Save this as a one-page receipt',
+  /** BS-03a (§3) — the proof hands into Skills rather than back to Home, so
+   * the hour keeps its momentum. [DRAFT] */
+  proofIntoSkills: 'Now teach it a task you repeat',
   proofDone: 'That difference is your context working.',
   proofDoneSub: 'Shown exactly as your AI wrote it. The panel never reads or scores it.',
   copyPrompt: 'Copy',

@@ -11,9 +11,11 @@ import { Splash } from './surfaces/Splash';
 import { WallPanels } from './components/WallPanels';
 import { getSession, setSession } from '../core/storage/client';
 import { FeedbackSheet, Button } from './components';
+import { getLocal } from '../core/storage/client';
 import { contextModules, contextOutline, skillsModules, skillsOutline, buildProofModules } from '../core/flow/flow';
 import { SKILLS_FILE_COPY } from '../core/files/skillsFile';
 import { ANSWERS_KEY } from '../core/files/answersKey';
+import { fileFinished } from '../core/files/slots';
 import type { FileSlotId } from '../core/files/slots';
 import { ActionsFileView } from './surfaces/ActionsFileView';
 import { serviceStepOptions } from '../core/flow/proofAdapter';
@@ -91,6 +93,14 @@ export default function App() {
   const [fileId, setFileId] = useState<Exclude<FileSlotId, 'actions'>>('context');
   const [jumpTo, setJumpTo] = useState<Position | undefined>(undefined);
   const [splash, setSplash] = useState<SplashState>('asking');
+  /**
+   * BS-03a (§3) — is the Skills door actually open, for the hand-off at the
+   * end of the proof. Read once when the shell mounts and re-read whenever
+   * the proof is entered, because finishing Context is exactly what opens
+   * it. Derived from the answers, never stored: the same fold Home's shelf
+   * runs (core/files/slots.ts).
+   */
+  const [skillsOpen, setSkillsOpen] = useState(false);
 
   /**
    * V1.7 VB-34 — once per browser session.
@@ -133,6 +143,41 @@ export default function App() {
   function goHome() {
     setSurface('home');
     setJumpTo(undefined);
+  }
+
+  /**
+   * BS-03a (§3), Adam's P3 — WHAT FINISHING CONTEXT DOES.
+   *
+   * The proof used to wait in a tile somebody had to notice, at the end of a
+   * screen they had to scroll. §3 fires it the moment Context finishes
+   * instead, and Adam's ruling on the cost — landing them straight into a
+   * three-minute errand rather than letting them arrive somewhere — was
+   * "error on the side of momentum beating a reset".
+   *
+   * ONCE, THOUGH. Somebody who goes back to fix one answer and finishes
+   * again should not be handed the same errand a second time, so this reads
+   * the report: a proof that has already been run is not offered again. That
+   * is derived from what is stored, not a "seen it" flag — the same
+   * discipline every other state in this product follows.
+   */
+  /** Whether the Skills door at the end of the proof is real. Read on every
+   * way IN to the proof, not only the automatic one — the tile is still a
+   * route, and a door that only works when you arrive one way is worse than
+   * no door. */
+  async function refreshSkillsDoor() {
+    const answers = await getLocal('wb:answers');
+    setSkillsOpen(!!answers && fileFinished(contextOutline, contextModules, answers, new Date()));
+  }
+
+  async function finishContext() {
+    await refreshSkillsDoor();
+    const report = await getLocal('wb:report');
+    const alreadyProved = (report?.scores.length ?? 0) > 0;
+    if (alreadyProved) {
+      goHome();
+      return;
+    }
+    openProof();
   }
 
   /**
@@ -183,6 +228,7 @@ export default function App() {
   }
 
   function openProof() {
+    void refreshSkillsDoor();
     setFlowKind('proof');
     setJumpTo(undefined);
     setSurface('flow');
@@ -285,9 +331,19 @@ export default function App() {
               <Button type="button" variant="primary" onClick={() => setFeedbackOpen(true)}>
                 {S.feedbackOpenLong}
               </Button>
-              <Button type="button" variant="secondary" onClick={goHome}>
-                {S.backToFiles}
-              </Button>
+              {/* BS-03a (§3) — "Ends by handing straight into Skills, so the
+                  hour never stalls on a Home screen." The door is only real
+                  when Skills is actually open; otherwise this is the way
+                  back, exactly as it was. Degrade, never break. */}
+              {skillsOpen ? (
+                <Button type="button" variant="secondary" onClick={() => openSkillsAt()}>
+                  {S.proofIntoSkills}
+                </Button>
+              ) : (
+                <Button type="button" variant="secondary" onClick={goHome}>
+                  {S.backToFiles}
+                </Button>
+              )}
             </>
           )}
         />
@@ -311,7 +367,16 @@ export default function App() {
         />
       );
     }
-    return <Flow modules={contextModules} outline={contextOutline} initialPosition={jumpTo} onDone={goHome} onHome={goHome} />;
+    return (
+      <Flow
+        modules={contextModules}
+        outline={contextOutline}
+        initialPosition={jumpTo}
+        // BS-03a/P3 — finishing hands into the proof, not back to Home.
+        onDone={() => void finishContext()}
+        onHome={goHome}
+      />
+    );
   }
 
   // The surface first, always, and the splash after it — in the markup and in

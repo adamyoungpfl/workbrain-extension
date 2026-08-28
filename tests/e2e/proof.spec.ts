@@ -138,6 +138,40 @@ async function storedLocal(sw: Worker): Promise<Record<string, unknown>> {
   return sw.evaluate(() => chrome.storage.local.get(['wb:answers', 'wb:report']));
 }
 
+/**
+ * BS-03a — a file with NOTHING left to ask and no skip in it: every
+ * top-level question answered, both gates closed so no repeatable is left
+ * offering an "is there another one?" screen, and no `null` anywhere. This
+ * is the seed `fileFinished` says yes to, which is what opens Skills and
+ * what the interrupt tests need in order to reach `done` cleanly.
+ * (The same shape file-slots.spec.ts builds; duplicated per this repo's
+ * fixtures-live-with-their-spec convention.)
+ */
+function finishedFile(): Answers {
+  const now = new Date().toISOString();
+  const values: Record<string, AnswerValue> = {};
+  const answeredAt: Record<string, string> = {};
+  const reflectedAt: Record<string, string> = {};
+  for (const module of contextModules) {
+    for (const node of module.nodes) {
+      if ('fields' in node) continue;
+      const key = node.key ?? node.id;
+      let value: AnswerValue;
+      if (node.id === 'entities_gate' || node.id === 'initiatives_gate') value = 'no';
+      else if (node.id === 'role_names') value = [];
+      else if (node.kind === 'intro') value = null;
+      else if (node.kind === 'yesno') value = 'yes';
+      else if (node.kind === 'chips') value = node.options?.[0]?.v ?? 'x';
+      else if (node.kind === 'multi') value = node.options?.length ? [node.options[0]!.v] : [];
+      else value = `A test answer for ${node.id}.`;
+      values[key] = value;
+      answeredAt[key] = now;
+      if (typeof value === 'string') reflectedAt[key] = now;
+    }
+  }
+  return { values, repeatables: {}, answeredAt, reflectedAt };
+}
+
 test.describe('The proof loop (R1-11)', () => {
   test('a full pass through all four steps writes exactly one with-context score, and the pasted grade text lives only in the field it was pasted into', async () => {
     const { context, sw, id } = await launchExtension();
@@ -446,6 +480,89 @@ test.describe('The proof loop (R1-11)', () => {
     // an answer. Claiming otherwise would be the panel telling somebody
     // they had already done something they had not.
     await expect(page.locator('.proofheld')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  /* ── BS-03a (§3), Adam's P3 — the proof interrupts ──────────────────────
+     It used to wait in a tile somebody had to notice, at the end of a screen
+     they had to scroll. Now finishing Context hands straight into it.
+     Adam on the cost: "error on the side of momentum beating a reset." */
+  test('finishing Context hands straight into the proof, not back to Home', async () => {
+    const { context, sw, id } = await launchExtension();
+    // One question short of finished, so the walk ENDS in this test rather
+    // than being seeded past the moment under test.
+    const seeded = finishedFile();
+    const last = 'reference_example_second';
+    delete seeded.values[last];
+    delete seeded.answeredAt[last];
+    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
+
+    const page = await openPanel(context, id);
+    await page.getByRole('button', { name: /^Context\.md/ }).click();
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+    await page.waitForSelector('.flow');
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', last);
+
+    await page.locator('.flow textarea').fill('A last answer, written to finish the file.');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+
+    // Straight into the proof. No Home in between — that is the whole ruling.
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', /^proof/, { timeout: 10_000 });
+    await expect(page.locator('.home')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('it interrupts ONCE — a re-finish does not hand them the same errand again', async () => {
+    const { context, sw, id } = await launchExtension();
+    const seeded = finishedFile();
+    const last = 'reference_example_second';
+    delete seeded.values[last];
+    delete seeded.answeredAt[last];
+    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
+    // A proof that has already been run. Derived from what is stored, not
+    // from a "seen it" flag — the same discipline every other state here
+    // follows.
+    await sw.evaluate(() =>
+      chrome.storage.local.set({ 'wb:report': { scores: [{ at: '2026-08-01T00:00:00.000Z', value: 3, of: 4 }] } }),
+    );
+
+    const page = await openPanel(context, id);
+    await page.getByRole('button', { name: /^Context\.md/ }).click();
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+    await page.waitForSelector('.flow');
+    await page.locator('.flow textarea').fill('A last answer, written to finish the file again.');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+
+    // Home, and no second errand.
+    await page.waitForSelector('.home');
+    await expect(page.locator('.flow')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('the proof hands into Skills at the end, so the hour does not stall on Home', async () => {
+    const { context, sw, id } = await launchExtension();
+    // Skills opens on `fileFinished`, which is stricter than "nothing left to
+    // ask": a skipped question is a gap. This seed has no skip in it.
+    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), finishedFile());
+
+    const page = await openPanel(context, id);
+    await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
+    // Straight to the end of the loop — this test is about the door there.
+    for (let i = 0; i < 6; i++) {
+      const step = await page.locator('.flow').getAttribute('data-step-id');
+      if (step === 'proof_recommendations') break;
+      const skip = page.getByRole('button', { name: 'Skip', exact: true });
+      if (await skip.count()) await skip.click();
+      else await page.getByRole('button', { name: 'Next', exact: true }).click();
+    }
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+
+    // §3: "Ends by handing straight into Skills." The door is only real when
+    // Skills is genuinely open, which a finished Context file makes it.
+    await expect(page.getByRole('button', { name: 'Now teach it a task you repeat', exact: true })).toBeVisible();
 
     await context.close();
   });
