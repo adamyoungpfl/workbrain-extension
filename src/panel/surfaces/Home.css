@@ -78,53 +78,12 @@
   margin: -12px 0;
 }
 
-/* ── V2.6 VB-125 — the file lockup ──────────────────────────────────────── */
-.home-lockup {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 12px;
-  border: 1px solid var(--divider);
-  border-radius: var(--r-lg);
-  background: linear-gradient(180deg, var(--surface), var(--canvas));
-}
+/* ── BS-06 (§6), Adam's D3 — the file lockup is gone ────────────────────────
+   `.home-lockup*` and `.home-glyph` are deleted with the markup they
+   painted. The chrome bar says "this is Workbrain" once, for every state;
+   three sayings of it inside 180px was the thing §6 measured.
+*/
 
-.home-glyph {
-  width: 46px;
-  height: 46px;
-  flex: 0 0 46px;
-  border-radius: var(--r-md);
-  background: var(--canvas);
-  border: 1px solid var(--border);
-  display: grid;
-  place-items: center;
-}
-
-.home-lockup-text h2 {
-  margin: 0;
-  font-size: 15px;
-  font-weight: 680;
-  letter-spacing: -0.015em;
-  color: var(--ink);
-}
-
-.home-lockup-byline {
-  margin: 1px 0 0;
-  font-size: 11.5px;
-  line-height: 1.4;
-  color: var(--ink-3);
-}
-
-.home-lockup-meta {
-  margin: 6px 0 0;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: var(--ink-3);
-}
-
-/* V2.8 VB-132c — bolder, and in the header colour (Adam): the two shelf
-   labels are wayfinding, not whispers. --primary measures 6.8:1 on the
-   ground. */
 .home-section-label {
   font-size: 12px;
   font-weight: 750;
@@ -317,10 +276,16 @@
 
 /* Locked: dashed edge, the reason in the card, the pill — four signals
    beyond colour (VB-36's own floor), on a genuinely disabled button. */
+/* BS-06, Adam's D4 — DASHED MEANS EMPTY, NEVER LOCKED.
+   §1: "A dashed disabled tile reads as broken. Locked things become rows
+   that explain when they unlock." This card already explains when it
+   unlocks, in the card, as text — and it wears the one padlock the product
+   uses (components/fileLabels.tsx's LockGlyph) plus a "Locked" pill. Those
+   are the non-colour signals now; the edge goes back to solid so the card
+   reads as a thing that is not ready rather than a thing that is broken. */
 .home-card.is-locked {
-  border-style: dashed;
-  border-color: var(--border);
-  background: transparent;
+  border-color: var(--divider);
+  background: var(--sunken);
   cursor: not-allowed;
 }
 .home-card.is-locked:hover {
@@ -454,255 +419,15 @@
   margin: 0;
 }
 
-/* ── V2.6 VB-125c — the utility tiles ─────────────────────────────────────── */
-.home-tiles {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 8px;
-}
-
-/* V2.9 VB-147 — three tiles now (the library grew into its own banner
-   below), so each gets real room and a readable label. */
-.home-tiles.is-three {
-  grid-template-columns: repeat(3, 1fr);
-}
-.home-tiles.is-three .home-tile {
-  font-size: 11px;
-}
-
-/* VB-144's graduation face: after the Context interview finishes, the
-   dormant tiles come up in colour and read obviously active. */
-.home-tile.is-ready {
-  color: var(--primary);
-  background: var(--primary-tint);
-  border-color: var(--border-i);
-}
-.home-tile.is-ready:hover {
-  background: var(--surface);
-  border-color: var(--primary);
-}
-
-.home-tile {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  min-height: 58px;
-  padding: 10px 4px 9px;
-  font-family: var(--font-sans);
-  font-size: 10.5px;
-  font-weight: 600;
-  line-height: 1.25;
-  text-align: center;
-  text-decoration: none;
-  color: var(--ink-2);
-  background: var(--surface);
-  border: 1px solid var(--divider);
-  border-radius: var(--r-md);
-  cursor: pointer;
-  transition:
-    transform var(--fast) var(--ease),
-    background var(--fast) var(--ease),
-    color var(--fast) var(--ease),
-    border-color var(--fast) var(--ease);
-}
-.home-tile:hover {
-  background: var(--canvas);
-  color: var(--primary);
-  border-color: var(--border-i);
-  transform: translateY(-1px);
-}
-.home-tile:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-.home-tile:disabled {
-  cursor: not-allowed;
-  color: var(--ink-3);
-  border-style: dashed;
-}
-.home-tile:disabled:hover {
-  background: var(--surface);
-  color: var(--ink-3);
-  border-color: var(--divider);
-  transform: none;
-}
-
-/* The member gate's mark: the padlock and the word, on the tile itself. */
-.home-tile-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  font-size: 9.5px;
-  font-weight: 650;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
-  color: var(--ink-3);
-  border: 1px solid var(--divider);
-  border-radius: var(--r-pill);
-  padding: 1px 6px;
-  background: var(--canvas);
-}
-
-/* ── V2.9 VB-147 — the Certified Skills banner ──────────────────────────────
-   Spans the row like Workbrain+ below it, but on the light ground — an
-   invitation, not the pitch: chip, two lines, and a real door to the
-   library on the site. */
-.home-lib {
-  display: grid;
-  grid-template-columns: auto 1fr;
-  gap: 6px 12px;
-  align-items: start;
-  border: 1px solid var(--divider);
-  border-radius: var(--r-lg);
-  background: var(--surface);
-  padding: 14px;
-}
-.home-lib-chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: var(--r-md);
-  background: var(--primary-tint);
-  color: var(--primary);
-}
-.home-lib-text h2 {
-  margin: 0 0 3px;
-  font-size: 13.5px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  color: var(--ink);
-}
-.home-lib-text p {
-  margin: 0;
-  font-size: 12px;
-  line-height: 1.5;
-  color: var(--ink-2);
-}
-.home-lib-go {
-  grid-column: 2;
-  justify-self: start;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 44px;
-  padding: 0 4px;
-  margin: -6px -4px -10px;
-  font-size: 12.5px;
-  font-weight: 650;
-  text-decoration: none;
-  color: var(--primary);
-  border-radius: var(--r-md);
-}
-.home-lib-go:hover {
-  color: var(--primary-hover);
-}
-.home-lib-go:focus-visible {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-}
-
-/* ── V2.8 VB-134 — the Workbrain+ card ──────────────────────────────────────
-   The one marketing piece: the price is the loud thing, the framing line
-   sells it, the four bullets are the goods, the door is real. White alphas
-   on the gradient's lighter stop, measured: 0.9 text = 5.9:1, full white =
-   6.8:1, the 0.55 boundary = 3.3:1 (V2.6's build notes). */
-.home-cta {
-  border-radius: var(--r-lg);
-  border: 1px solid var(--divider);
-  background: linear-gradient(135deg, var(--primary), var(--primary-hover));
-  color: var(--ink-inv);
-  padding: 15px 14px 14px;
-}
-.home-cta h2 {
-  margin: 0;
-  font-size: 13px;
-  font-weight: 750;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.9);
-}
-.home-cta-price {
-  margin: 6px 0 0;
-  display: flex;
-  align-items: baseline;
-  gap: 8px;
-  font-size: 27px;
-  font-weight: 700;
-  letter-spacing: -0.02em;
-  line-height: 1.1;
-  color: var(--ink-inv);
-  font-variant-numeric: tabular-nums;
-}
-.home-cta-year {
-  font-size: 11px;
-  font-weight: 450;
-  letter-spacing: 0;
-  line-height: 1.35;
-  color: rgba(255, 255, 255, 0.9);
-  max-width: 17ch;
-}
-.home-cta-body {
-  margin: 8px 0 10px;
-  font-size: 12px;
-  line-height: 1.5;
-  font-weight: 600;
-  color: var(--ink-inv);
-}
-.home-cta-list {
-  margin: 0 0 12px;
-  padding: 0;
-  list-style: none;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 11.5px;
-  line-height: 1.45;
-  color: rgba(255, 255, 255, 0.9);
-}
-.home-cta-list li {
-  padding-left: 16px;
-  position: relative;
-}
-/* A drawn tick, not a bullet — the goods read as included, and the glyph
-   survives greyscale beside its words. */
-.home-cta-list li::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0.42em;
-  width: 8px;
-  height: 5px;
-  border-left: 1.6px solid rgba(255, 255, 255, 0.9);
-  border-bottom: 1.6px solid rgba(255, 255, 255, 0.9);
-  transform: rotate(-48deg);
-}
-.home-plus-go {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  min-height: var(--target-min);
-  border-radius: var(--r-md);
-  background: var(--canvas);
-  color: var(--primary);
-  font-size: 13px;
-  font-weight: 650;
-  text-decoration: none;
-  transition: transform var(--fast) var(--ease);
-}
-.home-plus-go:hover {
-  transform: translateY(-1px);
-}
-.home-plus-go:focus-visible {
-  outline: 2px solid var(--ink-inv);
-  outline-offset: 2px;
-}
+/* ── BS-06 (§6) — the action list replaced all of this ──────────────────────
+   `.home-tiles`, `.home-tile`, `.home-tile-pill`, the Certified Skills
+   banner (`.home-lib*`) and the Workbrain+ card (`.home-cta*`,
+   `.home-plus-go`) are deleted with the markup they painted. Three tiles
+   ran their labels at 11px and two of the three were usually dashed and
+   dead; the two banners spent ~330px saying two sentences and a price. One
+   list of rows says more in less height, and a dormant item explains itself
+   instead of going dark. The rows' own styles live at the end of this file.
+*/
 
 /* ── V2.6 VB-125c — the trust foot ────────────────────────────────────────── */
 .home-foot {
@@ -822,4 +547,102 @@
   .home > * {
     animation: none;
   }
+}
+
+/* ── BS-06 (§6) — the action list ─────────────────────────────────────────
+   One row per door, each with a subtitle. A dormant row says what it is
+   waiting for in words: never a dashed edge (§1 gave dashed to "empty") and
+   never a disabled control, which was the thing that read as broken. */
+.home-rows {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-lg);
+  background: var(--surface);
+  overflow: hidden;
+}
+
+.home-row + .home-row {
+  border-top: 1px solid var(--divider);
+}
+
+/* The hit box IS the row: read and pressed in one motion, and the 44px
+   floor is the row's own height. */
+.home-row-hit {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: var(--target-min);
+  padding: 10px 12px;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  text-align: left;
+  text-decoration: none;
+  color: inherit;
+  cursor: pointer;
+}
+/* A waiting row holds no control at all, so it has no cursor either. */
+.home-row.is-waiting .home-row-hit {
+  cursor: default;
+}
+button.home-row-hit:hover,
+a.home-row-hit:hover {
+  background: var(--canvas);
+}
+.home-row-hit:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: -2px;
+}
+
+.home-row-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--r-md);
+  background: var(--primary-tint);
+  color: var(--primary);
+}
+.home-row.is-waiting .home-row-chip {
+  background: var(--sunken);
+  color: var(--ink-3);
+}
+
+.home-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+  margin-right: auto;
+}
+
+.home-row-label {
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--ink);
+}
+.home-row.is-waiting .home-row-label {
+  color: var(--ink-2);
+}
+
+.home-row-sub {
+  font-size: var(--type-fine);
+  line-height: 1.4;
+  color: var(--ink-3);
+}
+
+.home-row-go {
+  flex: none;
+  color: var(--ink-3);
+}
+button.home-row-hit:hover .home-row-go,
+a.home-row-hit:hover .home-row-go {
+  color: var(--primary);
 }

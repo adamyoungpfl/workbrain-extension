@@ -3,11 +3,12 @@ import type { BrowserContext, Page } from '@playwright/test';
 import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { MARK_STATIC_ANGLE, markFrame } from '../../src/core/geometry/markSpin';
 import {
   MARK_SILHOUETTE_STILL,
   pointsAttribute,
 } from '../../src/core/geometry/markSilhouette';
+import { ORBIT_STILL } from '../../src/core/geometry/markOrbit';
+import type { MarkFrame } from '../../src/core/geometry/markSpin';
 
 /**
  * V1.2 VB-13 accept criteria: "rotates on the welcome screen; a reduced-motion
@@ -46,8 +47,18 @@ const STATUS_MARK_SPIN = (() => {
   return found;
 })();
 
-/** The pose the panel must be showing when nothing is allowed to move. */
-const STILL_POSE = markFrame(MARK_STATIC_ANGLE).nodes.map((n) => `${n.cx},${n.cy},${n.r}`);
+const poseOf = (frame: MarkFrame) => frame.nodes.map((n) => `${n.cx},${n.cy},${n.r}`);
+
+/**
+ * The big mark orbits rather than spins, and an orbit's still equivalent is
+ * the first viewpoint on its camera path — not the spin's static angle. Same
+ * solid, same claim, different resting pose, and the component has said so
+ * since V1.7 VB-34 (`BrandMark.tsx`: `spin === 'orbit' ? ORBIT_STILL : STILL`).
+ */
+const ORBIT_STILL_POSE = poseOf(ORBIT_STILL);
+// The spin's own static angle — `markFrame(MARK_STATIC_ANGLE)` — is still
+// asserted node-for-node, in `markSpin.test.ts`. It left this file with the
+// welcome mark, which was the only thing on screen that rested at it.
 
 /**
  * Counts every animation frame the page ever asks for, from before the first
@@ -91,8 +102,26 @@ async function waitForFrames(page: Page, n: number) {
   );
 }
 
+/**
+ * BS-06 (§6) moved this spec's subject. The welcome screen's big mark is gone
+ * — the change spec's first Home item names chrome bar, lockup and welcome
+ * card as three statements of "this is Workbrain" inside 180px and keeps only
+ * the chrome bar's. So the panel's one large, moving, entrance-carrying mark
+ * is now the splash's, and every claim below that used to be made about
+ * `.home-welcome .brand-mark` is made about `.splash-lockup .brand-mark`
+ * instead. The claims themselves did not change: same component, same loop,
+ * same reduced-motion bar, same still pose.
+ */
+const BIG_MARK = '.splash-lockup .brand-mark';
+
+/** Holds the splash open and waits for its lockup — where the big mark lives. */
+async function atTheBigMark(page: Page) {
+  await page.waitForSelector('.splash[data-phase="reveal"]');
+  await page.waitForSelector(BIG_MARK);
+}
+
 async function launchPanel(
-  options: { reduce?: boolean } = {},
+  options: { reduce?: boolean; keepSplash?: boolean } = {},
 ): Promise<{ context: BrowserContext; page: Page }> {
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
@@ -121,8 +150,12 @@ async function launchPanel(
   await page.waitForSelector('.home');
   // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
   // is its keyboard exit, and nothing else about this walk-in changed.
-  await page.keyboard.press('Escape');
-  await page.waitForSelector('.splash', { state: 'detached' });
+  // BS-06: the tests about the big mark keep the doorway open instead, because
+  // that is where the big mark now is.
+  if (!options.keepSplash) {
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
+  }
   return { context, page };
 }
 
@@ -170,11 +203,11 @@ const readOutline = (page: Page, selector: string) =>
 /** The outline the panel must be showing when nothing is allowed to move. */
 const STILL_OUTLINE = pointsAttribute(MARK_SILHOUETTE_STILL);
 
-test.describe('VB-13 — the welcome mark turns', () => {
+test.describe('VB-13 — the big mark turns', () => {
   test('rotates, in real 3D, and stays a whole icosahedron while it does', async () => {
-    const { context, page } = await launchPanel();
-    const mark = '.home-welcome .brand-mark';
-    await page.waitForSelector(mark);
+    const { context, page } = await launchPanel({ keepSplash: true });
+    const mark = BIG_MARK;
+    await atTheBigMark(page);
 
     const poses: string[] = [];
     const radii: string[] = [];
@@ -204,9 +237,9 @@ test.describe('VB-13 — the welcome mark turns', () => {
   });
 
   test('turning never changes the mark’s own layout box', async () => {
-    const { context, page } = await launchPanel();
-    const mark = page.locator('.home-welcome .brand-mark');
-    await mark.waitFor();
+    const { context, page } = await launchPanel({ keepSplash: true });
+    await atTheBigMark(page);
+    const mark = page.locator(BIG_MARK);
     // Past the one-time entrance, which is a real fade-and-scale and does
     // change the box — deliberately, once, on arrival. What must never change
     // is the box while the thing is *turning*.
@@ -226,9 +259,9 @@ test.describe('VB-13 — the welcome mark turns', () => {
 
 test.describe('VB-13 — reduced motion stops the loop, not just the movement', () => {
   test('not one animation frame is ever requested, and the still mark is the one we shipped', async () => {
-    const { context, page } = await launchPanel({ reduce: true });
-    const mark = '.home-welcome .brand-mark';
-    await page.waitForSelector(mark);
+    const { context, page } = await launchPanel({ reduce: true, keepSplash: true });
+    const mark = BIG_MARK;
+    await atTheBigMark(page);
 
     // The bar: zero. Not "few", not "it settles" — the loop must be absent.
     expect(await frameCount(page)).toBe(0);
@@ -238,9 +271,9 @@ test.describe('VB-13 — reduced motion stops the loop, not just the movement', 
     expect(await frameCount(page), 'a frame loop is running under reduced motion').toBe(0);
     expect(await readPose(page, mark)).toEqual(before);
 
-    // And what is on screen is exactly V1.1's mark — the pose mark.svg was
-    // exported at, node for node.
-    expect(before).toEqual(STILL_POSE);
+    // And what is on screen is exactly the pose the orbit rests at, node for
+    // node — the still equivalent, not an arbitrary frame it happened to stop on.
+    expect(before).toEqual(ORBIT_STILL_POSE);
 
     await context.close();
   });
@@ -261,8 +294,8 @@ test.describe('VB-13 — reduced motion stops the loop, not just the movement', 
 
   test('without the preference, the loop really is running — so the test above means something', async () => {
     // A zero that would be zero either way proves nothing. This is the control.
-    const { context, page } = await launchPanel();
-    await page.waitForSelector('.home-welcome .brand-mark');
+    const { context, page } = await launchPanel({ keepSplash: true });
+    await atTheBigMark(page);
     // Waits for the frames rather than for a stopwatch: on a loaded machine
     // this takes longer, but "did it schedule thirty frames" is the question,
     // and it is never "did it schedule thirty frames in 600ms".
@@ -425,15 +458,15 @@ test.describe('VB-13 — the status-bar mark', () => {
  * attribute that paints nothing would pass any assertion about markup.
  */
 test.describe('VB-39 — the mark as a silhouette', () => {
-  test('is one filled shape, and the welcome screen still has the whole graph', async () => {
-    const { context, page } = await launchPanel();
+  test('is one filled shape, and the big mark still has the whole graph', async () => {
+    const { context, page } = await launchPanel({ keepSplash: true });
 
-    // The welcome mark is untouched: VB-39 changes the small mark, not the
-    // one the screen is built around.
-    const welcome = page.locator('.home-welcome .brand-mark');
-    await expect(welcome).toHaveAttribute('data-variant', 'graph');
-    expect(await page.locator('.home-welcome .brand-mark circle').count()).toBe(12);
-    expect(await page.locator('.home-welcome .brand-mark line').count()).toBe(30);
+    // The big mark is untouched: VB-39 changes the small mark, not the one a
+    // screen is built around.
+    await atTheBigMark(page);
+    await expect(page.locator(BIG_MARK)).toHaveAttribute('data-variant', 'graph');
+    expect(await page.locator(`${BIG_MARK} circle`).count()).toBe(12);
+    expect(await page.locator(`${BIG_MARK} line`).count()).toBe(30);
 
     await intoTheFlow(page);
     const mark = page.locator('.flowprogress-mark');

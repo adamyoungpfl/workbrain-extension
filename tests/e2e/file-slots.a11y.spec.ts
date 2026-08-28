@@ -186,13 +186,17 @@ test('a locked slot’s name and its unlock line both clear 4.5:1 (VB-36)', asyn
   // V2.9 VB-146 — Actions' locked row used to make the same claims with its
   // own line. The row is hidden for the beta; the claim comes back with it.
 
-  // V2.9 VB-147's dormant tiles are disabled controls, so axe skips their
-  // words for exactly the reason it skips a locked card's. They still have to
-  // be readable: dormant is "not yet", never "unreadable".
-  await expect(page.locator('.home-tile:disabled')).not.toHaveCount(0);
-  const dormant = await inkAndGround(page, '.home-tile:disabled');
-  const dormantRatio = contrastRatio(dormant.ink, dormant.ground);
-  expect(dormantRatio, `a dormant tile reads at ${dormantRatio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+  // BS-06 replaced VB-147's dormant tiles with waiting ROWS, and the reason
+  // the check survives the swap is unchanged: a row that is not yet a door is
+  // not a control, so axe skips its words, and dormant is "not yet" — never
+  // "unreadable". Both halves of the row are checked, because the subtitle is
+  // the half that says when it unlocks.
+  await expect(page.locator('.home-row.is-waiting')).not.toHaveCount(0);
+  for (const part of ['.home-row-label', '.home-row-sub']) {
+    const dormant = await inkAndGround(page, `.home-row.is-waiting ${part}`);
+    const ratio = contrastRatio(dormant.ink, dormant.ground);
+    expect(ratio, `a waiting row's ${part} reads at ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+  }
 
   await context.close();
 });

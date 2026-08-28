@@ -238,14 +238,20 @@ test.describe('VB-36 — Home is the set of files (V2.6 VB-125b, the card gramma
     const { context, id } = await launch();
     const page = await openHome(context, id);
 
-    // Four independent signals, any one of which survives on its own: a word
-    // in the pill, a sentence in the card, a padlock, and a dashed edge.
+    // Three independent signals, any one of which survives on its own: a word
+    // in the pill, a sentence in the card, and a padlock.
     const locked = page.locator('.home-card[data-file="skills"]');
     await expect(locked.locator('.home-card-pill')).toHaveText('Locked');
     await expect(locked.locator('.home-card-reason')).toHaveText(/Finish/);
     await expect(locked.locator('.home-card-chip svg')).toHaveCount(1);
-    await expect(locked).toHaveCSS('border-style', 'dashed');
-    // The open card is not dashed, so the edge really is a distinction.
+
+    // BS-06, Adam's D4 — THE DASHED EDGE IS GONE. It was a fourth signal and
+    // it was the weakest one: §6 reads a dashed square as broken rather than
+    // as waiting, and "dormant items become rows that explain when they
+    // unlock, not dashed disabled squares" applies to the cards too. What
+    // replaced it is the reason sentence, which says the same thing in words
+    // somebody can act on. The edge is now the same edge the open card has.
+    await expect(locked).toHaveCSS('border-style', 'solid');
     await expect(page.locator('.home-card[data-file="context"]')).toHaveCSS('border-style', 'solid');
 
     await context.close();

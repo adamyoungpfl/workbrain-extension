@@ -133,18 +133,18 @@ test.describe('welcome screen — accessibility', () => {
 
   test('the mark says nothing to a screen reader, and the name is real text instead', async () => {
     const { context, page } = await openWelcome();
-    // Nothing in the mark is exposed: no role, no label, no title element.
-    // Scoped to the welcome lockup. V1.7 VB-34 put a second mark on the
-    // panel — the splash's — and it makes the same aria-hidden claim, which
-    // its own spec asserts.
-    const mark = page.locator('.home-welcome svg.brand-mark');
+    // BS-06 (§6) left Home exactly one mark, the chrome bar's, so this is
+    // now a claim about that one: nothing in it is exposed — no role, no
+    // label, no title element.
+    const mark = page.locator('.home svg.brand-mark');
+    await expect(mark).toHaveCount(1);
     await expect(mark).toHaveAttribute('aria-hidden', 'true');
     await expect(mark.locator('title')).toHaveCount(0);
     // What is exposed is text, selectable and translatable — V2.6 VB-125
     // moved the name into the chrome bar, where it is said once for every
     // Home state, beside a mark that is likewise only a picture.
     await expect(page.locator('.home-chrome-name')).toContainText('Workbrain');
-    await expect(page.locator('.home-chrome svg.brand-mark')).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('.home-chrome svg.brand-mark')).toHaveCount(1);
     // And the section it heads is named by the headline, not by the picture.
     await expect(page.locator('.home-welcome')).toHaveAttribute('aria-labelledby', 'home-welcome-headline');
     await expect(page.locator('#home-welcome-headline')).toHaveText('Teach AI who you are, once.');

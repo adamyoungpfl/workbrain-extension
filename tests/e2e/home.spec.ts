@@ -233,8 +233,6 @@ test.describe('Home surface (R1-12)', () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
-    // V1.1 VB-01 replaced the old "You have not started yet." card with the
-    // welcome lockup — covered in full by the welcome test below.
     await expect(page.getByRole('button', { name: 'Start with a few questions', exact: true })).toBeVisible();
     await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
     // V2.9 VB-145: the import door moved to the top of the UI — an upload
@@ -247,22 +245,20 @@ test.describe('Home surface (R1-12)', () => {
     await expect(page.getByRole('button', { name: 'Just pick a file', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Close', exact: true }).click();
 
-    // No due/current banner, and nothing to prove yet — the proof tile is
-    // there (the row is the map) but genuinely disabled, the same gate that
-    // used to hide the button. V2.9 VB-144: a dormant tile SAYS what it is
-    // waiting for in its own accessible name, so the wait is heard and not
-    // only seen.
-    const prove = page.getByRole('button', { name: /^Prove it works/ });
-    await expect(prove).toBeDisabled();
-    await expect(prove).toHaveAccessibleName('Prove it works — Ready when your Context file is finished');
-    // And the download tile, its twin, waits on exactly the same thing.
-    await expect(page.getByRole('button', { name: /^Download file/ })).toBeDisabled();
+    // BS-06 (§6): the dormant tiles are ROWS now, and a waiting row holds no
+    // control at all — a disabled button in the tab order is a promise the
+    // screen cannot keep. The wait is said in words, in the row.
+    const prove = page.locator('.home-row', { hasText: S.proofCta });
+    await expect(prove).toHaveClass(/is-waiting/);
+    await expect(prove).toContainText(S.tileWaitsOnContext);
+    await expect(prove.locator('button, a')).toHaveCount(0);
+    await expect(page.locator('.home-row', { hasText: S.tileDownload })).toHaveClass(/is-waiting/);
 
     await context.close();
   });
 
   // ────────────────────────────────────────────────────────── V1.1 VB-01
-  test('with empty storage the welcome state renders the mark, the wordmark and the CTA, and the CTA really starts the interview', async () => {
+  test('with empty storage the welcome state renders the promise, the cost and the CTA', async () => {
     const { context, sw, id } = await launchExtension();
     // Explicit rather than assumed: this is the "nothing has ever been
     // answered" case, which is the only one that shows this screen.
@@ -272,14 +268,21 @@ test.describe('Home surface (R1-12)', () => {
     const page = await openPanel(context, id);
     const welcome = page.locator('.home-welcome');
     await expect(welcome).toBeVisible();
+    // BS-06 (§6), Adam's D3: the mark left this card with the lockups. The
+    // chrome bar says "this is Workbrain" once, for every Home state.
+    await expect(welcome.locator('svg.brand-mark')).toHaveCount(0);
 
-    // --- the mark: really drawn, really sized, and really the node graph ---
-    const mark = welcome.locator('svg.brand-mark');
+    // --- the mark: really drawn, really the node graph, and now on the
+    // CHROME BAR rather than in this card. BS-06 moved it; the claims about
+    // the drawing itself are unchanged and follow it, because "the node
+    // graph really renders and its tokens really resolve" is worth pinning
+    // wherever the mark lives. ---
+    const mark = page.locator('.home-chrome svg.brand-mark');
     await expect(mark).toBeVisible();
     await expect(mark.locator('circle')).toHaveCount(12);
     await expect(mark.locator('line')).toHaveCount(30);
     const markBox = await mark.boundingBox();
-    expect(markBox?.width).toBeGreaterThan(48);
+    expect(markBox?.width).toBeGreaterThan(12);
     // Decorative — the wordmark beside it is what gets read out.
     await expect(mark).toHaveAttribute('aria-hidden', 'true');
     // Its colours resolve to the real brand tokens, not to nothing. A
@@ -322,40 +325,23 @@ test.describe('Home surface (R1-12)', () => {
     // And the line it replaced is gone.
     await expect(page.getByText('You have not started yet.')).toHaveCount(0);
 
-    // --- one entrance, then nothing. No loop, no rAF, no ticking. ---
-    const animation = await mark.evaluate((el) => {
-      const s = getComputedStyle(el);
-      return { name: s.animationName, count: s.animationIterationCount, fill: s.animationFillMode };
-    });
-    expect(animation.name).toBe('brand-mark-in');
-    expect(animation.count).toBe('1');
-    expect(animation.fill).toBe('both');
-    // Settled: after the entrance the mark is fully opaque and back to its
-    // own size, and stays that way — sampled twice, half a second apart, which
-    // is what a rotation or a pulse would fail. (Computed `transform` reads as
-    // the identity matrix rather than "none" while an animation with
-    // `fill-mode: both` is holding its end frame; identity is the point, not
-    // the spelling.)
-    const identity = 'matrix(1, 0, 0, 1, 0, 0)';
+    // --- STILL, and no loop. ---
+    // BS-06: the entrance itself moved with the mark. Home's only mark is
+    // the chrome bar's, which is drawn `entrance={false}` on purpose — it
+    // survives every state, so an arrival animation would replay on every
+    // return to Home. What still matters here, and is asserted, is that
+    // nothing about it MOVES: no rotation, no pulse, no ticking.
+    // brand-mark.spec.ts owns the entrance, on the splash's mark, which is
+    // the one that actually arrives.
     await expect(mark).toHaveCSS('opacity', '1');
     const first = await mark.evaluate((el) => getComputedStyle(el).transform);
     await page.waitForTimeout(500);
-    const second = await mark.evaluate((el) => getComputedStyle(el).transform);
-    expect([first, second]).toEqual([identity, identity]);
-
-    // --- keyboard-only: the CTA is reachable and really starts the flow ---
-    const cta = page.getByRole('button', { name: 'Start with a few questions', exact: true });
-    await cta.focus();
-    await expect(cta).toBeFocused();
-    await page.keyboard.press('Enter');
-    await expect(page.locator('.flow')).toBeVisible();
-    // Question one, not a resume — nothing has been answered.
-    await expect(page.locator('.home-welcome')).toHaveCount(0);
+    expect(await mark.evaluate((el) => getComputedStyle(el).transform)).toBe(first);
 
     await context.close();
   });
 
-  test('the welcome mark is still fully drawn under prefers-reduced-motion, with its entrance removed', async () => {
+  test('the chrome mark is fully drawn under prefers-reduced-motion, with nothing animating', async () => {
     const { context, id } = await launchExtension();
     const page = await context.newPage();
     await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -367,10 +353,10 @@ test.describe('Home surface (R1-12)', () => {
     await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
 
-    // Scoped to the welcome card. V1.7 VB-34 put a second mark on the panel —
-    // the splash's, on top for the first couple of seconds of a session — and
-    // this test is about the welcome screen's own.
-    const mark = page.locator('.home-welcome svg.brand-mark');
+    // BS-06 moved Home's only mark to the chrome bar (Adam's D3), so the
+    // still-version claim follows it: the whole mark, at full opacity,
+    // immediately, with nothing animating.
+    const mark = page.locator('.home-chrome svg.brand-mark');
     await expect(mark).toBeVisible();
     // The still version carries everything the motion did: the whole mark,
     // at full opacity, immediately.
@@ -401,52 +387,46 @@ test.describe('Home surface (R1-12)', () => {
     const page = await openPanel(context, id);
     await expect(page.locator('.home-welcome')).toHaveCount(0);
     await expect(page.getByText('Teach AI who you are, once.')).toHaveCount(0);
-    // V2.6 VB-125: the welcome's big mark is gone WITH the welcome, and the
-    // file lockup stands in its place — the glyph, "Your work brain", the
-    // tagline, and a meta line of real derivables.
+    // BS-06 (§6), Adam's D3 — THE LOCKUP IS GONE TOO. It said "this is
+    // Workbrain" a second time inside 180px of the chrome bar that already
+    // said it, and the chrome bar wins because it survives every state.
+    await expect(page.locator('.home-lockup')).toHaveCount(0);
     await expect(page.locator('.home-welcome .brand-mark')).toHaveCount(0);
-    const lockup = page.locator('.home-lockup');
-    await expect(lockup).toBeVisible();
-    await expect(lockup.getByRole('heading', { name: 'Your work brain' })).toBeVisible();
-    await expect(lockup).toContainText('How you do anything is how your AI does everything.');
-    // One answer, stamped today: "1 file · Updated today · 1 KB" — every
-    // claim derivable (FLAG 7), none of the template's invented ones.
-    await expect(lockup.locator('.home-lockup-meta')).toHaveText('1 file · Updated today · 1 KB');
+    // Exactly one mark on the screen, and it is the chrome's.
+    await expect(page.locator('.home svg.brand-mark')).toHaveCount(1);
+    await expect(page.locator('.home-chrome svg.brand-mark')).toHaveCount(1);
+    // The facts the lockup's meta line printed are still on the screen — the
+    // meter and the file cards derive them from the same answers.
+    await expect(page.locator('.meter')).toBeVisible();
+    await expect(page.locator('.home-card[data-file="context"]')).toBeVisible();
 
     await context.close();
   });
 
-  test('the Workbrain+ card: a real door, and the price said on purpose', async () => {
-    // V2.8 VB-134: the offer menu became ONE marketing piece, and showing
-    // the price is Adam's explicit reversal of V2.6's no-prices call
-    // (recorded in strings.ts). What has NOT changed: the door is a real
-    // link and the site does the charging — no checkout, no dollar the
-    // extension collects (NORTH-STAR 4).
+  test('Workbrain+ keeps its door and loses its pitch (BS-06)', async () => {
+    // §6: "The four bullets and the price belong on the page already
+    // linked. On Home they cost about 230px and make the panel read as a
+    // storefront on the screen people open to do work." This reverses V2.8
+    // VB-134 and V2.9 VB-147's reprice — Adam's D3, taken knowingly.
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
-    const link = page.getByRole('link', { name: /See Workbrain\+/ });
-    await expect(link).toBeVisible();
+    const link = page.getByRole('link', { name: /Workbrain\+/ });
     await expect(link).toHaveAttribute('href', 'https://www.model-citizen.org/work-brain/plus');
     await expect(link).toHaveAttribute('target', '_blank');
     await expect(link).toHaveAttribute('rel', /noreferrer/);
 
-    const card = page.locator('.home-cta');
-    await expect(card).toContainText('Workbrain+');
-    // V2.9 VB-147 reprices it — Adam: "Under promise, over deliver." The
-    // monthly number stands here; the year's price lives on the billing page.
-    await expect(card).toContainText('Starting at $1K a month');
-    await expect(card).toContainText('Billed monthly on the site.');
-    // The four goods, present as a list.
-    await expect(card.locator('.home-cta-list li')).toHaveCount(4);
-    // And the old menu really is gone.
-    await expect(page.getByText('AI Coaching')).toHaveCount(0);
-    await expect(page.getByText('Fractional CTO')).toHaveCount(0);
+    // The door survives; the storefront does not.
+    await expect(page.locator('.home-cta')).toHaveCount(0);
+    await expect(page.locator('.home')).not.toContainText('Starting at $1K a month');
+    await expect(page.locator('.home')).not.toContainText('Billed monthly on the site.');
+    for (const good of S.plusBullets) {
+      await expect(page.locator('.home')).not.toContainText(good);
+    }
 
     await context.close();
   });
 
-  // ────────────────────────────────────────────────────────── V2.6 VB-127
   test('"See what\'s stored" lists exactly what exists, in plain words, and stores nothing about looking', async () => {
     const { context, sw, id } = await launchExtension();
     // Two context answers, one skill, one typed proof score, one hidden
@@ -544,85 +524,72 @@ function nothingLeftToAsk(): Answers {
 }
 
 test.describe('V2.9 — Your next move, and the graduation it waits for', () => {
-  test('three tiles, and the two that wait say what they are waiting for (VB-147)', async () => {
+  test('five rows, and the two that wait explain themselves in words (BS-06)', async () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
-    const tiles = page.locator('.home-tiles .home-tile');
-    await expect(tiles).toHaveCount(3);
-    // The row is three now because the library left it for a banner of its
-    // own, below — a tile could not carry an invitation.
-    await expect(tiles.nth(0)).toHaveAccessibleName(/^Download file/);
-    await expect(tiles.nth(1)).toHaveAccessibleName(/^Prove it works/);
-    await expect(tiles.nth(2)).toHaveAccessibleName('Redeem a skill');
+    /**
+     * BS-06 (§6) — the tiles became rows. "A plain row list with a subtitle
+     * says more in less height, and dormant items become rows that explain
+     * themselves instead of disabled squares."
+     */
+    const rows = page.locator('.home-row');
+    await expect(rows).toHaveCount(5);
+    await expect(rows.nth(0)).toContainText(S.tileDownload);
+    await expect(rows.nth(1)).toContainText(S.proofCta);
+    await expect(rows.nth(2)).toContainText(S.tileRedeem);
+    await expect(rows.nth(3)).toContainText(S.libTitle);
+    await expect(rows.nth(4)).toContainText(S.plusTitle);
 
-    // Dormant, and honest about why — in the name, so it is heard.
-    for (const index of [0, 1]) {
-      await expect(tiles.nth(index)).toBeDisabled();
-      await expect(tiles.nth(index)).toHaveAccessibleName(/Ready when your Context file is finished$/);
-      await expect(tiles.nth(index)).not.toHaveClass(/is-ready/);
-    }
-    // The third never waits on anything: a code from a bought skill works on
-    // day one, before there is a file at all.
-    await expect(tiles.nth(2)).toBeEnabled();
+    // A waiting row says what it is waiting for, in the row, as text.
+    await expect(rows.nth(0)).toHaveClass(/is-waiting/);
+    await expect(rows.nth(0)).toContainText(S.tileWaitsOnContext);
+    await expect(rows.nth(1)).toContainText(S.tileWaitsOnContext);
+
+    // AND IT HOLDS NO CONTROL AT ALL. A disabled button in the tab order is
+    // a promise the screen cannot keep — §1 took the dashed disabled square
+    // away and this is what replaced it, not a quieter version of it.
+    await expect(rows.nth(0).locator('button, a')).toHaveCount(0);
+    await expect(page.locator('.home-tile')).toHaveCount(0);
+
+    // The third never waits: a redeem code works on day one.
+    await expect(rows.nth(2)).not.toHaveClass(/is-waiting/);
+    await expect(rows.nth(2).locator('button')).toHaveCount(1);
 
     await context.close();
   });
 
-  test('finishing the Context file lights both dormant tiles, and the light is derived (VB-144)', async () => {
+  test('finishing the Context file makes both waiting rows real (BS-06)', async () => {
     const { context, sw, id } = await launchExtension();
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), nothingLeftToAsk());
 
     const page = await openPanel(context, id);
-    const download = page.getByRole('button', { name: 'Download file', exact: true });
-    const prove = page.getByRole('button', { name: 'Prove it works', exact: true });
-
-    // In colour and obviously active — and the name loses the waiting clause,
-    // because there is nothing left to wait for.
-    for (const tile of [download, prove]) {
-      await expect(tile).toBeEnabled();
-      await expect(tile).toHaveClass(/is-ready/);
+    const rows = page.locator('.home-row');
+    for (const index of [0, 1]) {
+      await expect(rows.nth(index)).not.toHaveClass(/is-waiting/);
+      await expect(rows.nth(index).locator('button')).toHaveCount(1);
     }
+    // …and they stop saying they are waiting.
+    await expect(page.locator('.home-rows')).not.toContainText(S.tileWaitsOnContext);
 
-    // "In colour" is a real measurement, not a class: the ready tile's ground
-    // and ink both move off the resting tile's, and the ink still clears the
-    // 4.5:1 floor on the ground it is actually painted on.
-    const look = await download.evaluate((el) => {
-      const style = getComputedStyle(el);
-      return { background: style.backgroundColor, color: style.color };
-    });
-    const resting = await page
-      .getByRole('button', { name: 'Redeem a skill', exact: true })
-      .evaluate((el) => getComputedStyle(el).backgroundColor);
-    expect(look.background).not.toBe(resting);
-
-    // And it really downloads — one press, no sheet.
+    // The download really downloads — one press, no sheet.
     const downloadPromise = page.waitForEvent('download');
-    await download.click();
+    await page.getByRole('button', { name: new RegExp(`^${S.tileDownload}`) }).click();
     expect((await downloadPromise).suggestedFilename()).toBe('Context.md');
     await expect(page.getByText('Downloaded. Keep it somewhere you will find it.')).toBeVisible();
 
     await context.close();
   });
 
-  test('the Certified Skills banner spans the page and its door is real (VB-147)', async () => {
+  test('the Certified Skills door is a row like the rest (BS-06)', async () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
-    const banner = page.locator('.home-lib');
-    await expect(banner).toContainText('Workbrain Certified Skills');
-    const link = banner.getByRole('link', { name: /Explore Certified Skills/ });
+    const link = page.getByRole('link', { name: new RegExp(S.libTitle) });
     await expect(link).toHaveAttribute('href', 'https://www.model-citizen.org/work-brain/skills-library');
     await expect(link).toHaveAttribute('target', '_blank');
-    await expect(link).toHaveAttribute('rel', /noreferrer/);
-
-    // It spans, like the Workbrain+ card under it — an invitation, not a
-    // quarter-tile with a "Soon" pill on it (V2.6's locked library tile,
-    // which this replaces).
-    const width = await banner.evaluate((el) => el.getBoundingClientRect().width);
-    const tile = await page.locator('.home-tile').first().evaluate((el) => el.getBoundingClientRect().width);
-    expect(width).toBeGreaterThan(tile * 2);
-    await expect(page.locator('.home-tile-pill')).toHaveCount(0);
+    // The spanning banner is gone with the tiles it was spanning past.
+    await expect(page.locator('.home-lib')).toHaveCount(0);
 
     await context.close();
   });

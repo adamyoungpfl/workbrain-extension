@@ -996,6 +996,18 @@ export const S = {
   tileDownload: 'Download file',
   /** The dormant tiles, said aloud: a pointer cannot read grey. */
   tileWaitsOnContext: 'Ready when your Context file is finished',
+  /* BS-06 (§6) — the tiles became ROWS with subtitles. A three-across icon
+     grid whose labels ran at 11px said less in more height, and two of the
+     three were usually dashed and dead; a dormant item is a row that
+     explains itself, not a disabled square. These are the subtitles that
+     replace the explaining a dashed edge was doing badly. [DRAFT] */
+  rowDownloadSub: 'The file itself, to keep or to hand to any AI',
+  rowProveSub: 'Two answers, side by side. Two minutes.',
+  rowRedeemSub: 'Add a skill somebody built for you',
+  rowLibrarySub: 'Skills built and tested by Model Citizen',
+  /** Workbrain+ keeps its door and loses its pitch: the price and the four
+   * goods belong on the page this links to (§6). */
+  rowPlusSub: 'Real help every month, from the people who build these',
   /**
    * [DRAFT] V2.9 VB-145 — the upload door at the top of the UI, and its
    * seatbelt: bringing a file in REPLACES what is here, so the sheet says

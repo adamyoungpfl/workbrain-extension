@@ -18,10 +18,9 @@ import { getLocal, getSync, setLocal } from '../../core/storage/client';
 import { computeNextMove } from '../../core/freshness/nextMove';
 import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
 import { computeUtilization } from '../../core/home/utilization';
-import { lockupMeta } from '../../core/home/lockupMeta';
-import { contextFileDate, generateContextFile } from '../../core/files/generate';
-import { generateSkillsFile } from '../../core/files/skillsFile';
-import { deriveActionsFile } from '../../core/files/deriveActions';
+/* BS-06: the file GENERATORS left Home with the lockup's meta line — the
+   only thing that needed a byte count on this screen. `downloadContextFile`
+   still writes the real file from the same generator, one layer down. */
 import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { multipleRecordCount } from '../../core/flow/multiples';
 import { fileAsked, fileFinished, shownFileSlots } from '../../core/files/slots';
@@ -114,6 +113,87 @@ const PLUS_URL = 'https://www.model-citizen.org/work-brain/plus';
  */
 const EMPTY_SKILLS: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
 
+/**
+ * BS-06 (§6) — one row of Home's action list.
+ *
+ * A door (`href`), a control (`onPress`), or a DORMANT row that says what it
+ * is waiting for and cannot be pressed. Dormant is drawn as quiet ink and a
+ * stated reason — never a dashed edge, which §1 reassigned to "empty", and
+ * never a disabled square, which was the thing that read as broken.
+ *
+ * The 44px floor is on the row, so the whole line is the target: these are
+ * read and pressed in one motion.
+ */
+function HomeRow({
+  id,
+  icon,
+  label,
+  sub,
+  ready,
+  onPress,
+  href,
+}: {
+  id: string;
+  icon: ReactNode;
+  label: string;
+  sub: string;
+  ready: boolean;
+  onPress?: (() => void) | undefined;
+  href?: string | undefined;
+}) {
+  // The NAME is the verb, the SUBTITLE is the description. Both are read, and
+  // in that order — but a control announced as "Redeem a skill, paste a code
+  // somebody sent you" is one whose name is no longer the thing on the screen,
+  // and the copy rule is that a button is a verb the person would say. So the
+  // subtitle is `aria-describedby`, which is what supporting text is for.
+  const subId = `home-row-sub-${id}`;
+  const body = (
+    <>
+      <span className="home-row-chip" aria-hidden="true">
+        {icon}
+      </span>
+      <span className="home-row-text">
+        <span className="home-row-label">{label}</span>
+        <span className="home-row-sub" id={subId}>
+          {sub}
+        </span>
+      </span>
+      {(onPress || href) && <span className="home-row-go" aria-hidden="true">{GO_ARROW}</span>}
+    </>
+  );
+  return (
+    <li className={ready ? 'home-row' : 'home-row is-waiting'}>
+      {href ? (
+        <a
+          className="home-row-hit"
+          href={href}
+          target="_blank"
+          rel="noreferrer"
+          aria-label={label}
+          aria-describedby={subId}
+        >
+          {body}
+        </a>
+      ) : onPress ? (
+        <button
+          type="button"
+          className="home-row-hit"
+          onClick={onPress}
+          aria-label={label}
+          aria-describedby={subId}
+        >
+          {body}
+        </button>
+      ) : (
+        // Not a disabled control: there is nothing to press yet, so there is
+        // no control. A disabled button in the tab order is a promise the
+        // screen cannot keep.
+        <span className="home-row-hit">{body}</span>
+      )}
+    </li>
+  );
+}
+
 function lockedReason(slot: FileSlot): string {
   const lock = fileLock(slot);
   // Only ever called for a locked slot, which always has one. "Coming later"
@@ -192,6 +272,13 @@ const LIBRARY_ICON = (
 
 /* V2.8 VB-133: TIM_ICON left with its tile; the Redeemer's key stands
  * there now — a code that opens a skill. */
+/** BS-06 — Workbrain+'s row glyph: a spark, in the house stroke style. */
+const PLUS_ICON = (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M9 2.5 10.6 7 15 8.6 10.6 10.2 9 14.6 7.4 10.2 3 8.6 7.4 7Z" strokeLinejoin="round" />
+  </svg>
+);
+
 const REDEEM_ICON = (
   <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
     <circle cx="5.8" cy="6.4" r="3.1" />
@@ -508,16 +595,6 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
     report,
     now: new Date(),
   });
-  const meta = lockupMeta({
-    context: answers,
-    skills: skillsAnswers,
-    contextText: generateContextFile(answers, contextFileDate()),
-    skillsText: generateSkillsFile(skillsAnswers, contextFileDate()),
-    actionsText: deriveActionsFile(skillsAnswers),
-    // VB-146: the hidden file is not counted while it is hidden.
-    actionsOn: false,
-    now: new Date(),
-  });
 
   return (
     <div className="home">
@@ -555,40 +632,27 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           it on Home (the file row, the "bring your file" hint, Import, the
           privacy note) is unchanged and still renders — this replaces the
           bare "You have not started yet." card, not the page. */}
-      {/* V2.6 VB-125 — the file lockup: what this place holds, said as a
-          thing ("Your work brain"), the tagline under it, and a meta line of
-          real derivables (core/home/lockupMeta.ts — FLAG 7: nothing the
-          person could not check). Only once something exists: a fresh
-          install's lockup moment is the welcome card below, and two brand
-          lockups on one screen would be the chrome saying itself twice. */}
-      {hasStarted && (
-        <section className="home-lockup" aria-labelledby="home-lockup-title">
-          <div className="home-glyph">
-            <BrandMark size={30} spin="none" entrance={false} />
-          </div>
-          <div className="home-lockup-text">
-            <h2 id="home-lockup-title">{S.workBrainStage}</h2>
-            <p className="home-lockup-byline">{S.splashTagline}</p>
-            <p className="home-lockup-meta">
-              {meta.files === 0
-                ? S.notBuiltYet
-                : [
-                    S.metaFiles(meta.files),
-                    meta.ageDays === 0 ? S.updatedToday : S.daysOld(meta.ageDays ?? 0),
-                    S.metaSize(meta.kb),
-                  ].join(' · ')}
-            </p>
-          </div>
-        </section>
-      )}
+      {/* BS-06 (§6), Adam's D3 — THE LOCKUPS ARE GONE.
+          V2.6 VB-125 put a brand block here: the mark, "Your work brain",
+          the tagline, and a meta line of derivables. §6: "Chrome bar,
+          lockup and welcome card all say 'this is Workbrain' within 180px
+          of each other. The chrome bar wins because it survives every
+          state." That is ~84px back and one fewer thing to read before the
+          screen says anything a person came for.
+
+          The meta line's facts are not lost — they are the same derivations
+          the file cards and the meter print, one row down. `lockupMeta` is
+          left in core: it is tested, it is honest, and §6 removed the place
+          it was printed rather than the fact it is true. */}
 
       {nextMove.kind === 'start' && (
         <section className="home-welcome" aria-labelledby="home-welcome-headline">
-          <BrandMark />
-          {/* V2.6 VB-125: the wordmark and byline left this card — the
-              chrome bar above says both now, once, for every Home state.
-              The mark stays: it is the welcome's one warm thing, and the
-              approved copy below is untouched. */}
+          {/* V2.6 VB-125 took the wordmark and byline off this card; BS-06
+              takes the mark, for the reason that was already written here —
+              the chrome bar says it once, for every Home state. What is
+              left is what a first-time person actually needs: the promise,
+              the time it costs, and the way in. The approved copy is
+              untouched. */}
           <h2 id="home-welcome-headline" className="home-welcome-headline">
             {S.welcomeHeadline}
           </h2>
@@ -757,86 +821,62 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           accessible name since a disabled tile meets no pointer (decision
           4 + NORTH-STAR); TiM is a door to the site. */}
       <p className="home-section-label">{S.homeKeepLabel}</p>
-      {/* V2.9 VB-147 — three tiles, sized to the space. Download file is
-          the Move tile's heir and DOWNLOADS, plainly; it and Prove it
-          works stand dormant until the Context interview is finished,
-          then in colour and obviously active (VB-144's graduation state,
-          derived from the file's real state — nothing stored). The
-          import door moved to the chrome's upload control (VB-145). */}
-      <div className="home-tiles is-three">
-        <button
-          type="button"
-          className={contextComplete ? 'home-tile is-ready' : 'home-tile'}
-          disabled={!contextComplete}
-          aria-label={contextComplete ? undefined : `${S.tileDownload} — ${S.tileWaitsOnContext}`}
-          onClick={() => {
-            downloadContextFile(answers);
-            setHomeToast(S.toastDownloaded);
-          }}
-        >
-          {DOWNLOAD_ICON}
-          {S.tileDownload}
-        </button>
-        <button
-          type="button"
-          className={contextComplete ? 'home-tile is-ready' : 'home-tile'}
-          disabled={!contextComplete}
-          aria-label={contextComplete ? undefined : `${S.proofCta} — ${S.tileWaitsOnContext}`}
-          onClick={onOpenProof}
-        >
-          {PROVE_ICON}
-          {S.proofCta}
-        </button>
-        <button type="button" className="home-tile" onClick={() => setRedeemOpen(true)}>
-          {REDEEM_ICON}
-          {S.tileRedeem}
-        </button>
-      </div>
+      {/* BS-06 (§6) — THREE TILES AND TWO BANNERS BECOME ONE LIST.
+          The tiles were a 3-across icon grid whose labels ran at 11px, and
+          two of the three were usually dashed and dead; the Certified Skills
+          banner and the Workbrain+ card cost another ~330px between them to
+          say two sentences and a price. A plain row with a subtitle says
+          more in less height — and a dormant item becomes a row that
+          EXPLAINS ITSELF rather than a disabled square, which is the same
+          §1 rule that took dashed away from "locked". */}
+      <ul className="home-rows">
+        <HomeRow
+          id="download"
+          icon={DOWNLOAD_ICON}
+          label={S.tileDownload}
+          sub={contextComplete ? S.rowDownloadSub : S.tileWaitsOnContext}
+          ready={contextComplete}
+          onPress={
+            contextComplete
+              ? () => {
+                  downloadContextFile(answers);
+                  setHomeToast(S.toastDownloaded);
+                }
+              : undefined
+          }
+        />
+        <HomeRow
+          id="prove"
+          icon={PROVE_ICON}
+          label={S.proofCta}
+          sub={contextComplete ? S.rowProveSub : S.tileWaitsOnContext}
+          ready={contextComplete}
+          onPress={contextComplete ? onOpenProof : undefined}
+        />
+        <HomeRow
+          id="redeem"
+          icon={REDEEM_ICON}
+          label={S.tileRedeem}
+          sub={S.rowRedeemSub}
+          ready
+          onPress={() => setRedeemOpen(true)}
+        />
+        <HomeRow
+          id="library"
+          icon={LIBRARY_ICON}
+          label={S.libTitle}
+          sub={S.rowLibrarySub}
+          ready
+          href="https://www.model-citizen.org/work-brain/skills-library"
+        />
+        {/* Workbrain+ keeps its door and loses its pitch. The price and the
+            four goods belong on the page this links to; on Home they cost
+            ~230px and made the panel read as a storefront on the screen a
+            person opens to do work (§6). */}
+        <HomeRow id="plus" icon={PLUS_ICON} label={S.plusTitle} sub={S.rowPlusSub} ready href={PLUS_URL} />
+      </ul>
 
       {nextMove.kind === 'start' && <p className="home-hint">{S.emptyNewDevice}</p>}
-
-      {/* V2.8 VB-134 — Workbrain+, the one marketing piece: the name, the
-          price said plainly (Adam's reversal of V2.6's no-prices call,
-          recorded), the framing line, the four things a member gets, and
-          one real door to the site — which is still where every dollar
-          changes hands (NORTH-STAR 4). */}
-      {/* V2.9 VB-147 — Certified Skills, spanning the row like Workbrain+
-          below it: an invitation to explore, not a locked tile waiting to
-          apologise. The library lives on the site; this is its door. */}
-      <section className="home-lib" aria-labelledby="home-lib-title">
-        <span className="home-lib-chip" aria-hidden="true">{LIBRARY_ICON}</span>
-        <div className="home-lib-text">
-          <h2 id="home-lib-title">{S.libTitle}</h2>
-          <p>{S.libBody}</p>
-        </div>
-        <a
-          className="home-lib-go"
-          href="https://www.model-citizen.org/work-brain/skills-library"
-          target="_blank"
-          rel="noreferrer"
-        >
-          {S.libGo}
-          {GO_ARROW}
-        </a>
-      </section>
-
-      <section className="home-cta" aria-labelledby="home-cta-title">
-        <h2 id="home-cta-title">{S.plusTitle}</h2>
-        <p className="home-cta-price">
-          {S.plusPrice}
-          <span className="home-cta-year">{S.plusYear}</span>
-        </p>
-        <p className="home-cta-body">{S.plusFrame}</p>
-        <ul className="home-cta-list">
-          {S.plusBullets.map((line) => (
-            <li key={line}>{line}</li>
-          ))}
-        </ul>
-        <a className="home-plus-go" href={PLUS_URL} target="_blank" rel="noreferrer">
-          {S.plusGo}
-          {GO_ARROW}
-        </a>
-      </section>
 
       <footer className="home-foot">
         <p className="home-privacy">{S.homePrivacyNote}</p>
