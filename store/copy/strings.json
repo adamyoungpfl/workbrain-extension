@@ -588,67 +588,13 @@
   "id": "s66",
   "file": "src/panel/strings.ts",
   "key": "meterLabel",
-  "text": "set up",
+  "text": "Optimized",
   "note": "V2.6 VB-125 \u2014 the utilization meter's printed pieces, under Adam's decided semantics (docs/V2.6-REFINEMENT.md, decision 2): the number measures how much of full utilization is SET UP \u2014 Context and Skills completion first, with Act and Share holding the remainder so 100% takes outside work. \"Set up\" and never the template's \"AI-utilized\": the product does not watch usage and its meter must not claim to. `meterLabel` sits after the big number (\"60% set up\" \u2014 the same claim `utilization` above makes, split for the layout); `stepNamed` is the standing step, said with its name (\"Step 2 \u00b7 Repeat\") the way the template's \"Gate 2\" never may.",
   "section": "the four steps",
   "surface": "The panel"
  },
  {
   "id": "s67",
-  "file": "src/panel/strings.ts",
-  "key": "meterWhat",
-  "text": "What moves this?",
-  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
-  "section": "the four steps",
-  "surface": "The panel"
- },
- {
-  "id": "s68",
-  "file": "src/panel/strings.ts",
-  "key": "meterWhatTitle",
-  "text": "What moves this number",
-  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
-  "section": "the four steps",
-  "surface": "The panel"
- },
- {
-  "id": "s69",
-  "file": "src/panel/strings.ts",
-  "key": "meterWhatLead",
-  "text": "Four quarters, one for each step. Each one is a real count of your own answers \u2014 nothing here watches you work.",
-  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
-  "section": "the four steps",
-  "surface": "The panel"
- },
- {
-  "id": "s70",
-  "file": "src/panel/strings.ts",
-  "key": "meterWhatFills",
-  "text": "Questions you answer in the Context interview. A question you pass on stays empty.\nQuestions you answer in the Skills interview, the same way.\nSkills that say how much AI may do on its own, and where the data lives. \"Not sure\" leaves the gap.\nProof you ran, and skills you saved or redeemed. Half each.",
-  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
-  "section": "the four steps",
-  "surface": "The panel"
- },
- {
-  "id": "s71",
-  "file": "src/panel/strings.ts",
-  "key": "meterWhatCeiling",
-  "text": "The last quarter needs your file out in the world, so 100% takes more than answering questions.",
-  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
-  "section": "the four steps",
-  "surface": "The panel"
- },
- {
-  "id": "s72",
-  "file": "src/panel/strings.ts",
-  "key": "stepNamed",
-  "text": "Step ${n} \u00b7 ${label}",
-  "note": "BS-06 (\u00a76) \u2014 \"Add 'What moves this?' beside the percentage \u2014 a sheet listing the four segments and what fills them. The number is honest and completely opaque today.\"  All eight lines below are mine and want Adam's morning pass. Each line answers one question and only that question: WHAT PUTS PERCENT IN THIS QUARTER. Not what the step means \u2014 the tick already names it \u2014 and not how far along they are, which the drawing above already says. They are written from core/home/utilization.ts's own formula, sentence by sentence, so the sheet and the arithmetic cannot drift apart without somebody noticing. The last line is the one people actually open this for. 100% is not reachable by answering questions alone, on purpose (Adam's semantics, V2.6 decision 2), and a person who works that out for themselves at 74% has been tricked. It says so plainly instead.",
-  "section": "the four steps",
-  "surface": "The panel"
- },
- {
-  "id": "s73",
   "file": "src/panel/strings.ts",
   "key": "goHome",
   "text": "Go to the home screen",
@@ -657,7 +603,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s74",
+  "id": "s68",
   "file": "src/panel/strings.ts",
   "key": "qzoneLabel",
   "text": "The question and its help",
@@ -666,7 +612,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s75",
+  "id": "s69",
   "file": "src/panel/strings.ts",
   "key": "fileTreeSelect",
   "text": "Show ${title} in the picture",
@@ -675,7 +621,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s76",
+  "id": "s70",
   "file": "src/panel/strings.ts",
   "key": "browseEdit",
   "text": "Edit the file",
@@ -684,7 +630,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s77",
+  "id": "s71",
   "file": "src/panel/strings.ts",
   "key": "(in place)",
   "text": "Show me\nStart the questions\nSave a copy of my skills\nAdd skills from a file\nSaved. The copy is in your downloads.\nAdded 1 skill.\nAdded ${added} skills.",
@@ -693,7 +639,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s78",
+  "id": "s72",
   "file": "src/panel/strings.ts",
   "key": "tourNext",
   "text": "Show me",
@@ -702,7 +648,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s79",
+  "id": "s73",
   "file": "src/panel/strings.ts",
   "key": "tourStart",
   "text": "Start the questions",
@@ -711,7 +657,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s80",
+  "id": "s74",
   "file": "src/panel/strings.ts",
   "key": "skillsShareSave",
   "text": "Save a copy of my skills",
@@ -720,7 +666,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s81",
+  "id": "s75",
   "file": "src/panel/strings.ts",
   "key": "skillsShareAdd",
   "text": "Add skills from a file",
@@ -729,7 +675,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s82",
+  "id": "s76",
   "file": "src/panel/strings.ts",
   "key": "skillsShareSaved",
   "text": "Saved. The copy is in your downloads.",
@@ -738,7 +684,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s83",
+  "id": "s77",
   "file": "src/panel/strings.ts",
   "key": "skillsShareAdded",
   "text": "Added 1 skill.\nAdded ${added} skills.\nAdded ${added}, and ${skipped} could not come along.",
@@ -747,7 +693,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s84",
+  "id": "s78",
   "file": "src/panel/strings.ts",
   "key": "skip",
   "text": "Skip",
@@ -756,7 +702,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s85",
+  "id": "s79",
   "file": "src/panel/strings.ts",
   "key": "rephrase",
   "text": "Ask me that a different way",
@@ -765,16 +711,16 @@
   "surface": "The panel"
  },
  {
-  "id": "s86",
+  "id": "s80",
   "file": "src/panel/strings.ts",
   "key": "makeUpName",
-  "text": "Make one up for me",
+  "text": "Give me something....bold!",
   "note": "V2.4 VB-109 \u2014 the name generator on the two name questions (core/flow/nameGenerator.ts). Same register as `giveExample` above: a verb the person stuck at the box would say out loud \u2014 and on a name question, \"one\" can only mean a name. The button drops a made-up famous mashup into the field via the exact ideas mechanic; pressing again deals the next one.",
   "section": "flow runner",
   "surface": "The panel"
  },
  {
-  "id": "s87",
+  "id": "s81",
   "file": "src/panel/strings.ts",
   "key": "assist",
   "text": "AI Assist",
@@ -783,7 +729,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s88",
+  "id": "s82",
   "file": "src/panel/strings.ts",
   "key": "assistRecommended",
   "text": "AI Assist (Recommended)",
@@ -792,7 +738,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s89",
+  "id": "s83",
   "file": "src/panel/strings.ts",
   "key": "assistActivated",
   "text": "AI Assist Activated",
@@ -801,7 +747,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s90",
+  "id": "s84",
   "file": "src/panel/strings.ts",
   "key": "assistReadPrompt",
   "text": "Read the whole prompt",
@@ -810,7 +756,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s91",
+  "id": "s85",
   "file": "src/panel/strings.ts",
   "key": "assistOpenService",
   "text": "Open ${service}",
@@ -819,7 +765,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s92",
+  "id": "s86",
   "file": "src/panel/strings.ts",
   "key": "assistStarted",
   "text": "I've started the interview",
@@ -828,7 +774,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s93",
+  "id": "s87",
   "file": "src/panel/strings.ts",
   "key": "assistUse",
   "text": "Put it in my answer",
@@ -837,7 +783,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s94",
+  "id": "s88",
   "file": "src/panel/strings.ts",
   "key": "assistNeedPaste",
   "text": "Paste what your AI wrote, or close this and type your own answer.",
@@ -846,7 +792,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s95",
+  "id": "s89",
   "file": "src/panel/strings.ts",
   "key": "assistLanded",
   "text": "Your answer is in the box below. You can edit it.",
@@ -855,7 +801,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s96",
+  "id": "s90",
   "file": "src/panel/strings.ts",
   "key": "fileTreeAgeStale",
   "text": "updated ${age} ago \u2014 time to review",
@@ -864,7 +810,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s97",
+  "id": "s91",
   "file": "src/panel/strings.ts",
   "key": "fileTreeRecords",
   "text": "1 item\n${n} items",
@@ -873,7 +819,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s98",
+  "id": "s92",
   "file": "src/panel/strings.ts",
   "key": "(in place)",
   "text": "S OWN, borrowed rather than written: `Due` is\n     `sectionStateDue` and `Not yet` is `fileTreeStateUntouched`, both already\n     printed on every row of the drawer\nDue",
@@ -882,7 +828,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s99",
+  "id": "s93",
   "file": "src/panel/strings.ts",
   "key": "nodePurpose",
   "text": "What you want AI to stop making you re-explain.\nYour name, and how you would describe yourself to a stranger.\nsec2-1\nThe hats you wear, so AI knows which one you are in.\nsec2-2\nThe work that is yours to deliver, not just to touch.\nsec2-3\nWhere your job stops, so AI stops there too.\nsec2-4\nWhat you can decide alone, and what needs someone else.\nsec2-5\nWhat you know well enough that AI should not explain it.\nThe people, teams and tools AI should already know by name.\nThe named efforts you have underway right now.\nHow you weigh risk and act, so AI matches your judgment.\nHow you sound in writing, so AI writes as you.\nWho you write for, and how each of them differs.\nWords that mean something particular here, and words to avoid.\nWhat AI should never do when it writes as you.",
@@ -891,7 +837,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s100",
+  "id": "s94",
   "file": "src/panel/strings.ts",
   "key": "sec10",
   "text": "Real work of yours, for AI to match rather than guess.",
@@ -900,7 +846,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s101",
+  "id": "s95",
   "file": "src/panel/strings.ts",
   "key": "(in place)",
   "text": "Just a quick check.\nNothing has been sent anywhere.\nKeep it as-is\nTighten it with my AI\nSay it again\nAsk your AI this\nPaste what it says here\nPaste what your AI said, or go back and keep your own words.\nUse this instead",
@@ -909,7 +855,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s102",
+  "id": "s96",
   "file": "src/panel/strings.ts",
   "key": "runCardLit",
   "text": "${section} is lit up.",
@@ -918,7 +864,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s103",
+  "id": "s97",
   "file": "src/panel/strings.ts",
   "key": "runCardWrote",
   "text": "One new line in your file.\n${capitalise(wordFor(lines))} new lines in your file.",
@@ -927,7 +873,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s104",
+  "id": "s98",
   "file": "src/panel/strings.ts",
   "key": "jumpOpen",
   "text": "Jump to\u2026",
@@ -936,7 +882,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s105",
+  "id": "s99",
   "file": "src/panel/strings.ts",
   "key": "jumpTitle",
   "text": "Jump to a question",
@@ -945,7 +891,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s106",
+  "id": "s100",
   "file": "src/panel/strings.ts",
   "key": "jumpFieldLabel",
   "text": "Find a question",
@@ -954,7 +900,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s107",
+  "id": "s101",
   "file": "src/panel/strings.ts",
   "key": "jumpPlaceholder",
   "text": "A word from the question\u2026",
@@ -963,7 +909,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s108",
+  "id": "s102",
   "file": "src/panel/strings.ts",
   "key": "runCardKeep",
   "text": "Keep going",
@@ -972,7 +918,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s109",
+  "id": "s103",
   "file": "src/panel/strings.ts",
   "key": "runCardRead",
   "text": "Read my file",
@@ -981,7 +927,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s110",
+  "id": "s104",
   "file": "src/panel/strings.ts",
   "key": "runCardStop",
   "text": "Stop here for now",
@@ -990,7 +936,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s111",
+  "id": "s105",
   "file": "src/panel/strings.ts",
   "key": "runCardStopNote",
   "text": "Everything is saved. Pick up wherever you like.",
@@ -999,7 +945,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s112",
+  "id": "s106",
   "file": "src/panel/strings.ts",
   "key": "microOffer",
   "text": "Want to see it work? One minute.",
@@ -1008,7 +954,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s113",
+  "id": "s107",
   "file": "src/panel/strings.ts",
   "key": "microOfferGo",
   "text": "Show me",
@@ -1017,7 +963,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s114",
+  "id": "s108",
   "file": "src/panel/strings.ts",
   "key": "microTitle",
   "text": "Send this to your AI.",
@@ -1026,7 +972,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s115",
+  "id": "s109",
   "file": "src/panel/strings.ts",
   "key": "microLead",
   "text": "It goes with everything you have told me so far. Watch what comes back.",
@@ -1035,7 +981,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s116",
+  "id": "s110",
   "file": "src/panel/strings.ts",
   "key": "microPasteLabel",
   "text": "Paste what it wrote here",
@@ -1044,7 +990,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s117",
+  "id": "s111",
   "file": "src/panel/strings.ts",
   "key": "microLookFor",
   "text": "Look for ${name} in the first line.",
@@ -1053,7 +999,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s118",
+  "id": "s112",
   "file": "src/panel/strings.ts",
   "key": "microLookForSelf",
   "text": "Look for how much it already knows about your work.",
@@ -1062,7 +1008,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s119",
+  "id": "s113",
   "file": "src/panel/strings.ts",
   "key": "microDone",
   "text": "That is your file working. Keep going.",
@@ -1071,7 +1017,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s120",
+  "id": "s114",
   "file": "src/panel/strings.ts",
   "key": "microBack",
   "text": "Back to the questions",
@@ -1080,7 +1026,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s121",
+  "id": "s115",
   "file": "src/panel/strings.ts",
   "key": "(in place)",
   "text": "${ordinalWord(index + 1)} run of ${wordFor(of)}",
@@ -1089,7 +1035,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s122",
+  "id": "s116",
   "file": "src/panel/strings.ts",
   "key": "proofNoAttach",
   "text": "Your file comes along inside the message. You do not need to attach anything.",
@@ -1098,7 +1044,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s123",
+  "id": "s117",
   "file": "src/panel/strings.ts",
   "key": "proofFileLead",
   "text": "Here is my Context file. Use it to answer the question above.",
@@ -1107,7 +1053,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s124",
+  "id": "s118",
   "file": "src/panel/strings.ts",
   "key": "proofAskWithFile",
   "text": "Copy all of this into a fresh chat:",
@@ -1116,7 +1062,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s125",
+  "id": "s119",
   "file": "src/panel/strings.ts",
   "key": "proofHeld",
   "text": "Copied. Your place is held.",
@@ -1125,7 +1071,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s126",
+  "id": "s120",
   "file": "src/panel/strings.ts",
   "key": "proofHeldLine",
   "text": "When it answers, bring the answer back here.",
@@ -1134,7 +1080,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s127",
+  "id": "s121",
   "file": "src/panel/strings.ts",
   "key": "proofHeldPaste",
   "text": "Copy what it wrote and paste it below. Nothing else to do.",
@@ -1143,7 +1089,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s128",
+  "id": "s122",
   "file": "src/panel/strings.ts",
   "key": "proofCopyAgain",
   "text": "Copy the prompt again",
@@ -1152,7 +1098,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s129",
+  "id": "s123",
   "file": "src/panel/strings.ts",
   "key": "proofJudge",
   "text": "Same question. Two answers.",
@@ -1161,7 +1107,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s130",
+  "id": "s124",
   "file": "src/panel/strings.ts",
   "key": "proofJudgeSub",
   "text": "Shown exactly as your AI wrote them. Workbrain never reads or scores them.",
@@ -1170,7 +1116,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s131",
+  "id": "s125",
   "file": "src/panel/strings.ts",
   "key": "proofColNoFile",
   "text": "No file",
@@ -1179,7 +1125,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s132",
+  "id": "s126",
   "file": "src/panel/strings.ts",
   "key": "proofColWithFile",
   "text": "With your file",
@@ -1188,7 +1134,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s133",
+  "id": "s127",
   "file": "src/panel/strings.ts",
   "key": "proofWhichRight",
   "text": "Which of these did the second one get right?",
@@ -1197,7 +1143,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s134",
+  "id": "s128",
   "file": "src/panel/strings.ts",
   "key": "proofIntoSkills",
   "text": "Now teach it a task you repeat",
@@ -1206,7 +1152,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s135",
+  "id": "s129",
   "file": "src/panel/strings.ts",
   "key": "proofDone",
   "text": "That difference is your context working.",
@@ -1215,7 +1161,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s136",
+  "id": "s130",
   "file": "src/panel/strings.ts",
   "key": "proofDoneSub",
   "text": "Shown exactly as your AI wrote it. The panel never reads or scores it.",
@@ -1224,7 +1170,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s137",
+  "id": "s131",
   "file": "src/panel/strings.ts",
   "key": "capHeading",
   "text": "Now watch it do the job.",
@@ -1233,7 +1179,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s138",
+  "id": "s132",
   "file": "src/panel/strings.ts",
   "key": "capSub",
   "text": "${capitalise(wordFor(steps))} steps, in your words, and it hands back ${shape.toLowerCase()}.\n${capitalise(wordFor(steps))} steps, in your words.",
@@ -1242,7 +1188,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s139",
+  "id": "s133",
   "file": "src/panel/strings.ts",
   "key": "(in place)",
   "text": "Tell us how it went\nFeedback",
@@ -1251,7 +1197,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s140",
+  "id": "s134",
   "file": "src/panel/strings.ts",
   "key": "copyShort",
   "text": "Copy",
@@ -1260,7 +1206,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s141",
+  "id": "s135",
   "file": "src/panel/strings.ts",
   "key": "closeShort",
   "text": "Close",
@@ -1269,7 +1215,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s142",
+  "id": "s136",
   "file": "src/panel/strings.ts",
   "key": "narratorShort",
   "text": "Read aloud",
@@ -1278,7 +1224,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s143",
+  "id": "s137",
   "file": "src/panel/strings.ts",
   "key": "rephraseShort",
   "text": "Reword",
@@ -1287,43 +1233,34 @@
   "surface": "The panel"
  },
  {
-  "id": "s144",
-  "file": "src/panel/strings.ts",
-  "key": "homeShort",
-  "text": "Home",
-  "note": "And the last one: the mark in the interview's corner is a door home (V2.5 VB-112), and a mark is an icon however well known it is. Stacked under it for the same reason as `rephraseShort` \u2014 the strip beside it belongs to the module title.  */",
-  "section": "The panel",
-  "surface": "The panel"
- },
- {
-  "id": "s145",
+  "id": "s138",
   "file": "src/panel/strings.ts",
   "key": "copied",
   "text": "Copied",
-  "note": "And the last one: the mark in the interview's corner is a door home (V2.5 VB-112), and a mark is an icon however well known it is. Stacked under it for the same reason as `rephraseShort` \u2014 the strip beside it belongs to the module title.  */",
+  "note": "BS-05 (\u00a75) \u2014 the twelfth of BS-01c's icon-only controls, and the last. It went UNDER the glyph rather than beside it: BS-01c measured \"Reword\" into the question row and it opened a 103px dead band, because the row is the question and the question is what gets narrower. Stacked, the control keeps the 44px width it already had and takes its height out of a heading that is two lines or more on every question that has rephrasings.  */",
   "section": "the feedback door",
   "surface": "The panel"
  },
  {
-  "id": "s146",
+  "id": "s139",
   "file": "src/panel/strings.ts",
   "key": "proofCta",
-  "text": "Prove it works",
-  "note": "And the last one: the mark in the interview's corner is a door home (V2.5 VB-112), and a mark is an icon however well known it is. Stacked under it for the same reason as `rephraseShort` \u2014 the strip beside it belongs to the module title.  */",
+  "text": "Will It Really Make A Difference?",
+  "note": "BS-05 (\u00a75) \u2014 the twelfth of BS-01c's icon-only controls, and the last. It went UNDER the glyph rather than beside it: BS-01c measured \"Reword\" into the question row and it opened a 103px dead band, because the row is the question and the question is what gets narrower. Stacked, the control keeps the 44px width it already had and takes its height out of a heading that is two lines or more on every question that has rephrasings.  */",
   "section": "the feedback door",
   "surface": "The panel"
  },
  {
-  "id": "s147",
+  "id": "s140",
   "file": "src/panel/strings.ts",
   "key": "proofFinished",
   "text": "That's the whole loop.",
-  "note": "And the last one: the mark in the interview's corner is a door home (V2.5 VB-112), and a mark is an icon however well known it is. Stacked under it for the same reason as `rephraseShort` \u2014 the strip beside it belongs to the module title.  */",
+  "note": "BS-05 (\u00a75) \u2014 the twelfth of BS-01c's icon-only controls, and the last. It went UNDER the glyph rather than beside it: BS-01c measured \"Reword\" into the question row and it opened a 103px dead band, because the row is the question and the question is what gets narrower. Stacked, the control keeps the 44px width it already had and takes its height out of a heading that is two lines or more on every question that has rephrasings.  */",
   "section": "the feedback door",
   "surface": "The panel"
  },
  {
-  "id": "s148",
+  "id": "s141",
   "file": "src/panel/strings.ts",
   "key": "(in place)",
   "text": "chatgpt\nChatGPT\nclaude\nClaude\ngemini\nGemini\ncopilot\nCopilot\ngrok\nGrok\nperplexity\nPerplexity\nother\nSomething Cooler You Don't Even Know About\nScore for the first answer, out of 10",
@@ -1332,16 +1269,16 @@
   "surface": "The panel"
  },
  {
-  "id": "s149",
+  "id": "s142",
   "file": "src/panel/strings.ts",
   "key": "chromeCompany",
-  "text": "Model Citizen",
+  "text": "by Model Citizen",
   "note": "V2.6 VB-125 \u2014 the chrome bar and the lockup's meta line. `chromeCompany` is the quiet half of \"Workbrain \u00b7 Model Citizen\"; the mark and `appName` carry the rest, and the separator is drawn, not said. It replaced `brandByline` (\"by Model Citizen\"), which left with the welcome card's own wordmark \u2014 one company name on the screen, in the chrome, instead of two. Recorded per the `fileTreeRoot` precedent. The meta pieces print only what core/home/lockupMeta.ts really derived: a count of built files, the newest answer's age (said with the shelf's own `updatedToday`/`daysOld`), and the generated files' real size. The template mocked \"workbrain.zip \u00b7 v3 \u00b7 84 KB\"; every claim it invented is replaced by one a person could check (FLAG 7).",
   "section": "home",
   "surface": "The panel"
  },
  {
-  "id": "s150",
+  "id": "s143",
   "file": "src/panel/strings.ts",
   "key": "metaFiles",
   "text": "1 file\n${n} files",
@@ -1350,7 +1287,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s151",
+  "id": "s144",
   "file": "src/panel/strings.ts",
   "key": "metaSize",
   "text": "${kb} KB",
@@ -1359,7 +1296,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s152",
+  "id": "s145",
   "file": "src/panel/strings.ts",
   "key": "cardOpen",
   "text": "Open",
@@ -1368,7 +1305,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s153",
+  "id": "s146",
   "file": "src/panel/strings.ts",
   "key": "cardContextDesc",
   "text": "Who you are, how you work, what good looks like.",
@@ -1377,7 +1314,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s154",
+  "id": "s147",
   "file": "src/panel/strings.ts",
   "key": "cardSkillsDesc",
   "text": "The tasks you repeat, written down once and reused.",
@@ -1386,7 +1323,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s155",
+  "id": "s148",
   "file": "src/panel/strings.ts",
   "key": "homeFilesLabel",
   "text": "Your files",
@@ -1395,7 +1332,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s156",
+  "id": "s149",
   "file": "src/panel/strings.ts",
   "key": "(in place)",
   "text": "Your next move",
@@ -1404,7 +1341,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s157",
+  "id": "s150",
   "file": "src/panel/strings.ts",
   "key": "homeKeepLabel",
   "text": "Your next move",
@@ -1413,7 +1350,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s158",
+  "id": "s151",
   "file": "src/panel/strings.ts",
   "key": "plusTitle",
   "text": "Workbrain+",
@@ -1422,16 +1359,16 @@
   "surface": "The panel"
  },
  {
-  "id": "s159",
+  "id": "s152",
   "file": "src/panel/strings.ts",
   "key": "tileRedeem",
-  "text": "Redeem a skill",
+  "text": "Skill Activator",
   "note": "V2.8 VB-133 \u2014 the Skill Redeemer: the tile (a verb, per the button law), and the sheet behind it. The code arrives with a bought or commissioned custom skill \u2014 the same skill is also in their email as a file \u2014 and redeeming lands it through the pack path. The failure voices live in core/packs/redeem.ts beside VB-124's, where every pack refusal already speaks.",
   "section": "home",
   "surface": "The panel"
  },
  {
-  "id": "s160",
+  "id": "s153",
   "file": "src/panel/strings.ts",
   "key": "redeemTitle",
   "text": "Redeem a skill code",
@@ -1440,7 +1377,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s161",
+  "id": "s154",
   "file": "src/panel/strings.ts",
   "key": "redeemLabel",
   "text": "Your code",
@@ -1449,7 +1386,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s162",
+  "id": "s155",
   "file": "src/panel/strings.ts",
   "key": "redeemHint",
   "text": "It came with your custom skill. The same file is in your email.",
@@ -1458,7 +1395,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s163",
+  "id": "s156",
   "file": "src/panel/strings.ts",
   "key": "redeemGo",
   "text": "Add it to my file",
@@ -1467,7 +1404,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s164",
+  "id": "s157",
   "file": "src/panel/strings.ts",
   "key": "redeemBusy",
   "text": "Checking your code",
@@ -1476,7 +1413,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s165",
+  "id": "s158",
   "file": "src/panel/strings.ts",
   "key": "tileDownload",
   "text": "Download file",
@@ -1485,7 +1422,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s166",
+  "id": "s159",
   "file": "src/panel/strings.ts",
   "key": "rowDownloadSub",
   "text": "The file itself, to keep or to hand over",
@@ -1494,7 +1431,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s167",
+  "id": "s160",
   "file": "src/panel/strings.ts",
   "key": "rowProveSub",
   "text": "Two answers, side by side. Two minutes.",
@@ -1503,16 +1440,16 @@
   "surface": "The panel"
  },
  {
-  "id": "s168",
+  "id": "s161",
   "file": "src/panel/strings.ts",
   "key": "rowRedeemSub",
-  "text": "Add a skill somebody built for you",
+  "text": "Redeem a purchased skill or upload a skill somebody built for you",
   "note": "BS-06 (\u00a76) \u2014 the tiles became ROWS with subtitles. A three-across icon grid whose labels ran at 11px said less in more height, and two of the three were usually dashed and dead; a dormant item is a row that explains itself, not a disabled square. These are the subtitles that replace the explaining a dashed edge was doing badly.  */",
   "section": "home",
   "surface": "The panel"
  },
  {
-  "id": "s169",
+  "id": "s162",
   "file": "src/panel/strings.ts",
   "key": "rowLibrarySub",
   "text": "Built and tested by Model Citizen",
@@ -1521,7 +1458,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s170",
+  "id": "s163",
   "file": "src/panel/strings.ts",
   "key": "uploadOpen",
   "text": "Bring in a file",
@@ -1530,7 +1467,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s171",
+  "id": "s164",
   "file": "src/panel/strings.ts",
   "key": "uploadTitle",
   "text": "Bring in a file",
@@ -1539,7 +1476,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s172",
+  "id": "s165",
   "file": "src/panel/strings.ts",
   "key": "uploadWarn",
   "text": "The file you bring in replaces what is here now.",
@@ -1548,7 +1485,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s173",
+  "id": "s166",
   "file": "src/panel/strings.ts",
   "key": "uploadBoth",
   "text": "Download mine first, then pick",
@@ -1557,7 +1494,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s174",
+  "id": "s167",
   "file": "src/panel/strings.ts",
   "key": "uploadJust",
   "text": "Just pick a file",
@@ -1566,7 +1503,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s175",
+  "id": "s168",
   "file": "src/panel/strings.ts",
   "key": "libTitle",
   "text": "Workbrain Certified Skills",
@@ -1575,7 +1512,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s176",
+  "id": "s169",
   "file": "src/panel/strings.ts",
   "key": "libBody",
   "text": "Skills built and tested by Model Citizen. Explore the library and add what fits your work.",
@@ -1584,7 +1521,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s177",
+  "id": "s170",
   "file": "src/panel/strings.ts",
   "key": "libGo",
   "text": "Explore Certified Skills",
@@ -1593,7 +1530,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s178",
+  "id": "s171",
   "file": "src/panel/strings.ts",
   "key": "storedLink",
   "text": "See what's stored",
@@ -1602,7 +1539,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s179",
+  "id": "s172",
   "file": "src/panel/strings.ts",
   "key": "storedTitle",
   "text": "What's stored on this device",
@@ -1611,7 +1548,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s180",
+  "id": "s173",
   "file": "src/panel/strings.ts",
   "key": "storedContext",
   "text": "Your Context answers \u2014 ${n}",
@@ -1620,7 +1557,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s181",
+  "id": "s174",
   "file": "src/panel/strings.ts",
   "key": "storedSkills",
   "text": "Skills on your list \u2014 1\nSkills on your list \u2014 ${n}",
@@ -1629,7 +1566,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s182",
+  "id": "s175",
   "file": "src/panel/strings.ts",
   "key": "storedScores",
   "text": "Proof scores you typed \u2014 ${n}",
@@ -1638,7 +1575,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s183",
+  "id": "s176",
   "file": "src/panel/strings.ts",
   "key": "storedHidden",
   "text": "Suggestions you hid \u2014 ${n}",
@@ -1647,7 +1584,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s184",
+  "id": "s177",
   "file": "src/panel/strings.ts",
   "key": "storedVoice",
   "text": "Read questions aloud \u2014 ${on ? 'On' : 'Off'}",
@@ -1656,7 +1593,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s185",
+  "id": "s178",
   "file": "src/panel/strings.ts",
   "key": "storedMeta",
   "text": "A version stamp, so updates go smoothly",
@@ -1665,7 +1602,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s186",
+  "id": "s179",
   "file": "src/panel/strings.ts",
   "key": "storedNone",
   "text": "Nothing stored yet.",
@@ -1674,7 +1611,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s187",
+  "id": "s180",
   "file": "src/panel/strings.ts",
   "key": "storedOutro",
   "text": "That is the whole list. None of it ever leaves your browser.",
@@ -1683,7 +1620,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s188",
+  "id": "s181",
   "file": "src/panel/strings.ts",
   "key": "badgeCurrent",
   "text": "Current",
@@ -1692,7 +1629,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s189",
+  "id": "s182",
   "file": "src/panel/strings.ts",
   "key": "badgeNext",
   "text": "Next",
@@ -1701,7 +1638,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s190",
+  "id": "s183",
   "file": "src/panel/strings.ts",
   "key": "badgeLater",
   "text": "Later",
@@ -1710,7 +1647,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s191",
+  "id": "s184",
   "file": "src/panel/strings.ts",
   "key": "badgeDue",
   "text": "${n} due",
@@ -1719,7 +1656,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s192",
+  "id": "s185",
   "file": "src/panel/strings.ts",
   "key": "peekStatus",
   "text": "${S.sectionsOf(done, total)} \u00b7 ${added} ${added === 1 ? 'line' : 'lines'} just added",
@@ -1728,7 +1665,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s193",
+  "id": "s186",
   "file": "src/panel/strings.ts",
   "key": "multiplesTitle",
   "text": "Roles, people and projects",
@@ -1737,7 +1674,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s194",
+  "id": "s187",
   "file": "src/panel/strings.ts",
   "key": "multiplesSub",
   "text": "Open one to change it. Or add a new one.",
@@ -1746,7 +1683,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s195",
+  "id": "s188",
   "file": "src/panel/strings.ts",
   "key": "multiplesCount",
   "text": "One on your list\n${wordFor(n)} on your list",
@@ -1755,7 +1692,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s196",
+  "id": "s189",
   "file": "src/panel/strings.ts",
   "key": "multipleAnswered",
   "text": "${done} of ${total} answered",
@@ -1764,7 +1701,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s197",
+  "id": "s190",
   "file": "src/panel/strings.ts",
   "key": "recordAnswered",
   "text": "${done} of ${total} answered",
@@ -1773,7 +1710,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s198",
+  "id": "s191",
   "file": "src/panel/strings.ts",
   "key": "splashEnter",
   "text": "Open your work brain",
@@ -1782,7 +1719,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s199",
+  "id": "s192",
   "file": "src/panel/strings.ts",
   "key": "splashCost",
   "text": "About fifteen minutes, one question at a time.",
@@ -1791,16 +1728,16 @@
   "surface": "The panel"
  },
  {
-  "id": "s200",
+  "id": "s193",
   "file": "src/panel/strings.ts",
   "key": "splashWhat",
-  "text": "You get plain text files that work with any AI. Nothing leaves your browser, and you can stop anywhere.",
+  "text": "The file is yours from start to finish. Nothing leaves your browser.",
   "note": "BS-09 \u2014 WHAT THE HELD SECONDS BUY. V2.7 VB-128 spent them on a cycling loading line and a draining bar. The beta review's \u00a79: a first-time tester reads the tagline in two seconds and then waits, so the seconds should answer the question they are actually asking \u2014 what is this, and what will it cost me. That is the same thing `welcomeTime` says one screen later; said here, where the decision is being made. `splashLoading` and its cycling are DELETED with the drain bar, recorded here rather than silently dropped, per the `splashBuild` precedent above. TWO FILES, NOT THREE. Actions is hidden for the beta (V2.9 VB-146), so a promise of three would be the first thing the product got wrong.",
   "section": "splash",
   "surface": "The panel"
  },
  {
-  "id": "s201",
+  "id": "s194",
   "file": "src/panel/strings.ts",
   "key": "filePreviewDownload",
   "text": "Download",
@@ -1809,7 +1746,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s202",
+  "id": "s195",
   "file": "src/panel/strings.ts",
   "key": "drawerClosedValue",
   "text": "Closed",
@@ -1818,7 +1755,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s203",
+  "id": "s196",
   "file": "src/panel/strings.ts",
   "key": "errPickBoth",
   "text": "Pick one of each to keep going, or skip this question.",
@@ -1827,7 +1764,7 @@
   "surface": "The panel"
  },
  {
-  "id": "s204",
+  "id": "s197",
   "file": "src/panel/surfaces/Flow.tsx",
   "key": "(in place)",
   "text": "flow-pair",
