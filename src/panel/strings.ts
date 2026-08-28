@@ -674,6 +674,21 @@ export const S = {
   runCardStop: 'Stop here for now',
   runCardStopNote: 'Everything is saved. Pick up wherever you like.',
 
+  /* BS-03a (§3) — the micro-proof, offered once at the end of My World.
+     One round trip, no scoring, no comparison: the point is simply that
+     their AI comes back knowing something it could not have known. Adam
+     moved it here from minute six, because a person's name is the thing
+     that lands and nobody has been named before this. [DRAFT] */
+  microOffer: 'Want to see it work? One minute.',
+  microOfferGo: 'Show me',
+  microTitle: 'Send this to your AI.',
+  microLead: 'It goes with everything you have told me so far. Watch what comes back.',
+  microPasteLabel: 'Paste what it wrote here',
+  microLookFor: (name: string) => `Look for ${name} in the first line.`,
+  microLookForSelf: 'Look for how much it already knows about your work.',
+  microDone: 'That is your file working. Keep going.',
+  microBack: 'Back to the questions',
+
   // ------------------------------------------------------------ the beat row
   /* BS-05a (§5) — pace without a finish line to bargain with. V1.1 VB-02's
      ban stands where it was aimed: no global total, ever. Adam's D1 keeps it

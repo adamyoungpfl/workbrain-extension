@@ -20,11 +20,12 @@ import {
 } from '../components';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
 import { PROOF_BASELINE_ANSWER_KEY, PROOF_CONTEXT_ANSWER_KEY } from '../../core/flow/proofAdapter';
-import { RUN_CARD_MIN, endsRun, runOf } from '../../core/flow/runs';
+import { MICRO_PROOF_MODULE, RUN_CARD_MIN, endsRun, runOf } from '../../core/flow/runs';
 import type { Run } from '../../core/flow/runs';
 import { proofChecks, proofTally } from '../../core/proof/checklist';
 import type { ProofCheck, ProofCheckId } from '../../core/proof/checklist';
 import { ModuleIntro } from './ModuleIntro';
+import { MicroProof } from './MicroProof';
 import { RunCard } from './RunCard';
 import { FileDrawer } from './FileDrawer';
 import { AssistBar } from './AssistBar';
@@ -580,6 +581,11 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
    * `seenIntros` above uses, for the same reason: a stored flag would be a
    * fact about the person this product has no business keeping. */
   const [paidRuns, setPaidRuns] = useState<ReadonlySet<string>>(new Set());
+  /** BS-03a — the micro-proof is offered once. Ephemeral like the card that
+   * carries it: an errand nobody took is not a fact worth storing, and one
+   * they did take is proved by the file getting better, not by a flag. */
+  const [microDone, setMicroDone] = useState(false);
+  const [microOpen, setMicroOpen] = useState(false);
   const [history, setHistory] = useState<Position[]>([]);
   const [viewing, setViewing] = useState<Position | null>(initialPosition ?? null);
   const [saveError, setSaveError] = useState(false);
@@ -734,15 +740,24 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
      * bounded by their module, so this always fires on a section boundary —
      * which is what lets the card name what just finished.
      */
+    /**
+     * ONLY A TOP-LEVEL COMMIT CAN CLOSE A RUN, and the trace that found this
+     * is worth recording: a run whose last node is a repeatable BLOCK was
+     * being closed by the block's FIRST field, so the card fired in the
+     * middle of somebody's first role and announced that About Me was lit
+     * up. A block ends when the person says there are no more of them, which
+     * is `handleAddAnotherDecision` below — not when any field inside it is
+     * answered.
+     */
     const justAnswered =
-      from.kind === 'add-another'
-        ? from.block.id
-        : from.kind === 'step' || from.kind === 'reflect'
-          ? from.location.in === 'top'
-            ? from.step.id
-            : from.location.blockId
-          : null;
-    if (justAnswered) {
+      (from.kind === 'step' || from.kind === 'reflect') && from.location.in === 'top'
+        ? from.step.id
+        : null;
+    if (justAnswered) offerRunPayoff(justAnswered);
+  }
+
+  /** BS-05d/BS-03a — the card, when the node just settled ends a run. */
+  function offerRunPayoff(justAnswered: string) {
       const closed = endsRun(modules, justAnswered);
       const key = closed ? `${closed.moduleId}#${closed.index}` : null;
       /**
@@ -754,11 +769,21 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
        * or more; the short runs are paid off by the drawer lighting their
        * section, which is a thing they can already see happening.
        */
-      if (closed && key && closed.nodeIds.length >= RUN_CARD_MIN && !paidRuns.has(key)) {
+      /**
+       * BS-03a — AND THE ONE EXCEPTION TO THE LENGTH RULE.
+       *
+       * My World is two questions, so it earns no card by length. It is also
+       * the first boundary at which a person has NAMED somebody, which is
+       * the whole of what the micro-proof leans on. A card with something to
+       * offer is worth the interruption even when a card with nothing to say
+       * would not be — the rule was never about length for its own sake.
+       */
+      const offersMicro = closed?.moduleId === MICRO_PROOF_MODULE && !microDone;
+      const longEnough = (closed?.nodeIds.length ?? 0) >= RUN_CARD_MIN;
+      if (closed && key && (longEnough || offersMicro) && !paidRuns.has(key)) {
         setRunCard(closed);
         setPaidRuns((seen) => new Set(seen).add(key));
       }
-    }
   }
 
   /** V1.1 VB-05's "continue". Writes nothing to `wb:answers` — there is no
@@ -790,6 +815,9 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
    * without a name.
    */
   function handleAddAnotherDecision(from: Position, blockId: string, wantsMore: boolean, name?: string) {
+    // BS-05d: "no more of these" is when a repeatable block is finished, so
+    // it is when a run whose last node is that block can close.
+    if (!wantsMore) offerRunPayoff(blockId);
     const block = from.kind === 'add-another' ? from.block : undefined;
     const seedStep = block && needsName(block) ? findSeedStep(modules, block) : undefined;
     // What "yes" writes — or null when it cannot be honoured, which is also
@@ -990,6 +1018,12 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
    * is a moment laid over it. Dismissing it leaves the flow precisely where
    * it already was.
    */
+  if (microOpen) {
+    return withDrawer(
+      <MicroProof answers={ans} fileText={generateContextFile(ans, contextFileDate())} onDone={() => setMicroOpen(false)} />,
+    );
+  }
+
   if (runCard) {
     const section = modules.find((m) => m.id === runCard.moduleId)?.title ?? '';
     const written = runCard.nodeIds.filter((id) => {
@@ -1003,6 +1037,15 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
       <RunCard
         section={section}
         written={written}
+        onMicroProof={
+          runCard.moduleId === MICRO_PROOF_MODULE && !microDone
+            ? () => {
+                setMicroDone(true);
+                setRunCard(null);
+                setMicroOpen(true);
+              }
+            : undefined
+        }
         onKeep={() => setRunCard(null)}
         onRead={() => {
           setRunCard(null);

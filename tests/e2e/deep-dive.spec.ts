@@ -9,6 +9,7 @@ import { EXPAND_MS } from '../../src/core/motion/disclosure';
 import { SHIMMER_KEYFRAME, SHIMMER_STAGGER_MS, attractMs } from '../../src/core/motion/shimmer';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.1 VB-03 accept criteria (docs/V1.1-REFINEMENT.md): "every `deepDive`
@@ -283,6 +284,8 @@ const CHIP_STEP = 'context_scope';
 /** The seeded walk-in opens straight on the question that ships a single
  * tag (VB-90: the ladder and the gate skip once the gate is answered). */
 async function chipQuestion(page: Page): Promise<void> {
+  // BS-05d: a run's payoff card can stand between two questions.
+  await pastRunCard(page);
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', CHIP_STEP);
   expect(DEEP_DIVE[CHIP_STEP], `${CHIP_STEP} must carry exactly one follow-up`).toHaveLength(1);
   await expect(page.locator('.flow .deepdive-item')).toHaveCount(1);
@@ -307,6 +310,8 @@ test.describe('the deeper-dive follow-ups', () => {
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), buildAnswersExcept(contextModules, 'role_names'));
     const page = await openPanel(context, id);
     await enterInterview(page);
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
 
     // The two-chip specimen, `role_names` (VB-113 retired orientation's).
@@ -377,6 +382,8 @@ test.describe('the deeper-dive follow-ups', () => {
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), buildAnswersExcept(contextModules, 'role_names'));
     const page = await openPanel(context, id);
     await enterInterview(page);
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
     await expect(page.locator('.flow .deepdive-item')).toHaveCount(2);
 
@@ -436,6 +443,8 @@ test.describe('the deeper-dive follow-ups', () => {
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), buildAnswersExcept(contextModules, 'role_names'));
     const page = await openPanel(context, id);
     await enterInterview(page);
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
     await expect(page.locator('.flow .deepdive-chip').first()).toBeVisible();
 
@@ -846,6 +855,8 @@ test.describe('the deeper-dive follow-ups', () => {
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), buildAnswersExcept(contextModules, 'role_names'));
     const page = await openPanel(context, id);
     await enterInterview(page);
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
 
     // Watch it for a third of a second: with motion off the height must take
@@ -943,6 +954,8 @@ test.describe('the deeper-dive follow-ups', () => {
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), buildAnswersExcept(contextModules, 'role_names'));
     const page = await openPanel(context, id);
     await enterInterview(page);
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
 
     /**
@@ -985,6 +998,8 @@ test.describe('the deeper-dive follow-ups', () => {
       await page.getByRole('button', { name: 'No', exact: true }).click();
       await page.getByRole('button', { name: 'Next', exact: true }).click();
     }
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'voice_directness');
 
     // The examples are what make this question answerable at a glance, so
@@ -1025,6 +1040,8 @@ test.describe('the deeper-dive follow-ups', () => {
     const page = await openPanel(context, id);
     await page.getByRole('button', { name: 'Prove it works', exact: true }).focus();
     await page.keyboard.press('Enter');
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_service');
 
     await expect(page.locator('.flow .flow-hint')).toHaveText('Which AI do you use most?');

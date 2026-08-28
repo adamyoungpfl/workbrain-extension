@@ -59,3 +59,11 @@
   font-size: var(--type-fine);
   color: var(--ink-3);
 }
+
+/* BS-03a — the micro-proof's offer, above the button that takes it. */
+.runcard-offer {
+  margin: 0 0 2px;
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--ink);
+}

@@ -1,0 +1,32 @@
+/* BS-03a (§3) — the micro-proof. One errand, no ceremony. */
+
+.microproof-title {
+  margin: 18px 0 0;
+  font-size: var(--type-section);
+  font-weight: var(--type-section-weight);
+  line-height: var(--type-section-line);
+  color: var(--ink);
+}
+
+.microproof-lead {
+  margin: 6px 0 14px;
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* What to watch for. Quiet, and only ever about something the prompt really
+   carries — the component names it from the rung the task reached. */
+.microproof-look {
+  margin: 10px 0;
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--primary);
+}
+
+.microproof-done {
+  margin: 10px 0 0;
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--green);
+}

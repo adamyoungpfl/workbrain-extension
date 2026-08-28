@@ -36,9 +36,15 @@ export interface RunCardProps {
   onKeep: () => void;
   onRead: () => void;
   onStop: () => void;
+  /**
+   * BS-03a — the micro-proof's offer, when this is the boundary that earns
+   * it. Absent everywhere else: the errand is offered ONCE, at the first
+   * point a person's own name exists to come back to them.
+   */
+  onMicroProof?: (() => void) | undefined;
 }
 
-export function RunCard({ section, written, onKeep, onRead, onStop }: RunCardProps) {
+export function RunCard({ section, written, onKeep, onRead, onStop, onMicroProof }: RunCardProps) {
   return (
     // `.flow` as well as `.runcard`, the same way ModuleIntro roots itself:
     // this is a screen ON the flow surface, so it takes the surface's frame,
@@ -49,12 +55,25 @@ export function RunCard({ section, written, onKeep, onRead, onStop }: RunCardPro
       <p className="runcard-line">{S.runCardWrote(written)}</p>
 
       <div className="runcard-doors">
-        <Button type="button" variant="primary" onClick={onKeep}>
+        {/* BS-03a — when the micro-proof is on offer it IS the primary. The
+            card's own "keep going" is what somebody does anyway; this is the
+            thing worth interrupting for, and it is offered once. */}
+        {onMicroProof && (
+          <>
+            <p className="runcard-offer">{S.microOffer}</p>
+            <Button type="button" variant="primary" onClick={onMicroProof}>
+              {S.microOfferGo}
+            </Button>
+          </>
+        )}
+        <Button type="button" variant={onMicroProof ? 'secondary' : 'primary'} onClick={onKeep}>
           {S.runCardKeep}
         </Button>
-        <Button type="button" variant="secondary" onClick={onRead}>
-          {S.runCardRead}
-        </Button>
+        {!onMicroProof && (
+          <Button type="button" variant="secondary" onClick={onRead}>
+            {S.runCardRead}
+          </Button>
+        )}
         <button type="button" className="runcard-stop" onClick={onStop}>
           {S.runCardStop}
         </button>

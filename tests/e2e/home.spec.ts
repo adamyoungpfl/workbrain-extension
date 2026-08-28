@@ -160,6 +160,8 @@ test.describe('Home surface (R1-12)', () => {
     // role_durability, keyboard-only, not a fresh flow from question one ---
     await cta.focus();
     await page.keyboard.press('Enter');
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', ROLE_DURABILITY_KEY);
     // The already-given answer is pre-selected, same as any Back navigation.
     // Not `exact: true` — a pressed Pill's accessible name picks up its own
@@ -191,6 +193,13 @@ test.describe('Home surface (R1-12)', () => {
     // proof rather than back to Home — "momentum beating a reset". This
     // fixture has never run one, so it fires. The way back to Home is the
     // mark, which is the door VB-112 built for exactly this.
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
+    // BS-05d + BS-03a: the last answer closes a run AND finishes the file,
+    // so the payoff card lands first and the proof follows it. Two
+    // interstitials back to back — noted in docs/BETA-SPRINT.md as a
+    // sequencing question for §5's remaining slices.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', /^proof/, { timeout: 10_000 });
     await page.getByRole('button', { name: S.goHome, exact: true }).click();
 

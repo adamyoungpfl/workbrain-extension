@@ -134,3 +134,19 @@ export function endsRun(modules: Module[], nodeId: string): Run | null {
 export function runOrdinal(modules: Module[], run: Run): number {
   return allRuns(modules).findIndex((each) => each.moduleId === run.moduleId && each.index === run.index);
 }
+
+/**
+ * BS-03a — the module whose boundary carries the micro-proof's offer.
+ *
+ * Adam's P4, revised: the second run boundary (end of About Me) cannot do
+ * it, because `entities` and `initiatives_records` are asked in the two
+ * modules AFTER it — the ladder in core/proof/microProof.ts could only ever
+ * reach its role rung there, and the review's own example ("a note to
+ * Priya") was unbuildable. The end of My World is the first boundary at
+ * which a person has named somebody.
+ *
+ * Named here rather than in the panel so the fact lives beside the run
+ * machinery it depends on, and so a reordering of the flow fails a test
+ * rather than quietly moving the moment.
+ */
+export const MICRO_PROOF_MODULE = 'my-world';

@@ -10,6 +10,7 @@ import { EXPAND_MS } from '../../src/core/motion/disclosure';
 import { ROTATE_MS, ROTATION_INTERACTIONS } from '../../src/core/motion/rotation';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.8 VB-42 — one follow-up at a time, as a text link, rotating.
@@ -125,6 +126,8 @@ async function enterInterview(page: Page): Promise<void> {
   // design. Park it in the corner (the orb-choice precedent).
   await page.mouse.move(0, 0);
   await page.waitForSelector('.flow');
+  // BS-05d: a run's payoff card can stand between two questions.
+  await pastRunCard(page);
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_names');
 }
 
@@ -243,6 +246,8 @@ async function resumeAt(
     // stationary hover is a hold by design. Park clear.
     await page.mouse.move(0, 0);
   }
+  // BS-05d: a run's payoff card can stand between two questions.
+  await pastRunCard(page);
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', stepId);
   // Each question is a fresh mount (Flow.tsx keys StepView by position), so
   // the presses that got us here belong to screens that no longer exist and
@@ -648,6 +653,8 @@ test.describe('VB-57 — the rotation stops on any interaction and never resumes
     await expectStillStopped(page, held, 'the touched question');
 
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'audiences_list');
     await expect(link(page)).toHaveCount(1);
     await proveItIsRotating(page);
