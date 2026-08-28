@@ -713,11 +713,13 @@ describe('BrainGlobe — flying in', () => {
     const stillThere = sectionPins(container).filter((pin) => !pin.hidden);
     expect(stillThere).toHaveLength(1);
     expect(stillThere[0]!.getAttribute('data-section-id')).toBe('sec2');
-    // And a real way back that is not only a keystroke — V2.1 VB-74: the nav
-    // band's Back, above the stage, enabled because there is now a level up.
-    const back = container.querySelector('.brainglobe-nav-btn')!;
-    expect(back).not.toBeNull();
-    expect(back.getAttribute('aria-disabled')).toBeNull();
+    // BS-07a (§7.1) took the band's Back away; the way back that is not only
+    // a keystroke is the flown section's OWN orb, which toggles (BrainGlobe's
+    // `isFlown ? flyOut() : flyInto()`). Still a pointer route, one fewer
+    // control.
+    const flown = container.querySelector<HTMLButtonElement>('.brainglobe-pin[data-flown="true"]')
+      ?? container.querySelector<HTMLButtonElement>('.brainglobe-pin')!;
+    expect(flown).not.toBeNull();
   });
 });
 
@@ -829,9 +831,13 @@ describe('BrainGlobe — VB-23, hierarchy inside a section', () => {
     expect(Number(halo()!.getAttribute('opacity'))).toBeCloseTo(0, 3);
 
     // ...and comes back out here, where it is the only mark of the section
-    // being written now among ten equal siblings. V2.1 VB-74: the way out is
-    // the nav band's Back.
-    act(() => container.querySelector<HTMLButtonElement>('.brainglobe-nav-btn')!.click());
+    // being written now among ten equal siblings. BS-07a (§7.1): the way out
+    // is Escape, or the flown section's own orb — the band is gone.
+    act(() => {
+      container.querySelector('.brainglobe')!.dispatchEvent(
+        new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }),
+      );
+    });
     env.settle();
     expect(Number(halo()!.getAttribute('opacity'))).toBeCloseTo(1, 3);
   });
@@ -987,8 +993,9 @@ describe('BrainGlobe — VB-23, the split', () => {
     // BS-07c: the part of the card that SCROLLS is the stop, which is what
     // the rule (WCAG 2.1.1) is about — the card around it carries the name.
     expect(container.querySelector('.leafcard-scroll')!.getAttribute('tabindex')).toBe('0');
-    // Nothing removed the way back out (V2.1 VB-74: the band's Back, live).
-    expect(container.querySelector('.brainglobe-nav-btn')!.getAttribute('aria-disabled')).toBeNull();
+    // BS-07a (§7.1): the way back out of a PICKED child is the card's own
+    // close, which is the control that let the band go at all.
+    expect(container.querySelector('.leafcard-close')).not.toBeNull();
   });
 
   it('Escape closes the split first and the section only after it', () => {
@@ -1010,27 +1017,38 @@ describe('BrainGlobe — VB-23, the split', () => {
   });
 
   /**
-   * V2.1 VB-74 rewrote this test's scenario out of existence. It used to click
-   * the corner pill from an open sub-node, which flew out of the section with
-   * the split still open — the pill skipped a rung. The band's Back walks the
-   * same strict ladder Escape does: one level per press, split first, section
-   * second. So the claim becomes the pointer's copy of the Escape-ladder test
-   * above, and "flying out closes the split" survives inside it — by the time
-   * the section closes, the split is already gone.
+   * BS-07a (§7.1) — THERE IS NO LONGER ONE CONTROL THAT WALKS THE LADDER, and
+   * that is the change rather than a loss.
+   *
+   * V2.1 VB-74's band Back walked strictly: split first, section second, one
+   * level per press. §7.1 dropped it as a duplicate, and what replaced it is
+   * a control PER LEVEL — the card's own close for the split, the flown
+   * section's own orb for the section. Each is on the thing it closes, which
+   * is why neither can skip a rung: there is no rung for it to skip to.
+   *
+   * Escape still walks the whole ladder from the keyboard, unchanged, and its
+   * own test above is what holds that claim.
    */
-  it('Back walks one level per press: the split closes first, the section after', () => {
+  it('each level is closed by the control on it: the card by its close, the section by its orb', () => {
     const env = stubEnvironment({ reduce: false });
     const { container } = render({ details: DETAILS });
     openChild(container, env);
-    const back = () => container.querySelector<HTMLButtonElement>('.brainglobe-nav-btn')!;
 
-    act(() => back().click());
+    // The card's close takes the split down, and NOTHING else — the section
+    // is still flown into.
+    act(() => container.querySelector<HTMLButtonElement>('.leafcard-close')!.click());
     env.settle();
+    // The card goes at once; the split's own clock eases back down behind it,
+    // so the geometry needs a second settle. Both are asserted rather than
+    // just the card, because "the panel vanished but the stage stayed split"
+    // is a real way for this to go wrong.
     expect(container.querySelector('.leafcard')).toBeNull();
+    env.settle();
     expect(container.querySelector('.brainglobe')!.getAttribute('data-inside')).toBe('true');
     expect(container.querySelector('.brainglobe')!.getAttribute('data-split')).toBe('0.000');
 
-    act(() => back().click());
+    // And the section is left by pressing the section — its own orb toggles.
+    act(() => container.querySelector<HTMLButtonElement>('.brainglobe-pin[data-section-id="sec2"]')!.click());
     env.settle();
     expect(container.querySelector('.brainglobe')!.getAttribute('data-inside')).toBe('false');
   });

@@ -84,7 +84,13 @@ async function openAtWorkBrain(context: BrowserContext, sw: Worker, id: string):
   await page.getByRole('button', { name: S.drawerModeBrain, exact: true }).click();
   await expect(page.locator('.filedrawer')).toHaveAttribute('data-mode', 'brain');
   // V2.1 VB-74: the way out is the nav band's Back, above the stage.
-  await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+  // BS-07a (§7.1): the nav band is gone — Back and Home duplicated the mark
+    // and the trail root. Escape still walks the same ladder it always did,
+    // and from the file tier with nothing flown into that is the climb out.
+    // Escape is the globe's own keydown handler, so it needs focus INSIDE the
+    // globe — `.brainglobe` is a div and never takes focus itself.
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    await page.keyboard.press('Escape');
   await expect(page.locator('.brainglobe')).toHaveAttribute('data-tier', 'work');
   return page;
 }

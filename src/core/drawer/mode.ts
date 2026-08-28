@@ -48,22 +48,25 @@ export const BRAIN_STAGE_PAD = 10;
  * drawer is showing List. */
 export const BRAIN_STAGE_MIN = 116;
 
-/**
- * V2.1 VB-74 — the navigation band above the stage, in px: the row holding
- * Back and Home, below the breadcrumbs, fixed while the picture underneath
- * moves. It exists only in Brain mode, so it belongs to this file's room
- * arithmetic rather than to `DRAWER_CHROME_HEIGHT`, which both modes pay.
+/*
+ * BS-07a (§7.1) — `BRAIN_NAV_BAND` IS GONE, AND SO IS THE ROW IT PAID FOR.
  *
- * THIRTY, NOT FORTY-FOUR, AND THE SIX PIXELS ARE THE REASON. The band's
- * controls keep their full 44px targets by overhanging the stage below
- * (BrainGlobe.css — the same painted-versus-pressable split the drawer's own
- * handle uses, whose visible band is 24 of a 44px target). A 44px band would
- * put `BRAIN_MIN_HEIGHT` at 384 against a 700px viewport's drawer ceiling of
- * 376 — no Brain at all on the panel's own standard height, which is not a
- * trade anyone asked for. At 30 the floor lands at 370, six pixels under the
- * ceiling. Measured before it was built, not discovered after.
+ * V2.1 VB-74 put Back and Home in a 30px band above the stage and measured it
+ * carefully: thirty rather than forty-four, because 44 would have put
+ * `BRAIN_MIN_HEIGHT` at 384 against a 700px panel's ceiling of 376 and left no
+ * Brain at all. Good arithmetic for a band that had to exist.
+ *
+ * §7.1: "Back and Home duplicate the mark and the trail root; drop them and
+ * the peek gains a row." Checked before cutting — every route the band offered
+ * has two others (BrainGlobe.tsx says which) — so the band went and its thirty
+ * pixels go to the stage.
+ *
+ * WHAT THAT BUYS, measured: `BRAIN_MIN_HEIGHT` falls from 370 to 340, so Brain
+ * is available on panels thirty pixels shorter than before, and the stage at
+ * any given drawer height is thirty pixels taller — which is thirty closer to
+ * the 286px §7.2's leaf card wants (core/globe/leafCard.ts). It does not close
+ * that gap on a 700px panel; it narrows it.
  */
-export const BRAIN_NAV_BAND = 30;
 
 /**
  * How big a globe is worth showing, in px — VB-14's "at 300px it's excellent".
@@ -130,7 +133,7 @@ export const BRAIN_STAGE_IDEAL = 208;
  * any ordinary width, which is why three specs and the drawer's own
  * documentation remain written in terms of it.
  */
-export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_NAV_BAND + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
+export const BRAIN_MIN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
 
 /**
  * V2.0 VB-70 — how far past the threshold the drawer has to come back before
@@ -169,7 +172,7 @@ export const BRAIN_YIELD_BAND = DRAWER_STEP;
  * surface edge to edge (core/drawer/chrome.ts) leaves nothing there to pay for,
  * and every term here is again a band the drawer really has.
  */
-export const BRAIN_OPEN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_NAV_BAND + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
+export const BRAIN_OPEN_HEIGHT = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_IDEAL + BRAIN_STAGE_PAD * 2;
 
 /**
  * The morph, in ms. VB-14: "Mode change is a morph, not a swap: every node
@@ -322,7 +325,7 @@ export function brainStageRoom(height: number, width: number, extra = 0): number
   // renders without its way out, so room that ignored the band would be room
   // the picture does not really have, and the globe would clip along its
   // bottom edge by exactly the band on every panel.
-  const tall = height - DRAWER_CHROME_HEIGHT - BRAIN_NAV_BAND - BRAIN_STAGE_PAD * 2 - Math.max(0, extra);
+  const tall = height - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2 - Math.max(0, extra);
   const wide = width - BRAIN_STAGE_PAD * 2;
   return Math.min(tall, wide);
 }

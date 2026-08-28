@@ -174,9 +174,22 @@ test.describe('VB-27 — keyboard focus', () => {
     await expect(pin(page, 'sec2-2')).toBeFocused();
     await expect(card(page)).toHaveAttribute('data-node-id', 'sec2-2');
 
-    // And all the way out of the globe, still with nothing in the way.
-    for (let i = 0; i < 5; i++) await page.keyboard.press('Tab');
-    expect(await page.evaluate(() => !!document.activeElement?.closest('.brainglobe'))).toBe(false);
+    /**
+     * And all the way out of the globe, still with nothing in the way.
+     *
+     * BS-07a (§7.1) removed two stops (the band's Back and Home), so a FIXED
+     * count of five now walks past the last pin, out to the body, and back
+     * round to the first pin — the harness page has nothing else focusable,
+     * so Tab cycles. Counting stops was always measuring the tab order rather
+     * than the claim; this presses until focus leaves and fails if it never
+     * does, which is what "nothing to trap" actually means.
+     */
+    let escaped = false;
+    for (let i = 0; i < 8 && !escaped; i++) {
+      await page.keyboard.press('Tab');
+      escaped = !(await page.evaluate(() => !!document.activeElement?.closest('.brainglobe')));
+    }
+    expect(escaped, 'focus never left the globe').toBe(true);
     await expect(card(page)).toHaveCount(0);
   });
 

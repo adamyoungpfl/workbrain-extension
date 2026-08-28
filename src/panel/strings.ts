@@ -577,8 +577,11 @@ export const S = {
    * whose destination changes with the level cannot, and the trail directly
    * above it already prints where you are and where pressing it lands.
    */
-  navBack: 'Back',
-  navHome: 'Home',
+  /* BS-07a (§7.1) — `navBack` / `navHome` are GONE with the band they named.
+     They were the stage's own Back and Home, and §7.1's ruling is that both
+     duplicate the mark and the trail root. Nothing else read them: the flow's
+     own Back is `back` above, and the way out of the globe is the trail's
+     `crumbWork` rung. A string with no reader is not a spare. */
 
   /**
    * V2.0 VB-71 — the one line that says the globe can be turned.

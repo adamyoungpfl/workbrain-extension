@@ -181,6 +181,25 @@ From the change spec's §11, minus the ones now answered:
 | ~~O2~~ | ~~Who writes the purpose lines, and do they ship with the card or behind it?~~ | **RESOLVED — below** |
 | O6b | D1 bans printed digits. The progressbar's spoken count (`aria-valuetext`, "Question 3 of 38") is not printed — assumption is it becomes **run-scoped** rather than global, so a screen-reader user gets what the beat row gives everyone else. Correct if the spoken total should go entirely. | BS-05a |
 
+**A CONTAMINATED `dist/` LOOKS EXACTLY LIKE A BROKEN GUARDRAIL.** BS-07a's
+remainder gate reported that the dev-only voice audition had leaked into the
+production bundle — `narrator.spec` greps the built chunks precisely to catch
+that, and `wbVoices` really was in the file it named. It was a stale artefact
+from repeated manual builds between probes, not a regression: stash, build at
+HEAD, no leak; pop, build, no leak. **Attribute a suspected guardrail
+violation with stash-build-compare BEFORE concluding anything**, because a
+contaminated artefact and a real breach are identical in the failure output.
+The repo's "never rebuild dist during a running gate" rule is the same lesson
+one step earlier; building repeatedly between test runs gets you a dist no
+single command produced.
+
+**AND SOME TESTS NEED THEIR OWN BUDGET.** Two this sprint, both doing real
+work the default 30s assumes away: `capability`'s receipt (a genuine download
+event) and `one-surface`'s pixel walk (a screenshot per control, twelve of
+them). Both pass in seconds alone and time out under five headed browsers.
+The protocol still holds — 3x isolated to classify — and the fix for a
+genuinely slow test is `test.setTimeout`, stated on the test with the reason.
+
 **A REPLACED ELEMENT IS A THREE-WAVE SWEEP** (BS-07c, the same lesson one
 surface along). `.brainglobe-detail` was the shared anchor for "the split is
 open" across e2e specs, a11y specs AND units — 30 e2e, 3 a11y, 7 unit, found

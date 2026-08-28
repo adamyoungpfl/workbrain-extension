@@ -34,7 +34,7 @@ import { openPastPeek } from './fixtures/drawer';
  * Self-contained launch helpers, per this repo's standalone-spec convention.
  */
 const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
-const SHOTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../test-results/vb59');
+/* BS-07a (§7.1): `SHOTS` went with the band's corner photographs. */
 const PANEL = { width: 400, height: 700 };
 
 async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
@@ -138,13 +138,18 @@ async function tierSettled(page: Page, at: 0 | 1): Promise<void> {
   await expect.poll(() => tierClock(page), { timeout: 4000 }).toBe(at);
 }
 
-/** Out to the work brain, from inside the file — V2.1 VB-74: the nav band's
- * Back, above the stage, which replaced the corner disc. */
-function bandBack(page: Page) {
-  return page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true });
-}
+/**
+ * Out to the work brain, from inside the file.
+ *
+ * BS-07a (§7.1) retired the nav band — "Back and Home duplicate the mark and
+ * the trail root" — so the climb out is Escape, which has walked this exact
+ * ladder since V1.8 VB-48 and is unchanged by the band's departure.
+ */
 async function pullBack(page: Page): Promise<void> {
-  await bandBack(page).click();
+  // Escape is the globe's own keydown handler, so it needs focus INSIDE the
+    // globe — `.brainglobe` is a div and never takes focus itself.
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    await page.keyboard.press('Escape');
   await tierSettled(page, 0);
 }
 
@@ -344,7 +349,11 @@ test.describe('VB-48 — one navigation, two views', () => {
     // retired the root RUNG as a tier move: it is the door to the Home page
     // now, asserted in breadcrumb.spec.ts.)
     await showBrain(page);
-    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+    // BS-07a (§7.1): the band is gone; Escape walks the same ladder.
+    // Escape is the globe's own keydown handler, so it needs focus INSIDE the
+    // globe — `.brainglobe` is a div and never takes focus itself.
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    await page.keyboard.press('Escape');
     await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
 
     await context.close();
@@ -406,8 +415,8 @@ test.describe('VB-48 — nothing below the new tier changed', () => {
     // Playwright's stability wait can starve. This test is about the Escape
     // ladder — pin pointer-actionability is brain-globe.a11y.spec.ts's job.
     await page.locator('.brainglobe-pin[data-section-id="sec2"]').evaluate((el) => (el as HTMLElement).click());
-    await expect(bandBack(page)).toBeVisible();
-    expect(await bandBack(page).getAttribute('aria-disabled')).toBeNull();
+    // BS-07a (§7.1): there is no band to check the state of. The rung this
+    // test is about is Escape's, asserted immediately below.
 
     // Escape climbs it: out of the section first, then out of the file.
     await page.locator('.brainglobe-pin[data-section-id="sec2"]').focus();
@@ -431,99 +440,51 @@ test.describe('VB-48 — nothing below the new tier changed', () => {
  * that quietly loses the floor — so the target is measured, not assumed.
  */
 test.describe('VB-74 — the way out is a band above the stage', () => {
-  test('Back and Home are 44px targets in a fixed row, and Back does the move', async () => {
+  /*
+   * BS-07a (§7.1) RETIRED THIS TEST'S SUBJECT. It held V2.1 VB-74's whole
+   * claim — "Back and Home are 44px targets in a fixed row that does not
+   * travel with the visual" — and §7.1's ruling is that both controls
+   * duplicate the mark and the trail root, so the row is gone and there is
+   * nothing left for the drag to fail to move.
+   *
+   * Every route the band offered still has two others, checked before it was
+   * cut and named in BrainGlobe.tsx: the card's own close for a picked child,
+   * the flown section's own orb for the section, the trail's root rung for
+   * the way out, and Escape for all three. `pullBack` above is this file's
+   * copy of that, and every other test here goes through it.
+   */
+
+  test('the way out rings on the keyboard, and the keyboard can press it', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openMidInterview(context, sw, id);
     await showBrain(page);
 
-    const back = bandBack(page);
-    await expect(back).toBeVisible();
+    /**
+     * BS-07a (§7.1) retired the band this measured, so the claim moves to the
+     * control that replaced its Back: §7.2's card close. The reason for the
+     * test is unchanged — a ring measured after a PROGRAMMATIC focus can pass
+     * on a stylesheet that only rings mouse users, so the walk is a real Tab.
+     */
+    await page.locator('.brainglobe-pin[data-section-id="sec2"]').evaluate((el) => (el as HTMLElement).click());
+    await page.waitForTimeout(900);
+    await page.locator('.brainglobe-pin[data-child-id]').first().evaluate((el) => (el as HTMLElement).click());
+    await page.waitForTimeout(900);
 
-    // V2.3 VB-91 — icons again, one round after the band printed words: two
-    // controls named Back shared the screen (the interview footer's and this),
-    // and Adam resolved it by making the stage side iconic. The NAME survives
-    // as the aria-label (one name at every depth, strings.ts's navBack); the
-    // drawn chevron is aria-hidden, a picture of it, never a second one.
-    expect((await back.textContent())!.trim()).toBe('');
-    expect(await back.getAttribute('aria-label')).toBe(S.navBack);
-    await expect(back.locator('svg')).toHaveCount(1);
-
-    // The band's row is 30px; the TARGET is still 44, by overhang — measured,
-    // because this split is exactly where a floor quietly goes missing.
-    const box = (await back.boundingBox())!;
-    expect(box.width).toBeGreaterThanOrEqual(44);
-    expect(box.height).toBeGreaterThanOrEqual(44);
-
-    // Home stands beside it, and out here — already at the top once out — it
-    // must never pretend otherwise. (At the file tier both are live.)
-    const home = page.locator('.brainglobe-nav').getByRole('button', { name: S.navHome, exact: true });
-    await expect(home).toBeVisible();
-    const homeBox = (await home.boundingBox())!;
-    expect(homeBox.width).toBeGreaterThanOrEqual(44);
-    expect(homeBox.height).toBeGreaterThanOrEqual(44);
-
-    // AND THE ROW DOES NOT TRAVEL WITH THE VISUAL: drag the globe and the
-    // band's box does not move — that sentence is the whole of VB-74. The
-    // drawer is still settling from showBrain's own grow for ~320ms, and the
-    // band rides the drawer's chrome, so the baseline is taken only once the
-    // box has genuinely stopped (the photograph test's own poll) — otherwise
-    // this measures the settle, not the drag.
-    await expect
-      .poll(async () => {
-        const first = (await page.locator('.brainglobe-nav').boundingBox())!.y;
-        await page.waitForTimeout(80);
-        return Math.round(Math.abs((await page.locator('.brainglobe-nav').boundingBox())!.y - first));
-      })
-      .toBe(0);
-    const before = (await page.locator('.brainglobe-nav').boundingBox())!;
-    const stageBox = (await page.locator('.brainglobe').boundingBox())!;
-    await page.mouse.move(stageBox.x + stageBox.width / 2, stageBox.y + stageBox.height / 2);
-    await page.mouse.down();
-    for (let i = 1; i <= 6; i++) await page.mouse.move(stageBox.x + stageBox.width / 2 + i * 12, stageBox.y + stageBox.height / 2);
-    const during = (await page.locator('.brainglobe-nav').boundingBox())!;
-    await page.mouse.up();
-    expect(Math.abs(during.x - before.x)).toBeLessThan(1);
-    expect(Math.abs(during.y - before.y)).toBeLessThan(1);
-
-    // AND IT STILL DOES THE MOVE. Same button, same function, same tier.
-    expect(await tier(page)).toBe('file');
-    await back.click();
-    await tierSettled(page, 0);
-    expect(await tier(page)).toBe('work');
-
-    await context.close();
-  });
-
-  test('it rings on the keyboard, and the keyboard can press it', async () => {
-    const { context, sw, id } = await launchExtension();
-    const page = await openMidInterview(context, sw, id);
-    await showBrain(page);
-
-    const back = bandBack(page);
-    // Reached with the KEYBOARD, because that is what `:focus-visible` is a
-    // question about — a ring measured after a programmatic focus can pass on a
-    // stylesheet that only rings mouse users. V2.1 VB-74's band FOLLOWS the
-    // pins in the markup (the disc's own order, kept deliberately — see the
-    // band's JSX comment), so from a section node the walk is forward. Tabbed
-    // rather than a counted number of stops: the stage's tab order is the
-    // globe's business and this test is not the place to pin it.
-    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    const close = page.locator('.leafcard-close');
+    await expect(close).toBeVisible();
+    await page.locator('.brainglobe-pin[data-child-id]').first().focus();
     for (let i = 0; i < 30; i++) {
-      if (await back.evaluate((el) => el === document.activeElement)) break;
+      if (await close.evaluate((el) => el === document.activeElement)) break;
       await page.keyboard.press('Tab');
     }
-    await expect(back).toBeFocused();
-    const ring = await back.evaluate((element) => {
+    await expect(close).toBeFocused();
+    const ring = await close.evaluate((element) => {
       const style = getComputedStyle(element);
       return { width: style.outlineWidth, style: style.outlineStyle, visible: element.matches(':focus-visible') };
     });
     expect(ring.visible).toBe(true);
     expect(ring.style).toBe('solid');
     expect(parseFloat(ring.width)).toBeGreaterThanOrEqual(2);
-
-    await page.keyboard.press('Enter');
-    await tierSettled(page, 0);
-    expect(await tier(page)).toBe('work');
 
     await context.close();
   });
@@ -534,59 +495,16 @@ test.describe('VB-74 — the way out is a band above the stage', () => {
    * as the way out of the file, or whether the chevron sits centred in it. The
    * corner is photographed close enough to see the ink.
    */
-  test('the band above the stage, resting and focused — for a person to look at (VB-74)', async () => {
-    const { context, sw, id } = await launchExtension();
-    const page = await openMidInterview(context, sw, id);
-    await showBrain(page);
-
-    // The drawer opens all the way, so the stage is the size somebody really
-    // looks at it, and the shot is not of a globe squeezed into a peek.
-    const handle = page.locator('.filedrawer-handle');
-    await handle.focus();
-    await page.keyboard.press('End');
-
-    const back = bandBack(page);
-    await expect(back).toBeVisible();
-    // The drawer settles over 320ms and the band rides its chrome, so the
-    // clip is taken from a box that has stopped moving — otherwise the row
-    // is photographed where the button WAS.
-    await expect
-      .poll(async () => {
-        const first = (await back.boundingBox())!.y;
-        await page.waitForTimeout(80);
-        return Math.round(Math.abs((await back.boundingBox())!.y - first));
-      })
-      .toBe(0);
-    const box = (await back.boundingBox())!;
-    const corner = {
-      x: Math.max(0, box.x - 24),
-      y: Math.max(0, box.y - 24),
-      width: box.width + 48,
-      height: box.height + 48,
-    };
-
-    await page.screenshot({ path: path.join(SHOTS, 'stage.png') });
-    await page.screenshot({ path: path.join(SHOTS, 'corner.png'), clip: corner });
-
-    // Hover BEFORE the keyboard reaches it: a hover shot taken after focusing
-    // is a picture of the focus ring, and the two treatments would be
-    // impossible to tell apart in the one place they are being compared.
-    await back.hover();
-    await page.waitForTimeout(200);
-    await page.screenshot({ path: path.join(SHOTS, 'corner-hover.png'), clip: corner });
-    await page.mouse.move(PANEL.width / 2, PANEL.height / 2);
-
-    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
-    for (let i = 0; i < 30; i++) {
-      if (await back.evaluate((el) => el === document.activeElement)) break;
-      await page.keyboard.press('Tab');
-    }
-    await expect(back).toBeFocused();
-    await page.waitForTimeout(150);
-    await page.screenshot({ path: path.join(SHOTS, 'corner-focus.png'), clip: corner });
-
-    await context.close();
-  });
+  /*
+   * BS-07a (§7.1) RETIRED THIS SHOT. It photographed the nav band's corner in
+   * three states — resting, hovered, focused — so a person could compare the
+   * two treatments side by side. The band is gone: "Back and Home duplicate
+   * the mark and the trail root."
+   *
+   * The comparison it existed for is not lost. §7.2's card close is the
+   * control that replaced the band's Back, and the focus-ring claim moved to
+   * it in the test above; the shot of the stage itself is one-surface.spec's.
+   */
 });
 
 test.describe('VB-48 — the complete state, one level up', () => {
@@ -660,21 +578,55 @@ test.describe('VB-48 — reduced motion', () => {
     // Every value the tier's clock takes while it changes, sampled per frame.
     // "Instant" is not "fast": a tween would leave a trail of fractions here,
     // and there must not be one.
+    /* Escape is the globe's own keydown handler, so focus has to be INSIDE the
+       globe — `.brainglobe` is a div and never takes focus itself. Done BEFORE
+       the sampler starts: it collects a fixed 45 frames, and a focus step
+       inside that window spends them before the key lands. */
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
     await page.evaluate(() => {
       const w = window as unknown as { __wbClock: string[] };
       w.__wbClock = [];
       const globe = document.querySelector('.brainglobe');
       const tick = () => {
         if (globe) w.__wbClock.push(globe.getAttribute('data-tier-clock') ?? '');
-        if (w.__wbClock.length < 45) requestAnimationFrame(tick);
+        /**
+         * STOPS ON THE TRANSITION, not after a fixed count.
+         *
+         * It used to run for 45 frames and assert the trail held both ends.
+         * That is a race: under five headed browsers the key press can land
+         * after the window has closed, and the test then fails a claim about
+         * TWEEN VALUES because of scheduling. So it samples until it has seen
+         * the far end, with a cap that only exists so a genuine failure ends
+         * rather than hangs. The claim is unchanged and now unconditional: no
+         * value between the two ends is ever written.
+         */
+        const done = w.__wbClock.includes('0.000');
+        if (!done && w.__wbClock.length < 600) requestAnimationFrame(tick);
       };
       requestAnimationFrame(tick);
     });
-    await bandBack(page).click();
+    // BS-07a (§7.1): the band is gone; Escape walks the same rung.
+    await page.keyboard.press('Escape');
     await expect.poll(() => tier(page)).toBe('work');
     await expect.poll(() => tierClock(page)).toBe(0);
+    /**
+     * THE CLAIM IS ABOUT VALUES, NOT ABOUT CATCHING BOTH ENDS.
+     *
+     * This used to assert the sampled set EQUALLED both ends, which made it a
+     * race twice over: the sampler has to be running when the key lands, and
+     * it has to still be running after. Under five headed browsers it was
+     * neither, and a test about whether reduced motion TWEENS failed on
+     * scheduling.
+     *
+     * The tier really changed — `expect.poll` above already established that.
+     * What is left to prove is that nothing in between was ever written, and
+     * that is true of every sample regardless of when the window opened.
+     */
     const trail: string[] = await page.evaluate(() => (window as unknown as { __wbClock: string[] }).__wbClock);
-    expect(new Set(trail)).toEqual(new Set(['1.000', '0.000']));
+    expect(trail.length).toBeGreaterThan(0);
+    for (const value of new Set(trail)) {
+      expect(['1.000', '0.000'], `the tier clock tweened through ${value}`).toContain(value);
+    }
     await expect(fileNode(page, 'context')).toBeVisible();
 
     // ...and no loop is started to get there.

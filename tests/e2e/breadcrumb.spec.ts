@@ -188,7 +188,13 @@ test.describe('VB-52 — the breadcrumb is where you are', () => {
     // same navigation.
     await page.getByRole('button', { name: S.drawerModeBrain, exact: true }).click();
     await drawerSettled(page);
-    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+    // BS-07a (§7.1): the nav band is gone — Back and Home duplicated the mark
+    // and the trail root. Escape still walks the same ladder it always did,
+    // and from the file tier with nothing flown into that is the climb out.
+    // Escape is the globe's own keydown handler, so it needs focus INSIDE the
+    // globe — `.brainglobe` is a div and never takes focus itself.
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    await page.keyboard.press('Escape');
     await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
     await expect(page.locator('.workshelf')).toHaveCount(1);
     await expect(page.locator('.crumbs-seg')).toHaveCount(1);
@@ -217,7 +223,13 @@ test.describe('VB-52 — the trail and the Brain’s zoom are one state', () => 
     // globe without being told twice. (The trail's own root rung stopped
     // being a tier move at V2.4 VB-112 — it is the door Home now, asserted
     // in its own test below.)
-    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+    // BS-07a (§7.1): the nav band is gone — Back and Home duplicated the mark
+    // and the trail root. Escape still walks the same ladder it always did,
+    // and from the file tier with nothing flown into that is the climb out.
+    // Escape is the globe's own keydown handler, so it needs focus INSIDE the
+    // globe — `.brainglobe` is a div and never takes focus itself.
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    await page.keyboard.press('Escape');
     await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
     await expect(page.locator('.crumbs-seg')).toHaveCount(1);
 
@@ -248,7 +260,13 @@ test.describe('VB-52 — the trail and the Brain’s zoom are one state', () => 
     // same three rungs again, naming the same file.
     await page.getByRole('button', { name: S.drawerModeBrain, exact: true }).click();
     await drawerSettled(page);
-    await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+    // BS-07a (§7.1): the nav band is gone — Back and Home duplicated the mark
+    // and the trail root. Escape still walks the same ladder it always did,
+    // and from the file tier with nothing flown into that is the climb out.
+    // Escape is the globe's own keydown handler, so it needs focus INSIDE the
+    // globe — `.brainglobe` is a div and never takes focus itself.
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    await page.keyboard.press('Escape');
     await expect.poll(() => tier(page), { timeout: 3000 }).toBe('work');
     // The shelf is the List's work-tier face — flip back to List to use it.
     await page.getByRole('button', { name: S.drawerModeList, exact: true }).click();

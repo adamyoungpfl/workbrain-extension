@@ -1100,7 +1100,6 @@ export function FileDrawer({
           summaries={summaries}
           recommendations={recommendations}
           onSelect={handleGlobeSelect}
-          onHome={onHome}
           /* BS-07c (§7.2) — the leaf card's action. In the drawer a list opens
              the section's own records through the same `handleNavigate` every
              other route here uses, so the card is not a second navigation. */

@@ -934,10 +934,12 @@ export interface BrainGlobeProps {
    * an empty ANSWER or an empty LIST, and only the outline knows which.
    */
   listNodes?: ReadonlySet<string> | undefined;
-  /** V2.4 VB-112 — when present, the nav band's drawn house leaves for the
-   * Home PAGE instead of climbing the tier ladder, and is active at every
-   * tier. */
-  onHome?: (() => void) | undefined;
+  /* BS-07a (§7.1) — `onHome` LEFT THIS COMPONENT with the band's house.
+   V2.4 VB-112 threaded the Home door to three affordances: "the top-left
+   mark, the trail's root rung, and the globe's drawn house." §7.1's whole
+   argument is that the third duplicates the first two, so it is two now —
+   and a prop with no reader is dead API, not a spare. Escape's last rung
+   still climbs to the work brain (`goWork`), which is what it always did. */
   /** V2.4 VB-103 — programmatic selection: when this changes to a section id
    * (nonce distinguishes repeat picks of the same id), the globe runs the
    * same path a pin press runs — centering the orb and opening its summary —
@@ -1114,7 +1116,6 @@ export function BrainGlobe({
   onSelect,
   onLeafAct,
   listNodes,
-  onHome,
   selectRequest,
   files,
   file = 'context',
@@ -2197,77 +2198,7 @@ export function BrainGlobe({
 
   const rootStyle = { '--brainglobe-size': `${size}px` } as CSSProperties;
 
-  /**
-   * ── V2.1 VB-74 — THE WAY OUT LEAVES THE PICTURE ──────────────────────────
-   *
-   * "Lock the back and centre controls to a nav row below the breadcrumbs.
-   * They must not travel with the visual." Until now the way out lived in the
-   * stage's own corner — VB-59's disc at the file tier, the `Back to the whole
-   * file` pill inside a section — which meant it sat ON the picture, moved
-   * when the stage resized, and changed shape at every level. This band is a
-   * normal-flow row above the square: fixed while the picture underneath
-   * turns, zooms and flies, and the same two controls at every depth.
-   *
-   * BACK IS THE ESCAPE LADDER'S POINTER RUNGS, EXACTLY. One level up from
-   * wherever you are: a picked sub-node un-picks, a flown section flies out, a
-   * file pulls back to the work brain. The keyboard's Escape (below, in
-   * `onStageKeyDown`) walks the identical ladder — plus one rung this button
-   * deliberately does not have: Escape dismisses an open hover summary first,
-   * because the summary is pointer state and a button press should never spend
-   * itself on a tooltip.
-   *
-   * HOME IS THE LADDER JUMPED. All the way out to the work brain — Adam: "the
-   * high-level equivalent of the Home screen." At the file tier the two
-   * buttons converge on the same move; that redundancy is the price of the
-   * shape never changing, and it is the trade VB-74 asks for by name.
-   *
-   * IN THE MARKUP IT FOLLOWS THE SQUARE; ON SCREEN IT SITS ABOVE IT. See the
-   * comment on the band's own JSX for why the tab order goes pins-first.
-   *
-   * DISABLED, NOT HIDDEN, AT THE TOP. At the work tier there is nothing above,
-   * and the controls stay where they are with `aria-disabled` rather than
-   * vanishing — "the way out is always the same shape" is the whole point, and
-   * a row that empties at one tier is a different shape. `aria-disabled` and
-   * not `disabled`, so they stay in the tab order and a keyboard walk finds
-   * them in the same place every time (the locked-chip precedent,
-   * Breadcrumb.tsx). The one case where a control IS absent rather than
-   * disabled: `workEnabled` false means no grouping exists at all, so Home has
-   * no destination on any screen and a permanently disabled button would be
-   * furniture — that follows `brainFitsIn`'s rule ("a control that cannot do
-   * its job is worse than no control"), not this one.
-   *
-   * The band's 30px and the stage arithmetic that pays for it live in
-   * core/drawer/mode.ts (`BRAIN_NAV_BAND`); the 44px targets overhang the
-   * stage below (BrainGlobe.css), which is the drawer handle's own
-   * painted-versus-pressable split.
-   */
-  const backTarget =
-    pickedChildId !== null || flownIndex !== null || (workEnabled && tierShown === 'file');
-  const navBack = () => {
-    if (pickedChildId !== null) {
-      unpickChild();
-      return;
-    }
-    if (flownIndex !== null) {
-      flyOut();
-      return;
-    }
-    goWork();
-  };
-  const navHome = () => {
-    // V2.4 VB-112: the house is the Home PAGE when the caller offers the
-    // door — people instinctively assume it, at every tier including the
-    // top. The tier-ladder climb remains for standalone showcases.
-    if (onHome) {
-      onHome();
-      return;
-    }
-    if (tierShown === 'work') return;
-    if (flownIndex !== null) flyOut();
-    goWork();
-  };
-
-  return (
+    return (
     <>
       <div
         className="brainglobe"
@@ -3223,7 +3154,12 @@ export function BrainGlobe({
           purpose={S.nodePurpose[pickedChild.id]}
           top={leafBand.top}
           height={leafBand.height}
-          onClose={() => setPickedChildId(null)}
+          /* `unpickChild`, not `setPickedChildId(null)`: the id is only half
+             of it — the split's own clock has to ease back down too, or the
+             card vanishes and the stage stays split behind it. Same function
+             Escape and the child pin both call, so there is one way to close
+             a split rather than three that agree today. */
+          onClose={unpickChild}
           onAct={() => onLeafAct?.(pickedChild, leafState.startsWith('list-'))}
         />
       )}
@@ -3291,63 +3227,28 @@ export function BrainGlobe({
         {pickedChild ? S.brainGlobeInside(pickedChild.label) : flownSection ? S.brainGlobeInside(flownSection.label) : ''}
       </p>
     </div>
-      {/* AFTER the square in the markup, ABOVE it on the screen (CSS
-          `order: -1`). The tab order is the decision here, and it is the one
-          the retired corner disc already made and every keyboard suite
-          already encodes: the pins first, the way out after — Escape, which
-          walks the same ladder, remains the keyboard's fast exit, so the two
-          stops at the end cost a keyboard user nothing on the way in. Putting
-          the band first in the DOM was tried and put Back and Home in front
-          of every pin on every Tab journey into the globe. */}
-      <div className="brainglobe-nav">
-        <button
-          type="button"
-          className="brainglobe-nav-btn"
-          aria-label={S.navBack}
-          aria-disabled={backTarget ? undefined : 'true'}
-          onClick={backTarget ? navBack : undefined}
-        >
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true" focusable="false">
-            {/* components/NavButton.tsx's own back chevron — the mark the
-                interview's Back draws, drawn rather than typed for the reason
-                DeepDive.tsx documents: `◂` renders as an all-but-invisible
-                dot in this panel's font stack. */}
-            <path
-              d="M15 5 8 12l7 7"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.4"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </button>
-        {workEnabled && (
-          <button
-            type="button"
-            className="brainglobe-nav-btn"
-            aria-label={S.navHome}
-            aria-disabled={tierShown === 'work' ? 'true' : undefined}
-            onClick={tierShown === 'work' ? undefined : navHome}
-          >
-            {/* V2.3 VB-91 — a drawn house, same convention as every icon in
-                this product: stroke, currentColor, aria-hidden, the button
-                carries the name. Icons rather than words so the stage never
-                shows a second printed "Back" while the interview's footer
-                shows its own (the V2.2 collision, resolved as Adam asked). */}
-            <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true" focusable="false">
-              <path
-                d="M4 11.5 12 5l8 6.5M6.5 10.5V19h11v-8.5"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-          </button>
-        )}
-      </div>
+      {/*
+        BS-07a (§7.1) — THE NAV BAND IS GONE. "Back and Home duplicate the
+        mark and the trail root; drop them and the peek gains a row."
+
+        Checked before it was cut, because a picture with no way out of it is
+        the worst thing this could have shipped. Every route the band offered
+        already exists:
+
+          · UNPICK A CHILD — §7.2's card carries its own close now, which is
+            the change that unblocked this; plus Escape, plus pressing the
+            child's pin again.
+          · FLY OUT OF A SECTION — pressing the flown section's own orb is
+            already a toggle (`isFlown ? flyOut() : flyInto()`, above); plus
+            Escape.
+          · OUT TO THE WORK BRAIN — the trail's root rung, which is where
+            V2.4 VB-112 put the door to Home; plus Escape.
+
+        So the band was a third way to do three things that each had two.
+        `BRAIN_NAV_BAND` goes with it (core/drawer/mode.ts) and the thirty
+        pixels go to the stage — which is also thirty pixels closer to the
+        286px §7.2's card wants.
+      */}
     </>
   );
 }

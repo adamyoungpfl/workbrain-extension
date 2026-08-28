@@ -623,96 +623,10 @@
   color: var(--globe-detail-key);
 }
 
-/* ── V2.1 VB-74 — the nav band: the way out, off the picture ──────────────
-   Replaces the two corner controls that stood ON the stage — the section
-   pill (V1.8 VB-48) and the work-brain disc (V2.0 VB-59), whose rules lived
-   here. Both travelled with the visual and changed shape at every level; the
-   band is a normal-flow row above the square, fixed while the picture
-   underneath moves, holding the same two words at every depth.
+/* BS-07a (§7.1) — `.brainglobe-nav` and its two buttons are gone. Every route
+   they offered has two others (BrainGlobe.tsx names them), and the thirty
+   pixels they cost went back to the stage (core/drawer/mode.ts). */
 
-   THE 30px BAND HOLDS 44px TARGETS. The row's height is `BRAIN_NAV_BAND`
-   (core/drawer/mode.ts — the stage arithmetic pays for it there), and the
-   buttons keep the floor by overhanging the stage below: 44px tall, margin
-   pulling the row's box back up to 30. The drawer's handle is the precedent —
-   a 24px visible band of a 44px target. Overhanging DOWN, onto the stage,
-   because above is the breadcrumb band whose rungs own their own 44px; the
-   strip of stage under the buttons gives up its drag, which a corner of dead
-   drag space costs nobody anything.
-
-   ON THE FIELD, IN THE FIELD'S OWN INK. The band sits on the drawer's dark
-   surface, so it keeps the retired controls' colour vocabulary — the same
-   `--globe-label` ink and `--globe-focus` ring whose contrast on this ground
-   was measured when the corner controls wore them. Hover is the underline,
-   the drawer's one hover language (V1.9 VB-50). */
-
-.brainglobe-nav {
-  /* Drawn above the square while following it in the DOM — the stage's parent
-     is a flex column (FileDrawer.css), and -1 lifts the row over the picture
-     without touching the keyboard journey the markup order carries. */
-  order: -1;
-  height: 30px;
-  display: flex;
-  align-items: flex-start;
-  gap: 2px;
-  width: 100%;
-  padding: 0 2px;
-  box-sizing: border-box;
-}
-
-.brainglobe-nav-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  /* V2.3 VB-91 — icons again, so the width the words used to supply has to
-     be stated (the VB-59 lesson, relearned the same afternoon it was
-     unlearned): an icon-only button collapses to its glyph and fails the
-     floor while looking exactly right. */
-  min-width: var(--target-min);
-  height: var(--target-min);
-  /* The overhang: the box is 44 tall in a 30 row. The bottom 14px lie over
-     the stage's top edge and take the presses that land there; the painted
-     words sit in the row because the padding below pushes them up. */
-  margin-bottom: -14px;
-  padding: 0 10px 14px;
-  border: 0;
-  background: none;
-  color: var(--globe-label);
-  /* The same halo every label on this stage carries (`.brainglobe-label`):
-     the field's own colour, tight then soft, so the ink keeps its floor over
-     whatever the picture puts near the band's bottom edge. */
-  text-shadow: 0 1px 3px var(--globe-field), 0 0 8px var(--globe-field);
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.brainglobe-nav-btn svg {
-  flex: none;
-  filter: drop-shadow(0 1px 3px var(--globe-field));
-}
-
-.brainglobe-nav-btn:hover:not([aria-disabled='true']) {
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  text-decoration-thickness: 1.5px;
-}
-
-.brainglobe-nav-btn:focus-visible {
-  outline: 2px solid var(--globe-focus);
-  outline-offset: -2px;
-}
-
-/* Nothing above you. Quiet ink and no affordance, but still here and still in
-   the tab order (`aria-disabled`, not `disabled`) — the row keeping its shape
-   at the top is the point of the row. The trail directly above says why it is
-   quiet. */
-.brainglobe-nav-btn[aria-disabled='true'] {
-  color: var(--globe-dim, var(--globe-label));
-  opacity: 0.55;
-  cursor: default;
-}
 
 /* ── V1.8 VB-48 — the work brain, one level above a file ─────────────────── */
 

@@ -5,7 +5,6 @@ import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import {
   BRAIN_MIN_HEIGHT,
-  BRAIN_NAV_BAND,
   BRAIN_OPEN_HEIGHT,
   BRAIN_STAGE_IDEAL,
   BRAIN_STAGE_PAD,
@@ -182,7 +181,9 @@ test.describe('VB-70 — the visual’s height governs the mode', () => {
     // V2.1 VB-74: the stage's box now holds two things — the nav band above
     // the picture, then the picture — with the padding around them. So the
     // stage less its padding is the band plus the globe, exactly.
-    expect(at.stage - BRAIN_STAGE_PAD * 2).toBeCloseTo(at.globe + BRAIN_NAV_BAND, 0);
+    // BS-07a (§7.1): with the band gone the globe fills the padded stage
+      // exactly, rather than the stage less a 30px row above it.
+      expect(at.stage - BRAIN_STAGE_PAD * 2).toBeCloseTo(at.globe, 0);
     // And the picture at the handover is the IDEAL — V2.1 VB-75's whole
     // point. This line used to expect BRAIN_STAGE_MIN: the globe at the
     // threshold was the smallest legal globe, and there is no such thing any

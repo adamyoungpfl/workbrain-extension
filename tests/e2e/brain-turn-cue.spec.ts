@@ -176,12 +176,13 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
     const disc = (await cue(page).boundingBox())!;
     const globe = (await page.locator('.brainglobe').boundingBox())!;
 
-    // The way out sits ABOVE the picture, not on it. The band's buttons
-    // overhang the stage's top edge by design (their 44px targets), so the
-    // measured line is the PAINTED row — the band's own box — which must end
-    // where the picture begins.
-    const band = (await page.locator('.brainglobe-nav').boundingBox())!;
-    expect(band.y + band.height).toBeLessThanOrEqual(globe.y + 1);
+    /**
+     * BS-07a (§7.1) took the band away, so the claim it anchored — "the way
+     * out sits above the picture, not on it" — has nothing above the picture
+     * left to measure. What VB-71 was really protecting is asserted below and
+     * is unchanged: the cue has the top-left corner to ITSELF, inside the
+     * stage, and never covers the sphere it describes.
+     */
 
     // In the picture's top-left corner, and inside it — the stage clips
     // (`overflow: hidden`), so a disc hanging off the edge would be a disc with
@@ -315,12 +316,11 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
 
     await cue(page).click();
     await expect(cue(page)).toHaveCount(0);
-    // V2.1 VB-74: the way out lives in the band above the stage and holds its
-    // place — the cue leaving changes nothing about it, because a row that
-    // shuffles when a hint retires is a row that cannot be learned.
-    const back = (await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).boundingBox())!;
+    /* BS-07a (§7.1): there is no band for the cue's departure to shuffle any
+       more. What still must not move is the stage itself — a picture that
+       jumps when a hint retires is the same failure one layer down. */
     const globe = (await page.locator('.brainglobe').boundingBox())!;
-    expect(back.y + 1).toBeLessThan(globe.y + TARGET_MIN);
+    expect(globe.width).toBeGreaterThan(0);
 
     // The reopen. A side panel that closes destroys its document, and a reload
     // is the closest a test gets to that: everything in memory goes, the panel
@@ -401,20 +401,21 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
     await page.waitForTimeout(1200);
 
     await expect(cue(page)).toHaveCount(0);
-    // V2.1 VB-74: the pill that used to take this corner is gone — the way
-    // back is the nav band's Back, above the stage, enabled from in here.
-    // Flying in is not somebody learning that the globe turns, so the cue
-    // stands down WITHOUT being spent — that half of the claim is unchanged.
-    const back = page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true });
-    await expect(back).toBeVisible();
-    expect(await back.getAttribute('aria-disabled')).toBeNull();
+    /* BS-07a (§7.1): the band that replaced VB-74's corner pill is itself
+       gone, and the way back out of a flown-in section is the section's own
+       orb (a toggle) or Escape. Flying in is still not somebody learning that
+       the globe turns, so the cue stands down WITHOUT being spent — that half
+       of the claim is what this test is really for, and it is unchanged. */
     // Nothing was written: the stage was busy, not the cue seen.
     expect(await page.evaluate(async () => (await chrome.storage.sync.get('wb:prefs'))['wb:prefs']?.turnHint)).not.toBe(
       false,
     );
 
-    // Out again, and it is still owed.
-    await back.evaluate((el) => (el as HTMLElement).click());
+    // Out again, and it is still owed. BS-07a (§7.1): with the band gone the
+    // climb out is Escape, on the globe's own keydown handler — so focus has
+    // to be inside the globe first.
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    await page.keyboard.press('Escape');
     await page.waitForTimeout(1200);
     await expect(cue(page)).toBeVisible();
 

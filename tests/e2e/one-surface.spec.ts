@@ -438,14 +438,23 @@ test('the stage has no ground of its own — one colour through the visual (VB-6
   const box = parseCssColor(await page.locator('.brainglobe').evaluate((el) => getComputedStyle(el).backgroundColor));
   expect(isOpaque(box), 'the stage declares a ground of its own').toBe(false);
 
-  // The way out: words standing on the surface, never a fill of their own —
-  // VB-59's disc and VB-69's second removal established the claim on the
-  // corner control; V2.1 VB-74 moved the control to the nav band and the
-  // claim moved with it.
-  const navOut = page.locator('.brainglobe-nav-btn').first();
-  await expect(navOut).toBeVisible();
-  const fill = parseCssColor(await navOut.evaluate((el) => getComputedStyle(el).backgroundColor));
-  expect(isOpaque(fill), 'the way out paints a ground of its own').toBe(false);
+  /*
+   * BS-07a (§7.1) — THE "WAY OUT" CLAUSE LEAVES THIS TEST, and where it went
+   * matters more than that it went.
+   *
+   * VB-59's corner disc, VB-69's removal and VB-74's band each carried the
+   * same rule in turn: the way out paints no ground of its own, because this
+   * stage is one colour all the way through. The band is gone, and the
+   * control that replaced its Back — §7.2's card close — does NOT sit on the
+   * picture. It sits on a card that is deliberately a plate.
+   *
+   * So the rule cannot follow it here: "no ground of its own" is a claim
+   * about a control on the field, and there is no longer a control on the
+   * field. What the close owes instead is asserted where it lives — its focus
+   * ring in work-brain.spec, its contrast against the card's own ground in
+   * brain-globe.spec. This test keeps what it was always really about: the
+   * STAGE declares no ground, measured two ways, above.
+   */
 
   console.log(`\n  VB-69 through the stage\n${measured.map((line) => `    ${line}`).join('\n')}\n`);
   await context.close();
@@ -636,7 +645,13 @@ test('every focusable control in the drawer still shows a ring (VB-50)', async (
   // ladder now (V2.4 VB-112 made the root rung the door to the Home page):
   // Brain, band Back, and back to List where the shelf lives.
   await page.getByRole('button', { name: S.drawerModeBrain, exact: true }).click();
-  await page.locator('.brainglobe-nav').getByRole('button', { name: S.navBack, exact: true }).click();
+  // BS-07a (§7.1): the nav band is gone — Back and Home duplicated the mark
+    // and the trail root. Escape still walks the same ladder it always did,
+    // and from the file tier with nothing flown into that is the climb out.
+    // Escape is the globe's own keydown handler, so it needs focus INSIDE the
+    // globe — `.brainglobe` is a div and never takes focus itself.
+    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
+    await page.keyboard.press('Escape');
   await page.getByRole('button', { name: S.drawerModeList, exact: true }).click();
   await page.waitForSelector('.workshelf-row');
   await check({ what: 'a work shelf row', locator: page.locator('.workshelf-row').first(), kind: 'text' });
@@ -648,6 +663,17 @@ test('every focusable control in the drawer still shows a ring (VB-50)', async (
 /* ── 3. LEGIBLE ON THE FIELD ─────────────────────────────────────────────── */
 
 test('every control is measured against the pixel really painted behind it (VB-50)', async () => {
+  /**
+   * A screenshot per control, and there are a dozen of them — this test reads
+   * the pixel actually painted behind each one rather than trusting a token,
+   * which is the whole point of VB-50 and also why it is the slowest walk in
+   * the file. It runs in 3.5s alone and timed out at 30s in a full-suite run
+   * under five headed browsers; passing three times isolated and three times
+   * as a file is the flake protocol's answer (docs/BETA-SPRINT.md).
+   *
+   * So it gets its own budget rather than being the suite's coin toss.
+   */
+  test.setTimeout(90_000);
   const { context, sw, id } = await launchExtension();
   const page = await openQuestion(context, sw, id);
   await setHeight(page, BOUNDS.max);

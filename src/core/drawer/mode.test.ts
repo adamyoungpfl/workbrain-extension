@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
   BRAIN_MIN_HEIGHT,
-  BRAIN_NAV_BAND,
   BRAIN_OPEN_HEIGHT,
   BRAIN_STAGE_IDEAL,
   BRAIN_STAGE_MIN,
@@ -121,7 +120,9 @@ describe('brainStageSize', () => {
     // the stage really does reach both edges (core/drawer/chrome.ts).
     // V2.1 VB-74: the nav band above the stage is a fourth term, baked into
     // the room arithmetic because Brain never renders without its way out.
-    expect(brainStageSize(354, 400)).toBe(354 - DRAWER_CHROME_HEIGHT - BRAIN_NAV_BAND - BRAIN_STAGE_PAD * 2);
+    // BS-07a (§7.1): the nav band is gone, so the stage keeps its thirty
+    // pixels. The shape of the arithmetic is unchanged — one term fewer.
+    expect(brainStageSize(354, 400)).toBe(354 - DRAWER_CHROME_HEIGHT - BRAIN_STAGE_PAD * 2);
     // A panel narrower than the drawer is tall: width wins.
     expect(brainStageSize(600, 400)).toBe(400 - BRAIN_STAGE_PAD * 2);
   });
@@ -186,7 +187,7 @@ describe('brainStageRoom and brainStageFits — the threshold is the stage', () 
     // above this point — the threshold and the clamp used to coincide and no
     // longer do — so the short height is derived from the clamp itself, which
     // is the thing this assertion is actually about.
-    const clampHeight = DRAWER_CHROME_HEIGHT + BRAIN_NAV_BAND + BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2;
+    const clampHeight = DRAWER_CHROME_HEIGHT + BRAIN_STAGE_MIN + BRAIN_STAGE_PAD * 2;
     const short = clampHeight - 20;
     expect(brainStageRoom(short, 400)).toBeLessThan(brainStageSize(short, 400));
   });

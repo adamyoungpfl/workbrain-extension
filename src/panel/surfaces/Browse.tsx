@@ -136,7 +136,6 @@ export function Browse({ modules, outline, answersKey = ANSWERS_KEY.context, nam
           summaries={summaries}
           onSelect={(node) => setSelected(node?.id ?? null)}
           selectRequest={selectRequest}
-          onHome={onBack}
           /* BS-07c (§7.2) — the leaf card's one action, part 5. The card
              names the move; this routes it. A list opens §8's Multiples
              screen, everything else opens that node's own question. */
