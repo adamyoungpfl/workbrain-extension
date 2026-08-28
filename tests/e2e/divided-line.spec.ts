@@ -115,7 +115,9 @@ async function launchOnRoleFor(
     // whose row opens the record for review at its first question: role_for.
     await page.getByRole('button', { name: new RegExp(S.multiplesTitle) }).click();
     await page.waitForSelector('.multiples');
-    await page.locator('.multiples-group .filerow').first().click();
+    // BS-08 (§8): the record row is `.recordrow` now — a completeness ring
+    // and what the record holds, in place of the shared file row.
+    await page.locator('.multiples-group .recordrow').first().click();
   } else {
     await page.getByRole('button', { name: /^Context\.md/ }).click();
     await page.getByRole('button', { name: 'Edit the file', exact: true }).click();

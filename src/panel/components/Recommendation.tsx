@@ -77,18 +77,6 @@ export function recommendationCopy(rec: Recommendation): RecommendationCopy {
         why: S.recSuccessWhy,
         action: S.driftAction(1),
       };
-    case 'entities-thin':
-      return {
-        headline: S.recEntitiesHeading,
-        why: S.recEntitiesWhy,
-        action: S.recEntitiesAction,
-      };
-    case 'initiatives-thin':
-      return {
-        headline: S.recInitiativesHeading,
-        why: S.recInitiativesWhy,
-        action: S.recInitiativesAction,
-      };
   }
 }
 

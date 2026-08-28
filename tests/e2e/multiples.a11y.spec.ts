@@ -67,7 +67,9 @@ function completedInterview(): Answers {
   throw new Error('the interview never finished');
 }
 
-async function openMultiples(): Promise<{ context: BrowserContext; page: Page; sw: Worker }> {
+async function openMultiples(
+  answers: Answers = completedInterview(),
+): Promise<{ context: BrowserContext; page: Page; sw: Worker }> {
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
     args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`],
@@ -76,7 +78,7 @@ async function openMultiples(): Promise<{ context: BrowserContext; page: Page; s
   const id = new URL(sw.url()).host;
   await sw.evaluate(async (value) => {
     await chrome.storage.local.set({ 'wb:answers': value });
-  }, completedInterview());
+  }, answers);
 
   const page = await context.newPage();
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -127,8 +129,9 @@ test('every word on the screen clears 4.5:1, including the refusal', async () =>
     '.multiples-title',
     '.multiples-sub',
     '.multiples-group-title',
-    '.multiples .filerow .nm',
-    '.multiples .filerow .sb',
+    '.multiples .recordrow-name',
+    '.multiples .recordrow-detail',
+    '.multiples .recordrow-add',
     '.multiples .field-label',
     '.multiples-error',
   ];
@@ -176,7 +179,61 @@ test('a refusal is announced, and nothing about it is carried by colour alone', 
   expect((await alert.textContent())!.length).toBeGreaterThan(12);
 
   // Each row's state is words too: "4 of 4 answered", never a coloured dot.
-  await expect(page.locator('.multiples .filerow .sb').first()).toHaveText(S.multipleAnswered(4, 4));
+  // BS-08 (§8): the row's visible second line is what the record HOLDS; the
+  // tally it used to print is now the sr-only line beside it.
+  await expect(page.locator('.multiples .recordrow-sr').first()).toHaveText(S.recordAnswered(4, 4));
+
+  await context.close();
+});
+
+/**
+ * BS-08 (§8) — the two states the completed fixture cannot produce.
+ *
+ * Everything in `completedInterview()` is four-of-four and every group has
+ * more than one record, so neither the "2 left" pill nor D8's norming line is
+ * on that screen. They get their own fixture rather than a conditional inside
+ * the loop above: a contrast check that silently skips a missing selector is
+ * a contrast check that passes when the element disappears.
+ */
+test('the incomplete pill and the norming line clear 4.5:1 too (BS-08)', async () => {
+  const answers = completedInterview();
+  // One entity, holding nothing but its name — thin enough for the nudge and
+  // incomplete enough for the pill.
+  answers.repeatables['entities'] = [{ entity_name: 'Priya Raman' }];
+  const { context, page } = await openMultiples(answers);
+
+  const pill = page.locator('.multiples .recordrow-left').first();
+  await expect(pill).toBeVisible();
+  const norm = page.locator('.multiples .multiples-norm').first();
+  await expect(norm).toBeVisible();
+  // D8's line, on the list rather than in the recommendation stack.
+  await expect(norm).toContainText(S.multiplesNorm('entities'));
+
+  for (const selector of ['.multiples .recordrow-left', '.multiples .multiples-norm', '.multiples .multiples-norm-line']) {
+    const measured = await page.locator(selector).first().evaluate((el) => {
+      let node: HTMLElement | null = el as HTMLElement;
+      let background = 'rgb(255, 255, 255)';
+      while (node) {
+        const value = getComputedStyle(node).backgroundColor;
+        if (value !== 'rgba(0, 0, 0, 0)' && value !== 'transparent') {
+          background = value;
+          break;
+        }
+        node = node.parentElement;
+      }
+      return { colour: getComputedStyle(el).color, background };
+    });
+    const ratio = contrastRatio(parseCssColor(measured.colour)!, parseCssColor(measured.background)!);
+    expect
+      .soft(ratio, `${selector} measures ${ratio.toFixed(2)}:1 on ${measured.background}`)
+      .toBeGreaterThanOrEqual(4.5);
+  }
+
+  // And the incomplete state is never colour alone: the amber ring, the arc
+  // it draws, and a word. The word is the one asserted here because it is the
+  // one that survives a greyscale screen.
+  await expect(pill).toHaveText(S.recordLeft(3));
+  await expect(page.locator('.multiples .recordrow.is-partial')).not.toHaveCount(0);
 
   await context.close();
 });

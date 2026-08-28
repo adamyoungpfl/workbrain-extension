@@ -1,7 +1,8 @@
 import type { FileOutlineNode, FlowContext, Module, RepeatableBlock, Step } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import { alignRecordIds } from '../packs/skillIds';
-import { buildFlowLookups, keyOf, nameStepFor, resolvePhrase } from '../files/lookups';
+import { bodyFieldsFor, buildFlowLookups, keyOf, nameStepFor, resolvePhrase } from '../files/lookups';
+import { SKIPPED_ANSWER_MARKER, formatAnswerValue } from '../files/generate';
 import { applyAnswer, applySeededAddAnother, findSeedStep, seededNameTaken } from './runner';
 import { splitSectionLabel } from './sectionLabel';
 
@@ -69,6 +70,25 @@ export interface MultipleRecord {
   /** How many of this record's questions have an answer, skips included. */
   answered: number;
   total: number;
+  /**
+   * BS-08 (§8) — WHAT THIS RECORD ACTUALLY HOLDS, up to three things.
+   *
+   * "'4 of 5 answered' is a fact about the form. Print the two or three
+   * things the record actually contains, and the list becomes a view of the
+   * person's world."
+   *
+   * Their own words, flattened to one line each, in file order, formatted by
+   * the same `formatAnswerValue` the generated file uses — so a row and the
+   * heading it corresponds to in Context.md cannot disagree about what
+   * somebody said. The name is not among them: it is the row's title.
+   *
+   * A SKIPPED ANSWER IS NOT A THING THE RECORD CONTAINS. It gets a real cell
+   * in `nodeDetails` because that panel is an account of the questions; this
+   * is an account of the CONTENT, and "left unanswered on purpose" printed as
+   * a row's subtitle is noise where a fact should be. Empty when the record
+   * holds nothing but its name yet.
+   */
+  detail: string[];
 }
 
 export interface MultipleGroup {
@@ -205,6 +225,7 @@ export function multipleGroups(
         name: nameOf(node, record),
         answered: node.fields.filter((field) => keyOf(field) in record).length,
         total: node.fields.length,
+        detail: recordDetail(node, record),
       }));
       groups.push({
         blockId: node.id,
@@ -218,6 +239,40 @@ export function multipleGroups(
   }
 
   return groups;
+}
+
+/**
+ * BS-08 (§8) — the two or three things one record actually holds.
+ *
+ * File order, the file's own formatter, the name excluded (it is the row's
+ * title), skipped answers excluded (see `MultipleRecord.detail`), and each
+ * value flattened to one line — `formatAnswerValue` renders a multi-select as
+ * a markdown list, which is right in a file and wrong in a 400px row.
+ */
+export const RECORD_DETAIL_MAX = 3;
+
+function oneLine(value: string): string {
+  return value
+    .split('\n')
+    .map((line) => line.replace(/^-\s*/, '').trim())
+    .filter((line) => line !== '')
+    .join(', ');
+}
+
+export function recordDetail(
+  block: RepeatableBlock,
+  record: Record<string, unknown>,
+): string[] {
+  const out: string[] = [];
+  for (const field of bodyFieldsFor(block)) {
+    if (out.length === RECORD_DETAIL_MAX) break;
+    const value = record[keyOf(field)] as Parameters<typeof formatAnswerValue>[1];
+    const formatted = formatAnswerValue(field, value);
+    if (formatted === null || formatted === SKIPPED_ANSWER_MARKER) continue;
+    const line = oneLine(formatted);
+    if (line !== '') out.push(line);
+  }
+  return out;
 }
 
 /** How many records the person holds across every block they can act on —

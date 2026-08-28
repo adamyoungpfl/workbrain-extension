@@ -1,6 +1,5 @@
 import type { FileOutlineNode } from '../../schema/flow.types';
 import { contextModules, contextOutline } from '../flow/flow';
-import { ENTITIES_BLOCK_ID, INITIATIVES_BLOCK_ID } from './engine';
 import type { Recommendation } from './types';
 
 /**
@@ -77,17 +76,10 @@ function questionsUnder(nodeId: string): number {
   return walk(contextOutline) ?? 1;
 }
 
-/** How many questions one record of a repeatable block holds. */
-function questionsPerRecord(blockId: string): number {
-  for (const module of contextModules) {
-    for (const node of module.nodes) {
-      // `'fields' in node` is how the runner tells a block from a step — a
-      // block has no `kind` at all (core/flow/runner.ts).
-      if ('fields' in node && node.id === blockId) return node.fields.length;
-    }
-  }
-  return 1;
-}
+/* BS-08 (§8), D8 removed `entities-thin` and `initiatives-thin`, and with
+   them the only branches that needed a per-record question count. The nudge
+   they carried is now a line on the multiples screen, which costs no minutes
+   because it is not an errand. */
 
 /**
  * How many questions acting on this recommendation puts in front of somebody.
@@ -112,11 +104,6 @@ export function recQuestions(rec: Recommendation): number {
     case 'role-stale':
     case 'initiative-no-success':
       return 1;
-    // Naming another one means filling in another record of the block.
-    case 'entities-thin':
-      return questionsPerRecord(ENTITIES_BLOCK_ID);
-    case 'initiatives-thin':
-      return questionsPerRecord(INITIATIVES_BLOCK_ID);
   }
 }
 

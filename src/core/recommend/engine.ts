@@ -279,48 +279,32 @@ function initiativeNoSuccess(answers: Answers): Recommendation[] {
   return out;
 }
 
-/**
- * One name where the section is built for several.
+/*
+ * BS-08 (§8), Adam's D8 — `thin` IS GONE, AND WITH IT `entities-thin` AND
+ * `initiatives-thin`.
  *
- * Gated on the person not having declined the section outright. Somebody who
- * answered "no" to "are there specific people, teams, tools or processes
- * worth telling AI about" is not thin — they answered the question, and
- * pushing back on that answer would be the panel overruling them.
+ * §6: "Move the 'most people name three or four' nudge out of the
+ * recommendation stack and onto the Multiples screen." §8: "Receive the
+ * nudge from Home."
  *
- * V2.0 VB-61/VB-63: that question is no longer askable — the block is required
- * now, and its old gate is a framing beat whose recorded value is a skip
- * (`null`), not "yes". So the test is "has NOT declined" rather than "said
- * yes": a stored "no" is a decision made under the old rule and is still
- * respected forever (core/flow/overrides.ts), and everybody else — who now
- * necessarily has at least one record — can be told that one is thin. Reading
- * it the old way would have retired this rule silently the day the gate
- * changed, which is the failure mode worth spelling out.
+ * It was the one rule in this engine that was not a structural gap. Every
+ * other entry here is a HOLE IN THE FILE — a section nobody reached, an
+ * initiative with no finish line, an answer past its half-life — and this one
+ * was a COMPARISON: you have one, most people have three. Two different
+ * claims wearing the same card, ranked against each other by a number, on the
+ * screen that is supposed to say what would help most.
+ *
+ * It now lives where the fact is: under the group it is about, on the list of
+ * them, where somebody is already looking at how many they have
+ * (surfaces/Multiples.tsx's `normFor`). Its threshold moved with it,
+ * unchanged — one record in a section built for several.
+ *
+ * The gate check went with it too. `thin` skipped a block whose gate was
+ * answered "no"; the multiples screen never lists a declined block at all
+ * (`multipleGroups` honours `skipIf`), so the nudge cannot reach somebody who
+ * said no by a route that no longer exists.
  */
-function thin(
-  answers: Answers,
-  gateId: string,
-  blockId: string,
-  nodeId: string,
-  kind: 'entities-thin' | 'initiatives-thin',
-  nameQuestionId: string,
-): Recommendation[] {
-  if (answers.values[gateId] === 'no') return [];
-  const records = answers.repeatables[blockId] ?? [];
-  if (records.length === 0 || records.length > THIN_AT_OR_BELOW) return [];
-  return [
-    {
-      id: makeId(kind, nodeId),
-      kind,
-      nodeId,
-      rank: RECOMMENDATION_WEIGHT[kind],
-      // Lands on the first record's name question: the flow's add-another
-      // screen is what follows a finished record, so this is the shortest
-      // real path to naming a second one.
-      target: { in: 'repeatable', blockId, recordIndex: 0, questionId: nameQuestionId },
-      named: records.length,
-    },
-  ];
-}
+
 
 // ── assembly ───────────────────────────────────────────────────────────────
 
@@ -394,15 +378,6 @@ export function recommend(input: RecommendInput): Recommendation[] {
     ...sectionStale(flat, health),
     ...sectionEmpty(flat, health),
     ...initiativeNoSuccess(answers),
-    ...thin(answers, ENTITIES_GATE_ID, ENTITIES_BLOCK_ID, ENTITIES_NODE_ID, 'entities-thin', ENTITY_NAME_ID),
-    ...thin(
-      answers,
-      INITIATIVES_GATE_ID,
-      INITIATIVES_BLOCK_ID,
-      INITIATIVES_NODE_ID,
-      'initiatives-thin',
-      INITIATIVE_NAME_ID,
-    ),
   ].sort(byRank(flat));
 
   // ORDER MATTERS, AND IT IS THIS WAY ROUND ON PURPOSE. Deduping first and

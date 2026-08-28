@@ -1284,8 +1284,38 @@ export const S = {
   multiplesTitle: 'Roles, people and projects',
   multiplesSub: 'Open one to change it. Or add a new one.',
   multiplesCount: (n: number) => (n === 1 ? 'One on your list' : `${wordFor(n)} on your list`),
-  /** What one record's row says under its name. Same shape as `sectionsOf`. */
+  /* BS-08 (§8) — the row's own words. [DRAFT]
+
+     `multipleAnswered` used to be the row's SUBTITLE, and §8 names the
+     problem with it exactly: "'4 of 5 answered' is a fact about the form."
+     The subtitle now prints what the record holds; this sentence moved to
+     where a fact about the form belongs — the accessible name, for anyone
+     who cannot see the ring that draws it. */
   multipleAnswered: (done: number, total: number) => `${done} of ${total} answered`,
+  recordAnswered: (done: number, total: number) => `${done} of ${total} answered`,
+  /** The word half of "incomplete" — the ring's arc and its amber are the
+   * other two, and no one of them is doing the job alone (GUARDRAILS). */
+  recordLeft: (n: number) => `${n} left`,
+  /** A record holding nothing but its name. Says so, rather than leaving a
+   * blank line where a fact should be. */
+  recordNothingYet: 'Nothing in it yet',
+  /* §8's norming line, RECEIVED FROM HOME (D8). It was a recommendation —
+     `entities-thin` and `initiatives-thin` — which put it in a stack of
+     structural gaps it never belonged in: every other entry there is a hole
+     in the file, and "most people name three or four" is a comparison. It is
+     a fact about the list, so it lives on the list, under the group it is
+     about, where somebody is already looking at how many they have.
+
+     Only while the group is genuinely thin. A person with five people named
+     does not need to be told what most people do. */
+  multiplesNorm: (group: string) =>
+    group === 'entities'
+      ? 'Most people name three or four here.'
+      : 'Most people list two or three projects.',
+  multiplesNormWhy: (group: string) =>
+    group === 'entities'
+      ? 'Every name you add is one more thing AI can use.'
+      : 'AI helps most with the work it already knows about.',
   /** A record whose name question has not been answered yet. States the fact;
    * the row still opens, and the first thing it asks is the name. */
   multipleUnnamed: 'Not named yet',
@@ -1397,16 +1427,14 @@ export const S = {
   recSuccessHeading: (name: string) => `Tell AI what done looks like for ${name}`,
   recSuccessWhy: 'With a finish line, AI can tell you if a plan gets there.',
 
-  recEntitiesHeading: 'Most people name three or four here',
-  /** Forward, not backward. An earlier draft read "AI only knows the people
-   * you name for it", which is true and is still a sentence about what they
-   * have not done. This one is about what the next minute buys. */
-  recEntitiesWhy: 'Every name you add is one more thing AI can use.',
-  recEntitiesAction: 'Add another name',
-
-  recInitiativesHeading: 'Most people list two or three projects',
-  recInitiativesWhy: 'AI helps most with the work it already knows about.',
-  recInitiativesAction: 'Add a project',
+  /* BS-08 (§8), D8 — `recEntities*` and `recInitiatives*` moved. They said
+     "most people name three or four here", which is a comparison rather than
+     a gap in the file, and the recommendation stack is a list of gaps. The
+     lines themselves survive almost word for word as `multiplesNorm` /
+     `multiplesNormWhy` above, on the screen that lists the things they are
+     counting. The forward-not-backward rule that shaped them still holds
+     there: "every name you add is one more thing AI can use", never "AI only
+     knows the people you name for it". */
 
   // ---------------------------------------------------------------- splash
   /**

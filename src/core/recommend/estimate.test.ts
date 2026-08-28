@@ -52,27 +52,6 @@ const EVERY_KIND: Recommendation[] = [
     section: 'Context Boundaries',
     questions: 2,
   },
-  {
-    id: 'entities-thin:sec3',
-    kind: 'entities-thin',
-    nodeId: 'sec3',
-    rank: 40,
-    target: { in: 'repeatable', blockId: 'entities', recordIndex: 1, questionId: 'entity_name' },
-    named: 1,
-  },
-  {
-    id: 'initiatives-thin:sec4',
-    kind: 'initiatives-thin',
-    nodeId: 'sec4',
-    rank: 20,
-    target: {
-      in: 'repeatable',
-      blockId: 'initiatives_records',
-      recordIndex: 1,
-      questionId: 'initiative_name',
-    },
-    named: 1,
-  },
 ];
 
 describe('MINUTES_PER_QUESTION', () => {
@@ -114,13 +93,8 @@ describe('recQuestions', () => {
     expect(recQuestions(EVERY_KIND[2] as Recommendation)).toBe(1);
   });
 
-  it('is one record’s worth of fields for the "name another" kinds', () => {
-    // Read off the real blocks rather than restated: naming another person
-    // means filling in another record, and a record is the block's fields.
-    for (const rec of [EVERY_KIND[4] as Recommendation, EVERY_KIND[5] as Recommendation]) {
-      expect(recQuestions(rec)).toBeGreaterThan(1);
-    }
-  });
+  /* BS-08 (§8, D8) retired the "name another" kinds — see ./engine.ts. The
+     test that measured their per-record question count went with them. */
 });
 
 describe('recMinutes', () => {

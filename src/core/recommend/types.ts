@@ -47,11 +47,7 @@ export type RecommendationKind =
   /** Every question in this section was passed on. */
   | 'section-empty'
   /** A named initiative whose "what does success look like" was skipped. */
-  | 'initiative-no-success'
-  /** One person/team/tool named, where the section is built for several. */
-  | 'entities-thin'
-  /** One project named, where the section is built for several. */
-  | 'initiatives-thin';
+  | 'initiative-no-success';
 
 /**
  * Where acting on this recommendation lands.
@@ -108,6 +104,10 @@ export type Recommendation =
       kind: 'initiative-no-success';
       /** The initiative's own name, as they typed it. */
       initiative: string;
-    })
-  | (RecommendationBase & { kind: 'entities-thin'; named: number })
-  | (RecommendationBase & { kind: 'initiatives-thin'; named: number });
+    });
+
+/* BS-08 (§8), Adam's D8 — `entities-thin` and `initiatives-thin` left this
+   union. They were the only two kinds here that were not a structural gap:
+   "most people name three or four" is a COMPARISON, not a hole in the file,
+   and it now lives on the list it is about. See ./engine.ts's note where the
+   rule used to be. */

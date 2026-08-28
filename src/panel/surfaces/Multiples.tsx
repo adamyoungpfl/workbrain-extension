@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Field, FileRow } from '../components';
+import { AddRecordRow, Button, Field, RecordRow } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { applyAddRecord, multipleGroups, recordNameTaken } from '../../core/flow/multiples';
 import type { MultipleGroup } from '../../core/flow/multiples';
@@ -45,17 +45,32 @@ import './Multiples.css';
  * the added record itself.
  */
 
-/** A record's row glyph — a card with a line on it, drawn to the same
- * convention as FileRow's own FILE_ICON and Home's PERSON_ICON (stroke-based,
- * `currentColor`, `aria-hidden` because the row around it carries the name).
- * Deliberately not the file glyph: a role is in a file, it is not one. */
-const RECORD_ICON = (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden="true">
-    <rect x="3.5" y="5.5" width="17" height="13" rx="2.5" />
-    <path d="M7.5 10.5h9" />
-    <path d="M7.5 14h5" />
-  </svg>
-);
+/* BS-08 (§8) — RECORD_ICON is gone. Every row carried the same
+   card-with-a-line glyph, which §8 calls what it was: "repetitions of no
+   information". A completeness ring stands in that slot now, drawing a fact
+   (components/RecordRow.tsx). */
+
+/**
+ * D8 (§6 → §8) — which groups carry a norming line, and how thin is thin.
+ *
+ * The two the recommendation engine used to nudge about, and only those: the
+ * roles block is seeded from a question that already asks for all of them at
+ * once, so "most people have three or four roles" would be arguing with an
+ * answer somebody gave in one screen.
+ *
+ * The thresholds are the recommendation engine's own, moved rather than
+ * reinvented — it fired at ONE named record, which is the number where a
+ * section built for several is holding a single thing.
+ */
+const NORM_THRESHOLD: Readonly<Record<string, number>> = {
+  entities: 2,
+  initiatives_records: 2,
+};
+
+function normFor(group: MultipleGroup): boolean {
+  const under = NORM_THRESHOLD[group.blockId];
+  return under !== undefined && group.records.length > 0 && group.records.length < under;
+}
 
 export interface MultiplesProps {
   modules: Module[];
@@ -175,23 +190,43 @@ export function Multiples({ modules, outline, onBack, onOpen }: MultiplesProps) 
             {group.title}
           </h3>
 
-          {group.records.length === 0 ? (
-            <p className="multiples-empty">{S.multiplesEmptyGroup}</p>
-          ) : (
-            <div className="multiples-list">
-              {group.records.map((record) => (
-                <FileRow
-                  key={`${group.blockId}-${record.index}`}
-                  name={record.name || S.multipleUnnamed}
-                  subtitle={S.multipleAnswered(record.answered, record.total)}
-                  icon={RECORD_ICON}
-                  onClick={() => openRecord(group.blockId, record.index)}
-                />
-              ))}
-            </div>
+          {/* BS-08 (§8) — the list, and the add AS ITS LAST ROW. "Reads as one
+              more of the thing above, and saves height per group." An empty
+              group is not a sentence saying it is empty followed by a button:
+              it is the add row on its own, which is the only thing there is
+              to do there. */}
+          <div className="multiples-list">
+            {group.records.map((record) => (
+              <RecordRow
+                key={`${group.blockId}-${record.index}`}
+                name={record.name || S.multipleUnnamed}
+                detail={record.detail}
+                answered={record.answered}
+                total={record.total}
+                onClick={() => openRecord(group.blockId, record.index)}
+              />
+            ))}
+            {addingTo !== group.blockId && (
+              <AddRecordRow
+                label={S.multipleAddTo(group.title)}
+                onClick={() => openAdd(group.blockId)}
+              />
+            )}
+          </div>
+
+          {/* D8 — §8 "receives the 'most people name three or four' nudge"
+              from Home's recommendation stack. A fact about the list, said on
+              the list, under the group it is about — and only while the group
+              is genuinely thin, because somebody with five named people does
+              not need telling what most people do. */}
+          {normFor(group) && (
+            <p className="multiples-norm">
+              <span className="multiples-norm-line">{S.multiplesNorm(group.blockId)}</span>{' '}
+              {S.multiplesNormWhy(group.blockId)}
+            </p>
           )}
 
-          {addingTo === group.blockId ? (
+          {addingTo === group.blockId && (
             /* The name, asked in the interview's own words — the block's own
                first question, or the roles loop's own naming question (see
                core/flow/multiples.ts). Its label is visible: the heading above
@@ -229,17 +264,6 @@ export function Multiples({ modules, outline, onBack, onOpen }: MultiplesProps) 
                 {S.multipleAddConfirm}
               </Button>
             </form>
-          ) : (
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              className="multiples-add-open"
-              aria-label={S.multipleAddTo(group.title)}
-              onClick={() => openAdd(group.blockId)}
-            >
-              {S.multipleAdd}
-            </Button>
           )}
         </section>
       ))}

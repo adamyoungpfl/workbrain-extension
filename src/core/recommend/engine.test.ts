@@ -537,28 +537,27 @@ describe('the real ported flow', () => {
     expect(runReal(answers).filter((r) => r.kind === 'initiative-no-success')).toHaveLength(1);
   });
 
-  it('offers a second name when exactly one person or tool is named', () => {
-    const recs = runReal(realAnswers({ entities: 1 }));
-    const rec = recs.find((r) => r.kind === 'entities-thin');
-    if (!rec || rec.kind !== 'entities-thin') throw new Error('expected entities-thin');
-    expect(rec.named).toBe(1);
-    expect(rec.nodeId).toBe('sec3');
-  });
-
-  it('says nothing about it once a second is named', () => {
-    expect(runReal(realAnswers({ entities: 2 })).filter((r) => r.kind === 'entities-thin')).toEqual([]);
-  });
-
-  it('never pushes back on somebody who answered "no" to the gate', () => {
-    // They answered the question. Overruling that answer would be the panel
-    // telling them they are wrong about their own working life.
-    const recs = runReal(realAnswers({ entities: 0, initiatives: 0 }));
-    expect(recs.filter((r) => r.kind === 'entities-thin' || r.kind === 'initiatives-thin')).toEqual([]);
-  });
-
-  it('offers a second project when exactly one is named', () => {
-    const recs = runReal(realAnswers({ initiatives: 1 }));
-    expect(recs.filter((r) => r.kind === 'initiatives-thin')).toHaveLength(1);
+  /**
+   * BS-08 (§8), Adam's D8 — THE THIN RULES ARE GONE, and these four tests are
+   * one test now: the engine says NOTHING about how many of something you
+   * have. That claim is worth keeping as an assertion rather than deleting
+   * quietly, because the failure it guards against is somebody re-adding a
+   * norming nudge to a stack of structural gaps.
+   */
+  it('never comments on how many of something the person has (D8)', () => {
+    for (const answers of [
+      realAnswers({ entities: 1 }),
+      realAnswers({ initiatives: 1 }),
+      realAnswers({ entities: 1, initiatives: 1 }),
+      realAnswers({ entities: 0, initiatives: 0 }),
+    ]) {
+      for (const rec of runReal(answers)) {
+        expect(rec.kind, `${rec.kind} counts records`).not.toMatch(/thin/);
+        // The surviving kinds are gaps, and a gap never carries a tally of
+        // what somebody already has.
+        expect(rec).not.toHaveProperty('named');
+      }
+    }
   });
 
   it('ranks a real file’s offers strongest first, with the whole list stable', () => {
@@ -566,8 +565,8 @@ describe('the real ported flow', () => {
     answers.repeatables[INITIATIVES_BLOCK_ID]![0]![INITIATIVE_SUCCESS_ID] = null;
     const recs = runReal(answers);
     expect(recs[0]!.kind).toBe('role-stale');
-    // sec4 holds both an initiative-no-success and an initiatives-thin;
-    // one node, one recommendation, and the stronger of the two wins.
+    // One node, one recommendation — the dedup, still asserted after BS-08
+    // took `initiatives-thin` out of the contest for sec4.
     expect(recs.filter((r) => r.nodeId === 'sec4')).toHaveLength(1);
     expect(recs.find((r) => r.nodeId === 'sec4')!.kind).toBe('initiative-no-success');
     expect(recs).toEqual(runReal(answers)); // same input, same list, every time
@@ -609,6 +608,11 @@ describe('the real ported flow', () => {
 
   it('works with no arguments beyond answers and a clock — the real data is the default', () => {
     expect(recommend({ answers: realAnswers(), now: NOW })).toEqual([]);
-    expect(recommend({ answers: realAnswers({ entities: 1 }), now: NOW }).length).toBeGreaterThan(0);
+    // BS-08 (D8): one named entity used to be enough to produce an offer.
+    // It is not a gap any more, so the file needs a real one — a project
+    // with no finish line.
+    const withAGap = realAnswers({ initiatives: 1 });
+    withAGap.repeatables[INITIATIVES_BLOCK_ID]![0]![INITIATIVE_SUCCESS_ID] = null;
+    expect(recommend({ answers: withAGap, now: NOW }).length).toBeGreaterThan(0);
   });
 });

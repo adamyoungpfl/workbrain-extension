@@ -338,10 +338,15 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     await hide.focus();
     await page.keyboard.press('Enter');
 
-    // Gone immediately, and the fourth recommendation moves up into the space
-    // it left — the list is re-ranked, not re-ordered by hand.
+    // Gone immediately, and the list is re-ranked rather than re-ordered by
+    // hand — what is left is the gaps that were already under it.
+    //
+    // BS-08 (§8, D8) took `entities-thin` out of this engine, so the FOUR_GAPS
+    // fixture now offers three. The claim survives the change: hiding one
+    // leaves the rest standing, and the region does not collapse.
     await expect(initiative).toHaveCount(0);
-    await expect(page.getByText('Most people name three or four here')).toBeVisible();
+    await expect(page.locator('.home-recs .banner')).toHaveCount(1);
+    await expect(page.locator('.rec-row')).not.toHaveCount(0);
 
     // Focus went somewhere real rather than to the top of the document: the
     // control that had it has just unmounted.
@@ -362,18 +367,22 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     // The others are all still there — a dismissal is one offer, not the
     // whole feature switched off.
     await expect(reopened.locator('.home-recs .banner')).toHaveCount(1);
-    await expect(reopened.locator('.rec-row')).toHaveCount(2);
+    await expect(reopened.locator('.rec-row')).toHaveCount(1);
 
     await context.close();
   });
 
   test('hiding every one leaves the region genuinely quiet — and still focusable', async () => {
     const { context, sw, id } = await launchExtension();
-    await seed(sw, buildAnswers({ entities: 1 }).answers);
+    // BS-08 (§8, D8): "one person named" is no longer a recommendation at all
+    // — it is a line on the multiples screen. So the one-gap fixture is a real
+    // gap now: a project with no finish line.
+    await seed(sw, buildAnswers({ initiatives: 1, initiativesWithoutSuccess: [0] }).answers);
     const page = await openPanel(context, id);
 
-    // One gap only: the thin entity list.
-    await expect(page.getByText('Most people name three or four here')).toBeVisible();
+    // One gap only.
+    await expect(page.locator('.home-recs .banner')).toHaveCount(1);
+    await expect(page.locator('.rec-row')).toHaveCount(0);
     await page.getByRole('button', { name: /^Hide this: / }).click();
 
     // V2.8 VB-132a: the all-current banner is gone — redundant beside the

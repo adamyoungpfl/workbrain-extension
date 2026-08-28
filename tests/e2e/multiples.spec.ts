@@ -273,9 +273,138 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
     expect(titles).toEqual(['Roles', 'My World', 'Initiatives', 'Audience Profiles']);
 
     const roles = group(page, 'Roles');
-    await expect(roles.locator('.filerow')).toHaveCount(1);
-    await expect(roles.locator('.filerow .nm')).toHaveText('Employee');
-    await expect(roles.locator('.filerow .sb')).toHaveText(S.multipleAnswered(4, 4));
+    await expect(roles.locator('.recordrow')).toHaveCount(1);
+    await expect(roles.locator('.recordrow-name')).toHaveText('Employee');
+    /**
+     * BS-08 (§8) — THE SUBTITLE IS WHAT THE RECORD HOLDS, NOT A TALLY.
+     *
+     * "'4 of 5 answered' is a fact about the form. Print the two or three
+     * things the record actually contains, and the list becomes a view of
+     * the person's world." The fixture's role answers are real sentences, so
+     * this asserts real content rather than a shape.
+     */
+    const detail = await roles.locator('.recordrow-detail').textContent();
+    expect(detail).not.toContain('answered');
+    expect(detail!.length).toBeGreaterThan(0);
+    expect(detail).not.toBe(S.recordNothingYet);
+    // The count did not vanish — it moved to where a fact about the form
+    // belongs, for anyone who cannot see the ring that draws it.
+    await expect(roles.locator('.recordrow-sr')).toHaveText(S.recordAnswered(4, 4));
+    // Four of four: no ring is amber and no row says anything is left.
+    await expect(roles.locator('.recordrow.is-partial')).toHaveCount(0);
+    await expect(roles.locator('.recordrow-left')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  /**
+   * BS-08 (§8) — the three structural changes, as three claims.
+   *
+   * "Rows say what the record holds, not just a count." · "Replace the
+   * repeated person glyph with a completeness ring." · "'Add another' becomes
+   * the last row of the list, not a bordered button below it."
+   */
+  test('the add is the last row of its own list, never a button under it (BS-08)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openPanel(context, sw, id, completedInterview());
+    await openMultiples(page);
+
+    const roles = group(page, 'Roles');
+    // Inside the list, and last — so it reads as one more of the thing above.
+    const inList = roles.locator('.multiples-list > *');
+    const count = await inList.count();
+    await expect(inList.nth(count - 1)).toHaveClass(/recordrow-add/);
+    await expect(roles.locator('.recordrow-add')).toHaveCount(1);
+    // The bordered button below the list is gone with the layout it belonged
+    // to; nothing on the screen is `.multiples-add-open` any more.
+    await expect(page.locator('.multiples-add-open')).toHaveCount(0);
+
+    // And it still opens the same field, asked in the interview's own words.
+    await roles.locator('.recordrow-add').click();
+    await expect(page.locator('.multiples input')).toBeVisible();
+
+    await context.close();
+  });
+
+  test('every row draws its own completeness, and never by colour alone (BS-08)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const answers = completedInterview();
+    // One entity holding nothing but its name, beside the finished ones.
+    answers.repeatables['entities'] = [
+      answers.repeatables['entities']![0]!,
+      { entity_name: 'Half a person' },
+    ];
+    const page = await openPanel(context, sw, id, answers);
+    await openMultiples(page);
+
+    const world = group(page, 'My World');
+    await expect(world.locator('.recordrow')).toHaveCount(2);
+
+    // THE GLYPH IS GONE. §8: "The identical silhouette on every row is
+    // repetitions of no information."
+    await expect(page.locator('.multiples .filerow')).toHaveCount(0);
+    // A ring on every row, drawing a real arc.
+    await expect(world.locator('.recordrow-ring svg')).toHaveCount(2);
+
+    // The incomplete one is told apart three ways, and the word is the one
+    // that survives a greyscale screen.
+    const partial = world.locator('.recordrow', { hasText: 'Half a person' });
+    await expect(partial).toHaveClass(/is-partial/);
+    await expect(partial.locator('.recordrow-left')).toHaveText(S.recordLeft(3));
+    // The finished one carries none of those.
+    const whole = world.locator('.recordrow').first();
+    await expect(whole).not.toHaveClass(/is-partial/);
+    await expect(whole.locator('.recordrow-left')).toHaveCount(0);
+
+    // A record with nothing in it says so, rather than leaving a blank line.
+    await expect(partial.locator('.recordrow-detail')).toHaveText(S.recordNothingYet);
+
+    await context.close();
+  });
+
+  /**
+   * D8 — §6 moved the "most people name three or four" nudge off Home's
+   * recommendation stack; §8 receives it. Both halves are asserted here,
+   * because a nudge that left one screen without arriving on the other is the
+   * failure this move could actually have.
+   */
+  test('the norming line lives on the list now, and only while the group is thin (BS-08/D8)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const answers = completedInterview();
+    answers.repeatables['entities'] = [answers.repeatables['entities']![0]!];
+    const page = await openPanel(context, sw, id, answers);
+
+    // NOT on Home, in any form. The recommendation region is the stack it
+    // used to sit in.
+    await expect(page.locator('.home-recs')).not.toContainText('Most people name');
+    await expect(page.locator('.home')).not.toContainText('Most people name');
+
+    await openMultiples(page);
+    // ON the list, under the group it counts.
+    const world = group(page, 'My World');
+    await expect(world.locator('.multiples-norm')).toContainText(S.multiplesNorm('entities'));
+    await expect(world.locator('.multiples-norm')).toContainText(S.multiplesNormWhy('entities'));
+    // And nowhere near a group that is not thin — Roles never gets one at
+    // all, because its names are asked for all at once.
+    await expect(group(page, 'Roles').locator('.multiples-norm')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('a second name silences the nudge, without anything else changing (BS-08/D8)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const answers = completedInterview();
+    answers.repeatables['entities'] = [
+      answers.repeatables['entities']![0]!,
+      { entity_name: 'Priya Raman', entity_type: 'person' },
+    ];
+    const page = await openPanel(context, sw, id, answers);
+    await openMultiples(page);
+
+    const world = group(page, 'My World');
+    await expect(world.locator('.recordrow')).toHaveCount(2);
+    // Somebody with two named does not need telling what most people do.
+    await expect(world.locator('.multiples-norm')).toHaveCount(0);
 
     await context.close();
   });
@@ -417,13 +546,13 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
     await openMultiples(page);
 
     const roles = group(page, 'Roles');
-    await expect(roles.locator('.filerow')).toHaveCount(2);
-    await expect(roles.locator('.filerow .nm').nth(1)).toHaveText(NEW_ROLE);
+    await expect(roles.locator('.recordrow')).toHaveCount(2);
+    await expect(roles.locator('.recordrow-name').nth(1)).toHaveText(NEW_ROLE);
 
     // The SECOND row. It opens at the record's first question, carrying that
     // record's own stored answer — which is a different option from the first
     // record's, so this proves which record was opened.
-    await roles.locator('.filerow').nth(1).click();
+    await roles.locator('.recordrow').nth(1).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_for');
     const chosen = seeded.repeatables.roles?.[1]?.role_for as string;
     const roleFor = rolesBlock.fields.find((f) => f.id === 'role_for')!;
@@ -467,7 +596,7 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
     await roles.getByRole('button', { name: S.multipleAddConfirm, exact: true }).click();
     await expect(roles.locator('[role="alert"]')).toHaveText(S.errNameTaken);
     await expect(page.locator('.multiples')).toBeVisible();
-    await expect(roles.locator('.filerow')).toHaveCount(1);
+    await expect(roles.locator('.recordrow')).toHaveCount(1);
 
     const stored = await storedAnswers(sw);
     expect(stored.repeatables.roles).toHaveLength(1);
@@ -482,7 +611,7 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
     await openMultiples(page);
 
     const world = group(page, 'My World');
-    const existing = await world.locator('.filerow .nm').first().textContent();
+    const existing = await world.locator('.recordrow-name').first().textContent();
     await world.getByRole('button', { name: S.multipleAddTo('My World') }).click();
     await world.locator('input').fill((existing ?? '').toUpperCase());
     await world.getByRole('button', { name: S.multipleAddConfirm, exact: true }).click();

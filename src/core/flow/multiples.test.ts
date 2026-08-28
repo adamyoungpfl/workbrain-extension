@@ -10,7 +10,14 @@ import {
   findSeedTarget,
   reconcileSeededRepeatable,
 } from './runner';
-import { applyAddRecord, multipleGroups, multipleRecordCount, nameKeyFor, recordNameTaken } from './multiples';
+import {
+  RECORD_DETAIL_MAX,
+  applyAddRecord,
+  multipleGroups,
+  multipleRecordCount,
+  nameKeyFor,
+  recordNameTaken,
+} from './multiples';
 
 /**
  * V1.7 VB-38. The four tests that matter are named as such below — they are
@@ -136,7 +143,7 @@ describe('multipleGroups — the real flow', () => {
     const groups = multipleGroups(contextModules, contextOutline, answers);
     const roles = groups.find((g) => g.blockId === 'roles')!;
     expect(roles.records).toHaveLength(1);
-    expect(roles.records[0]).toEqual({ index: 0, name: 'Employee', answered: 4, total: 4 });
+    expect(roles.records[0]).toMatchObject({ index: 0, name: 'Employee', answered: 4, total: 4 });
 
     const entities = groups.find((g) => g.blockId === 'entities')!;
     expect(entities.records[0]!.name).toBe('an answer for entity_name');
@@ -158,7 +165,78 @@ describe('multipleGroups — the real flow', () => {
       repeatables: { entities: [{ entity_type: 'person' }] },
     };
     const entities = multipleGroups(contextModules, contextOutline, answers).find((g) => g.blockId === 'entities')!;
-    expect(entities.records[0]).toEqual({ index: 0, name: '', answered: 1, total: 4 });
+    expect(entities.records[0]).toMatchObject({ index: 0, name: '', answered: 1, total: 4 });
+  });
+
+  /**
+   * BS-08 (§8) — "'4 of 5 answered' is a fact about the form. Print the two
+   * or three things the record actually contains, and the list becomes a view
+   * of the person's world."
+   */
+  it('says what a record HOLDS, in the file own words, not what the form did', () => {
+    const answers = completeFlow('yes');
+    const roles = multipleGroups(contextModules, contextOutline, answers).find((g) => g.blockId === 'roles')!;
+    const detail = roles.records[0]!.detail;
+
+    // Real content, capped at three, in file order.
+    expect(detail.length).toBeGreaterThan(0);
+    expect(detail.length).toBeLessThanOrEqual(RECORD_DETAIL_MAX);
+    expect(detail.join(' ')).not.toContain('answered');
+    // The name is the row title, so it is never repeated in the detail.
+    expect(detail).not.toContain('Employee');
+  });
+
+  it('resolves an option to its label and flattens a list to one line', () => {
+    const answers: Answers = {
+      ...EMPTY,
+      values: { entities_gate: 'yes' },
+      repeatables: {
+        entities: [
+          {
+            entity_name: 'Priya Raman',
+            entity_type: 'person',
+            entity_relevance: 'Design lead I work with weekly',
+            entity_aliases: ['PR', 'Priya R'],
+          },
+        ],
+      },
+    };
+    const entities = multipleGroups(contextModules, contextOutline, answers).find((g) => g.blockId === 'entities')!;
+    const detail = entities.records[0]!.detail;
+
+    // The label, not the stored key — the same resolution the generated file
+    // makes, so a row and a heading cannot disagree.
+    expect(detail[0]).toBe('Person');
+    expect(detail[1]).toBe('Design lead I work with weekly');
+    // A multi-select renders as a markdown list in the file and as one line
+    // here: a 400px row has no business wrapping a bullet list.
+    expect(detail[2]).toBe('PR, Priya R');
+    expect(detail.join('')).not.toContain('\n');
+  });
+
+  it('never counts a SKIPPED answer as something the record holds', () => {
+    const answers: Answers = {
+      ...EMPTY,
+      values: { entities_gate: 'yes' },
+      repeatables: {
+        entities: [{ entity_name: 'Priya Raman', entity_type: null, entity_relevance: null }],
+      },
+    };
+    const entities = multipleGroups(contextModules, contextOutline, answers).find((g) => g.blockId === 'entities')!;
+    // Three of four answered — a skip IS an answer, and the tally says so.
+    expect(entities.records[0]!.answered).toBe(3);
+    // …and the detail is empty, because "left unanswered on purpose" is not a
+    // thing the record contains. The row says so in its own words.
+    expect(entities.records[0]!.detail).toEqual([]);
+  });
+
+  it('stops at three, however much the record holds', () => {
+    const answers = completeFlow('yes');
+    for (const group of multipleGroups(contextModules, contextOutline, answers)) {
+      for (const record of group.records) {
+        expect(record.detail.length).toBeLessThanOrEqual(RECORD_DETAIL_MAX);
+      }
+    }
   });
 
   it('counts every record a person holds', () => {

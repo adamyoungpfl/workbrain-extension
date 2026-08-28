@@ -48,10 +48,10 @@ import type { RecommendationKind } from './types';
  * |                         |      | be quietly wrong".                                             |
  * | section-empty           |  60  | A whole area of the file blank. Real coverage gap, but they    |
  * |                         |      | passed on it once already, so it never outranks a live error.  |
- * | entities-thin           |  40  | One name where the section is built for several. Genuinely     |
- * |                         |      | useful, genuinely optional.                                    |
- * | initiatives-thin        |  20  | The same shape, one step lower: a person may really only have  |
- * |                         |      | one project, more often than they really only know one person. |
+ *
+ * BS-08 (§8), D8: the 40 and 20 bands (`entities-thin`, `initiatives-thin`)
+ * are gone. They were comparisons rather than gaps and are now a line under
+ * the group they are about, on the multiples screen — see ./engine.ts.
  *
  * EVERY BAND IS TWENTY POINTS WIDE, and `STALENESS_URGENCY_MAX` below is
  * fifteen, so urgency can separate two stale sections but can never let one
@@ -64,8 +64,6 @@ export const RECOMMENDATION_WEIGHT: Readonly<Record<RecommendationKind, number>>
   'section-stale': 100,
   'initiative-no-success': 80,
   'section-empty': 60,
-  'entities-thin': 40,
-  'initiatives-thin': 20,
 };
 
 /**

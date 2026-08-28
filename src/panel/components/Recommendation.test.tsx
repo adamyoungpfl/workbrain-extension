@@ -41,22 +41,8 @@ const EVERY_KIND: Recommendation[] = [
     section: 'Context Boundaries',
     questions: 2,
   },
-  {
-    id: 'entities-thin:sec3',
-    kind: 'entities-thin',
-    nodeId: 'sec3',
-    rank: 40,
-    target: { in: 'repeatable', blockId: 'entities', recordIndex: 0, questionId: 'entity_name' },
-    named: 1,
-  },
-  {
-    id: 'initiatives-thin:sec4',
-    kind: 'initiatives-thin',
-    nodeId: 'sec4',
-    rank: 20,
-    target: { in: 'repeatable', blockId: 'initiatives_records', recordIndex: 0, questionId: 'initiative_name' },
-    named: 1,
-  },
+  /* BS-08 (§8, D8): `entities-thin` and `initiatives-thin` left the union —
+     their nudge is a line on the multiples screen now, not a card here. */
 ];
 
 /** Words that would turn help into a scold. VB-28's own test case: "Most
@@ -161,7 +147,7 @@ describe('RecommendationRow', () => {
 
   it('gives the hide control a name of its own, so three of them are three controls', () => {
     const a = mount(<RecommendationRow rec={EVERY_KIND[2]!} onAct={() => {}} onHide={() => {}} />);
-    const b = mount(<RecommendationRow rec={EVERY_KIND[4]!} onAct={() => {}} onHide={() => {}} />);
+    const b = mount(<RecommendationRow rec={EVERY_KIND[3]!} onAct={() => {}} onHide={() => {}} />);
     const nameOf = (m: { container: HTMLElement }) =>
       m.container.querySelector('.rec-row-hide')?.getAttribute('aria-label');
     expect(nameOf(a)).toBeTruthy();

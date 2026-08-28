@@ -13,8 +13,6 @@ const EVERY_KIND: RecommendationKind[] = [
   'section-stale',
   'section-empty',
   'initiative-no-success',
-  'entities-thin',
-  'initiatives-thin',
 ];
 
 describe('the weight table', () => {
@@ -25,7 +23,7 @@ describe('the weight table', () => {
     expect(Object.keys(RECOMMENDATION_WEIGHT).sort()).toEqual([...EVERY_KIND].sort());
   });
 
-  it('orders wrong-before-thin, exactly as the table says', () => {
+  it('orders wrong-before-missing, exactly as the table says', () => {
     expect(RECOMMENDATION_WEIGHT['role-stale']).toBeGreaterThan(RECOMMENDATION_WEIGHT['section-stale']);
     expect(RECOMMENDATION_WEIGHT['section-stale']).toBeGreaterThan(
       RECOMMENDATION_WEIGHT['initiative-no-success'],
@@ -33,9 +31,11 @@ describe('the weight table', () => {
     expect(RECOMMENDATION_WEIGHT['initiative-no-success']).toBeGreaterThan(
       RECOMMENDATION_WEIGHT['section-empty'],
     );
-    expect(RECOMMENDATION_WEIGHT['section-empty']).toBeGreaterThan(RECOMMENDATION_WEIGHT['entities-thin']);
-    expect(RECOMMENDATION_WEIGHT['entities-thin']).toBeGreaterThan(
-      RECOMMENDATION_WEIGHT['initiatives-thin'],
+    // BS-08 (§8, D8): the two thin bands below `section-empty` are gone. They
+    // were comparisons rather than gaps, and they now live on the multiples
+    // screen — so `section-empty` is the floor of this table.
+    expect(Math.min(...Object.values(RECOMMENDATION_WEIGHT))).toBe(
+      RECOMMENDATION_WEIGHT['section-empty'],
     );
   });
 

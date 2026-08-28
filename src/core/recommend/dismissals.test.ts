@@ -16,11 +16,19 @@ const LATER = new Date('2026-09-30T09:00:00.000Z');
 function rec(id: string): Recommendation {
   return {
     id,
-    kind: 'entities-thin',
-    nodeId: 'sec3',
-    rank: 40,
-    target: { in: 'repeatable', blockId: 'entities', recordIndex: 0, questionId: 'entity_name' },
-    named: 1,
+    // Any real kind will do — this file is about the dismissal ledger, not
+    // about which rule produced the thing being dismissed. BS-08 (D8) retired
+    // the `entities-thin` fixture this used to carry.
+    kind: 'initiative-no-success',
+    nodeId: 'sec4',
+    rank: 80,
+    target: {
+      in: 'repeatable',
+      blockId: 'initiatives_records',
+      recordIndex: 0,
+      questionId: 'initiative_success',
+    },
+    initiative: 'the Atlas migration',
   };
 }
 

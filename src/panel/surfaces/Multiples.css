@@ -53,10 +53,12 @@
   margin: 0;
 }
 
+/* 6px rather than 9: the rows carry a ring and two lines each now, and a
+   tighter stack reads as one list where a looser one reads as six cards. */
 .multiples-list {
   display: flex;
   flex-direction: column;
-  gap: 9px;
+  gap: 6px;
 }
 
 .multiples-empty {
@@ -66,10 +68,23 @@
   margin: 0;
 }
 
-/* The add control sits left, not stretched: it is one option among the rows
-   above it, not the screen's conclusion. */
-.multiples-add-open {
-  align-self: flex-start;
+/* BS-08 (§8) — `.multiples-add-open` is gone with the button it styled. The
+   add is the list's LAST ROW now, in the rows' own grammar
+   (components/RecordRow.css), which is what "reads as one more of the thing
+   above" means in CSS. */
+
+/* D8's norming line, received from Home's recommendation stack. Quiet, and
+   under the group rather than over it: it is a footnote to a list, not an
+   instruction about one. */
+.multiples-norm {
+  margin: 0;
+  font-size: var(--type-fine);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.multiples-norm-line {
+  font-weight: 650;
+  color: var(--ink);
 }
 
 /* The name field and its confirm, as one form. 12px between the field and the
