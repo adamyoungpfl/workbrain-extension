@@ -65,7 +65,8 @@ describe('MINUTES_PER_QUESTION', () => {
     // out of the ported data, so a silent edit to a module's pair or to the
     // outline moves this number and this test says so.
     expect(minutes).toBe(39);
-    expect(questions).toBe(56);
+    // BS-11 (VB-142) retired `reference_example_second`.
+    expect(questions).toBe(55);
     expect(MINUTES_PER_QUESTION).toBeCloseTo(minutes / questions, 10);
   });
 

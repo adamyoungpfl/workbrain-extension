@@ -196,6 +196,10 @@ export function FlowProgress({ title, current, total, onHome, run }: FlowProgres
       <div className="flowprogress-shell">
         <button type="button" className="flowprogress-home" aria-label={S.goHome} onClick={onHome}>
           {mark}
+          {/* BS-01c's eleventh control gets its word. `aria-label` above
+              still carries the full sentence, so this is what is read and
+              that is what is announced. */}
+          <span className="flowprogress-home-word">{S.homeShort}</span>
         </button>
         {bar(
           <>

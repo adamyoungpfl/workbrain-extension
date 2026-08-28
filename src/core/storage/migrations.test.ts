@@ -88,9 +88,11 @@ describe('migration to schema v2 — record ids minted', () => {
     return { values: {}, repeatables: { skills: records }, answeredAt: {}, reflectedAt: {} };
   }
 
-  it('exists, and is the only migration shipped so far', () => {
+  it('exists, and is one of the two shipped so far', () => {
     expect(v2).toBeTruthy();
-    expect(migrations).toHaveLength(1);
+    // BS-11 (VB-142) added the fold of `reference_example_second`, below.
+    expect(migrations).toHaveLength(2);
+    expect(migrations.map((m) => m.to)).toEqual([2, 3]);
   });
 
   it('mints index-aligned ids for every answers store with records', () => {
@@ -128,5 +130,46 @@ describe('migration to schema v2 — record ids minted', () => {
     const id = once['wb:answers:skills']!.recordIds?.skills?.[0];
     const twice = v2.up(once) as Record<string, Answers>;
     expect(twice['wb:answers:skills']!.recordIds?.skills?.[0]).toBe(id);
+  });
+});
+
+/**
+ * BS-11 (V2.9 VB-142) — the reference module asks one question for three
+ * examples, and `reference_example_second` no longer exists in the flow. The
+ * claim: nobody part-way through the beta loses what they wrote.
+ */
+describe('migration to schema v3 — the second reference example is folded in', () => {
+  const v3 = migrations.find((m) => m.to === 3)!;
+
+  function answers(values: Record<string, unknown>): Answers {
+    return { values: values as Answers['values'], repeatables: {}, answeredAt: {}, reflectedAt: {} };
+  }
+  const run = (values: Record<string, unknown>) =>
+    (v3.up({ 'wb:answers': answers(values) }) as Record<string, Answers>)['wb:answers']!;
+
+  it('joins the two with the blank line the new question asks people to use', () => {
+    const out = run({ reference_example_primary: 'First one.', reference_example_second: 'Second one.' });
+    expect(out.values['reference_example_primary']).toBe('First one.\n\nSecond one.');
+    expect('reference_example_second' in out.values).toBe(false);
+  });
+
+  it('takes the second whole when there is no first — no leading blank line', () => {
+    const out = run({ reference_example_second: 'The only one.' });
+    expect(out.values['reference_example_primary']).toBe('The only one.');
+  });
+
+  it('drops a skip rather than folding a blank in', () => {
+    const out = run({ reference_example_primary: 'Kept.', reference_example_second: null });
+    expect(out.values['reference_example_primary']).toBe('Kept.');
+    expect('reference_example_second' in out.values).toBe(false);
+  });
+
+  it('leaves a store that never held the key exactly as it was', () => {
+    const before = { 'wb:answers': answers({ reference_example_primary: 'Kept.' }) };
+    expect(v3.up(before)).toBe(before);
+  });
+
+  it('passes anything that is not an answers store straight through', () => {
+    expect(v3.up({ 'wb:answers': 'nonsense' })).toEqual({ 'wb:answers': 'nonsense' });
   });
 });

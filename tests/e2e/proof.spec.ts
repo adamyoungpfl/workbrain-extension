@@ -514,7 +514,7 @@ test.describe('The proof loop (R1-11)', () => {
     // One question short of finished, so the walk ENDS in this test rather
     // than being seeded past the moment under test.
     const seeded = finishedFile();
-    const last = 'reference_example_second';
+    const last = 'reference_example_primary';
     delete seeded.values[last];
     delete seeded.answeredAt[last];
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
@@ -523,6 +523,11 @@ test.describe('The proof loop (R1-11)', () => {
     await page.getByRole('button', { name: /^Context\.md/ }).click();
     await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
     await page.waitForSelector('.flow');
+    // BS-11 (VB-142) made Reference Examples a one-question module, so
+    // clearing its only answer leaves the whole module untouched and the
+    // runner opens it with its intro. Press through, the house pattern.
+    await expect(page.locator('.flow')).toHaveAttribute('data-position', 'module-intro');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', last);
 
     await page.locator('.flow textarea').fill('A last answer, written to finish the file.');
@@ -538,7 +543,7 @@ test.describe('The proof loop (R1-11)', () => {
   test('it interrupts ONCE — a re-finish does not hand them the same errand again', async () => {
     const { context, sw, id } = await launchExtension();
     const seeded = finishedFile();
-    const last = 'reference_example_second';
+    const last = 'reference_example_primary';
     delete seeded.values[last];
     delete seeded.answeredAt[last];
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
@@ -553,6 +558,11 @@ test.describe('The proof loop (R1-11)', () => {
     await page.getByRole('button', { name: /^Context\.md/ }).click();
     await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
     await page.waitForSelector('.flow');
+    // BS-11 (VB-142): see the test above — a one-question module opens with
+    // its intro once its only answer is cleared.
+    if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
+      await page.getByRole('button', { name: 'Next', exact: true }).click();
+    }
     await page.locator('.flow textarea').fill('A last answer, written to finish the file again.');
     await page.getByRole('button', { name: 'Next', exact: true }).click();
 

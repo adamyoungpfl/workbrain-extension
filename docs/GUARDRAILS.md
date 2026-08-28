@@ -60,7 +60,9 @@ product observed is telemetry.* Authorship, not transmission, and not derivabili
 That last word matters. `docs/ARCHITECTURE.md`'s "nothing derived is stored" is the **wrong guard**
 for this class of question — `wb:recs` was admitted on the argument that a dismissal isn't
 derivable, and a usage log makes exactly the same argument and wins. Authorship is the guard that
-holds. `wb:report.scores` (a self-reported 0–10 the person typed) is on the right side of it;
+holds. `wb:report.scores` (what the person ticked, and the length of the checklist
+they ticked it against — `{ value, of }`, both authored: the count is their ticks
+and the denominator is their own steps) is on the right side of it;
 a count of panel opens is not, however local it stays.
 
 

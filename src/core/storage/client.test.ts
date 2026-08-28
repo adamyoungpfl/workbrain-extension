@@ -67,14 +67,14 @@ describe('initStorage', () => {
     const result = await initStorage({ exportBeforeMigrate, backend });
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('unreachable');
-    expect(result.data.schemaVersion).toBe(2); // V3 slice one bumped the schema
+    expect(result.data.schemaVersion).toBe(3); // BS-11 (VB-142) bumped it again
     expect(new Date(result.data.installedAt).toString()).not.toBe('Invalid Date');
     expect(exportBeforeMigrate).not.toHaveBeenCalled();
     expect(await getLocal('wb:meta', backend)).toEqual(result.data);
   });
 
   it('already at the current version: returns the existing meta and writes nothing back', async () => {
-    const meta = { schemaVersion: 2, installedAt: '2020-01-01T00:00:00.000Z' };
+    const meta = { schemaVersion: 3, installedAt: '2020-01-01T00:00:00.000Z' };
     const backend = fakeBackend({ 'wb:meta': meta });
     const setSpy = vi.spyOn(backend, 'set');
     const result = await initStorage({ exportBeforeMigrate: () => {}, backend });
@@ -83,9 +83,10 @@ describe('initStorage', () => {
   });
 
   it('behind the current version: migrates, exports the pre-migration snapshot first, and writes the migrated state back under the same keys', async () => {
-    // SCHEMA_VERSION is really 2 (V3 slice one), so "behind" here means
-    // schemaVersion 1 — the fixture migration bridges 1 -> 2, matching the
-    // real target.
+    // SCHEMA_VERSION is really 3 (BS-11), so "behind" here means schemaVersion
+    // 1 and the fixture migration bridges 1 -> 2. It does not have to reach the
+    // current version: what this test proves is that a migration in range runs,
+    // the snapshot goes out first, and the result is stamped at the target.
     const oldMeta = { schemaVersion: 1, installedAt: '2020-01-01T00:00:00.000Z' };
     const backend = fakeBackend({
       'wb:meta': oldMeta,
@@ -111,7 +112,7 @@ describe('initStorage', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('unreachable');
-    expect(result.data.schemaVersion).toBe(2);
+    expect(result.data.schemaVersion).toBe(3);
     expect(result.data.installedAt).toBe(oldMeta.installedAt); // preserved, not reset
 
     // exported before anything changed
@@ -160,7 +161,7 @@ describe('initStorage', () => {
 
     expect(result.ok).toBe(true);
     if (!result.ok) throw new Error('unreachable');
-    expect(result.data.schemaVersion).toBe(2);
+    expect(result.data.schemaVersion).toBe(3);
     expect(result.data.installedAt).toBe(meta.installedAt); // preserved, not reset
     expect((snapshots[0] as Record<string, unknown>)['wb:answers']).toEqual(existing);
 

@@ -156,11 +156,13 @@ describe('adaptContextFlow — real content (docs/RELEASE-1.md R1-05)', () => {
       'goal_service',
       'goal_want',
     ];
-    expect(all).toHaveLength(56);
+    // BS-11 (VB-142) retired `reference_example_second`: the module asks one
+    // question for three examples now, so the port is 48 rather than 49.
+    expect(all).toHaveLength(55);
     for (const id of authoredHere) {
       expect(all.filter((s) => s.id === id), id).toHaveLength(1);
     }
-    expect(all.filter((s) => !authoredHere.includes(s.id))).toHaveLength(49);
+    expect(all.filter((s) => !authoredHere.includes(s.id))).toHaveLength(48);
     // VB-90 + VB-93: the why screen, the ladder, then the gate — the flow's
     // first QUESTIONS are still the gate; everything before it is a screen.
     expect(all.slice(0, 5).map((s) => s.id)).toEqual([

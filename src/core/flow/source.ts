@@ -1141,35 +1141,31 @@ const referenceExamples: Module = {
   required: true,
   estimatedMinutes: [3, 6],
   nodes: [
+    /* BS-11 (V2.9 VB-142) — ONE PROMPT, THREE EXAMPLES.
+
+       This was two questions: a required first sample and an optional second
+       "from a different context". Two problems with that. The optional one was
+       skipped by almost anybody in a hurry, which is exactly the person whose
+       voice the file is thinnest on; and asking twice, separately, produced
+       two samples of the same register, because the second question arrived
+       with the first still on screen as the model to follow.
+
+       Asking once, for three DELIBERATELY DIFFERENT ones, gets the range in
+       the ask itself. The separator is the person's own blank line — it is
+       what a paste already does between two things, so it is a rule they keep
+       without being taught it, and the file prints the answer as written.
+
+       The old `reference_example_second` id is retired; a store that holds one
+       is folded into this answer by the migration to schema 3
+       (src/core/storage/migrations.ts), so nothing anybody wrote is lost. */
     q({
       id: "reference_example_primary",
       type: "text",
       multiline: true,
-      prompt: () => "Paste something you wrote that you were proud of.",
-      hint: "This teaches more than any description — one paragraph is enough. It becomes AI's reference sample for your voice.",
-      rephrasings: [() => "If you had to hand someone one paragraph and say 'this is how I sound,' what would it be?"],
-      placeholder: "Paste a paragraph of your own writing you'd be happy to see again...",
-      ideas: [
-        "Finished the quarterly count this morning — three locations are fully reconciled, two still need a recount on Friday. I'll have the final numbers to you by end of day Monday.",
-        "The new intake process went live on schedule, with all existing records migrated and verified before the cutover. No service interruption was reported, and the fallback plan wasn't needed.",
-        "I went with the simpler version of the form here rather than the one with extra fields — nobody had actually asked for that level of detail, and it would have added another week before we could roll it out.",
-        "Good conversation today. Landed on: the schedule stays the same for next month, the team lead owns the announcement, and I'll have the updated policy out by Friday. Let me know if I missed anything.",
-        "Root cause was a mislabeled batch in the intake system — the sorting step was skipping it on every pass. Fixed the label and reprocessed the batch by hand. Watching for a repeat over the next few days.",
-        "Spent most of the week sorting out a scheduling conflict that's been quietly causing double-bookings for months. Turned out two different teams were each working around it their own way. Fixed it once, at the source, so nobody has to work around it again.",
-        "The draft is close — the numbers are right and it's well organized. What's missing is the recommendation: right now it reads like a summary, but the ask is a decision. Lead with what you want them to approve.",
-        "Next month is mostly cleanup — closing out the open requests, fixing the two recurring complaints from last week, and getting the reference guide current before we roll this out further. Nothing new starts until that's done.",
-        "Thanks for flagging this — you were right that the statement was missing the last transaction under certain filters. It's fixed now, and I've double-checked last month's records to make sure nothing else was missed.",
-        "Three takeaways from this quarter: attendance held steady despite the schedule change, the new check-in process cut wait times by a third, and requests are trending up faster than staffing — worth a conversation before it becomes a bottleneck.",
-      ],
-    }),
-    q({
-      id: "reference_example_second",
-      type: "text",
-      multiline: true,
-      required: false,
-      prompt: () => "Want to add a second example — ideally from a different context?",
-      hint: "Optional. A different tone or audience than the first makes AI's reference richer — skip if one is enough.",
-      placeholder: "Optional — a different kind of message than the one above",
+      prompt: () => "Paste three things you wrote — as different from each other as you can find.",
+      hint: "A blank line between each one is enough to keep them apart. Different readers or different moods teach the most; one paragraph each is plenty.",
+      rephrasings: [() => "If you handed someone three paragraphs and said 'this is the range of how I sound,' which three?"],
+      placeholder: "Paste the first one here, then a blank line, then the next...",
       ideas: [
         "Finished the quarterly count this morning — three locations are fully reconciled, two still need a recount on Friday. I'll have the final numbers to you by end of day Monday.",
         "The new intake process went live on schedule, with all existing records migrated and verified before the cutover. No service interruption was reported, and the fallback plan wasn't needed.",
@@ -1251,5 +1247,5 @@ export const CONTEXT_FILE_OUTLINE: FileOutlineNode[] = [
   { id: "sec7", label: "7. Audience Profiles", questionIds: ["audiences_list", "audience_variance"] },
   { id: "sec8", label: "8. Vocabulary & Knowledge", questionIds: ["terms_depend_on", "never_words"] },
   { id: "sec9", label: "9. Context Boundaries", questionIds: ["standards_list", "guardrails_list"] },
-  { id: "sec10", label: "10. Reference Examples", questionIds: ["reference_example_primary", "reference_example_second"] },
+  { id: "sec10", label: "10. Reference Examples", questionIds: ["reference_example_primary"] },
 ];

@@ -2459,6 +2459,12 @@ function StepView({
                   onClick={(e) => cycleRephrase(e.currentTarget)}
                 >
                   {REPHRASE_ICON}
+                  {/* BS-01c's twelfth control gets its word. `aria-label`
+                      above still wins the accessible name, so the long
+                      sentence is what is announced and "Reword" is what is
+                      read — the same split the other three labelled glyphs
+                      use. */}
+                  <span className="flow-rephrase-word">{S.rephraseShort}</span>
                 </Button>
               )}
             </div>

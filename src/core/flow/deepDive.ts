@@ -342,21 +342,15 @@ export const DEEP_DIVE: Record<string, DeepDiveEntry[]> = {
   reference_example_primary: [
     {
       q: 'Why does this matter so much?',
-      a: "One real paragraph teaches AI more about your voice than every answer you've given so far.",
+      a: "One real paragraph teaches AI more about your voice than every answer above it. Three teach it your range.",
     },
     {
       q: 'What should I pick?',
-      a: "Something ordinary you'd be happy to see again. A status update or a note to your team beats anything polished.",
+      a: "Ordinary things you'd be happy to see again. A status update, a note to your team and a message to somebody outside it beat anything polished.",
     },
     {
-      q: "What if I can't find one?",
-      a: 'Write two sentences here as if you were sending them. That works just as well.',
-    },
-  ],
-  reference_example_second: [
-    {
-      q: 'Is one enough?',
-      a: "Yes. A second one helps most if it's a different tone or a different reader than the first.",
+      q: "What if I can't find three?",
+      a: 'Give what you have. Two is better than one, and two sentences written here as if you were sending them count.',
     },
   ],
 };

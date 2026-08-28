@@ -220,8 +220,10 @@ describe('round-trip — real ported content', () => {
         // prints it — so the round-trip has to carry both shapes at once.
         audience_variance: null, // explicitly skipped — required: false
         standards_list: ['cite-source', 'show-work', 'A rule of my own'],
-        reference_example_primary: 'Finished the quarterly count this morning.',
-        reference_example_second: null, // explicitly skipped — required: false
+        // BS-11 (VB-142): one question, three examples, the person's own blank
+        // line between them — which the round-trip has to carry intact.
+        reference_example_primary:
+          'Finished the quarterly count this morning.\n\nThanks for flagging this — it is fixed now.',
       },
       repeatables: {
         roles: [

@@ -40,6 +40,40 @@ export const migrations: Migration[] = [
       return snapshot;
     },
   },
+  {
+    /* BS-11 (V2.9 VB-142): the reference module asks ONE question for three
+       examples now, and `reference_example_second` no longer exists in the
+       flow. Anybody part-way through the beta may have answered it, and an
+       answer with no question to render it is an answer that quietly stops
+       appearing in the file.
+
+       So it is FOLDED IN, separated by the blank line the new question asks
+       people to use, and the retired key is dropped. A skip (`null`) carries
+       nothing and is simply dropped; an empty primary takes the second whole
+       rather than arriving with a blank line in front of it. Nothing else in
+       the store is touched, and a store that never held the key is valid and
+       gains nothing. */
+    to: 3,
+    up(state: unknown): unknown {
+      const snapshot = { ...(state as Record<string, unknown>) };
+      // Only Context's store: the reference module is Context's, and neither
+      // sibling has ever held this key.
+      const answers = snapshot['wb:answers'];
+      if (!looksLikeAnswers(answers)) return state;
+      if (!('reference_example_second' in answers.values)) return state;
+
+      const values = { ...answers.values };
+      const second = values['reference_example_second'];
+      delete values['reference_example_second'];
+      if (typeof second === 'string' && second.trim() !== '') {
+        const first = values['reference_example_primary'];
+        const kept = typeof first === 'string' ? first.trim() : '';
+        values['reference_example_primary'] = kept === '' ? second : `${kept}\n\n${second}`;
+      }
+      snapshot['wb:answers'] = { ...answers, values };
+      return snapshot;
+    },
+  },
 ];
 
 export type MigrationResult =

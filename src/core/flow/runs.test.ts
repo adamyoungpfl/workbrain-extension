@@ -85,10 +85,16 @@ describe('where a node sits', () => {
  * they are pinned here rather than left to be rediscovered.
  */
 describe('the Context flow, as runs', () => {
-  it('divides into runs no longer than five', () => {
+  it('divides into runs no longer than five, and never leaves a remainder of one', () => {
     for (const run of allRuns(contextModules)) {
       expect(run.nodeIds.length, run.moduleId).toBeLessThanOrEqual(RUN_LENGTH);
-      expect(run.nodeIds.length, run.moduleId).toBeGreaterThan(1);
+      // BS-11 (VB-142) made Reference Examples a single question, so "no run
+      // of one" needed saying precisely. The rule is about a REMAINDER: a
+      // lone question stranded after a full run gets folded back, because a
+      // beat row with one mark after a row of five reads as a mistake. A
+      // module whose entire askable set is one question is a different thing
+      // — there is nothing to fold it into, and one mark is the truth.
+      if (run.of > 1) expect(run.nodeIds.length, run.moduleId).toBeGreaterThan(1);
     }
   });
 

@@ -508,10 +508,10 @@ word there, not twice.
 | `ReadOnlyBlock`'s copy | **Done** — "Copy" beside the glyph; the full sentence stays the accessible name, because three of these can share a screen |
 | `Sheet`'s close | **Done** — "Close" beside the cross. Also lifted the one hard-coded user-facing string in the component tree into `strings.ts` |
 | `NarratorToggle` | **Done** — "Read aloud"; the long sentence stays the accessible name |
-| Flow's rephrase | **Deferred to §5.** Measured, not guessed: adding "Reword" widens the question row enough to open a **103px dead band** between the follow-ups and the helper row on `terms_depend_on` at the resting drawer height, which `save-note.spec.ts`'s seam law catches. That row is the tightest real estate in the product and §5 owns that screen |
+| Flow's rephrase | **Done at BS-05.** "Reword" goes UNDER the ring, not beside it — beside it the control widens and the question narrows, which is what opened the dead band below. Stacked, it keeps its 44px width and spends height a two-line heading already pays for. Originally deferred: Measured, not guessed: adding "Reword" widens the question row enough to open a **103px dead band** between the follow-ups and the helper row on `terms_depend_on` at the resting drawer height, which `save-note.spec.ts`'s seam law catches. That row is the tightest real estate in the product and §5 owns that screen |
 | Home's upload | Deferred to §6 — Home is rebuilt |
 | `Recommendation`'s hide | Deferred to §6, which already replaces the corner cross with a text "Not now" in the review's own mock |
-| `FlowProgress`'s home | Deferred to §5 — the progress shell is rebuilt for the beat row |
+| `FlowProgress`'s home | **Done at BS-05.** "Home" under the mark, same reasoning: the strip beside it belongs to the module title, and the word rides inside the 44px box the 26px mark was already reserving |
 | The two drawer mode buttons | Deferred to §7.1, which makes them labelled pills |
 | The globe's back and home | Deferred to §7.1, which **deletes** them |
 | `BrainTurnCue` | Deferred to §7 |

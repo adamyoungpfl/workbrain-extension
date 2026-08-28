@@ -36,7 +36,8 @@ describe('deepDive data', () => {
     // VB-03 report rather than silently dropping approved copy.
     // V2.3 VB-89 added 9 (the [DRAFT] sweep); V2.5 VB-113 retired
     // orientation_ready's two — the dime tour carries those answers now.
-    expect(ids).toHaveLength(35);
+    // BS-11 (VB-142) retired `reference_example_second` and its one pair.
+    expect(ids).toHaveLength(34);
   });
 
   it('every entry has a non-empty question and a non-empty answer', () => {
@@ -191,7 +192,7 @@ function readingGrade(strings: string[]): number {
 describe('reading level (npm run audit cannot see this file)', () => {
   it('reads at grade 7 or below, across every question and answer', () => {
     const all = Object.values(DEEP_DIVE).flatMap((entries) => entries.flatMap((e) => [e.q, e.a]));
-    expect(all).toHaveLength(104);
+    expect(all).toHaveLength(102);
     const grade = readingGrade(all);
     expect(grade, `deepDive.ts reads at grade ${grade.toFixed(1)} — target is 7`).toBeLessThanOrEqual(7);
   });

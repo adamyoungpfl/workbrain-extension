@@ -1019,12 +1019,23 @@ export const S = {
      that go beside the glyphs that used to stand on their own. Each is the
      shortest true verb, because the controls they label sit in tight rows,
      and each keeps its longer sentence as the accessible name.
-     Flow's rephrase has no entry here on purpose: its word does not fit the
-     question row (docs/BETA-SPRINT.md, BS-01c), and §5 gives it one.
      [DRAFT] */
   copyShort: 'Copy',
   closeShort: 'Close',
   narratorShort: 'Read aloud',
+  /* BS-05 (§5) — the twelfth of BS-01c's icon-only controls, and the last.
+     It went UNDER the glyph rather than beside it: BS-01c measured "Reword"
+     into the question row and it opened a 103px dead band, because the row is
+     the question and the question is what gets narrower. Stacked, the control
+     keeps the 44px width it already had and takes its height out of a heading
+     that is two lines or more on every question that has rephrasings.
+     [DRAFT] */
+  rephraseShort: 'Reword',
+  /* And the last one: the mark in the interview's corner is a door home
+     (V2.5 VB-112), and a mark is an icon however well known it is. Stacked
+     under it for the same reason as `rephraseShort` — the strip beside it
+     belongs to the module title. [DRAFT] */
+  homeShort: 'Home',
   copied: 'Copied',
   proofCta: 'Prove it works',
   proofFinished: "That's the whole loop.",

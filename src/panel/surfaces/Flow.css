@@ -722,6 +722,19 @@
   min-width: var(--target-min);
   padding: 0;
   margin-top: -8px;
+  /* BS-05 (§5) — the word goes UNDER the ring, not beside it. Beside it the
+     control widens and the question narrows, which is what opened BS-01c's
+     103px dead band; under it the control is exactly as wide as it already
+     was and spends height a two-line heading has already paid for. */
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+.flow-rephrase-word {
+  font-size: var(--type-fine);
+  line-height: 1;
+  color: var(--ink-3);
 }
 
 /* VB-04's press cue — "spin and swap". The ring turns once ("again") while the

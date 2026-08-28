@@ -122,9 +122,10 @@ describe('the ported ideas this button exists to surface', () => {
     const authoredHere = ['audience_needs', 'goal_want'];
     const carrying = allSteps().filter((s) => ideasFor(s).length > 0);
     const ported = carrying.filter((s) => !authoredHere.includes(s.id));
-    expect(ported).toHaveLength(22);
-    expect(ported.reduce((total, s) => total + ideasFor(s).length, 0)).toBe(94);
-    expect(carrying).toHaveLength(24);
+    // BS-11 (VB-142) retired `reference_example_second`, which carried ten.
+    expect(ported).toHaveLength(21);
+    expect(ported.reduce((total, s) => total + ideasFor(s).length, 0)).toBe(84);
+    expect(carrying).toHaveLength(23);
   });
 
   it('still puts ten on reference_example_primary', () => {
