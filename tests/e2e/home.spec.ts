@@ -309,7 +309,7 @@ test.describe('Home surface (R1-12)', () => {
     // --- the meter: present at 0%, the honest map of the journey ---
     const meter = page.locator('.meter');
     await expect(meter).toHaveAttribute('aria-valuenow', '0');
-    await expect(meter).toHaveAttribute('aria-valuetext', '0% set up, Step 1 · Name');
+    await expect(meter).toHaveAttribute('aria-valuetext', `0% ${S.meterLabel}, ${S.stepBoth(S.steps[0], S.steps[1])}`);
 
     // --- the approved copy, verbatim ---
     await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toBeVisible();
@@ -574,45 +574,24 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     await context.close();
   });
 
-  test('the meter says what moves it, and the door is not inside the drawing (BS-06)', async () => {
+  /**
+   * BS-06 put a "What moves this?" door beside the percentage; Adam removed
+   * it on 2026-08-28 ("remove this link, we don't need it") and the sheet
+   * went with it. What that test really guarded survives here: the meter's
+   * whole drawing is one `aria-hidden` progressbar, so nothing interactive
+   * may live inside it — a control in there is a control a screen reader
+   * never meets.
+   */
+  test('the meter is a drawing, with no control inside it (BS-06)', async () => {
     const { context, sw, id } = await launchExtension();
     const { answers } = buildAnswersWithOneDueRole(contextModules);
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
     const page = await openPanel(context, id);
 
-    // THE POINT OF THE TEST. The percentage, the track and the ticks are all
-    // inside `role="progressbar"`, and every one of them is aria-hidden — a
-    // door in there is a door a screen reader never meets.
-    const door = page.getByRole('button', { name: 'What moves this?', exact: true });
-    await expect(door).toBeVisible();
-    await expect(page.locator('.meter button')).toHaveCount(0);
-    await expect(page.locator('.home-meter > .home-meter-what')).toHaveCount(1);
-
-    // The 44px floor, on a control whose text is 15px tall.
-    const box = (await door.boundingBox())!;
-    expect(box.height).toBeGreaterThanOrEqual(44);
-
-    await door.click();
-    const sheet = page.locator('.meterwhat');
-    await expect(sheet).toBeVisible();
-
-    // Four segments, in the drawing's own order, each with the sentence that
-    // says what fills it.
-    const steps = sheet.locator('.meterwhat-step');
-    await expect(steps).toHaveText(['Name', 'Repeat', 'Act', 'Share']);
-    await expect(sheet.locator('.meterwhat-fill')).toHaveCount(4);
-    for (let i = 0; i < 4; i++) {
-      await expect(sheet.locator('.meterwhat-fill').nth(i)).not.toBeEmpty();
-    }
-
-    // And the ceiling, which is the thing people open this to find out: the
-    // last quarter cannot be filled by answering questions (V2.6 decision 2).
-    await expect(sheet.locator('.meterwhat-ceiling')).toContainText('100%');
-
-    // Escape closes it and focus comes back to the door it left from.
-    await page.keyboard.press('Escape');
-    await expect(sheet).toHaveCount(0);
-    await expect(door).toBeFocused();
+    await expect(page.locator('.meter')).toBeVisible();
+    await expect(page.locator('.meter button, .meter a')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'What moves this?' })).toHaveCount(0);
+    await expect(page.locator('.meterwhat')).toHaveCount(0);
 
     await context.close();
   });

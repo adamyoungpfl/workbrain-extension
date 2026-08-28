@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BrandMark, Button, BuildStamp } from '../components';
+import { BrandMark, BuildStamp } from '../components';
 import { SplashStage } from './SplashStage';
 import type { SplashStageHandle } from './SplashStage';
 import {
@@ -237,9 +237,14 @@ export function Splash({ onDone, onTour }: SplashProps) {
               `welcomeTime` makes one screen later. */}
           <p className="splash-cost">{S.splashCost}</p>
           <p className="splash-what">{S.splashWhat}</p>
-          <Button type="button" variant="primary" className="splash-enter" onClick={() => leave.current()}>
-            {S.splashEnter}
-          </Button>
+          {/* V2.7 VB-128's "Open your work brain" button stood here and is
+              REMOVED (Adam, 2026-08-28: "remove this button, it is not
+              needed"). He is right that it was furniture: the WHOLE SURFACE
+              is the way in and has been since V2.6 VB-126 ("any click from
+              the splash page will load to the home page"), Escape is the
+              keyboard's way, and `splashSkip` says so out loud in the corner.
+              A primary button on a screen where everything is the button was
+              a fourth exit competing with three that already worked. */}
           {/* §9's tour door, and D10: the guardrail's ban is on a dismissible
               overlay pointing at UI, not on orientation somebody asked for.
               This is the one moment anyone accepts it — after question one,

@@ -105,7 +105,7 @@ test.describe('VB-128 — the show opens', () => {
     await expect(page.locator('.splash-glow')).toHaveCount(1);
     // The movie has not reached its title card: no name, no button.
     await expect(page.locator('.splash-wordmark')).toHaveCount(0);
-    await expect(page.locator('.splash-enter')).toHaveCount(0);
+    await expect(page.locator('.splash-cost')).toHaveCount(0);
 
     // It covers the panel, opaquely, on its own dark field.
     const box = (await splash.boundingBox())!;
@@ -145,26 +145,26 @@ test.describe('VB-128 — the show opens', () => {
     await expect(page.locator('.splash-tagline')).toHaveText(
       'How you do anything is how your AI does everything.',
     );
-    const cta = page.getByRole('button', { name: S.splashEnter, exact: true });
-    await expect(cta).toBeVisible();
+    // BR-01 (Adam, 2026-08-28): the "Open your work brain" button is gone —
+    // the surface itself is the way in, and has been since V2.6 VB-126. So
+    // the reveal now ends in the two sentences rather than in a control, and
+    // this test's stack is one item shorter.
+    await expect(page.locator('.splash-enter')).toHaveCount(0);
     // BS-09 (§9): the cycling word and the drain bar are replaced by the
     // two sentences that answer "what is this and what will it cost me".
     await expect(page.locator('.splash-cost')).toBeVisible();
     await expect(page.locator('.splash-what')).toBeVisible();
 
-    // Centred, and stacked in the movie order.
+    // Centred, and stacked in the movie order: mark, promise, cost, what.
     const mark = (await page.locator('.splash-lockup .brand-mark').boundingBox())!;
     const tagline = (await page.locator('.splash-tagline').boundingBox())!;
-    const button = (await cta.boundingBox())!;
+    const cost = (await page.locator('.splash-cost').boundingBox())!;
+    const what = (await page.locator('.splash-what').boundingBox())!;
     expect(Math.abs(mark.x + mark.width / 2 - 200)).toBeLessThan(1.5);
     expect(Math.abs(tagline.x + tagline.width / 2 - 200)).toBeLessThan(1.5);
     expect(tagline.y).toBeGreaterThan(mark.y + mark.height);
-    expect(button.y).toBeGreaterThan(tagline.y);
-    // The sentences land between the tagline and the button — read after the
-    // promise, before the decision.
-    const cost = (await page.locator('.splash-cost').boundingBox())!;
     expect(cost.y).toBeGreaterThan(tagline.y);
-    expect(cost.y).toBeLessThan(button.y);
+    expect(what.y).toBeGreaterThan(cost.y);
 
     await context.close();
   });
@@ -347,8 +347,9 @@ test.describe('VB-128 — every exit, at every moment', () => {
   });
 
   test('the reveal’s button is real: named, focusable, Enter works', async () => {
+    // Was the enter button's; it is SKIP's since BR-01 removed the other one.
     const { context, page } = await launchPanel();
-    const cta = page.getByRole('button', { name: S.splashEnter, exact: true });
+    const cta = page.getByRole('button', { name: S.splashSkip, exact: true });
     await cta.waitFor({ timeout: REVEAL_TIMEOUT });
 
     await cta.focus();
@@ -375,22 +376,23 @@ test.describe('VB-128 — every exit, at every moment', () => {
     await context.close();
   });
 
-  test('the covered panel is inert while the splash is up; Tab walks the three doors in order', async () => {
+  test('the covered panel is inert while the splash is up; Tab walks the doors in order', async () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash');
     await expect(page.locator('main[inert]')).toHaveCount(1);
 
-    await page.waitForSelector('.splash-enter', { timeout: REVEAL_TIMEOUT });
-    // BS-09 (§9): the screen went from one control to three. Skip comes
-    // first because it is drawn first — it is the corner a person reaches
-    // for when they do not want the movie, and making them tab past the
-    // thing they are declining would be the wrong order.
+    await page.waitForSelector('.splash-cost', { timeout: REVEAL_TIMEOUT });
+    // BS-09 took the screen from one control to three; BR-01 takes it to two.
+    // Skip comes first because it is drawn first — it is the corner a person
+    // reaches for when they do not want the movie, and making them tab past
+    // the thing they are declining would be the wrong order.
     const order: string[] = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       await page.keyboard.press('Tab');
       order.push(await page.evaluate(() => document.activeElement?.textContent ?? ''));
     }
-    expect(order).toEqual([S.splashSkip, S.splashEnter, S.splashTour]);
+    // Two doors since BR-01, not three.
+    expect(order).toEqual([S.splashSkip, S.splashTour]);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
@@ -402,7 +404,7 @@ test.describe('VB-128 — every exit, at every moment', () => {
   test('the show ends on its own — the ten-count hands over to Home', async () => {
     test.setTimeout(40_000);
     const { context, page } = await launchPanel();
-    await page.waitForSelector('.splash-enter', { timeout: REVEAL_TIMEOUT });
+    await page.waitForSelector('.splash-cost', { timeout: REVEAL_TIMEOUT });
 
     // Not yet: the count has barely started.
     await page.waitForTimeout(1500);
@@ -461,7 +463,7 @@ test.describe('VB-128 — reduced motion', () => {
     await expect(page.locator('.splash-tagline')).toHaveText(
       'How you do anything is how your AI does everything.',
     );
-    await expect(page.getByRole('button', { name: S.splashEnter, exact: true })).toBeVisible();
+    await expect(page.locator('.splash-cost')).toBeVisible();
 
     // The mark holds the camera path's own still viewpoint.
     const before = await readPose(page, '.splash-lockup .brand-mark');
@@ -483,7 +485,7 @@ test.describe('VB-128 — reduced motion', () => {
     // sentences, the button, the skip and the tour door.
     await expect(page.locator('.splash-cost')).toHaveText(S.splashCost);
     await expect(page.locator('.splash-what')).toHaveText(S.splashWhat);
-    await expect(page.getByRole('button', { name: S.splashEnter, exact: true })).toBeVisible();
+    await expect(page.locator('.splash-cost')).toBeVisible();
     await expect(page.getByRole('button', { name: S.splashSkip, exact: true })).toBeVisible();
     await expect(page.locator('.splash-drain')).toHaveCount(0);
 
@@ -493,7 +495,7 @@ test.describe('VB-128 — reduced motion', () => {
   test('the ten-count still hands over — the still version keeps the whole contract', async () => {
     test.setTimeout(30_000);
     const { context, page } = await launchPanel({ reduce: true });
-    await page.waitForSelector('.splash-enter', { timeout: 4000 });
+    await page.waitForSelector('.splash-cost', { timeout: 4000 });
 
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: SPLASH_BEATS.idleMs + 3000 });
     await expect(page.locator('.home')).toBeVisible();

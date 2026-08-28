@@ -8,7 +8,6 @@ import {
   FeedbackSheet,
   FileRow,
   Meter,
-  MeterWhatSheet,
   RecommendationHide,
   RecommendationRow,
   Sheet,
@@ -19,6 +18,7 @@ import { getLocal, getSync, setLocal } from '../../core/storage/client';
 import { computeNextMove } from '../../core/freshness/nextMove';
 import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
 import { computeUtilization } from '../../core/home/utilization';
+import { stepCue } from '../../core/home/stepCue';
 /* BS-06: the file GENERATORS left Home with the lockup's meta line — the
    only thing that needed a byte count on this screen. `downloadContextFile`
    still writes the real file from the same generator, one layer down. */
@@ -453,8 +453,6 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
   const [uploadOpen, setUploadOpen] = useState(false);
   /** BS-02 — the beta's return channel, in the chrome that already exists. */
   const [feedbackOpen, setFeedbackOpen] = useState(false);
-  /** BS-06 (§6) — the meter's own explanation. See MeterWhatSheet.tsx. */
-  const [meterWhatOpen, setMeterWhatOpen] = useState(false);
   const [homeToast, setHomeToast] = useState<string | null>(null);
   /** V2.8 VB-133 — the Skill Redeemer's sheet, and its landed-toast. */
   const [redeemOpen, setRedeemOpen] = useState(false);
@@ -762,17 +760,33 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
           on a fresh install on purpose: the four ticks are the whole journey,
           and the meter saying "0% set up, Step 1 · Name" is the product's
           honest map of it. */}
-      {/* BS-06 (§6) — "Add 'What moves this?' beside the percentage." The
-          door is the meter's SIBLING, not its child: the whole drawing is
-          `aria-hidden` decoration over one progressbar, and a control inside
-          that is a control a screen reader never meets. See
-          components/MeterWhatSheet.tsx. */}
+      {/* BS-06 (§6) added "What moves this?" beside the percentage, a door
+          onto a sheet explaining the four quarters. REMOVED (Adam, 2026-08-28:
+          "remove this link, we don't need it"). The sheet and its eight lines
+          go with it — a door nobody opens is a door, but a door plus eight
+          paragraphs of arithmetic is a second product. BR-01's cue does the
+          work §6 wanted from it: the meter now says where you are AND where
+          you are going, which is the direction the sheet was standing in for.
+          `components/MeterWhatSheet.tsx` and `S.meterWhat*` are deleted. */}
       <div className="home-meter">
       <Meter
         value={utilization.percent}
         name={S.meterName}
         label={S.meterLabel}
-        step={S.stepNamed(utilization.currentStep, S.steps[utilization.currentStep - 1] as string)}
+        step={(() => {
+          // BR-01 — where you are, then where you are going. The fold is
+          // core/home/stepCue.ts; the words are strings.ts's. Neither knows
+          // about the other, which is why "next" can be a step or a finish
+          // without this line growing a branch.
+          const cue = stepCue(utilization);
+          const current = S.steps[cue.current - 1] as string;
+          const next = cue.next === null ? S.stepNextFinish : (S.steps[cue.next - 1] as string);
+          return {
+            current: S.stepCurrent(current),
+            next: S.stepNext(next),
+            spoken: S.stepBoth(current, next),
+          };
+        })()}
         current={utilization.currentStep}
         segments={[
           { label: S.steps[0], percent: utilization.segments.name },
@@ -781,13 +795,6 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
           { label: S.steps[3], percent: utilization.segments.share },
         ]}
       />
-        <button
-          type="button"
-          className="home-meter-what"
-          onClick={() => setMeterWhatOpen(true)}
-        >
-          {S.meterWhat}
-        </button>
       </div>
 
       {/* V1.7 VB-36's shelf, in V2.6 VB-125b's card grammar: the duo (Context
@@ -953,7 +960,6 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
       {/* V2.9 VB-145 — the upload door's sheet. The download half of the
           old Move sheet became the tile above; what needs a seatbelt is
           only the import, and the seatbelt is the sheet's own warning. */}
-      <MeterWhatSheet open={meterWhatOpen} onClose={() => setMeterWhatOpen(false)} />
 
       <FeedbackSheet
         open={feedbackOpen}

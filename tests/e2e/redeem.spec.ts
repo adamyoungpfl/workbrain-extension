@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PACK_FORMAT } from '../../src/core/packs/skillsPack';
 import type { Answers } from '../../src/schema/storage.types';
+import { S } from '../../src/panel/strings';
 
 /**
  * V2.8 VB-133 — the Skill Redeemer, on the real panel with the network
@@ -50,7 +51,7 @@ async function launchHome(): Promise<{ context: BrowserContext; page: Page; sw: 
 }
 
 async function openSheet(page: Page): Promise<void> {
-  await page.getByRole('button', { name: 'Redeem a skill', exact: true }).click();
+  await page.getByRole('button', { name: S.tileRedeem, exact: true }).click();
   await page.waitForSelector('.redeem');
 }
 

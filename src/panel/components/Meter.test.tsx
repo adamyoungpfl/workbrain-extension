@@ -20,7 +20,7 @@ const SEGMENTS: MeterSegment[] = [
 describe('Meter', () => {
   it('exposes the value as a real progressbar, not color/number alone', () => {
     const { container } = mount(
-      <Meter value={46} name="How much is set up" label="set up" step="Step 2 · Repeat" segments={SEGMENTS} />,
+      <Meter value={46} name="How much is set up" label="set up" step={{ current: 'Current: Repeat', next: 'Next Up: Act', spoken: 'Step 2 · Repeat' }} segments={SEGMENTS} />,
     );
     const meter = container.querySelector('[role="progressbar"]')!;
     expect(meter.getAttribute('aria-label')).toBe('How much is set up');
@@ -30,18 +30,26 @@ describe('Meter', () => {
     expect(meter.getAttribute('aria-valuetext')).toBe('46% set up, Step 2 · Repeat');
   });
 
-  it('prints the number, the label and the standing step', () => {
-    const { container } = mount(
-      <Meter value={46} name="n" label="set up" step="Step 2 · Repeat" segments={SEGMENTS} />,
-    );
+  it('prints the number, the label and BOTH halves of the cue', () => {
+    // BR-01 (Adam, 2026-08-28): "Step 2 · Repeat" became an alternating pair.
+    // Both halves are always in the DOM and CSS decides which is painted —
+    // which is what lets reduced motion show the whole instruction rather
+    // than freezing on half a sentence.
+    const step = { current: 'Current: Repeat', next: 'Next Up: Act', spoken: 'Current: Repeat. Next Up: Act.' };
+    const { container } = mount(<Meter value={46} name="n" label="Optimized" step={step} segments={SEGMENTS} />);
     expect(container.querySelector('.meter-val')?.textContent).toBe('46%');
-    expect(container.querySelector('.meter-lab')?.textContent).toBe('set up');
-    expect(container.querySelector('.meter-step')?.textContent).toBe('Step 2 · Repeat');
+    expect(container.querySelector('.meter-lab')?.textContent).toBe('Optimized');
+    expect(container.querySelector('.meter-step-a')?.textContent).toBe('Current: Repeat');
+    expect(container.querySelector('.meter-step-b')?.textContent).toBe('Next Up: Act');
+    // And the spoken account is one sentence, not the two run together.
+    expect(container.querySelector('[role="progressbar"]')?.getAttribute('aria-valuetext')).toBe(
+      '46% Optimized, Current: Repeat. Next Up: Act.',
+    );
   });
 
   it('every segment carries its own fill — a half-full Share beside an empty Act', () => {
     const { container } = mount(
-      <Meter value={46} name="n" label="l" step="s" segments={SEGMENTS} />,
+      <Meter value={46} name="n" label="l" step={{ current: 'Current: Repeat', next: 'Next Up: Act', spoken: 's' }} segments={SEGMENTS} />,
     );
     const fills = [...container.querySelectorAll<HTMLElement>('.meter-track i')].map((el) =>
       el.style.getPropertyValue('--p'),
@@ -51,7 +59,7 @@ describe('Meter', () => {
 
   it('a tick with anything in its segment reads as reached; an empty one stays quiet', () => {
     const { container } = mount(
-      <Meter value={46} name="n" label="l" step="s" segments={SEGMENTS} />,
+      <Meter value={46} name="n" label="l" step={{ current: 'Current: Repeat', next: 'Next Up: Act', spoken: 's' }} segments={SEGMENTS} />,
     );
     const ticks = [...container.querySelectorAll('.meter-ticks span')];
     expect(ticks.map((t) => t.className)).toEqual(['on', 'on', '', 'on']);
@@ -60,7 +68,7 @@ describe('Meter', () => {
 
   it('the drawing is decoration; the progressbar is the account', () => {
     const { container } = mount(
-      <Meter value={46} name="n" label="l" step="s" segments={SEGMENTS} />,
+      <Meter value={46} name="n" label="l" step={{ current: 'Current: Repeat', next: 'Next Up: Act', spoken: 's' }} segments={SEGMENTS} />,
     );
     expect(container.querySelector('.meter-top')?.getAttribute('aria-hidden')).toBe('true');
     expect(container.querySelector('.meter-track')?.getAttribute('aria-hidden')).toBe('true');

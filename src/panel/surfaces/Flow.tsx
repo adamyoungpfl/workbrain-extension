@@ -28,7 +28,7 @@ import {
   PROOF_TICKED_KEY,
   proofQuestion,
 } from '../../core/flow/proofAdapter';
-import { MICRO_PROOF_MODULE, RUN_CARD_MIN, endsRun, runOf } from '../../core/flow/runs';
+import { RUN_CARD_MIN, endsRun, runOf } from '../../core/flow/runs';
 import { positionForQuestionId } from '../../core/flow/outline';
 import { jumpTargets } from '../../core/flow/jumpTo';
 import type { JumpTarget } from '../../core/flow/jumpTo';
@@ -52,7 +52,6 @@ import {
 import type { ProofCheck, ProofCheckId } from '../../core/proof/checklist';
 import { ModuleIntro } from './ModuleIntro';
 import { downloadMarkdown } from './FileActions';
-import { MicroProof } from './MicroProof';
 import { RunCard } from './RunCard';
 import { FileDrawer } from './FileDrawer';
 import { AssistBar } from './AssistBar';
@@ -617,11 +616,6 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
    * `seenIntros` above uses, for the same reason: a stored flag would be a
    * fact about the person this product has no business keeping. */
   const [paidRuns, setPaidRuns] = useState<ReadonlySet<string>>(new Set());
-  /** BS-03a — the micro-proof is offered once. Ephemeral like the card that
-   * carries it: an errand nobody took is not a fact worth storing, and one
-   * they did take is proved by the file getting better, not by a flag. */
-  const [microDone, setMicroDone] = useState(false);
-  const [microOpen, setMicroOpen] = useState(false);
   const [history, setHistory] = useState<Position[]>([]);
   const [viewing, setViewing] = useState<Position | null>(initialPosition ?? null);
   const [saveError, setSaveError] = useState(false);
@@ -860,17 +854,19 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
        * section, which is a thing they can already see happening.
        */
       /**
-       * BS-03a — AND THE ONE EXCEPTION TO THE LENGTH RULE.
+       * BS-03a made ONE EXCEPTION to the length rule, and it goes with the
+       * offer it existed for (Adam, 2026-08-28).
        *
-       * My World is two questions, so it earns no card by length. It is also
-       * the first boundary at which a person has NAMED somebody, which is
-       * the whole of what the micro-proof leans on. A card with something to
-       * offer is worth the interruption even when a card with nothing to say
-       * would not be — the rule was never about length for its own sake.
+       * My World is two questions, so it earns no card by length. It got one
+       * anyway because it was the first boundary at which a person had NAMED
+       * somebody, which is what the micro-proof leaned on — "a card with
+       * something to offer is worth the interruption even when a card with
+       * nothing to say would not be." With the offer gone the card has
+       * nothing to say there, and the exception would be an interruption for
+       * its own sake. Length is the rule again, on its own.
        */
-      const offersMicro = closed?.moduleId === MICRO_PROOF_MODULE && !microDone;
       const longEnough = (closed?.nodeIds.length ?? 0) >= RUN_CARD_MIN;
-      if (closed && key && (longEnough || offersMicro) && !paidRuns.has(key)) {
+      if (closed && key && longEnough && !paidRuns.has(key)) {
         setRunCard(closed);
         setPaidRuns((seen) => new Set(seen).add(key));
       }
@@ -1114,11 +1110,6 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
    * is a moment laid over it. Dismissing it leaves the flow precisely where
    * it already was.
    */
-  if (microOpen) {
-    return withDrawer(
-      <MicroProof answers={ans} fileText={generateContextFile(ans, contextFileDate())} onDone={() => setMicroOpen(false)} />,
-    );
-  }
 
   if (runCard) {
     const section = modules.find((m) => m.id === runCard.moduleId)?.title ?? '';
@@ -1133,15 +1124,6 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
       <RunCard
         section={section}
         written={written}
-        onMicroProof={
-          runCard.moduleId === MICRO_PROOF_MODULE && !microDone
-            ? () => {
-                setMicroDone(true);
-                setRunCard(null);
-                setMicroOpen(true);
-              }
-            : undefined
-        }
         onKeep={() => setRunCard(null)}
         onRead={() => {
           setRunCard(null);

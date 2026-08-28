@@ -283,7 +283,10 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     const meter = page.locator('.meter');
     await expect(meter).toHaveCount(1);
     const valuetext = (await meter.getAttribute('aria-valuetext')) ?? '';
-    expect(valuetext).toMatch(/% set up, Step \d · /);
+    // BR-01 (Adam, 2026-08-28): "set up" became "Optimized", and "Step 2 ·
+    // Repeat" became the pair — "Current: X. Next Up: Y." The claim is
+    // unchanged: the meter speaks its own number and never a grade.
+    expect(valuetext).toMatch(/^\d+% Optimized, Current: .+\. Next Up: .+\.$/);
     expect(valuetext.toLowerCase()).not.toContain('score');
 
     await context.close();

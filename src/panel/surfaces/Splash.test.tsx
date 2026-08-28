@@ -126,8 +126,10 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     expect(container.querySelector('.splash')!.getAttribute('data-phase')).toBe('reveal');
     expect(container.querySelector('.splash-wordmark')!.textContent).toBe(S.appName);
     expect(container.querySelector('.splash-tagline')!.textContent).toBe(S.splashTagline);
-    const button = container.querySelector<HTMLButtonElement>('.splash-enter')!;
-    expect(button.textContent).toBe(S.splashEnter);
+    // BR-01 (Adam, 2026-08-28): the "Open your work brain" button is gone —
+    // the whole surface has been the way in since V2.6 VB-126, so it was a
+    // fourth exit competing with three that already worked.
+    expect(container.querySelector('.splash-enter')).toBeNull();
     // BS-09 (§9): the cycling word and the draining bar are gone, and what
     // stands in their place is what the held seconds are for.
     expect(container.querySelector('.splash-loader')).toBeNull();
@@ -139,17 +141,17 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
   });
 
   /**
-   * BS-09 — the screen went from one control to three, on purpose, and each
-   * of them is a real choice rather than decoration: enter, skip, or take
-   * the tour. The old claim ("exactly one button, the rest is decoration")
-   * described a screen whose only other thing was a loading line.
+   * BS-09 took this screen from one control to three; BR-01 takes it back to
+   * two, and the one that went was the redundant one. Skip is the way past,
+   * the tour is the one thing somebody might choose INSTEAD of arriving, and
+   * "enter" was a button for a move the entire surface already makes.
    */
-  it('every control on it is a real one — enter, skip, and the tour when it is offered', () => {
+  it('every control on it is a real one — skip, and the tour when it is offered', () => {
     vi.useFakeTimers();
     stubMedia(true);
     const { container } = mount(<Splash onDone={() => {}} onTour={() => {}} />);
     const labels = [...container.querySelectorAll('.splash button')].map((b) => b.textContent);
-    expect(labels).toEqual([S.splashSkip, S.splashEnter, S.splashTour]);
+    expect(labels).toEqual([S.splashSkip, S.splashTour]);
   });
 
   it('draws no tour door when there is nowhere to take one', () => {
@@ -157,7 +159,20 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     stubMedia(true);
     const { container } = mount(<Splash onDone={() => {}} />);
     expect(container.querySelector('.splash-tour')).toBeNull();
-    expect(container.querySelectorAll('.splash button').length).toBe(2);
+    expect(container.querySelectorAll('.splash button').length).toBe(1);
+  });
+
+  it('still lets anybody in — the surface itself is the door', () => {
+    // The claim the removed button was standing in for. If this ever fails,
+    // the splash has become a screen somebody can be stuck on.
+    vi.useFakeTimers();
+    stubMedia(true);
+    const onDone = vi.fn();
+    const { container } = mount(<Splash onDone={onDone} />);
+    act(() => {
+      (container.querySelector('.splash') as HTMLElement).click();
+    });
+    expect(onDone).toHaveBeenCalledTimes(1);
   });
 
   it('says which build it is, because that is the first thing a report needs', () => {
@@ -167,14 +182,17 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     expect(container.querySelector('.buildstamp')!.textContent).toMatch(/\d+\.\d+\.\d+/);
   });
 
-  it('the button hands over instantly — no fade to sit through', () => {
+  it('a press hands over instantly — no fade to sit through', () => {
+    // Was the enter button's test; it is the SKIP button's now, which is the
+    // control that survived BR-01. The claim is the same and is about the
+    // hand-off, not about which control made it.
     vi.useFakeTimers();
     stubMedia(true);
     const onDone = vi.fn();
     const { container } = mount(<Splash onDone={onDone} />);
 
     act(() => {
-      container.querySelector<HTMLButtonElement>('.splash-enter')!.click();
+      container.querySelector<HTMLButtonElement>('.splash-skip')!.click();
     });
     expect(onDone).toHaveBeenCalledTimes(1);
   });

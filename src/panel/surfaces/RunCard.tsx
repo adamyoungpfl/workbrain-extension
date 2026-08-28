@@ -36,15 +36,9 @@ export interface RunCardProps {
   onKeep: () => void;
   onRead: () => void;
   onStop: () => void;
-  /**
-   * BS-03a — the micro-proof's offer, when this is the boundary that earns
-   * it. Absent everywhere else: the errand is offered ONCE, at the first
-   * point a person's own name exists to come back to them.
-   */
-  onMicroProof?: (() => void) | undefined;
 }
 
-export function RunCard({ section, written, onKeep, onRead, onStop, onMicroProof }: RunCardProps) {
+export function RunCard({ section, written, onKeep, onRead, onStop }: RunCardProps) {
   return (
     // `.flow` as well as `.runcard`, the same way ModuleIntro roots itself:
     // this is a screen ON the flow surface, so it takes the surface's frame,
@@ -55,25 +49,21 @@ export function RunCard({ section, written, onKeep, onRead, onStop, onMicroProof
       <p className="runcard-line">{S.runCardWrote(written)}</p>
 
       <div className="runcard-doors">
-        {/* BS-03a — when the micro-proof is on offer it IS the primary. The
-            card's own "keep going" is what somebody does anyway; this is the
-            thing worth interrupting for, and it is offered once. */}
-        {onMicroProof && (
-          <>
-            <p className="runcard-offer">{S.microOffer}</p>
-            <Button type="button" variant="primary" onClick={onMicroProof}>
-              {S.microOfferGo}
-            </Button>
-          </>
-        )}
-        <Button type="button" variant={onMicroProof ? 'secondary' : 'primary'} onClick={onKeep}>
+        {/* BS-03a's micro-proof offer stood here — "Want to see it work? One
+            minute." — and it is REMOVED (Adam, 2026-08-28: "remove this link
+            for now, I don't want to introduce the microproof just yet").
+
+            The surface it opened is built, tested and left in the tree
+            (surfaces/MicroProof.tsx); nothing renders it, so nothing bundles
+            it. What went is the interruption, not the work — this card is back
+            to the three doors §5 asked for and no fourth thing competing with
+            them at the moment somebody has just finished a run. */}
+        <Button type="button" variant="primary" onClick={onKeep}>
           {S.runCardKeep}
         </Button>
-        {!onMicroProof && (
-          <Button type="button" variant="secondary" onClick={onRead}>
-            {S.runCardRead}
-          </Button>
-        )}
+        <Button type="button" variant="secondary" onClick={onRead}>
+          {S.runCardRead}
+        </Button>
         <button type="button" className="runcard-stop" onClick={onStop}>
           {S.runCardStop}
         </button>

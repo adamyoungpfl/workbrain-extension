@@ -57,40 +57,36 @@ export const S = {
    * Repeat") the way the template's "Gate 2" never may.
    */
   meterName: 'How much of your work brain is set up',
-  meterLabel: 'set up',
+  meterLabel: 'Optimized',
 
+  /* BS-06 (§6) added "What moves this?" and a sheet of eight lines behind
+     it, explaining what fills each quarter. REMOVED with the door (Adam,
+     2026-08-28: "remove this link, we don't need it"). Recorded rather than
+     silently dropped, per the `splashBuild` precedent: the arithmetic those
+     lines described is still in core/home/utilization.ts, and BR-01's
+     `stepCurrent`/`stepNext` pair does the job §6 actually wanted — the meter
+     says which way the ground goes now, which is what "completely opaque" was
+     complaining about. */
   /**
-   * BS-06 (§6) — "Add 'What moves this?' beside the percentage — a sheet
-   * listing the four segments and what fills them. The number is honest and
-   * completely opaque today."
+   * BR-01 (Adam, 2026-08-28) — WHERE YOU ARE, THEN WHERE YOU ARE GOING.
    *
-   * [DRAFT] All eight lines below are mine and want Adam's morning pass.
+   * `stepNamed` printed "Step 2 · Repeat", which is a position. Adam: make it
+   * "an animated back and forth of 'Current: [Current Phase]' and 'Next Up:
+   * [Next Incomplete Phase]' or 'Next Up: Download and Prove It'." A position
+   * says where somebody is standing; a pair says which way the ground goes,
+   * and that is what a person on Home is looking for.
    *
-   * Each line answers one question and only that question: WHAT PUTS
-   * PERCENT IN THIS QUARTER. Not what the step means — the tick already
-   * names it — and not how far along they are, which the drawing above
-   * already says. They are written from core/home/utilization.ts's own
-   * formula, sentence by sentence, so the sheet and the arithmetic cannot
-   * drift apart without somebody noticing.
+   * `stepNextFinish` is the second half when there is no step left ahead —
+   * `stepCue` returns `next: null` there rather than promising a fifth phase
+   * that does not exist. It names the one real thing left to do.
    *
-   * The last line is the one people actually open this for. 100% is not
-   * reachable by answering questions alone, on purpose (Adam's semantics,
-   * V2.6 decision 2), and a person who works that out for themselves at 74%
-   * has been tricked. It says so plainly instead.
-   */
-  meterWhat: 'What moves this?',
-  meterWhatTitle: 'What moves this number',
-  meterWhatLead:
-    'Four quarters, one for each step. Each one is a real count of your own answers — nothing here watches you work.',
-  meterWhatFills: [
-    'Questions you answer in the Context interview. A question you pass on stays empty.',
-    'Questions you answer in the Skills interview, the same way.',
-    'Skills that say how much AI may do on its own, and where the data lives. "Not sure" leaves the gap.',
-    'Proof you ran, and skills you saved or redeemed. Half each.',
-  ] as const,
-  meterWhatCeiling:
-    'The last quarter needs your file out in the world, so 100% takes more than answering questions.',
-  stepNamed: (n: number, label: string) => `Step ${n} · ${label}`,
+   * `stepBoth` is what a SCREEN READER hears, and what reduced motion prints:
+   * one sentence carrying both halves, because a cross-fade is a way of
+   * showing two things in one place and not a fact of its own. */
+  stepCurrent: (label: string) => `Current: ${label}`,
+  stepNext: (label: string) => `Next Up: ${label}`,
+  stepNextFinish: 'Download and Prove It',
+  stepBoth: (current: string, next: string) => `Current: ${current}. Next Up: ${next}.`,
 
   // ---------------------------------------------------------------- flow runner
   /**
@@ -161,7 +157,7 @@ export const S = {
    * mashup into the field via the exact ideas mechanic; pressing again deals
    * the next one.
    */
-  makeUpName: 'Make one up for me',
+  makeUpName: 'Give me something....bold!',
   /**
    * [DRAFT] V2.5 VB-119 — "Let my AI ask me" grows up into AI Assist: the
    * name on the helper chip, and the title of the full-height sheet it
@@ -992,7 +988,7 @@ export const S = {
   feedbackOpenLong: 'Tell us how that went',
   feedbackTitle: 'Tell us how it went',
   feedbackBody:
-    'This is a beta, and what you noticed is the whole point of it. Write as little or as much as you like.',
+    'If it helped say it, if it sucked, say why and how...we can take it.',
   feedbackWrite: 'Write an email',
   feedbackCopy: 'Copy the build details',
   feedbackCopied: 'Copied. Paste it anywhere you like.',
@@ -1023,7 +1019,7 @@ export const S = {
      [DRAFT] */
   rephraseShort: 'Reword',
   copied: 'Copied',
-  proofCta: 'Prove it works',
+  proofCta: 'Will It Really Make A Difference?',
   proofFinished: "That's the whole loop.",
   // Chip labels for the service picker — key order matches
   // core/flow/proofAdditions.ts's ALL_PROOF_SERVICES: the manifest's four
@@ -1114,7 +1110,7 @@ export const S = {
    * template mocked "workbrain.zip · v3 · 84 KB"; every claim it invented
    * is replaced by one a person could check (FLAG 7).
    */
-  chromeCompany: 'Model Citizen',
+  chromeCompany: 'by Model Citizen',
   metaFiles: (n: number) => (n === 1 ? '1 file' : `${n} files`),
   metaSize: (kb: number) => `${kb} KB`,
   /**
@@ -1189,7 +1185,7 @@ export const S = {
    * failure voices live in core/packs/redeem.ts beside VB-124's, where
    * every pack refusal already speaks.
    */
-  tileRedeem: 'Redeem a skill',
+  tileRedeem: 'Skill Activator',
   redeemTitle: 'Redeem a skill code',
   redeemLabel: 'Your code',
   redeemHint: 'It came with your custom skill. The same file is in your email.',
@@ -1216,7 +1212,7 @@ export const S = {
      replace the explaining a dashed edge was doing badly. [DRAFT] */
   rowDownloadSub: 'The file itself, to keep or to hand over',
   rowProveSub: 'Two answers, side by side. Two minutes.',
-  rowRedeemSub: 'Add a skill somebody built for you',
+  rowRedeemSub: 'Redeem a purchased skill or upload a skill somebody built for you',
   rowLibrarySub: 'Built and tested by Model Citizen',
   /** Workbrain+ keeps its door and loses its pitch: the price and the four
    * goods belong on the page this links to (§6). */
@@ -1614,7 +1610,7 @@ export const S = {
    * [DRAFT]
    */
   splashCost: 'About fifteen minutes, one question at a time.',
-  splashWhat: 'You get plain text files that work with any AI. Nothing leaves your browser, and you can stop anywhere.',
+  splashWhat: 'The file is yours from start to finish. Nothing leaves your browser.',
   /** The way past it, said out loud. Any click already left; nothing said so,
    * so people sat through it politely (§9). */
   splashSkip: 'Skip',

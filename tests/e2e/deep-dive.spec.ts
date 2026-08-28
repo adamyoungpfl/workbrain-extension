@@ -8,6 +8,7 @@ import { DEEP_DIVE } from '../../src/core/flow/deepDive';
 import { EXPAND_MS } from '../../src/core/motion/disclosure';
 import { SHIMMER_KEYFRAME, SHIMMER_STAGGER_MS, attractMs } from '../../src/core/motion/shimmer';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
+import { S } from '../../src/panel/strings';
 import type { Answers } from '../../src/schema/storage.types';
 import { pastRunCard } from './fixtures/runCard';
 
@@ -1038,7 +1039,7 @@ test.describe('the deeper-dive follow-ups', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: 'Prove it works', exact: true }).focus();
+    await page.getByRole('button', { name: S.proofCta, exact: true }).focus();
     await page.keyboard.press('Enter');
     // BS-05d: a run's payoff card can stand between two questions.
     await pastRunCard(page);

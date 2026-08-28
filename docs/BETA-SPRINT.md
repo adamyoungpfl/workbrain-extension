@@ -197,6 +197,15 @@ The repo's "never rebuild dist during a running gate" rule is the same lesson
 one step earlier; building repeatedly between test runs gets you a dist no
 single command produced.
 
+**AND IT HAPPENED AGAIN, the same way, on BR-01's gate** — `wbVoices` named
+in `assets/panel.html-*.js`, and absent from a clean build. The cause both
+times is the same and is worth stating as a rule: **interleaving `npm run
+build` with scripts that also drive a browser against `dist/` produces a bundle
+no single command produced.** `scripts/copy-shots.mjs` and
+`scripts/store-shots.mjs` are exactly that kind of script. `rm -rf dist
+node_modules/.vite && npm run build` clears it in one step and is cheaper than
+the diagnosis.
+
 **AND SOME TESTS NEED THEIR OWN BUDGET.** Two this sprint, both doing real
 work the default 30s assumes away: `capability`'s receipt (a genuine download
 event) and `one-surface`'s pixel walk (a screenshot per control, twelve of

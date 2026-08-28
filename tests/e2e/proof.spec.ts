@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
+import { S } from '../../src/panel/strings';
 import type { Answers } from '../../src/schema/storage.types';
 import { readFile } from 'node:fs/promises';
 
@@ -185,7 +186,7 @@ test.describe('The proof loop (R1-11)', () => {
     // --- entry point: Home offers the proof loop once there's any real
     // progress to prove (Home.tsx), reached keyboard-only (CLAUDE.md's
     // definition of done) ---
-    await page.getByRole('button', { name: 'Prove it works', exact: true }).focus();
+    await page.getByRole('button', { name: S.proofCta, exact: true }).focus();
     await page.keyboard.press('Enter');
 
     // --- V2.3 VB-93: no pick-a-service screen — the goal gate answered
@@ -339,7 +340,7 @@ test.describe('The proof loop (R1-11)', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
+    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
 
     // Skip baseline and with-context entirely (VB-93: the seed carries a
     // goal, so there is no pick-a-service screen to get past first).
@@ -399,7 +400,7 @@ test.describe('The proof loop (R1-11)', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
+    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
 
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_service');
     // V2.4 VB-105: the picker asks with the same merged, persona-dressed list
@@ -428,7 +429,7 @@ test.describe('The proof loop (R1-11)', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
+    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_baseline');
 
     // Before the copy there is nothing to come back to, so the panel does
@@ -489,7 +490,7 @@ test.describe('The proof loop (R1-11)', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
+    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
     await page.locator('.readonly .copy').click();
     await expect(page.locator('.proofheld')).toBeVisible();
 
@@ -580,7 +581,7 @@ test.describe('The proof loop (R1-11)', () => {
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), finishedFile());
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: 'Prove it works', exact: true }).click();
+    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
     // Straight to the end of the loop — this test is about the door there.
     for (let i = 0; i < 6; i++) {
       const step = await page.locator('.flow').getAttribute('data-step-id');

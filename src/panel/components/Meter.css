@@ -23,11 +23,54 @@
   color: var(--ink-3);
 }
 
+/* BR-01 — the cue alternates in place.
+
+   A GRID WITH ONE CELL, so both halves stack on the same square and the box
+   is as wide as the longer of them. Laying them out any other way makes the
+   meter's top row change width every four seconds, which is the one thing a
+   status line must never do. */
 .meter-step {
   margin-left: auto;
+  display: grid;
   font-size: 12px;
   font-weight: 650;
   color: var(--primary);
+  text-align: right;
+}
+.meter-step > span {
+  grid-area: 1 / 1;
+}
+
+/* Eight seconds a cycle, four on each half, and a fade rather than a slide:
+   the eye should be able to ignore this. `alternate` on one keyframe pair
+   would drift the two out of phase after a repaint, so each half runs its own
+   loop over the same period. */
+@keyframes meter-step-a {
+  0%, 44% { opacity: 1; }
+  50%, 94% { opacity: 0; }
+  100% { opacity: 1; }
+}
+@keyframes meter-step-b {
+  0%, 44% { opacity: 0; }
+  50%, 94% { opacity: 1; }
+  100% { opacity: 0; }
+}
+.meter-step-a { animation: meter-step-a 8s var(--ease, ease-in-out) infinite; }
+.meter-step-b { animation: meter-step-b 8s var(--ease, ease-in-out) infinite; }
+
+/* AND THE STILL VERSION KEEPS BOTH HALVES (docs/GUARDRAILS.md: the reduced
+   equivalent still carries the instruction). A frozen cross-fade would show
+   one of the two forever, which is exactly half the sentence. */
+@media (prefers-reduced-motion: reduce) {
+  .meter-step {
+    display: block;
+    line-height: 1.35;
+  }
+  .meter-step > span {
+    display: block;
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .meter-track {
