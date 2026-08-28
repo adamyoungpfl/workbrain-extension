@@ -28,6 +28,10 @@ its job; Workbrain+ is a door, not a storefront.
 
 ---
 
+**Every id in this table has landed.** What was never in this sprint — the
+`[DRAFT]` copy pass, DEF-1, and R1-13's store package — is scoped in
+`docs/BETA-REMAINDER.md`.
+
 ## Task ids
 
 | Id | Workstream | Spec |
