@@ -7,6 +7,7 @@ import { fileFinished } from '../../src/core/files/slots';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { openPastPeek } from './fixtures/drawer';
 
 /**
  * V1.8 VB-47 — the file-type toggle, and the storage change under it.
@@ -100,7 +101,8 @@ async function openList(context: BrowserContext, id: string): Promise<Page> {
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
-  await page.waitForSelector('.filetree-row');
+  // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
   const handle = page.locator('.filedrawer-handle');
   await handle.focus();
   await page.keyboard.press('End');
@@ -157,7 +159,8 @@ test.describe('VB-47 — one answers key per file', () => {
     // And the interview resumed from them rather than from question one: the
     // drawer's own list shows written sections.
     await page.getByRole('button', { name: S.browseEdit, exact: true }).click();
-    await page.waitForSelector('.filetree-row');
+    // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
     const written = await page.locator('.filetree-row[data-life="lit"]').count();
     expect(written, 'the drawer shows nothing written — the answers were lost').toBeGreaterThan(0);
 
@@ -261,7 +264,8 @@ test.describe('VB-47 — the strip is gone; the trail is the switcher', () => {
 
     await page.getByRole('button', { name: /^Context\.md/ }).click();
     await page.getByRole('button', { name: S.browseEdit, exact: true }).click();
-    await page.waitForSelector('.filetree-row');
+    // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
     await page.locator('.crumbs-seg[data-seg="file"]').click();
     // On the trail: V2.2 unlocked Skills, and V2.9 VB-146 hid Actions — the
     // one file that was still locked here — for the beta. So with Context

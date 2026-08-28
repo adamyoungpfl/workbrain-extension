@@ -26,6 +26,7 @@ import {
   drawerHeightForKey,
   drawerHeightFromDrag,
   drawerOpenPercent,
+  drawerShowsStatus,
   restingDrawerHeight,
   shouldCloseOnRelease,
 } from '../../core/drawer/height';
@@ -550,6 +551,36 @@ export function FileDrawer({
   }, [outline, answers.values, currentQuestionId]);
 
   const reached = outline.filter((node) => states[node.id] !== 'untouched').length;
+
+  /**
+   * BS-07a (§7.1) — the peek's status line, and the one number it carries
+   * that is not already on the screen.
+   *
+   * HOW MANY LINES THE LAST ANSWER PUT IN THE FILE. A fact about the
+   * DOCUMENT, read off the same generated text the preview shows and the
+   * download writes, recomputed every render and stored nowhere. That is the
+   * right side of GUARDRAILS' authorship test: it is not a count of anything
+   * the person DID — no answers-per-session, no opens, no time — it is how
+   * much longer their file is than it was a moment ago, which is the thing
+   * the drawer exists to show.
+   *
+   * The delta is held for as long as it is true. It changes only when the
+   * file changes, so it stands from one answer to the next rather than
+   * flashing and clearing — and it is empty on the first paint, because
+   * nothing was "just" added to a file somebody has only opened.
+   */
+  const fileLines = parts.text.split('\n').length;
+  const lastLinesRef = useRef<number | null>(null);
+  const [linesAdded, setLinesAdded] = useState(0);
+  useEffect(() => {
+    const before = lastLinesRef.current;
+    lastLinesRef.current = fileLines;
+    if (before === null || fileLines <= before) return;
+    setLinesAdded(fileLines - before);
+  }, [fileLines]);
+
+  /** Too short to be a list — see core/drawer/height.ts. */
+  const statusOnly = drawerShowsStatus(height);
 
   /**
    * V1.5 VB-25. Every section's health, for the globe's unified glow — the same
@@ -1095,7 +1126,18 @@ export function FileDrawer({
             away entirely: the file switcher and the way back up are both the
             breadcrumb's now, one band higher and above the scroll box. Nothing
             inside the list scrolls under a control any more. */}
-        {nav.tier === 'work' ? (
+        {/* BS-07a (§7.1) — AT THE PEEK, ONE TRUE SENTENCE INSTEAD OF A SLICED
+            LIST. "A row reading 0 of 6 and 0% under a trail that already
+            names the section" is three ways of saying nothing, and it is what
+            somebody meets on the screen where the interview begins.
+
+            The threshold is geometry, not taste: below two whole rows there
+            is no list to draw, only a row and part of another
+            (core/drawer/height.ts's `drawerShowsStatus`). Drag the drawer up
+            by one step and the tree is back. */}
+        {statusOnly ? (
+          <p className="filedrawer-status">{S.peekStatus(reached, outline.length, linesAdded)}</p>
+        ) : nav.tier === 'work' ? (
           <WorkShelf
             items={toggle}
             note={{ [nav.file]: S.sectionsOf(reached, outline.length) }}
@@ -1170,20 +1212,28 @@ export function FileDrawer({
  * not a value being collected, and a toggle button is what a screen reader
  * announces most plainly.
  *
- * ── V1.4 VB-22: icons, and the name that survives losing the word ─────────
+ * ── V1.4 VB-22 TOOK THE WORD AWAY; BS-07a (§7.1) PUTS IT BACK ─────────────
  *
- * The bar these sit in now wears the stage's own colour, and on Brain's deep
- * field a word inside a light chip was the loudest thing on the drawer. So the
- * word goes and a glyph takes its place — but **an icon is not a name**
- * (docs/GUARDRAILS.md's keyboard and screen-reader floor), so the same string
- * that used to be printed is now the button's `aria-label`. Nothing is lost in
- * the accessibility tree; the two specs that find these buttons by their names
- * (tests/e2e/drawer-modes*.spec.ts) never had to change.
+ * VB-22's reasoning was about paint: the bar wears the stage's own colour, and
+ * a word inside a light chip was the loudest thing on the drawer. That was
+ * true, and it was solved the wrong way round — the fix for a chip that shouts
+ * is to stop drawing the chip, not to delete the word.
  *
- * The pressed one is still never distinguished by colour alone: it carries a
- * filled chip, a solid underline bar, and a heavier glyph stroke, any of which
- * reads on its own — plus `aria-pressed`, which is the one that matters when
- * nothing is being read at all.
+ * The beta review's §7.1: "Two unlabelled glyphs on a dark field, choosing
+ * between two views most people have never seen. Make them labelled pills."
+ * Adam's D3 ruling on the same collision is the general rule — a control named
+ * by a glyph is named for people who already know what it does, and neither of
+ * these is a control anybody arrives knowing.
+ *
+ * THE `aria-label` WENT WITH THE CHANGE, deliberately. A printed word plus an
+ * `aria-label` saying the same thing is two names for one control that agree
+ * today; the printed text IS the accessible name now, so they cannot drift.
+ * The two specs that find these buttons by name never had to change either
+ * way, which is the point.
+ *
+ * The pressed one is still never distinguished by colour alone: the accent
+ * bar, the heavier glyph stroke, and `aria-pressed` — which is the one that
+ * matters when nothing is being looked at at all.
  */
 function ModeButton({
   mode,
@@ -1202,10 +1252,16 @@ function ModeButton({
       className="filedrawer-mode"
       data-mode={mode}
       aria-pressed={active}
-      aria-label={label}
       onClick={() => onPick(mode)}
     >
       {mode === 'brain' ? <BrainGlyph /> : <ListGlyph />}
+      {/* BS-07a (§7.1) — THE WORD IS BACK, AND IT IS PRINTED.
+          "Two unlabelled glyphs on a dark field, choosing between two views
+          most people have never seen. Make them labelled pills." The
+          `aria-label` is gone with it: the button's name is now its own text,
+          which is the version a sighted person and a screen-reader user can
+          both check against each other. */}
+      <span className="filedrawer-mode-word">{label}</span>
     </button>
   );
 }

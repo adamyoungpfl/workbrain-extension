@@ -97,7 +97,11 @@ async function openMidInterview(context: BrowserContext, sw: Worker, id: string)
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
-  await page.waitForSelector('.filetree-row');
+  // BS-07a (§7.1): at the resting peek the drawer shows one status line
+  // rather than a sliced list, so "the drawer has drawn its content" is now
+  // either of those. This spec is about the drawer's GEOMETRY, so it must not
+  // grow the drawer to get a row — that would be moving the thing it measures.
+  await page.waitForSelector('.filetree-row, .filedrawer-status');
   return page;
 }
 

@@ -6,6 +6,7 @@ import { contextModules, contextOutline } from '../../src/core/flow/flow';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { openPastPeek } from './fixtures/drawer';
 
 /**
  * V1.8 VB-45 + VB-46 — the rows carry the brain's orbs, and the count and
@@ -93,7 +94,8 @@ async function openList(context: BrowserContext, id: string): Promise<Page> {
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
-  await page.waitForSelector('.filetree-row');
+  // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
   const handle = page.locator('.filedrawer-handle');
   await handle.focus();
   await page.keyboard.press('End');

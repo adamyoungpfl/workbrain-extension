@@ -13,6 +13,7 @@ import { splitSectionLabel } from '../../src/core/flow/sectionLabel';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { openPastPeek } from './fixtures/drawer';
 
 /**
  * V1.9 VB-52 + VB-51 — the breadcrumb as navigation, and the bottom view bar.
@@ -97,7 +98,8 @@ async function openDrawer(context: BrowserContext, sw: Worker, id: string): Prom
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
   await page.waitForSelector('.crumbs');
-  await page.waitForSelector('.filetree-row');
+  // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
   return page;
 }
 

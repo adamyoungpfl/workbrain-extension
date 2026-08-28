@@ -177,9 +177,46 @@ From the change spec's §11, minus the ones now answered:
 
 | # | Question | Blocks |
 |---|---|---|
-| O1 | Does a skipped answer read differently from an unanswered one on the leaf card, or share the empty state? | BS-07c |
-| O2 | Who writes the ~nine purpose lines, and do they ship with the card or behind it? | BS-07d |
+| ~~O1~~ | ~~Does a skipped answer read differently from an unanswered one on the leaf card?~~ | **RESOLVED — below** |
+| ~~O2~~ | ~~Who writes the purpose lines, and do they ship with the card or behind it?~~ | **RESOLVED — below** |
 | O6b | D1 bans printed digits. The progressbar's spoken count (`aria-valuetext`, "Question 3 of 38") is not printed — assumption is it becomes **run-scoped** rather than global, so a screen-reader user gets what the beat row gives everyone else. Correct if the spoken total should go entirely. | BS-05a |
+
+**THE PEEK IS THE DRAWER'S TEST FIXTURE** (BS-07a, learned the expensive way).
+§7.1's status line is one bullet and it cost four gate cycles. Fifteen specs
+opened the drawer and immediately waited for `.filetree-row` — never their
+subject, they were relying on the resting peek happening to show a list. So
+**anything that changes what the peek shows is a suite-wide sweep**, and the
+sweep belongs in the estimate the way the interstitial tax does. The shape of
+the fix, for next time: one shared `openPastPeek` fixture threaded through
+every opener, plus the handful of specs whose subject genuinely IS the resting
+height, which keep the peek explicitly.
+
+**O1 — RESOLVED (Adam, 2026-08-28): a skip keeps the quieter state.**
+§7.3's matrix gave "Answer, skipped" the same primary-blue action as "Answer,
+empty", which collides head-on with what O3 settled: a skip writes `null`, and
+`core/recommend/engine.ts` deliberately never re-raises one, because that would
+be "the product arguing with a decision somebody already made." A card that
+says *you skipped this* under a primary **Answer this** is that argument, one
+surface further along. So the skipped state says it was skipped, in words, and
+its action is the SECONDARY "Change this answer" — the same control a filled
+answer gets. The hollow ring and the dashed block stay: the block is genuinely
+empty, and drawing it as full would be the opposite lie.
+
+**O2 — RESOLVED (Adam, 2026-08-28): I draft them, [DRAFT]-marked.** Same
+treatment as every other new string this sprint. Two of §7.4's own examples
+survive verbatim.
+
+**…and the count was wrong, in both directions.** §7.4 estimated "~nine".
+Counted: the outline has fourteen leaves plus `sec2`, which carries three
+questions of its own — **fifteen**. But the card's subject today
+(`pickedChild` in BrainGlobe.tsx) is only ever a child of `sec2`, which is
+**five**. §7.3's matrix settles which number is right: its "List, healthy /
+incomplete / empty" rows can only be reached by nodes that own a repeatable
+block — `sec3`, `sec4`, `sec7` and `sec2-1` — and three of those four are
+childless sections you fly INTO rather than sub-nodes you pick. So the card
+must show for both, and fifteen is the number. Recorded here because the spec
+does not say it in as many words, and the matrix is what forces it.
+
 
 **O3 — RESOLVED (Adam, 2026-08-27): the doors open on "nothing left to ask".**
 Every question in the interview is skippable, and a skip writes `null` — a

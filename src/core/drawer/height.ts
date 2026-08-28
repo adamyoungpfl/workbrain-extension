@@ -260,6 +260,35 @@ export const DRAWER_REST_HEIGHT = DRAWER_MIN_HEIGHT + 10;
  * `FLOW_NAV_HEIGHT` and is subtracted separately in `drawerBounds`, so this
  * number stays exactly the measurement it always was.
  */
+/**
+ * BS-07a (§7.1) — HOW MANY LIST ROWS THE DRAWER HAS ROOM FOR, at a height.
+ *
+ * "Replace the peek's zeroed row with a status line — '4 of 10 sections · 1
+ * line just added' says more than a row reading 0 of 6 and 0% under a trail
+ * that already names the section."
+ *
+ * At the resting peek the body holds about one and a half rows, so a person
+ * opening the interview meets the first one or two sections of a file they
+ * have not written yet: "0 of 4 · 0%", under a trail that has already told
+ * them which section they are in. That is three ways of saying nothing.
+ *
+ * The threshold is a fact about the geometry rather than a number somebody
+ * liked: below two whole rows there is no LIST — there is a row and a sliced
+ * one — so that is where a list stops being the right thing to draw. Derived
+ * here rather than measured in the component because the component would be
+ * measuring a box whose height it just set.
+ */
+export function drawerListRows(height: number): number {
+  const body = height - DRAWER_CHROME_HEIGHT - DRAWER_HANDLE_OVERHANG;
+  return Math.max(0, Math.floor(body / DRAWER_ROW_HEIGHT));
+}
+
+/** Whether the drawer is too short to be a list, and should say one true
+ * sentence instead. */
+export function drawerShowsStatus(height: number): boolean {
+  return drawerListRows(height) < 2;
+}
+
 export const DRAWER_QUESTION_RESERVE = 260;
 
 /**

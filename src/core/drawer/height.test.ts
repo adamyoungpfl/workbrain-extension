@@ -11,6 +11,8 @@ import {
   DRAWER_QUESTION_RESERVE,
   DRAWER_REST_HEIGHT,
   DRAWER_ROW_HEIGHT,
+  drawerListRows,
+  drawerShowsStatus,
   DRAWER_STEP,
   DRAWER_VIEW_BAR_HEIGHT,
   clampDrawerHeight,
@@ -308,6 +310,39 @@ describe('VB-99 — closed is reached only by moves that mean it', () => {
     expect(drawerHeightForKey('End', DRAWER_CLOSED_HEIGHT, B, 300, true)!.height).toBe(B.max);
     for (const key of ['ArrowDown', 'ArrowLeft', 'PageDown'] as const) {
       expect(drawerHeightForKey(key, DRAWER_CLOSED_HEIGHT, B, 300, true), key).toBeNull();
+    }
+  });
+});
+
+describe('BS-07a (§7.1) — how many rows the drawer has room for', () => {
+  it('says the resting peek is not a list', () => {
+    // "A row reading 0 of 6 and 0% under a trail that already names the
+    // section." At the peek there is one row and part of another, which is
+    // why §7.1 replaces it with a sentence.
+    expect(drawerListRows(DRAWER_REST_HEIGHT)).toBe(1);
+    expect(drawerShowsStatus(DRAWER_REST_HEIGHT)).toBe(true);
+  });
+
+  it('turns back into a list the moment two whole rows fit', () => {
+    const twoRows = DRAWER_CHROME_HEIGHT + DRAWER_HANDLE_OVERHANG + DRAWER_ROW_HEIGHT * 2;
+    expect(drawerShowsStatus(twoRows)).toBe(false);
+    expect(drawerShowsStatus(twoRows - 1)).toBe(true);
+    // The threshold is the geometry's, not a number somebody liked: it is
+    // exactly where the second row stops being sliced.
+    expect(drawerListRows(twoRows)).toBe(2);
+    expect(drawerListRows(twoRows - 1)).toBe(1);
+  });
+
+  it('never returns a negative count for a drawer smaller than its own chrome', () => {
+    expect(drawerListRows(0)).toBe(0);
+    expect(drawerListRows(DRAWER_CHROME_HEIGHT)).toBe(0);
+    expect(drawerShowsStatus(0)).toBe(true);
+  });
+
+  it('grows one row at a time, in step with the height', () => {
+    const base = DRAWER_CHROME_HEIGHT + DRAWER_HANDLE_OVERHANG;
+    for (let rows = 0; rows < 6; rows++) {
+      expect(drawerListRows(base + DRAWER_ROW_HEIGHT * rows)).toBe(rows);
     }
   });
 });

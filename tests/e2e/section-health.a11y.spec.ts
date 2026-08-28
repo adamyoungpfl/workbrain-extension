@@ -7,6 +7,7 @@ import { contextModules, contextOutline } from '../../src/core/flow/flow';
 import { halfLifeFor } from '../../src/core/freshness/halfLives';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { openPastPeek } from './fixtures/drawer';
 
 /**
  * V1.3 VB-19's accessibility floor, scanned on the real panel with ALL FIVE
@@ -84,6 +85,8 @@ async function openList(context: BrowserContext, sw: Worker, id: string): Promis
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
+  // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
   await page.waitForSelector('.filetree-row[data-health]');
   const handle = page.locator('.filedrawer-handle');
   await handle.focus();

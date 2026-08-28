@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { openPastPeek } from './fixtures/drawer';
 
 /**
  * VB-07's accessibility floor, scanned on the real panel — the component
@@ -81,7 +82,8 @@ async function openMidInterview(context: BrowserContext, sw: Worker, id: string)
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
-  await page.waitForSelector('.filetree-row');
+  // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
   return page;
 }
 

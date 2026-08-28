@@ -1281,6 +1281,20 @@ export const S = {
    * read straight off the outline — see core/flow/multiples.ts, which is why
    * none of them are written here.
    */
+  /* BS-07a (§7.1) — the peek's status line. [DRAFT]
+
+     "'4 of 10 sections · 1 line just added' says more than a row reading 0 of
+     6 and 0% under a trail that already names the section."
+
+     Two clauses, both facts, and the second one only when it is true. The
+     line count is a fact about the DOCUMENT — how many lines their answers
+     have written into the file so far — computed at render and never stored.
+     It is not a count of anything the person did, which is the line
+     GUARDRAILS' authorship test draws. */
+  peekStatus: (done: number, total: number, added: number) =>
+    added > 0
+      ? `${S.sectionsOf(done, total)} · ${added} ${added === 1 ? 'line' : 'lines'} just added`
+      : S.sectionsOf(done, total),
   multiplesTitle: 'Roles, people and projects',
   multiplesSub: 'Open one to change it. Or add a new one.',
   multiplesCount: (n: number) => (n === 1 ? 'One on your list' : `${wordFor(n)} on your list`),

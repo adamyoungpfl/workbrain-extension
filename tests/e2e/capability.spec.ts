@@ -183,6 +183,20 @@ test.describe('BS-04 — proof two, the capability proof', () => {
   });
 
   test('the checklist is their steps, the count is the sentence, and the receipt saves', async () => {
+    /**
+     * The heaviest walk in this file — into the run, a paste, an advance,
+     * three ticks, and a real file leaving the browser — and the only one that
+     * waits on a `download` event.
+     *
+     * It timed out twice in full-suite runs and passed three times in a row on
+     * its own, which is the signature of a budget rather than a break
+     * (docs/BETA-SPRINT.md's flake protocol). The trace says exactly where it
+     * stops: on the download, with the click already sent. Chromium under five
+     * headed windows does not always emit it inside the default thirty
+     * seconds. So the budget is the fix, stated on the one test that needs it
+     * rather than raised for the whole suite.
+     */
+    test.setTimeout(90_000);
     const { context, sw, id } = await launch();
     await seed(sw, TWO_SKILLS);
     const page = await openHome(context, id);

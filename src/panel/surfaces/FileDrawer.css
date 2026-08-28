@@ -159,28 +159,35 @@
 /* ── V1.2 VB-14b: Brain / List ───────────────────────────────────────────── */
 
 /* The pair, centred in the bar. V1.4 put them at the left of the head band,
-   clear of the grip; there is no grip down here to keep clear of, and two icons
-   pushed into a corner of an otherwise empty bar read as leftovers rather than
-   as the bar's purpose. */
+   clear of the grip; there is no grip down here to keep clear of, and two
+   controls pushed into a corner of an otherwise empty bar read as leftovers
+   rather than as the bar's purpose.
+
+   BS-07a widens the gap from 2px to 8px: two labelled pills 2px apart read as
+   one segmented control with a seam, and these are two independent choices. */
 .filedrawer-modes {
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 8px;
 }
 
-/* V1.4 VB-22: two glyphs, not two words. The band wears the stage's own
-   colour now, and on Brain's deep field a word in a light chip was the
-   loudest thing on the drawer. The name did not go anywhere — it is the
-   button's aria-label (FileDrawer.tsx) — only the print did. */
+/* BS-07a (§7.1) — LABELLED PILLS. The glyph keeps its place and gains its
+   word: "two unlabelled glyphs on a dark field, choosing between two views
+   most people have never seen."
+
+   VB-22 removed the word because the CHIP around it shouted on the dark
+   stage. The chip is what went instead — these are a glyph and a word on the
+   bar's own ground, with the accent bar underneath carrying the choice, so
+   nothing here is louder than the picture above it. */
 .filedrawer-mode {
-  /* A control, so the 44px floor, icon-only ones included
-     (docs/GUARDRAILS.md). */
+  /* A control, so the 44px floor (docs/GUARDRAILS.md). */
   min-width: var(--target-min);
   height: var(--target-min);
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0;
+  gap: 6px;
+  padding: 0 10px;
   margin: 0;
   appearance: none;
   border: 0;
@@ -196,8 +203,19 @@
 
 .filedrawer-glyph {
   /* The stroke is set here rather than on the SVG so the pressed state can
-     thicken it — one of the three signals below. */
+     thicken it — one of the signals below. */
   stroke-width: 1.75;
+  flex: none;
+}
+
+/* The word. Small and quiet: it is a label on a view switcher, not a heading,
+   and the two of them together must still read as one small control rather
+   than as the bar's own content. */
+.filedrawer-mode-word {
+  font-size: var(--type-fine);
+  font-weight: 650;
+  letter-spacing: 0.01em;
+  white-space: nowrap;
 }
 
 /* ── V1.9 VB-50: WHERE HOVER WENT ────────────────────────────────────────
@@ -254,6 +272,11 @@
 }
 .filedrawer-mode[aria-pressed='true'] .filedrawer-glyph {
   stroke-width: 2.4;
+}
+/* The word thickens with the glyph, so the chosen pill reads as chosen in
+   greyscale — the bar, the stroke and the weight, none of them a hue. */
+.filedrawer-mode[aria-pressed='true'] .filedrawer-mode-word {
+  font-weight: 700;
 }
 
 /* Everything visible about the handle is the grip. V1.2 drew it straddling
@@ -985,4 +1008,22 @@
   font-size: 11.5px;
   font-variant-numeric: tabular-nums;
   color: var(--dock-ink-quiet, var(--ink-3));
+}
+
+/* BS-07a (§7.1) — the peek's status line, where a sliced list used to be.
+
+   Centred in the body it replaces, at the body's own size, because it IS the
+   body at this height rather than a note attached to something else. Quiet
+   ink: it is orientation, and the question above the drawer is what somebody
+   is actually doing. */
+.filedrawer-status {
+  margin: 0;
+  padding: 0 4px;
+  display: flex;
+  align-items: center;
+  min-height: var(--drawer-row-h, 44px);
+  font-size: var(--type-fine);
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  color: var(--dock-ink-quiet, var(--ink-2));
 }

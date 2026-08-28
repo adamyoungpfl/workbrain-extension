@@ -9,6 +9,7 @@ import { generateContextFile, contextFileDate } from '../../src/core/files/gener
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { openPastPeek } from './fixtures/drawer';
 
 /**
  * V1.1 VB-07 + VB-07b accept criteria, driven in a real browser.
@@ -47,7 +48,7 @@ async function openPanel(context: BrowserContext, id: string): Promise<Page> {
   return page;
 }
 
-async function enterInterview(page: Page): Promise<void> {
+async function enterInterview(page: Page, options: { peek?: boolean } = {}): Promise<void> {
   await page.getByRole('button', { name: /^Context\.md/ }).focus();
   await page.keyboard.press('Enter');
   // V1.7 VB-37: the file row opens the FILE, and the file view is where the
@@ -55,6 +56,11 @@ async function enterInterview(page: Page): Promise<void> {
   await page.getByRole('button', { name: 'Edit the file', exact: true }).focus();
   await page.keyboard.press('Enter');
   await page.waitForSelector('.flow');
+  // BS-07a (§7.1): the resting peek is one status line now, not a sliced
+  // list. This whole spec is about what a ROW says, so it puts the drawer
+  // where there are rows — except where the RESTING HEIGHT is the subject.
+  if (options.peek) await page.waitForSelector('.filedrawer-status');
+  else await openPastPeek(page);
 }
 
 async function seedAnswers(sw: Worker, answers: Answers): Promise<void> {
@@ -398,7 +404,7 @@ test.describe('VB-07 — the drawer is a dock, never a modal', () => {
     await page.close();
 
     page = await openPanel(context, id);
-    await enterInterview(page);
+    await enterInterview(page, { peek: true });
     await expect(page.locator('.filedrawer-handle')).toHaveAttribute('aria-valuenow', String(DRAWER_REST_HEIGHT));
 
     // Nothing drawer-shaped was persisted anywhere.

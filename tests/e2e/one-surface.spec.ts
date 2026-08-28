@@ -11,6 +11,7 @@ import type { Rgb } from '../../src/core/color/contrast';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { openPastPeek } from './fixtures/drawer';
 
 /**
  * V1.9 VB-50 accept criteria, driven in a real browser.
@@ -124,7 +125,8 @@ async function openQuestion(context: BrowserContext, sw: Worker, id: string): Pr
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: S.next, exact: true }).click();
   }
-  await page.waitForSelector('.filetree-row');
+  // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
   // The question types itself in; let it finish so nothing is mid-print when a
   // screenshot is taken.
   await page.waitForTimeout(900);
@@ -857,7 +859,12 @@ test('nothing in the drawer is clipped, and the edge controls keep their 44px (V
       expect(handle.height, `${where}: the handle's target`).toBeGreaterThanOrEqual(44);
 
       if (mode === 'list') {
-        const toggle = await page.locator('.filetree-orbtoggle').first().boundingBox();
+        // BS-07a (§7.1): at the drawer's floor the list is a status line, so
+        // there is no row and no disclosure to measure. `boundingBox()` WAITS
+        // for an element that will never arrive — the `if` below was always
+        // written to tolerate absence, and this is the check that lets it.
+        const toggleEl = page.locator('.filetree-orbtoggle').first();
+        const toggle = (await toggleEl.count()) > 0 ? await toggleEl.boundingBox() : null;
         if (toggle) {
           expect(toggle.width, `${where}: the disclosure's target`).toBeGreaterThanOrEqual(44);
           expect(toggle.x + toggle.width, `${where}: the disclosure is off the panel`).toBeLessThanOrEqual(

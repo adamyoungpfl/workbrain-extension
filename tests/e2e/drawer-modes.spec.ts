@@ -8,6 +8,7 @@ import { BRAIN_MIN_HEIGHT, BRAIN_OPEN_HEIGHT, MORPH_LAND_MS, MORPH_MS } from '..
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { openPastPeek } from './fixtures/drawer';
 
 /**
  * V1.2 VB-14b accept criteria, driven in a real browser.
@@ -113,7 +114,7 @@ async function openMidInterview(
   context: BrowserContext,
   sw: Worker,
   id: string,
-  options: { reducedMotion?: 'reduce' | 'no-preference'; frames?: boolean } = {},
+  options: { reducedMotion?: 'reduce' | 'no-preference'; frames?: boolean; peek?: boolean } = {},
 ): Promise<Page> {
   await sw.evaluate(async (value) => {
     await chrome.storage.local.set({ 'wb:answers': value });
@@ -144,7 +145,11 @@ async function openMidInterview(
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
-  await page.waitForSelector('.filetree-row');
+  // BS-07a (§7.1): the peek is a status line now, not a sliced list, so a
+  // spec about ROWS has to put the drawer where there are rows. `peek: true`
+  // is for the one test whose subject IS the resting height.
+  if (options.peek) await page.waitForSelector('.filedrawer-status');
+  else await openPastPeek(page);
   return page;
 }
 
@@ -277,7 +282,7 @@ test.describe('VB-14b — two modes in one drawer', () => {
 
   test('choosing Brain while the drawer is short expands it to fit the globe', async () => {
     const { context, sw, id } = await launchExtension();
-    const page = await openMidInterview(context, sw, id);
+    const page = await openMidInterview(context, sw, id, { peek: true });
 
     expect(await announcedHeight(page)).toBe(DRAWER_REST_HEIGHT);
     expect(DRAWER_REST_HEIGHT).toBeLessThan(BRAIN_OPEN_HEIGHT);

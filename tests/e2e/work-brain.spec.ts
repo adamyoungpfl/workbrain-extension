@@ -7,6 +7,7 @@ import { contrastRatio, parseCssColor } from '../../src/core/color/contrast';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { openPastPeek } from './fixtures/drawer';
 
 /**
  * V1.8 VB-48 — the work brain above the context brain, driven in a real
@@ -115,7 +116,8 @@ async function openMidInterview(
   if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
     await page.getByRole('button', { name: 'Next', exact: true }).click();
   }
-  await page.waitForSelector('.filetree-row');
+  // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
   return page;
 }
 
@@ -621,7 +623,8 @@ test.describe('VB-48 — the complete state, one level up', () => {
     if ((await page.locator('.flow').getAttribute('data-position')) === 'module-intro') {
       await page.getByRole('button', { name: 'Next', exact: true }).click();
     }
-    await page.waitForSelector('.filetree-row');
+    // BS-07a (§7.1): the peek is a status line now, not a sliced list.
+  await openPastPeek(page);
     await showBrain(page);
 
     await expect(stage(page)).toHaveAttribute('data-unified', 'true');

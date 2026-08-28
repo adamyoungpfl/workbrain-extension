@@ -252,7 +252,20 @@ test('the head band is the same dark field in both modes (VB-22, VB-30)', async 
   await context.close();
 });
 
-test('the mode toggles lose their words and keep their names (VB-22)', async () => {
+/**
+ * BS-07a (§7.1) OVERTURNS VB-22's HALF OF THIS, and the test is rewritten
+ * rather than deleted because the other half still holds.
+ *
+ * VB-22 removed the printed word because the chip around it shouted on the
+ * dark stage. §7.1: "Two unlabelled glyphs on a dark field, choosing between
+ * two views most people have never seen. Make them labelled pills." The chip
+ * is what went instead; the word is back and the `aria-label` is gone, so the
+ * printed text IS the name — one string, not two that agree today.
+ *
+ * Everything VB-50 established about the PRESSED state is untouched and is
+ * still asserted below: no fill, a bar, a heavier stroke, `aria-pressed`.
+ */
+test('the mode toggles print their words, and the word is the name (BS-07a, was VB-22)', async () => {
   const { context, sw, id } = await launchExtension();
   const page = await openQuestion(context, sw, id);
   await setHeight(page, BOUNDS.max);
@@ -263,8 +276,10 @@ test('the mode toggles lose their words and keep their names (VB-22)', async () 
   ] as const) {
     const button = page.getByRole('button', { name: label, exact: true });
     await expect(button, `${label} is not findable by name`).toHaveCount(1);
-    // A glyph, not a word: nothing printed, and the name comes from the label.
-    expect((await button.innerText()).trim(), `${label} still prints a word`).toBe('');
+    // A glyph AND a word, and the word is what names the control — no
+    // `aria-label` saying the same thing a second time.
+    expect((await button.innerText()).trim(), `${label} prints nothing`).toBe(label);
+    await expect(button).not.toHaveAttribute('aria-label', /./);
     await expect(button.locator('svg')).toHaveCount(1);
     const box = (await button.boundingBox())!;
     expect(box.width, `${label} target`).toBeGreaterThanOrEqual(44);
