@@ -8,7 +8,7 @@ full `npm run check`, one commit per slice.
 | Id | Item | Blocked on | Shape |
 |---|---|---|---|
 | **BR-01** | The `[DRAFT]` copy pass | Adam's read | Editing, not building |
-| **BR-02** | DEF-1 — AI Assist is broken in the Skills interview | nothing | One seam, three call sites |
+| ~~**BR-02**~~ | ~~DEF-1 — AI Assist is broken in the Skills interview~~ | — | **DONE.** One seam, three call sites |
 | **BR-03** | R1-13 — store submission package | non-code assets | Mostly not code |
 
 ---
@@ -82,7 +82,14 @@ that has to stay true or the marker stops being a worklist. Then
 
 ---
 
-## BR-02 · DEF-1 — AI Assist is broken in the Skills interview
+## BR-02 · DEF-1 — AI Assist is broken in the Skills interview — **DONE**
+
+*Shipped as specced. The one thing the spec did not anticipate: the Skills row
+unlocks only for a finished Context (`core/files/slots.ts`), so the e2e needed a
+full `finishedContext()` fold — three specs had each grown their own copy, and
+this is now `tests/e2e/fixtures/answers.ts`. The three existing copies were left
+alone: rewriting passing specs to make a point about duplication is how a defect
+fix turns into a refactor.*
 
 ### The defect, exactly
 

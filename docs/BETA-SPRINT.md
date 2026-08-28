@@ -730,7 +730,7 @@ it in the same record and all currently unused — a complete brief sitting idle
 
 ### Two defects the audit turned up
 
-**DEF-1 · AI Assist is broken in the Skills interview.** Skills mounts with
+**DEF-1 · AI Assist is broken in the Skills interview. FIXED — BR-02.** Skills mounts with
 `answersKey={ANSWERS_KEY.skills}` (`App.tsx:295`), so `Flow` loads only
 `wb:answers:skills`. `interviewMePrompt` reads `goal_want` and `goal_service`
 from that store, where they do not exist — so **every AI Assist in Skills says

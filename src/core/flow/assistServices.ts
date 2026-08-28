@@ -41,7 +41,9 @@ export const ASSIST_SERVICE_URLS: Record<string, string> = {
  * label, no link, one sentence either way.
  */
 export function assistServiceUrlFor(ctx: FlowContext): string | undefined {
-  const key = ctx.answers['goal_service'];
+  // BR-02 (DEF-1) — see FlowContext.contextAnswers. The service is a fact
+  // about the person, not about the file being answered.
+  const key = (ctx.contextAnswers ?? ctx.answers)['goal_service'];
   if (typeof key !== 'string') return undefined;
   return ASSIST_SERVICE_URLS[key];
 }

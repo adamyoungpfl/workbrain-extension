@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { FlowContext } from '../../schema/flow.types';
 import { ASSIST_SERVICE_URLS, assistServiceUrlFor } from './assistServices';
+import { goalServiceLabelFor } from './reflectFrames';
 import { ALL_PROOF_SERVICES } from './proofAdditions';
 
 function ctxFor(service: string | undefined): FlowContext {
@@ -38,5 +39,38 @@ describe('the per-service URL map (VB-119)', () => {
     expect(assistServiceUrlFor(ctxFor(undefined))).toBeUndefined();
     // A skipped gate stores null; null is not a key.
     expect(assistServiceUrlFor({ answers: { goal_service: null }, repeatables: {} })).toBeUndefined();
+  });
+});
+
+/**
+ * BR-02 (DEF-1) — the service is a fact about the PERSON, so it is read from
+ * the Context store wherever the flow happens to be. Before this, every AI
+ * Assist inside Skills said "your AI" and showed no door.
+ */
+describe('the service resolvers across files', () => {
+  const inSkills: FlowContext = {
+    answers: { skill_name: 'Board pack prep' },
+    repeatables: {},
+    contextAnswers: { goal_service: 'claude' },
+  };
+
+  it('resolves the URL from the Context store when the flow is not Context', () => {
+    expect(assistServiceUrlFor(inSkills)).toBe(ASSIST_SERVICE_URLS['claude']);
+  });
+
+  it('resolves the LABEL from the Context store too — one answer, both resolvers', () => {
+    expect(goalServiceLabelFor(inSkills)).toBeTruthy();
+    expect(goalServiceLabelFor(inSkills)).toBe(goalServiceLabelFor(ctxFor('claude')));
+  });
+
+  it('is unchanged on the Context flow, where there is no second store', () => {
+    expect(assistServiceUrlFor(ctxFor('claude'))).toBe(ASSIST_SERVICE_URLS['claude']);
+    expect(assistServiceUrlFor(ctxFor(undefined))).toBeUndefined();
+  });
+
+  it('still gives no door when the Context store never answered the gate', () => {
+    const fresh: FlowContext = { answers: {}, repeatables: {}, contextAnswers: {} };
+    expect(assistServiceUrlFor(fresh)).toBeUndefined();
+    expect(goalServiceLabelFor(fresh)).toBeUndefined();
   });
 });

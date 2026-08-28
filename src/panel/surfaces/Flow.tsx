@@ -709,6 +709,38 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
   }, []);
 
   /**
+   * BR-02 (DEF-1) — THE SECOND READ, and only when there is a second store.
+   *
+   * `Flow` loads one answers store, whichever `answersKey` names. Three
+   * builders are genuinely cross-file — the AI Assist's goal line and the two
+   * service resolvers — and all three read the goal gate's answers, which live
+   * in CONTEXT. In Skills they were reading a store those keys are not in, so
+   * every assist there said "your AI" and never showed the service door.
+   *
+   * Skipped entirely on the Context flow, where `answersKey` IS this key:
+   * `contextAnswers` stays undefined and every builder falls back to
+   * `ctx.answers`, which is the same object. Nothing about Context changes.
+   *
+   * READ-ONLY, and never written back. This flow persists to `answersKey` and
+   * nothing else — a Skills screen must not be able to edit the Context file.
+   *
+   * A failed or empty read is not an error: somebody who opened Skills first
+   * genuinely has no goal answers, and the no-answer branch each builder
+   * already has is the right output (docs/GUARDRAILS.md: degrade, silently).
+   */
+  const [contextAnswers, setContextAnswers] = useState<Answers['values'] | undefined>(undefined);
+  useEffect(() => {
+    if (answersKey === ANSWERS_KEY.context) return undefined;
+    let cancelled = false;
+    void getLocal(ANSWERS_KEY.context).then((stored) => {
+      if (!cancelled && stored) setContextAnswers(stored.values);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [answersKey]);
+
+  /**
    * V2.3 VB-90 — the orientation ladder's canvas/brain rungs flip the real
    * drawer while they talk, through the same requested-mode seam the toggle
    * uses. A request, not a lock: the person's own toggle still works — this
@@ -1145,6 +1177,7 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
       key={positionKey(position)}
       cue={positionKey(position)}
       modules={modules}
+      contextAnswers={contextAnswers}
       pos={position}
       answers={answers}
       total={total}
@@ -1258,6 +1291,11 @@ function initialSelection(
 
 interface StepViewProps {
   modules: Module[];
+  /** BR-02 (DEF-1) — the Context store's values, when this flow is NOT the
+   * Context flow. Threaded down rather than re-read here: one read per mount,
+   * in the component that owns the store, is the same discipline `answers`
+   * itself follows. */
+  contextAnswers?: Record<string, AnswerValue> | undefined;
   /** V2.0 — the position key, threaded down to every `NavCluster` this screen
    * can render so the melt plays on each new question rather than on each
    * remount. See components/NavCluster.tsx. */
@@ -1297,6 +1335,7 @@ interface StepViewProps {
  */
 function StepView({
   modules,
+  contextAnswers,
   cue,
   pos,
   answers,
@@ -1590,9 +1629,14 @@ function StepView({
     (pos.kind === 'step' || pos.kind === 'reflect') && pos.location.in === 'repeatable'
       ? answers.repeatables[pos.location.blockId]?.[pos.location.recordIndex]
       : undefined;
-  const ctx: FlowContext = activeRecord
-    ? { answers: answers.values, repeatables: answers.repeatables, record: activeRecord }
-    : { answers: answers.values, repeatables: answers.repeatables };
+  const ctx: FlowContext = {
+    answers: answers.values,
+    repeatables: answers.repeatables,
+    ...(activeRecord ? { record: activeRecord } : {}),
+    // BR-02 — absent on the Context flow by construction (see the effect
+    // above), which is what keeps every builder's Context output identical.
+    ...(contextAnswers ? { contextAnswers } : {}),
+  };
   /**
    * BS-03b — the bytes the with-file run carries. The same generator the
    * download and the drawer's preview use, so the three cannot disagree

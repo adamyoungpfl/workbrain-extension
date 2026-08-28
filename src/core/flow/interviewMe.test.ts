@@ -160,3 +160,48 @@ describe('reading level (npm run audit cannot see this file)', () => {
     }
   });
 });
+
+/**
+ * BR-02 (DEF-1) — THE CROSS-FILE READ.
+ *
+ * `Flow` loads one answers store. Inside the Skills interview that store is
+ * `wb:answers:skills`, and the goal gate's answers are not in it — so this
+ * prompt lost its goal line on eleven questions, silently, by falling to the
+ * branch that is correct when there genuinely is no goal.
+ */
+describe('interviewMePrompt across files', () => {
+  const skillsStore: FlowContext = {
+    answers: { skill_name: 'Board pack prep' },
+    repeatables: {},
+    contextAnswers: { goal_want: 'Draft my Monday update.' },
+  };
+
+  it('finds the goal in the CONTEXT store when the flow is not Context', () => {
+    expect(interviewMePrompt('Q?', skillsStore)).toContain('"Draft my Monday update."');
+  });
+
+  it('is byte-identical on the Context flow, where there is no second store', () => {
+    // The whole safety argument for the change: `contextAnswers` is absent by
+    // construction on Context (src/panel/surfaces/Flow.tsx), so the fallback
+    // reads the same object it always read.
+    const context: FlowContext = { answers: { goal_want: 'Draft my Monday update.' }, repeatables: {} };
+    expect(interviewMePrompt('Q?', context)).toBe(interviewMePrompt('Q?', skillsStore));
+  });
+
+  it('never lets the local store shadow the person\'s real goal', () => {
+    // A skills store that happens to hold the key does not win: the goal gate
+    // is answered in Context and that is the one true answer.
+    const shadowed: FlowContext = {
+      answers: { goal_want: 'Something a skills store should not be able to say.' },
+      repeatables: {},
+      contextAnswers: { goal_want: 'Draft my Monday update.' },
+    };
+    expect(interviewMePrompt('Q?', shadowed)).toContain('"Draft my Monday update."');
+    expect(interviewMePrompt('Q?', shadowed)).not.toContain('should not be able to say');
+  });
+
+  it('says nothing about a goal when the Context store has none', () => {
+    const fresh: FlowContext = { answers: {}, repeatables: {}, contextAnswers: {} };
+    expect(interviewMePrompt('Q?', fresh)).not.toContain('For context');
+  });
+});

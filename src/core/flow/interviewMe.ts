@@ -54,7 +54,11 @@ export const ANSWER_FENCE = '```';
  * our constant's name), first person.
  */
 export function interviewMePrompt(question: string, ctx: FlowContext): string {
-  const want = ctx.answers['goal_want'];
+  // BR-02 (DEF-1): the goal gate is answered in the CONTEXT file, and this
+  // prompt renders inside Skills too. `contextAnswers` is absent on the
+  // Context flow, where `answers` is already that store — so this expression
+  // is byte-identical there and only changes what Skills sees.
+  const want = (ctx.contextAnswers ?? ctx.answers)['goal_want'];
   const goalLine =
     typeof want === 'string' && want.trim() !== ''
       ? `\nFor context, the thing I most want you to do better for me: "${want.trim()}"\n`

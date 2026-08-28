@@ -38,6 +38,31 @@ export interface FlowContext {
    * read anyway.
    */
   record?: Record<string, AnswerValue>;
+  /**
+   * BR-02 (DEF-1) — THE CONTEXT STORE'S VALUES, for the few builders that are
+   * genuinely cross-file. Absent when the flow IS Context, because `answers`
+   * is already that store.
+   *
+   * `Flow` loads exactly ONE answers store — whichever `answersKey` names —
+   * so inside the Skills interview `answers` is `wb:answers:skills` and the
+   * goal gate's `goal_want` / `goal_service` are simply not in it. Three
+   * builders read those two keys, all fell to their no-answer branch, and all
+   * did it silently: every AI Assist in Skills said "your AI" instead of
+   * naming the service and never showed the service door. A degradation that
+   * looked exactly like a design, which is why it shipped.
+   *
+   * WHY A SECOND NAMED CHANNEL RATHER THAN A MERGE
+   * Merging the two stores into `answers` would put foreign keys in front of
+   * every `keyOf` lookup in the runner, so a skills question that happened to
+   * share a key with a context one would resolve against the wrong store. A
+   * channel with its own name cannot collide with anything.
+   *
+   * WHO MAY READ IT: only a builder whose subject is genuinely the person's
+   * whole setup rather than the file being answered — today the assist's goal
+   * line and the two service resolvers. A question's own `skipIf` must NOT:
+   * the goal gate asks about the Context file and is answered inside it.
+   */
+  contextAnswers?: Record<string, AnswerValue>;
 }
 
 /** Most questions are static text; a few are scope-aware (e.g. "in your work life" vs "in your personal life"). */

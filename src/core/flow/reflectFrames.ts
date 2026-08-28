@@ -51,7 +51,8 @@ export function reflectLeadFor(step: Pick<Step, 'id' | 'interpret'>): string {
  * back to "your AI chat".
  */
 export function goalServiceLabelFor(ctx: FlowContext): string | undefined {
-  const key = ctx.answers['goal_service'];
+  // BR-02 (DEF-1) — see FlowContext.contextAnswers.
+  const key = (ctx.contextAnswers ?? ctx.answers)['goal_service'];
   if (typeof key !== 'string' || key === '' || key === 'other') return undefined;
   for (const node of GOAL_GATE_NODES) {
     if (node.kind !== 'question' || node.id !== 'goal_service') continue;
