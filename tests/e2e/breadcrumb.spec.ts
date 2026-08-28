@@ -168,13 +168,14 @@ test.describe('VB-52 — the breadcrumb is where you are', () => {
       band.x + band.width - 60,
     );
 
-    // ON THE QUESTION SCREEN: no number at all. VB-02's bar is unchanged and
-    // carries its count only in `aria-valuetext` (components/FlowProgress.tsx).
+    // ON THE QUESTION SCREEN: no number at all, and O6b means that now
+    // includes the spoken one. The trail carries the count; the question
+    // screen carries none, in either account.
     const progress = page.locator('.flowprogress');
     await expect(progress).toBeVisible();
     await expect(progress).not.toContainText(/\d+\s*\/\s*\d+/);
     await expect(progress).not.toContainText(/\d+ of \d+/);
-    expect(await progress.getAttribute('aria-valuetext'), 'the bar lost its spoken count').toMatch(/\d/);
+    expect(await progress.getAttribute('aria-valuetext'), 'the bar grew a spoken count').toBeNull();
 
     await context.close();
   });

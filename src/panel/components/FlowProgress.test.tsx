@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { FlowProgress, STATUS_MARK_SPIN } from './FlowProgress';
-import { S } from '../strings';
 import { mount } from './testUtils';
 
 /**
@@ -40,17 +39,33 @@ describe('FlowProgress', () => {
     expect(container.textContent).not.toMatch(/\d/);
   });
 
-  it('keeps the count for assistive tech, as a real progressbar', () => {
-    const { container } = mount(<FlowProgress title="Orientation" current={3} total={38} />);
-    const bar = container.querySelector('[role="progressbar"]')!;
-    expect(bar).not.toBeNull();
-    expect(bar.getAttribute('aria-valuenow')).toBe('3');
-    expect(bar.getAttribute('aria-valuemin')).toBe('0');
-    expect(bar.getAttribute('aria-valuemax')).toBe('38');
-    expect(bar.getAttribute('aria-valuetext')).toBe('Question 3 of 38');
-    // The exact approved copy, read from strings.ts rather than retyped, so a
-    // reworded string fails as a copy change and not as a stale test.
-    expect(bar.getAttribute('aria-valuetext')).toBe(S.questionOfSr(3, 38));
+  /**
+   * O6b (Adam, 2026-08-28) — the count is not spoken either.
+   *
+   * This test used to assert the opposite, on the reasoning that removing a
+   * number visually is a design choice and losing it for a screen reader is a
+   * bug. D1's point is that the number is not worth having: it is something to
+   * bargain with. Giving it to one audience and not the other hands the
+   * bargaining chip to the person who cannot see the marks.
+   *
+   * The ROLE stays. A progressbar with no `aria-valuenow` is ARIA's own
+   * indeterminate state — announced by name, as progress, with no figure —
+   * and the role is what keeps the module title announced exactly once.
+   */
+  it('is a progressbar with no value at all, in either shape', () => {
+    for (const props of [
+      { title: 'Orientation', current: 3, total: 38 },
+      { title: 'Orientation', current: 3, total: 38, run: { done: 2, of: 5, label: 'Second run of three' } },
+    ]) {
+      const { container } = mount(<FlowProgress {...props} />);
+      const bar = container.querySelector('[role="progressbar"]')!;
+      expect(bar).not.toBeNull();
+      for (const attr of ['aria-valuenow', 'aria-valuemin', 'aria-valuemax', 'aria-valuetext']) {
+        expect(bar.getAttribute(attr), attr).toBeNull();
+      }
+      // And nothing else on the strip smuggles one back in.
+      expect(container.innerHTML).not.toMatch(/aria-value/);
+    }
   });
 
   it('names the bar with the module title, and announces it only once', () => {
@@ -81,17 +96,22 @@ describe('FlowProgress', () => {
   it('clamps rather than overflowing when the index runs past the total', () => {
     const { container } = mount(<FlowProgress title="The proof" current={9} total={5} />);
     expect((container.querySelector('.flowprogress-fill') as HTMLElement).style.width).toBe('100%');
-    // The count itself is still reported honestly — only the drawing clamps.
-    expect(container.querySelector('[role="progressbar"]')?.getAttribute('aria-valuenow')).toBe('9');
+    // O6b removed the value the second half of this used to check. The drawing
+    // is the only account of position now, and clamping it is the whole claim.
   });
 
-  it('still has an accessible name if a module ever arrives without a title', () => {
-    // A progressbar with no name is unusable; degrade, never break
-    // (docs/GUARDRAILS.md). Not reachable with the shipped data — every
-    // module has a title — but it must not be a silent a11y hole if it were.
+  it('degrades to unnamed progress if a module ever arrives without a title', () => {
+    // The fallback name used to be the spoken count, and O6b took that away.
+    // Not reachable with the shipped data — every module has a title — and
+    // an unnamed progressbar is the honest degradation, not a number nobody
+    // asked for smuggled back in through the one door left open.
     const { container } = mount(<FlowProgress title="" current={2} total={38} />);
     const bar = container.querySelector('[role="progressbar"]')!;
-    expect(bar.getAttribute('aria-label')).toBe('Question 2 of 38');
+    expect(bar.getAttribute('aria-label')).toBe('');
+    // The mark's own path data is full of digits; what matters is that no
+    // number is announced or printed.
+    expect(bar.textContent).not.toMatch(/\d/);
+    expect(bar.outerHTML).not.toMatch(/aria-value/);
   });
 
   it('does not divide by zero on an empty flow', () => {
@@ -181,28 +201,23 @@ describe('FlowProgress — a run of five', () => {
    * not take another line (see the component's own note). The marks carry it
    * for the eye by width and ring, never colour alone.
    */
-  it('says where they are in the run, in words, to assistive tech', () => {
+  /**
+   * O6b — the run's own count is not spoken either.
+   *
+   * BS-05a replaced the global total with a run-scoped one ("four left in
+   * this run") on the reasoning that five is a number people do not bargain
+   * with. Adam's call is that the panel simply does not verbalize a count:
+   * the marks are the account, for everybody.
+   */
+  it('speaks no count at all, run or global', () => {
     const { container } = mount(<FlowProgress title="About Me" current={3} total={38} run={run} />);
     const bar = container.querySelector('[role="progressbar"]')!;
-    expect(bar.getAttribute('aria-valuetext')).toBe('Four left in this run · second run of two');
-    expect(bar.getAttribute('aria-valuemax')).toBe('5');
-    expect(bar.getAttribute('aria-valuenow')).toBe('1');
-  });
-
-  it('never speaks a global total when it has a run', () => {
-    const { container } = mount(<FlowProgress title="About Me" current={3} total={38} run={run} />);
-    const bar = container.querySelector('[role="progressbar"]')!;
-    expect(bar.getAttribute('aria-valuetext')).not.toContain('38');
-    expect(bar.getAttribute('aria-valuemax')).not.toBe('38');
-  });
-
-  it('drops the run-of-runs clause when the module is a single run', () => {
-    const { container } = mount(
-      <FlowProgress title="Vocabulary" current={3} total={38} run={{ done: 0, of: 2, label: '' }} />,
-    );
-    expect(container.querySelector('[role="progressbar"]')!.getAttribute('aria-valuetext')).toBe(
-      'Two left in this run',
-    );
+    expect(bar.getAttribute('aria-valuetext')).toBeNull();
+    expect(bar.getAttribute('aria-valuenow')).toBeNull();
+    expect(bar.getAttribute('aria-valuemax')).toBeNull();
+    // The module title, and nothing numeric anywhere in the announced tree.
+    expect(bar.getAttribute('aria-label')).toBe('About Me');
+    expect(container.innerHTML).not.toMatch(/38|aria-value/);
   });
 
   it('keeps the bar for a flow with no runs — the proof loop', () => {

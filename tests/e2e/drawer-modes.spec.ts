@@ -524,8 +524,11 @@ test.describe('VB-14b — two modes in one drawer', () => {
       const drawer = (await page.locator('.filedrawer').boundingBox())!;
       expect(bar.y, mode).toBeGreaterThanOrEqual(0);
       expect(bar.y + bar.height, mode).toBeLessThanOrEqual(drawer.y + 1);
-      // The bar is a real progressbar with a real value in both, not a strip.
-      await expect(progress, mode).toHaveAttribute('aria-valuetext', /^Question \d+ of \d+$/);
+      // A real progressbar in both, not a strip — and O6b means an
+      // indeterminate one, named by its module and carrying no figure.
+      await expect(progress, mode).toHaveAttribute('role', 'progressbar');
+      expect(await progress.getAttribute('aria-valuetext'), mode).toBeNull();
+      expect(await progress.getAttribute('aria-valuenow'), mode).toBeNull();
     }
 
     await context.close();

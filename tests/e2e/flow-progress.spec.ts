@@ -2,8 +2,6 @@ import { test, expect, chromium } from '@playwright/test';
 import type { BrowserContext, Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { contextModules } from '../../src/core/flow/flow';
-import { questionCount } from '../../src/core/flow/runner';
 import { pastRunCard } from './fixtures/runCard';
 
 /**
@@ -21,7 +19,6 @@ import { pastRunCard } from './fixtures/runCard';
  * convention (see deep-dive.spec.ts and reflect.spec.ts).
  */
 const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
-const TOTAL = questionCount(contextModules);
 
 async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
   const context = await chromium.launchPersistentContext('', {
@@ -100,23 +97,21 @@ test.describe('VB-02 — module title + progress bar', () => {
     const { context, page } = await launchPanel();
 
     /**
-     * BS-05a (§5) — the spoken value is run-scoped now.
+     * O6b (Adam, 2026-08-28) — NO COUNT IS SPOKEN, and this test is now about
+     * the marks rather than the value.
      *
      * V1.1 VB-02 kept the global count for screen-reader users because the
-     * bar drew a fraction of it. The bar is five marks of a RUN, so the
-     * spoken value says the same thing the marks do — and §5's rule is that
-     * no global total appears anywhere, including out loud. A screen-reader
-     * user gets exactly what everybody else gets, which is the point.
+     * bar drew a fraction of it; BS-05a made that count run-scoped. Adam's
+     * call takes it away entirely: a count of questions left is a thing to
+     * bargain with, and handing it to one audience only is not a kindness.
+     * The bar stays a real `progressbar` because that is what keeps the module
+     * title announced once — with no value, which is ARIA's indeterminate.
      */
     const bar = page.locator('.flowprogress[role="progressbar"]');
     await expect(bar).toHaveCount(1);
-    await expect(bar).toHaveAttribute('aria-valuemin', '0');
-    // Orientation is four askable questions — its slides are not questions —
-    // so the run is four long and no total of thirty-eight is spoken.
-    await expect(bar).toHaveAttribute('aria-valuemax', '4');
-    await expect(bar).toHaveAttribute('aria-valuenow', '2');
-    await expect(bar).toHaveAttribute('aria-valuetext', 'Two left in this run');
-    await expect(bar).not.toHaveAttribute('aria-valuetext', new RegExp(String(TOTAL)));
+    for (const attr of ['aria-valuemin', 'aria-valuemax', 'aria-valuenow', 'aria-valuetext']) {
+      expect(await bar.getAttribute(attr), attr).toBeNull();
+    }
     // Named, or a screen reader announces an anonymous bar.
     await expect(bar).toHaveAttribute('aria-label', 'Orientation');
 
@@ -132,8 +127,7 @@ test.describe('VB-02 — module title + progress bar', () => {
     await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 
-    await expect(bar).toHaveAttribute('aria-valuenow', '3');
-    await expect(bar).toHaveAttribute('aria-valuetext', 'One left in this run');
+    // The marks are the only account of position, so they are what moves.
     await expect(page.locator('.flowprogress-beat[data-state="done"]')).toHaveCount(3);
 
     // Still the same module, so the title is unchanged — the bar is what
@@ -190,9 +184,7 @@ test.describe('VB-02 — module title + progress bar', () => {
 
     // Position is derived from wb:answers, never stored — so is the bar.
     // Reopening lands on the same question with the same reading.
-    const valueTextBefore = await page
-      .locator('.flowprogress[role="progressbar"]')
-      .getAttribute('aria-valuetext');
+    const beatsBefore = await page.locator('.flowprogress-beat[data-state="done"]').count();
     const titleBefore = (await page.locator('.flowprogress-title').textContent()) ?? '';
     const panelUrl = page.url();
     await page.close();
@@ -212,10 +204,7 @@ test.describe('VB-02 — module title + progress bar', () => {
     await reopened.waitForSelector('.flow');
 
     await expect(reopened.locator('.flowprogress-title')).toHaveText(titleBefore);
-    await expect(reopened.locator('.flowprogress[role="progressbar"]')).toHaveAttribute(
-      'aria-valuetext',
-      valueTextBefore!,
-    );
+    await expect(reopened.locator('.flowprogress-beat[data-state="done"]')).toHaveCount(beatsBefore);
 
     await context.close();
   });

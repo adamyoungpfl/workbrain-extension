@@ -104,12 +104,20 @@ export interface FlowProgressProps {
  *   people bargain with, not one that helps them answer the question in front
  *   of them. The bar says "some way in" without inviting arithmetic.
  *
- * - **The number is still there for assistive tech.** Removing a number
- *   visually is a design choice; losing it for a screen reader is a bug. So
- *   this is a real `role="progressbar"` carrying `aria-valuenow` /
- *   `aria-valuemin` / `aria-valuemax` and an `aria-valuetext` of
- *   "Question {n} of {total}" — the approved copy in docs/V1.1-COPY-DRAFT.md,
- *   which is explicitly never shown on screen.
+ * - **And no number is SPOKEN either (O6b, Adam, 2026-08-28).** This carried
+ *   `aria-valuenow` / `aria-valuemax` / `aria-valuetext` for two years on the
+ *   argument that removing a number visually is a design choice but losing it
+ *   for a screen reader is a bug. That argument holds when the number is worth
+ *   having. D1's whole point is that it is not: a running count of questions
+ *   left is a thing people bargain with, and handing it to one audience and
+ *   not the other is not accessibility, it is giving the bargaining chip to
+ *   the person who cannot see the marks.
+ *
+ *   So the values go and the ROLE STAYS. A `progressbar` with no `valuenow`
+ *   is ARIA's own indeterminate state: it is announced by name, as progress,
+ *   with no figure attached — "My World, progress indicator" — which is
+ *   exactly what the bar says to everyone else. The role is what keeps the
+ *   module title announced once, as the bar's name, rather than twice.
  *
  * - **Not the `Meter` component.** Meter is Home's macro four-gate progress
  *   (Name · Repeat · Act · Share) — four segments, a headline percentage, and
@@ -146,17 +154,14 @@ export function FlowProgress({ title, current, total, onHome, run }: FlowProgres
    *
    * V1.1 VB-02 was right about the number it was aimed at: "question 12 of
    * 38" invites bargaining because 38 is far away. Five is not. So the bar's
-   * fraction of a global total is replaced by marks a person can count, and
-   * the spoken value goes with it — `aria-valuetext` now says where they are
-   * IN THIS RUN, which is what the marks say to everyone else. No global
-   * total is printed or spoken (Adam's D1, and §5's own rule).
+   * fraction of a global total is replaced by marks a person can count.
+   *
+   * BS-05a's first build kept a run-scoped `aria-valuetext` — "two left in
+   * this run". O6b took that too: no count, printed or spoken, anywhere.
    *
    * `run` is optional so a flow with no run machinery behind it — the proof
    * loop — still renders the bar it always had. Degrade, never break.
    */
-  const valueText = run
-    ? [S.runLeft(run.of - run.done), run.label].filter(Boolean).join(' · ')
-    : S.questionOfSr(current, total);
 
   // V2.4 VB-112 — the mark is a door home (Adam: "people instinctively
   // assume whatever is there will take you home"). The ICON only, never the
@@ -177,16 +182,16 @@ export function FlowProgress({ title, current, total, onHome, run }: FlowProgres
     <div
       className="flowprogress"
       role="progressbar"
-      // Every module in the shipped data has a title, so the `||` is never
-      // reached in practice. It exists because a progressbar with no
-      // accessible name is unusable, and "unusable" is not an acceptable
-      // failure mode for a missing string (docs/GUARDRAILS.md: degrade, never
-      // break).
-      aria-label={title || valueText}
-      aria-valuemin={0}
-      aria-valuemax={run ? run.of : total}
-      aria-valuenow={run ? run.done : current}
-      aria-valuetext={valueText}
+      // Every module in the shipped data has a title. There is no fallback
+      // here any more: the fallback used to be the spoken count, and O6b took
+      // that away — an untitled bar announces as unnamed progress, which is
+      // the honest degradation, not a number nobody wanted.
+      aria-label={title}
+      /* NO `aria-valuenow`, and that omission is the feature (O6b): a
+         progressbar without one is indeterminate by ARIA's own definition, so
+         it is announced as progress with no figure. `aria-valuemin` and
+         `aria-valuemax` go with it — a range with nothing in it is furniture,
+         and a screen reader will happily read "0 to 5" off them. */
     >
       {barContent}
     </div>

@@ -179,7 +179,7 @@ From the change spec's §11, minus the ones now answered:
 |---|---|---|
 | ~~O1~~ | ~~Does a skipped answer read differently from an unanswered one on the leaf card?~~ | **RESOLVED — below** |
 | ~~O2~~ | ~~Who writes the purpose lines, and do they ship with the card or behind it?~~ | **RESOLVED — below** |
-| O6b | D1 bans printed digits. The progressbar's spoken count (`aria-valuetext`, "Question 3 of 38") is not printed — assumption is it becomes **run-scoped** rather than global, so a screen-reader user gets what the beat row gives everyone else. Correct if the spoken total should go entirely. | BS-05a |
+| ~~O6b~~ | ~~D1 bans printed digits. Does the progressbar's spoken count go run-scoped, or go entirely?~~ | **RESOLVED (Adam, 2026-08-28): entirely.** *"Spoken should go entirely, let's not verbalize the count."* `aria-valuenow` / `aria-valuemin` / `aria-valuemax` / `aria-valuetext` are all gone, and `S.questionOfSr`, `S.runLeft` and `S.runBeats` with them. The ROLE stays: a `progressbar` with no `valuenow` is ARIA's own indeterminate state, announced by name with no figure — and the role is what keeps the module title announced exactly once instead of twice. The trade, stated: a screen-reader user now perceives no position at all where a sighted one sees five marks. That is the call — the count was a bargaining chip, and giving it only to the audience that cannot see the marks was the worse asymmetry. |
 
 **A CONTAMINATED `dist/` LOOKS EXACTLY LIKE A BROKEN GUARDRAIL.** BS-07a's
 remainder gate reported that the dev-only voice audition had leaked into the

@@ -101,7 +101,6 @@ export const S = {
    * screen is a design decision; taking it away from a screen reader would be
    * a bug, so it lives on here.
    */
-  questionOfSr: (n: number, total: number) => `Question ${n} of ${total}`,
   back: 'Back',
   next: 'Next',
   /** [DRAFT] V2.4 VB-112 — the one name all three doors home share: the
@@ -854,18 +853,10 @@ export const S = {
      strict — NO DIGIT AT ALL in the panel's own voice — so every number here
      is spelled out. The marks themselves carry the pace; these words are
      what a screen reader gets and what the eye reads under them. [DRAFT] */
-  runLeft: (n: number) =>
-    n === 0
-      ? 'Last one in this run'
-      : n === 1
-        ? 'One left in this run'
-        : `${capitalise(wordFor(n))} left in this run`,
   /** Which run of how many, WITHIN this section — the only count that stays
    * true when a repeatable adds questions. Spelled, never printed as digits. */
   runOfRuns: (index: number, of: number) =>
     of === 1 ? '' : `${ordinalWord(index + 1)} run of ${wordFor(of)}`,
-  /** The beat row's accessible name — the marks are decoration over it. */
-  runBeats: 'How far through this run you are',
 
   // ---------------------------------------------------------------- the proof
   // The prompts and per-service tips are ported — see docs/CONTENT-SOURCES.md,
