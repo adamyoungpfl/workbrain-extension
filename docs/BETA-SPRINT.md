@@ -735,19 +735,22 @@ from that store, where they do not exist — so **every AI Assist in Skills says
 `getLocal(ANSWERS_KEY.context)` read. This also caps what VB-141 can do in
 Skills until that read exists.
 
-**DEF-2 · The grader audits a file it has never seen.** `evaluationPrompt`'s
-rubric asks the AI to judge "anything the with-Context answer invented that the
-file doesn't support" and "what this Context.md is missing" — with the file
-absent from the prompt. §3.1's inlining fixes this for free at the grade step.
+**DEF-2 · The grader audits a file it has never seen. RESOLVED by deletion.**
+`evaluationPrompt`'s rubric asked the AI to judge "anything the with-Context
+answer invented that the file doesn't support" and "what this Context.md is
+missing" — with the file absent from the prompt. Adam's P1 deleted the
+self-grading round trip entirely, so the function now has no production caller
+at all (only `proofAdapter.test.ts`, which pins the port). The person judges;
+there is no grader left to mislead. The port stays as ported.
 
 ### One decision this forced — RESOLVED (Adam, 2026-08-27)
 
 **The file carries the reference examples; prompts about something else do
 not.** Not an exclusion — a scope rule, and it needs no new guardrail.
 
-`reference_example_primary` and `reference_example_second`
-(`source.ts:1145`, `:1166`) are the only two questions in the interview whose
-instruction is **paste**, not **describe**. Every other text answer is authored
+`reference_example_primary` is the only question in the interview whose
+instruction is **paste**, not **describe** — one question asking for three
+examples since BS-11 retired `reference_example_second`. Every other text answer is authored
 on the spot, about the person, in response to our question. These two are a
 real document lifted out of their actual work — and real documents contain
 other people. `docs/GUARDRAILS.md` already draws exactly this line for the one
@@ -755,8 +758,9 @@ other place the product takes a paste: *"the raw chat export never touches
 storage… their history contains other people — pasted emails, client details,
 colleagues."* Same category of input, already treated as its own thing.
 
-They are also the only unbounded fields in the file, and so the single biggest
-variance between a 7.6 KB file and a 29 KB one.
+It is also the only unbounded field in the file, and so the single biggest
+variance between a 7.6 KB file and a 29 KB one — more so now that it holds
+three examples rather than one.
 
 **How it builds:** the two keys carry a `scope: 'file'` marker (or the
 assembler holds the pair by id — decide at BS-03b, it is one line either way).
