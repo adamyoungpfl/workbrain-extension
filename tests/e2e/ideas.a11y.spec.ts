@@ -74,9 +74,10 @@ test('axe finds no violations on a question offering an example (VB-08)', async 
 
   expect((await scan()).violations).toEqual([]);
 
-  // And again with an example in the field and in the live region.
+  // And again with an example offered as ghost text and announced in the
+  // live region (BS-05g — the prompt is a starter, not content).
   await page.getByRole('button', { name: S.giveExample, exact: true }).click();
-  await expect(page.locator('#flow-stop_explaining')).not.toHaveValue('');
+  await expect(page.locator('#flow-stop_explaining')).not.toHaveAttribute('placeholder', '');
   expect((await scan()).violations).toEqual([]);
 
   await context.close();

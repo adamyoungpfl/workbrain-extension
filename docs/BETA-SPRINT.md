@@ -61,6 +61,7 @@ its job; Workbrain+ is a door, not a storefront.
 | **BS-09** | Splash — the held seconds buy the decision | §9 |
 | **BS-10** | Guardrail and open-decision amendments | this file |
 | **BS-11** | VB-142 — the reference prompt asks for three examples | V2.9 survivor |
+| **BS-05g** | "Give me an example" → "Prompt me", and the example becomes ghost text | Adam, mid-sprint |
 
 ---
 
@@ -311,6 +312,28 @@ constants lead, the CSS follows.** `DRAWER_ROW_HEIGHT`, `FLOW_NAV_TARGET` and
 the dock's welded set are what the geometry specs mirror, so a raise there is
 what the specs re-measure against — the reverse order leaves the gate red for
 no useful reason.
+
+### BS-05g — the example stops being an answer
+
+Adam, 2026-08-27, mid-sprint: *"change the 'Give me an example' buttons to
+'Prompt Me' and change the ghost display text so they can click in and
+immediately start writing their own. That is a more useful starter than
+examples which will never be good enough to use and might be useful to edit
+only."*
+
+Built. The example lands as the field's **placeholder** rather than in
+`draftText`, so the box stays empty, the cursor goes straight in, and the
+first keystroke clears it. Pressing again cycles as it always did, and the
+live region still announces what is on offer — a placeholder alone is not
+reliably read.
+
+**The name generator deliberately still WRITES.** "Make one up for me" hands
+back a name that is usable as it stands, which is the whole of that feature;
+an example answer is not, which is the whole of this one. The two buttons sit
+side by side and now behave differently on purpose.
+
+One thing changed from Adam's note: the label is **"Prompt me"**, sentence
+case, to match every other button in the product.
 
 ### BS-02 — where the door actually landed, and the header that would not take it
 

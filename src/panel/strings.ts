@@ -114,7 +114,14 @@ export const S = {
    * Present tense, active, four words, and a verb someone stuck at a blank box
    * would actually say out loud.
    */
-  giveExample: 'Give me an example',
+  /* BS-05g (Adam, 2026-08-27) — "Give me an example" became "Prompt me",
+     and the example stopped landing IN the box. Adam: examples "will never
+     be good enough to use and might be useful to edit only" — so what a
+     person got was a paragraph to delete before they could write their own.
+     As GHOST text it is a starter instead: click in and type, and it is
+     gone. Sentence case to match every other button in the product; Adam
+     wrote it title-case and this is the one thing changed from his note. */
+  giveExample: 'Prompt me',
   /**
    * [DRAFT] V2.4 VB-109 — the name generator on the two name questions
    * (core/flow/nameGenerator.ts). Same register as `giveExample` above: a

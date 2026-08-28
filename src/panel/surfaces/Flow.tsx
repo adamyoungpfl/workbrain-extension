@@ -1180,6 +1180,9 @@ function StepView({
   /** BS-03d — what the person has ticked on the judged landing. Ephemeral
    * like every other draft here; the durable fact is the tally written at
    * commit (`commitJudge`). */
+  /** BS-05g — the example currently offered as ghost text, if any. Per
+   * position like every other draft here, so a new question opens clean. */
+  const [promptIdea, setPromptIdea] = useState<string | null>(null);
   const [ticked, setTicked] = useState<ProofCheckId[]>([]);
   /** BS-03c — has the prompt been copied on THIS step. Per-position like
    * every other draft here, so returning to a step later opens it fresh
@@ -1916,12 +1919,25 @@ function StepView({
    * cue class goes straight to the DOM: a React state round-trip cannot
    * express "this again, from the start".
    */
+  /**
+   * BS-05g (Adam, 2026-08-27) — THE EXAMPLE IS A PROMPT, NOT AN ANSWER.
+   *
+   * It used to land in the field as real text, which meant somebody who
+   * pressed it had to delete a paragraph before writing their own. Adam:
+   * examples "will never be good enough to use and might be useful to edit
+   * only". So it lands as GHOST text instead — the field stays empty, the
+   * cursor goes straight in, and the first keystroke clears it.
+   *
+   * The name generator below deliberately still WRITES. A made-up name is
+   * usable as it stands, which is the whole of that feature; an example
+   * answer is not, which is the whole of this one.
+   */
   function dropIdea(button: HTMLButtonElement) {
     const idea = ideaAt(ideas, ideaPresses);
     if (idea === null) return;
-    setDraftText(idea);
-    // VB-106: an example landing in the field ends the highlight for the
-    // same reason typing does — see answerText.
+    setPromptIdea(idea);
+    // VB-106: the cue has done its job once a prompt is showing, for the
+    // same reason typing ends it — see answerText.
     setInputHighlight(false);
     setSpokenIdea(idea);
     setIdeaPresses((n) => n + 1);
@@ -2156,7 +2172,10 @@ function StepView({
                   // VB-138: the reopened box says what it is waiting for.
                   assistPhase === 'returned' && draftText === ''
                     ? ASSIST_LINE_RETURN
-                    : resolveOptionalPhrase(step.ph, ctx)
+                    : // BS-05g: a pressed "Prompt me" shows its example HERE,
+                      // as ghost text, so the box is still empty and the first
+                      // keystroke is the person's own.
+                      (promptIdea ?? resolveOptionalPhrase(step.ph, ctx))
                 }
                 error={pendingError ?? undefined}
                 // V2.4 VB-106/107, re-aimed by V2.5 VB-119 — the one

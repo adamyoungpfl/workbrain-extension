@@ -188,7 +188,7 @@ test.describe('Give me an example (VB-08)', () => {
     await context.close();
   });
 
-  test('drops real text into the real field, cycles in order, and wraps', async () => {
+  test('offers each example as ghost text, cycles in order, and wraps', async () => {
     const { context, page } = await launchPanel();
     await goToIdeaQuestion(page);
 
@@ -196,20 +196,30 @@ test.describe('Give me an example (VB-08)', () => {
     const button = page.locator('.flow-idea');
     await expect(field).toHaveValue('');
 
-    // Each press produces the next written example, in the order the data
-    // lists them. These strings come from the ported source, so this fails if
-    // the button ever starts inventing or reordering.
+    /**
+     * BS-05g (Adam, 2026-08-27) — THE EXAMPLE IS A PROMPT, NOT AN ANSWER.
+     * It used to land in the field as real text, so pressing it meant
+     * deleting a paragraph before writing your own. Adam: examples "will
+     * never be good enough to use and might be useful to edit only." As
+     * ghost text it is a starter — the box stays empty and the first
+     * keystroke is theirs.
+     *
+     * Each press still produces the next example in the order the data lists
+     * them; these strings come from the ported source, so this fails if the
+     * button ever starts inventing or reordering.
+     */
     for (const idea of IDEAS) {
       await button.click();
-      await expect(field).toHaveValue(idea);
+      await expect(field).toHaveAttribute('placeholder', idea);
+      await expect(field).toHaveValue('');
     }
     // And one more press comes back round to the first.
     await button.click();
-    await expect(field).toHaveValue(IDEAS[0]!);
+    await expect(field).toHaveAttribute('placeholder', IDEAS[0]!);
 
-    // It is an ordinary value, not a placeholder and not locked: the text is
-    // in `value`, the field is editable, and what it announces to assistive
-    // tech is the example that just landed.
+    // Ghost, not content: nothing to delete, the field is editable, and what
+    // it announces to assistive tech is the example now on offer — because a
+    // placeholder alone is not reliably read.
     const state = await page.evaluate(() => {
       const el = document.querySelector<HTMLTextAreaElement>('#flow-stop_explaining')!;
       const live = document.querySelector('.flow-idea-live')!;
@@ -222,32 +232,39 @@ test.describe('Give me an example (VB-08)', () => {
         politeness: live.getAttribute('role'),
       };
     });
-    expect(state.value).toBe(IDEAS[0]);
-    expect(state.placeholder).not.toBe(IDEAS[0]);
+    expect(state.value).toBe('');
+    expect(state.placeholder).toBe(IDEAS[0]);
     expect(state.readOnly).toBe(false);
     expect(state.disabled).toBe(false);
     expect(state.announced).toBe(IDEAS[0]);
     expect(state.politeness).toBe('status');
 
+    // THE POINT OF THE CHANGE: click in and start writing, with nothing to
+    // clear first.
+    await field.click();
+    await page.keyboard.type('My own words.');
+    await expect(field).toHaveValue('My own words.');
+
     await context.close();
   });
 
-  test('the dropped-in text edits and commits exactly like typed text', async () => {
+  test('what they write over the prompt commits exactly like typed text', async () => {
     const { context, page, sw } = await launchPanel();
     await goToIdeaQuestion(page);
 
     const field = page.locator('#flow-stop_explaining');
     await page.locator('.flow-idea').click();
-    await expect(field).toHaveValue(IDEAS[0]!);
+    // BS-05g: the prompt is ghost text, so there is nothing in the box to
+    // edit — they write their own over the top of it.
+    await expect(field).toHaveAttribute('placeholder', IDEAS[0]!);
+    await expect(field).toHaveValue('');
 
-    // Editing it is just typing — the caret goes to the end and carries on.
-    // (V2.5 VB-120: the suffix carries the whole line past the 80-char
-    // threshold, so the commit below still lands on the reflect screen —
-    // a shorter edit now takes bypass (b) instead. See reflect.spec.ts.)
-    const edited = `${IDEAS[0]!} And the budget process, end to end, every quarter.`;
+    // (V2.5 VB-120: long enough to carry past the 80-char threshold, so the
+    // commit below still lands on the reflect screen — a shorter answer now
+    // takes bypass (b) instead. See reflect.spec.ts.)
+    const edited = 'Everything about how our intake works, and the budget process, end to end, every quarter.';
     await field.click();
-    await page.keyboard.press('End');
-    await page.keyboard.type(' And the budget process, end to end, every quarter.');
+    await page.keyboard.type(edited);
     await expect(field).toHaveValue(edited);
 
     // Committing it goes through the same path a typed answer does. This
@@ -513,7 +530,9 @@ test.describe('Example press cue (VB-08 animation)', () => {
 
       // And a burst, the way someone flicking through ten examples actually
       // presses it: still one animation per half, still a whole one, and every
-      // press still put its own example in the field.
+      // press still put its own example on offer. BS-05g: on offer as GHOST
+      // text, so the field's `value` stays empty and the placeholder is what
+      // moves.
       const seen: string[] = [];
       for (let i = 0; i < 8; i++) {
         button.click();
@@ -521,7 +540,7 @@ test.describe('Example press cue (VB-08 animation)', () => {
         // its own schedule, and this is asserting what ends up in the field,
         // not how quickly React gets it there.
         await wait(8);
-        seen.push(field.value);
+        seen.push(field.placeholder);
       }
       const burstCounts = halves().map((el) => el.getAnimations().length);
       const lastOfBurst = await played(halves().map((el) => el.getAnimations()[0]!));
@@ -632,9 +651,10 @@ test.describe('Example press cue (VB-08 animation)', () => {
     expect(cue.settled.color).toBe(cue.rest.color);
     expect(cue.settled.background).toBe(cue.rest.background);
 
-    // The example still lands in the field — the substantive feedback is the
-    // same in both forms, so nothing here is carried by the colour alone.
-    await expect(field).toHaveValue(IDEAS[0]!);
+    // The example is still offered — the substantive feedback is the same in
+    // both forms, so nothing here is carried by the colour alone. BS-05g:
+    // it arrives as ghost text rather than as content to delete.
+    await expect(field).toHaveAttribute('placeholder', IDEAS[0]!);
 
     await context.close();
   });
