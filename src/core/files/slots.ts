@@ -174,10 +174,26 @@ export function fileSlots(finished: Readonly<Partial<Record<FileSlotId, boolean>
  * section holding a skip is `partly`, and this function, which is a fold over
  * exactly those states, reports the file as unfinished. Match, do not argue.
  *
- * The consequence is the honest one: a locked row keeps saying "Finish
- * Context.md first" while a question in it is still passed on. Going back and
- * answering it is what changes that, and that is a true instruction rather
- * than a kind one.
+ * ── WHAT THIS IS NO LONGER USED FOR (O3, Adam, 2026-08-27) ────────────────
+ *
+ * This function used to gate the Skills door, and the consequence was
+ * defended here as "the honest one": a locked row kept saying "Finish
+ * Context.md first" while a question in it was still passed on.
+ *
+ * That defence was wrong, and it is worth saying why rather than quietly
+ * deleting it. EVERY question in the interview is skippable — `showSkip` is
+ * true for every non-intro screen — so one press of Skip anywhere locked
+ * Skills.md permanently. Nothing said which question it was; nothing offered
+ * a way back; `core/recommend/engine.ts` deliberately never re-raises a skip
+ * ("the product arguing with a decision somebody already made"). So the row
+ * told somebody who HAD finished the interview to finish it, with no
+ * instruction they could act on. A true instruction is one somebody can
+ * follow, and that one was not.
+ *
+ * The doors read `fileAsked` now. This stays as the claim about the FILE —
+ * the Skills card's "Current" badge is a statement about contents, not a
+ * lock — and its treatment of a skip is unchanged and still right: a skipped
+ * question is not content, and a file holding one is not gapless.
  */
 export function fileFinished(
   outline: FileOutlineNode[],

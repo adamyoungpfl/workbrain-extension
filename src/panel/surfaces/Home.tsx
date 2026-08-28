@@ -444,13 +444,20 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   const skillsFinished = fileFinished(skillsOutline, skillsModules, skillsAnswers, new Date());
   const skillsHealthMap = sectionHealthMap(skillsOutline, skillsModules, skillsAnswers, null, new Date());
   const skillsHealth = summariseSectionHealth(skillsOutline, skillsHealthMap);
-  const contextFinished = fileFinished(contextOutline, contextModules, answers, new Date());
+  /* O3: `contextFinished` is gone. The Context card's badge never read it —
+     due/Current are FRESHNESS claims off `computeNextMove`, and the count
+     branch reads `contextHealth` — so the only thing it decided was the
+     Skills door, which now opens on `fileAsked`. `fileFinished` survives
+     here for the SKILLS card's own "Current" badge, which is a claim about
+     that file's contents rather than a door. */
   // V2.9 VB-144 — the graduation gate, and NOT the same question the card
   // asks. `fileAsked` is "the interview is over"; `fileFinished` is "the file
   // has no gaps". They differ only on a file with a skip in it, and the
   // person who passed on an optional question has finished the interview —
   // see the long note in core/files/slots.ts.
   const contextComplete = fileAsked(contextOutline, contextModules, answers, new Date());
+  /** …and the same question one file over, for the shelf's own door. */
+  const skillsComplete = fileAsked(skillsOutline, skillsModules, skillsAnswers, new Date());
   // V2.6 VB-125b — the Context card's own section count, the same fold the
   // Skills row has always used, one file over.
   const contextHealth = summariseSectionHealth(
@@ -459,9 +466,30 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   );
   // V2.9 VB-146: the interface shows the beta's slots — Actions is hidden
   // (core/files/slots.ts's BETA_HIDDEN_SLOTS carries the story).
+  /**
+   * O3 (Adam, 2026-08-27) — THE DOOR OPENS ON "NOTHING LEFT TO ASK".
+   *
+   * Every question in the interview is skippable, and a skip writes `null` —
+   * a recorded answer. `core/recommend/engine.ts` says so in as many words
+   * and deliberately never re-raises one: "a single skip is a considered
+   * answer… re-raising it one at a time would be the product arguing with a
+   * decision somebody already made."
+   *
+   * The lock disagreed with that. Reading `fileFinished`, one press of Skip
+   * anywhere in Context locked Skills.md permanently, with nothing to say
+   * which question it was and no route back — and the locked row went on
+   * saying "Finish Context.md first" to somebody who had finished it and
+   * simply declined one question. That sentence was the thing that was
+   * wrong, not their skip. Since BS-03a it also dead-ended the proof's
+   * hand-off into Skills, at the peak of the hour.
+   *
+   * So the DOOR reads `fileAsked` and the CARD keeps `fileFinished`: the
+   * interview being over is what unlocks the next file, and the file's own
+   * status still reports honestly that a question was passed on.
+   */
   const slots = shownFileSlots({
-    context: contextFinished,
-    skills: skillsFinished,
+    context: contextComplete,
+    skills: skillsComplete,
   });
   const skillsStarted = Object.keys(skillsAnswers.answeredAt).length > 0;
 

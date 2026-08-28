@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { contextModules, contextOutline } from '../../src/core/flow/flow';
 import { findPosition } from '../../src/core/flow/runner';
 import { fileStartTarget } from '../../src/core/files/fileView';
-import { fileFinished } from '../../src/core/files/slots';
+import { fileAsked, fileFinished } from '../../src/core/files/slots';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 
@@ -372,6 +372,69 @@ test.describe('VB-102 — the browse canvas', () => {
     await reopened.goto(url);
     await expect(reopened.locator('.home')).toBeVisible();
     await expect(reopened.locator('.browse')).toHaveCount(0);
+
+    await context.close();
+  });
+});
+
+/* ── O3 (Adam, 2026-08-27) — a skip must not lock the next file ────────────
+   Every question in the interview is skippable, and a skip writes `null` — a
+   recorded answer that `core/recommend/engine.ts` deliberately never
+   re-raises. The Skills door used to read `fileFinished`, so one press of
+   Skip locked Skills.md permanently, with nothing to say which question it
+   was and no route back. The doors read `fileAsked` now. */
+test.describe('O3 — the door opens on "nothing left to ask"', () => {
+  /** A finished interview with exactly one question passed on. */
+  function withOneSkip(): Answers {
+    const answers = nothingLeftToAsk();
+    answers.values['professional_name'] = null;
+    return answers;
+  }
+
+  test('a skipped question still opens Skills — the interview is over', async () => {
+    const { context, sw, id } = await launch();
+    const seeded = withOneSkip();
+    // The two folds really do disagree about this file, which is the whole
+    // reason the decision existed.
+    expect(fileAsked(contextOutline, contextModules, seeded, new Date())).toBe(true);
+    expect(fileFinished(contextOutline, contextModules, seeded, new Date())).toBe(false);
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), seeded);
+
+    const page = await openHome(context, id);
+    const skills = page.locator('.home-card[data-file="skills"]');
+    await expect(skills).toBeEnabled();
+    await expect(skills).not.toHaveClass(/is-locked/);
+    // And it no longer tells somebody who finished the interview to finish it.
+    await expect(page.locator('.home-duo')).not.toContainText('Finish Context.md first');
+
+    await context.close();
+  });
+
+  test('the file still reports the gap honestly — the door moved, the truth did not', async () => {
+    const { context, sw, id } = await launch();
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), withOneSkip());
+
+    const page = await openHome(context, id);
+    // The Context card speaks in freshness and section counts, and a section
+    // holding a skip is not "done" — so nothing here claims the file is
+    // gapless just because the door opened.
+    await expect(page.locator('.home-card[data-file="context"]')).not.toContainText('10 of 10');
+
+    await context.close();
+  });
+
+  test('an UNFINISHED interview still keeps the door shut', async () => {
+    // The change must not open the door early: unanswered is not skipped.
+    const { context, sw, id } = await launch();
+    const answers = nothingLeftToAsk();
+    delete answers.values['professional_name'];
+    delete answers.answeredAt['professional_name'];
+    expect(fileAsked(contextOutline, contextModules, answers, new Date())).toBe(false);
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
+
+    const page = await openHome(context, id);
+    await expect(page.locator('.home-card[data-file="skills"]')).toBeDisabled();
+    await expect(page.locator('.home-duo')).toContainText('Finish Context.md first');
 
     await context.close();
   });

@@ -15,7 +15,7 @@ import { getLocal } from '../core/storage/client';
 import { contextModules, contextOutline, skillsModules, skillsOutline, buildProofModules } from '../core/flow/flow';
 import { SKILLS_FILE_COPY } from '../core/files/skillsFile';
 import { ANSWERS_KEY } from '../core/files/answersKey';
-import { fileFinished } from '../core/files/slots';
+import { fileAsked } from '../core/files/slots';
 import type { FileSlotId } from '../core/files/slots';
 import { ActionsFileView } from './surfaces/ActionsFileView';
 import { serviceStepOptions } from '../core/flow/proofAdapter';
@@ -166,7 +166,9 @@ export default function App() {
    * no door. */
   async function refreshSkillsDoor() {
     const answers = await getLocal('wb:answers');
-    setSkillsOpen(!!answers && fileFinished(contextOutline, contextModules, answers, new Date()));
+    // O3: the door opens when the interview is over, not when the file is
+    // gapless — a skip is a considered answer (Home.tsx carries the note).
+    setSkillsOpen(!!answers && fileAsked(contextOutline, contextModules, answers, new Date()));
   }
 
   async function finishContext() {

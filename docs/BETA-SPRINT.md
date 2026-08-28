@@ -169,8 +169,25 @@ From the change spec's §11, minus the ones now answered:
 |---|---|---|
 | O1 | Does a skipped answer read differently from an unanswered one on the leaf card, or share the empty state? | BS-07c |
 | O2 | Who writes the ~nine purpose lines, and do they ship with the card or behind it? | BS-07d |
-| O3 | `fileFinished` counts a skip as a gap, so one skipped optional question keeps Skills.md locked forever. Intended? | BS-06, and the Skills unlock generally |
 | O6b | D1 bans printed digits. The progressbar's spoken count (`aria-valuetext`, "Question 3 of 38") is not printed — assumption is it becomes **run-scoped** rather than global, so a screen-reader user gets what the beat row gives everyone else. Correct if the spoken total should go entirely. | BS-05a |
+
+**O3 — RESOLVED (Adam, 2026-08-27): the doors open on "nothing left to ask".**
+Every question in the interview is skippable, and a skip writes `null` — a
+recorded answer that `core/recommend/engine.ts` deliberately never re-raises
+("the product arguing with a decision somebody already made"). The lock
+disagreed: reading `fileFinished`, one press of Skip anywhere locked
+Skills.md **permanently**, with nothing to say which question it was and no
+route back — and the locked row went on telling somebody who had finished the
+interview to finish it. Since BS-03a it also dead-ended the proof's hand-off
+into Skills, at the peak of the hour.
+
+So every DOOR — Home's shelf, the drawer's switcher, the proof's hand-off —
+now reads `fileAsked`. `fileFinished` stays as the claim about the FILE (the
+Skills card's "Current" badge), and its treatment of a skip is unchanged and
+still right: a skipped question is not content. The defence written into its
+own header has been corrected rather than deleted, because "a true
+instruction rather than a kind one" was the wrong call and the reason is
+worth keeping.
 
 **Closed since:** O4 (the file carries the reference examples, prompts about
 something else do not), O5 and O10 (taken as calls — see below), O6/O7/O8/O9

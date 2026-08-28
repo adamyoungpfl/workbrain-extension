@@ -196,11 +196,19 @@ test.describe('Home surface (R1-12)', () => {
     // BS-05d: a run's payoff card can stand between two questions.
     await pastRunCard(page);
     // BS-05d + BS-03a: the last answer closes a run AND finishes the file,
-    // so the payoff card lands first and the proof follows it. Two
-    // interstitials back to back — noted in docs/BETA-SPRINT.md as a
-    // sequencing question for §5's remaining slices.
-    await pastRunCard(page);
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', /^proof/, { timeout: 10_000 });
+    // so payoff cards land before the proof does — more than one of them, as
+    // a block ending and a run ending can both fall on the same press. Drain
+    // whatever stands in the way rather than assuming a fixed number.
+    // (Noted in docs/BETA-SPRINT.md as a sequencing question for §5.)
+    await expect
+      .poll(
+        async () => {
+          await pastRunCard(page);
+          return await page.locator('.flow').getAttribute('data-step-id');
+        },
+        { timeout: 15_000 },
+      )
+      .toMatch(/^proof/);
     await page.getByRole('button', { name: S.goHome, exact: true }).click();
 
     // V2.8 VB-132a: the all-current banner is gone (redundant beside the

@@ -11,7 +11,7 @@ import { contextFileDate, generateContextFileParts } from '../../core/files/gene
 import { CONTEXT_FILE_COPY } from '../../core/files/source';
 import type { FileCopy } from '../../core/files/source';
 import type { ContextFileSection } from '../../core/files/generate';
-import { fileFinished } from '../../core/files/slots';
+import { fileAsked } from '../../core/files/slots';
 import type { FileSlotId } from '../../core/files/slots';
 import { fileToggle } from '../../core/files/toggle';
 import {
@@ -655,7 +655,9 @@ export function FileDrawer({
    * "Finish Context.md first" at the same moment Home's locked row does.
    */
   const toggle = useMemo(
-    () => fileToggle(shownFile, { [shownFile]: fileFinished(outline, modules, answers, now) }),
+    // O3: the switcher's lock is a DOOR, so it opens on "nothing left to
+    // ask" like every other door — see surfaces/Home.tsx's note.
+    () => fileToggle(shownFile, { [shownFile]: fileAsked(outline, modules, answers, now) }),
     [shownFile, outline, modules, answers, now],
   );
 
