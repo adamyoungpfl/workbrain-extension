@@ -58,6 +58,38 @@ export const S = {
    */
   meterName: 'How much of your work brain is set up',
   meterLabel: 'set up',
+
+  /**
+   * BS-06 (§6) — "Add 'What moves this?' beside the percentage — a sheet
+   * listing the four segments and what fills them. The number is honest and
+   * completely opaque today."
+   *
+   * [DRAFT] All eight lines below are mine and want Adam's morning pass.
+   *
+   * Each line answers one question and only that question: WHAT PUTS
+   * PERCENT IN THIS QUARTER. Not what the step means — the tick already
+   * names it — and not how far along they are, which the drawing above
+   * already says. They are written from core/home/utilization.ts's own
+   * formula, sentence by sentence, so the sheet and the arithmetic cannot
+   * drift apart without somebody noticing.
+   *
+   * The last line is the one people actually open this for. 100% is not
+   * reachable by answering questions alone, on purpose (Adam's semantics,
+   * V2.6 decision 2), and a person who works that out for themselves at 74%
+   * has been tricked. It says so plainly instead.
+   */
+  meterWhat: 'What moves this?',
+  meterWhatTitle: 'What moves this number',
+  meterWhatLead:
+    'Four quarters, one for each step. Each one is a real count of your own answers — nothing here watches you work.',
+  meterWhatFills: [
+    'Questions you answer in the Context interview. A question you pass on stays empty.',
+    'Questions you answer in the Skills interview, the same way.',
+    'Skills that say how much AI may do on its own, and where the data lives. "Not sure" leaves the gap.',
+    'Proof you ran, and skills you saved or redeemed. Half each.',
+  ] as const,
+  meterWhatCeiling:
+    'The last quarter needs your file out in the world, so 100% takes more than answering questions.',
   stepNamed: (n: number, label: string) => `Step ${n} · ${label}`,
 
   // ---------------------------------------------------------------- flow runner
@@ -1280,6 +1312,20 @@ export const S = {
    * rather than three identical "Hide" buttons.
    */
   recHideNamed: (what: string) => `Hide this: ${what}`,
+  /**
+   * BS-06 (§6) — the hero's verb with its price on it: "Open My World · 4 min".
+   *
+   * A middot rather than a bracket or a second line: the time is part of the
+   * offer, not a footnote about it, and at 400px a button that wraps to two
+   * lines reads as two thoughts. "min" rather than "minutes" for the same
+   * reason, and it is the abbreviation everybody already reads on a recipe.
+   *
+   * The number comes from core/recommend/estimate.ts, which derives it from
+   * the ported interview's own per-module estimates. It is a pace, never a
+   * measurement of the person — see that file, and GUARDRAILS' authorship
+   * test.
+   */
+  recActionIn: (action: string, minutes: number) => `${action} · ${minutes} min`,
   recStaleHeading: (section: string) => `${section} could be out of date`,
   /** `ago` arrives already worded by `agoLabel` — "7 months", "3 days". */
   recStaleWhy: (ago: string) => `The newest answer in it is ${ago} old.`,

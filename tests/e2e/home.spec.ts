@@ -153,7 +153,9 @@ test.describe('Home surface (R1-12)', () => {
     await expect(page.getByText('One part of your file is out of date')).toBeVisible();
     await expect(page.getByText(`You said your ${roleLabel} role was current.`)).toBeVisible();
     await expect(page.getByText('1 due')).toBeVisible();
-    const cta = page.getByRole('button', { name: 'Answer one question', exact: true });
+    // BS-06 (§6) put the price on the verb. One question at the interview's
+    // own pace rounds to one minute (core/recommend/estimate.ts).
+    const cta = page.getByRole('button', { name: 'Answer one question · 1 min', exact: true });
     await expect(cta).toBeVisible();
 
     // --- the CTA deep-links straight into the Context flow at
@@ -524,6 +526,87 @@ function nothingLeftToAsk(): Answers {
 }
 
 test.describe('V2.9 — Your next move, and the graduation it waits for', () => {
+  /**
+   * BS-06 (§6)'s acceptance, as three measurements rather than three
+   * opinions: "Home fits in roughly one and a half panel heights; the
+   * recommendation is the first content under the chrome and the only filled
+   * primary; no disabled dashed tiles remain; the plus card is a single-row
+   * door."
+   */
+  test('the recommendation is the first thing under the chrome, and the only filled primary (BS-06)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const { answers } = buildAnswersWithOneDueRole(contextModules);
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
+    const page = await openPanel(context, id);
+
+    // Order, read off the DOM rather than off pixel positions — the meter and
+    // the file shelf both used to come first, and this is the swap.
+    const order = await page.$eval('.home', (home) =>
+      [...home.children].map((child) => child.className.split(' ')[0]),
+    );
+    expect(order[0]).toBe('home-chrome');
+    expect(order[1]).toBe('home-recs');
+    // BS-06's own sheet door made the meter a wrapped row rather than a
+    // direct child of `.home`; the claim is still "the hero is above it".
+    expect(order.indexOf('home-recs')).toBeLessThan(order.indexOf('home-meter'));
+
+    // And it is the only filled primary anywhere on the screen. The welcome
+    // card has one too, but the two states never coexist — this is the
+    // returning state, and here the hero stands alone.
+    await expect(page.locator('.home .btn-primary')).toHaveCount(1);
+    await expect(page.locator('.home-recs .btn-primary')).toHaveCount(1);
+
+    // Roughly one and a half panel heights. The 760px panel is what the
+    // review measured against; §6 opened at ~1,470px and targeted ~810px.
+    const height = await page.$eval('.home', (home) => Math.round(home.getBoundingClientRect().height));
+    expect(height, `Home is ${height}px tall`).toBeLessThan(760 * 1.5);
+
+    await context.close();
+  });
+
+  test('the meter says what moves it, and the door is not inside the drawing (BS-06)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const { answers } = buildAnswersWithOneDueRole(contextModules);
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
+    const page = await openPanel(context, id);
+
+    // THE POINT OF THE TEST. The percentage, the track and the ticks are all
+    // inside `role="progressbar"`, and every one of them is aria-hidden — a
+    // door in there is a door a screen reader never meets.
+    const door = page.getByRole('button', { name: 'What moves this?', exact: true });
+    await expect(door).toBeVisible();
+    await expect(page.locator('.meter button')).toHaveCount(0);
+    await expect(page.locator('.home-meter > .home-meter-what')).toHaveCount(1);
+
+    // The 44px floor, on a control whose text is 15px tall.
+    const box = (await door.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+
+    await door.click();
+    const sheet = page.locator('.meterwhat');
+    await expect(sheet).toBeVisible();
+
+    // Four segments, in the drawing's own order, each with the sentence that
+    // says what fills it.
+    const steps = sheet.locator('.meterwhat-step');
+    await expect(steps).toHaveText(['Name', 'Repeat', 'Act', 'Share']);
+    await expect(sheet.locator('.meterwhat-fill')).toHaveCount(4);
+    for (let i = 0; i < 4; i++) {
+      await expect(sheet.locator('.meterwhat-fill').nth(i)).not.toBeEmpty();
+    }
+
+    // And the ceiling, which is the thing people open this to find out: the
+    // last quarter cannot be filled by answering questions (V2.6 decision 2).
+    await expect(sheet.locator('.meterwhat-ceiling')).toContainText('100%');
+
+    // Escape closes it and focus comes back to the door it left from.
+    await page.keyboard.press('Escape');
+    await expect(sheet).toHaveCount(0);
+    await expect(door).toBeFocused();
+
+    await context.close();
+  });
+
   test('five rows, and the two that wait explain themselves in words (BS-06)', async () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);

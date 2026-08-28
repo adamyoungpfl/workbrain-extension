@@ -1,0 +1,106 @@
+/* BS-06 (§6) — the meter's "What moves this?" door and its sheet. */
+
+.meterwhat {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.meterwhat-lead {
+  margin: 0;
+  font-size: var(--type-body);
+  line-height: 1.5;
+  color: var(--ink);
+}
+
+/* An ordered list because the four ARE ordered — they are the four steps in
+   the order the ticks print them, and the numbering is the thing that ties a
+   line here to a quarter up there. `list-style: none` with the step's own
+   name as the marker: "Name", "Repeat" and the rest carry the order better
+   than "1." does, and the interface has never numbered them. */
+.meterwhat-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.meterwhat-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.meterwhat-step {
+  font-size: var(--type-fine);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.meterwhat-fill {
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* The ceiling. Set apart by a rule rather than by a colour, because it is a
+   different KIND of statement — everything above says what fills a quarter,
+   and this says what no amount of answering will. */
+.meterwhat-ceiling {
+  margin: 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--divider);
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* The door, on Home's meter row. Same grammar as BS-02's feedback door — a
+   word, never a glyph, and the 44px floor on the height.
+
+   IT SITS UNDER THE DRAWING, NOT INSIDE IT. The meter's top line already
+   carries the number, the phrase and the standing step; a third thing on it
+   at 400px is a queue, not a row. Under the ticks and hard right, it reads
+   as an annotation of the whole meter, which is what it is.
+
+   The 44px target costs 44px of box for 15px of text, so the row is pulled
+   up into the meter's own bottom margin — the target keeps its full height,
+   the layout pays for about half of it. Nothing overlaps: the ticks end
+   above it and Home's own 20px gap follows. */
+.home-meter {
+  display: flex;
+  flex-direction: column;
+}
+
+.home-meter-what {
+  align-self: flex-end;
+  margin-top: -8px;
+  margin-right: -6px;
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--type-fine);
+  font-weight: 600;
+  color: var(--ink-3);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  text-decoration-color: var(--border-i);
+  cursor: pointer;
+  border-radius: var(--r-md);
+  transition: color var(--fast) var(--ease);
+}
+.home-meter-what:hover {
+  color: var(--primary);
+}
+.home-meter-what:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}

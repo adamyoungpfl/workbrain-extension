@@ -8,6 +8,7 @@ import {
   FeedbackSheet,
   FileRow,
   Meter,
+  MeterWhatSheet,
   RecommendationHide,
   RecommendationRow,
   Sheet,
@@ -22,6 +23,7 @@ import { computeUtilization } from '../../core/home/utilization';
    only thing that needed a byte count on this screen. `downloadContextFile`
    still writes the real file from the same generator, one layer down. */
 import { recommend, topRecommendations } from '../../core/recommend/engine';
+import { recMinutes } from '../../core/recommend/estimate';
 import { multipleRecordCount } from '../../core/flow/multiples';
 import { fileAsked, fileFinished, shownFileSlots } from '../../core/files/slots';
 import type { FileSlot, FileSlotId } from '../../core/files/slots';
@@ -438,6 +440,8 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
   const [uploadOpen, setUploadOpen] = useState(false);
   /** BS-02 — the beta's return channel, in the chrome that already exists. */
   const [feedbackOpen, setFeedbackOpen] = useState(false);
+  /** BS-06 (§6) — the meter's own explanation. See MeterWhatSheet.tsx. */
+  const [meterWhatOpen, setMeterWhatOpen] = useState(false);
   const [homeToast, setHomeToast] = useState<string | null>(null);
   /** V2.8 VB-133 — the Skill Redeemer's sheet, and its landed-toast. */
   const [redeemOpen, setRedeemOpen] = useState(false);
@@ -625,6 +629,78 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
             this bar, and its proposed interview screen has no bar at all. */}
         <FeedbackDoor onOpen={() => setFeedbackOpen(true)} />
       </header>
+      {/* V1.5 VB-28 — the one "what to do next" region. One card, then at most
+          two quiet rows. `aria-live="polite"` announces a hide without moving
+          anybody: docs/OPEN.md #1 settled that drift is surfaced on open and
+          never pushed, and this region is that surface.
+
+          BS-06 (§6) MOVED IT TO THE TOP. It was item four, below the meter
+          and the file shelf, in amber, competing with a full-bleed price
+          card — and it is "the reason to open the panel on day nine". It is
+          now the first content under the chrome and Home's only filled
+          primary. Nothing about what it says changed; only where a person
+          meets it.
+
+          It sits ABOVE the welcome state deliberately rather than beside it:
+          the two never coexist (`hasStarted` is false exactly when the
+          welcome shows), so the order costs a first-time person nothing and
+          spares the code a second condition that could drift. */}
+      {hasStarted && (
+        <section
+          className={top ? 'home-recs' : 'home-recs is-quiet'}
+          ref={recsRef}
+          tabIndex={-1}
+          aria-label={S.recsLabel}
+          aria-live="polite"
+        >
+          {top && topCopy ? (
+            <>
+              {/* The card is the strongest recommendation, drawn in the
+                  next-move card's own box. Its decline is the same corner
+                  control every row carries, rather than a second button
+                  beside the primary — see components/Recommendation.tsx. */}
+              <div className="home-rec-card">
+                <Banner
+                  title={topCopy.headline}
+                  action={
+                    <Button type="button" variant="primary" onClick={() => onOpenTarget(top.target)}>
+                      {/* §6: "Add a time estimate to the verb." The number is
+                          the interview's own per-module estimate at the grain
+                          of one question (core/recommend/estimate.ts) — not a
+                          measurement of anybody, which the guardrail rules
+                          out, and not a figure somebody typed here. */}
+                      {S.recActionIn(topCopy.action, recMinutes(top))}
+                    </Button>
+                  }
+                >
+                  {topCopy.why}
+                </Banner>
+                <RecommendationHide rec={top} onHide={hide} className="home-rec-card-hide" />
+              </div>
+
+              {rest.length > 0 && (
+                <ul className="rec-list">
+                  {rest.map((rec) => (
+                    <RecommendationRow
+                      key={rec.id}
+                      rec={rec}
+                      onAct={(r) => onOpenTarget(r.target)}
+                      onHide={hide}
+                    />
+                  ))}
+                </ul>
+              )}
+            </>
+          ) : /* V2.8 VB-132a: the all-current banner is GONE (Adam: redundant
+               beside the Context card's own Current status). The region
+               itself survives empty — it is where focus lands when the last
+               recommendation is hidden, and unmounting the element focus
+               just moved to would drop a keyboard user at the top of the
+               document. `is-quiet` collapses its box (Home.css). */
+          null}
+        </section>
+      )}
+
       {/* V1.1 VB-01 — the welcome state. Still just the `start` branch of the
           same derived next move, not a surface and not a stored "have I
           welcomed them" flag: someone who clears their answers is genuinely
@@ -669,6 +745,12 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           on a fresh install on purpose: the four ticks are the whole journey,
           and the meter saying "0% set up, Step 1 · Name" is the product's
           honest map of it. */}
+      {/* BS-06 (§6) — "Add 'What moves this?' beside the percentage." The
+          door is the meter's SIBLING, not its child: the whole drawing is
+          `aria-hidden` decoration over one progressbar, and a control inside
+          that is a control a screen reader never meets. See
+          components/MeterWhatSheet.tsx. */}
+      <div className="home-meter">
       <Meter
         value={utilization.percent}
         name={S.meterName}
@@ -682,61 +764,14 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           { label: S.steps[3], percent: utilization.segments.share },
         ]}
       />
-
-      {/* V1.5 VB-28 — the one "what to do next" region. One card, then at most
-          two quiet rows. `aria-live="polite"` announces a hide without moving
-          anybody: docs/OPEN.md #1 settled that drift is surfaced on open and
-          never pushed, and this region is that surface. */}
-      {hasStarted && (
-        <section
-          className={top ? 'home-recs' : 'home-recs is-quiet'}
-          ref={recsRef}
-          tabIndex={-1}
-          aria-label={S.recsLabel}
-          aria-live="polite"
+        <button
+          type="button"
+          className="home-meter-what"
+          onClick={() => setMeterWhatOpen(true)}
         >
-          {top && topCopy ? (
-            <>
-              {/* The card is the strongest recommendation, drawn in the
-                  next-move card's own box. Its decline is the same corner
-                  control every row carries, rather than a second button
-                  beside the primary — see components/Recommendation.tsx. */}
-              <div className="home-rec-card">
-                <Banner
-                  title={topCopy.headline}
-                  action={
-                    <Button type="button" variant="primary" onClick={() => onOpenTarget(top.target)}>
-                      {topCopy.action}
-                    </Button>
-                  }
-                >
-                  {topCopy.why}
-                </Banner>
-                <RecommendationHide rec={top} onHide={hide} className="home-rec-card-hide" />
-              </div>
-
-              {rest.length > 0 && (
-                <ul className="rec-list">
-                  {rest.map((rec) => (
-                    <RecommendationRow
-                      key={rec.id}
-                      rec={rec}
-                      onAct={(r) => onOpenTarget(r.target)}
-                      onHide={hide}
-                    />
-                  ))}
-                </ul>
-              )}
-            </>
-          ) : /* V2.8 VB-132a: the all-current banner is GONE (Adam: redundant
-               beside the Context card's own Current status). The region
-               itself survives empty — it is where focus lands when the last
-               recommendation is hidden, and unmounting the element focus
-               just moved to would drop a keyboard user at the top of the
-               document. `is-quiet` collapses its box (Home.css). */
-          null}
-        </section>
-      )}
+          {S.meterWhat}
+        </button>
+      </div>
 
       {/* V1.7 VB-36's shelf, in V2.6 VB-125b's card grammar: the duo (Context
           and Skills as the template's two-up cards), then Actions as its own
@@ -888,6 +923,8 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
       {/* V2.9 VB-145 — the upload door's sheet. The download half of the
           old Move sheet became the tile above; what needs a seatbelt is
           only the import, and the seatbelt is the sheet's own warning. */}
+      <MeterWhatSheet open={meterWhatOpen} onClose={() => setMeterWhatOpen(false)} />
+
       <FeedbackSheet
         open={feedbackOpen}
         onClose={() => setFeedbackOpen(false)}

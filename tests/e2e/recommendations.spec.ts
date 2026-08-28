@@ -198,7 +198,12 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     // --- the card: the strongest one, in R1-12's own approved words ---
     await expect(region.getByText('One part of your file is out of date')).toBeVisible();
     await expect(region.getByText(`You said your ${roleLabel} role was current.`)).toBeVisible();
-    await expect(region.getByRole('button', { name: 'Answer one question', exact: true }).first()).toBeVisible();
+    // BS-06 (§6): the CARD's verb carries a time estimate, because the card
+    // is the hero now. The rows below it do not — they are the quiet
+    // alternatives, and three prices in a stack is a price list.
+    await expect(
+      region.getByRole('button', { name: 'Answer one question · 1 min', exact: true }).first(),
+    ).toBeVisible();
 
     // --- the two quiet rows under it, in rank order ---
     const rows = region.locator('.rec-row');
@@ -306,7 +311,9 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     await seed(sw, buildAnswers(FOUR_GAPS).answers);
     const page = await openPanel(context, id);
 
-    const cta = page.locator('.home-recs .banner').getByRole('button', { name: 'Answer one question' });
+    const cta = page
+      .locator('.home-recs .banner')
+      .getByRole('button', { name: /^Answer one question/ });
     await cta.focus();
     await page.keyboard.press('Enter');
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', ROLE_DURABILITY_KEY);

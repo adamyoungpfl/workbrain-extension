@@ -570,14 +570,19 @@
 }
 
 /* The hit box IS the row: read and pressed in one motion, and the 44px
-   floor is the row's own height. */
+   floor is the row's own height.
+
+   The padding is 8px rather than the 10px this shipped at because five rows
+   pay it five times: §6's budget is the whole screen, and 2px a row is 10px
+   of scroll for nothing anybody can see. `min-height` is untouched — the
+   guardrail floor is not what is being trimmed. */
 .home-row-hit {
   display: flex;
   align-items: center;
   gap: 12px;
   width: 100%;
   min-height: var(--target-min);
-  padding: 10px 12px;
+  padding: 8px 12px;
   border: 0;
   background: none;
   font-family: var(--font-sans);
