@@ -14,6 +14,7 @@ import { ADD_ANOTHER } from '../../src/core/flow/addAnother';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.4 VB-20 — "another role?" at the end of the roles loop, driven in a real
@@ -117,6 +118,10 @@ const next = (page: Page) => page.getByRole('button', { name: S.next, exact: tru
 
 /** Answers whatever question is on screen the shortest legitimate way. */
 async function answerCurrent(page: Page): Promise<void> {
+  // BS-05d: a run's payoff card can stand between two questions, the same
+  // way a module transition can. Walk past it.
+  if (await pastRunCard(page)) return;
+
   const position = await page.locator('.flow').getAttribute('data-position');
   if (position === 'reflect') {
     await page.getByRole('button', { name: S.reflectKeep, exact: true }).click();

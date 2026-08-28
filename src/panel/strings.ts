@@ -661,6 +661,19 @@ export const S = {
   reflectNeedPaste: 'Paste what your AI said, or go back and keep your own words.',
   reflectUseThis: 'Use this instead',
 
+  // ------------------------------------------------------- the run's payoff
+  /* BS-05d (§5) — what a run boundary is FOR. §5: "a card that shows the
+     lines just written, then keep going · take a break · see your file."
+     The explicit stop is a feature: `welcomeTime` promises somebody can stop
+     anywhere and no screen in the interview has ever offered it. [DRAFT] */
+  runCardLit: (section: string) => `${section} is lit up.`,
+  runCardWrote: (lines: number) =>
+    lines === 1 ? 'One new line in your file.' : `${capitalise(wordFor(lines))} new lines in your file.`,
+  runCardKeep: 'Keep going',
+  runCardRead: 'Read my file',
+  runCardStop: 'Stop here for now',
+  runCardStopNote: 'Everything is saved. Pick up wherever you like.',
+
   // ------------------------------------------------------------ the beat row
   /* BS-05a (§5) — pace without a finish line to bargain with. V1.1 VB-02's
      ban stands where it was aimed: no global total, ever. Adam's D1 keeps it

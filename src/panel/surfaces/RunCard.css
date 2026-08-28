@@ -1,0 +1,61 @@
+/* BS-05d (§5) — the run's payoff. Quiet, centred, and three real choices;
+   the applause is the sentence, not the decoration. */
+
+/* The surface's own frame comes from `.flow`; this adds only the card's
+   own rhythm. `justify-content` puts the payoff in the upper third rather
+   than floating it in the middle of a tall panel. */
+.runcard {
+  text-align: center;
+}
+
+.runcard-doors {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 18px;
+}
+
+.runcard-title {
+  margin: 24px 0 0;
+  font-size: var(--type-section);
+  font-weight: var(--type-section-weight);
+  line-height: var(--type-section-line);
+  color: var(--ink);
+  text-wrap: balance;
+}
+
+.runcard-line {
+  margin: 0 0 6px;
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+
+/* The stop is a real choice, drawn as one — quiet, but never hidden and
+   never a link pretending to be a footnote. 44px like everything else. */
+.runcard-stop {
+  min-height: var(--target-min);
+  margin-top: 2px;
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+  border-radius: var(--r-md);
+}
+.runcard-stop:hover {
+  color: var(--primary);
+}
+.runcard-stop:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+.runcard-stopnote {
+  margin: -4px 0 0;
+  font-size: var(--type-fine);
+  color: var(--ink-3);
+}

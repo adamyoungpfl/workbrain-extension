@@ -8,6 +8,7 @@ import { ROLES_BLOCK_ID, ROLE_DURABILITY_KEY, ROLE_NAME_SEED_FIELD } from '../..
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 import { S } from '../../src/panel/strings';
+import { pastRunCard } from './fixtures/runCard';
 
 // R1-12 accept criteria (docs/RELEASE-1.md): "Files with freshness, one
 // next-move card, the quiet 'talk to a person' row. Derived entirely —
@@ -175,6 +176,8 @@ test.describe('Home surface (R1-12)', () => {
     // V1.4 VB-20: finishing a role's last question now ends the roles loop by
     // asking whether there is another one. There isn't — say so, keyboard-only
     // like everything else here, and the flow carries on exactly as before.
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'add-another');
     await page.getByRole('button', { name: 'No', exact: true }).focus();
     await page.keyboard.press('Space');

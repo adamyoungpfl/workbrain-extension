@@ -15,6 +15,7 @@ import { PAIR_CAPTIONS, PAIRED_PICKS, pairedStepsFor } from '../../src/core/choi
 import type { AnswerValue } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 import { S } from '../../src/panel/strings';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V2.5 VB-123 — role_standing + role_durability as ONE screen, on the real
@@ -162,12 +163,16 @@ test.describe('the merged role screen (VB-123)', () => {
 
     // Nothing picked: the refusal names both lists.
     await page.getByRole('button', { name: S.next, exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow [role="alert"]')).toHaveText(S.errPickBoth);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', pair.anchorId);
 
     // Standing picked, mark still empty: one list is missing, so errPickOne.
     await page.getByRole('button', { name: 'Primary', exact: true }).click();
     await page.getByRole('button', { name: S.next, exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow [role="alert"]')).toHaveText(S.errPickOne);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', pair.anchorId);
 
@@ -177,6 +182,8 @@ test.describe('the merged role screen (VB-123)', () => {
     // Selection never advances anything (the guardrail) — Next is the door.
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', pair.anchorId);
     await page.getByRole('button', { name: S.next, exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'add-another');
 
     const stored = await storedAnswers(sw);
@@ -206,6 +213,8 @@ test.describe('the merged role screen (VB-123)', () => {
 
     await page.getByRole('button', { name: 'Historical', exact: true }).click();
     await page.getByRole('button', { name: S.next, exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'add-another');
 
     const after = await storedAnswers(sw);
@@ -257,6 +266,8 @@ test.describe('the merged role screen (VB-123)', () => {
 
     await page.getByRole('button', { name: S.next, exact: true }).focus();
     await page.keyboard.press('Enter');
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'add-another');
 
     const stored = await storedAnswers(sw);

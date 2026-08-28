@@ -2,6 +2,7 @@ import { test, expect, chromium } from '@playwright/test';
 import type { BrowserContext, Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { pastRunCard } from './fixtures/runCard';
 
 // R1-07 accept criteria (docs/RELEASE-1.md): "Open-text answers play back
 // verbatim before committing. Keep / tighten with my AI / say it again.
@@ -100,6 +101,8 @@ async function driveToTextQuestion(page: Page): Promise<void> {
   await page.locator('.flow .vpick .vpick-tile').first().focus();
   await page.keyboard.press('Space');
   await page.getByRole('button', { name: 'Next', exact: true }).click();
+  // BS-05d: a run's payoff card can stand between two questions.
+  await pastRunCard(page);
   await page.mouse.move(0, 0);
   // Q3: stop_explaining.
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
@@ -110,6 +113,8 @@ async function driveToReflect(page: Page, raw: string): Promise<void> {
   await driveToTextQuestion(page);
   await page.locator('.flow textarea').fill(raw);
   await page.getByRole('button', { name: 'Next', exact: true }).click();
+  // BS-05d: a run's payoff card can stand between two questions.
+  await pastRunCard(page);
   await expect(page.locator('.flow')).toHaveAttribute('data-position', 'reflect');
 }
 
@@ -223,6 +228,8 @@ test.describe('Reflect step (R1-07)', () => {
     const secondDraft = 'A tighter second pass — with punctuation, and  extra  spacing, grown past the bar on purpose.';
     await page.locator('.flow textarea').fill(secondDraft);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
 
     // Back on the reflect screen, now playing back the NEW text, byte-identically.
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'reflect');
@@ -231,6 +238,8 @@ test.describe('Reflect step (R1-07)', () => {
     expect(blockText).not.toContain(firstDraft);
 
     await page.getByRole('button', { name: 'Keep it as-is', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     const answers = await storedAnswers(page);
     expect(answers.values.stop_explaining).toBe(secondDraft);
 
@@ -294,6 +303,8 @@ test.describe('Reflect step (R1-07)', () => {
     await expect(page.locator('.flow textarea')).toHaveValue(landed);
 
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await page.mouse.move(0, 0);
 
     // No recheck: the interview moves straight on.
@@ -360,6 +371,8 @@ test.describe('Reflect step (R1-07)', () => {
     // Submitting the short answer: no recheck — bypass (b) — and nothing
     // pretends otherwise in storage: no reflectedAt, no assistedAt.
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await page.mouse.move(0, 0);
     await expect(page.locator('.flow')).not.toHaveAttribute('data-position', 'reflect');
     await expect(page.locator('.flow')).not.toHaveAttribute('data-step-id', 'stop_explaining');

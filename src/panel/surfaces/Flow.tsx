@@ -20,10 +20,12 @@ import {
 } from '../components';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
 import { PROOF_BASELINE_ANSWER_KEY, PROOF_CONTEXT_ANSWER_KEY } from '../../core/flow/proofAdapter';
-import { runOf } from '../../core/flow/runs';
+import { RUN_CARD_MIN, endsRun, runOf } from '../../core/flow/runs';
+import type { Run } from '../../core/flow/runs';
 import { proofChecks, proofTally } from '../../core/proof/checklist';
 import type { ProofCheck, ProofCheckId } from '../../core/proof/checklist';
 import { ModuleIntro } from './ModuleIntro';
+import { RunCard } from './RunCard';
 import { FileDrawer } from './FileDrawer';
 import { AssistBar } from './AssistBar';
 import { ASSIST_LINE_RETURN } from '../../core/flow/assistCopy';
@@ -570,6 +572,14 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
   // the module. A real close/reopen resumes past it on the derivation alone
   // (core/flow/runner.ts's `moduleHasAnyAnswer`), with nothing persisted.
   const [seenIntros, setSeenIntros] = useState<ReadonlySet<string>>(new Set());
+  /** BS-05d — the run whose card is on screen, or null. A moment, not a
+   * state: it lives for this session and is never written down. */
+  const [runCard, setRunCard] = useState<Run | null>(null);
+  /** …and which runs have already been applauded, so going Back and forward
+   * through a boundary does not replay it. The same ephemeral shape
+   * `seenIntros` above uses, for the same reason: a stored flag would be a
+   * fact about the person this product has no business keeping. */
+  const [paidRuns, setPaidRuns] = useState<ReadonlySet<string>>(new Set());
   const [history, setHistory] = useState<Position[]>([]);
   const [viewing, setViewing] = useState<Position | null>(initialPosition ?? null);
   const [saveError, setSaveError] = useState(false);
@@ -710,6 +720,45 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
     void persist(next);
     setHistory((h) => [...h, from]);
     setViewing(null);
+    /**
+     * BS-05d (§5) — THE RUN'S PAYOFF, at the moment it is earned.
+     *
+     * Held here rather than derived as a `Position`, and that is a design
+     * decision rather than a shortcut. A run card is about something the
+     * person JUST DID — it belongs to the commit, not to the state of the
+     * answers. Deriving it would mean re-showing it on every reopen until
+     * dismissed, or inventing a stored "seen it" flag; both are worse than
+     * the truth, which is that this is a moment and moments pass.
+     *
+     * `endsRun` reads the node just answered (core/flow/runs.ts). Runs are
+     * bounded by their module, so this always fires on a section boundary —
+     * which is what lets the card name what just finished.
+     */
+    const justAnswered =
+      from.kind === 'add-another'
+        ? from.block.id
+        : from.kind === 'step' || from.kind === 'reflect'
+          ? from.location.in === 'top'
+            ? from.step.id
+            : from.location.blockId
+          : null;
+    if (justAnswered) {
+      const closed = endsRun(modules, justAnswered);
+      const key = closed ? `${closed.moduleId}#${closed.index}` : null;
+      /**
+       * D1's TWO WEIGHTS, and the reason the card is not offered at every
+       * boundary. Six of Context's modules are two questions long, so a
+       * full-screen payoff at every run would fire eleven-plus times — and a
+       * reward that arrives every two questions is a tax with a nice face
+       * on it. A takeover has to be earned, so it is kept for runs of four
+       * or more; the short runs are paid off by the drawer lighting their
+       * section, which is a thing they can already see happening.
+       */
+      if (closed && key && closed.nodeIds.length >= RUN_CARD_MIN && !paidRuns.has(key)) {
+        setRunCard(closed);
+        setPaidRuns((seen) => new Set(seen).add(key));
+      }
+    }
   }
 
   /** V1.1 VB-05's "continue". Writes nothing to `wb:answers` — there is no
@@ -930,6 +979,40 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
               </Button>
             )}
       </div>
+    );
+  }
+
+  /**
+   * BS-05d (§5) — the run's payoff, in front of whatever comes next.
+   *
+   * Rendered here rather than as a router branch because it is not a
+   * position: the runner still knows exactly where the person is, and this
+   * is a moment laid over it. Dismissing it leaves the flow precisely where
+   * it already was.
+   */
+  if (runCard) {
+    const section = modules.find((m) => m.id === runCard.moduleId)?.title ?? '';
+    const written = runCard.nodeIds.filter((id) => {
+      const node = modules.flatMap((m) => m.nodes).find((n) => n.id === id);
+      if (!node || 'fields' in node) return true;
+      const key = node.key ?? node.id;
+      const value = ans.values[key];
+      return value !== undefined && value !== null && value !== '';
+    }).length;
+    return withDrawer(
+      <RunCard
+        section={section}
+        written={written}
+        onKeep={() => setRunCard(null)}
+        onRead={() => {
+          setRunCard(null);
+          onHome?.();
+        }}
+        onStop={() => {
+          setRunCard(null);
+          onHome?.();
+        }}
+      />,
     );
   }
 

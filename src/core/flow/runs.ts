@@ -38,6 +38,19 @@ import type { Module, RepeatableBlock, Step } from '../../schema/flow.types';
 /** The target length. The last run of a module may be shorter. */
 export const RUN_LENGTH = 5;
 
+/**
+ * BS-05d — how long a run has to be to earn a full-screen payoff.
+ *
+ * Adam's D1 consequence, recorded when the run shape was decided: six of
+ * Context's eleven modules are two questions long, so a takeover at every
+ * boundary would fire eleven-plus times in one file. A reward that arrives
+ * every two questions is a tax with a nice face on it. Short runs are paid
+ * off by the drawer lighting their section — something the person can
+ * already watch happen — and the card is kept for the boundaries that
+ * genuinely cost something to reach.
+ */
+export const RUN_CARD_MIN = 4;
+
 export interface Run {
   moduleId: string;
   /** 0-based, within its own module. */

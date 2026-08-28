@@ -13,6 +13,7 @@ import {
 import { S } from '../../src/panel/strings';
 import type { AnswerValue } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.4 VB-20 adds a screen shape the panel did not have: a yes/no question
@@ -93,6 +94,8 @@ test('axe finds no violations on the "another role?" screen (VB-20)', async () =
   await page.locator('.flow .orbgroup .orbchoice').first().click();
   await page.getByRole('button', { name: S.next, exact: true }).click();
   for (let guard = 0; guard < 12; guard++) {
+    // BS-05d: a run's payoff card can stand between two questions.
+    if (await pastRunCard(page)) continue;
     if ((await page.locator('.flow').getAttribute('data-position')) === 'add-another') break;
     if ((await page.locator('.flow').getAttribute('data-position')) === 'reflect') {
       await page.getByRole('button', { name: S.reflectKeep, exact: true }).click();

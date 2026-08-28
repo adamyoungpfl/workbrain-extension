@@ -15,6 +15,7 @@ import {
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, RepeatableBlock } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.7 VB-38 — add and edit the things that come in numbers, in a real
@@ -165,6 +166,8 @@ async function answerCurrent(page: Page): Promise<void> {
   const position = await page.locator('.flow').getAttribute('data-position');
   if (position === 'reflect') {
     await page.getByRole('button', { name: S.reflectKeep, exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     return;
   }
   const textarea = page.locator('.flow textarea');
@@ -207,6 +210,8 @@ async function finishRecord(
   fieldIds: string[],
 ): Promise<void> {
   for (let guard = 0; guard < 24; guard++) {
+    // BS-05d: a run's payoff card can stand between two questions.
+    if (await pastRunCard(page)) continue;
     const record = (await storedAnswers(sw)).repeatables[blockId]?.[index] ?? {};
     if (fieldIds.every((id) => id in record)) return;
     if ((await page.locator('.flow').getAttribute('data-position')) === 'add-another') {

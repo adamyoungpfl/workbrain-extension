@@ -8,6 +8,7 @@ import { halfLifeFor } from '../../src/core/freshness/halfLives';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.3 VB-19 — section health in List mode, driven in a real browser.
@@ -137,6 +138,10 @@ const INITIATIVE_QUESTIONS = (() => {
  * does, so the person is really walked rather than the answers seeded.
  */
 async function answerWhateverIsOnScreen(page: Page): Promise<void> {
+  // BS-05d: a run's payoff card can stand between two questions, the same
+  // way a module transition can. Walk past it.
+  if (await pastRunCard(page)) return;
+
   const position = await page.locator('.flow').getAttribute('data-position');
   if (position === 'reflect') {
     await page.getByRole('button', { name: S.reflectKeep, exact: true }).click();

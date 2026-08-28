@@ -3,6 +3,7 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Answers } from '../../src/schema/storage.types';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.2 VB-10 accept criteria, driven in a real browser:
@@ -224,6 +225,8 @@ async function toStopExplaining(page: Page): Promise<void> {
   // V2.5 VB-118: context_scope's choices are icon tiles.
   await page.locator('.flow .vpick .vpick-tile').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
+  // BS-05d: a run's payoff card can stand between two questions.
+  await pastRunCard(page);
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 }
 
@@ -422,8 +425,12 @@ test.describe('VB-10 — the module label prints on a change, not on a question'
     // Walk the rest of module one. Every one of these is a remount of the
     // whole status bar (Flow keys its step view by position), which is exactly
     // the thing that used to make a mount-triggered label print every time.
+    // BS-05d raised the cap from 12: the walk now passes a run's payoff card
+    // on its way out of Orientation, and each pass costs a turn.
     let guard = 0;
-    while (guard++ < 12) {
+    while (guard++ < 16) {
+      // BS-05d: a run's payoff card can stand between two questions.
+      if (await pastRunCard(page)) continue;
       const position = await page.locator('.flow').getAttribute('data-position');
       if (position === 'module-intro') break;
       if (position === 'reflect') {
@@ -437,6 +444,11 @@ test.describe('VB-10 — the module label prints on a change, not on a question'
         await page.getByRole('button', { name: 'Next', exact: true }).click();
       }
       await page.waitForSelector('.flow');
+      // BS-05d: that Next may have landed on a run's payoff card, which
+      // carries no module label of its own — a celebration with a progress
+      // bar on it would be the panel talking over itself. Nothing to check
+      // this turn; the top of the loop walks past it.
+      if (await page.locator('.runcard').count()) continue;
       // Still inside module one? Then the label must not have reprinted.
       if ((await page.locator('.flowprogress-title').textContent()) === 'Orientation') {
         expect(await printsSeen(), 'the label reprinted inside a single module').toEqual([]);
@@ -498,12 +510,16 @@ test.describe('VB-10 — reduced motion', () => {
 
     // Two more arrivals, each of which would print under full motion.
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
     expect((await readText(page, '.flow-q')).shown).toBe(
       await page.locator('.flow-q').textContent(),
     );
     await page.locator('.flow .vpick .vpick-tile').first().click(); // VB-118: tiles
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
     expect((await readText(page, '.flow-q')).shown).toBe(
       await page.locator('.flow-q').textContent(),

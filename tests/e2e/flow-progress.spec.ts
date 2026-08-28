@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import { questionCount } from '../../src/core/flow/runner';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.1 VB-02 accept criteria (docs/V1.1-REFINEMENT.md): "no raw numbers
@@ -127,6 +128,8 @@ test.describe('VB-02 — module title + progress bar', () => {
     // context_scope's choices are icon tiles.)
     await page.locator('.flow .vpick .vpick-tile').first().click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 
     await expect(bar).toHaveAttribute('aria-valuenow', '3');
@@ -151,6 +154,9 @@ test.describe('VB-02 — module title + progress bar', () => {
       // textContent, not innerText: the title is styled `text-transform:
       // uppercase`, so innerText would compare against the CSS rendering
       // rather than against the module title the data actually carries.
+      // BS-05d: a run's payoff card can stand between two questions, and it
+      // carries no module title of its own.
+      if (await pastRunCard(page)) continue;
       const title = (await page.locator('.flowprogress-title').textContent()) ?? '';
       if (!titles.includes(title)) titles.push(title);
       if (titles.length > 1) break;

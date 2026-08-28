@@ -14,6 +14,7 @@ import {
 import type { AnswerValue, RepeatableBlock } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 import { S } from '../../src/panel/strings';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V2.5 VB-122 — role_for as the divided line, on the real screen.
@@ -208,6 +209,10 @@ test.describe('the divided line (VB-122)', () => {
     // Crossing never advances — Next is still the only door.
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_for');
     await page.getByRole('button', { name: S.next, exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_mandate');
 
     await context.close();
@@ -246,6 +251,8 @@ test.describe('the divided line (VB-122)', () => {
     // Next commits the KEY, not the label.
     await page.getByRole('button', { name: S.next, exact: true }).focus();
     await page.keyboard.press('Enter');
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_mandate');
     expect(await storedRoleFor(sw)).toBe('community');
 
@@ -272,6 +279,10 @@ test.describe('the divided line (VB-122)', () => {
       .toBe(true);
 
     await page.getByRole('button', { name: S.next, exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_mandate');
     expect(await storedRoleFor(sw)).toBe('The scout troop parents');
 
@@ -296,6 +307,10 @@ test.describe('the divided line (VB-122)', () => {
 
     // Re-submitting unchanged keeps the stored string exactly as it was.
     await page.getByRole('button', { name: S.next, exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'role_mandate');
     expect(await storedRoleFor(sw)).toBe('employer');
 
@@ -307,6 +322,8 @@ test.describe('the divided line (VB-122)', () => {
     await expect(held).toHaveAttribute('aria-pressed', 'false');
     await expect(held).toBeVisible();
     await page.getByRole('button', { name: S.next, exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     expect(await storedRoleFor(sw)).toBe('myself');
 
     await context.close();

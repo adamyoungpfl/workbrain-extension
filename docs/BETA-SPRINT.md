@@ -691,6 +691,31 @@ part.
 **`drawer-modes.spec.ts` — "dragging below the threshold"** timed out once
 under load (BS-01c's gate) and passed 3x isolated. Same protocol.
 
+**`home.spec.ts` — "finishing the Context file lights both dormant tiles"**
+timed out once under load (BS-05d's gate) and passed 3x isolated. Same
+protocol.
+
+---
+
+## The interstitial tax, and why it is worth naming
+
+BS-05d's run card broke **31 e2e tests** in one commit. Not one of them was
+wrong: the interview grew a screen between two questions, and every spec that
+WALKS the interview now meets it — exactly as every walker already meets V1.1
+VB-05's module transitions.
+
+The fix is one shared helper, `tests/e2e/fixtures/runCard.ts`'s
+`pastRunCard(page)`, threaded into fourteen files. It is shared rather than
+duplicated because the repo's fixtures-live-with-their-spec convention is
+about DATA — whose shape a spec is often making a claim about — and this is
+three lines of navigation that fourteen walkers would otherwise carry copies
+of. A copy that drifts is a walker that silently stops testing what it says.
+
+**The lesson for §5's remaining slices, and for §7:** an interstitial costs a
+suite-wide sweep, and the sweep should be budgeted with the feature rather
+than discovered after it. The census predicted 38 broken tests for §5; that
+number is real and this was one slice of it.
+
 ---
 
 ## Build order

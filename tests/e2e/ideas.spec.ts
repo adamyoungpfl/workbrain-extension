@@ -6,6 +6,7 @@ import { contextModules } from '../../src/core/flow/flow';
 import type { Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 import { S } from '../../src/panel/strings';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.1 VB-08: the "give me an example" button. `Step.ideas` has been in the
@@ -93,6 +94,10 @@ async function goToIdeaQuestion(page: Page): Promise<void> {
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'context_scope');
   await page.locator('.flow .vpick .vpick-tile').first().click();
   await page.getByRole('button', { name: 'Next', exact: true }).click();
+  // BS-05d: a run's payoff card can stand between two questions.
+  await pastRunCard(page);
+  // BS-05d: a run's payoff card can stand between two questions.
+  await pastRunCard(page);
   await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
 }
 
@@ -125,6 +130,10 @@ test.describe('Give me an example (VB-08)', () => {
     // And the text question that has them does show it.
     await page.locator('.flow .vpick .vpick-tile').first().click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
     await expect(page.locator('.flow-idea')).toHaveCount(1);
 
@@ -272,6 +281,8 @@ test.describe('Give me an example (VB-08)', () => {
     // which reads from the *stored* answer, not the draft buffer, so seeing
     // the text there is proof it was written as an ordinary answer.
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'reflect');
     // V2.3 VB-95: the played-back words live in the unboxed quote now.
     expect(await page.locator('.flow .flow-reflect-quote').textContent()).toContain(edited);
@@ -300,6 +311,8 @@ test.describe('Give me an example (VB-08)', () => {
     const typed = 'The context behind my own work, in my own words, with enough substance to earn the quick check.';
     await page.locator('#flow-stop_explaining').fill(typed);
     await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // BS-05d: a run's payoff card can stand between two questions.
+    await pastRunCard(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-position', 'reflect');
 
     await page.getByRole('button', { name: S.reflectRedo, exact: true }).click();

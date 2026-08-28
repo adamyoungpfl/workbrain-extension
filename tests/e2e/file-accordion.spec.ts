@@ -9,6 +9,7 @@ import { splitSectionLabel } from '../../src/core/flow/sectionLabel';
 import { S } from '../../src/panel/strings';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { pastRunCard } from './fixtures/runCard';
 
 /**
  * V1.6 VB-33 — List mode as a modern accordion, driven in a real browser.
@@ -157,6 +158,10 @@ function everythingAnsweredLongAgo(): Answers {
  * "another one?" rather than a single Yes/No.
  */
 async function answerWhateverIsOnScreen(page: Page): Promise<void> {
+  // BS-05d: a run's payoff card can stand between two questions, the same
+  // way a module transition can. Walk past it.
+  if (await pastRunCard(page)) return;
+
   const position = await page.locator('.flow').getAttribute('data-position');
   if (position === 'reflect') {
     await page.getByRole('button', { name: S.reflectKeep, exact: true }).click();

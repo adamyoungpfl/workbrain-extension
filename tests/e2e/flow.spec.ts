@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import { questionCount } from '../../src/core/flow/runner';
+import { pastRunCard } from './fixtures/runCard';
 
 // R1-06 accept criteria: "keyboard-only pass from first question to the end;
 // answers persist across a panel close/reopen." See docs/TESTING.md for the
@@ -88,6 +89,10 @@ async function openPanel(context: BrowserContext): Promise<Page> {
  * tested).
  */
 async function answerCurrentQuestion(page: Page): Promise<void> {
+  // BS-05d: a run's payoff card can stand between two questions, the same
+  // way a module transition can. Walk past it.
+  if (await pastRunCard(page)) return;
+
   const form = page.locator('.flow');
   const position = await form.getAttribute('data-position');
 
