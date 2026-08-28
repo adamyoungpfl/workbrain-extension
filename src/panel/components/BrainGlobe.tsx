@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useId, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { CSSProperties, PointerEvent as ReactPointerEvent, KeyboardEvent as ReactKeyboardEvent } from 'react';
 import type { FileOutlineNode } from '../../schema/flow.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
@@ -13,7 +13,6 @@ import { HIGHLIGHT_RADIUS, LIMB_INNER, SHADE_RADIUS, orbLight } from '../../core
 import type { OrbLight } from '../../core/globe/lighting';
 import type { SectionLife } from '../../core/freshness/sectionLife';
 import { sectionIsLit, sectionLife } from '../../core/freshness/sectionLife';
-import { detailBand } from '../../core/globe/detailBand';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
 import type { FileSlotId } from '../../core/files/slots';
 import { firstLocked } from '../../core/files/toggle';
@@ -49,6 +48,9 @@ import {
 import type { Vec3 } from '../../core/geometry/icosahedron';
 import { prefersReducedMotion } from '../cues/verbs';
 import { S } from '../strings';
+import { LeafCard } from './LeafCard';
+import { leafCardBand } from '../../core/globe/leafCard';
+import { leafStateFor } from '../../core/globe/leafState';
 import './BrainGlobe.css';
 
 /**
@@ -487,27 +489,14 @@ const FEATURE_X = -58;
 const FEATURE_Y = 0;
 const FEATURE_R = 19;
 
-/**
- * V1.6 VB-31 — the free text's own three numbers.
- *
- * `DETAIL_DRIFT` is the only taste decision in the whole placement, and it sets
- * the measure rather than being set by it (core/globe/detailBand.ts): how far
- * the block's own centre may sit from the node's, as a fraction of the node's
- * radius. **0.5 puts the text's axis halfway between the orb's centre and its
- * rim** — 14px on the 300px stage, under 5% of it, which nobody reads as
- * "offset to one side" — and buys about 50% more measure than dead-centre for
- * it. Screenshotted at both ends: at 0 the block is 93px on the smallest stage
- * and "Manager / Team Lead" breaks in two; at 1 the axis is on the rim and the
- * text has visibly stopped being under the orb.
- *
- * `DETAIL_EDGE_PX` is the margin the block keeps from the stage's own edge, and
- * `DETAIL_GAP` the space between the orb's rim and the first line of text. 10
- * rather than the hover card's 6: with no border between them, the gap is the
- * only thing saying the text is *under* the orb rather than falling out of it.
- */
-const DETAIL_DRIFT = 0.5;
-const DETAIL_EDGE_PX = 8;
-const DETAIL_GAP = 10;
+/* BS-07c (§7.2) — DETAIL_DRIFT / DETAIL_EDGE_PX / DETAIL_GAP went with the
+   band they positioned. `detailBand`'s whole job was buying a measure for a
+   text column under one orb; the leaf card takes the stage's lower portion
+   instead (core/globe/leafCard.ts), so where the orb sits no longer decides
+   how wide the words may be. `detailBand.ts` itself is left in core — it is
+   tested, it is honest, and deleting a fold because its only caller changed
+   shape is how a repo loses the arithmetic it may want back. */
+
 
 /**
  * V1.5 VB-27 — how long the summary waits before closing when the pointer
@@ -932,6 +921,19 @@ export interface BrainGlobeProps {
    * into, one of its children when a child is picked, null when the globe is
    * back to the whole file. The caller owns what to show for it. */
   onSelect?: (node: FileOutlineNode | null) => void;
+  /**
+   * BS-07c (§7.2) — the leaf card's one action. `wantsList` is true for the
+   * two states whose action opens the list §8 built rather than a question.
+   * Absent, the card still draws and its action does nothing — the picture
+   * must never be the thing that breaks a screen.
+   */
+  onLeafAct?: ((node: FileOutlineNode, wantsList: boolean) => void) | undefined;
+  /**
+   * BS-07c — which nodes OWN a list (`core/flow/outline.ts`'s `listNodeIds`).
+   * The one fact the card needs that the globe cannot see: an empty node is
+   * an empty ANSWER or an empty LIST, and only the outline knows which.
+   */
+  listNodes?: ReadonlySet<string> | undefined;
   /** V2.4 VB-112 — when present, the nav band's drawn house leaves for the
    * Home PAGE instead of climbing the tier ladder, and is active at every
    * tier. */
@@ -1089,102 +1091,14 @@ function labelPlacement(leftPct: number): { shift: string; room: string } {
 
 // ── What the detail zoom says ─────────────────────────────────────────────
 
-/**
- * What a sub-section holds — V1.4 VB-23's "information panel on the right",
- * which V1.6 VB-31 turned into free text centred under the node.
- *
- * THE MARKUP IS UNCHANGED AND THE PRESENTATION IS NOT. VB-31 asks for the same
- * shape every time, and the shape was never the box: it is name → record →
- * answer → the question the answer belongs to, in the order the person's own
- * file writes them. What went is the card around it and the two-up grid, which
- * existed because the panel had 144px of content beside the orb; a block of
- * centred free text has one column, and a centred grid of two would be reading
- * order fighting layout for no gain at 400px.
- *
- * Three decisions, all of them forced by 400px:
- *
- * 1. **The answer is the loud line, the question is its caption.** Every
- *    question in this interview is a whole spoken sentence ("Is this your
- *    primary role, a secondary role, or something occasional?"), and a list
- *    whose labels are sentences buries the answers. So the person's own words
- *    are the loud line and the question sits under them, three lines at most,
- *    with the whole of it in `title` for anyone who wants it. Nothing they
- *    *said* is ever clipped.
- * 2. **Records become headings, not indentation.** Three roles are three
- *    headings, exactly as the generated file prints them — indentation at this
- *    width would cost more than it explains.
- * 3. **A `<dl>`, because these are name/value pairs.** Grouped in `<div>`s,
- *    which is valid inside a description list and is what lets each pair be
- *    one block.
- *
- * **No headings in here, deliberately.** A record's title looks like an `<h4>`
- * and is not one: this component is dropped into a drawer whose own heading is
- * an `<h2>`, and into a bare harness page whose first heading is an `<h1>`, so
- * any level hard-coded here is wrong somewhere and axe's `heading-order` says
- * so. Each record is a named `role="group"` instead, labelled by the very text
- * that is drawn — which is the structure a record actually has, and it needs no
- * knowledge of what is above it on the page.
- *
- * Empty is a real state and says so in a sentence: a section nobody has
- * answered yet draws no boxes at all (core/flow/nodeDetails.ts).
- */
-function DetailGrid({ details }: { details: readonly NodeDetail[] }) {
-  const uid = useId().replace(/[^a-zA-Z0-9_-]/g, '');
-  if (details.length === 0) {
-    return <p className="brainglobe-detail-empty">{S.brainGlobeDetailEmpty}</p>;
-  }
+/* BS-07c (§7.2) — `DetailGrid` is gone with the definition list it drew.
+   §7.2: "Selecting a sub-node currently renders `brainglobe-detail` as a
+   definition list from `nodeDetails`, question label first" — and leading with
+   the QUESTION is what made a leaf holding a list and a leaf holding one
+   answer look identical. The card leads with what the node holds instead
+   (components/LeafCard.tsx). `nodeDetails` itself still feeds the answer
+   variant, so the fold survives its renderer. */
 
-  // Consecutive runs of the same group, in the order core handed them over —
-  // never sorted, so the panel reads in the order the file writes.
-  const groups: Array<{ group: string; cells: NodeDetail[] }> = [];
-  for (const detail of details) {
-    const last = groups[groups.length - 1];
-    if (last && last.group === detail.group) last.cells.push(detail);
-    else groups.push({ group: detail.group, cells: [detail] });
-  }
-
-  return (
-    <>
-      {groups.map(({ group, cells }, index) => (
-        <div
-          className="brainglobe-detail-group"
-          key={`${group}-${index}`}
-          {...(group ? { role: 'group', 'aria-labelledby': `${uid}-g${index}` } : {})}
-        >
-          {group && (
-            <p className="brainglobe-detail-record" id={`${uid}-g${index}`}>
-              {group}
-            </p>
-          )}
-          <dl className="brainglobe-detail-grid">
-            {cells.map((cell, cellIndex) => (
-              <div
-                className="brainglobe-detail-cell"
-                key={`${cell.label}-${cellIndex}`}
-                /* Still published, and no longer laid out on: V1.6 VB-31's
-                   single centred column has no row for a wide cell to take.
-                   Kept because it is core's own statement about this answer's
-                   length (`WIDE_VALUE_CHARS` in core/flow/nodeDetails.ts) and
-                   the DOM is where that contract is visible. */
-                data-wide={cell.wide ? 'true' : 'false'}
-              >
-                {/* `dt` before `dd`, which is the order HTML requires inside a
-                    description list and the order a screen reader wants:
-                    question, then answer. The block shows them the other way up
-                    — the answer is the content — and that is one `order` in
-                    BrainGlobe.css rather than invalid markup here. */}
-                <dt className="brainglobe-detail-key" title={cell.label}>
-                  {cell.label}
-                </dt>
-                <dd className="brainglobe-detail-value">{cell.value}</dd>
-              </div>
-            ))}
-          </dl>
-        </div>
-      ))}
-    </>
-  );
-}
 
 // ── The component ──────────────────────────────────────────────────────────
 
@@ -1198,6 +1112,8 @@ export function BrainGlobe({
   summaries,
   recommendations,
   onSelect,
+  onLeafAct,
+  listNodes,
   onHome,
   selectRequest,
   files,
@@ -2228,43 +2144,31 @@ export function BrainGlobe({
    * mid-split and arrives with it rather than after it. Derived per render like
    * everything else on this stage; nothing about it is stored.
    */
-  const pickedLayout = childLayout.find((entry) => entry.picked);
-  const band = pickedLayout
-    ? detailBand({
-        size,
-        nodeX: pct(pickedLayout.x) / 100,
-        nodeY: pct(pickedLayout.y) / 100,
-        nodeRadius: pickedLayout.radius / (VIEW_HALF * 2),
-        driftAllowance: DETAIL_DRIFT,
-        edge: DETAIL_EDGE_PX,
-        gap: DETAIL_GAP,
-      })
-    : null;
 
   /**
-   * V1.6 VB-31 — whether the free text has more below the fold.
+   * BS-07c (§7.2) — the card's share of the stage, and which of §7.3's six it
+   * is wearing.
    *
-   * The one thing about this block that cannot be derived from props: it
-   * depends on how the browser broke the lines. So it is measured off the real
-   * element, after layout, and it decides exactly one thing — whether the
-   * fade at the block's foot is drawn (BrainGlobe.css). Guessing it from the
-   * content's length faded the last line of `2.5 Expertise`, which is one
-   * sentence and fits with 30px to spare.
-   *
-   * `useLayoutEffect` and no dependency array, because the answer changes with
-   * anything that changes the line breaking — the picked node, the stage's
-   * size, the band's own room — and enumerating those is a list that will be
-   * wrong by V1.7. The read costs one layout on a render where the block is
-   * mounted at all, and `setState` only ever runs on the frame the answer
-   * actually flips.
+   * `detailBand` and its drift arithmetic went with the band it positioned:
+   * the card takes the LOWER PORTION rather than the room under an orb, so
+   * where the orb happens to be stopped mattering. See core/globe/leafCard.ts
+   * for the measurement that forced the change.
    */
-  const detailRef = useRef<HTMLDivElement | null>(null);
-  const [detailScrolls, setDetailScrolls] = useState(false);
-  useLayoutEffect(() => {
-    const element = detailRef.current;
-    const scrolls = !!element && element.scrollHeight - element.clientHeight > 1;
-    setDetailScrolls((was) => (was === scrolls ? was : scrolls));
-  });
+  const leafBand = pickedChild ? leafCardBand(size) : null;
+  const leafState = leafStateFor(
+    pickedChild ? (summaries?.[pickedChild.id] ?? null) : null,
+    pickedChild ? (listNodes?.has(pickedChild.id) ?? false) : false,
+  );
+  /** The card's orb wears the flown section's own gradient, so the thing on
+   * the card is visibly the thing that was pressed a moment ago. */
+  const leafGradient = flownIndex === null ? 1 : sectionNodeGradient(flownIndex);
+
+  /* BS-07c (§7.2) — the measured "does this scroll" flag went with the band.
+   It existed to draw a fade at the foot of a text block whose height was
+   capped by `detailBand`'s room. The card's middle is a real scroll region
+   with the action pinned below it (components/LeafCard.css), so whether it
+   scrolls is the browser's business and nothing has to measure it. */
+
 
   /**
    * V1.8 VB-48 — how big the solid actually is on the stage this frame, in view
@@ -2367,9 +2271,26 @@ export function BrainGlobe({
     <>
       <div
         className="brainglobe"
-      style={rootStyle}
       data-moving={moving ? 'true' : 'false'}
       data-inside={inside ? 'true' : 'false'}
+      /* BS-07c (§7.2) — "globe compresses to a strip, never-occlude preserved
+         above". One flag; the stylesheet moves the picture up into the strip
+         `leafCardBand` measured, and the card owns everything below it. A
+         transform rather than a second projection: the same drawing, smaller
+         and higher, so hit targets travel with what they are targeting. */
+      data-leaf={pickedChild ? 'true' : 'false'}
+      style={
+        leafBand
+          ? ({
+              ...rootStyle,
+              '--brainglobe-strip': `${leafBand.strip.toFixed(2)}px`,
+              // The scale that lands the square picture inside the strip, and
+              // the number each hit target undoes on itself so the 44px floor
+              // survives the compression (BrainGlobe.css).
+              '--brainglobe-leafscale': (leafBand.strip / Math.max(1, size)).toFixed(4),
+            } as CSSProperties)
+          : rootStyle
+      }
       data-reduced={reduced ? 'true' : 'false'}
       /* V1.5 VB-25. One flag, one colour swap in the stylesheet — every orb,
          every bloom and every edge at once. A state, not an event: it goes on
@@ -3274,35 +3195,37 @@ export function BrainGlobe({
         Mounted only while a sub-node is picked, so nothing behind the globe
         holds a name or a tab stop it should not.
       */}
-      {pickedChild && band && (
-        <div
-          className="brainglobe-detail"
-          ref={detailRef}
-          role="region"
-          tabIndex={0}
-          aria-label={S.brainGlobeDetail(pickedChild.label)}
-          data-detail-id={pickedChild.id}
-          /* Measured, not guessed — see `detailScrolls`. It draws the fade at
-             the block's foot and nothing else; the scrolling itself is the
-             browser's and the tab stop above is what reaches it. */
-          data-scrolls={detailScrolls ? 'true' : 'false'}
-          style={
-            {
-              '--brainglobe-split': es.toFixed(3),
-              '--brainglobe-detail-centre': `${band.centre.toFixed(2)}px`,
-              '--brainglobe-detail-width': `${band.width.toFixed(2)}px`,
-              '--brainglobe-detail-top': `${band.top.toFixed(2)}px`,
-              '--brainglobe-detail-room': `${band.room.toFixed(2)}px`,
-            } as CSSProperties
-          }
-        >
-          {/* Not a heading, for the same reason the record titles below are
-              not: this component does not know what heading level is above it.
-              The region's own accessible name carries the sub-section's name
-              to a screen reader; this is the visible copy of it. */}
-          <p className="brainglobe-detail-name">{pickedChild.label}</p>
-          <DetailGrid details={details?.[pickedChild.id] ?? []} />
-        </div>
+      {/*
+        BS-07c (§7.2) — THE FIVE-PART CARD, where a definition list used to be.
+
+        What it replaces: `.brainglobe-detail`, a `<dl>` of question-label /
+        answer pairs positioned in the room under one orb. §7.2's complaint —
+        "a leaf holding a list and a leaf holding one answer look identical, a
+        list leaf has no count, and there is no route to the editor or
+        statement of what the field is for" — is three separate holes, and the
+        card closes all three: `itemKind` picks the variant, the list variant
+        leads on its count, and part 5 is the route.
+
+        The geometry moved with it. `detailBand` measured the room BELOW AN
+        ORB; `leafCardBand` gives the card the stage's lower portion and
+        compresses the globe into the strip above (the `data-leaf` attribute
+        on the root, and BrainGlobe.css). Never-occlude is kept by
+        arrangement rather than by capping a height — the globe is not drawn
+        where the card is, which is the stronger version of the same promise.
+      */}
+      {pickedChild && leafBand && (
+        <LeafCard
+          label={pickedChild.label}
+          state={leafState}
+          gradient={leafGradient}
+          summary={summaries?.[pickedChild.id] ?? null}
+          details={details?.[pickedChild.id] ?? []}
+          purpose={S.nodePurpose[pickedChild.id]}
+          top={leafBand.top}
+          height={leafBand.height}
+          onClose={() => setPickedChildId(null)}
+          onAct={() => onLeafAct?.(pickedChild, leafState.startsWith('list-'))}
+        />
       )}
 
       {/*

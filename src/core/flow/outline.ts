@@ -138,6 +138,34 @@ export function positionForQuestionId(modules: Module[], questionId: string): Po
  * Doing it by data rather than by section id also means a future outline
  * change cannot silently drop the records from the tree.
  */
+/**
+ * BS-07c (§7.2) — every outline node that OWNS a list, by id.
+ *
+ * The leaf card needs one fact the globe cannot see: whether a node holding
+ * nothing is an empty ANSWER or an empty LIST. `nodeSummaryFor` cannot say —
+ * it reports a block with no records as an answer node, because with no
+ * records the answers are all there is to count — so the shape has to come
+ * from the outline itself, which is where a fact about shape belongs.
+ *
+ * A set rather than a lookup per node: the globe holds the whole outline and
+ * asks about whichever node a pointer lands on, and rebuilding the module
+ * index per hover is the thing `nodeDetailsByNode` already refuses to do.
+ */
+export function listNodeIds(
+  modules: Module[],
+  outline: readonly FileOutlineNode[],
+): ReadonlySet<string> {
+  const ids = new Set<string>();
+  const walk = (nodes: readonly FileOutlineNode[]) => {
+    for (const node of nodes) {
+      if (repeatableBlocksForNode(modules, node).length > 0) ids.add(node.id);
+      if (node.children) walk(node.children);
+    }
+  };
+  walk(outline);
+  return ids;
+}
+
 export function repeatableBlocksForNode(modules: Module[], node: FileOutlineNode): RepeatableBlock[] {
   const ids = new Set(node.questionIds);
   const blocks: RepeatableBlock[] = [];

@@ -181,6 +181,19 @@ From the change spec's §11, minus the ones now answered:
 | ~~O2~~ | ~~Who writes the purpose lines, and do they ship with the card or behind it?~~ | **RESOLVED — below** |
 | O6b | D1 bans printed digits. The progressbar's spoken count (`aria-valuetext`, "Question 3 of 38") is not printed — assumption is it becomes **run-scoped** rather than global, so a screen-reader user gets what the beat row gives everyone else. Correct if the spoken total should go entirely. | BS-05a |
 
+**A REPLACED ELEMENT IS A THREE-WAVE SWEEP** (BS-07c, the same lesson one
+surface along). `.brainglobe-detail` was the shared anchor for "the split is
+open" across e2e specs, a11y specs AND units — 30 e2e, 3 a11y, 7 unit, found
+in that order because each layer runs at a different stage of the gate. When
+a widely-referenced element is REPLACED rather than restyled, budget for all
+three waves; the e2e failures are only the first one you see.
+
+**AND CHECK STRUCTURE, NOT SUBSTRINGS.** `drawer-drag` asserted a height was
+never stored by searching the whole storage blob for "376". Every stamp in
+its fixture is an ISO string, and a run at `15:32:00.376Z` failed a test about
+drawer heights because of a millisecond. Latent since VB-12; it just needed
+the right clock. Walk the values.
+
 **THE PEEK IS THE DRAWER'S TEST FIXTURE** (BS-07a, learned the expensive way).
 §7.1's status line is one bullet and it cost four gate cycles. Fifteen specs
 opened the drawer and immediately waited for `.filetree-row` — never their

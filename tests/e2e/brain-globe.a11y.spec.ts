@@ -45,7 +45,9 @@ test.describe('Brain globe — accessibility', () => {
     await page.keyboard.press('Enter');
     await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
     await expect(page.locator('.brainglobe')).toHaveAttribute('data-split', '1.000');
-    await expect(page.locator('.brainglobe-detail-cell')).toHaveCount(13);
+    // BS-07c (§7.2): the definition list is a five-part card now. Waiting on
+    // the card is the same "it has finished opening" this always meant.
+    await expect(page.locator('.leafcard-act')).toBeVisible();
 
     expect((await new AxeBuilder({ page }).analyze()).violations).toEqual([]);
   });
@@ -94,7 +96,9 @@ test.describe('Brain globe — accessibility', () => {
     // A named region, not an unlabelled box — and a real tab stop, because it
     // scrolls (axe's `scrollable-region-focusable`, WCAG 2.1.1).
     await expect(page.getByRole('region', { name: "What's in 2.1 Roles" })).toHaveCount(1);
-    await expect(page.locator('.brainglobe-detail')).toHaveAttribute('tabindex', '0');
+    // BS-07c: the card is the named region; the part of it that SCROLLS is
+    // the tab stop, which is what the rule is actually about.
+    await expect(page.locator('.leafcard-scroll')).toHaveAttribute('tabindex', '0');
 
     // The sub-node says it is open, in words rather than by position. Its name
     // is the short one V1.5 VB-26 prints on the stage — a control's accessible

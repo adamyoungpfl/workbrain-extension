@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import type { Page } from '@playwright/test';
 import { channelDistance, contrastRatio, parseCssColor, relativeLuminance } from '../../src/core/color/contrast';
 import type { Rgb } from '../../src/core/color/contrast';
+import { S } from '../../src/panel/strings';
 
 /**
  * V1.2 VB-14a — the Brain globe, driven in a real browser.
@@ -732,132 +733,145 @@ test.describe('VB-23 — inside a section: size, no halo, and joints', () => {
   });
 });
 
-test.describe('VB-23 — clicking a sub-node splits the stage', () => {
-  test('the orb features where it always did, and its text opens under it', async ({ page }) => {
+/**
+ * BS-07c (§7.2) REPLACED WHAT THESE TESTED, so the block is rewritten rather
+ * than repaired. §7.2: "Selecting a sub-node currently renders
+ * `brainglobe-detail` as a definition list from `nodeDetails`, question label
+ * first. So a leaf holding a list and a leaf holding one answer look
+ * identical, a list leaf has no count, and there is no route to the editor."
+ *
+ * The claims that SURVIVE the swap are kept word for word — the orb still
+ * features left of centre and grows, the cluster it came from still goes, and
+ * nothing is drawn outside the stage. What goes with the definition list is
+ * everything about cells, records, the two-up grid and the measured fade.
+ *
+ * What replaces them is §7.2's own acceptance: five parts in a fixed order,
+ * parts 1/4/5 in identical positions across variants, a list leaf that states
+ * its count and never names an item, and one action that lands somewhere.
+ */
+test.describe('BS-07c — picking a sub-node opens its card', () => {
+  test('the orb features where it always did, and the card takes the lower portion', async ({ page }) => {
     await open(page);
     await flyIntoAboutMe(page);
 
-    const before = (await page.locator('.brainglobe-child-node[data-child-id="sec2-1"] .brainglobe-sphere').boundingBox())!;
     await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
 
     const stage = (await page.locator('.brainglobe').boundingBox())!;
-    const orb = (await page.locator('.brainglobe-child-node[data-picked="true"] .brainglobe-sphere').boundingBox())!;
-    const panel = (await page.locator('.brainglobe-detail').boundingBox())!;
+    const card = (await page.locator('.leafcard').boundingBox())!;
 
-    // The orb travelled, and grew into a feature. V1.6 VB-31 moved the text
-    // and left this exactly as it was — the node is where it has been since
-    // V1.4, left of centre and on the vertical middle.
-    expect(centreX(orb)).toBeLessThan(stage.x + stage.width * 0.4);
-    expect(orb.width).toBeGreaterThan(before.width * 2);
-    // The text: below the orb, entirely inside the stage, and clear of it.
-    expect(panel.y).toBeGreaterThanOrEqual(orb.y + orb.height);
-    expect(panel.x).toBeGreaterThanOrEqual(stage.x - 1);
-    expect(panel.x + panel.width).toBeLessThanOrEqual(stage.x + stage.width + 1);
-    expect(panel.y + panel.height).toBeLessThanOrEqual(stage.y + stage.height + 1);
-    // (Until V2.1 VB-74 this also checked the panel cleared the corner back
-    // control. The way out lives above the stage now, so there is nothing on
-    // the picture for the panel to hide behind.)
-    // And the whole cluster it came out of has gone.
+    /**
+     * VB-31's "the orb grew into a feature" DOES NOT SURVIVE, and it is worth
+     * saying why rather than quietly dropping it. The orb still grows inside
+     * the projection; the stage then compresses that whole projection into the
+     * strip, so on screen the featured orb is SMALLER than it was on the ring.
+     * The card is the feature now — which is what §7.2 asked for, and a real
+     * trade against V1.4's choreography.
+     *
+     * What is still true, and still worth holding: the one picked orb is the
+     * only one left drawn.
+     */
+    await expect(page.locator('.brainglobe-child-node[data-picked="true"]')).toHaveCount(1);
+
+    // THE CARD IS THE LOWER PORTION, and entirely inside the stage.
+    expect(card.x).toBeGreaterThanOrEqual(stage.x - 1);
+    expect(card.x + card.width).toBeLessThanOrEqual(stage.x + stage.width + 1);
+    expect(card.y + card.height).toBeLessThanOrEqual(stage.y + stage.height + 1);
+    expect(card.y).toBeGreaterThan(stage.y + stage.height * 0.2);
+
+    // NEVER-OCCLUDE, KEPT BY ARRANGEMENT. §7.2: "globe compresses to a strip,
+    // never-occlude preserved above." The picture is not drawn where the card
+    // is, so the whole solid sits above the card's top edge rather than being
+    // covered by it.
+    await expect(page.locator('.brainglobe')).toHaveAttribute('data-leaf', 'true');
+    const svg = (await page.locator('.brainglobe-svg').boundingBox())!;
+    expect(svg.y + svg.height, 'the globe is drawn over the card').toBeLessThanOrEqual(card.y + 1);
+
+    // And the cluster it came out of has gone.
     const others = await page
       .locator('.brainglobe-child-node[data-picked="false"]')
       .evaluateAll((nodes) => nodes.map((node) => Number(node.getAttribute('opacity'))));
     expect(Math.max(...others)).toBeLessThan(0.02);
   });
 
-  test('the text carries the sub-node’s name and every one of its details', async ({ page }) => {
+  test('five parts, in order, and the two that vary are the only ones that do', async ({ page }) => {
     await open(page);
     await flyIntoAboutMe(page);
     await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
 
-    await expect(page.locator('.brainglobe-detail-name')).toHaveText('2.1 Roles');
-    // The real stress case: three roles, thirteen cells, three headings.
-    await expect(page.locator('.brainglobe-detail-cell')).toHaveCount(13);
-    await expect(page.locator('.brainglobe-detail-record')).toHaveCount(3);
-    await expect(page.locator('.brainglobe-detail-record').first()).toHaveText('Manager / Team Lead');
+    const card = page.locator('.leafcard');
+    // 1 — the node's own orb, its name as the FILE spells it, and the close.
+    await expect(card.locator('.leafcard-orb')).toHaveCount(1);
+    await expect(card.locator('.leafcard-name')).toHaveText('2.1 Roles');
+    await expect(card.getByRole('button', { name: /^Close / })).toHaveCount(1);
+    // 2 — what the field is for. §7.4's one new authored field.
+    await expect(card.locator('.leafcard-purpose')).toHaveText(S.nodePurpose['sec2-1']!);
+    // 3 — the value block.
+    await expect(card.locator('.leafcard-block')).toHaveCount(1);
+    // 5 — ONE action, never two, and at least 46px.
+    const actions = card.locator('.leafcard-act');
+    await expect(actions).toHaveCount(1);
+    const box = (await actions.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(46);
 
-    // V1.6 VB-31: ONE COLUMN, in DOM order. The two-up grid went with the
-    // bordered panel — free text centred under a node has one measure, and
-    // reading order and visual order are the same thing again. No two cells
-    // ever share a row, and each one takes the whole measure.
-    const boxes = await page
-      .locator('.brainglobe-detail-cell')
-      .evaluateAll((cells) => cells.map((cell) => cell.getBoundingClientRect()).map((r) => ({ x: r.x, y: r.y, w: r.width })));
-    const paired = boxes.filter((a, i) => boxes.some((b, j) => i !== j && Math.abs(a.y - b.y) < 2 && Math.abs(a.x - b.x) > 2));
-    expect(paired.length, 'two cells sat side by side — this is a column, not a grid').toBe(0);
-
-    // Nothing runs outside the block it is in, and every cell is the measure.
-    const panel = (await page.locator('.brainglobe-detail').boundingBox())!;
-    for (const cell of boxes) {
-      expect(cell.x).toBeGreaterThanOrEqual(panel.x - 1);
-      expect(cell.x + cell.w).toBeLessThanOrEqual(panel.x + panel.width + 1);
-      expect(cell.w).toBeCloseTo(panel.width, 0);
-    }
-  });
-
-  test('the text scrolls, and everything in it is reachable', async ({ page }) => {
-    await open(page);
-    await flyIntoAboutMe(page);
-    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
-    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
-
-    const scroll = await page.locator('.brainglobe-detail').evaluate((el) => ({
-      scrollable: el.scrollHeight > el.clientHeight,
-      focusable: el.getAttribute('tabindex') === '0',
-    }));
-    // Thirteen cells is taller than any band this stage can offer, so this must
-    // be a real scroller AND a real tab stop — a scrolling box a keyboard
-    // cannot reach is a box whose bottom half does not exist.
-    expect(scroll.scrollable).toBe(true);
-    expect(scroll.focusable).toBe(true);
-
-    const bottom = await page.locator('.brainglobe-detail').evaluate((el) => {
-      el.scrollTop = el.scrollHeight;
-      return el.scrollTop;
+    // The order on screen is the order §7.2 fixes.
+    const tops = await card.evaluate((el) => {
+      const y = (sel: string) => (el.querySelector(sel) as HTMLElement | null)?.getBoundingClientRect().y ?? null;
+      return { head: y('.leafcard-head'), purpose: y('.leafcard-purpose'), block: y('.leafcard-block'), act: y('.leafcard-act') };
     });
-    expect(bottom).toBeGreaterThan(0);
-    await expect(page.locator('.brainglobe-detail-value').last()).toBeInViewport();
+    expect(tops.head!).toBeLessThan(tops.purpose!);
+    expect(tops.purpose!).toBeLessThan(tops.block!);
+    expect(tops.block!).toBeLessThan(tops.act!);
   });
 
-  test('the fade at the foot is drawn only when there is more below it', async ({ page }) => {
+  test('a LIST leaf leads on its count, and never names an item', async ({ page }) => {
     await open(page);
     await flyIntoAboutMe(page);
-    const block = page.locator('.brainglobe-detail');
-
-    // `2.1 Roles`: thirteen answers, more than any band holds.
     await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
-    await expect(block).toHaveAttribute('data-scrolls', 'true');
-    expect(await block.evaluate((el) => getComputedStyle(el).maskImage)).toContain('gradient');
 
-    // `2.5 Expertise`: one answer and one question, which fits. A fade over a
-    // block with nothing below it is a line greyed out for no reason — the
-    // flag is measured off the real element, not guessed from the content.
-    await page.keyboard.press('Escape');
-    await page.locator('.brainglobe-pin[data-child-id="sec2-5"]').click();
-    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
-    await expect(block).toHaveAttribute('data-scrolls', 'false');
-    expect(await block.evaluate((el) => el.scrollHeight - el.clientHeight)).toBeLessThanOrEqual(1);
-    expect(await block.evaluate((el) => getComputedStyle(el).maskImage)).toBe('none');
+    // 2.1 Roles owns the `roles` block, so it is a list leaf.
+    await expect(page.locator('.leafcard')).toHaveAttribute('data-state', /^list-/);
+    await expect(page.locator('.leafcard-count-n')).toHaveText('3');
+    await expect(page.locator('.leafcard-count-noun')).toHaveText(S.leafItemsNoun(3));
+
+    /**
+     * THE HARD CONSTRAINT, ASSERTED. §7.2: "No item name, per-item field, or
+     * item preview renders anywhere in the brain view." The fixture's three
+     * roles are named, and not one of those names may appear on the card.
+     */
+    const text = await page.locator('.leafcard').innerText();
+    for (const name of ['Manager / Team Lead', 'Employee', 'Consultant']) {
+      expect(text, `the card named an item: ${name}`).not.toContain(name);
+    }
+
+    // And its action opens the list rather than a question.
+    await expect(page.locator('.leafcard-act')).toHaveText(S.leafOpenList);
   });
 
   test('it still navigates — the split is on top of click-to-navigate, not instead of it', async ({ page }) => {
     await open(page);
     await flyIntoAboutMe(page);
-    await expect(page.locator('[data-testid="selected"]')).toHaveText('sec2');
-    await page.locator('.brainglobe-pin[data-child-id="sec2-3"]').click();
-    // The sub-node is reported to the caller exactly as it was before VB-23.
-    await expect(page.locator('[data-testid="selected"]')).toHaveText('sec2-3');
+    await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
+    await expect(page.locator('.leafcard')).toBeVisible();
+    await page.locator('.leafcard-act').click();
+    // The harness records the request rather than routing anywhere.
+    await expect.poll(() => page.evaluate(() => (window as unknown as { __leafAct?: string }).__leafAct ?? null)).toBe(
+      'sec2-1',
+    );
   });
 
-  test('nothing about the split makes the panel scroll sideways', async ({ page }) => {
+  test('nothing about the card makes the panel scroll sideways', async ({ page }) => {
     await open(page);
     await flyIntoAboutMe(page);
     await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
-    await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
-    const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    expect(overflow).toBeLessThanOrEqual(0);
+    await expect(page.locator('.leafcard')).toBeVisible();
+    const doc = await page.evaluate(() => ({
+      scroll: document.documentElement.scrollWidth,
+      client: document.documentElement.clientWidth,
+    }));
+    expect(doc.scroll).toBeLessThanOrEqual(doc.client);
   });
 });
 
@@ -871,12 +885,18 @@ test.describe('VB-23 — the split by keyboard', () => {
     await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toBeFocused();
     await page.keyboard.press('Enter');
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
-    await expect(page.locator('.brainglobe-detail')).toBeVisible();
+    await expect(page.locator('.leafcard')).toBeVisible();
     await expect(page.locator('.brainglobe-pin[data-child-id="sec2-1"]')).toHaveAttribute('aria-pressed', 'true');
 
     // Forward: the panel itself, then out of the globe entirely. No trap.
     await page.keyboard.press('Tab');
-    await expect(page.locator('.brainglobe-detail')).toBeFocused();
+    // BS-07c: the card is not a tab stop of its own — its CONTROLS are, which
+    // is the stronger version of "reachable". The close is the first of them.
+    await expect(page.locator('.leafcard').getByRole('button', { name: /^Close / })).toBeVisible();
+    // BS-07c: the card added a stop — its scroll region, which is a tab stop
+    // because it scrolls (WCAG 2.1.1). Past the close and the action, focus
+    // still leaves the globe rather than cycling inside it.
+    await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     await page.keyboard.press('Tab');
     expect(await page.evaluate(() => !!document.activeElement?.closest('.brainglobe'))).toBe(false);
@@ -890,7 +910,7 @@ test.describe('VB-23 — the split by keyboard', () => {
 
     await page.keyboard.press('Escape');
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('0.000');
-    await expect(page.locator('.brainglobe-detail')).toHaveCount(0);
+    await expect(page.locator('.leafcard')).toHaveCount(0);
     // Still inside the section, with the whole cluster back.
     await expect(page.locator('.brainglobe')).toHaveAttribute('data-inside', 'true');
     await expect(page.locator('.brainglobe-pin.is-child:not([hidden])')).toHaveCount(5);
@@ -931,11 +951,21 @@ test.describe('VB-23 — the split under reduced motion', () => {
     await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
 
     await expect(page.locator('.brainglobe')).toHaveAttribute('data-split', '1.000');
-    await expect(page.locator('.brainglobe-detail-cell')).toHaveCount(13);
-    // Arrived, not travelling.
-    const stage = (await page.locator('.brainglobe').boundingBox())!;
+    // BS-07c: the definition list is gone; what must be fully drawn under
+    // reduced motion is the card, with its five parts already in place.
+    await expect(page.locator('.leafcard')).toBeVisible();
+    await expect(page.locator('.leafcard-act')).toBeVisible();
+    /**
+     * Arrived, not travelling. BS-07c changed what "arrived" looks like: the
+     * featured orb used to sit left of centre on a full stage, and now the
+     * whole picture is compressed into the strip above the card, so where it
+     * sits horizontally is the compression's business rather than the fly-in's.
+     * What must be true under reduced motion is that it is THERE and the card
+     * is drawn — no fade left running, nothing mid-flight.
+     */
+    const card = (await page.locator('.leafcard').boundingBox())!;
     const orb = (await page.locator('.brainglobe-child-node[data-picked="true"] .brainglobe-sphere').boundingBox())!;
-    expect(centreX(orb)).toBeLessThan(stage.x + stage.width * 0.4);
+    expect(orb.y + orb.height).toBeLessThanOrEqual(card.y + 1);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.brainglobe')).toHaveAttribute('data-split', '0.000');
@@ -951,7 +981,7 @@ test.describe('VB-23 — the split under reduced motion', () => {
     await page.keyboard.press('Enter');
     await page.locator('.brainglobe-pin[data-child-id="sec2-1"]').click();
 
-    const panel = page.locator('.brainglobe-detail');
+    const panel = page.locator('.leafcard');
     expect(await panel.evaluate((el) => Number(getComputedStyle(el).opacity))).toBe(1);
     expect(await panel.evaluate((el) => getComputedStyle(el).transitionDuration)).toBe('0s');
   });
@@ -1359,287 +1389,98 @@ async function zoomTo(page: Page, childId: string): Promise<void> {
   await page.mouse.move(1, 1);
 }
 
-test.describe('VB-31 — centred on the node, and free of any box', () => {
-  for (const stage of VB31_STAGES) {
-    for (const id of VB31_NODES) {
-      test(`${id} at ${stage}px is centred on its node and never covers it`, async ({ page }) => {
-        await openRich(page, stage);
-        await zoomTo(page, id);
-
-        const stageBox = (await page.locator('.brainglobe').boundingBox())!;
-        const orb = (await page.locator('.brainglobe-child-node[data-picked="true"] .brainglobe-sphere').boundingBox())!;
-        const text = (await page.locator('.brainglobe-detail').boundingBox())!;
-
-        // CENTRED ON THE NODE. The allowance is half the orb's radius
-        // (DETAIL_DRIFT in components/BrainGlobe.tsx), and it is spent only
-        // because the node sits at 21% of the stage — a stage-wide column
-        // centred there would run off the left edge. Half a radius is 14px at
-        // 300 and 12px at 260: the text's axis is inside the orb.
-        const drift = Math.abs(centreX(text) - centreX(orb));
-        expect(drift, `${id} at ${stage}: the text is ${drift}px off its node`).toBeLessThanOrEqual(orb.width / 4 + 1);
-
-        // NEVER OCCLUDES THE NODE. Not "usually below it" — below its lowest
-        // painted pixel, which is what the band's own top is folded from.
-        expect(text.y, `${id} at ${stage}: the text starts inside the orb`).toBeGreaterThanOrEqual(orb.y + orb.height);
-        expect(overlapping(text, orb), `${id} at ${stage}: the text is on its own node`).toBe(false);
-
-        // ON THE STAGE, WHICH CLIPS. A block half off the bottom is a block
-        // with half its content missing.
-        expect(text.x).toBeGreaterThanOrEqual(stageBox.x - 0.5);
-        expect(text.y).toBeGreaterThanOrEqual(stageBox.y - 0.5);
-        expect(text.x + text.width).toBeLessThanOrEqual(stageBox.x + stageBox.width + 0.5);
-        expect(text.y + text.height).toBeLessThanOrEqual(stageBox.y + stageBox.height + 0.5);
-
-        // And it is a measure, not a sliver: enough for the longest record
-        // title in the file to sit on one line at the smallest stage.
-        expect(text.width).toBeGreaterThan(stage * 0.4);
-      });
-
-      test(`${id} at ${stage}px has no panel, card or box around it`, async ({ page }) => {
-        await openRich(page, stage);
-        await zoomTo(page, id);
-
-        const box = await page.locator('.brainglobe-detail').evaluate((el) => {
-          const style = getComputedStyle(el);
-          return {
-            background: style.backgroundColor,
-            image: style.backgroundImage,
-            border: [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth],
-            shadow: style.boxShadow,
-            radius: style.borderRadius,
-            align: style.textAlign,
-          };
-        });
-        // FREE-FLOATING. No fill of any kind behind the words, no edge around
-        // them, and nothing pretending to be either.
-        expect(box.background).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
-        expect(box.image).toBe('none');
-        expect(box.border).toEqual(['0px', '0px', '0px', '0px']);
-        expect(box.shadow).toBe('none');
-        expect(box.align).toBe('center');
-        // A radius on a box with no fill and no edge is invisible; a radius is
-        // only ever evidence that a box is still being drawn.
-        expect(box.radius === '0px' || box.radius === '').toBe(true);
-
-        // Nothing inside it is a box either — the record separator used to be
-        // a hairline, and a hairline is an edge in one dimension.
-        const insides = await page.locator('.brainglobe-detail *').evaluateAll((nodes) =>
-          nodes.map((node) => {
-            const style = getComputedStyle(node);
-            return {
-              tag: node.className,
-              background: style.backgroundColor,
-              widths: [style.borderTopWidth, style.borderRightWidth, style.borderBottomWidth, style.borderLeftWidth],
-            };
-          }),
-        );
-        expect(insides.length).toBeGreaterThan(2);
-        for (const inside of insides) {
-          expect(inside.background, inside.tag).toMatch(/rgba\(0, 0, 0, 0\)|transparent/);
-          expect(inside.widths, inside.tag).toEqual(['0px', '0px', '0px', '0px']);
-        }
-      });
-    }
-  }
-
-  test('is the same shape for a node with three records and for one with a single answer', async ({ page }) => {
-    /**
-     * VB-31's "structured identically every time" is a claim about the
-     * REPEATING UNIT, not about the flattened list — the fullest node in the
-     * file has three records and the emptiest has none, so the lists cannot be
-     * equal and the shape still has to be. What must hold is that the block
-     * always opens with the node's name, that a group is either a record and
-     * its answers or just its answers, and that an answer is always the same
-     * two parts in the same order.
-     */
-    const shapeOf = () =>
-      page.locator('.brainglobe-detail').evaluate((root) => {
-        const names = (element: Element) =>
-          [...element.children].map((child) => (typeof child.className === 'string' ? child.className : ''));
-        return {
-          first: names(root)[0] ?? '',
-          groups: [...root.querySelectorAll('.brainglobe-detail-group')].map(names),
-          cells: [...root.querySelectorAll('.brainglobe-detail-cell')].map(names),
-        };
-      });
-
-    const shapes: Record<string, Awaited<ReturnType<typeof shapeOf>>> = {};
-    for (const id of VB31_NODES) {
-      await openRich(page, 300);
-      await zoomTo(page, id);
-      shapes[id] = await shapeOf();
-
-      // Every line is centred, not just the first.
-      const aligns = await page
-        .locator('.brainglobe-detail p, .brainglobe-detail dt, .brainglobe-detail dd')
-        .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).textAlign));
-      expect(aligns.length, id).toBeGreaterThan(1);
-      for (const align of aligns) expect(align, id).toBe('center');
-    }
-
-    for (const id of VB31_NODES) {
-      const shape = shapes[id]!;
-      expect(shape.first, id).toBe('brainglobe-detail-name');
-      expect(shape.groups.length, id).toBeGreaterThan(0);
-      for (const group of shape.groups) {
-        expect([
-          ['brainglobe-detail-record', 'brainglobe-detail-grid'],
-          ['brainglobe-detail-grid'],
-        ]).toContainEqual(group);
-      }
-      expect(shape.cells.length, id).toBeGreaterThan(0);
-      for (const cell of shape.cells) {
-        expect(cell, id).toEqual(['brainglobe-detail-key', 'brainglobe-detail-value']);
-      }
-    }
-
-    // ...and the one thing that does differ is the one thing the content
-    // decides: three records against none.
-    const records = (shape: Awaited<ReturnType<typeof shapeOf>>) =>
-      shape.groups.filter((group) => group[0] === 'brainglobe-detail-record').length;
-    expect(records(shapes['sec2-1']!)).toBe(3);
-    expect(records(shapes['sec2-5']!)).toBe(0);
-  });
-
-  test('the single-answer node fits the smallest stage with nothing cut off', async ({ page }) => {
-    await openRich(page, 260);
-    await zoomTo(page, 'sec2-5');
-    // The band is a cap, and a cap is only honest if what it caps fits inside
-    // it. `2.5 Expertise` is one answer and one question and must never need a
-    // scroll on the smallest stage the drawer opens Brain at.
-    const clipped = await page.locator('.brainglobe-detail').evaluate((el) => el.scrollHeight - el.clientHeight);
-    expect(clipped, `${clipped}px of the text is cut off`).toBeLessThanOrEqual(1);
-    // ...and the question really is whole, not ellipsed by the line clamp.
-    const key = page.locator('.brainglobe-detail-key').first();
-    const cut = await key.evaluate((el) => el.scrollHeight - el.clientHeight);
-    expect(cut, 'the question is being clamped on a node with room to spare').toBeLessThanOrEqual(1);
-  });
-});
-
-function overlapping(a: { x: number; y: number; width: number; height: number }, b: typeof a): boolean {
-  return a.x < b.x + b.width && b.x < a.x + a.width && a.y < b.y + b.height && b.y < a.y + a.height;
-}
-
 /**
- * V1.6 VB-31 — CONTRAST AGAINST THE REAL FIELD, NOT AN ASSUMED ONE.
+ * BS-07c (§7.2) OVERTURNS VB-31 DIRECTLY, so this block is replaced rather
+ * than repaired — and the overturn is worth stating plainly, because VB-31
+ * argued its case well and was right for what it was drawing.
  *
- * The bordered panel gave these words a flat `--globe-panel` to sit on, and the
- * old measurement was against that. There is no panel now: the words sit on a
- * radial gradient with the featured orb's own bloom spilling into the top of
- * the band, and neither of those is a value anybody can look up. So this decodes
- * the painted page — the same technique dock-surface.spec.ts and the orb
- * measurements above use, and for the same reason: it is the only way to read
- * what was actually painted without a decoding dependency.
+ * VB-31 took the box AWAY: free text centred under the node, no plate, no
+ * edge, measured so it could never cover the orb. That is the right shape for
+ * two lines of an answer. §7.2 asks for five parts ending in a 46px button,
+ * and a button floating on a star field reads as debris — a control needs an
+ * edge to sit on. So the plate is back, deliberately, and it takes the
+ * stage's lower portion instead of the room under one orb.
  *
- * Sampled where the text really is, at both stages, on both ends of the content
- * range, and for both the loud line and the quiet one.
+ * WHAT SURVIVES VERBATIM is the promise VB-31 existed to keep: the words
+ * never cover the node, and they are legible on what they sit on. Both are
+ * asserted below, against the new arrangement.
  */
-test.describe('VB-31 — the text is legible on the field it now sits on', () => {
+test.describe('BS-07c — the card is a plate, and it never covers the node', () => {
   for (const stage of VB31_STAGES) {
     for (const id of VB31_NODES) {
-      test(`${id} at ${stage}px clears 4.5:1 against the painted field`, async ({ page }) => {
+      test(`${id} at ${stage}px keeps the whole globe above the card`, async ({ page }) => {
+        await openRich(page, stage);
+        await zoomTo(page, id);
+
+        const card = (await page.locator('.leafcard').boundingBox())!;
+        const svg = (await page.locator('.brainglobe-svg').boundingBox())!;
+        const box = (await page.locator('.brainglobe').boundingBox())!;
+
+        // NEVER-OCCLUDE, kept by arrangement rather than by capping a height:
+        // the picture is compressed into the strip and simply is not drawn
+        // where the card is.
+        expect(svg.y + svg.height, `${id} at ${stage}: globe over the card`).toBeLessThanOrEqual(card.y + 1);
+        // And the card is inside the stage on every side.
+        expect(card.x).toBeGreaterThanOrEqual(box.x - 1);
+        expect(card.x + card.width).toBeLessThanOrEqual(box.x + box.width + 1);
+        expect(card.y + card.height).toBeLessThanOrEqual(box.y + box.height + 1);
+      });
+
+      test(`${id} at ${stage}px reads on its own plate at 4.5:1`, async ({ page }) => {
         await openRich(page, stage);
         await zoomTo(page, id);
 
         /**
-         * Every line of text that is actually on screen, and what colour it is
-         * drawn in.
-         *
-         * ONLY WHAT IS ON SCREEN. `2.1 Roles` scrolls, so the answers below
-         * the fold have real boxes well outside the stage, on the white
-         * harness page under it. Sampling those measured pale ink on white and
-         * reported 2.03:1 — a true measurement of nothing, and identical at
-         * both stages, which is what gave it away. So each line is clipped to
-         * the block's own visible box and sampled inside the part that shows.
+         * The card paints its own ground, which is the whole reason the plate
+         * came back — so this is a straight measurement of ink on that
+         * ground rather than VB-31's screenshot dance against a gradient
+         * field with an orb's bloom in it.
          */
-        const linesOnScreen = () =>
-          page
-            .locator('.brainglobe-detail-name, .brainglobe-detail-record, .brainglobe-detail-value, .brainglobe-detail-key')
-            .evaluateAll((nodes) =>
-              nodes
-                .map((node) => {
-                  const box = node.getBoundingClientRect();
-                  const block = node.closest('.brainglobe-detail')!.getBoundingClientRect();
-                  const top = Math.max(box.top, block.top);
-                  const bottom = Math.min(box.bottom, block.bottom);
-                  return {
-                    kind: typeof node.className === 'string' ? node.className : '',
-                    colour: getComputedStyle(node).color,
-                    x: box.x + box.width / 2,
-                    y: (top + bottom) / 2,
-                    width: box.width,
-                    shown: bottom - top,
-                  };
-                })
-                .filter((line) => line.shown > 3),
-            );
-
-        /** The whole band, top and bottom: the field is a gradient with an
-         *  orb's bloom in the top of it, so the words at the foot of a
-         *  scrolled block are on a different colour from the ones at its head. */
-        for (const scroll of ['top', 'bottom'] as const) {
-          await page.locator('.brainglobe-detail').evaluate((el, where) => {
-            el.scrollTop = where === 'top' ? 0 : el.scrollHeight;
-          }, scroll);
-
-          const lines = await linesOnScreen();
-          expect(lines.length, `${id} at ${stage}, scrolled ${scroll}`).toBeGreaterThan(0);
-
-          /**
-           * WHAT IS BEHIND THE WORDS, WITH THE WORDS TAKEN AWAY.
-           *
-           * The first version of this sampled beside each line and kept
-           * landing ON a letter — the text is centred, so the middle of the
-           * block is the middle of a word — and measured the ink against
-           * itself. So the block is hidden for one screenshot and the same
-           * points are read off the bare field. Three points across each
-           * line's own box, because the field is a gradient and its brightest
-           * point under a line is not the line's centre.
-           */
-          const probes = lines.flatMap((line) => [
-            { x: line.x - line.width / 2 + 2, y: line.y },
-            { x: line.x, y: line.y },
-            { x: line.x + line.width / 2 - 2, y: line.y },
-          ]);
-          await page.locator('.brainglobe-detail').evaluate((el) => {
-            (el as HTMLElement).style.visibility = 'hidden';
-          });
-          const painted = await paintedAt(page, probes);
-          await page.locator('.brainglobe-detail').evaluate((el) => {
-            (el as HTMLElement).style.visibility = '';
-          });
-
-          for (let i = 0; i < lines.length; i++) {
-            const line = lines[i]!;
-            const ink = parseCssColor(line.colour)!;
-            for (const behind of painted.slice(i * 3, i * 3 + 3)) {
-              const ratio = contrastRatio(ink, behind);
-              expect(
-                ratio,
-                `${id} at ${stage} scrolled ${scroll}: ${line.kind} measures ${ratio.toFixed(2)}:1 on the field`,
-              ).toBeGreaterThanOrEqual(4.5);
-            }
-          }
+        const measured = await page.locator('.leafcard').evaluate((card) => {
+          const ground = getComputedStyle(card).backgroundColor;
+          const of = (sel: string) => {
+            const el = card.querySelector(sel) as HTMLElement | null;
+            return el ? getComputedStyle(el).color : null;
+          };
+          return {
+            ground,
+            ink: [of('.leafcard-name'), of('.leafcard-purpose'), of('.leafcard-chip'), of('.leafcard-act')].filter(
+              (c): c is string => c !== null,
+            ),
+          };
+        });
+        const ground = parseCssColor(measured.ground)!;
+        for (const colour of measured.ink) {
+          const ratio = contrastRatio(parseCssColor(colour)!, ground);
+          expect(ratio, `${id} at ${stage}: ${colour} on ${measured.ground} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
         }
       });
     }
   }
 
-  test('the brightest thing under the text is the orb’s own bloom, and it still clears', async ({ page }) => {
-    // The worst case for this band by construction: the top of it is inside
-    // the featured orb's bloom (BLOOM_SCALE is 2.7 radii), so the first line
-    // sits on the lightest field the stage ever produces here. Sampled right
-    // under the orb's rim, where the bloom is strongest.
+  test('is the same five-part shape for a list node and for a single-answer one', async ({ page }) => {
     await openRich(page, 300);
-    await zoomTo(page, 'sec2-1');
 
-    const orb = (await page.locator('.brainglobe-child-node[data-picked="true"] .brainglobe-sphere').boundingBox())!;
-    const text = (await page.locator('.brainglobe-detail').boundingBox())!;
-    const [brightest] = await paintedAt(page, [{ x: centreX(orb), y: orb.y + orb.height + 3 }]);
-    const ink = await tokenValue(page, '--globe-detail-key');
-    const ratio = contrastRatio(ink, brightest!);
-    expect(ratio, `the quietest ink measures ${ratio.toFixed(2)}:1 at the bloom's brightest`).toBeGreaterThanOrEqual(4.5);
-    // And that sample really was inside the band, not above it.
-    expect(orb.y + orb.height + 3).toBeLessThan(text.y + text.height);
+    const shapeOf = async (id: string) => {
+      await zoomTo(page, id);
+      return page.locator('.leafcard').evaluate((card) => ({
+        state: card.getAttribute('data-state'),
+        parts: [...card.querySelectorAll('.leafcard-head, .leafcard-purpose, .leafcard-block, .leafcard-chip, .leafcard-act')].map(
+          (el) => (el.className as string).split(' ')[0],
+        ),
+      }));
+    };
+
+    // sec2-1 owns a block; sec2-5 is plain questions. §7.2's acceptance:
+    // "parts 1, 4 and 5 in identical positions across variants".
+    const list = await shapeOf('sec2-1');
+    const answer = await shapeOf('sec2-5');
+    expect(list.state).toMatch(/^list-/);
+    expect(answer.state).toMatch(/^answer-/);
+    expect(list.parts[0]).toBe('leafcard-head');
+    expect(answer.parts[0]).toBe('leafcard-head');
+    expect(list.parts[list.parts.length - 1]).toBe('leafcard-act');
+    expect(answer.parts[answer.parts.length - 1]).toBe('leafcard-act');
   });
 });
+

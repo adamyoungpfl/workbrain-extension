@@ -114,6 +114,12 @@ test.describe('VB-27 — the node summary, accessibility', () => {
     const target = covered[0]!;
     await page.locator(`.brainglobe-pin[data-child-id="${target}"]`).click();
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
-    await expect(page.locator('.brainglobe-detail')).toHaveAttribute('data-detail-id', target);
+    // BS-07c (§7.2): the card names the node it is about in its own header,
+    // where a person can read it, rather than in a data attribute only a test
+    // could see.
+    await expect(page.locator('.leafcard')).toBeVisible();
+    // The card's own name matches the pin's full title — one node, one name.
+    const title = await page.locator(`.brainglobe-pin[data-child-id="${target}"]`).getAttribute('title');
+    await expect(page.locator('.leafcard-name')).toHaveText(title!);
   });
 });

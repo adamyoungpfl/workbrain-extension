@@ -48,6 +48,7 @@ import type { DrawerMode, MorphPoint } from '../../core/drawer/mode';
 import {
   currentQuestionIdFor,
   currentSectionId as sectionIdFor,
+  listNodeIds,
   navigationTargetFor,
   outlineNodeState,
   positionForQuestionId,
@@ -928,6 +929,10 @@ export function FileDrawer({
    * does not move the interview. Flying back out (`null`) navigates nowhere,
    * because leaving a section is not a request to go anywhere.
    */
+  /** BS-07c — which nodes own a list, for the leaf card's empty states.
+   * Built once per drawer rather than per hover (core/flow/outline.ts). */
+  const listNodes = useMemo(() => listNodeIds(modules, outline), [modules, outline]);
+
   function handleGlobeSelect(node: FileOutlineNode | null) {
     if (!node) return;
     if (outlineNodeState(node, answers.values, currentQuestionId) === 'untouched') return;
@@ -1096,6 +1101,11 @@ export function FileDrawer({
           recommendations={recommendations}
           onSelect={handleGlobeSelect}
           onHome={onHome}
+          /* BS-07c (§7.2) — the leaf card's action. In the drawer a list opens
+             the section's own records through the same `handleNavigate` every
+             other route here uses, so the card is not a second navigation. */
+          listNodes={listNodes}
+          onLeafAct={(node) => handleGlobeSelect(node)}
           /* V1.8 VB-48 — the tier above, and the one state both views read.
              The globe is handed the same `toggle` the List's strip is drawn
              from, so "what is locked" is one answer on this screen rather than

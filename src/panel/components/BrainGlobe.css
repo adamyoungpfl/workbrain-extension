@@ -823,3 +823,66 @@
      gone, both audiences now get the same behaviour from the same declaration
      and there is nothing here to restore. */
 }
+
+/* ── BS-07c (§7.2) — THE GLOBE COMPRESSES TO A STRIP ─────────────────────────
+
+   "Leaf tier gives the card the lower portion, globe compresses to a strip,
+   never-occlude preserved above."
+
+   A TRANSFORM, NOT A SECOND PROJECTION. Every position on this stage is a
+   percentage of a square, and re-deriving them for a short rectangle would be
+   a second layout that agrees with the first until somebody edits one. So the
+   picture is drawn exactly as it always is and then moved: scaled into the
+   strip `leafCardBand` measured and pinned to the top. Hit targets are inside
+   the same transformed layers, so a control goes where its picture goes —
+   which is the property a re-derivation would have had to be careful to keep.
+
+   The card is a sibling, absolutely positioned over the lower portion, and
+   the globe is simply not drawn there. That is never-occlude kept by
+   arrangement: there is no height to cap and nothing to overflow. */
+.brainglobe[data-leaf='true'] .brainglobe-svg,
+.brainglobe[data-leaf='true'] .brainglobe-pins {
+  /* `--brainglobe-strip` over the stage's own side is the scale that lands the
+     square inside the strip; the origin is the top so it shrinks upward and
+     leaves the lower portion empty rather than centring in it. */
+  transform: scale(var(--brainglobe-leafscale, 1));
+  transform-origin: 50% 0;
+}
+
+/* AND THE CONTROLS ARE PUT BACK TO FULL SIZE. Scaling the interactive layer
+   scaled the buttons with it: measured 15px against a 44px floor, which
+   docs/GUARDRAILS.md calls "not negotiable, not deferrable". A control that
+   shrank because the picture behind it did is exactly the regression a floor
+   exists to catch, and the a11y spec caught it.
+
+   THE PIN UNDOES THE SCALE ON ITSELF. The layer carries the POSITION — that
+   is what keeps a pin registered with its orb once the orb has moved into the
+   strip — and each pin then multiplies the scale back out, so what a finger
+   presses is the size it always was. The translate that centres the hit on
+   the node is kept and composed with it, in that order, because a transform
+   list applies right to left and the centring has to happen in the pin's own
+   restored space. */
+.brainglobe[data-leaf='true'] .brainglobe-pin {
+  /* ORIGIN AT THE ANCHOR, or the scale moves the control off the thing it
+     targets. `left`/`top` put the pin's top-left on the node; scaling about
+     the default centre then slid the hit ~21px away from its orb, which the
+     "hit is centred on the orb" test caught. About `0 0` the anchor is a
+     fixed point, so the pin regains its size without moving, and the
+     translate below re-centres the hit on the node in its restored space. */
+  transform-origin: 0 0;
+  transform: scale(calc(1 / var(--brainglobe-leafscale, 1)))
+    translate(-50%, calc(max(var(--target-min), var(--brainglobe-hit-size, 0px)) / -2));
+}
+
+/* The turn cue and the lock note belong to the picture, so they go with it —
+   otherwise the cue would sit over the card it is not about. */
+.brainglobe[data-leaf='true'] .brainturncue {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .brainglobe[data-leaf='true'] .brainglobe-svg,
+  .brainglobe[data-leaf='true'] .brainglobe-pins {
+    transition: none;
+  }
+}

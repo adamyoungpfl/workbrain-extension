@@ -191,7 +191,7 @@ test.describe('VB-27 — keyboard focus', () => {
     // The split's own panel says everything the card said and more, in the
     // same place. Two of them at once would be the node described twice.
     await expect(card(page)).toHaveCount(0);
-    await expect(page.locator('.brainglobe-detail')).toBeVisible();
+    await expect(page.locator('.leafcard')).toBeVisible();
   });
 });
 
@@ -207,11 +207,11 @@ test.describe('VB-27 — activation, on a screen with no pointer to hover with',
     await expect(card(page)).toHaveAttribute('data-node-id', 'sec2-1');
     // Still on the ring: the tap was spent on the summary, deliberately.
     expect(await page.locator('.brainglobe').getAttribute('data-split')).toBe('0.000');
-    await expect(page.locator('.brainglobe-detail')).toHaveCount(0);
+    await expect(page.locator('.leafcard')).toHaveCount(0);
 
     await pin(page, 'sec2-1').tap();
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
-    await expect(page.locator('.brainglobe-detail')).toBeVisible();
+    await expect(page.locator('.leafcard')).toBeVisible();
     await expect(card(page)).toHaveCount(0);
   });
 
@@ -231,7 +231,7 @@ test.describe('VB-27 — a mouse is unchanged', () => {
 
     await pin(page, 'sec2-1').click();
     await expect.poll(() => page.locator('.brainglobe').getAttribute('data-split'), { timeout: 2000 }).toBe('1.000');
-    await expect(page.locator('.brainglobe-detail')).toBeVisible();
+    await expect(page.locator('.leafcard')).toBeVisible();
   });
 });
 

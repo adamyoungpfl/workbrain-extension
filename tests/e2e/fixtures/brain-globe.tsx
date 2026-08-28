@@ -15,6 +15,7 @@ import { recommend, recommendationsByNode } from '../../../src/core/recommend/en
 import type { AnswerValue, FileOutlineNode } from '../../../src/schema/flow.types';
 import type { Answers } from '../../../src/schema/storage.types';
 import type { OutlineNodeState } from '../../../src/core/flow/outline';
+import { listNodeIds } from '../../../src/core/flow/outline';
 
 /**
  * V1.2 VB-14a. A mount for the Brain globe on its own, so
@@ -288,6 +289,15 @@ function Harness() {
         summaries={SUMMARIES}
         recommendations={RECOMMENDATIONS}
         onSelect={setSelected}
+        /* BS-07c (§7.2) — the leaf card's inputs. `listNodes` is the one fact
+           the globe cannot see (an empty node is an empty ANSWER or an empty
+           LIST), and `onLeafAct` is part 5's route. The harness records the
+           request rather than routing anywhere: this page has no surfaces to
+           route TO, and what a test needs to know is that the card asked. */
+        listNodes={listNodeIds(contextModules, contextOutline)}
+        onLeafAct={(node) => {
+          (window as unknown as { __leafAct?: string }).__leafAct = node.id;
+        }}
         {...(WORK === 'off' ? {} : { files, file: nav.file, tier: nav.tier, onTier: setNav })}
       />
       </div>

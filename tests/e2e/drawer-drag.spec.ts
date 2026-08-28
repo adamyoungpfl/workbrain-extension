@@ -349,7 +349,29 @@ test.describe('VB-12 — the drawer drags', () => {
     // Not under a key of its own, and not inside the answers either.
     const stored = await sw.evaluate(async () => await chrome.storage.local.get(null));
     expect(Object.keys(stored).filter((k) => /drawer|height|size|open/i.test(k))).toEqual([]);
-    expect(JSON.stringify(stored)).not.toContain(String(dragged));
+
+    /**
+     * THE HEIGHT IS NOT A VALUE ANYWHERE, checked structurally.
+     *
+     * This used to be `JSON.stringify(stored)).not.toContain(String(dragged))`
+     * and it was a coin toss on the clock: the dragged height is 376, every
+     * stamp in the fixture is an ISO string, and a run that happened to land
+     * on `...:00.376Z` failed a test about drawer heights because of a
+     * millisecond. Caught in a full-suite run at 15:32:00.376.
+     *
+     * A substring search over a JSON blob cannot tell a stored height from
+     * three digits of a timestamp. Walking the values can, and it is the
+     * claim the test was always trying to make.
+     */
+    const values: unknown[] = [];
+    const walk = (node: unknown) => {
+      if (Array.isArray(node)) node.forEach(walk);
+      else if (node && typeof node === 'object') Object.values(node).forEach(walk);
+      else values.push(node);
+    };
+    walk(stored);
+    expect(values).not.toContain(dragged);
+    expect(values).not.toContain(String(dragged));
     expect(stored['wb:answers']).toEqual(seeded);
 
     await context.close();

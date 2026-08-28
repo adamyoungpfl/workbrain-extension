@@ -678,6 +678,81 @@ export const S = {
   summaryAge: (ago: string) => `${ago} old`,
   summaryToday: 'written today',
 
+  // ------------------------------------------------- BS-07c (§7.2) the leaf card
+  /* The five-part card that replaces `brainglobe-detail`'s definition list.
+     §7.2's complaint: "a leaf holding a list and a leaf holding one answer
+     look identical, a list leaf has no count, and there is no route to the
+     editor or statement of what the field is for." [DRAFT] throughout.
+
+     IT BORROWS THE SUMMARY'S OWN WORDS WHEREVER IT CAN, for the reason the
+     block above states: Brain and List are two views of one file, and a
+     section that reads "6 of 9 answered" in the drawer must not read
+     anything else on its own card. `summaryAnswered`, `summaryAge`,
+     `summaryToday`, `sectionSkipped` are all reused verbatim. */
+
+  /** Part 1's close. A control, so a name — and the shortest true verb, since
+   * it sits beside a 19px node name in a 250px card. */
+  leafClose: 'Close',
+  leafCloseNamed: (label: string) => `Close ${label}`,
+
+  /** Part 3, the LIST variant. The count is the loud thing; this is the noun
+   * beside it. Never an item's name — the hard constraint (§7.2) forbids one
+   * anywhere in the brain view, and this is the wording that keeps it. */
+  leafItemsNoun: (n: number) => (n === 1 ? 'thing named here' : 'things named here'),
+  /** …and, when a list is unfinished, the fact WITHOUT naming the item. */
+  leafIncomplete: (n: number) =>
+    n === 1 ? 'One of them is unfinished.' : `${capitalise(wordFor(n))} of them are unfinished.`,
+
+  /** Part 3, the ANSWER variant, when there is nothing to show. Two states,
+   * two sentences, because the difference is the whole of O1: a gap is a road
+   * ahead, and a skip is a decision somebody already made. */
+  leafNothingYet: 'Nothing written here yet.',
+  leafSkipped: 'You passed on this one.',
+
+  /** Part 5, the action. A verb naming what it opens, never "Edit" or "Fix" —
+   * and the same verb for a filled answer and a skipped one, per O1. */
+  leafChangeAnswer: 'Change this answer',
+  leafAnswerThis: 'Answer this',
+  leafOpenList: 'Open the list',
+  leafStartList: 'Add the first one',
+
+  /* BS-07d (§7.4) — THE ONE NEW AUTHORED FIELD, and the count the spec got
+     wrong in both directions. [DRAFT] throughout, all fifteen.
+
+     §7.4 estimated "~nine". The outline has fourteen leaves plus `sec2`,
+     which carries three questions of its own — fifteen. The card's subject
+     today is only ever a child of `sec2`, which would be five. §7.3's matrix
+     settles it: its List rows can only be reached by nodes that own a
+     repeatable block, and three of those four are childless sections you fly
+     INTO rather than sub-nodes you pick. So the card shows for both, and
+     fifteen is the number. Written up in docs/BETA-SPRINT.md.
+
+     THE RULE, from §7.4: one sentence, under about twelve words, saying what
+     the field is FOR rather than what it contains. "Projects" and
+     "Guardrails" are the spec's own examples, kept verbatim.
+
+     ABSENT IS A LEGAL STATE. A node with no entry here renders no part 2 and
+     the card closes the gap — §7.4's last line is "do not ship a
+     placeholder", so there is no fallback string and `purposeFor` returns
+     undefined rather than something bland. */
+  nodePurpose: {
+    sec1: 'What you want AI to stop making you re-explain.',
+    sec2: 'Your name, and how you would describe yourself to a stranger.',
+    'sec2-1': 'The hats you wear, so AI knows which one you are in.',
+    'sec2-2': 'The work that is yours to deliver, not just to touch.',
+    'sec2-3': 'Where your job stops, so AI stops there too.',
+    'sec2-4': 'What you can decide alone, and what needs someone else.',
+    'sec2-5': 'What you know well enough that AI should not explain it.',
+    sec3: 'The people, teams and tools AI should already know by name.',
+    sec4: 'The named efforts you have underway right now.',
+    sec5: 'How you weigh risk and act, so AI matches your judgment.',
+    sec6: 'How you sound in writing, so AI writes as you.',
+    sec7: 'Who you write for, and how each of them differs.',
+    sec8: 'Words that mean something particular here, and words to avoid.',
+    sec9: 'What AI should never do when it writes as you.',
+    sec10: 'Real work of yours, for AI to match rather than guess.',
+  } as Readonly<Record<string, string>>,
+
   // ---------------------------------------------------------------- reflect
   // [DRAFT] V2.3 VB-95 — the reflect step becomes a quick check: heading in
   // the register of a person confirming, the sub keeps only the trust line

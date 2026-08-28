@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import type { Answers } from '../../schema/storage.types';
 import type { FileOutlineNode, Module } from '../../schema/flow.types';
 import type { OutlineNodeState } from '../../core/flow/outline';
-import { outlineNodeState } from '../../core/flow/outline';
+import { listNodeIds, outlineNodeState } from '../../core/flow/outline';
 import { fileCanResume, fileStartTarget } from '../../core/files/fileView';
 import { sectionHealthMap } from '../../core/freshness/sectionHealth';
+import { nodeDetailsByNode } from '../../core/flow/nodeDetails';
+import { nodeSummaries } from '../../core/flow/nodeSummary';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { ANSWERS_KEY, type AnswersKey } from '../../core/files/answersKey';
 import { BrainGlobe } from '../components/BrainGlobe';
@@ -52,9 +54,16 @@ export interface BrowseProps {
   /** V2.5 VB-124 — the skills canvas carries the share/backup row; other
    * files do not (App decides). */
   share?: boolean;
+  /** BS-07c (§7.2) — where a leaf card's "Open the list" goes: §8's
+   * multiples screen. Absent, the card still draws and the action does
+   * nothing, which is the degradation a picture owes (GUARDRAILS). */
+  onMultiples?: (() => void) | undefined;
 }
 
-export function Browse({ modules, outline, answersKey = ANSWERS_KEY.context, name, generate, onEdit, onBack, share = false }: BrowseProps) {
+export function Browse({ modules, outline, answersKey = ANSWERS_KEY.context, name, generate, onEdit, onBack, share = false, onMultiples }: BrowseProps) {
+  /** BS-07c — the one fact the card needs that the globe cannot see. Built
+   * once per surface, not per hover (core/flow/outline.ts). */
+  const listNodes = useMemo(() => listNodeIds(modules, outline), [modules, outline]);
   const [answers, setAnswers] = useState<Answers | null>(null);
   useEffect(() => {
     let cancelled = false;
@@ -80,6 +89,10 @@ export function Browse({ modules, outline, answersKey = ANSWERS_KEY.context, nam
     return map;
   }, [outline, ans]);
   const health = useMemo(() => sectionHealthMap(outline, modules, ans, null, now), [outline, modules, ans, now]);
+  /* BS-07c — the two folds the globe wants and this surface never handed it.
+     The same functions the drawer calls, on the same inputs. */
+  const details = useMemo(() => nodeDetailsByNode(outline, ans, modules), [outline, ans, modules]);
+  const summaries = useMemo(() => nodeSummaries(outline, ans, health, modules), [outline, ans, health, modules]);
 
   if (!answers) return null;
 
@@ -111,9 +124,27 @@ export function Browse({ modules, outline, answersKey = ANSWERS_KEY.context, nam
           states={states}
           health={health}
           size={300}
+          /* BS-07c (§7.2) — THIS SURFACE NEVER PASSED THESE, and it shows.
+             Browse has drawn the globe since V2.4 without `summaries` or
+             `details`, so its detail panel has always been empty: every leaf
+             said "Nothing written here yet" on a finished file. Invisible
+             while the panel was two lines of free text, and the first thing
+             you see now that the card leads with what the node holds. Same
+             folds the drawer feeds it, so the two surfaces cannot disagree
+             about one node. */
+          details={details}
+          summaries={summaries}
           onSelect={(node) => setSelected(node?.id ?? null)}
           selectRequest={selectRequest}
           onHome={onBack}
+          /* BS-07c (§7.2) — the leaf card's one action, part 5. The card
+             names the move; this routes it. A list opens §8's Multiples
+             screen, everything else opens that node's own question. */
+          listNodes={listNodes}
+          onLeafAct={(node, wantsList) => {
+            if (wantsList) onMultiples?.();
+            else onEdit(fileStartTarget([node]));
+          }}
         />
       </div>
       <div className="browse-actions">

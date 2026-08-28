@@ -913,33 +913,27 @@ describe('BrainGlobe — VB-23, the split', () => {
     expect(after.r).toBeGreaterThan(before.r * 2);
   });
 
-  it('opens a panel with the sub-node’s name and a grid of what it holds', () => {
+  /**
+   * BS-07c (§7.2) — the definition list became a five-part card, so these are
+   * rewritten rather than repaired. §7.2's complaint is what they used to
+   * assert: a grid of question-label / answer pairs, question first, which
+   * made a list leaf and a single-answer leaf look identical.
+   */
+  it('opens a CARD with the sub-node’s name, its purpose and its one action', () => {
     const env = stubEnvironment({ reduce: false });
     const { container } = render({ details: DETAILS });
-    expect(container.querySelector('.brainglobe-detail')).toBeNull();
+    expect(container.querySelector('.leafcard')).toBeNull();
 
     openChild(container, env);
 
-    const panel = container.querySelector('.brainglobe-detail')!;
-    expect(panel.querySelector('.brainglobe-detail-name')!.textContent).toBe('2.1 Roles');
-    expect(panel.getAttribute('aria-label')).toBe(S.brainGlobeDetail('2.1 Roles'));
-
-    // The real thirteen cells, grouped under the three role headings the
-    // generated file prints (core/flow/nodeDetails.ts).
-    expect(panel.querySelectorAll('.brainglobe-detail-cell')).toHaveLength(13);
-    expect([...panel.querySelectorAll('.brainglobe-detail-record')].map((el) => el.textContent)).toEqual([
-      'Manager / Team Lead',
-      'Volunteer / Board Member',
-      'Freelancer / Contractor',
-    ]);
-    // Every cell says both halves, in the file's own words.
-    const values = [...panel.querySelectorAll('.brainglobe-detail-value')].map((el) => el.textContent);
-    expect(values).toContain('My employer');
-    expect(values).toContain('Historical');
-    for (const key of panel.querySelectorAll('.brainglobe-detail-key')) {
-      // The whole question is kept, however few lines of it are drawn.
-      expect(key.getAttribute('title')).toBe(key.textContent);
-    }
+    const card = container.querySelector('.leafcard')!;
+    expect(card.querySelector('.leafcard-name')!.textContent).toBe('2.1 Roles');
+    expect(card.getAttribute('aria-label')).toBe(S.brainGlobeDetail('2.1 Roles'));
+    // §7.4's one new authored field, and §7.2's one action — never two.
+    expect(card.querySelector('.leafcard-purpose')!.textContent).toBe(S.nodePurpose['sec2-1']);
+    expect(card.querySelectorAll('.leafcard-act')).toHaveLength(1);
+    // The close, which is what lets §7.1 drop Back from the stage.
+    expect(card.querySelector('.leafcard-close')).not.toBeNull();
   });
 
   it('says so plainly when a sub-node holds nothing yet — never an empty grid', () => {
@@ -947,18 +941,20 @@ describe('BrainGlobe — VB-23, the split', () => {
     const { container } = render({ details: DETAILS });
     openChild(container, env, 'sec2-4');
 
-    const panel = container.querySelector('.brainglobe-detail')!;
-    expect(panel.querySelectorAll('.brainglobe-detail-cell')).toHaveLength(0);
-    expect(panel.querySelector('.brainglobe-detail-empty')!.textContent).toBe(S.brainGlobeDetailEmpty);
+    const card = container.querySelector('.leafcard')!;
+    expect(card.querySelector('.leafcard-blank')!.textContent).toBe(S.leafNothingYet);
+    // Empty draws hollow and dashed — §7.3's own columns, and both shapes.
+    expect(card.querySelector('.leafcard-orb')!.getAttribute('data-hollow')).toBe('true');
+    expect(card.querySelector('.leafcard-block')!.getAttribute('data-dashed')).toBe('true');
   });
 
   it('splits with no details prop at all — the showcase degrades, it does not break', () => {
     const env = stubEnvironment({ reduce: false });
     const { container } = mount(<BrainGlobe sections={contextOutline} states={STATES} />);
     openChild(container, env);
-    const panel = container.querySelector('.brainglobe-detail')!;
-    expect(panel.querySelector('.brainglobe-detail-name')!.textContent).toBe('2.1 Roles');
-    expect(panel.querySelector('.brainglobe-detail-empty')).not.toBeNull();
+    const card = container.querySelector('.leafcard')!;
+    expect(card.querySelector('.leafcard-name')!.textContent).toBe('2.1 Roles');
+    expect(card.querySelector('.leafcard-blank')).not.toBeNull();
   });
 
   it('still reports the sub-node to the caller — click-to-navigate is untouched', () => {
@@ -977,7 +973,7 @@ describe('BrainGlobe — VB-23, the split', () => {
     act(() => childPin(container, 'sec2-1').click());
     env.settle();
     expect(chosen).toEqual(['sec2', 'sec2-1']);
-    expect(container.querySelector('.brainglobe-detail')).toBeNull();
+    expect(container.querySelector('.leafcard')).toBeNull();
   });
 
   it('takes the four you did not pick out of the tab order, and does not trap the one you did', () => {
@@ -988,8 +984,9 @@ describe('BrainGlobe — VB-23, the split', () => {
     const visible = [...container.querySelectorAll<HTMLButtonElement>('.brainglobe-pin')].filter((p) => !p.hidden);
     expect(visible.map((p) => p.getAttribute('data-child-id'))).toEqual(['sec2-1']);
     expect(childPin(container, 'sec2-1').getAttribute('aria-pressed')).toBe('true');
-    // The panel is a real stop of its own, because it scrolls.
-    expect(container.querySelector('.brainglobe-detail')!.getAttribute('tabindex')).toBe('0');
+    // BS-07c: the part of the card that SCROLLS is the stop, which is what
+    // the rule (WCAG 2.1.1) is about — the card around it carries the name.
+    expect(container.querySelector('.leafcard-scroll')!.getAttribute('tabindex')).toBe('0');
     // Nothing removed the way back out (V2.1 VB-74: the band's Back, live).
     expect(container.querySelector('.brainglobe-nav-btn')!.getAttribute('aria-disabled')).toBeNull();
   });
@@ -1003,7 +1000,7 @@ describe('BrainGlobe — VB-23, the split', () => {
 
     act(() => stage.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
     env.settle();
-    expect(container.querySelector('.brainglobe-detail')).toBeNull();
+    expect(container.querySelector('.leafcard')).toBeNull();
     expect(stage.getAttribute('data-inside')).toBe('true');
 
     act(() => stage.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })));
@@ -1029,7 +1026,7 @@ describe('BrainGlobe — VB-23, the split', () => {
 
     act(() => back().click());
     env.settle();
-    expect(container.querySelector('.brainglobe-detail')).toBeNull();
+    expect(container.querySelector('.leafcard')).toBeNull();
     expect(container.querySelector('.brainglobe')!.getAttribute('data-inside')).toBe('true');
     expect(container.querySelector('.brainglobe')!.getAttribute('data-split')).toBe('0.000');
 
@@ -1149,7 +1146,7 @@ describe('BrainGlobe — VB-27, the node summary', () => {
     act(() => childPin(container, 'sec2-1').click());
     env.settle();
     expect(card(container)).toBeNull();
-    expect(container.querySelector('.brainglobe-detail')).not.toBeNull();
+    expect(container.querySelector('.leafcard')).not.toBeNull();
   });
 
   it('degrades to the globe it was: no summaries prop, no card, and the split still opens', () => {
@@ -1162,7 +1159,7 @@ describe('BrainGlobe — VB-27, the node summary', () => {
 
     act(() => childPin(container, 'sec2-1').click());
     env.settle();
-    expect(container.querySelector('.brainglobe-detail')).not.toBeNull();
+    expect(container.querySelector('.leafcard')).not.toBeNull();
   });
 });
 
@@ -1175,8 +1172,11 @@ describe('BrainGlobe — VB-23 under reduced motion', () => {
 
     expect(env.frameCount, 'a reduced-motion visitor must get no rAF loop at all').toBe(0);
     expect(container.querySelector('.brainglobe')!.getAttribute('data-split')).toBe('1.000');
-    const panel = container.querySelector('.brainglobe-detail')!;
-    expect(panel.querySelectorAll('.brainglobe-detail-cell')).toHaveLength(13);
+    // BS-07c: under reduced motion the CARD is fully there — all five parts,
+    // nothing waiting on a fade that will never come.
+    const card = container.querySelector('.leafcard')!;
+    expect(card.querySelector('.leafcard-name')!.textContent).toBe('2.1 Roles');
+    expect(card.querySelector('.leafcard-act')).not.toBeNull();
     // Arrived, not on its way: the orb is already at the feature position.
     const orb = container.querySelector('.brainglobe-child-node[data-child-id="sec2-1"] .brainglobe-sphere')!;
     expect(Number(orb.getAttribute('cx'))).toBeLessThan(-30);

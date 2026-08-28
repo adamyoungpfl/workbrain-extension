@@ -359,6 +359,11 @@ export default function App() {
           name={S.fileContext}
           generate={(answers) => generateContextFile(answers, contextFileDate())}
           onBack={goHome}
+          /* BS-07c (§7.2) — where a leaf card's "Open the list" goes: §8's
+             multiples screen, which is the editor for exactly the records the
+             card counted. Context only — the Skills file's records have their
+             own canvas, and multiples is built on the context outline. */
+          onMultiples={() => setSurface('multiples')}
           onEdit={(startAt) =>
             openContextAt(startAt ? positionForTarget(contextModules, { in: 'top', questionId: startAt }) : undefined)
           }

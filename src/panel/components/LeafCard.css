@@ -1,0 +1,269 @@
+/* BS-07c (§7.2) — the five-part leaf card.
+
+   IT IS A CARD, WHERE THE THING IT REPLACES WAS NOT. `.brainglobe-detail` is
+   free text on the picture: no plate, no edge, positioned in the room under
+   one orb. That is right for two lines and wrong for five parts ending in a
+   button — a control needs an edge to sit on, and a button floating on a star
+   field reads as debris.
+
+   So this has a plate, in the globe's own panel colour, on the stage's lower
+   portion (core/globe/leafCard.ts). The globe is compressed into the strip
+   above and simply is not drawn here, which is the never-occlude promise kept
+   by arrangement rather than by capping a height. */
+
+.leafcard {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: var(--leafcard-top, 60%);
+  height: var(--leafcard-height, 40%);
+  box-sizing: border-box;
+  display: grid;
+  /* Header and action fixed, the middle taking what is left — which is what
+     makes the action pinned and the value block the thing that scrolls. */
+  grid-template-rows: auto 1fr auto;
+  gap: 8px;
+  padding: 10px;
+  border-radius: var(--r-lg);
+  background: var(--globe-panel);
+  border: 1px solid var(--globe-panel-line);
+  font-family: var(--font-sans);
+  color: var(--globe-label);
+  text-align: left;
+}
+
+/* ── 1. the header ────────────────────────────────────────────────────────── */
+
+.leafcard-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+/* The node's own orb, at §7.2's 13px, carrying the gradient it wore on the
+   stage — so the thing on the card is visibly the thing that was pressed. */
+.leafcard-orb {
+  flex: none;
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+}
+.leafcard-orb[data-gradient='1'] { background: var(--globe-node-1-mid); }
+.leafcard-orb[data-gradient='2'] { background: var(--globe-node-2-mid); }
+.leafcard-orb[data-gradient='3'] { background: var(--globe-node-3-mid); }
+.leafcard-orb[data-gradient='4'] { background: var(--globe-node-4-mid); }
+.leafcard-orb[data-gradient='5'] { background: var(--globe-node-5-mid); }
+
+/* Empty and skipped wear a hollow ring rather than a solid — §7.3's own
+   column, and a SHAPE, so the state survives a greyscale screen. */
+.leafcard-orb[data-hollow='true'] {
+  background: none;
+  box-shadow: inset 0 0 0 2px var(--globe-edge);
+}
+
+.leafcard-name {
+  margin: 0;
+  min-width: 0;
+  flex: 1;
+  font-size: 19px;
+  font-weight: 680;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The way out. BS-07a's stage nav band goes when this ships — this is the
+   control that replaces its Back, and it belongs on the thing it closes
+   rather than in a band above the picture. 44px target on a 14px mark, by
+   padding, the same split every icon button in this panel uses. */
+.leafcard-close {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--target-min);
+  height: var(--target-min);
+  margin: -10px -10px -10px 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--globe-detail-key);
+  cursor: pointer;
+  border-radius: var(--r-md);
+}
+.leafcard-close:hover {
+  color: var(--globe-label);
+}
+.leafcard-close:focus-visible {
+  outline: 2px solid var(--globe-focus);
+  outline-offset: -2px;
+}
+
+/* ── the middle, which is the part that scrolls ───────────────────────────── */
+
+.leafcard-scroll {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* THE PARTS KEEP THEIR SIZES; THE REGION SCROLLS. Without this a flex column
+   shrinks its children to fit, so a short stage clipped the 34px count in half
+   instead of scrolling past it — which is the failure `leafCardBand`'s comment
+   says this arrangement exists to avoid. */
+.leafcard-scroll > * {
+  flex: none;
+}
+
+/* ── 2. the purpose line ──────────────────────────────────────────────────── */
+
+/* §7.4: "one sentence, under about twelve words, saying what the field is FOR
+   rather than what it contains." Absent is legal and the card closes the gap —
+   there is no placeholder rule here because there is no placeholder. */
+.leafcard-purpose {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--globe-detail-key);
+}
+
+/* ── 3. the value block, the only part that varies ────────────────────────── */
+
+.leafcard-block {
+  padding: 8px 10px;
+  border-radius: var(--r-md);
+  border-left: 3px solid var(--globe-edge);
+  background: rgb(255 255 255 / 6%);
+}
+.leafcard-block[data-gradient='1'] { border-left-color: var(--globe-node-1-mid); }
+.leafcard-block[data-gradient='2'] { border-left-color: var(--globe-node-2-mid); }
+.leafcard-block[data-gradient='3'] { border-left-color: var(--globe-node-3-mid); }
+.leafcard-block[data-gradient='4'] { border-left-color: var(--globe-node-4-mid); }
+.leafcard-block[data-gradient='5'] { border-left-color: var(--globe-node-5-mid); }
+
+/* Empty and skipped: dashed and muted, per §7.3. The tint goes with the rule
+   — a block drawn full when it holds nothing is the lie the hollow orb above
+   it is there to avoid. */
+.leafcard-block[data-dashed='true'] {
+  background: none;
+  border-left: 0;
+  border: 1px dashed var(--globe-panel-line);
+}
+
+/* The list variant's count: the loud thing on the card, tabular so two of
+   them under each other line up. */
+.leafcard-count {
+  margin: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+.leafcard-count-n {
+  font-size: 34px;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.leafcard-count-noun {
+  font-size: 17px;
+  font-weight: 600;
+  color: var(--globe-detail-key);
+}
+
+/* The incomplete line — the fact, without naming the item (§7.2's hard
+   constraint). Amber for "this wants you", the same amber the drift banner
+   uses, never the red of an error. */
+.leafcard-norm {
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: var(--amber-line);
+}
+
+/* The answer variant: their own words, at §7.2's 17px/600, one per line. */
+.leafcard-answers {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+/* Nothing here yet, or passed on. States the fact and never apologises. */
+.leafcard-blank {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.4;
+  color: var(--globe-detail-key);
+}
+
+/* ── 4. the state chip ────────────────────────────────────────────────────── */
+
+/* Exactly one, or none. A line rather than a pill: a pill on a dark plate is
+   a third plate, and this is metadata about the card it sits in. */
+.leafcard-chip {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+  color: var(--globe-detail-key);
+}
+
+/* ── 5. the action ────────────────────────────────────────────────────────── */
+
+/* One, full width, 46px min — §7.2 fixes all three. Never two: an offer with
+   a second button beside it is two offers, and the card's whole job is to
+   name the one move this node has. */
+.leafcard-act {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 46px;
+  padding: 0 12px;
+  border-radius: var(--r-md);
+  border: 1px solid var(--globe-edge);
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--globe-label);
+  cursor: pointer;
+}
+.leafcard-act:hover {
+  background: rgb(255 255 255 / 8%);
+}
+.leafcard-act:focus-visible {
+  outline: 2px solid var(--globe-focus);
+  outline-offset: 2px;
+}
+
+/* Primary only where the node is genuinely empty. A skipped answer does NOT
+   get this (O1) — the product does not re-raise a decision somebody already
+   made, and a blue button under "you passed on this one" is that argument. */
+.leafcard-act.is-primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--ink-inv);
+}
+.leafcard-act.is-primary:hover {
+  background: var(--primary-hover);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .leafcard {
+    transition: none;
+  }
+}
