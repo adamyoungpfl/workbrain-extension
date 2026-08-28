@@ -91,7 +91,10 @@ async function panel(where) {
     await page.getByRole('button', { name: /Context\.md/ }).first().click();
     // V1.7 VB-37: the file row opens the FILE, and the file view is where the
     // interview is entered — the same two-step walk every e2e spec makes.
-    await page.getByRole('button', { name: /Go through (the questions|them again)/ }).click();
+    // BS-06 rebuilt this door: it read "Go through the questions" until §6
+    // put one verb on it, and this script broke silently at the first shot
+    // after the panel it photographs.
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
     await page.waitForSelector('.flow');
     await page.waitForTimeout(700);
     // A reflect screen is a poor listing image — it shows the machinery, not
@@ -99,17 +102,39 @@ async function panel(where) {
     // roles loop parks the resume on: a listing shot captioned "the questions
     // are the point" must show a question with some point to it. Step past
     // both until the screen holds a real box to write in.
-    for (let i = 0; i < 8; i++) {
+    for (let i = 0; i < 10; i++) {
       const position = await page.locator('.flow').getAttribute('data-position');
+      // BS-05d: a run's payoff card stands between two questions. It is a fine
+      // screen and a poor listing image — the caption promises a question.
+      if (await page.locator('.runcard').count()) {
+        await page.getByRole('button', { name: 'Keep going', exact: true }).click().catch(() => {});
+        await page.waitForTimeout(600);
+        continue;
+      }
+      if (position === 'module-intro') {
+        await page.getByRole('button', { name: 'Next', exact: true }).click();
+        await page.waitForTimeout(600);
+        continue;
+      }
       if (position === 'reflect') {
         await page.getByRole('button', { name: 'Keep it as-is', exact: true }).click();
         await page.waitForTimeout(600);
         continue;
       }
-      if ((await page.locator('.flow textarea.field').count()) > 0) break;
+      // A real box to write in — input or textarea. The old check named
+      // `textarea.field` only, so a single-line question walked straight past
+      // it and the loop ran on until it ran out.
+      if ((await page.locator('.flow .field').count()) > 0) break;
       const no = page.getByRole('button', { name: 'No', exact: true });
       if (await no.count()) await no.click();
-      await page.getByRole('button', { name: 'Next', exact: true }).click();
+      // SKIP, NEVER NEXT. Next on an empty field is a failed submit, and the
+      // question then wears "Answer this to keep going, or skip it." in red —
+      // which is exactly what the last four listing images showed. Skip
+      // advances without validating, and it is also the thing this shot's own
+      // caption promises ("Skip anything").
+      const skip = page.getByRole('button', { name: 'Skip', exact: true });
+      if (await skip.count()) await skip.click();
+      else await page.getByRole('button', { name: 'Next', exact: true }).click();
       await page.waitForTimeout(700);
     }
   }
@@ -127,9 +152,13 @@ async function panel(where) {
     const brain = page.getByRole('button', { name: 'Brain', exact: true });
     if (await brain.count()) {
       await brain.click();
-      // The globe, its nav band, and a settled pose — the drawer grows and the
-      // stage drifts for a moment; a shot mid-motion is a smear.
-      await page.waitForSelector('.brainglobe-nav');
+      // The globe and a settled pose — the drawer grows and the stage drifts
+      // for a moment; a shot mid-motion is a smear.
+      //
+      // Waited on `.brainglobe-nav` until BS-07a's remainder DELETED that band
+      // and gave its thirty pixels back to the stage. The stage itself is the
+      // durable thing to wait for: it is what the shot is of.
+      await page.waitForSelector('.brainglobe-svg');
       await page.waitForTimeout(2200);
     }
   }

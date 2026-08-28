@@ -190,14 +190,29 @@ until this read existed.
 The last item from Release 1, and the only one still open. **Most of it is not
 code**, which is why it has never fitted into a build sprint.
 
-### Already done
+### Already done — more than `docs/STORE.md`'s checklist suggests
+
+That checklist is stale; `store/` is further along than it says.
 
 - `manifest.config.ts` requests **only** `storage` and `sidePanel`, pinned by
   `manifest.spec.ts`.
 - Icons ship at 16 / 32 / 48 / 128 (`public/icons/`).
 - `npm run zip` builds `dist.zip` from a production build.
-- `docs/STORE.md` holds the single-purpose statement, the permission
-  justifications, the data disclosure, and a **draft** privacy policy.
+- **`scripts/store-shots.mjs` captures all five images from the REAL built
+  extension** — four 1280×800 shots and the 440×280 promo tile, the panel
+  composed onto a ground with one line of copy. The panel pixels are never
+  mocked, which is the whole point: a listing image that does not match what
+  installs is the fastest way to earn a one-star review.
+- `store/LISTING.md` and `store/PRIVACY.md` are drafted.
+
+**The script had rotted against the sprint** and is repaired (this commit):
+Home's door is "Edit the file" since BS-06, BS-07a's remainder deleted the
+`.brainglobe-nav` it waited on, BS-05d's run card now stands between two
+questions, and its "found a question" check named `textarea.field` only — so a
+single-line question walked past it, the loop ran out pressing Next on an empty
+box, and **the last four listing images shipped a red validation error.**
+Advancing with Skip rather than Next is the fix and is also what the shot's own
+caption promises.
 
 ### Not done — and none of it is code
 
@@ -208,8 +223,8 @@ code**, which is why it has never fitted into a build sprint.
 | Title, 45 chars | Adam | |
 | Short description, 132 chars | Adam | Leads with the person's problem, not the mechanism |
 | Detailed description | Adam | What it does, then the privacy position, then who it is for |
-| 1280×800 screenshots ×4 | **Blocked on BR-01** | Home, a question, the proof moment, the file — every one of them full of `[DRAFT]` copy today |
-| Small promo tile 440×280 | Design | |
+| 1280×800 screenshots ×4 | **Regenerate after BR-01** | The script is fixed and green; the images are only as final as the copy in them |
+| Small promo tile 440×280 | Done | `scripts/store-shots.mjs` |
 | Category: Productivity | Adam | |
 | Support URL | Adam | Needs somewhere to point |
 | Privacy policy **published at a URL** | Adam | The draft exists; it needs a host |
@@ -220,9 +235,10 @@ code**, which is why it has never fitted into a build sprint.
 still marked unread is a listing that has to be reshot. This is the one hard
 dependency between the three items.
 
-### The code half, such as it is
+### The code half, such as it is — **DONE**
 
-One slice, and it is verification rather than building:
+The shot script is repaired and all five images regenerate. What is left is
+verification:
 
 - `npm run zip` from a clean tree; unpack `dist.zip` and confirm the manifest
   in the artefact requests two permissions and nothing else.
