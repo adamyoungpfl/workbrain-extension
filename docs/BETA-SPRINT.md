@@ -793,6 +793,104 @@ protocol.
 
 ---
 
+## BS-05c — built, tested, and not drawn
+
+§5 asked for "a two-line slip under the answer holding the actual markdown
+that just landed... the cheapest way to make the product feel like it is doing
+something." The fold is built and committed: `core/files/writtenLine.ts`, with
+a test that asserts the line it returns is a **real substring of the
+download** rather than a rendering that resembles one. The panel does not draw
+it, for two reasons that only appeared once it was on screen.
+
+**1. It is the third telling of one fact.** BS-07a's drawer status line
+already says "3 lines just added" on every question. BS-05d's run card already
+says "Four new lines in your file" at every module boundary. Both shipped,
+both green, and the drawer's line is on the same screen at the same moment. A
+third is not more payoff — it is more furniture.
+
+**2. There is no room on that screen that is not the question's.** Two
+placements were built and both broke a rule the interview's geometry rests on:
+
+| Placement | What broke | Caught by |
+|---|---|---|
+| A child of the form, after `.flow-answer` | Every non-zone child is `flex-shrink: 0`, so the slip took its full height and V2.8's question zone shrank to **zero** — the prompt left the screen | `narrator.spec`, timing out on a rephrase button with nowhere to be |
+| Inside `.flow-answer`, sharing its budget | A dead band opened under the composed cluster | `question-fill`'s VB-17 |
+
+The section this item belongs to is a section about interview pace, and the
+question is the thing it is pacing. Trading the prompt for a receipt is the
+wrong side of that trade. **What is missing is a place to put it, not a way to
+derive it** — the fold stands ready for one.
+
+---
+
+## BS-05e — not built, and the census that says why
+
+§5 asked that no presentation KIND appear twice in a run. The census: a run is
+whatever sits between two module boundaries, and the kinds that can land in
+one are the run card (BS-05d), the micro-proof offer (BS-03a), the capability
+offer (BS-04) and the drift banner. Three of the four are already
+single-shot by their own state — `paidRuns`, `microDone` and the capability's
+`nextSkillIndex` each refuse a second showing without any scheduler — and the
+fourth is not a presentation, it is a condition of the file.
+
+So the rule §5 asks for is already true, enforced four times locally rather
+than once centrally. A scheduler would add a piece of session state whose only
+job is to re-derive what four booleans already know, and would have to be kept
+in step with every future card. **Left unbuilt deliberately.** If a fifth kind
+of card arrives without its own once-per-run state, this is the note that says
+build the scheduler then.
+
+---
+
+## Two bugs that had been sitting under the interview screen
+
+BS-05b's cluster failed VB-17 with an 8px dead band under the composed
+cluster, and `home.spec` with a 30-second timeout clicking a button that was
+visible and enabled. Neither had anything to do with the cluster. Three CSS
+rules were bisected away before either was found, which is the lesson worth
+keeping: **when a measurement is wrong by a constant that matches a known
+geometry constant, suspect the frame before the box.**
+
+**One — the document was always 8px scrollable, because `body` still had the
+browser's default margin.** Nothing in the panel ever reset it. On a surface
+sized to the viewport that makes the document taller than the window, which
+makes it scrollable, which makes it something the browser may scroll on its
+own to bring a focused thing into view. On the interview screen the form is in
+normal flow and `.flow-save` is `position: fixed`, so a scrolled document
+moves the form and not the note, and the gap between them opens by exactly the
+scroll. Fixed in `App.css` with `body { margin-bottom: 0 }` — **the bottom
+margin only.** The top 8px have been part of this panel's frame since the
+first screen was drawn and every measurement in the suite is written against
+them; they are also harmless. The bottom 8px do nothing but make a fixed-height
+surface scrollable.
+
+Two things that do NOT work, tried in this order: `overflow: hidden` on the
+root (still a scroll container, so Chrome still carries an offset), and
+`overflow: clip` (same). Pinning the body with `position: fixed; inset: 0`
+does stop it — and breaks every screen that legitimately scrolls, which is
+most of them. **Removing the overflow is the only fix that is not also a
+regression.**
+
+**Two — `.flow-chrome`'s rule had never applied.** BS-02 introduced the
+interview's chrome row and its stylesheet block opened its comment on the same
+line as a stray `.flow-q-row`, making the selector `.flow-q-row .flow-chrome`
+— a descendant of something the row is not inside. It looked right anyway,
+because `.narrator-row` was still carrying its own arithmetic underneath, so
+nothing failed and nothing was noticed. It surfaced only when BS-05f put a
+second control in that row and needed the row to lay itself out.
+
+The consequence was live: with the row unstyled, the toggle landed on the
+row's left, where the chrome bar's mark is — and a 44px control overhanging a
+zero-height row sits *on top of* whatever is under it. The way home was
+covered on every interview screen. `home.spec` called it a timeout; what it
+was is a door with something invisible in front of it.
+
+**Both of these are pre-existing and neither was caught by anything until a
+change downstream leant on them.** That is the shape to expect from a rule
+that is inert rather than wrong: it costs nothing until something needs it.
+
+---
+
 ## The interstitial tax, and why it is worth naming
 
 BS-05d's run card broke **31 e2e tests** in one commit. Not one of them was

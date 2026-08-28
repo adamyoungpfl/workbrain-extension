@@ -934,14 +934,29 @@ test.describe('VB-53 — the buttons melt into the bar and rise back out', () =>
        moving. Staggered, the emptiest frame still holds 59% — there is always
        a word standing still to see the moving ones against.
 
-       Two fifths is the floor rather than the measured 59% so this is a rule
-       about the shape of the gesture and not a snapshot of today's numbers.
-       V1.9's 26% does not clear it, which is the point. */
+       Two fifths was the floor rather than the measured 59%, so the rule was
+       about the shape of the gesture and not a snapshot of the numbers.
+
+       BS-05b (§5) BROKE THE INSTRUMENT, NOT THE GESTURE, and the distinction
+       is the whole reason this comment grew. Next is a filled pill now, so
+       the RESTING band holds several times the ink three bare words did —
+       and a proportional floor measured against a reference that just
+       tripled says "emptier" about a band that is strictly fuller. Measured:
+       the emptiest frame now paints MORE ink in absolute terms than the
+       whole resting band did before the pill existed, while scoring 32% of
+       the new resting total.
+ 
+       So the guard is absolute now. What it protects against is a HOLE — a
+       frame a person reads as the panel glitching — and a hole is a fact
+       about how few pixels are lit, not about a ratio to whatever else
+       happens to be on the row. The floor is the ink three resting words
+       carry, which is what the band held for the whole of V1.9 and V2.x, and
+       V1.9's own blink frame does not clear it. */
     const emptiest = sweep.reduce((a, b) => (b.total < a.total ? b : a));
     expect(
       emptiest.total,
       'a frame of the gesture left the band all but empty — this is the V1.9 blink',
-    ).toBeGreaterThan(rest.total * 0.4);
+    ).toBeGreaterThan(WORDS_ONLY_BAND_INK);
 
     await thawMelt(page, frozen);
     await page.screenshot({ path: path.join(SHOTS, 'z-reformed.png') });
@@ -987,6 +1002,18 @@ interface BandInk {
  * reaches so the comparison is against the ground actually painted rather than
  * against a token restated here.
  */
+/**
+ * The ink three bare words put in the band, in painted pixels — the resting
+ * state of the cluster for the whole of V1.9 and V2.x, before BS-05b (§5)
+ * made Next a filled pill.
+ *
+ * It is the absolute floor the blink guard above uses. Stated as a measured
+ * constant rather than a fraction of today's resting band, because the
+ * resting band is exactly what changed: a ratio against it now reports
+ * "emptier" about a row that is strictly fuller.
+ */
+const WORDS_ONLY_BAND_INK = 1200;
+
 async function bandInk(page: Page): Promise<BandInk> {
   const shot = (await page.screenshot()).toString('base64');
   return page.evaluate(async (shot) => {

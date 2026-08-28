@@ -242,6 +242,9 @@ interface Control {
   label: string;
   ink: Rgb;
   background: Rgb | null;
+  /** BS-05b (§5): the ground the control paints for ITSELF, if it paints one.
+   * Null for the bare words, which is every control but Next. */
+  faceBackground: Rgb | null;
   borderWidth: number;
   weight: number;
   chevrons: number;
@@ -260,9 +263,15 @@ async function controls(page: Page): Promise<Control[]> {
       const style = getComputedStyle(el);
       const hit = el.getBoundingClientRect();
       const paint = (el.closest('.navbtn') as HTMLElement).getBoundingClientRect();
+      const face = el.querySelector('.navbtn-face') as HTMLElement | null;
+      const faceBg = face ? getComputedStyle(face).backgroundColor : 'rgba(0, 0, 0, 0)';
       return {
         color: style.color,
         background: style.backgroundColor,
+        /* BS-05b (§5): a control may paint its OWN ground now — Next is a
+           filled pill. Carried so the contrast walk can measure the ink
+           against what is really behind it rather than against the bar. */
+        faceBackground: faceBg,
         borderWidth: parseFloat(style.borderTopWidth) || 0,
         weight: Number(style.fontWeight),
         chevrons: el.querySelectorAll('svg').length,
@@ -282,6 +291,7 @@ async function controls(page: Page): Promise<Control[]> {
       label,
       ink: ink!,
       background: parseCssColor(measured.background),
+      faceBackground: parseCssColor(measured.faceBackground),
       borderWidth: measured.borderWidth,
       weight: measured.weight,
       chevrons: measured.chevrons,
@@ -375,6 +385,30 @@ test('every control clears 4.5:1 on the ground behind it, at min, mid and max dr
       await setHeight(page, height);
       for (const control of await controls(page)) {
         const where = `${mode} at ${name}: ${control.label}`;
+
+        /**
+         * BS-05b (§5) SPLIT THIS MEASUREMENT IN TWO, and the reason is the
+         * same one that moved the melt's blink guard: VB-41's premise was
+         * that the cluster has NO BOXES, so "the ground behind a control" and
+         * "the bar" were the same pixel. Next is a filled pill now, and
+         * sampling above it measured white ink against the canvas — 1.07:1,
+         * a true reading of two things that are not behind each other.
+         *
+         * So a control that paints its own ground is measured against THAT,
+         * and only a control that does not is measured against the bar. Both
+         * are the same claim — every word clears 4.5:1 on what is really
+         * behind it — and neither is weaker than what VB-41 asked for.
+         */
+        const own = control.faceBackground;
+        if (own && isOpaque(own)) {
+          const ratio = contrastRatio(control.ink, own);
+          measured.push(`${where} — ${ratio.toFixed(2)}:1 on its own fill`);
+          expect(ratio, `${where}: label on its own fill`).toBeGreaterThanOrEqual(
+            DOCK_TEXT_MIN_CONTRAST,
+          );
+          continue;
+        }
+
         // Two samples inside the pressable box and outside the painted one:
         // the ground above the word and the ground below it. Sampling the
         // word's own centre would sometimes land on a glyph and measure the

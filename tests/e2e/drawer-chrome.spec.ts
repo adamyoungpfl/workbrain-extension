@@ -117,6 +117,127 @@ async function openMidInterview(
   return page;
 }
 
+test.describe('BS-05b — the cluster', () => {
+  test('Next is the only filled control on the question screen (BS-05b)', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openMidInterview(context, sw, id, answersAllExcept(contextModules, TEXT_QUESTION, NEXT_QUESTION));
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', TEXT_QUESTION);
+
+    /**
+     * §5's acceptance: "Next is the only filled control on the question
+     * screen." Measured on the PAINT rather than on the variant prop — the
+     * census's own lesson, since Flow.css strips the fill from every button
+     * in this cluster and only Next gets it back.
+     */
+    const painted = await page.$$eval('.flow-foot .navbtn', (ns) =>
+      ns.map((n) => {
+        const face = n.querySelector('.navbtn-face') as HTMLElement | null;
+        return {
+          nav: n.getAttribute('data-nav'),
+          fill: face ? getComputedStyle(face).backgroundColor : 'none',
+        };
+      }),
+    );
+    const filled = painted.filter((c) => c.fill !== 'none' && !/rgba\(0, 0, 0, 0\)/.test(c.fill));
+    expect(filled.map((c) => c.nav)).toEqual(['next']);
+
+    // And wide: it takes the room the two quiet words leave.
+    const boxes = await page.$$eval('.flow-foot .navbtn', (ns) =>
+      ns.map((n) => ({ nav: n.getAttribute('data-nav'), w: n.getBoundingClientRect().width })),
+    );
+    const next = boxes.find((b) => b.nav === 'next')!;
+    for (const other of boxes.filter((b) => b.nav !== 'next')) {
+      expect(next.w, `Next is not wider than ${other.nav}`).toBeGreaterThan(other.w * 2);
+    }
+
+    await context.close();
+  });
+});
+test.describe('BS-05f — Jump to…', () => {
+  test('opens on every question, in file order, before a word is typed', async () => {
+    const { context, sw, id } = await launchExtension();
+    // The deterministic fixture: it opens ON a question, where the chrome
+    // row lives. The default one lands on a module transition, which has no
+    // question chrome and therefore no door.
+    const page = await openMidInterview(context, sw, id, answersAllExcept(contextModules, TEXT_QUESTION, NEXT_QUESTION));
+
+    await page.getByRole('button', { name: S.jumpOpen, exact: true }).click();
+    const rows = page.locator('.jump-row');
+    await expect(rows).not.toHaveCount(0);
+
+    /**
+     * Opening it with an empty box is a legitimate use: a person who does not
+     * know the word to search for is exactly who needs this, and a search
+     * that shows nothing until you guess right is a search for people who
+     * already know the answer.
+     */
+    const first = await rows.count();
+    await expect(page.locator('.jump-count')).toHaveText(S.jumpCount(first));
+
+    await context.close();
+  });
+
+  test('every word has to land, and the order never moves', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openMidInterview(context, sw, id, answersAllExcept(contextModules, TEXT_QUESTION, NEXT_QUESTION));
+    await page.getByRole('button', { name: S.jumpOpen, exact: true }).click();
+
+    const before = await page.locator('.jump-row-q').allTextContents();
+    await page.locator('#jump-query').fill('role');
+    const narrowed = await page.locator('.jump-row-q').allTextContents();
+    expect(narrowed.length).toBeGreaterThan(0);
+    expect(narrowed.length).toBeLessThan(before.length);
+    // Still in the order they were, just fewer — where a question lives is
+    // learnable only if the list does not re-rank under the person.
+    expect(narrowed).toEqual(before.filter((q) => narrowed.includes(q)));
+
+    // Typing more narrows rather than broadens.
+    await page.locator('#jump-query').fill('role zzzz');
+    await expect(page.locator('.jump-row')).toHaveCount(0);
+    await expect(page.locator('.jump-empty')).toHaveText(S.jumpNothing);
+
+    await context.close();
+  });
+
+  test('picking one lands on that question, and Back returns', async () => {
+    const { context, sw, id } = await launchExtension();
+    const page = await openMidInterview(context, sw, id, answersAllExcept(contextModules, TEXT_QUESTION, NEXT_QUESTION));
+    const startedOn = await page.locator('.flow').getAttribute('data-step-id');
+
+    await page.getByRole('button', { name: S.jumpOpen, exact: true }).click();
+    await page.locator('#jump-query').fill('never');
+    await page.locator('.jump-row').first().click();
+
+    // Landed, and the sheet is gone with it.
+    await expect(page.locator('.jump')).toHaveCount(0);
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'never_words');
+
+    /**
+     * AND BACK RETURNS. A search that stranded somebody would be worse than
+     * no search — the jump goes through the same `history` every other move
+     * uses, so the way out is the one they already know.
+     */
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await page.mouse.move(0, 0);
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', startedOn!);
+
+    await context.close();
+  });
+
+  test('it filters the QUESTIONS and never the answers', async () => {
+    const { context, sw, id } = await launchExtension();
+    // Every answer in this fixture is "A test answer for <id>." — so a query
+    // for a word that appears only in ANSWERS must find nothing.
+    const page = await openMidInterview(context, sw, id, answersAllExcept(contextModules, TEXT_QUESTION, NEXT_QUESTION));
+    await page.getByRole('button', { name: S.jumpOpen, exact: true }).click();
+
+    await page.locator('#jump-query').fill('A test answer for');
+    await expect(page.locator('.jump-row')).toHaveCount(0);
+
+    await context.close();
+  });
+});
+
 test.describe('BS-07a — the drawer chrome', () => {
   test('the mode buttons print their words, and the word IS the name', async () => {
     const { context, sw, id } = await launchExtension();

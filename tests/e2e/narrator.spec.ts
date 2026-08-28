@@ -241,8 +241,15 @@ test.describe('the toggle', () => {
     // nothing is ever narrated that the person did not choose to hear.
     await expect(button).toHaveAttribute('aria-pressed', 'false');
 
-    // It is the first thing in the tab order on the screen, and the ring is a
-    // real 2px --primary one.
+    /**
+     * It is in the chrome's tab order — reached before the question, which is
+     * the claim — and the ring is a real 2px --primary one.
+     *
+     * BS-05f (§5) added "Jump to…" to this same zero-height chrome row and
+     * put it to the toggle's RIGHT precisely so this claim survives: the
+     * toggle keeps the head of the row, so DOM order, reading order and tab
+     * order still agree (WCAG 2.4.3) and it is still the first stop.
+     */
     await page.evaluate(() => document.body.focus());
     await page.keyboard.press('Tab');
     await expect(button).toBeFocused();

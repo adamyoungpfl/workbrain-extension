@@ -512,12 +512,28 @@
   align-items: flex-start;
   gap: 6px;
 }
-.flow-q-row /* BS-02 — the interview's chrome row: the feedback door and the narrator
+/* BS-02 — the interview's chrome row: the feedback door and the narrator
    toggle, hanging together in the empty right-hand end of the header the
    module label and the bar already occupy. The row's own arithmetic is
    NarratorToggle.css's, moved up one level and left exactly as it was: the
    -10px and the -9px are that file's numbers, and the toggle inside gives
-   them up so the pair is measured once rather than twice. */
+   them up so the pair is measured once rather than twice.
+
+   BS-05f (§5): this selector read `.flow-q-row .flow-chrome` until now — a
+   stray prefix left on the line the comment opens on, which made a descendant
+   selector out of two unrelated rules and meant NONE of this had ever applied.
+   The row still looked right because `.narrator-row` was carrying its own
+   arithmetic underneath. Fixed here, with `.flow-chrome .narrator` below
+   giving that arithmetic up as the comment always said it would, so the pair
+   is a wash on screen.
+
+   `height: 0` IS THE WHOLE POINT. The toggle has ridden here since V1.3 VB-18
+   using exactly this trick: a zero-height row whose 44px control overhangs it,
+   so the control is pressable without costing the question a single pixel
+   (NarratorToggle.css does the arithmetic). Jump to… joins it on the same
+   terms, and `flex-end` keeps both of them at the right-hand end — the LEFT
+   of this row is where the chrome bar's mark sits, and a 44px control
+   overhanging a zero-height row lands right on top of it. */
 .flow-chrome {
   display: flex;
   justify-content: flex-end;
@@ -1431,13 +1447,67 @@
   color: var(--ink-2);
 }
 
-/* Next. The only coloured word in the cluster — and NOT the only signal it is
-   the primary: it also carries the heavier weight and the chevron
-   (components/NavButton.tsx), because docs/GUARDRAILS.md does not allow the
-   difference to be hue alone. 6.82:1 on the canvas. */
+/* BS-05b (§5) — NEXT IS A FILLED PRIMARY NOW.
+
+   §5's complaint: "The action taken forty-nine times is currently an
+   underlined word in a mostly empty band." True, and V1.7 VB-41's reasoning
+   for that is still on the record above — the cluster dropped its boxes so
+   the words could sit on the panel's own ground. What §5 asks for is not the
+   boxes back; it is ONE of them: "Keep the cluster; give it a hierarchy: Back
+   and Skip quiet, Next filled and wide."
+
+   THE PAINT/PRESS SPLIT SURVIVES, WHICH IS WHY THIS IS SMALL. The fill is
+   drawn on the 26px painted face, not on the 44px pressable box — so
+   `navPaintHeight()` is unchanged, the melt's travel arithmetic
+   (core/flow/navMelt.ts reads that number) is unchanged, and the drawer's
+   ceiling is unchanged. A filled pill of exactly the height the words already
+   occupied, rather than a block that would have moved every constant welded
+   to the cluster's geometry.
+
+   It keeps the heavier weight and the chevron it already had, so the primary
+   is still not told by hue alone (docs/GUARDRAILS.md) — the fill is a third
+   signal on top of two, not a replacement for them. */
 .flowshell :is(.flow-foot, .flow-melt) .btn-primary {
-  color: var(--primary);
+  color: var(--ink-inv);
   font-weight: 700;
+}
+/* THE PILL MUST NOT MAKE THE ROW TALLER. The face is 26px where a bare word
+   is 18, so the hit padding gives back the difference: 44 = 26 + 9 + 9, the
+   same pressable box the other two controls have, and the same row height
+   the drawer's ceiling was computed against (core/flow/dock.ts). Without
+   this the cluster grew 8px and ate the clearance VB-41 measured. */
+.flowshell :is(.flow-foot, .flow-melt) .btn-primary {
+  padding-top: calc(var(--nav-hit-pad, 13px) - 4px);
+  padding-bottom: calc(var(--nav-hit-pad, 13px) - 4px);
+}
+
+.flowshell :is(.flow-foot, .flow-melt) .btn-primary .navbtn-face {
+  background: var(--primary);
+  border-radius: var(--r-pill);
+  /* The horizontal air a fill needs to read as a pill rather than as a
+     highlighted word, and the face's OWN height vertically — `--nav-paint-h`
+     is `navPaintHeight()`, the number the melt's travel is computed from
+     (core/flow/navMelt.ts). Padding it taller would move that. */
+  padding: 0 14px;
+  min-height: var(--nav-paint-h, 26px);
+  box-sizing: border-box;
+  justify-content: center;
+}
+
+/* AND WIDE. §5 asks for it, and it is what makes the hierarchy read at a
+   glance rather than on inspection: Back and Skip take exactly their words,
+   Next takes everything left over. */
+.flowshell .flow-foot .navbtn:has(.btn-primary) {
+  flex: 1;
+}
+.flowshell .flow-foot .navbtn:has(.btn-primary) .btn {
+  width: 100%;
+}
+/* The FACE is what is painted, so the face is what has to stretch — a button
+   at full width with a content-sized face inside it is a wide hit box around
+   a small pill, which is the paint/press split saying the wrong thing. */
+.flowshell .flow-foot .navbtn:has(.btn-primary) .navbtn-face {
+  width: 100%;
 }
 
 /* Skip. The quietest thing in the bar, at --ink-3's 4.71:1 — over the floor,
@@ -1461,7 +1531,16 @@
   color: var(--ink);
 }
 .flowshell .flow-foot .btn-primary:hover {
-  color: var(--primary-hover);
+  color: var(--ink-inv);
+}
+.flowshell .flow-foot .btn-primary:hover .navbtn-face {
+  background: var(--primary-hover);
+}
+/* The underline hover belongs to the WORDS. On a filled pill it would be an
+   underline inside a button, which is the one place the affordance the boxes
+   used to be is not needed — the box is back. */
+.flowshell .flow-foot .btn-primary:hover .navbtn-label {
+  text-decoration: none;
 }
 
 /* The reflect screen's own buttons are in the question, so its nav can hold
@@ -1960,3 +2039,5 @@
   line-height: 1.45;
   color: var(--ink-2);
 }
+
+/* BS-05f (§5) — the door itself. The row it lives in is up beside BS-02's. */

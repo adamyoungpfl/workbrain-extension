@@ -10,6 +10,7 @@ import {
   FlowProgress,
   NarratorToggle,
   NavButton,
+  JumpSheet,
   NavCluster,
   NAV_MELT_LAYER_CLASS,
   OrbGroup,
@@ -28,6 +29,9 @@ import {
   proofQuestion,
 } from '../../core/flow/proofAdapter';
 import { MICRO_PROOF_MODULE, RUN_CARD_MIN, endsRun, runOf } from '../../core/flow/runs';
+import { positionForQuestionId } from '../../core/flow/outline';
+import { jumpTargets } from '../../core/flow/jumpTo';
+import type { JumpTarget } from '../../core/flow/jumpTo';
 import type { Run } from '../../core/flow/runs';
 import { proofChecks, proofTally } from '../../core/proof/checklist';
 import {
@@ -69,6 +73,7 @@ import {
   FLOW_SAVE_NOTE_FOOT,
   flowBottomReserve,
   navHitPadding,
+  navPaintHeight,
   navPaintOverhang,
 } from '../../core/flow/dock';
 import { NAV_MELT_DROP, NAV_MELT_STAGGER_MS, NAV_RISE_DELAY_MS } from '../../core/flow/navMelt';
@@ -746,6 +751,28 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
     return result.ok;
   }
 
+  /**
+   * BS-05f (§5) — send the interview to a named question.
+   *
+   * `positionForQuestionId` is the door R1-12 already built for Home's
+   * next-move card and V1.5's recommendations; a search is a third caller of
+   * the same mechanism rather than a second way to navigate. The move goes
+   * through `viewing` and `history`, so Back from a jumped-to question
+   * returns to where the person was — a search that stranded somebody would
+   * be worse than no search.
+   */
+  /** BS-05f — every question the search can reach. Built from the flow's own
+   * words, never from an answer (core/flow/jumpTo.ts). */
+  const jumpList = outline ? jumpTargets(modules, outline, ans) : [];
+
+  function jumpToQuestion(questionId: string) {
+    const target = positionForQuestionId(modules, questionId);
+    if (!target) return;
+    const from = viewing ?? findPosition(modules, ans, declinedBlocks, seenIntros);
+    setHistory((h) => [...h, from]);
+    setViewing(target);
+  }
+
   function goBack() {
     if (history.length === 0) return;
     const prev = history[history.length - 1]!;
@@ -940,6 +967,12 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
             '--nav-hit-pad': `${navHitPadding()}px`,
             '--nav-paint-inset': `${navPaintOverhang()}px`,
             '--nav-label-h': `${FLOW_NAV_LABEL}px`,
+            /* BS-05b — the painted face's own height, published so Next's
+               fill is exactly the box the row was already laid out at.
+               `navPaintHeight()` is the number the melt's travel is computed
+               from (core/flow/navMelt.ts); a pill that guessed its own height
+               would move the gesture. */
+            '--nav-paint-h': `${navPaintHeight()}px`,
             '--nav-clearance': `${FLOW_NAV_CLEARANCE}px`,
             // V1.8 VB-44. The foot under the save note — one gutter, not the
             // surface's whole 20px frame, and held under the clearance above
@@ -1124,6 +1157,8 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
       }
       onHome={onHome}
       onFixSteps={onFixSteps}
+      onJumpTo={outline ? jumpToQuestion : undefined}
+      jumpList={jumpList}
     />,
   );
 }
@@ -1238,6 +1273,11 @@ interface StepViewProps {
   onHome?: (() => void) | undefined;
   /** BS-04 — see `FlowProps.onFixSteps`. */
   onFixSteps?: ((recordIndex: number) => void) | undefined;
+  /** BS-05f — send the interview to a question by id. Absent on a flow with
+   * no outline to search (the proof loops), and the door is absent with it. */
+  onJumpTo?: ((questionId: string) => void) | undefined;
+  /** BS-05f — the questions the search offers. */
+  jumpList?: readonly JumpTarget[] | undefined;
   onBack: () => void;
   onCommit: (next: Answers) => void;
   /** `name` is V1.4 VB-20's: set only when the block names its new records —
@@ -1268,6 +1308,8 @@ function StepView({
   onAddAnotherDecision,
   onHome,
   onFixSteps,
+  onJumpTo,
+  jumpList = [],
 }: StepViewProps) {
   const [draftValues, setDraftValues] = useState<string[]>(() => initialSelection(pos, answers));
   // Doubles as the reflect screen's "Say it again" draft — pre-filled with
@@ -1385,6 +1427,10 @@ function StepView({
    * Save button on one screen, so this never has to outlive the moment and
    * never becomes a stored fact about somebody. */
   const [capTicked, setCapTicked] = useState<number[]>([]);
+  /** BS-05f — whether "Jump to…" is open. Per position like every other
+   * draft here: picking a question navigates, so it never has to survive
+   * one. */
+  const [jumpOpen, setJumpOpen] = useState(false);
   /** BS-03c — has the prompt been copied on THIS step. Per-position like
    * every other draft here, so returning to a step later opens it fresh
    * rather than claiming a place is held that nobody left. */
@@ -1575,6 +1621,17 @@ function StepView({
     : '';
   /** Their AI's reply, from screen one. Printed on screen two, never read. */
   const capReply = String(answers.values[CAPABILITY_ANSWER_KEY] ?? '');
+
+  /**
+   * BS-05c (§5) — the markdown the previous answer just put in the file.
+   *
+   * Derived per render from the same generator the download uses, so the
+   * slip cannot show something the file does not say
+   * (core/files/writtenLine.ts). Null on the first question of a session, on
+   * a skip, on a gate, and on a field of a repeatable — all four of which are
+   * "nothing landed", and all four decided in core rather than here.
+   */
+
 
   /**
    * What a `kind: 'gen'` step puts on the clipboard, and what it calls it.
@@ -1845,7 +1902,46 @@ function StepView({
 
   const topSection = (
     <>
-      <NarratorToggle />
+      {/* BS-05f (§5) — "Jump to…", beside the narrator's own toggle. Both
+          live in the same 24px chrome row and both keep a 44px target by
+          overhanging it (NarratorToggle.css's split, reused). A WORD rather
+          than a magnifying glass: §1's rule that no control communicates by
+          icon alone. */}
+      {/* BS-05f — THE TOGGLE STAYS FIRST, AND STAYS ON THE RIGHT.
+
+          VB-18 put the narrator's toggle at the head of the tab order on
+          purpose: somebody who cannot see the screen should meet the thing
+          that reads it to them before anything else on it. So the door goes
+          AFTER it in the DOM, and the row is laid out right-to-left from the
+          end — DOM order, reading order and tab order all agree, and nothing
+          is reordered in CSS (which would be the same lie told twice, since a
+          sighted keyboard user follows the paint).
+
+          The first build put the toggle on the row's LEFT instead, which is
+          where the chrome bar's mark is — and this row is zero-height with a
+          44px control overhanging it, so the toggle silently covered the way
+          home. `home.spec` caught it as a 30-second timeout clicking a button
+          that was visible, enabled, and underneath something. A control that
+          costs the row no pixels still costs somebody else's pixels. */}
+      <div className="flow-chrome">
+        <NarratorToggle />
+        {onJumpTo && (
+          <button type="button" className="flow-jump" onClick={() => setJumpOpen(true)}>
+            {S.jumpOpen}
+          </button>
+        )}
+      </div>
+      {onJumpTo && (
+        <JumpSheet
+          open={jumpOpen}
+          onClose={() => setJumpOpen(false)}
+          targets={jumpList}
+          onJump={(id) => {
+            setJumpOpen(false);
+            onJumpTo(id);
+          }}
+        />
+      )}
       <FlowProgress
         title={moduleFor(modules, pos)?.title ?? ''}
         current={topLevelIndex(modules, pos)}
@@ -2926,9 +3022,33 @@ function StepView({
             )}
           </>
         )}
+      {/* BS-05c (§5) — THE SLIP IS NOT DRAWN, AND THIS IS WHY.
+
+          §5 asked for "a two-line slip under the answer holding the actual
+          markdown that just landed... the cheapest way to make the product feel
+          like it is doing something." It was built, and then stood down, for
+          two reasons that only appeared in the building:
+
+          1. IT IS THE THIRD TELLING OF ONE FACT. BS-07a's drawer status line
+             already says "3 lines just added" on every question, and BS-05d's
+             run card already says "Four new lines in your file" at every
+             boundary. Both shipped, both are on screen at the same moment. A
+             third is not more payoff, it is more furniture.
+
+          2. THERE IS NO ROOM THAT IS NOT THE QUESTION'S. As a child of the
+             form it collapsed the prompt to zero height (`narrator.spec`
+             caught it, timing out on a rephrase button with nowhere left to
+             be). Moved INSIDE the answer, it opened a dead band beneath the
+             composed cluster (`question-fill`'s VB-17 caught that). The
+             interview's geometry has one pool of slack and the question has
+             first claim on it — which is the premise of the whole section
+             this item sits in.
+
+          `core/files/writtenLine.ts` STAYS, tested, and its test proves the
+          line it returns is a real substring of the download. What is missing
+          is a place to put it, not a way to derive it. */}
       </AnswerArea>
 
-      
       {/* V2.5 VB-114: a tour slide carries its own advance — the nav row
           would be a second set of controls saying the same thing. */}
       {!tourSlide && (

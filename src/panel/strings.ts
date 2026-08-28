@@ -798,6 +798,36 @@ export const S = {
   runCardLit: (section: string) => `${section} is lit up.`,
   runCardWrote: (lines: number) =>
     lines === 1 ? 'One new line in your file.' : `${capitalise(wordFor(lines))} new lines in your file.`,
+  /* BS-05f (§5) — "Jump to…", a filter over the outline. [DRAFT]
+
+     §5: "Forty-nine questions with no search is the one missing utility
+     every comparable browser tool has."
+
+     THE DOOR IS A WORD, not a magnifying glass — §1's rule that no control
+     communicates by icon alone, and this one sits in a 24px chrome row
+     beside the narrator's own labelled toggle. */
+  jumpOpen: 'Jump to…',
+  jumpTitle: 'Jump to a question',
+  jumpFieldLabel: 'Find a question',
+  jumpPlaceholder: 'A word from the question…',
+  /** What the list says when a filter matches nothing. States the fact and
+   * offers the way back, never an apology (docs/design-system.html §08). */
+  jumpNothing: 'No question has that word. Try a shorter one.',
+  jumpCount: (n: number) => (n === 1 ? '1 question' : `${n} questions`),
+  /** Beside a question already answered — so "where did I say that" is
+   * answerable at a glance, which is half of what a search is opened for. */
+  jumpAnswered: 'Answered',
+
+  /* BS-05c (§5) — the written-line slip. [DRAFT]
+
+     "Show the file writing itself, inline, once per answer... the drawer's
+     payoff delivered where the eye already is."
+
+     ONE LABEL AND NOTHING ELSE. What follows it is the file's own markdown,
+     verbatim (core/files/writtenLine.ts) — so the only words this product
+     adds are the three that say what the block is. Anything more would be
+     the panel narrating a thing the person can read. */
+
   runCardKeep: 'Keep going',
   runCardRead: 'Read my file',
   runCardStop: 'Stop here for now',

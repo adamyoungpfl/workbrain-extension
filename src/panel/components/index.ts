@@ -118,4 +118,5 @@ export type { RecommendationRowProps, RecommendationHideProps, RecommendationCop
 export { FeedbackSheet, FeedbackDoor, BuildStamp } from './FeedbackSheet';
 export { MeterWhatSheet } from './MeterWhatSheet';
 export { RecordRow, AddRecordRow } from './RecordRow';
+export { JumpSheet } from './JumpSheet';
 export type { FeedbackSheetProps } from './FeedbackSheet';

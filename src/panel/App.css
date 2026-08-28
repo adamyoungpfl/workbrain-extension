@@ -44,6 +44,28 @@ html,
 body {
   background: var(--ground);
 }
+/* AND THE DOCUMENT DOES NOT OVERFLOW BY THE BOTTOM MARGIN NOBODY ASKED FOR.
+
+   The browser's default `body { margin: 8px }` was never reset here. On a
+   surface sized to the viewport that makes the document eight pixels taller
+   than the window, which makes it scrollable, which makes it something the
+   browser may scroll on its own to bring a focused thing into view.
+
+   That matters on the interview screen because the form is in normal flow and
+   `.flow-save` is `position: fixed`: scroll the document and the form moves
+   while the note does not, so the gap between them opens by exactly the
+   scroll. `question-fill`'s VB-17 reads that as a dead band under the composed
+   cluster — a layout failure with no cause anywhere in Flow.css, because the
+   layout was right and the frame had moved.
+
+   Only the BOTTOM margin goes. The top eight pixels have been part of this
+   panel's frame since the first screen was drawn and every measurement in the
+   suite is written against them; removing those is a separate change with a
+   separate blast radius, and there is nothing wrong with them. The bottom
+   eight do nothing but make a fixed-height surface scrollable. */
+body {
+  margin-bottom: 0;
+}
 .app-ground {
   position: fixed;
   inset: 0;
