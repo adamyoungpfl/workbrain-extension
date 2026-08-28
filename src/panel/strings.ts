@@ -800,6 +800,63 @@ export const S = {
   proofIntoSkills: 'Now teach it a task you repeat',
   proofDone: 'That difference is your context working.',
   proofDoneSub: 'Shown exactly as your AI wrote it. The panel never reads or scores it.',
+  // ------------------------------------------- proof two, the capability proof
+  /* BS-04 (§4) — "This is the screen that sells the product and it does not
+     exist. Proof one buys trust; this buys the sentence a tester repeats to
+     a colleague." Every line below is [DRAFT] and wants the morning pass.
+
+     THE VOICE IS DIFFERENT FROM PROOF ONE'S ON PURPOSE. Proof one is careful
+     and even-handed — it is running a comparison, and the copy must not tip
+     it. This one is not a comparison. Their AI is about to do a job they
+     described, and the words can say so. */
+  capHeading: 'Now watch it do the job.',
+  capSub: (steps: number, shape: string) =>
+    shape
+      ? `${capitalise(wordFor(steps))} steps, in your words, and it hands back ${shape.toLowerCase()}.`
+      : `${capitalise(wordFor(steps))} steps, in your words.`,
+  /** The cadence line, when they gave one. */
+  capCadence: (cadence: string) => `Runs: ${cadence}`,
+  capToolsLine: (tools: string) => `In: ${tools}`,
+  /** The first two steps, shown so the offer is concrete before they copy. */
+  capFirstSteps: 'The first steps you wrote:',
+  capMoreSteps: (n: number) => (n === 1 ? 'and one more' : `and ${wordFor(n)} more`),
+  /** The one sentence, and the instruction that the recipe rides with it. */
+  capAskLabel: 'The one thing you send:',
+  capRecipeRides: 'The recipe goes with it, inside the message. Nothing to attach.',
+  capCopy: 'Copy it, with the recipe',
+  capLead: 'Here is the recipe. Follow its steps in order, exactly as written.',
+  /** The secondary. It names the skill it switches to, because "pick a
+   * different one" does not tell you what happens when you press it. */
+  capSwitch: (name: string) => `Use ${name} instead`,
+  capPaste: 'Paste what it wrote here',
+  /** The payoff. Their own steps, ticked by them. */
+  capDone: 'Which of your steps did it actually do?',
+  capDoneSub: 'Your steps, in your order. Tick what it got. Workbrain never reads the reply.',
+  /** The fieldset's own name. Not the heading again — a screen reader that
+   * reads the question and then reads it a second time as the group's name
+   * has been told one thing twice. */
+  capChecksLegend: 'Your steps, in order',
+  /** Written from the count, and "first try" is the part somebody repeats. */
+  capTallyLine: (done: number, of: number) =>
+    done === of
+      ? `Every one of your ${wordFor(of)} steps, first try.`
+      : `${capitalise(wordFor(done))} of your ${wordFor(of)} steps, first try.`,
+  /** …and what it means going forward, in one sentence (§4). */
+  capMeaning: (done: number, of: number) =>
+    done === 0
+      ? 'That is worth knowing. A recipe that reads clearly to you can still be missing a step it needs.'
+      : done === of
+        ? 'Ask for it by name from now on. You never have to explain it again.'
+        : `Ask for it by name from now on, and the ${of - done === 1 ? 'step' : 'steps'} it missed is where the recipe needs a line.`,
+  capReceipt: 'Save this as a one-page receipt',
+  /** The route back into Skills, at the one question that would fix it. */
+  capFixSteps: 'Rewrite the steps',
+  /** Home's row, and the door on Skills' own last screen. */
+  capCta: 'Run a skill for real',
+  capRowSub: 'Hand your AI a recipe and watch it work.',
+  capRowWaiting: 'Ready once you have two skills',
+  capIntoSkills: 'Now watch one of them run',
+
   copyPrompt: 'Copy',
   copyToClipboard: 'Copy to clipboard',
 
@@ -1027,19 +1084,19 @@ export const S = {
    */
   tileDownload: 'Download file',
   /** The dormant tiles, said aloud: a pointer cannot read grey. */
-  tileWaitsOnContext: 'Ready when your Context file is finished',
+  tileWaitsOnContext: 'Ready when Context is finished',
   /* BS-06 (§6) — the tiles became ROWS with subtitles. A three-across icon
      grid whose labels ran at 11px said less in more height, and two of the
      three were usually dashed and dead; a dormant item is a row that
      explains itself, not a disabled square. These are the subtitles that
      replace the explaining a dashed edge was doing badly. [DRAFT] */
-  rowDownloadSub: 'The file itself, to keep or to hand to any AI',
+  rowDownloadSub: 'The file itself, to keep or to hand over',
   rowProveSub: 'Two answers, side by side. Two minutes.',
   rowRedeemSub: 'Add a skill somebody built for you',
-  rowLibrarySub: 'Skills built and tested by Model Citizen',
+  rowLibrarySub: 'Built and tested by Model Citizen',
   /** Workbrain+ keeps its door and loses its pitch: the price and the four
    * goods belong on the page this links to (§6). */
-  rowPlusSub: 'Real help every month, from the people who build these',
+  rowPlusSub: 'Real help every month, from us',
   /**
    * [DRAFT] V2.9 VB-145 — the upload door at the top of the UI, and its
    * seatbelt: bringing a file in REPLACES what is here, so the sheet says

@@ -40,6 +40,25 @@ const OPTION_LABELS: ReadonlyMap<string, ReadonlyMap<string, string>> = (() => {
   return byQuestion;
 })();
 
+/**
+ * BS-04 (§4) exported these three. Proof two assembles a message out of the
+ * same record this file prints, and a second rendering of "which words does
+ * key `weekly_monday` stand for" would be two answers to one question — the
+ * kind that agree today and disagree after somebody edits one option list.
+ */
+export function skillOptionLabel(questionId: string, value: unknown): string {
+  return labelFor(questionId, value);
+}
+
+export function skillOptionLabels(questionId: string, value: unknown): string[] {
+  return labelsFor(questionId, value);
+}
+
+/** One skill's recipe block — the exact bytes Skills.md carries for it. */
+export function skillRecipeBlock(record: Record<string, unknown>): string | null {
+  return renderSkillRecord('skills', record);
+}
+
 function labelFor(questionId: string, value: unknown): string {
   if (typeof value !== 'string') return '';
   return OPTION_LABELS.get(questionId)?.get(value) ?? value;

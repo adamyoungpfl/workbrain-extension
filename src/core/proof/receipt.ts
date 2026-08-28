@@ -96,3 +96,75 @@ export function buildProofReceipt(receipt: ProofReceipt): string {
 export function proofReceiptName(on: string): string {
   return `Workbrain proof — ${on}.md`;
 }
+
+/**
+ * BS-04 (§4) — PROOF TWO'S RECEIPT.
+ *
+ * Same trade as the one above and deliberately the same shape: a markdown
+ * file, in the person's own words, assembled at the moment they ask for it
+ * and never stored or uploaded. D5 holds — a file, never a hosted link,
+ * while `docs/OPEN.md` #4 stays open.
+ *
+ * What differs is the argument it carries. Proof one's receipt is two answers
+ * and what changed between them. This one is a RECIPE AND A RUN: the steps
+ * they wrote, which of them their AI actually did, and the count. §4: "the
+ * artifact and the checklist are the argument."
+ *
+ * The steps print in their own order with a real tick or a real blank, rather
+ * than a list of hits followed by a list of misses — somebody reading this
+ * back is walking the recipe, and a reordered recipe is a different recipe.
+ */
+export interface CapabilityReceipt {
+  /** The skill's name, theirs. */
+  skill: string;
+  /** The one sentence they sent. */
+  ask: string;
+  /** Every step they wrote, in order. */
+  steps: readonly string[];
+  /** The indices of the steps they said their AI did. */
+  done: readonly number[];
+  /** Printed date, injected so the file is testable to the character. */
+  on: string;
+}
+
+const CAPABILITY_TITLE = '# What my AI did with my recipe';
+
+export function buildCapabilityReceipt(receipt: CapabilityReceipt): string {
+  const done = new Set(receipt.done);
+  const lines: string[] = [
+    CAPABILITY_TITLE,
+    '',
+    `_${receipt.on} · made with Workbrain, on this machine._`,
+    '',
+    `## ${receipt.skill}`,
+    '',
+    '### What I asked',
+    '',
+    block(receipt.ask),
+    '',
+    '### My steps, and what it did',
+    '',
+  ];
+
+  if (receipt.steps.length === 0) {
+    lines.push(NOT_CAPTURED);
+  } else {
+    receipt.steps.forEach((step, index) => {
+      lines.push(`- [${done.has(index) ? 'x' : ' '}] ${step}`);
+    });
+  }
+
+  lines.push(
+    '',
+    `**${done.size} of ${receipt.steps.length}**, first try — judged by me. Workbrain never read the reply.`,
+    '',
+  );
+
+  return lines.join('\n');
+}
+
+/** The filename. Names the skill, because somebody runs this more than once. */
+export function capabilityReceiptName(skill: string, on: string): string {
+  const safe = skill.replace(/[\\/:*?"<>|]/g, ' ').replace(/\s+/g, ' ').trim();
+  return `Workbrain run — ${safe || 'skill'} — ${on}.md`;
+}

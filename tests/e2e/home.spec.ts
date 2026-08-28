@@ -556,10 +556,20 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     await expect(page.locator('.home .btn-primary')).toHaveCount(1);
     await expect(page.locator('.home-recs .btn-primary')).toHaveCount(1);
 
-    // Roughly one and a half panel heights. The 760px panel is what the
-    // review measured against; §6 opened at ~1,470px and targeted ~810px.
+    /**
+     * §6's acceptance is "Home fits in roughly one and a half panel heights",
+     * against the 760px panel the review measured. It opened at ~1,470px.
+     *
+     * THE BOUND MOVED ONCE, FROM 1.5 TO 1.6, AND IT IS WORTH WRITING DOWN
+     * WHY. §6 counted five rows. §4 then shipped proof two, a surface that
+     * did not exist when Home was measured, and gave it the sixth — about
+     * 60px. Holding 1.5 would have meant cutting something §6 kept in order
+     * to fit something §6 never weighed, which is arithmetic driving design.
+     * The subtitles were shortened to one line each in the same pass, which
+     * is the part of the overage that was really slack.
+     */
     const height = await page.$eval('.home', (home) => Math.round(home.getBoundingClientRect().height));
-    expect(height, `Home is ${height}px tall`).toBeLessThan(760 * 1.5);
+    expect(height, `Home is ${height}px tall`).toBeLessThan(760 * 1.6);
 
     await context.close();
   });
@@ -607,7 +617,7 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     await context.close();
   });
 
-  test('five rows, and the two that wait explain themselves in words (BS-06)', async () => {
+  test('six rows, and the three that wait explain themselves in words (BS-06/BS-04)', async () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
@@ -617,27 +627,33 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
      * themselves instead of disabled squares."
      */
     const rows = page.locator('.home-row');
-    await expect(rows).toHaveCount(5);
+    // BS-04 (§4) added the third: proof two, waiting on two recipes.
+    await expect(rows).toHaveCount(6);
     await expect(rows.nth(0)).toContainText(S.tileDownload);
     await expect(rows.nth(1)).toContainText(S.proofCta);
-    await expect(rows.nth(2)).toContainText(S.tileRedeem);
-    await expect(rows.nth(3)).toContainText(S.libTitle);
-    await expect(rows.nth(4)).toContainText(S.plusTitle);
+    await expect(rows.nth(2)).toContainText(S.capCta);
+    await expect(rows.nth(3)).toContainText(S.tileRedeem);
+    await expect(rows.nth(4)).toContainText(S.libTitle);
+    await expect(rows.nth(5)).toContainText(S.plusTitle);
 
-    // A waiting row says what it is waiting for, in the row, as text.
+    // A waiting row says what it is waiting for, in the row, as text — and
+    // the three of them wait on different things, said in their own words.
     await expect(rows.nth(0)).toHaveClass(/is-waiting/);
     await expect(rows.nth(0)).toContainText(S.tileWaitsOnContext);
     await expect(rows.nth(1)).toContainText(S.tileWaitsOnContext);
+    await expect(rows.nth(2)).toHaveClass(/is-waiting/);
+    await expect(rows.nth(2)).toContainText(S.capRowWaiting);
 
     // AND IT HOLDS NO CONTROL AT ALL. A disabled button in the tab order is
     // a promise the screen cannot keep — §1 took the dashed disabled square
     // away and this is what replaced it, not a quieter version of it.
     await expect(rows.nth(0).locator('button, a')).toHaveCount(0);
+    await expect(rows.nth(2).locator('button, a')).toHaveCount(0);
     await expect(page.locator('.home-tile')).toHaveCount(0);
 
-    // The third never waits: a redeem code works on day one.
-    await expect(rows.nth(2)).not.toHaveClass(/is-waiting/);
-    await expect(rows.nth(2).locator('button')).toHaveCount(1);
+    // The fourth never waits: a redeem code works on day one.
+    await expect(rows.nth(3)).not.toHaveClass(/is-waiting/);
+    await expect(rows.nth(3).locator('button')).toHaveCount(1);
 
     await context.close();
   });

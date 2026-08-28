@@ -24,6 +24,7 @@ import { computeUtilization } from '../../core/home/utilization';
    still writes the real file from the same generator, one layer down. */
 import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { recMinutes } from '../../core/recommend/estimate';
+import { capabilityReady } from '../../core/proof/capability';
 import { multipleRecordCount } from '../../core/flow/multiples';
 import { fileAsked, fileFinished, shownFileSlots } from '../../core/files/slots';
 import type { FileSlot, FileSlotId } from '../../core/files/slots';
@@ -72,6 +73,9 @@ export interface HomeProps {
    */
   onOpenFile: (id: FileSlotId) => void;
   onOpenProof: () => void;
+  /** BS-04 (§4) — proof two. Its own door, because it proves a different
+   * thing: the file changing an answer versus the recipe getting done. */
+  onOpenCapability: () => void;
   /**
    * V1.7 VB-38: opens the list of roles, people and projects — the things the
    * file holds several of. Shown only when there is at least one of them, so
@@ -265,6 +269,15 @@ const PROVE_ICON = (
   </svg>
 );
 
+/** BS-04 (§4) — proof two's row glyph: a play mark, because the row runs
+ * something. Same 17px stroke house style as its neighbours. */
+const RUN_ICON = (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <circle cx="9" cy="9" r="6.4" />
+    <path d="M7.4 6.4 11.8 9l-4.4 2.6Z" strokeLinejoin="round" />
+  </svg>
+);
+
 const LIBRARY_ICON = (
   <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
     <path d="M3.5 4.2A2 2 0 0 1 5.5 2.5H9v13H5.5a2 2 0 0 0-2 1.2V4.2Z" />
@@ -425,7 +438,7 @@ function LockedCard(props: { file: FileSlotId; reason: string }) {
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMultiples }: HomeProps) {
+export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCapability, onOpenMultiples }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   /** V2.2 — the second file's answers, for the shelf: whether Skills.md is
    * finished (which unlocks the DERIVED Actions.md), and what its row says.
@@ -583,6 +596,10 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
     skills: skillsComplete,
   });
   const skillsStarted = Object.keys(skillsAnswers.answeredAt).length > 0;
+  /** BS-04 (§4) — "reachable after two skills without finishing all of
+   * Skills", so this is a fold over the RECORDS rather than over the
+   * interview's completeness (core/proof/capability.ts). */
+  const capabilityOpen = capabilityReady(skillsAnswers);
 
   // V2.6 VB-125 — the meter's number and the lockup's meta line, derived on
   // every render like everything else here. The meta reuses the download
@@ -887,6 +904,19 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenMul
           sub={contextComplete ? S.rowProveSub : S.tileWaitsOnContext}
           ready={contextComplete}
           onPress={contextComplete ? onOpenProof : undefined}
+        />
+        {/* BS-04 (§4) — proof two, "the screen that sells the product".
+            Waiting, in the row grammar §6 built for exactly this, until two
+            recipes exist: the screen literally cannot run without steps, so
+            the gate and "does it work" are the same sentence
+            (core/proof/capability.ts). */}
+        <HomeRow
+          id="run"
+          icon={RUN_ICON}
+          label={S.capCta}
+          sub={capabilityOpen ? S.capRowSub : S.capRowWaiting}
+          ready={capabilityOpen}
+          onPress={capabilityOpen ? onOpenCapability : undefined}
         />
         <HomeRow
           id="redeem"

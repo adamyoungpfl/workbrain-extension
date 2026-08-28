@@ -12,13 +12,15 @@ import { WallPanels } from './components/WallPanels';
 import { getSession, setSession } from '../core/storage/client';
 import { FeedbackSheet, Button } from './components';
 import { getLocal } from '../core/storage/client';
-import { contextModules, contextOutline, skillsModules, skillsOutline, buildProofModules } from '../core/flow/flow';
+import { contextModules, contextOutline, skillsModules, skillsOutline, buildProofModules, buildCapabilityModules } from '../core/flow/flow';
 import { SKILLS_FILE_COPY } from '../core/files/skillsFile';
 import { ANSWERS_KEY } from '../core/files/answersKey';
 import { fileAsked } from '../core/files/slots';
 import type { FileSlotId } from '../core/files/slots';
 import { ActionsFileView } from './surfaces/ActionsFileView';
 import { serviceStepOptions } from '../core/flow/proofAdapter';
+import { positionForRecordField } from '../core/flow/runner';
+import { capabilityReady } from '../core/proof/capability';
 import type { Position } from '../core/flow/runner';
 import { positionForTarget } from '../core/recommend/targets';
 import type { RecommendationTarget } from '../core/recommend/types';
@@ -29,6 +31,13 @@ import { S } from './strings';
  * proofAdapter.ts's header comment on why this assembly can't happen in
  * core/ itself. Built once at module load, same as `contextModules`.
  */
+/** BS-04 (§4) — proof two's module, built the same way and for the same
+ * reason: its copy is panel chrome, and core/ never imports panel/. */
+const capabilityModules = buildCapabilityModules({
+  offerQ: S.capHeading,
+  doneQ: S.capDone,
+});
+
 const proofModules = buildProofModules({
   serviceOptions: serviceStepOptions(S.proofServiceOptions.map((o) => ({ key: o.key, label: o.label }))),
   heading: S.proofHeading,
@@ -56,7 +65,10 @@ const proofModules = buildProofModules({
  * `wb:answers`.
  */
 type Surface = 'home' | 'file' | 'flow' | 'multiples' | 'actions';
-type FlowKind = 'context' | 'proof' | 'skills';
+/** BS-04 (§4) adds `capability` — proof two. It runs on the SKILLS store,
+ * which is what makes the offer cheap: the recipes it hands over are that
+ * store's own records. */
+type FlowKind = 'context' | 'proof' | 'skills' | 'capability';
 
 /**
  * V1.7 VB-34. Whether the splash is on screen.
@@ -237,10 +249,69 @@ export default function App() {
   }
 
   /**
+   * BS-04 (§4) — finishing Skills hands into proof two, the same way BS-03a
+   * has finishing Context hand into proof one. The hour is Context → prove
+   * it → Skills → watch it run, and a Home screen between the last two would
+   * be the place it stalls.
+   *
+   * Only when there is something to run. `capabilityReady` is a fold over the
+   * records, so somebody who wrote one recipe and skipped the rest lands on
+   * Home exactly as before — degrade, never break.
+   *
+   * There is deliberately no "you already did this" guard. Proof one has one
+   * (a stored score), and proof two stores no score because §4 says the panel
+   * scores nothing. What it means in practice is that fixing a step and
+   * walking to the end offers the run again, which is the right loop rather
+   * than a repeated nag.
+   */
+  async function finishSkills() {
+    const skills = await getLocal(ANSWERS_KEY.skills);
+    if (skills && capabilityReady(skills)) {
+      openCapability();
+      return;
+    }
+    goHome();
+  }
+
+  /** BS-04 (§4) — proof two's door. */
+  function openCapability() {
+    setFlowKind('capability');
+    setJumpTo(undefined);
+    setSurface('flow');
+  }
+
+  /**
+   * §4's secondary: "fix the step it missed, which routes back into the
+   * Skills interview for that step." One question of one record — not the
+   * record from the top, and not the interview from wherever it left off.
+   */
+  function openSkillStepsFor(recordIndex: number) {
+    const at = positionForRecordField(skillsModules, 'skills', recordIndex, 'skill_steps');
+    openSkillsAt(at);
+  }
+
+  /**
    * The router, unchanged. It is a function now only so the splash can be
    * laid over whatever it returns without every branch below repeating the
    * overlay — the splash is on top of the panel, not one more surface the
    * panel can be showing instead.
+   */
+  /**
+   * BS-04 found a real bug here, and the one-word fix is the `key` on every
+   * `<Flow>` below.
+   *
+   * All four branches render `<Flow>` in the SAME slot of this function, so
+   * React reconciles them as one component and only updates its props. `Flow`
+   * seeds its `viewing` position from `initialPosition` in a `useState`
+   * initialiser — which runs once, on mount — so a flow-to-flow move kept the
+   * previous flow's position and ignored the deep link entirely. Proof two's
+   * "Rewrite the steps" landed on the Skills module intro instead of on the
+   * step it named, and finishing Context into the proof had the same shape of
+   * problem waiting in it.
+   *
+   * Keying by `flowKind` says what is actually true: these are four different
+   * interviews over three different stores, and moving between them is a new
+   * screen, not an update to the old one.
    */
   function currentSurface() {
     if (surface === 'home') {
@@ -259,6 +330,7 @@ export default function App() {
             setSurface('file');
           }}
           onOpenProof={openProof}
+          onOpenCapability={openCapability}
           onOpenMultiples={() => setSurface('multiples')}
         />
       );
@@ -320,6 +392,7 @@ export default function App() {
     if (flowKind === 'proof') {
       return (
         <Flow
+          key={flowKind}
           modules={proofModules}
           onHome={goHome}
           renderDone={() => (
@@ -352,25 +425,49 @@ export default function App() {
       );
     }
 
+    /**
+     * BS-04 (§4) — proof two. Two screens, one round trip, no baseline.
+     *
+     * `answersKey` is the SKILLS store and that is the whole trick: the
+     * recipes this proof offers are that store's own records, so the offer
+     * assembles from `answers` with nothing fetched and nothing duplicated.
+     * No `outline` for the same reason the proof above has none — it writes
+     * no file, and there is nothing for a tree to show.
+     */
+    if (flowKind === 'capability') {
+      return (
+        <Flow
+          key={flowKind}
+          modules={capabilityModules}
+          answersKey={ANSWERS_KEY.skills}
+          onDone={goHome}
+          onHome={goHome}
+          onFixSteps={openSkillStepsFor}
+        />
+      );
+    }
+
     // V1.1 VB-07: only the Context flow passes an `outline`, because it is the
     // only flow that writes a file. The proof loop above deliberately does not —
     // there is nothing for a file tree to show there.
     if (flowKind === 'skills') {
       return (
         <Flow
+          key={flowKind}
           modules={skillsModules}
           outline={skillsOutline}
           answersKey={ANSWERS_KEY.skills}
           fileId="skills"
           fileCopy={SKILLS_FILE_COPY}
           initialPosition={jumpTo}
-          onDone={goHome}
+          onDone={() => void finishSkills()}
           onHome={goHome}
         />
       );
     }
     return (
       <Flow
+        key={flowKind}
         modules={contextModules}
         outline={contextOutline}
         initialPosition={jumpTo}

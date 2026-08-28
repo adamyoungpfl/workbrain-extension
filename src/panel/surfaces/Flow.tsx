@@ -20,6 +20,8 @@ import {
 } from '../components';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
 import {
+  CAPABILITY_ANSWER_KEY,
+  CAPABILITY_SKILL_KEY,
   PROOF_BASELINE_ANSWER_KEY,
   PROOF_CONTEXT_ANSWER_KEY,
   PROOF_TICKED_KEY,
@@ -28,7 +30,21 @@ import {
 import { MICRO_PROOF_MODULE, RUN_CARD_MIN, endsRun, runOf } from '../../core/flow/runs';
 import type { Run } from '../../core/flow/runs';
 import { proofChecks, proofTally } from '../../core/proof/checklist';
-import { buildProofReceipt, proofReceiptName } from '../../core/proof/receipt';
+import {
+  capabilityAsk,
+  capabilityPrompt,
+  capabilityRecipe,
+  capabilityRecord,
+  capabilitySkills,
+  cardFor,
+  nextSkillIndex,
+} from '../../core/proof/capability';
+import {
+  buildCapabilityReceipt,
+  buildProofReceipt,
+  capabilityReceiptName,
+  proofReceiptName,
+} from '../../core/proof/receipt';
 import type { ProofCheck, ProofCheckId } from '../../core/proof/checklist';
 import { ModuleIntro } from './ModuleIntro';
 import { downloadMarkdown } from './FileActions';
@@ -138,6 +154,13 @@ export interface FlowProps {
    * affordances people read as "take me home": the top-left mark, the
    * trail's root rung, and the globe's drawn house. */
   onHome?: (() => void) | undefined;
+  /**
+   * BS-04 (§4) — proof two's secondary: "fix the step it missed, which
+   * routes back into the Skills interview for that step." Given a record
+   * index, the host opens the Skills flow at that record's `skill_steps`.
+   * Absent on every other flow, and the button is absent with it.
+   */
+  onFixSteps?: ((recordIndex: number) => void) | undefined;
   /** R1-12: deep-links into a specific position instead of the derived
    * "first thing left to do" — e.g. Home's next-move card sending the
    * person straight back to an already-answered `role_durability` field.
@@ -549,6 +572,7 @@ function errorFor(step: Step): string {
 function pasteLabelFor(step: Step): string {
   // BS-03d: 'grade' is gone — the AI is no longer asked to grade itself, so
   // there is no third paste to label.
+  if (step.genKey === 'capability') return S.capPaste; // BS-04, proof two
   if (step.genKey === 'withContext') return S.proofPaste2;
   return S.proofPaste1; // 'baseline'
 }
@@ -570,7 +594,7 @@ function scoreSubStep(key: string): Step {
  * everything specific to the question on screen lives in `StepView`, mounted
  * fresh per position via `key` — see its own comment for why.
  */
-export function Flow({ modules, renderDone, onDone, onHome, initialPosition, outline, answersKey = ANSWERS_KEY.context, fileId, fileCopy }: FlowProps) {
+export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialPosition, outline, answersKey = ANSWERS_KEY.context, fileId, fileCopy }: FlowProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [declinedBlocks, setDeclinedBlocks] = useState<ReadonlySet<string>>(new Set());
   // V1.1 VB-05: module ids whose transition screen has been continued past
@@ -1099,6 +1123,7 @@ export function Flow({ modules, renderDone, onDone, onHome, initialPosition, out
         handleAddAnotherDecision(position, blockId, wantsMore, name)
       }
       onHome={onHome}
+      onFixSteps={onFixSteps}
     />,
   );
 }
@@ -1211,6 +1236,8 @@ interface StepViewProps {
   canGoBack: boolean;
   saveError: boolean;
   onHome?: (() => void) | undefined;
+  /** BS-04 — see `FlowProps.onFixSteps`. */
+  onFixSteps?: ((recordIndex: number) => void) | undefined;
   onBack: () => void;
   onCommit: (next: Answers) => void;
   /** `name` is V1.4 VB-20's: set only when the block names its new records —
@@ -1240,6 +1267,7 @@ function StepView({
   onCommit,
   onAddAnotherDecision,
   onHome,
+  onFixSteps,
 }: StepViewProps) {
   const [draftValues, setDraftValues] = useState<string[]>(() => initialSelection(pos, answers));
   // Doubles as the reflect screen's "Say it again" draft — pre-filled with
@@ -1352,6 +1380,11 @@ function StepView({
    * position like every other draft here, so a new question opens clean. */
   const [promptIdea, setPromptIdea] = useState<string | null>(null);
   const [ticked, setTicked] = useState<ProofCheckId[]>([]);
+  /** BS-04 — which of THEIR steps their AI did, as indices into their own
+   * list. Ephemeral on purpose: §4 puts the checklist, the count and the
+   * Save button on one screen, so this never has to outlive the moment and
+   * never becomes a stored fact about somebody. */
+  const [capTicked, setCapTicked] = useState<number[]>([]);
   /** BS-03c — has the prompt been copied on THIS step. Per-position like
    * every other draft here, so returning to a step later opens it fresh
    * rather than claiming a place is held that nobody left. */
@@ -1522,6 +1555,46 @@ function StepView({
    * generator wants the whole `Answers` — and this component has it.
    */
   const contextFileText = generateContextFile(answers, contextFileDate());
+
+  /**
+   * BS-04 (§4) — proof two's own derivations.
+   *
+   * This flow runs on the SKILLS store (App.tsx passes `ANSWERS_KEY.skills`),
+   * which is what makes it cheap: the recipes it offers are `answers`'
+   * own records, and the reply and the ticks it records land beside them.
+   * Every one of these is null on every other flow, because no other flow
+   * has a `skills` block.
+   */
+  const capCards = capabilitySkills(answers);
+  const capChosenRaw = answers.values[CAPABILITY_SKILL_KEY];
+  const capChosen = cardFor(capCards, typeof capChosenRaw === 'string' ? Number(capChosenRaw) : 0);
+  const capRecord = capChosen ? capabilityRecord(answers, capChosen.index) : undefined;
+  const capAsk = capChosen ? capabilityAsk(capChosen, capRecord?.['skill_trigger']) : '';
+  const capText = capChosen
+    ? capabilityPrompt(capAsk, capabilityRecipe(answers, capChosen.index), S.capLead)
+    : '';
+  /** Their AI's reply, from screen one. Printed on screen two, never read. */
+  const capReply = String(answers.values[CAPABILITY_ANSWER_KEY] ?? '');
+
+  /**
+   * What a `kind: 'gen'` step puts on the clipboard, and what it calls it.
+   *
+   * Two proofs now share this branch and the difference between them is one
+   * line each: proof one sends a QUESTION with the Context file appended
+   * (BS-03b), proof two sends an ASK with the recipe appended (BS-04). Both
+   * are one paste, and neither ever attaches a file.
+   */
+  const genText =
+    pos.kind === 'step' && pos.step.genKey === 'capability'
+      ? capText
+      : promptFor(pos.kind === 'step' ? pos.step.genKey : undefined, ctx, contextFileText, S.proofFileLead);
+
+  function genTag(step: Step): string {
+    // Proof two's block holds the ask AND the recipe, which is the same
+    // "all of this" proof one's with-file run puts on the clipboard.
+    if (step.genKey === 'capability') return S.proofAskWithFile;
+    return step.genKey === 'withContext' ? S.proofAskWithFile : S.proofAskThis;
+  }
   /**
    * "Saved on this device / Nothing leaves your browser".
    *
@@ -2498,6 +2571,39 @@ function StepView({
 
         {step.kind === 'gen' && (
           <>
+            {/* BS-04 (§4) — PROOF TWO, SCREEN ONE: THE OFFER.
+                "Name the skill, its cadence, its step count and its output
+                shape. Show the first two steps in the person's own words,
+                then the single sentence they will send."
+
+                Every word of it is theirs. The panel names nothing here it
+                was not told — which is the whole reason this screen sells
+                the product: somebody reading it is reading their own job
+                description back. */}
+            {step.genKey === 'capability' && capChosen && (
+              <div className="capoffer">
+                <p className="capoffer-name">{capChosen.name}</p>
+                <p className="capoffer-sub">{S.capSub(capChosen.steps.length, capChosen.outputShape)}</p>
+                {capChosen.cadence !== '' && (
+                  <p className="capoffer-meta">{S.capCadence(capChosen.cadence)}</p>
+                )}
+                {capChosen.tools.length > 0 && (
+                  <p className="capoffer-meta">{S.capToolsLine(capChosen.tools.join(', '))}</p>
+                )}
+                <p className="capoffer-label">{S.capFirstSteps}</p>
+                <ol className="capoffer-steps">
+                  {capChosen.steps.slice(0, 2).map((line, i) => (
+                    <li key={`${i}-${line}`}>{line}</li>
+                  ))}
+                </ol>
+                {capChosen.steps.length > 2 && (
+                  <p className="capoffer-more">{S.capMoreSteps(capChosen.steps.length - 2)}</p>
+                )}
+                <p className="capoffer-label">{S.capAskLabel}</p>
+                <p className="capoffer-ask">{capAsk}</p>
+                <p className="flow-hint">{S.capRecipeRides}</p>
+              </div>
+            )}
             {/* BS-03b (§3.1) — one copy, no attach. The instruction that
                 replaces the attach step, and the attach route kept behind a
                 disclosure for anyone who would rather do it that way. */}
@@ -2510,12 +2616,31 @@ function StepView({
                 </details>
               </>
             )}
-            <ReadOnlyBlock
-              tag={step.genKey === 'withContext' ? S.proofAskWithFile : S.proofAskThis}
-              onCopy={() => setHandedOff(true)}
-            >
-              {promptFor(step.genKey, ctx, contextFileText, S.proofFileLead)}
+            <ReadOnlyBlock tag={genTag(step)} onCopy={() => setHandedOff(true)}>
+              {genText}
             </ReadOnlyBlock>
+
+            {/* §4's one secondary. It NAMES the skill it switches to, because
+                "pick a different one" does not say what happens when you
+                press it — and a cycle costs no screen (the interstitial tax,
+                docs/BETA-SPRINT.md). Hidden with one runnable skill, where
+                there is nothing to switch to. */}
+            {step.genKey === 'capability' && capCards.length > 1 && capChosen && (
+              <Button
+                type="button"
+                variant="secondary"
+                size="sm"
+                onClick={() => {
+                  const next = nextSkillIndex(capCards, capChosen.index);
+                  onCommit(
+                    applyAnswer(answers, scoreSubStep(CAPABILITY_SKILL_KEY), pos.location, String(next)),
+                  );
+                  setHandedOff(false);
+                }}
+              >
+                {S.capSwitch(cardFor(capCards, nextSkillIndex(capCards, capChosen.index))?.name ?? '')}
+              </Button>
+            )}
 
             {/* BS-03c (§3.2) — THE HELD PLACE. The panel used to look the
                 same whether somebody was mid-errand in another tab or had
@@ -2549,9 +2674,7 @@ function StepView({
                   variant="secondary"
                   size="sm"
                   onClick={() => {
-                    void navigator.clipboard
-                      ?.writeText(promptFor(step.genKey, ctx, contextFileText, S.proofFileLead))
-                      .catch(() => {});
+                    void navigator.clipboard?.writeText(genText).catch(() => {});
                   }}
                 >
                   {S.proofCopyAgain}
@@ -2609,7 +2732,76 @@ function StepView({
             </fieldset>
           </div>
         )}
-        {step.kind === 'demo' && step.genKey !== 'judge' && <DemoBody answers={answers} />}
+        {/* BS-04 (§4) — PROOF TWO, SCREEN TWO: THE PAYOFF.
+            "Their own steps as a checklist. They tick what the AI actually
+            did. The summary line is written from the count."
+
+            The reply is printed and never read. The checklist is THEIR
+            steps, in their order, parsed out of the one field they wrote
+            them in — §4's acceptance says "generated from their steps, not a
+            fixed list", and there is no fixed list anywhere in this file to
+            fall back on.
+
+            The ticks live here and nowhere else. BS-03d had to store its
+            ticks because its receipt was a screen later; everything here —
+            the count, the sentence, the Save button — is on this screen, so
+            nothing about what somebody ticked outlives the moment. */}
+        {step.kind === 'demo' && step.genKey === 'capabilityDone' && capChosen && (
+          <div className="capdone">
+            <p className="flow-hint">{S.capDoneSub}</p>
+            {capReply !== '' && <p className="capdone-reply">{capReply}</p>}
+            <fieldset className="capdone-checks">
+              <legend>{S.capChecksLegend}</legend>
+              {capChosen.steps.map((line, index) => (
+                <label key={`${index}-${line}`} className="capdone-check">
+                  <input
+                    type="checkbox"
+                    checked={capTicked.includes(index)}
+                    onChange={() =>
+                      setCapTicked((was) =>
+                        was.includes(index) ? was.filter((i) => i !== index) : [...was, index],
+                      )
+                    }
+                  />
+                  <span>{line}</span>
+                </label>
+              ))}
+            </fieldset>
+            <p className="capdone-tally">{S.capTallyLine(capTicked.length, capChosen.steps.length)}</p>
+            <p className="capdone-meaning">{S.capMeaning(capTicked.length, capChosen.steps.length)}</p>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() =>
+                downloadMarkdown(
+                  capabilityReceiptName(capChosen.name, contextFileDate()),
+                  buildCapabilityReceipt({
+                    skill: capChosen.name,
+                    ask: capAsk,
+                    steps: capChosen.steps,
+                    done: capTicked,
+                    on: contextFileDate(),
+                  }),
+                )
+              }
+            >
+              {S.capReceipt}
+            </Button>
+            {/* §4's secondary: "fix the step it missed, which routes back
+                into the Skills interview for that step." The recipe is ONE
+                answer — `skill_steps` holds every line — so the honest
+                target is that question on that record, which is exactly
+                where a missing line gets added. */}
+            {onFixSteps && (
+              <Button type="button" variant="secondary" onClick={() => onFixSteps(capChosen.index)}>
+                {S.capFixSteps}
+              </Button>
+            )}
+          </div>
+        )}
+        {step.kind === 'demo' && step.genKey !== 'judge' && step.genKey !== 'capabilityDone' && (
+          <DemoBody answers={answers} />
+        )}
 
         {step.kind !== 'text' && step.kind !== 'intro' && step.kind !== 'gen' && step.kind !== 'demo' && (
           <>

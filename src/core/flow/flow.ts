@@ -1,7 +1,7 @@
 import type { Module, FileOutlineNode } from '../../schema/flow.types';
 import { adaptContextFlow } from './adapter';
-import { buildProofModule } from './proofAdapter';
-import type { ProofCopy } from './proofAdapter';
+import { buildProofModule, buildCapabilityModule } from './proofAdapter';
+import type { CapabilityCopy, ProofCopy } from './proofAdapter';
 import { SKILLS_INTERVIEW_MODULES, SKILLS_FILE_OUTLINE } from './skillsSource';
 import { SKILLS_ADD_ANOTHER } from './addAnother';
 
@@ -43,3 +43,9 @@ export function buildProofModules(copy: ProofCopy): Module[] {
   return [buildProofModule(copy)];
 }
 export type { ProofCopy };
+
+/** BS-04 (§4) — proof two, the same one-module shape as the proof above. */
+export function buildCapabilityModules(copy: CapabilityCopy): Module[] {
+  return [buildCapabilityModule(copy)];
+}
+export type { CapabilityCopy };

@@ -158,6 +158,74 @@ export function buildProofModule(copy: ProofCopy): Module {
   };
 }
 
+/**
+ * BS-04 (§4) — PROOF TWO, AS A MODULE.
+ *
+ * Two steps, exactly as §4 numbers them: the offer (a `gen` — there is a
+ * prompt to copy and an answer to bring back) and the payoff (a `demo` —
+ * nothing to copy; the panel shows them their own steps and records what they
+ * say about it). No service pick: proof one already asked, or the goal gate
+ * did at minute one, and asking a third time would be the demo opening on a
+ * question already answered.
+ *
+ * NO BASELINE STEP, and that is the design rather than an omission. §4: "One
+ * round trip only. No baseline, because the absence of a before is the
+ * point." Proof one measures a difference and needs two runs; this one shows
+ * a capability and needs one.
+ *
+ * `required: false` like the proof above it — reached by choice, never gated
+ * into anybody's path. `outKey` on the offer is what makes the payoff's
+ * checklist reachable after a reload, and it holds THEIR AI's reply, which
+ * the panel prints and never reads.
+ */
+export const CAPABILITY_ANSWER_KEY = 'cap_answer';
+/** Which record they ran, so the payoff and the route back agree on it. */
+export const CAPABILITY_SKILL_KEY = 'cap_skill';
+/* There is deliberately NO key for the ticks. BS-03d had to store its ticks
+   because its receipt was built a screen later; §4 puts the checklist, the
+   summary line and the Save button on ONE screen, so the ticks never outlive
+   the moment and never become a fact about somebody stored on their machine.
+   The durable thing is the receipt they saved. */
+
+export interface CapabilityCopy {
+  offerQ: string; // S.capHeading
+  doneQ: string; // S.capDone
+}
+
+export function buildCapabilityModule(copy: CapabilityCopy): Module {
+  const offer: Step = {
+    id: 'cap_offer',
+    module: 1,
+    section: -1,
+    eyebrow: EYEBROW,
+    q: copy.offerQ,
+    kind: 'gen',
+    genKey: 'capability',
+    outKey: CAPABILITY_ANSWER_KEY,
+    required: true,
+  };
+
+  const payoff: Step = {
+    id: 'cap_done',
+    module: 1,
+    section: -1,
+    eyebrow: EYEBROW,
+    q: copy.doneQ,
+    kind: 'demo',
+    genKey: 'capabilityDone',
+  };
+
+  return {
+    id: 'capability',
+    n: 1,
+    title: 'The run',
+    purpose: 'Watch their own recipe get done.',
+    required: false,
+    estimatedMinutes: [3, 6],
+    nodes: [offer, payoff],
+  };
+}
+
 /** Which generated prompt a `kind: 'gen'` step shows, resolved from its
  * `genKey` against what's already been pasted this session. Mirrors
  * evaluationPrompt's own graceful "[not captured]" fallback (proofSource.ts)

@@ -302,6 +302,29 @@ export function positionForRecord(modules: Module[], blockId: string, recordInde
 }
 
 /**
+ * BS-04 (§4) — the same, aimed at ONE field of a record.
+ *
+ * `positionForRecord` above lands on a record's first field, which is right
+ * for "review this one from the top". Proof two's secondary is not that: "fix
+ * the step it missed" means the `skill_steps` question of that skill and
+ * nothing else, and walking somebody through four earlier questions to reach
+ * it would be the panel not having heard what they pressed.
+ *
+ * `undefined`, never a throw, when the block or the field has gone — the same
+ * degradation every function around it documents.
+ */
+export function positionForRecordField(
+  modules: Module[],
+  blockId: string,
+  recordIndex: number,
+  questionId: string,
+): Position | undefined {
+  const step = blockById(modules, blockId)?.fields.find((field) => field.id === questionId);
+  if (!step) return undefined;
+  return { kind: 'step', step, location: { in: 'repeatable', blockId, recordIndex } };
+}
+
+/**
  * V1.7 VB-38 — the same, for a record that was just added: its first
  * UNANSWERED field.
  *
