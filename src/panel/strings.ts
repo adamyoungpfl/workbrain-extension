@@ -695,6 +695,25 @@ export const S = {
 
   /** Part 1's close. A control, so a name — and the shortest true verb, since
    * it sits beside a 19px node name in a 250px card. */
+  /* BS-07b (§7.1) — the chip beside a node's name on the stage.
+
+     THE WORDS ARE THE LIST'S OWN, borrowed rather than written: `Due` is
+     `sectionStateDue` and `Not yet` is `fileTreeStateUntouched`, both already
+     printed on every row of the drawer's list. Brain and List are two views
+     of one file, and a section that reads "Due" in the list must not read
+     anything else on its own node. Reused here by reference so the two cannot
+     drift apart.
+
+     SO THERE ARE NO KEYS HERE FOR THEM. An earlier draft declared
+     `nodeChipDue: 'Due'` beside a comment promising reuse, which is the exact
+     drift the comment was about: two literals that agree today. The panel
+     reads `sectionStateDue` and `fileTreeStateUntouched` directly
+     (components/BrainGlobe.tsx), which is what reuse actually means. */
+  /** The chip is decoration on the picture; the node's own accessible name
+   * already carries its state in words (`brainGlobeNode`). This is what a
+   * screen reader hears INSTEAD of the number, on a node that holds a list. */
+  nodeChipCount: (n: number) => (n === 1 ? '1 thing in it' : `${n} things in it`),
+
   leafClose: 'Close',
   leafCloseNamed: (label: string) => `Close ${label}`,
 

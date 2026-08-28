@@ -1405,6 +1405,93 @@ async function zoomTo(page: Page, childId: string): Promise<void> {
  * never cover the node, and they are legible on what they sit on. Both are
  * asserted below, against the new arrangement.
  */
+/**
+ * BS-07b (§7.1) — the count chip beside a node's name.
+ *
+ * "A number when the node holds a list, a state word when there is something
+ * to say ('due', 'not yet', reusing the List's own wording), dashed when
+ * nothing is answered, never two chips."
+ */
+test.describe('BS-07b — the node chip', () => {
+  test('a list node wears its count; a quiet answered one wears nothing', async ({ page }) => {
+    await openRich(page, 300);
+
+    const chipOn = (id: string) =>
+      page.locator(`.brainglobe-pin[data-section-id="${id}"] .brainglobe-chip`);
+
+    // sec3 (My World) and sec4 (Initiatives) own repeatable blocks, so their
+    // chips are numbers — the more specific fact, which §7.1 asks for first.
+    await expect(chipOn('sec3')).toHaveCount(1);
+    await expect(chipOn('sec3')).toHaveText(/^\d+$/);
+    await expect(chipOn('sec4')).toHaveText(/^\d+$/);
+
+    // NEVER TWO. Not on any node, in any state.
+    for (const pin of await page.locator('.brainglobe-pin[data-section-id]').all()) {
+      expect(await pin.locator('.brainglobe-chip').count(), 'a node wore two chips').toBeLessThanOrEqual(1);
+    }
+  });
+
+  test('the words are the LIST\'s own, so the two views cannot disagree', async ({ page }) => {
+    await openRich(page, 300);
+
+    // Whatever words appear, they are the drawer list's own vocabulary —
+    // never a third set invented for the globe.
+    const words = await page
+      .locator('.brainglobe-chip')
+      .evaluateAll((els) => els.map((el) => el.textContent ?? '').filter((t) => !/^\d+$/.test(t)));
+    for (const word of words) {
+      expect([S.sectionStateDue, S.fileTreeStateUntouched], `"${word}" is not one of the List's words`).toContain(word);
+    }
+  });
+
+  test('the chip is a fact on the picture, not a second control', async ({ page }) => {
+    await openRich(page, 300);
+
+    /**
+     * A DEVIATION FROM §7.1, STATED. Its last line — "pressing the name opens
+     * the node; pressing the chip opens it at the list" — asks for two 44px
+     * targets per node. Ten nodes would need 880px of width on a stage that
+     * is 208 to 300, so it does not fit and is not close.
+     *
+     * What the chip wanted to reach exists one press deeper: §7.2's card
+     * leads on the same count and its one action IS "Open the list". So the
+     * chip states the fact, the card opens the destination, and every target
+     * stays legal.
+     */
+    await expect(page.locator('.brainglobe-chip button, button.brainglobe-chip')).toHaveCount(0);
+
+    /**
+     * It rides inside the node's own PIN — under the name rather than beside
+     * it, because a chip inside the label's measured width pushed six of ten
+     * labels past it and VB-26 caught the clipping. It is `aria-hidden`
+     * either way: the pin's accessible name already carries the state in
+     * words, so nothing here is only in the picture.
+     */
+    const placed = await page.locator('.brainglobe-chip').evaluateAll((els) =>
+      els.every((el) => !!el.closest('.brainglobe-pin') && !el.closest('.brainglobe-label')),
+    );
+    expect(placed, 'a chip is inside the label whose measure it would eat').toBe(true);
+    await expect(page.locator('.brainglobe-chip[aria-hidden="true"]')).toHaveCount(
+      await page.locator('.brainglobe-chip').count(),
+    );
+  });
+
+  test('dashed says "nothing answered here", as a shape', async ({ page }) => {
+    await open(page, 'empty');
+
+    // On a file with no answers at all, every chip that renders is dashed —
+    // never colour alone (GUARDRAILS), and a border style survives greyscale.
+    const chips = page.locator('.brainglobe-chip');
+    const count = await chips.count();
+    expect(count).toBeGreaterThan(0);
+    for (let i = 0; i < count; i++) {
+      await expect(chips.nth(i)).toHaveAttribute('data-dashed', 'true');
+      const style = await chips.nth(i).evaluate((el) => getComputedStyle(el).borderStyle);
+      expect(style).toBe('dashed');
+    }
+  });
+});
+
 test.describe('BS-07c — the card is a plate, and it never covers the node', () => {
   for (const stage of VB31_STAGES) {
     for (const id of VB31_NODES) {

@@ -800,3 +800,56 @@
     transition: none;
   }
 }
+
+/* ── BS-07b (§7.1) — the node's count chip ──────────────────────────────────
+
+   "Add a count chip beside the name — a number when the node holds a list, a
+   state word when there is something to say, dashed when nothing is answered,
+   never two chips."
+
+   UNDER THE NAME, NOT BESIDE IT. §7.1 says beside, and inline is where this
+   started — but the label's width is already capped at how much room the node
+   really has before its text runs off the stage, and a chip inside that
+   budget pushed six of ten labels past it. VB-26's "nothing is truncated, at
+   any depth or any rotation" caught it. A clipped name is a worse trade than
+   a chip on its own line, so the chip is the pin's own child and the label
+   keeps its whole measure. */
+.brainglobe-chip {
+  display: inline-block;
+  margin-top: 2px;
+  padding: 0 4px;
+  border-radius: var(--r-pill);
+  border: 1px solid var(--globe-edge);
+  /* AN ABSOLUTE SIZE, not `em`. The label above it is scaled per frame by
+     depth (`--brainglobe-label-size`), and a chip sized relative to that
+     became two or three unreadable pixels on a far node — the first draft
+     rendered as a row of empty rings. The chip is a fact about the node
+     rather than part of the picture's perspective, so it does not recede
+     with it. Smaller than the nearest label and never bolder: a chip that
+     outweighs the name it annotates reads as the name. */
+  font-size: 10.5px;
+  font-weight: 650;
+  line-height: 1.4;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: var(--globe-label);
+  /* THE FIELD'S OWN SHADOW, which the chip lost when it left the label's box.
+     Without it the words sit directly on a gradient with an orb's bloom in
+     it — the same reason every other word on this stage carries one. */
+  text-shadow: 0 1px 3px var(--globe-field), 0 0 8px var(--globe-field);
+  background: var(--globe-field);
+}
+
+/* Dashed when nothing in the node is answered — §7.1's own word for it, and
+   a SHAPE, so the state survives a screen with no colour. The same meaning
+   §1 kept for dashed after §6 took it away from "locked": not broken, and not
+   waiting on permission — simply empty. */
+.brainglobe-chip[data-dashed='true'] {
+  border-style: dashed;
+  color: var(--globe-detail-key);
+}
+
+/* BS-07b — `.brainglobe-name` is gone with the inline chip that needed it.
+   The chip left the label's box entirely (above), so the label's own text is
+   the name again and "the visible label is inside the accessible name"
+   (WCAG 2.5.3) is a straight comparison once more. */

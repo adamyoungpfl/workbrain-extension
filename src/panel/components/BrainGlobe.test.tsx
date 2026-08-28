@@ -320,9 +320,23 @@ describe('BrainGlobe — state is never colour alone', () => {
     expect(nameOf('sec3')).toBe(S.brainGlobeNode('My World', S.fileTreeStateCurrent));
     expect(nameOf('sec4')).toBe(S.brainGlobeNode('Initiatives', S.fileTreeStateUntouched));
     expect(pin(container, 'sec1').getAttribute('title')).toBe('1. About This Context');
-    // The visible label is inside the name, so speaking it works (WCAG 2.5.3).
+    /**
+     * The visible label is inside the name, so speaking it works (WCAG 2.5.3).
+     *
+     * BS-07b's chip lives OUTSIDE the label (it was pushing labels past their
+     * measured width), so this is a straight comparison again — and the chip
+     * gets its own second claim below, because it is a second piece of
+     * visible text on the same control.
+     */
     for (const pin of sectionPins(container)) {
-      expect(pin.getAttribute('aria-label')).toContain(pin.querySelector('.brainglobe-label')!.textContent);
+      const name = pin.getAttribute('aria-label') ?? '';
+      expect(name).toContain(pin.querySelector('.brainglobe-label')!.textContent);
+      const chip = pin.querySelector('.brainglobe-chip')?.textContent ?? '';
+      // A COUNT is a number the name deliberately does not carry — the name
+      // says the state in words, which is what a screen reader needs, and
+      // "2" spoken after a section title says nothing. A WORD chip must be
+      // in the name, because it is a second visible label on the control.
+      if (chip && !/^\d+$/.test(chip)) expect(name).toContain(chip);
     }
   });
 

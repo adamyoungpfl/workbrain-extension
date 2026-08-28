@@ -51,6 +51,8 @@ import { S } from '../strings';
 import { LeafCard } from './LeafCard';
 import { leafCardBand } from '../../core/globe/leafCard';
 import { leafStateFor } from '../../core/globe/leafState';
+import { nodeChipFor, nodeChipIsDashed } from '../../core/globe/nodeChip';
+import type { NodeChip } from '../../core/globe/nodeChip';
 import './BrainGlobe.css';
 
 /**
@@ -2012,6 +2014,28 @@ export function BrainGlobe({
   const stateOf = (section: FileOutlineNode): OutlineNodeState => states?.[section.id] ?? 'reached';
 
   /**
+   * BS-07b (§7.1) — the chip a node wears, and the word it prints.
+   *
+   * The fold is core's (`nodeChipFor`); this resolves its named state to a
+   * word, and the words are THE LIST'S OWN — `sectionStateDue` and
+   * `fileTreeStateUntouched`, read by reference rather than copied, so a
+   * section that reads "Due" on a row cannot read anything else on its node.
+   */
+  const chipFor = (node: FileOutlineNode): NodeChip | null =>
+    nodeChipFor(
+      summaries?.[node.id] ?? null,
+      health?.[node.id],
+      stateOf(node),
+      listNodes?.has(node.id) ?? false,
+    );
+
+  const chipWord = (chip: NodeChip | null): string => {
+    if (!chip) return '';
+    if (chip.kind === 'count') return String(chip.count);
+    return chip.state === 'due' ? S.sectionStateDue : S.fileTreeStateUntouched;
+  };
+
+  /**
    * V1.8 VB-46 — WHETHER A SECTION IS LIVE, LIT OR DIM, DECIDED IN core/.
    *
    * "The same rule drives the Brain visual, so both views agree about what is
@@ -2864,6 +2888,39 @@ export function BrainGlobe({
                 <span className="brainglobe-label" aria-hidden="true">
                   {globeLabelFor(entry.section)}
                 </span>
+                {/* BS-07b (§7.1) — the count chip.
+
+                    UNDER THE NAME, NOT BESIDE IT, and that is a measurement
+                    rather than a preference. §7.1 says "beside the name", and
+                    inline is where it started — but the label's width is
+                    already capped at how much room the node has before its
+                    text runs off the stage (`--brainglobe-label-room`), and a
+                    chip inside that budget pushed six of ten labels past it.
+                    VB-26's "nothing is truncated, at any depth or any
+                    rotation" caught it, and a clipped name is a worse trade
+                    than a chip on its own line.
+
+                    Outside the label's box, so the name keeps its whole
+                    budget and the chip is never what gets ellipsised.
+
+                    DECORATION, NOT A CONTROL — §7.1's last line asks for two
+                    targets per node ("pressing the name opens the node;
+                    pressing the chip opens it at the list") and ten nodes ×
+                    two 44px targets needs 880px on a stage that is 208 to
+                    300. What the chip wanted to reach is one press deeper:
+                    §7.2's card leads on the same count and its action IS
+                    "Open the list". The node's own accessible name carries
+                    the state in words, so nothing here is only in the
+                    picture. */}
+                {chipFor(entry.section) && (
+                  <span
+                    className="brainglobe-chip"
+                    aria-hidden="true"
+                    data-dashed={nodeChipIsDashed(stateOf(entry.section)) ? 'true' : 'false'}
+                  >
+                    {chipWord(chipFor(entry.section))}
+                  </span>
+                )}
               </button>
             );
           })}
