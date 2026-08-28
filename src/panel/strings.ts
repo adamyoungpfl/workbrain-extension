@@ -1022,11 +1022,6 @@ export const S = {
      that is two lines or more on every question that has rephrasings.
      [DRAFT] */
   rephraseShort: 'Reword',
-  /* And the last one: the mark in the interview's corner is a door home
-     (V2.5 VB-112), and a mark is an icon however well known it is. Stacked
-     under it for the same reason as `rephraseShort` — the strip beside it
-     belongs to the module title. [DRAFT] */
-  homeShort: 'Home',
   copied: 'Copied',
   proofCta: 'Prove it works',
   proofFinished: "That's the whole loop.",

@@ -84,18 +84,11 @@
   align-items: flex-start;
   gap: 4px;
 }
-/* BS-05 (§5) — the word goes UNDER the mark. Beside it, it would take its
-   width from the module title, which is the only other thing on this strip and
-   is already the first thing to be truncated. Under it, the control spends
-   height inside the 44px box it already occupies: the mark itself is 26px, so
-   the word rides in the room the hit target was already reserving. */
 .flowprogress-home {
   flex: 0 0 auto;
   display: inline-flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 1px;
   min-width: 44px;
   min-height: 44px;
   margin: -10px 0 0 -10px;
@@ -103,11 +96,6 @@
   border: 0;
   background: transparent;
   cursor: pointer;
-}
-.flowprogress-home-word {
-  font-size: var(--type-fine);
-  line-height: 1;
-  color: var(--ink-3);
 }
 .flowprogress-home:focus-visible {
   outline: 2px solid var(--primary);

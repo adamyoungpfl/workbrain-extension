@@ -61,11 +61,18 @@ const STATUS_MARK_SIZE = 24;
  * attributes a frame; the silhouette rewrites one, and only for the 320ms per
  * module that `STATUS_MARK_SPIN = 'once'` allows.
  *
- * The welcome screen keeps the node graph. It is 96px, it is the first thing
- * anybody sees, and at that size every node and edge resolves — there is
- * nothing there for a silhouette to fix.
+ * REVERSED (Adam, 2026-08-28): "make the icon the standard logo." The
+ * silhouette was a legibility argument at 24px and a cheapness argument for the
+ * turn, and it lost to a plainer one — the door home should wear the mark
+ * people already know, not a reduction of it. It is the same mark the welcome
+ * screen and the site use, and being recognisable is the entire reason it
+ * works as a door.
+ *
+ * The turn now rewrites the graph's attributes rather than one silhouette
+ * path, for 320ms per MODULE (`STATUS_MARK_SPIN = 'once'`) — not per question.
+ * That is the cost, and it is small enough to pay for the mark being itself.
  */
-const STATUS_MARK_VARIANT: BrandMarkVariant = 'silhouette';
+const STATUS_MARK_VARIANT: BrandMarkVariant = 'graph';
 
 export interface FlowProgressProps {
   /** The current module's own title — "Orientation", "How I Communicate".
@@ -200,11 +207,18 @@ export function FlowProgress({ title, current, total, onHome, run }: FlowProgres
     return (
       <div className="flowprogress-shell">
         <button type="button" className="flowprogress-home" aria-label={S.goHome} onClick={onHome}>
+          {/* NO WORD UNDER IT (Adam, 2026-08-28: "get rid of the label").
+              BS-01c gave this control "Home" under the mark to satisfy §1's
+              "zero controls communicate by icon alone". Overruled, and the
+              reasoning is worth keeping: a product's own mark in the top-left
+              corner returning you home is the most-learned control on the web,
+              and it is the ONE icon whose meaning does not depend on reading
+              it. `aria-label` still carries the full sentence, so nothing is
+              lost to a screen reader — the exemption is visual only. This is
+              now the second judged exception to §1, beside FileTree's orb
+              toggle (labelled by adjacency). Recorded in docs/BETA-SPRINT.md
+              so it is a decision rather than an oversight. */}
           {mark}
-          {/* BS-01c's eleventh control gets its word. `aria-label` above
-              still carries the full sentence, so this is what is read and
-              that is what is announced. */}
-          <span className="flowprogress-home-word">{S.homeShort}</span>
         </button>
         {bar(
           <>

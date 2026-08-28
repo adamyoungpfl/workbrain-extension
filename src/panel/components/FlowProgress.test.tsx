@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from 'vitest';
 import { FlowProgress, STATUS_MARK_SPIN } from './FlowProgress';
 import { mount } from './testUtils';
+import { S } from '../strings';
 
 /**
  * V1.2 VB-10 put a typewriter on the label. jsdom has no `matchMedia` at all,
@@ -160,14 +161,31 @@ describe('FlowProgress', () => {
       expect(['continuous', 'once']).toContain(STATUS_MARK_SPIN);
     });
 
-    // ── V1.7 VB-39 ────────────────────────────────────────────────────────
-    it('is the silhouette, not the node graph — one filled shape and no nodes', () => {
+    /**
+     * V1.7 VB-39 made this mark a silhouette; Adam reversed it on 2026-08-28
+     * — "make the icon the standard logo." The door home wears the mark people
+     * already know, at 24px, rather than a reduction of it.
+     */
+    it('is the standard logo — the whole graph, no silhouette', () => {
       const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
       const mark = container.querySelector('.flowprogress-mark')!;
-      expect(mark.getAttribute('data-variant')).toBe('silhouette');
-      expect(mark.querySelectorAll('polygon')).toHaveLength(1);
-      expect(mark.querySelectorAll('circle')).toHaveLength(0);
-      expect(mark.querySelectorAll('line')).toHaveLength(0);
+      expect(mark.getAttribute('data-variant')).toBe('graph');
+      expect(mark.querySelectorAll('circle')).toHaveLength(12);
+      expect(mark.querySelectorAll('line')).toHaveLength(30);
+      expect(mark.querySelectorAll('polygon')).toHaveLength(0);
+    });
+
+    it('carries no word beside it, and still announces one', () => {
+      // §1 asks that no control communicate by icon alone, and this is the
+      // second judged exception to it (FileTree's orb toggle is the first).
+      // The exemption is VISUAL only — the accessible name is unchanged, so
+      // nothing is lost to a screen reader.
+      const { container } = mount(
+        <FlowProgress title="About Me" current={5} total={38} onHome={() => {}} />,
+      );
+      const home = container.querySelector('.flowprogress-home')!;
+      expect(home.textContent).toBe('');
+      expect(home.getAttribute('aria-label')).toBe(S.goHome);
     });
   });
 });
