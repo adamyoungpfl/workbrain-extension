@@ -1,5 +1,24 @@
 /* BS-02 — the feedback door and its sheet. */
 
+/* R-02 (Adam, 2026-08-28) — THE LEAD IS FOUR LINES, AND THE SHEET GIVES IT
+   THE ROOM RATHER THAN GROWING A SCROLL.
+
+   "If it helped say it, if it sucked, say why and how...we can take it." is
+   fifteen words, which is four lines of heading at 400px. Every other sheet in
+   the product has a two-or-three-word title, so `sheet-head h3`'s 16.5px/650
+   is sized for a label rather than a sentence — at four lines it reads as a
+   wall and it pushes the box somebody came here to type in off the screen.
+
+   So THIS sheet's heading drops a step in size and gains its line height,
+   which is the difference between a long title and a short paragraph. It is
+   scoped to `.sheet-card:has(.feedback)` rather than added to Sheet.css: no
+   other sheet has this problem and none of them should inherit the fix. */
+.sheet-card:has(.feedback) .sheet-head h3 {
+  font-size: 15px;
+  font-weight: 620;
+  line-height: 1.4;
+}
+
 .feedback {
   display: flex;
   flex-direction: column;
@@ -12,6 +31,17 @@
   line-height: 1.5;
   color: var(--ink);
 }
+
+/* THERE IS NO INPUT ON THIS SHEET TO ADJUST, and that is a guardrail rather
+   than an omission. `docs/GUARDRAILS.md`: the door "may open the person's own
+   mail client with a draft… It may not send anything itself." The writing
+   happens in their client, where they can read it before it goes — which is
+   the whole difference between a draft somebody sends and a form we collect.
+
+   So the four-line lead costs the sheet nothing: what is under it is two short
+   paragraphs, the diagnostic block, and the door. Flagged for Adam, whose note
+   said "adjust the input areas to accommodate" — adding a box here is a real
+   product decision, not a layout one. */
 
 /* The claim, and then the block that proves it. Quieter than the body — this
    is the small print somebody checks, not the reason they opened the sheet. */

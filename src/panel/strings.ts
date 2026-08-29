@@ -157,7 +157,7 @@ export const S = {
    * mashup into the field via the exact ideas mechanic; pressing again deals
    * the next one.
    */
-  makeUpName: 'Give me something....bold!',
+  makeUpName: 'Give me something…bolder!!',
   /**
    * [DRAFT] V2.5 VB-119 — "Let my AI ask me" grows up into AI Assist: the
    * name on the helper chip, and the title of the full-height sheet it
@@ -966,8 +966,8 @@ export const S = {
   /** The route back into Skills, at the one question that would fix it. */
   capFixSteps: 'Rewrite the steps',
   /** Home's row, and the door on Skills' own last screen. */
-  capCta: 'Run a skill for real',
-  capRowSub: 'Hand your AI a recipe and watch it work.',
+  capCta: 'Skill Training',
+  capRowSub: 'Try and refine your skills. Unlocks automatically with your 2nd skill.',
   capRowWaiting: 'Ready once you have two skills',
   capIntoSkills: 'Now watch one of them run',
 
@@ -986,9 +986,22 @@ export const S = {
   /** The same door, where there is room for the whole sentence — the proof's
    * own second offer, at the one moment somebody writes a paragraph. */
   feedbackOpenLong: 'Tell us how that went',
-  feedbackTitle: 'Tell us how it went',
+  /* R-02 (Adam, 2026-08-28) — THE HONEST ASK LEADS.
+     "I want to push people to be honest. I don't need or want the praise, I
+     need the problems as clearly stated as they can."
+
+     So his sentence is the LEAD, not the body, and the body under it stops
+     being polite about what is wanted. A sheet that opens with "tell us how it
+     went" gets told it went fine; one that says out loud that the bad news is
+     the useful news gets the bad news.
+
+     It still does not blame the person for having a problem
+     (design-system.html §08) — "we can take it" puts the weight on us, which
+     is the whole difference between asking for a complaint and inviting one.
+     [DRAFT] */
+  feedbackTitle: 'If it helped say it, if it sucked, say why and how...we can take it.',
   feedbackBody:
-    'If it helped say it, if it sucked, say why and how...we can take it.',
+    'The problem is the useful part. What broke, what confused you, what you expected instead — as plainly as you can put it.',
   feedbackWrite: 'Write an email',
   feedbackCopy: 'Copy the build details',
   feedbackCopied: 'Copied. Paste it anywhere you like.',
@@ -1211,12 +1224,13 @@ export const S = {
      explains itself, not a disabled square. These are the subtitles that
      replace the explaining a dashed edge was doing badly. [DRAFT] */
   rowDownloadSub: 'The file itself, to keep or to hand over',
-  rowProveSub: 'Two answers, side by side. Two minutes.',
+  rowProveSub: 'Grab your file and find out right now if context matters!',
   rowRedeemSub: 'Redeem a purchased skill or upload a skill somebody built for you',
-  rowLibrarySub: 'Built and tested by Model Citizen',
+  rowLibrarySub: 'Skills that make us all stronger, built and tested by Model Citizen.',
   /** Workbrain+ keeps its door and loses its pitch: the price and the four
    * goods belong on the page this links to (§6). */
-  rowPlusSub: 'Real help every month, from us',
+  rowPlusSub:
+    'Your personal technology implementation manager. Maximizing your workbrain with your purpose and intent',
   /**
    * [DRAFT] V2.9 VB-145 — the upload door at the top of the UI, and its
    * seatbelt: bringing a file in REPLACES what is here, so the sheet says

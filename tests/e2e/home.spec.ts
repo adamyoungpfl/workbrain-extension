@@ -567,9 +567,18 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
      * to fit something §6 never weighed, which is arithmetic driving design.
      * The subtitles were shortened to one line each in the same pass, which
      * is the part of the overage that was really slack.
+     *
+     * AND IT MOVED A SECOND TIME, 1.6 → 1.65, on R-01 (Adam, 2026-08-28).
+     * Three of those subtitles got longer on purpose and now wrap to two
+     * lines — Workbrain+'s tag, the Certified banner's, and Skill Training's
+     * "unlocks automatically with your 2nd skill". Six pixels, all of it
+     * words somebody chose to say. Naming the cause here rather than nudging
+     * the number quietly, because the next six pixels should have to justify
+     * themselves the same way: if Home ever needs to be shorter, the lever is
+     * the length of these sentences, not the layout under them.
      */
     const height = await page.$eval('.home', (home) => Math.round(home.getBoundingClientRect().height));
-    expect(height, `Home is ${height}px tall`).toBeLessThan(760 * 1.6);
+    expect(height, `Home is ${height}px tall`).toBeLessThan(760 * 1.65);
 
     await context.close();
   });
