@@ -1,0 +1,2488 @@
+[
+ {
+  "stepId": "goal_service",
+  "kind": "chips",
+  "peek": {
+   "drawer": 176,
+   "stepId": "goal_service",
+   "words": 6,
+   "chars": 25,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 1,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 28
+   },
+   "hint": {
+    "x": 26,
+    "y": 102,
+    "w": 348,
+    "h": 34
+   },
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 158,
+    "w": 348,
+    "h": 164
+   },
+   "cluster": {
+    "x": 26,
+    "y": 332,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 174
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "goal_service",
+   "words": 6,
+   "chars": 25,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 1,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 28
+   },
+   "hint": {
+    "x": 26,
+    "y": 102,
+    "w": 348,
+    "h": 34
+   },
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "goal_want",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "goal_want",
+   "words": 11,
+   "chars": 52,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 229,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 474,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "goal_want",
+   "words": 11,
+   "chars": 52,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "context_scope",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "context_scope",
+   "words": 12,
+   "chars": 69,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 211,
+    "w": 348,
+    "h": 120
+   },
+   "cluster": {
+    "x": 26,
+    "y": 341,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 130
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "context_scope",
+   "words": 12,
+   "chars": 69,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 85,
+    "w": 348,
+    "h": 85
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 95
+  }
+ },
+ {
+  "stepId": "stop_explaining",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "stop_explaining",
+   "words": 14,
+   "chars": 71,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 243,
+    "w": 348,
+    "h": 313
+   },
+   "cluster": {
+    "x": 26,
+    "y": 566,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 323
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "stop_explaining",
+   "words": 14,
+   "chars": 71,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "preferred_name",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "preferred_name",
+   "words": 5,
+   "chars": 24,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 1,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 28
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 102,
+    "w": 348,
+    "h": 99
+   },
+   "cluster": {
+    "x": 26,
+    "y": 211,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 109
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "preferred_name",
+   "words": 5,
+   "chars": 24,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 1,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 28
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 86,
+    "w": 348,
+    "h": 84
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 94
+  }
+ },
+ {
+  "stepId": "professional_name",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "professional_name",
+   "words": 14,
+   "chars": 78,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 157,
+    "w": 348,
+    "h": 99
+   },
+   "cluster": {
+    "x": 26,
+    "y": 266,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 109
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "professional_name",
+   "words": 14,
+   "chars": 78,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 94,
+    "w": 348,
+    "h": 76
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 86
+  }
+ },
+ {
+  "stepId": "self_description",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "self_description",
+   "words": 7,
+   "chars": 35,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 229,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 474,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "self_description",
+   "words": 7,
+   "chars": 35,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "role_names",
+  "kind": "multi",
+  "peek": {
+   "drawer": 50,
+   "stepId": "role_names",
+   "words": 17,
+   "chars": 93,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 4,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 110
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 284,
+    "w": 348,
+    "h": 216
+   },
+   "cluster": {
+    "x": 26,
+    "y": 510,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 226
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "role_names",
+   "words": 17,
+   "chars": 93,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 4,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 110
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "responsibilities_list",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "responsibilities_list",
+   "words": 6,
+   "chars": 40,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 183,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 428,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "responsibilities_list",
+   "words": 6,
+   "chars": 40,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "contribution_boundaries",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "contribution_boundaries",
+   "words": 10,
+   "chars": 46,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 229,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 474,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "contribution_boundaries",
+   "words": 10,
+   "chars": 46,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "negative_responsibility",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "negative_responsibility",
+   "words": 11,
+   "chars": 75,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 257,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 502,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "negative_responsibility",
+   "words": 11,
+   "chars": 75,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "decision_rights",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "decision_rights",
+   "words": 8,
+   "chars": 46,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 183,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 428,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "decision_rights",
+   "words": 8,
+   "chars": 46,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "expertise",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "expertise",
+   "words": 9,
+   "chars": 50,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 229,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 474,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "expertise",
+   "words": 9,
+   "chars": 50,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "entities_gate",
+  "kind": "yesno",
+  "peek": {
+   "drawer": 50,
+   "stepId": "entities_gate",
+   "words": 27,
+   "chars": 161,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 5,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 138
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 312,
+    "w": 348,
+    "h": 44
+   },
+   "cluster": {
+    "x": 26,
+    "y": 366,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 54
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "entities_gate",
+   "words": 27,
+   "chars": 161,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 5,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 138
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 136,
+    "w": 348,
+    "h": 34
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 44
+  }
+ },
+ {
+  "stepId": "initiatives_gate",
+  "kind": "yesno",
+  "peek": {
+   "drawer": 50,
+   "stepId": "initiatives_gate",
+   "words": 30,
+   "chars": 195,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 6,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 165
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 293,
+    "w": 348,
+    "h": 44
+   },
+   "cluster": {
+    "x": 26,
+    "y": 347,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 54
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "initiatives_gate",
+   "words": 30,
+   "chars": 195,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 6,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 165
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 136,
+    "w": 348,
+    "h": 34
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 44
+  }
+ },
+ {
+  "stepId": "risk_tolerance",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "risk_tolerance",
+   "words": 21,
+   "chars": 122,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 5,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 138
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 266,
+    "w": 348,
+    "h": 150
+   },
+   "cluster": {
+    "x": 26,
+    "y": 426,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 160
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "risk_tolerance",
+   "words": 21,
+   "chars": 122,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 5,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 138
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 69,
+    "w": 348,
+    "h": 101
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 111
+  }
+ },
+ {
+  "stepId": "rigor_before_acting",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "rigor_before_acting",
+   "words": 15,
+   "chars": 74,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 211,
+    "w": 348,
+    "h": 150
+   },
+   "cluster": {
+    "x": 26,
+    "y": 371,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 160
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "rigor_before_acting",
+   "words": 15,
+   "chars": 74,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 69,
+    "w": 348,
+    "h": 101
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 111
+  }
+ },
+ {
+  "stepId": "ambiguity_handling",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "ambiguity_handling",
+   "words": 12,
+   "chars": 67,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 157,
+    "w": 348,
+    "h": 164
+   },
+   "cluster": {
+    "x": 26,
+    "y": 331,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 174
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "ambiguity_handling",
+   "words": 12,
+   "chars": 67,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "autonomy_preference",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "autonomy_preference",
+   "words": 12,
+   "chars": 64,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 257,
+    "w": 348,
+    "h": 150
+   },
+   "cluster": {
+    "x": 26,
+    "y": 417,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 160
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "autonomy_preference",
+   "words": 12,
+   "chars": 64,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 69,
+    "w": 348,
+    "h": 101
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 111
+  }
+ },
+ {
+  "stepId": "thinking_style",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "thinking_style",
+   "words": 12,
+   "chars": 58,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 129,
+    "w": 348,
+    "h": 97
+   },
+   "cluster": {
+    "x": 26,
+    "y": 236,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 107
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "thinking_style",
+   "words": 12,
+   "chars": 58,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 92,
+    "w": 348,
+    "h": 78
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 88
+  }
+ },
+ {
+  "stepId": "voice_directness",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "voice_directness",
+   "words": 11,
+   "chars": 58,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": {
+    "x": 26,
+    "y": 129,
+    "w": 348,
+    "h": 68
+   },
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 273,
+    "w": 348,
+    "h": 44
+   },
+   "cluster": {
+    "x": 26,
+    "y": 327,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 54
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "voice_directness",
+   "words": 11,
+   "chars": 58,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": {
+    "x": 26,
+    "y": 129,
+    "w": 348,
+    "h": 68
+   },
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 136,
+    "w": 348,
+    "h": 34
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 44
+  }
+ },
+ {
+  "stepId": "voice_formality",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "voice_formality",
+   "words": 7,
+   "chars": 38,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": {
+    "x": 26,
+    "y": 129,
+    "w": 348,
+    "h": 51
+   },
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 256,
+    "w": 348,
+    "h": 44
+   },
+   "cluster": {
+    "x": 26,
+    "y": 310,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 54
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "voice_formality",
+   "words": 7,
+   "chars": 38,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": {
+    "x": 26,
+    "y": 129,
+    "w": 348,
+    "h": 51
+   },
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 135,
+    "w": 348,
+    "h": 35
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 45
+  }
+ },
+ {
+  "stepId": "voice_qualification",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "voice_qualification",
+   "words": 11,
+   "chars": 54,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": {
+    "x": 26,
+    "y": 129,
+    "w": 348,
+    "h": 85
+   },
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 290,
+    "w": 348,
+    "h": 150
+   },
+   "cluster": {
+    "x": 26,
+    "y": 450,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 160
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "voice_qualification",
+   "words": 11,
+   "chars": 54,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": {
+    "x": 26,
+    "y": 129,
+    "w": 348,
+    "h": 85
+   },
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 69,
+    "w": 348,
+    "h": 101
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 111
+  }
+ },
+ {
+  "stepId": "shape_structure",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "shape_structure",
+   "words": 7,
+   "chars": 31,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 129,
+    "w": 348,
+    "h": 44
+   },
+   "cluster": {
+    "x": 26,
+    "y": 183,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 54
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "shape_structure",
+   "words": 7,
+   "chars": 31,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 127,
+    "w": 348,
+    "h": 43
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 53
+  }
+ },
+ {
+  "stepId": "shape_ask_placement",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "shape_ask_placement",
+   "words": 11,
+   "chars": 62,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 157,
+    "w": 348,
+    "h": 44
+   },
+   "cluster": {
+    "x": 26,
+    "y": 211,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 54
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "shape_ask_placement",
+   "words": 11,
+   "chars": 62,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 130,
+    "w": 348,
+    "h": 40
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 50
+  }
+ },
+ {
+  "stepId": "shape_length",
+  "kind": "chips",
+  "peek": {
+   "drawer": 50,
+   "stepId": "shape_length",
+   "words": 11,
+   "chars": 56,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 157,
+    "w": 348,
+    "h": 97
+   },
+   "cluster": {
+    "x": 26,
+    "y": 264,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 107
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "shape_length",
+   "words": 11,
+   "chars": 56,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 95,
+    "w": 348,
+    "h": 75
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 85
+  }
+ },
+ {
+  "stepId": "peeves",
+  "kind": "multi",
+  "peek": {
+   "drawer": 50,
+   "stepId": "peeves",
+   "words": 7,
+   "chars": 42,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 157,
+    "w": 348,
+    "h": 399
+   },
+   "cluster": {
+    "x": 26,
+    "y": 566,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 409
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "peeves",
+   "words": 7,
+   "chars": 42,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "audiences_list",
+  "kind": "multi",
+  "peek": {
+   "drawer": 50,
+   "stepId": "audiences_list",
+   "words": 6,
+   "chars": 30,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 229,
+    "w": 348,
+    "h": 309
+   },
+   "cluster": {
+    "x": 26,
+    "y": 548,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 319
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "audiences_list",
+   "words": 6,
+   "chars": 30,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "audience_variance",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "audience_variance",
+   "words": 11,
+   "chars": 66,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 229,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 474,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "audience_variance",
+   "words": 11,
+   "chars": 66,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 348,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": null,
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "terms_depend_on",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "terms_depend_on",
+   "words": 16,
+   "chars": 90,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 4,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 110
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 284,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 529,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "terms_depend_on",
+   "words": 16,
+   "chars": 90,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 4,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 110
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "never_words",
+  "kind": "multi",
+  "peek": {
+   "drawer": 50,
+   "stepId": "never_words",
+   "words": 14,
+   "chars": 69,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 211,
+    "w": 348,
+    "h": 256
+   },
+   "cluster": {
+    "x": 26,
+    "y": 477,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 266
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "never_words",
+   "words": 14,
+   "chars": 69,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "standards_list",
+  "kind": "multi",
+  "peek": {
+   "drawer": 50,
+   "stepId": "standards_list",
+   "words": 9,
+   "chars": 47,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 183,
+    "w": 348,
+    "h": 203
+   },
+   "cluster": {
+    "x": 26,
+    "y": 396,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 213
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "standards_list",
+   "words": 9,
+   "chars": 47,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "guardrails_list",
+  "kind": "multi",
+  "peek": {
+   "drawer": 50,
+   "stepId": "guardrails_list",
+   "words": 9,
+   "chars": 49,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 229,
+    "w": 348,
+    "h": 298
+   },
+   "cluster": {
+    "x": 26,
+    "y": 537,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 308
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "guardrails_list",
+   "words": 9,
+   "chars": 49,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 2,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 55
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ },
+ {
+  "stepId": "reference_example_primary",
+  "kind": "text",
+  "peek": {
+   "drawer": 50,
+   "stepId": "reference_example_primary",
+   "words": 15,
+   "chars": 76,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 303,
+    "w": 348,
+    "h": 235
+   },
+   "cluster": {
+    "x": 26,
+    "y": 548,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 245
+  },
+  "ceiling": {
+   "drawer": 436,
+   "stepId": "reference_example_primary",
+   "words": 15,
+   "chars": 76,
+   "fontPx": 22,
+   "lineHeightPx": 27.5,
+   "lines": 3,
+   "question": {
+    "x": 26,
+    "y": 62,
+    "w": 292,
+    "h": 83
+   },
+   "hint": null,
+   "rephrase": {
+    "x": 324,
+    "y": 54,
+    "w": 50,
+    "h": 44
+   },
+   "answerArea": {
+    "x": 26,
+    "y": 66,
+    "w": 348,
+    "h": 104
+   },
+   "cluster": {
+    "x": 26,
+    "y": 180,
+    "w": 348,
+    "h": 64
+   },
+   "answerRoom": 114
+  }
+ }
+]

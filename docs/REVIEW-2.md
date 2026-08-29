@@ -213,6 +213,58 @@ behaviour, so the fallback is free.
 
 Adam, 2026-08-29. Not tonight's work; recorded here so it is not re-derived.
 
+### R-14 — MEASURED (2026-08-29). Two of the three worries are already answered.
+
+`scripts/canvas-census.mjs` drives the real built extension through all 34
+top-level questions, at both ends of the drawer's drag, via BS-05f's Jump
+sheet. `store/canvas/census.json` holds every number. What it found changes
+what the concepts should be about.
+
+**The letter size is already constant.** 22px on every question, at both drawer
+ends, all 34. There is no type-size inconsistency to fix — `TypedHeading` has
+one size and always has.
+
+**The rephrase control is already in one place.** 54px from the top of the
+panel, on every question that has one, at both ends. My own spec said it
+"rides the question row and therefore moves down the screen as the question
+grows" — that was wrong, and `.flow-q-row`'s `align-items: flex-start` is why:
+the control pins to the TOP of the row, so a taller question grows underneath
+it rather than pushing it down.
+
+**The real inconsistency is that it is not always there.** 27 of 34 questions
+have a rephrase control; **7 do not** — `preferred_name`, `professional_name`,
+`goal_service`, `goal_want`, `audience_variance`, and both gates. A control
+that is in the same place every time but present only four times in five is
+harder to learn than one that moves, because the thing being learned is
+whether to look at all.
+
+**What DOES vary, hugely, is the question's height.** 28px to 165px — 1 to 6
+visual lines, a six-fold swing:
+
+| lines | questions |
+|---|---|
+| 1 | 2 |
+| 2 | 16 |
+| 3 | 11 |
+| 4 | 2 |
+| 5 | 2 |
+| 6 | 1 |
+
+Two thirds sit at two or three lines. The tail is what breaks the rhythm:
+`initiatives_gate` (6 lines, 30 words), `entities_gate` (5), `risk_tolerance`
+(5), `role_names` (4).
+
+**And the tail costs the answer its room.** At the drawer's ceiling the answer
+area collapses to **44px** on both gates — the accessibility floor exactly,
+with nothing to spare. The same two questions that break the visual rhythm are
+the two that put the layout at its limit.
+
+**So the brief re-aims.** "Consistency of letter sizes" is done. "Consistency
+of finding the rephrase button" is a question about PRESENCE, not position.
+The template's real job is the one Adam named third and probably felt first:
+*"big changes in text size and text length will create fall off"* — it is the
+LENGTH, and it is four or five questions doing most of the damage.
+
 ### R-14 · A design pattern for the interview canvas
 
 > *"My focus is on the consistency of the letter sizes and the consistency of

@@ -1,0 +1,1458 @@
+[
+ {
+  "id": "orientation_ready",
+  "section": "About This Context",
+  "sectionId": "sec1",
+  "module": "Orientation",
+  "kind": "intro",
+  "kindNote": "Nothing. A screen to read",
+  "required": true,
+  "question": "You already carry a way of working. AI starts from zero every time you open a chat. We're going to write yours down once — a plain file you hand to any AI you use.",
+  "rephrasings": [],
+  "spoken": "You already carry a way of working. AI starts from zero every time you open a chat. We're going to write yours down once — a plain file you hand to any AI you use.",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "wb_canvas",
+  "section": "About This Context",
+  "sectionId": "sec1",
+  "module": "Orientation",
+  "kind": "intro",
+  "kindNote": "Nothing. A screen to read",
+  "required": true,
+  "question": "Every answer lands in your file below — a list you can read, and a map that fills in.",
+  "rephrasings": [],
+  "spoken": "Every answer lands in your file below — a list you can read, and a map that fills in.",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "wb_go",
+  "section": "About This Context",
+  "sectionId": "sec1",
+  "module": "Orientation",
+  "kind": "intro",
+  "kindNote": "Nothing. A screen to read",
+  "required": true,
+  "question": "Back, Next and Skip sit under every question. Two quick questions first — off you go.",
+  "rephrasings": [],
+  "spoken": "Back, Next and Skip sit under every question. Two quick questions first — off you go.",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "goal_service",
+  "section": "About This Context",
+  "sectionId": "sec1",
+  "module": "Orientation",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "Which AI do you use most?",
+  "rephrasings": [],
+  "spoken": "Which AI do you use most?",
+  "hint": "Your file works with any of them. Naming yours lets every example speak its language.",
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "ChatGPT",
+   "Claude",
+   "Gemini",
+   "Copilot",
+   "Grok",
+   "Perplexity",
+   "Something Cooler You Don't Even Know About"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "goal_want",
+  "section": "About This Context",
+  "sectionId": "sec1",
+  "module": "Orientation",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "What's the one thing you want it to do better today?",
+  "rephrasings": [],
+  "spoken": "What's the one thing you want it to do better today?",
+  "hint": "Be specific and small — one real task from this week beats a wish. At the end, you will run exactly this and watch the difference. Your AI may decline some topics; pick something it can actually do.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What makes a good answer?",
+    "a": "One real task from this week. Small beats grand — you'll run exactly this at the end and watch the difference."
+   },
+   {
+    "q": "Can I change it later?",
+    "a": "Yes. It's the first thing in your file, and you can edit it there any time."
+   }
+  ],
+  "ideas": 4,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "context_scope",
+  "section": "About This Context",
+  "sectionId": "sec1",
+  "module": "Orientation",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "Are we building this primarily for your work, personal life, or both?",
+  "rephrasings": [
+   "Should this file lean toward your work, your personal life, or cover both?",
+   "Is this mainly about how you show up at work, at home, or a mix of both?"
+  ],
+  "spoken": "Are we building this primarily for your work, personal life, or both?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What changes based on my answer?",
+    "a": "Only the wording of later questions. Pick \"both\" if you're unsure — nothing gets locked out."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Work",
+   "Personal",
+   "Both"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "stop_explaining",
+  "section": "About This Context",
+  "sectionId": "sec1",
+  "module": "Orientation",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "What would you most like to stop explaining over and over in your life?",
+  "rephrasings": [
+   "Think about the last time you had to explain the same thing for the hundredth time in your life — what was it?",
+   "If AI already knew one thing about your life and never made you repeat it again, what would save you the most time?",
+   "What's the thing about your life that gets tedious to keep re-explaining to new people, or new tools?"
+  ],
+  "spoken": "What would you most like to stop explaining over and over in your life?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What if there's more than one thing?",
+    "a": "Pick the one that costs you the most retyping. The rest of the interview will catch the others."
+   },
+   {
+    "q": "How much detail?",
+    "a": "A sentence or two. You're naming the thing, not solving it — the questions after this do the unpacking."
+   }
+  ],
+  "ideas": 5,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "architecture_orientation",
+  "section": "About This Context",
+  "sectionId": "sec1",
+  "module": "Orientation",
+  "kind": "intro",
+  "kindNote": "Nothing. A screen to read",
+  "required": true,
+  "question": "One thing before we start: the Context file tells AI what it should know about you. Later, we'll build a Skills file to tell AI which tasks to perform... ...and an Actions file to tell it what it can access and what it can do. For now, let's start with your Context.md file. Let's start!",
+  "rephrasings": [],
+  "spoken": "One thing before we start: the Context file tells AI what it should know about you. Later, we'll build a Skills file to tell AI which tasks to perform... ...and an Actions file to tell it what it can access and what it can do. For now, let's start with your Context.md file. Let's start!",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "preferred_name",
+  "section": "About Me",
+  "sectionId": "sec2",
+  "module": "About Me",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "What should AI call you?",
+  "rephrasings": [],
+  "spoken": "What should AI call you?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 5,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "professional_name",
+  "section": "About Me",
+  "sectionId": "sec2",
+  "module": "About Me",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": false,
+  "question": "Do you use a different name professionally? Leave this blank if it's the same.",
+  "rephrasings": [],
+  "spoken": "Do you use a different name professionally? Leave this blank if it's the same.",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 5,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "self_description",
+  "section": "About Me",
+  "sectionId": "sec2",
+  "module": "About Me",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "How would you describe what you do?",
+  "rephrasings": [
+   "If a stranger asked what you do, what would you actually tell them?",
+   "Forget your job title — in plain terms, what does your day-to-day actually involve?",
+   "What would your closest coworker or family member say you spend most of your time doing?"
+  ],
+  "spoken": "How would you describe what you do?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "My job title, or something else?",
+    "a": "Whatever you'd say to a smart stranger at dinner. A title tells AI less than one plain sentence about what you actually do."
+   },
+   {
+    "q": "Work self or whole self?",
+    "a": "Match the scope you picked earlier. If this file covers both, say both — one line each is plenty."
+   }
+  ],
+  "ideas": 5,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "role_names",
+  "section": "Roles",
+  "sectionId": "sec2-1",
+  "module": "About Me",
+  "kind": "multi",
+  "kindNote": "Pick any number, and add their own",
+  "required": false,
+  "question": "What are your roles — the ones distinct enough that AI should know about each one separately?",
+  "rephrasings": [
+   "What are the different hats you wear that AI should really keep straight?",
+   "If you had to list the separate 'jobs' you're doing in your life right now, what would they be?"
+  ],
+  "spoken": "What are your roles — the ones distinct enough that AI should know about each one separately?",
+  "hint": "For example: a job, plus something like running a fundraiser or coaching a team. Both are legitimately roles worth AI knowing about. Pick any that fit, or add your own — most people have just one or two.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What counts as a role?",
+    "a": "Anything you'd describe differently to different people. A job is a role. So is running a fundraiser, or coaching a team."
+   },
+   {
+    "q": "What if I only have one?",
+    "a": "That's normal — most people have one or two. Pick one and keep going."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Employee",
+   "Manager / Team Lead",
+   "Business Owner",
+   "Freelancer / Contractor",
+   "Volunteer / Board Member",
+   "Student"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "role_for",
+  "section": "Roles",
+  "sectionId": "sec2-1",
+  "module": "About Me",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "Who or what is this role for?",
+  "rephrasings": [
+   "Who benefits from you doing this role?",
+   "If this role disappeared tomorrow, who or what would feel it?"
+  ],
+  "spoken": null,
+  "hint": "Pick whichever fits, or add your own — this just anchors who the role serves.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What if it's for more than one?",
+    "a": "Pick the one you'd name first if someone asked. This just anchors who the role serves — it isn't a contract."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Myself",
+   "My family",
+   "My team",
+   "My clients",
+   "My community",
+   "My employer",
+   "Clients",
+   "An organization or nonprofit"
+  ],
+  "inRepeatable": "roles"
+ },
+ {
+  "id": "role_mandate",
+  "section": "Roles",
+  "sectionId": "sec2-1",
+  "module": "About Me",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "In a sentence or two, what are you there to accomplish?",
+  "rephrasings": [
+   "What does 'doing this well' actually look like?",
+   "If you disappeared for a month, what's the one thing people would notice wasn't getting done?",
+   "What's the actual point of you being in this role?"
+  ],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "How is this different from my duties?",
+    "a": "Duties are the tasks. The mandate is why the role exists — what would go undone if nobody held it."
+   }
+  ],
+  "ideas": 4,
+  "options": [],
+  "inRepeatable": "roles"
+ },
+ {
+  "id": "role_standing",
+  "section": "Roles",
+  "sectionId": "sec2-1",
+  "module": "About Me",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "Is this your primary role, a secondary role, or something occasional?",
+  "rephrasings": [
+   "How much of your time and identity does this role actually take up — the main one, a side one, or just now and then?",
+   "If you had to rank your roles, where does this one land — top, middle, or rarely?"
+  ],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "Primary",
+   "Secondary",
+   "Occasional"
+  ],
+  "inRepeatable": "roles"
+ },
+ {
+  "id": "role_durability",
+  "section": "Roles",
+  "sectionId": "sec2-1",
+  "module": "About Me",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "Is this role current, or something from your past that's still useful context?",
+  "rephrasings": [
+   "Are you still doing this today, or is it something you've moved on from?",
+   "Should AI treat this as part of who you are right now, or more like useful history?"
+  ],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "Current",
+   "Historical"
+  ],
+  "inRepeatable": "roles"
+ },
+ {
+  "id": "responsibilities_list",
+  "section": "Responsibilities",
+  "sectionId": "sec2-2",
+  "module": "Responsibilities & Boundaries",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "What are you personally responsible for?",
+  "rephrasings": [
+   "If something goes wrong, what's actually your problem to fix?",
+   "What's on your plate that nobody else is going to pick up if you don't?",
+   "What would you put on a list titled 'things I'm on the hook for'?"
+  ],
+  "spoken": "What are you personally responsible for?",
+  "hint": "Anything else where you're the person ultimately accountable — keep going until the list feels complete.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "How is this different from what I do all day?",
+    "a": "Responsibility is what lands on you if it goes wrong. You do plenty of things you're not ultimately on the hook for."
+   }
+  ],
+  "ideas": 4,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "contribution_boundaries",
+  "section": "Boundaries",
+  "sectionId": "sec2-3",
+  "module": "Responsibilities & Boundaries",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": false,
+  "question": "What work do you contribute to but do not own?",
+  "rephrasings": [
+   "Where do you have a voice, but someone else makes the final call?",
+   "What are you involved in that isn't ultimately yours to decide?",
+   "What do you help move forward without being the one steering it?"
+  ],
+  "spoken": "What work do you contribute to but do not own?",
+  "hint": "Who usually owns those things instead?",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Why does AI need to know what I don't own?",
+    "a": "So it stops writing as if a call is yours to make. It changes how things get worded."
+   },
+   {
+    "q": "Should I say who does own it?",
+    "a": "If you know, yes. \"The product lead decides\" tells AI more than \"not mine.\""
+   }
+  ],
+  "ideas": 2,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "negative_responsibility",
+  "section": "Boundaries",
+  "sectionId": "sec2-3",
+  "module": "Responsibilities & Boundaries",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": false,
+  "question": "What do people sometimes assume is your responsibility, but actually isn't?",
+  "rephrasings": [
+   "What do people keep asking you about that's actually not your call?",
+   "Where do you get blamed — or credited — for things that aren't really yours?",
+   "What's a common misunderstanding about what you're actually responsible for?"
+  ],
+  "spoken": "What do people sometimes assume is your responsibility, but actually isn't?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Why would AI need to know this?",
+    "a": "So it stops writing as if you can approve things you can't. It's the most common way drafts come out wrong."
+   },
+   {
+    "q": "What if nothing comes to mind?",
+    "a": "Skip it. This one's genuinely optional."
+   }
+  ],
+  "ideas": 2,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "decision_rights",
+  "section": "Decision Rights",
+  "sectionId": "sec2-4",
+  "module": "Responsibilities & Boundaries",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "What kinds of decisions can you make yourself?",
+  "rephrasings": [
+   "Where do you not need to ask permission?",
+   "What can you just decide and move on, without looping anyone in?",
+   "What's the biggest call you're trusted to make on your own?"
+  ],
+  "spoken": "What kinds of decisions can you make yourself?",
+  "hint": "What decisions require someone else's sign-off?",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What if it depends?",
+    "a": "It usually does. Say what you can decide alone, and where the line is. \"Under ten thousand, my call\" is a real answer."
+   }
+  ],
+  "ideas": 2,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "expertise",
+  "section": "Expertise",
+  "sectionId": "sec2-5",
+  "module": "Responsibilities & Boundaries",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "What expertise do people normally come to you for?",
+  "rephrasings": [
+   "When something's confusing or broken, who ends up asking you about it?",
+   "What do people assume you just 'know' because it's your thing?",
+   "What's the topic where you're the go-to person?"
+  ],
+  "spoken": "What expertise do people normally come to you for?",
+  "hint": "Which of those would you consider deep expertise, versus just working knowledge?",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What if I don't feel like an expert?",
+    "a": "You don't have to be the best at it. If people ask you first, that counts."
+   },
+   {
+    "q": "Does depth matter here?",
+    "a": "Yes, and it's worth saying. Deep expertise and working knowledge get treated differently — tell AI which is which."
+   }
+  ],
+  "ideas": 2,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "entities_intro",
+  "section": "My World",
+  "sectionId": "sec3",
+  "module": "My World",
+  "kind": "intro",
+  "kindNote": "Nothing. A screen to read",
+  "required": true,
+  "question": "Now let's name the people, teams, tools, and processes AI should know. Everyone has at least one — we'll start with yours.",
+  "rephrasings": [],
+  "spoken": "Now let's name the people, teams, tools, and processes AI should know. Everyone has at least one — we'll start with yours.",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "entities_gate",
+  "section": "My World",
+  "sectionId": "sec3",
+  "module": "My World",
+  "kind": "yesno",
+  "kindNote": "Yes or no — it opens or closes a whole section",
+  "required": true,
+  "question": "Are there specific people, teams, tools, or processes worth telling AI about by name — the kind you'd expect it to recognize instead of re-explaining every time?",
+  "rephrasings": [],
+  "spoken": "Are there specific people, teams, tools, or processes worth telling AI about by name — the kind you'd expect it to recognize instead of re-explaining every time?",
+  "hint": "Think about who or what you mention constantly — a manager, a teammate, a tool you live in, a process you keep referencing. If nothing comes to mind, choose No — you can always come back and change this later.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What kind of thing belongs here?",
+    "a": "Anything you name constantly and then have to explain. A manager, a teammate, a tool you live in, a meeting that matters."
+   },
+   {
+    "q": "Should I add my whole team?",
+    "a": "No. Only the ones AI would need to recognize to be useful. Two or three is plenty."
+   }
+  ],
+  "ideas": 0,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "entity_name",
+  "section": "My World",
+  "sectionId": "sec3",
+  "module": "My World",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "What's their name — or its name, if this is a tool or team?",
+  "rephrasings": [],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 5,
+  "options": [],
+  "inRepeatable": "entities"
+ },
+ {
+  "id": "entity_type",
+  "section": "My World",
+  "sectionId": "sec3",
+  "module": "My World",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "What kind of thing do you want to tell AI about?",
+  "rephrasings": [
+   "Is this a person, a team, a tool, or a way of working?"
+  ],
+  "spoken": null,
+  "hint": "Pick the closest fit, or add your own. The next few questions follow whichever you pick.",
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "Person",
+   "Team",
+   "System or Tool",
+   "Process or Workflow"
+  ],
+  "inRepeatable": "entities"
+ },
+ {
+  "id": "entity_relevance",
+  "section": "My World",
+  "sectionId": "sec3",
+  "module": "My World",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "In a sentence, why does AI need to know about this?",
+  "rephrasings": [
+   "What should AI understand about how this fits into your world?",
+   "If AI mentioned this by name, what would it need to already get right?"
+  ],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Why does AI need this?",
+    "a": "So it knows what this name means when you drop it into a sentence — the way a colleague already would."
+   }
+  ],
+  "ideas": 4,
+  "options": [],
+  "inRepeatable": "entities"
+ },
+ {
+  "id": "entity_aliases",
+  "section": "My World",
+  "sectionId": "sec3",
+  "module": "My World",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": false,
+  "question": "Any other names, nicknames, or shorthand this goes by?",
+  "rephrasings": [],
+  "spoken": null,
+  "hint": "Skip if there's only one name for it.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Why does this matter?",
+    "a": "So AI recognizes the thing when you use its short name. If you say \"the CRM\" and it only knows \"Salesforce,\" you're explaining it again."
+   },
+   {
+    "q": "What if there's only one name?",
+    "a": "Then skip it. Most things only have one."
+   }
+  ],
+  "ideas": 5,
+  "options": [],
+  "inRepeatable": "entities"
+ },
+ {
+  "id": "initiatives_intro",
+  "section": "Initiatives",
+  "sectionId": "sec4",
+  "module": "Initiatives",
+  "kind": "intro",
+  "kindNote": "Nothing. A screen to read",
+  "required": true,
+  "question": "Now let's name the work you have underway. Not the day-to-day — the named efforts with their own goals.",
+  "rephrasings": [],
+  "spoken": "Now let's name the work you have underway. Not the day-to-day — the named efforts with their own goals.",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "initiatives_gate",
+  "section": "Initiatives",
+  "sectionId": "sec4",
+  "module": "Initiatives",
+  "kind": "yesno",
+  "kindNote": "Yes or no — it opens or closes a whole section",
+  "required": true,
+  "question": "Are there specific initiatives or projects underway right now that AI should know about individually — not just your general responsibilities, but named efforts with their own goals and timeline?",
+  "rephrasings": [],
+  "spoken": "Are there specific initiatives or projects underway right now that AI should know about individually — not just your general responsibilities, but named efforts with their own goals and timeline?",
+  "hint": "Think about what you'd list if someone asked 'what are you actually working on this quarter?' If nothing comes to mind beyond your day-to-day responsibilities, choose No.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What makes something an initiative?",
+    "a": "It has a name, a goal, and an end. Your ongoing responsibilities aren't initiatives — those came up earlier."
+   }
+  ],
+  "ideas": 0,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "initiative_name",
+  "section": "Initiatives",
+  "sectionId": "sec4",
+  "module": "Initiatives",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "What's this initiative called?",
+  "rephrasings": [],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 5,
+  "options": [],
+  "inRepeatable": "initiatives_records"
+ },
+ {
+  "id": "initiative_description",
+  "section": "Initiatives",
+  "sectionId": "sec4",
+  "module": "Initiatives",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "In a couple sentences, what is this and why does it matter?",
+  "rephrasings": [
+   "What's actually happening here, and why is it worth doing?",
+   "If you had thirty seconds to explain this to someone new, what would you say?"
+  ],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "How much background?",
+    "a": "Two sentences: what it is, and why it matters now. AI can ask you for more when it needs it."
+   }
+  ],
+  "ideas": 3,
+  "options": [],
+  "inRepeatable": "initiatives_records"
+ },
+ {
+  "id": "initiative_status",
+  "section": "Initiatives",
+  "sectionId": "sec4",
+  "module": "Initiatives",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "Where does this stand right now?",
+  "rephrasings": [
+   "If someone asked for a one-word status update, what would it be?"
+  ],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "Just getting started",
+   "Actively underway",
+   "Stalled or blocked",
+   "Wrapping up"
+  ],
+  "inRepeatable": "initiatives_records"
+ },
+ {
+  "id": "initiative_success",
+  "section": "Initiatives",
+  "sectionId": "sec4",
+  "module": "Initiatives",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "What does success look like for this?",
+  "rephrasings": [
+   "How will you know this actually worked?",
+   "What's the outcome you're actually driving toward?"
+  ],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What if success isn't defined yet?",
+    "a": "Say that — it's real information. Then add what better would look like, even roughly."
+   }
+  ],
+  "ideas": 3,
+  "options": [],
+  "inRepeatable": "initiatives_records"
+ },
+ {
+  "id": "initiative_constraints",
+  "section": "Initiatives",
+  "sectionId": "sec4",
+  "module": "Initiatives",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": false,
+  "question": "Any constraints AI should know about — budget, timeline, dependencies, risks?",
+  "rephrasings": [],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What counts as a constraint?",
+    "a": "Anything fixed that shapes your choices — a date, a budget, a required sign-off, a system you're stuck with."
+   }
+  ],
+  "ideas": 2,
+  "options": [],
+  "inRepeatable": "initiatives_records"
+ },
+ {
+  "id": "initiative_not_doing",
+  "section": "Initiatives",
+  "sectionId": "sec4",
+  "module": "Initiatives",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": false,
+  "question": "Anything explicitly out of scope here that people keep assuming is included?",
+  "rephrasings": [],
+  "spoken": null,
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Why say what this is not?",
+    "a": "Because AI will helpfully suggest it otherwise. A named non-goal saves you the same correction every week."
+   }
+  ],
+  "ideas": 5,
+  "options": [],
+  "inRepeatable": "initiatives_records"
+ },
+ {
+  "id": "risk_tolerance",
+  "section": "How I Think",
+  "sectionId": "sec5",
+  "module": "How I Think",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "When you're choosing between a fast, good-enough call and a slower, more certain one, which do you lean toward by default?",
+  "rephrasings": [
+   "Are you more of a 'ship it and adjust' person, or a 'get it right first' person?",
+   "If nobody was watching, would you rather move fast and fix mistakes later, or take the extra time upfront?"
+  ],
+  "spoken": "When you're choosing between a fast, good-enough call and a slower, more certain one, which do you lean toward by default?",
+  "hint": "Not about any one decision — just your general lean.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What if it depends on the situation?",
+    "a": "Pick \"depends on the stakes\" — it's a real answer, not a cop-out. AI will ask when it matters."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Fast and good enough",
+   "Depends on the stakes",
+   "Slower and more certain"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "rigor_before_acting",
+  "section": "How I Think",
+  "sectionId": "sec5",
+  "module": "How I Think",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "How much reasoning do you want to see before AI just gives you the answer?",
+  "rephrasings": [
+   "Do you want the destination, or the whole route it took to get there?",
+   "When you ask a question, do you want a quick answer or the thinking behind it?"
+  ],
+  "spoken": "How much reasoning do you want to see before AI just gives you the answer?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What does this actually change?",
+    "a": "Whether AI hands you a two-line answer or walks you through how it got there. You can always ask for more in the moment."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Just the answer",
+   "The answer, plus a quick reason why",
+   "Walk me through the reasoning first"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "ambiguity_handling",
+  "section": "How I Think",
+  "sectionId": "sec5",
+  "module": "How I Think",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "When what you've asked for is genuinely unclear, what should AI do?",
+  "rephrasings": [
+   "If AI isn't sure what you meant, would you rather it guess or check?",
+   "How much do you want AI to fill in the blanks on its own versus asking you to fill them in?"
+  ],
+  "spoken": "When what you've asked for is genuinely unclear, what should AI do?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "Make its best guess and keep going",
+   "Make an assumption, but say what it assumed",
+   "Stop and ask before doing anything"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "autonomy_preference",
+  "section": "How I Think",
+  "sectionId": "sec5",
+  "module": "How I Think",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "When AI can clearly see the next step, what's your gut instinct?",
+  "rephrasings": [
+   "Left to its own judgment, should AI just move, or check in with you first?"
+  ],
+  "spoken": "When AI can clearly see the next step, what's your gut instinct?",
+  "hint": "This is about your general instinct, not hard rules — there's a dedicated question later for the specific things AI should never do without checking first.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Isn't this the same as the last question?",
+    "a": "Close, but no. That one was about unclear requests. This one is about clear ones — whether AI should move or check with you first."
+   },
+   {
+    "q": "What if it depends on how risky the step is?",
+    "a": "A later question covers the hard rules — what AI must never do without asking. This one is just your general instinct."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Just do it",
+   "Do it, but flag anything worth knowing",
+   "Check with me first"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "thinking_style",
+  "section": "How I Think",
+  "sectionId": "sec5",
+  "module": "How I Think",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "Do you tend to start from the big picture, or the details?",
+  "rephrasings": [
+   "When you're figuring something out, do you zoom out first or zoom in first?"
+  ],
+  "spoken": "Do you tend to start from the big picture, or the details?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "Big picture first",
+   "Details first",
+   "Depends on the situation"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "voice_directness",
+  "section": "How I Communicate",
+  "sectionId": "sec6",
+  "module": "How I Communicate",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "How direct should AI default to when it's writing for you?",
+  "rephrasings": [
+   "If there's bad news, how should AI deliver it by default?"
+  ],
+  "spoken": "How direct should AI default to when it's writing for you?",
+  "hint": "Diplomatic: \"There's a chance Friday could be tight, given how the vendor work has gone.\" Balanced: \"Friday is at risk — the vendor delay pushed us back.\" Blunt: \"This won't be ready Friday.\"",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Is this locked in?",
+    "a": "No. It's the starting point. You can always ask for something softer or blunter in the moment."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Diplomatic",
+   "Balanced",
+   "Blunt"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "voice_formality",
+  "section": "How I Communicate",
+  "sectionId": "sec6",
+  "module": "How I Communicate",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "How formal should the default tone be?",
+  "rephrasings": [
+   "Should AI sound like it's talking to a friend, a coworker, or an executive by default?"
+  ],
+  "spoken": "How formal should the default tone be?",
+  "hint": "Casual: \"Hey — quick one on the rollout.\" Neutral: \"Quick update on the rollout.\" Formal: \"Please find below an update on the vendor rollout.\"",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What if it depends who's reading?",
+    "a": "It usually does — there's a whole section on that later. Pick your most common case here."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Casual",
+   "Neutral",
+   "Formal"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "voice_qualification",
+  "section": "How I Communicate",
+  "sectionId": "sec6",
+  "module": "How I Communicate",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "How much should AI qualify or hedge what it tells you?",
+  "rephrasings": [
+   "Do you want AI to just state things, or spell out what they depend on?"
+  ],
+  "spoken": "How much should AI qualify or hedge what it tells you?",
+  "hint": "None: \"Phase 3 slips to 8/15.\" Some: \"Phase 3 slips to 8/15, assuming no further vendor delays.\" Full: \"Phase 3 currently looks likely to slip to 8/15, though this depends on whether further vendor delays land and on Procurement confirming availability.\"",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Why would I want hedging at all?",
+    "a": "Because \"the date will slip\" and \"the date will slip if the vendor is late again\" are different claims. Some readers need the second one."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "None — state it plainly",
+   "Some — flag it where it matters",
+   "Full — qualify every assumption"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "shape_structure",
+  "section": "How I Communicate",
+  "sectionId": "sec6",
+  "module": "How I Communicate",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "Which one of these is more you?",
+  "rephrasings": [
+   "Same update, two treatments — which would you actually send?"
+  ],
+  "spoken": "Which one of these is more you?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "Structured — bullets",
+   "Prose — sentences"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "shape_ask_placement",
+  "section": "How I Communicate",
+  "sectionId": "sec6",
+  "module": "How I Communicate",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "When you need something from someone, where should the ask go?",
+  "rephrasings": [
+   "Do you lead with what you need, or build up to it?"
+  ],
+  "spoken": "When you need something from someone, where should the ask go?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "Ask first",
+   "Ask last"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "shape_length",
+  "section": "How I Communicate",
+  "sectionId": "sec6",
+  "module": "How I Communicate",
+  "kind": "chips",
+  "kindNote": "Pick one",
+  "required": true,
+  "question": "How long should a normal answer from AI run, by default?",
+  "rephrasings": [
+   "Left on its own, should AI keep things tight, or give you the full picture?"
+  ],
+  "spoken": "How long should a normal answer from AI run, by default?",
+  "hint": null,
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 0,
+  "options": [
+   "As short as possible",
+   "Enough to stand alone",
+   "Thorough"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "peeves",
+  "section": "How I Communicate",
+  "sectionId": "sec6",
+  "module": "How I Communicate",
+  "kind": "multi",
+  "kindNote": "Pick any number, and add their own",
+  "required": false,
+  "question": "What makes you rewrite something on sight?",
+  "rephrasings": [
+   "What's an instant red flag in a draft, the kind of thing that makes you stop reading and just redo it yourself?"
+  ],
+  "spoken": "What makes you rewrite something on sight?",
+  "hint": "Pick freely — the fastest way to describe how you want things written is to say what annoys you.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Why is this question here?",
+    "a": "Because it's the fastest way to describe how you want things written. Saying what annoys you is easier than describing good writing."
+   },
+   {
+    "q": "What if none of these bother me?",
+    "a": "Then skip it. This one's optional, and an honest blank beats a guess."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Burying the ask",
+   "Walls of text with no structure",
+   "Vague ownership — \"we should\"",
+   "Numbers with no source",
+   "Corporate filler",
+   "Apologetic openers",
+   "Commitments with no date",
+   "Recommendations with no trade-off",
+   "Jargon my audience won't know",
+   "Passive voice"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "audiences_list",
+  "section": "Audience Profiles",
+  "sectionId": "sec7",
+  "module": "Audience Profiles",
+  "kind": "multi",
+  "kindNote": "Pick any number, and add their own",
+  "required": false,
+  "question": "Who do you write to regularly?",
+  "rephrasings": [
+   "If you mentally switch 'voices' depending on who's reading, who are those different readers?"
+  ],
+  "spoken": "Who do you write to regularly?",
+  "hint": "Different readers, different defaults — pick everyone you write to on a regular basis, or add someone not listed.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What does AI do with this?",
+    "a": "It shifts tone by reader. Your manager and your team get different versions of the same update."
+   },
+   {
+    "q": "How many should I pick?",
+    "a": "Only the ones you actually write to often. Three or four is typical."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "My manager",
+   "My team",
+   "Peer managers",
+   "Executives",
+   "Business stakeholders",
+   "Vendors and partners",
+   "Cross-functional partners",
+   "Social media",
+   "Blog"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "audience_variance",
+  "section": "Audience Profiles",
+  "sectionId": "sec7",
+  "module": "Audience Profiles",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": false,
+  "question": "Do any of these need something noticeably different from the rest?",
+  "rephrasings": [],
+  "spoken": "Do any of these need something noticeably different from the rest?",
+  "hint": "A different tone, more or less detail, a different format entirely. Skip if 'about the same for everyone' is close enough.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What kind of difference counts?",
+    "a": "A different tone, more or less detail, or a different format entirely. Anything you'd consciously change."
+   },
+   {
+    "q": "What if they're all about the same?",
+    "a": "Then skip it. \"Same for everyone\" is a real answer and AI will treat it that way."
+   }
+  ],
+  "ideas": 3,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "audience_needs",
+  "section": "Audience Profiles",
+  "sectionId": "sec7",
+  "module": "Audience Profiles",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": false,
+  "question": "What's different about writing to this reader?",
+  "rephrasings": [],
+  "spoken": null,
+  "hint": "A different tone, more or less detail, a different format. Skip if this one gets what everyone else gets.",
+  "placeholder": null,
+  "deepDives": [],
+  "ideas": 4,
+  "options": [],
+  "inRepeatable": "audiences"
+ },
+ {
+  "id": "terms_depend_on",
+  "section": "Vocabulary & Knowledge",
+  "sectionId": "sec8",
+  "module": "Vocabulary & Knowledge",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": false,
+  "question": "What terms, tools, or shorthand does your work depend on that an outsider would get wrong?",
+  "rephrasings": [
+   "If someone sat in on your meetings tomorrow, what vocabulary would completely lose them?",
+   "What would you have to explain to a brand-new hire before anything else made sense?"
+  ],
+  "spoken": "What terms, tools, or shorthand does your work depend on that an outsider would get wrong?",
+  "hint": "Acronyms, tool names, project codenames — anything you'd have to explain to someone new.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What counts as shorthand?",
+    "a": "Acronyms, tool names, project codenames — anything you'd have to explain to someone starting Monday."
+   },
+   {
+    "q": "How much should I list?",
+    "a": "Five to ten is plenty. The ones that come up weekly, not every term you know."
+   }
+  ],
+  "ideas": 3,
+  "options": [],
+  "inRepeatable": null
+ },
+ {
+  "id": "never_words",
+  "section": "Vocabulary & Knowledge",
+  "sectionId": "sec8",
+  "module": "Vocabulary & Knowledge",
+  "kind": "multi",
+  "kindNote": "Pick any number, and add their own",
+  "required": false,
+  "question": "Are there words or phrases you never want to see in your own writing?",
+  "rephrasings": [
+   "If AI used one of these on you, would it instantly sound fake?"
+  ],
+  "spoken": "Are there words or phrases you never want to see in your own writing?",
+  "hint": "Corporate filler you're tired of seeing — pick any that apply, or add your own.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Does this actually work?",
+    "a": "Yes — this is one of the most literal instructions in the file. AI avoids what you list here."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Leverage",
+   "Synergy",
+   "Circle back",
+   "Deep dive",
+   "Bandwidth",
+   "Low-hanging fruit",
+   "Boil the ocean",
+   "At the end of the day",
+   "Move the needle",
+   "Touch base"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "standards_list",
+  "section": "Context Boundaries",
+  "sectionId": "sec9",
+  "module": "Context Boundaries",
+  "kind": "multi",
+  "kindNote": "Pick any number, and add their own",
+  "required": false,
+  "question": "What would you actually send a draft back over?",
+  "rephrasings": [
+   "What would make you send something straight back, no matter how good it otherwise looks?"
+  ],
+  "spoken": "What would you actually send a draft back over?",
+  "hint": "These become hard rules AI can't talk itself out of — not just preferences.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "How is this different from the peeves question?",
+    "a": "Peeves are style. These are hard rules AI can't talk itself out of — the things that make something wrong, not just annoying."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Always name the source",
+   "Show your work, not just the result",
+   "Call out what you're not sure about"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "guardrails_list",
+  "section": "Context Boundaries",
+  "sectionId": "sec9",
+  "module": "Context Boundaries",
+  "kind": "multi",
+  "kindNote": "Pick any number, and add their own",
+  "required": false,
+  "question": "What should AI never do without asking you first?",
+  "rephrasings": [
+   "Where's the line — what's too risky, sensitive, or hard to undo to hand over automatically?"
+  ],
+  "spoken": "What should AI never do without asking you first?",
+  "hint": "These stay on by default as recommendations — turn any off only if you're sure. Add your own if something's missing.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "What happens if I leave these on?",
+    "a": "AI drafts instead of sending, and asks before changing anything. Most people keep all three on."
+   },
+   {
+    "q": "Can I change these later?",
+    "a": "Yes. Everything here can be answered again — nothing is locked in."
+   }
+  ],
+  "ideas": 0,
+  "options": [
+   "Draft emails — never send them",
+   "Require my approval before changing anything in a system",
+   "Ask when context is missing instead of assuming",
+   "Never modify a shared system, record, or template directly"
+  ],
+  "inRepeatable": null
+ },
+ {
+  "id": "reference_example_primary",
+  "section": "Reference Examples",
+  "sectionId": "sec10",
+  "module": "Reference Examples",
+  "kind": "text",
+  "kindNote": "Written — one box, as long or short as they like",
+  "required": true,
+  "question": "Paste three things you wrote — as different from each other as you can find.",
+  "rephrasings": [
+   "If you handed someone three paragraphs and said 'this is the range of how I sound,' which three?"
+  ],
+  "spoken": "Paste three things you wrote — as different from each other as you can find.",
+  "hint": "A blank line between each one is enough to keep them apart. Different readers or different moods teach the most; one paragraph each is plenty.",
+  "placeholder": null,
+  "deepDives": [
+   {
+    "q": "Why does this matter so much?",
+    "a": "One real paragraph teaches AI more about your voice than every answer above it. Three teach it your range."
+   },
+   {
+    "q": "What should I pick?",
+    "a": "Ordinary things you'd be happy to see again. A status update, a note to your team and a message to somebody outside it beat anything polished."
+   },
+   {
+    "q": "What if I can't find three?",
+    "a": "Give what you have. Two is better than one, and two sentences written here as if you were sending them count."
+   }
+  ],
+  "ideas": 10,
+  "options": [],
+  "inRepeatable": null
+ }
+]
