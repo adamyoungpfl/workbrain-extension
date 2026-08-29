@@ -967,8 +967,12 @@ export const S = {
   capFixSteps: 'Rewrite the steps',
   /** Home's row, and the door on Skills' own last screen. */
   capCta: 'Skill Training',
-  capRowSub: 'Try and refine your skills. Unlocks automatically with your 2nd skill.',
-  capRowWaiting: 'Ready once you have two skills',
+  /* R-01. Adam's replacement line names the unlock, so it belongs on the
+     WAITING state — which is the one he was reading when he wrote it, and the
+     one somebody sees until they have two skills. The active line stays a
+     short verb: by then the row is a door, not an explanation. [DRAFT] */
+  capRowSub: 'Try and refine your skills.',
+  capRowWaiting: 'Try and refine your skills. Unlocks automatically with your 2nd skill.',
   capIntoSkills: 'Now watch one of them run',
 
   copyPrompt: 'Copy',

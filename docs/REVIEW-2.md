@@ -263,6 +263,24 @@ this screen say out loud" without running it.
 
 ---
 
+---
+
+## Two things the build turned up, for the next pass
+
+**The globe's labels crowd each other.** Visible in `store/copy/11-drawer-brain.png`:
+"MY VOICE", "VOCABULARY", "AUDIENCES", "EXAMPLES" and "GUARDRAILS" overlap one
+another and the chips beside them at the resting stage size. Pre-existing —
+R-07 only made it easier to see, because a glow draws the eye to a node whose
+name is half under its neighbour's. It belongs with R-14's canvas pass, since
+the fix is a layout rule and not a per-label nudge.
+
+**The glow may want to be stronger.** At 208px the difference between started
+and complete reads, but it reads quietly. The spread and opacity are two
+numbers in `BrainGlobe.css` and the state fold does not change — say louder and
+it is a one-line move.
+
+---
+
 ## What fits tonight
 
 **R-01 → R-06**, as two commits: the words, then the small visual. Every one of
