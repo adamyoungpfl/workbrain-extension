@@ -373,21 +373,28 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
     await context.close();
   });
 
-  /**
-   * IT DOES NOT SHOVE THE WAY BACK OFF THE STAGE.
+    /**
+   * R-06 (Adam, 2026-08-28) — IT NO LONGER STANDS DOWN, and this test says the
+   * opposite of what it used to.
    *
-   * Flying into a section swaps the 44px way-out disc for `Back to the whole
-   * file`, a pill as wide as its own sentence. Stepped sideways to make room
-   * for the cue, its right edge lands exactly on the globe's and the sentence
-   * wraps onto two lines — most of the top of the picture given over to
-   * furniture. So the cue stands down for that one, and comes back out with
-   * you, unspent.
+   * The cue stood down while a section was flown into because the corner then
+   * belonged to V1.8 VB-48's `Back to the whole file` pill, which stepped
+   * sideways for it and wrapped to two lines. That pill left the stage at V2.1
+   * VB-74 and the band it moved to was deleted at BS-07a, so the standing-down
+   * has spent two versions defending the corner from nothing — while paying
+   * for it in the one currency that matters here. Adam: "It pops up and
+   * disappears right now and it doesn't look great."
+   *
+   * The half of the old claim that survives is the one it was really for: the
+   * cue is not SPENT by any of this. Only turning the globe, or leaving Brain,
+   * retires it.
    */
-  test('a flown-in section stands the cue down, and does not spend it', async () => {
+  test('a flown-in section leaves the cue exactly where it was, and does not spend it', async () => {
     const { context, sw, id } = await launchExtension();
     const page = await openMidInterview(context, sw, id);
     await showBrain(page);
     await expect(cue(page)).toBeVisible();
+    const before = (await cue(page).boundingBox())!;
 
     /* Pressed, not dragged — a press is not a turn, so nothing here retires
        the cue. Dispatched rather than driven, which is the convention
@@ -400,24 +407,16 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
       .evaluate((el) => (el as HTMLElement).click());
     await page.waitForTimeout(1200);
 
-    await expect(cue(page)).toHaveCount(0);
-    /* BS-07a (§7.1): the band that replaced VB-74's corner pill is itself
-       gone, and the way back out of a flown-in section is the section's own
-       orb (a toggle) or Escape. Flying in is still not somebody learning that
-       the globe turns, so the cue stands down WITHOUT being spent — that half
-       of the claim is what this test is really for, and it is unchanged. */
-    // Nothing was written: the stage was busy, not the cue seen.
-    expect(await page.evaluate(async () => (await chrome.storage.sync.get('wb:prefs'))['wb:prefs']?.turnHint)).not.toBe(
-      false,
-    );
-
-    // Out again, and it is still owed. BS-07a (§7.1): with the band gone the
-    // climb out is Escape, on the globe's own keydown handler — so focus has
-    // to be inside the globe first.
-    await page.locator('.brainglobe-pin[data-section-id]').first().focus();
-    await page.keyboard.press('Escape');
-    await page.waitForTimeout(1200);
+    // Still there, and in the same corner — anchored, not popping.
     await expect(cue(page)).toBeVisible();
+    const after = (await cue(page).boundingBox())!;
+    expect(Math.round(after.x)).toBe(Math.round(before.x));
+    expect(Math.round(after.y)).toBe(Math.round(before.y));
+
+    // And nothing was written: the stage was busy, not the cue seen.
+    expect(
+      await page.evaluate(async () => (await chrome.storage.sync.get('wb:prefs'))['wb:prefs']?.turnHint),
+    ).not.toBe(false);
 
     await context.close();
   });

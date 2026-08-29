@@ -1016,6 +1016,14 @@
    body at this height rather than a note attached to something else. Quiet
    ink: it is orientation, and the question above the drawer is what somebody
    is actually doing. */
+/* R-03 — the resting drawer's pair sits a hair low in its band. Padding
+   BELOW, so the block rises inside the room it already has: nothing about the
+   drawer's own height changes, which is what keeps this out of the fifteen
+   specs that measure `DRAWER_REST_HEIGHT` and the peek's arithmetic. */
+.filedrawer-body[data-statusonly='on'] {
+  padding-bottom: 8px;
+}
+
 .filedrawer-status {
   margin: 0;
   padding: 0 4px;

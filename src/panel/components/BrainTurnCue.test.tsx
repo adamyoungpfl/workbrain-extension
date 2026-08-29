@@ -159,26 +159,30 @@ describe('BrainTurnCue', () => {
     expect(disc(container)).not.toBeNull();
   });
 
-  it('stands down while something else owns the corner — and is not spent doing it', async () => {
+  /**
+   * R-06 (Adam, 2026-08-28) — IT NO LONGER STANDS DOWN, and this test now says
+   * the opposite of what it used to.
+   *
+   * `paused` hid the cue while a section was flown into, because the corner
+   * belonged to `Back to the whole file` and there was not room for both. That
+   * pill left the stage at V2.1 VB-74 and the band it moved to was deleted at
+   * BS-07a, so the prop has spent two versions defending a corner from nothing
+   * — and paid for it by vanishing and returning every time somebody looked at
+   * a section. "It pops up and disappears right now and it doesn't look
+   * great." The corner is the cue's, and it holds it.
+   */
+  it('holds its corner while a section is flown into — no coming and going', async () => {
     const { writes } = installStorage();
     const { container, rerender } = await show();
     expect(disc(container)).not.toBeNull();
 
-    // Flying into a section replaces the 44px way-out disc with a pill as wide
-    // as `Back to the whole file`. There is not room for both.
     await act(async () => {
-      rerender(<BrainTurnCue showing turned={false} paused />);
+      rerender(<BrainTurnCue showing turned={false} />);
       await Promise.resolve();
     });
-    expect(disc(container)).toBeNull();
-    expect(writes, 'flying into a section spent the one chance the cue gets').toHaveLength(0);
-
-    // And it comes back when the corner is free again.
-    await act(async () => {
-      rerender(<BrainTurnCue showing turned={false} paused={false} />);
-      await Promise.resolve();
-    });
-    expect(disc(container)).not.toBeNull();
+    expect(disc(container), 'the cue left its corner').not.toBeNull();
+    // And still not spent: only turning the globe, or leaving Brain, retires it.
+    expect(writes, 'looking at a section spent the one chance the cue gets').toHaveLength(0);
   });
 
   it('stays gone on a later visit, because the flag outlives the panel', async () => {

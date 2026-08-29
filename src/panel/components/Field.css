@@ -15,12 +15,30 @@
   border: 1px solid var(--border-i);
   background: var(--canvas);
   color: var(--ink);
+  /* R-04 (Adam, 2026-08-28) — "a little inner shadow on the text inputs so
+     that they seem to have depth with the shadow around the top and right
+     side. Subtle but just adding polish and depth to design."
+
+     INSET, and offset down-and-left so the shadow falls on the top and right
+     inner edges — light from the lower left, which is the same direction
+     every raised thing in this product is lit from. Two pixels of blur and
+     six percent of the ink: at 400px anything heavier reads as a disabled
+     field rather than a deep one.
+
+     NO GEOMETRY. `box-shadow` does not participate in layout, so the field's
+     height is the same number the flow's two-zone arithmetic has always
+     measured (core/flow/dock.ts). A border or a padding change would not be. */
+  box-shadow: inset 1px -1px 2px rgba(21, 24, 29, 0.06);
   transition: all var(--fast) var(--ease);
 }
 .field:focus {
   outline: none;
   border-color: var(--primary);
-  box-shadow: 0 0 0 3px var(--primary-tint);
+  /* The focus ring KEEPS the depth rather than replacing it — one shadow
+     property, two jobs, or focusing a field would flatten it. */
+  box-shadow:
+    inset 1px -1px 2px rgba(21, 24, 29, 0.06),
+    0 0 0 3px var(--primary-tint);
 }
 .field::placeholder {
   color: var(--ink-3);

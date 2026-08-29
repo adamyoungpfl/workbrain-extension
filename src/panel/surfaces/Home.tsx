@@ -774,18 +774,11 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
         name={S.meterName}
         label={S.meterLabel}
         step={(() => {
-          // BR-01 — where you are, then where you are going. The fold is
-          // core/home/stepCue.ts; the words are strings.ts's. Neither knows
-          // about the other, which is why "next" can be a step or a finish
-          // without this line growing a branch.
-          const cue = stepCue(utilization);
-          const current = S.steps[cue.current - 1] as string;
-          const next = cue.next === null ? S.stepNextFinish : (S.steps[cue.next - 1] as string);
-          return {
-            current: S.stepCurrent(current),
-            next: S.stepNext(next),
-            spoken: S.stepBoth(current, next),
-          };
+          // R-05 — locked to Current. `stepCue` still says which step that is;
+          // its `next` is no longer drawn, and is kept because the fold is
+          // right and the next thing to want it is R-08's card status.
+          const current = S.steps[stepCue(utilization).current - 1] as string;
+          return { current: S.stepCurrent(current), spoken: S.stepCurrent(current) };
         })()}
         current={utilization.currentStep}
         segments={[

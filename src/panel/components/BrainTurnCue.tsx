@@ -92,26 +92,20 @@ export interface BrainTurnCueProps {
   showing: boolean;
   /** The globe has been turned with the pointer during this panel session. */
   turned: boolean;
-  /**
-   * Something else owns that corner right now — draw nothing, and spend
-   * nothing.
-   *
-   * There is exactly one such thing, and it is why this prop exists: flying
-   * into a section replaces the way-out DISC with `Back to the whole file`, a
-   * pill as wide as its own sentence. Stepped sideways to make room for the cue
-   * it runs off the end of a 208px stage and wraps onto two lines, which is
-   * most of the top of the picture given over to furniture. Measured, not
-   * guessed — the pill's right edge lands exactly on the globe's.
-   *
-   * Distinct from `showing` going false, deliberately. Flying into a section is
-   * not somebody learning that the globe turns, so it must not spend the one
-   * chance the cue gets; it is the corner being busy, and the cue comes back
-   * when it is free.
-   */
-  paused?: boolean;
+  /* R-06 (Adam, 2026-08-28) — `paused` is GONE, and with it the popping.
+
+     It stood the cue down while a section was flown into, because the corner
+     then belonged to `Back to the whole file` and there was not room for both
+     on a 208px stage. That pill left the stage at V2.1 VB-74 and the nav band
+     it moved to was deleted at BS-07a — so for two versions this has been
+     protecting a corner from a control that does not exist, and all it did was
+     make the cue vanish and return every time somebody looked at a section.
+
+     Adam: "It pops up and disappears right now and it doesn't look great."
+     That was the mechanism. */
 }
 
-export function BrainTurnCue({ showing, turned, paused = false }: BrainTurnCueProps) {
+export function BrainTurnCue({ showing, turned }: BrainTurnCueProps) {
   const { show, loaded, dismiss } = useTurnHintPref();
 
   useEffect(() => {
@@ -137,7 +131,7 @@ export function BrainTurnCue({ showing, turned, paused = false }: BrainTurnCuePr
     else if (loaded && show && wasShowing.current && !showing) dismiss();
   }, [loaded, show, showing, dismiss]);
 
-  if (!loaded || !show || !showing || paused) return null;
+  if (!loaded || !show || !showing) return null;
 
   return (
     <button

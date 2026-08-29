@@ -31,12 +31,17 @@ export interface MeterProps {
   /** The phrase printed after the number — "set up". */
   label: string;
   /**
-   * BR-01 — the two halves of the cue, alternating in place: "Current: Repeat"
-   * and "Next Up: Act". `spoken` is the same fact as one sentence, for the
-   * progressbar's value and for reduced motion — a cross-fade is a way of
-   * showing two things in one place, not a fact of its own.
+   * R-05 (Adam, 2026-08-28) — LOCKED TO CURRENT. "Drop the rotating Current /
+   * Next above the progress bar. Just keep it locked to Current and that
+   * should be the same color as the same status on the Context card below."
+   *
+   * BR-01 built this as an alternating pair, that morning. What the rotation
+   * cost is what killed it: a status line that changes every four seconds is a
+   * status line you have to WAIT for, and the meter's job is to be read in
+   * passing. `spoken` stays, because the progressbar still needs one sentence
+   * for the value.
    */
-  step: { current: string; next: string; spoken: string };
+  step: { current: string; spoken: string };
   /** V2.9 (Adam, mid-sprint): which step is the STANDING one, 1-based —
    * the same number the `step` phrase speaks. Its segment wears a slight
    * tint even at 0%, so a just-unlocked step reads as active-but-not-done
@@ -61,21 +66,11 @@ export function Meter({ value, name, label, step, current, segments }: MeterProp
       <div className="meter-top" aria-hidden="true">
         <span className="meter-val">{value}%</span>
         <span className="meter-lab">{label}</span>
-        {/* BR-01 — BOTH HALVES ARE ALWAYS IN THE DOM, and CSS decides which
-            one is painted. Two consequences that are the whole design:
-
-            · under `prefers-reduced-motion` the animation is off and BOTH
-              lines are shown, stacked — the still version carries the whole
-              instruction, which docs/GUARDRAILS.md requires and which a
-              frozen cross-fade (one half, forever) would fail;
-            · nothing is swapped in JavaScript, so there is no timer, no state
-              and nothing that can announce itself. The `aria-valuetext` above
-              already says both halves once, to the audience that needs them
-              said rather than shown. */}
-        <span className="meter-step">
-          <span className="meter-step-a">{step.current}</span>
-          <span className="meter-step-b">{step.next}</span>
-        </span>
+        {/* R-05 — ONE LINE, AND IT IS THE SAME GREEN AS "Current" ON THE CARD
+            BELOW. Two places on Home now say a person's file is current, and
+            saying it in one colour is what makes them legibly the same claim
+            rather than two unrelated status lines that happen to share a word. */}
+        <span className="meter-step">{step.current}</span>
       </div>
       <div className="meter-track" aria-hidden="true">
         {segments.map((segment, index) => (

@@ -309,7 +309,7 @@ test.describe('Home surface (R1-12)', () => {
     // --- the meter: present at 0%, the honest map of the journey ---
     const meter = page.locator('.meter');
     await expect(meter).toHaveAttribute('aria-valuenow', '0');
-    await expect(meter).toHaveAttribute('aria-valuetext', `0% ${S.meterLabel}, ${S.stepBoth(S.steps[0], S.steps[1])}`);
+    await expect(meter).toHaveAttribute('aria-valuetext', `0% ${S.meterLabel}, ${S.stepCurrent(S.steps[0])}`);
 
     // --- the approved copy, verbatim ---
     await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toBeVisible();

@@ -3241,7 +3241,7 @@ export function BrainGlobe({
         retires it, what a reduced-motion visitor gets — is
         components/BrainTurnCue.tsx's, which is the file to read.
       */}
-      <BrainTurnCue showing={turnCue} turned={turned} paused={inside} />
+      <BrainTurnCue showing={turnCue} turned={turned} />
 
       {/*
         V2.1 VB-74 — the way out used to live HERE, on the picture. Two

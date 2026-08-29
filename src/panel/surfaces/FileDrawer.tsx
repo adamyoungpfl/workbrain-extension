@@ -1122,7 +1122,19 @@ export function FileDrawer({
           turnCue={mode === 'brain'}
         />
       </div>
-      <div className="filedrawer-body" id={BODY_ID} ref={bodyRef}>
+      {/* R-03 (Adam, 2026-08-28): "add just a little padding below the status
+          and the logo label. Just a bit more padding will make it look
+          centered. It is slightly low at the moment, but just by a bit."
+
+          Only at the resting height, which is why it is a flag rather than a
+          rule on the body: with a list in it the body is a scroller and any
+          padding at the foot is dead space you have to scroll past. */}
+      <div
+        className="filedrawer-body"
+        data-statusonly={statusOnly ? 'on' : 'off'}
+        id={BODY_ID}
+        ref={bodyRef}
+      >
         {/* V1.8 VB-48 — THE LIST HAS THE SAME TWO TIERS THE BRAIN HAS.
 
             Out at the work brain, the List is the files; inside one, it is that

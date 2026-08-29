@@ -285,11 +285,7 @@ function Harness() {
           value={46}
           name="How much of your work brain is set up"
           label="set up"
-          step={{
-            current: 'Current: Repeat',
-            next: 'Next Up: Act',
-            spoken: 'Current: Repeat. Next Up: Act.',
-          }}
+          step={{ current: 'Current: Repeat', spoken: 'Current: Repeat. Next Up: Act.' }}
           segments={[
             { label: 'Name', percent: 100 },
             { label: 'Repeat', percent: 35 },
