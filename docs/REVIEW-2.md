@@ -372,3 +372,107 @@ mostly *removes* code written this morning.
 R-07 and R-08 next if the gate is quick. R-09 through R-13 are specced above
 and want their own sessions — R-09 because of what it sits on, R-10/11/12
 because they are one story that is not worth starting at the end of a day.
+
+
+---
+
+# R-16 · Concept 2, the Conversation — chosen, and what it costs
+
+Adam, 2026-08-29: *"Let's go with 2 and call out any compromises we need to
+consider to keep the flow solid. If we need to consider removing the rephrase
+to simplify the flow and design, that is acceptable. Rephrase is nice to have,
+not have to have."*
+
+## The measurement that decides the rephrase question
+
+A bubble is not free horizontally, and at 400px horizontal room is the whole
+game. From `store/canvas/census.json`, the question's measured width today:
+
+| | measure |
+|---|---|
+| a question WITH a rephrase control | **292px** |
+| a question WITHOUT one (7 of 34) | **348px** |
+
+So the rephrase control already costs the question **56px of measure** — it is
+a 50px box plus its gap, and it takes that room from the sentence on 27 of the
+34 screens.
+
+The bubble costs **63px**: the 26px mark, a 9px gap, and 14px of padding on
+each side of the bubble itself.
+
+Which gives three futures, and only one of them is good:
+
+| | question measure | vs today |
+|---|---|---|
+| today, with rephrase | 292px | — |
+| **Concept 2 keeping the rephrase** | **229px** | **22% narrower** |
+| **Concept 2 dropping it** | **285px** | 7px narrower — a wash |
+
+**Keeping both makes the problem this whole pass exists to fix meaningfully
+worse.** At 229px the thirty-word question goes from six lines to roughly
+eight, and the two gates already leave the answer exactly 44px at the drawer's
+ceiling. That is the compromise, stated plainly: the bubble and the rephrase
+control cannot both have the room.
+
+**Dropping it pays for the bubble almost exactly.** Adam's instinct is
+arithmetically right — the rephrase is what the conversation costs.
+
+## The compromises, in the order they bite
+
+**1 · The mark means the product has a face, and it did not before.**
+A 26px mark beside every question is a speaker. Today nothing in this product
+claims to be talking — the questions are the product's voice but nobody is
+pictured saying them. This is a product decision wearing a design change, and
+it is the one I would want ruled on rather than assumed. The alternative is a
+bubble with no mark, which still reads as a turn and claims nothing.
+
+**2 · A bordered box behaves worse than a bare heading when the room runs out.**
+V2.8's two-zone rule shrinks the question zone at weight 3 against the answer's
+1. A heading that loses room simply scrolls. A bordered, filled bubble that
+loses room clips its own frame, which reads as broken rather than as tight. So
+the bubble gets a background and **no border**, and it scrolls inside itself
+with the ground intact — the same call `ReadOnlyBlock` already makes.
+
+**3 · The reply must not indent.**
+Drawn as a real conversation the answer sits indented under the bubble, which
+costs the answer area another ~35px of width on screens where the census says
+it is already at the 44px floor. **The answer takes full width.** The turn
+still reads from the mark and the bubble; the reply does not have to be
+inset to be understood as a reply.
+
+**4 · The narrator is opt-in, so the metaphor has to work silently.**
+VB-18: nothing is ever narrated that the person did not choose to hear, and the
+toggle ships off. A conversation you cannot hear is the normal case, not the
+degraded one — so nothing about the bubble may depend on audio, and no copy
+may imply it.
+
+**5 · `TypedHeading` becomes better, not worse.**
+The question types itself in on arrival (V1.2 VB-10). Inside a bubble that
+stops being an effect and becomes the obvious thing — a message being written.
+This is the one place Concept 2 gets something for free.
+
+**6 · The question stays an `<h2>`.**
+The bubble and the mark are decoration and are `aria-hidden`. The accessible
+name, the reading order and the narrator's script are unchanged.
+
+## What removing the rephrase actually removes
+
+- `.flow-rephrase`, `REPHRASE_ICON`, `S.rephrase` and `S.rephraseShort`
+  (BS-01c's word, added yesterday).
+- Four e2e specs whose subject it is: `rephrase.spec.ts`,
+  `rephrase.a11y.spec.ts`, and the two that walk past it
+  (`follow-up-rotation`, `orb-choice`).
+- **The seven-of-thirty-four inconsistency the census found** — a control
+  present four times in five is harder to learn than one that is never there.
+
+**`step.rephrasings` STAYS in the data.** Thirty-six questions carry alternate
+wordings and they are good ones; they simply stop having a button. The obvious
+home for them is the narrator, which can offer a different wording on a repeat
+listen without spending a pixel — recorded here rather than built, because it
+is a feature and not a consequence.
+
+## The slice
+
+One commit, its own gate. It touches the question zone and nothing below it:
+the cluster, the dock's arithmetic and the drawer are all untouched, which is
+what keeps this out of R-09's blast radius.
