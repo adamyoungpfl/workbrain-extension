@@ -265,6 +265,36 @@ The template's real job is the one Adam named third and probably felt first:
 *"big changes in text size and text length will create fall off"* — it is the
 LENGTH, and it is four or five questions doing most of the damage.
 
+### R-14 — FOUR CONCEPTS, drawn (2026-08-29)
+
+**https://claude.ai/code/artifact/696970ca-65d2-41a4-9b8d-5b4e14d24c8b**
+
+Four directions at real 400px size against the real questions, with a switcher
+so each one can be watched meeting the thirty-word case. None of them is about
+letter sizes, because the census says that problem does not exist — each is an
+answer to LENGTH, and each pays for it somewhere different.
+
+| # | Direction | Its bet | What it costs |
+|---|---|---|---|
+| 1 | **The Fixed Stage** | One box of fixed height; the type steps down to fit | Two questions still will not fit at 18px; the air above a five-word question has to be designed |
+| 2 | **The Conversation** | The question is a spoken turn, not a heading — variance stops being a defect when the form is meant to vary | A bubble at 400px eats width to its own padding; the narrator becomes load-bearing |
+| 3 | **Type as the Art** | Size is a function of word count — constant area, varying voice | It breaks the one thing that IS consistent today; three sizes in a row may read as instability |
+| 4 | **The Headline** | Every screen is one bold line of eight words, the full wording quieter beneath | Thirty-four headlines have to be written and be right |
+
+Each states what it KEEPS, because the brief was explicit that this must not
+redo what already works: all four leave the two-zone layout, the cluster, the
+drawer and the narrator alone. Concepts 1 and 2 are re-skins of the question
+zone; 3 is a type rule; 4 is a content change wearing a type change.
+
+**Every one of them puts the rephrase control on all thirty-four screens**,
+which is the census's real finding about it. Concept 4 is the only one that
+makes the seven absences visible as a design problem rather than hiding them
+as an absence.
+
+`scripts/canvas-concepts.py` builds the page from `store/script/questions.json`
+and `store/canvas/census.json`, so the concepts cannot drift from the flow they
+are drawn against.
+
 ### R-14 · A design pattern for the interview canvas
 
 > *"My focus is on the consistency of the letter sizes and the consistency of
