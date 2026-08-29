@@ -220,7 +220,14 @@ test.describe('Home surface (R1-12)', () => {
     await expect(page.getByText('Your file is current')).toHaveCount(0);
     await expect(page.getByText('One part of your file is out of date')).toHaveCount(0);
     await expect(page.locator('.home-recs')).toHaveClass(/is-quiet/);
-    await expect(page.getByText('Current', { exact: true })).toBeVisible(); // the file's own badge, now fresh
+    /* R-08 (D1): the badge names the section now — "Current: My World" — and
+       falls back to plain "Current" when the flow is not standing in one (a
+       finished file, or one between modules). Either shape is the same claim
+       and this asserts the claim rather than one of its two spellings. */
+    const badge = page.locator('.home-card[data-file="context"] .home-card-status');
+    await expect(badge).toHaveText(/^Current(: .+)?$/);
+    // And it is the LIVE one — R-08's breath is what marks the good news.
+    await expect(badge).toHaveAttribute('data-live', 'on');
 
     // --- storage: the durability answer really did change, nothing else did ---
     const stored = await sw.evaluate(() => chrome.storage.local.get('wb:answers'));

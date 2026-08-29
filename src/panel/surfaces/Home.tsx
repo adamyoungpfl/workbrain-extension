@@ -19,6 +19,7 @@ import { computeNextMove } from '../../core/freshness/nextMove';
 import { sectionHealthMap, summariseSectionHealth } from '../../core/freshness/sectionHealth';
 import { computeUtilization } from '../../core/home/utilization';
 import { stepCue } from '../../core/home/stepCue';
+import { currentSectionTitle } from '../../core/home/currentSection';
 /* BS-06: the file GENERATORS left Home with the lockup's meta line — the
    only thing that needed a byte count on this screen. `downloadContextFile`
    still writes the real file from the same generator, one layer down. */
@@ -309,6 +310,17 @@ const REDEEM_ICON = (
 interface CardStatus {
   tone: 'fresh' | 'due' | 'quiet' | 'ai';
   label: string;
+  /**
+   * R-08 — whether this status is a LIVE one, worth a slow pulse.
+   *
+   * Adam asked for it "blinking". Built as a breath (2.6s, opacity 1 → 0.55)
+   * rather than a blink: a hard on/off is what an error state looks like in
+   * every interface anybody has used, it fails WCAG 2.2.2's blink rule, and it
+   * would make a file being CURRENT — the good news on this screen — read as
+   * an alarm. It stops entirely under `prefers-reduced-motion`, where the
+   * words and the tone colour still say the same thing.
+   */
+  live?: boolean;
 }
 
 /**
@@ -326,10 +338,19 @@ function HomeCard(props: {
   barPercent: number;
   desc: string;
   onOpen(): void;
+  /** R-08 — the file that is genuinely somebody's already. Raised AND lit;
+   * every other card is raised and quiet. */
+  active?: boolean;
 }) {
   const name = fileName(props.file);
   return (
-    <button type="button" className="home-card" data-file={props.file} onClick={props.onOpen}>
+    <button
+      type="button"
+      className="home-card"
+      data-file={props.file}
+      data-active={props.active ? 'on' : 'off'}
+      onClick={props.onOpen}
+    >
       <span className="home-card-top">
         <span className="home-card-chip" aria-hidden="true">
           {props.icon}
@@ -339,7 +360,11 @@ function HomeCard(props: {
           <span className="home-card-name">{name.replace(/\.md$/, '')}</span>
         </span>
       </span>
-      <span className="home-card-status" data-tone={props.status.tone}>
+      <span
+        className="home-card-status"
+        data-tone={props.status.tone}
+        data-live={props.status.live ? 'on' : 'off'}
+      >
         <span className="home-card-dot" aria-hidden="true" />
         {props.status.label}
       </span>
@@ -810,13 +835,29 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
             nextMove.kind === 'due'
               ? { tone: 'due', label: S.badgeDue(nextMove.items.length) }
               : nextMove.kind === 'current'
-                ? { tone: 'fresh', label: S.badgeCurrent }
+                ? {
+                    tone: 'fresh',
+                    // R-08 (D1) — "Current: [the section you're in]". The
+                    // section is the one `findPosition` would OPEN on, not one
+                    // this surface worked out for itself: a card that says
+                    // "My World" and then opens on Roles is a small lie told at
+                    // the moment somebody decided to trust the product.
+                    label: (() => {
+                      const section = currentSectionTitle(contextModules, contextOutline, answers);
+                      return section ? S.badgeCurrentIn(section) : S.badgeCurrent;
+                    })(),
+                    live: true,
+                  }
                 : hasStarted
                   ? { tone: 'quiet', label: S.sectionsOf(contextHealth.done, contextOutline.length) }
                   : { tone: 'quiet', label: S.notBuiltYet }
           }
           barPercent={utilization.segments.name}
           desc={S.cardContextDesc}
+          // R-08 — "once the context file is active". Active is `hasStarted`:
+          // one real answer in it. Not "finished", because a file somebody is
+          // half way through is exactly the one worth pulling the eye to.
+          active={hasStarted}
           onOpen={() => onOpenFile('context')}
         />
         {slots.find((slot) => slot.id === 'skills')?.state === 'open' ? (

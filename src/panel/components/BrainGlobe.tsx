@@ -13,6 +13,7 @@ import { HIGHLIGHT_RADIUS, LIMB_INNER, SHADE_RADIUS, orbLight } from '../../core
 import type { OrbLight } from '../../core/globe/lighting';
 import type { SectionLife } from '../../core/freshness/sectionLife';
 import { sectionIsLit, sectionLife } from '../../core/freshness/sectionLife';
+import { orbPulses, orbState } from '../../core/globe/orbState';
 import type { SectionHealth } from '../../core/freshness/sectionHealth';
 import type { FileSlotId } from '../../core/files/slots';
 import { firstLocked } from '../../core/files/toggle';
@@ -2638,6 +2639,16 @@ export function BrainGlobe({
                     <g
                       className="brainglobe-orb"
                       data-lit={muted ? 'muted' : 'lit'}
+                      /* R-07 — started, complete, or neither. `orbState`
+                         composes the two folds that already decide those, so
+                         an orb can never disagree with the edges around it or
+                         the list below it. The CSS spends it on a halo's size
+                         and brightness as well as its hue, and only `started`
+                         breathes. */
+                      data-orb={entry ? orbState(life, health?.[entry.section.id]) : 'structural'}
+                      data-pulse={
+                        entry && orbPulses(orbState(life, health?.[entry.section.id])) ? 'on' : 'off'
+                      }
                       /* V1.9 VB-54. Published so a test can read what the light
                          did to THIS orb and compare it with its neighbours —
                          one scene light is a claim about the relationship
@@ -2740,6 +2751,13 @@ export function BrainGlobe({
                   className="brainglobe-child-node"
                   data-child-id={child.id}
                   data-picked={picked ? 'true' : 'false'}
+                  /* R-07 — a sub-node carries the same three states its parent
+                     does, from the same fold. A child IS a section
+                     (`FileOutlineNode`), so `lifeOf` and the health map answer
+                     for it exactly as they do for the ten around the solid —
+                     no second rule one level down. */
+                  data-orb={orbState(lifeOf(child), health?.[child.id])}
+                  data-pulse={orbPulses(orbState(lifeOf(child), health?.[child.id])) ? 'on' : 'off'}
                   data-shade={light.shade.toFixed(3)}
                   opacity={(progress * fade).toFixed(3)}
                 >

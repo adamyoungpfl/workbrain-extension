@@ -191,6 +191,79 @@
   stroke-opacity: 0.85;
 }
 
+/* ── R-07 (Adam, 2026-08-28) — STARTED, COMPLETE, OR NEITHER ──────────────
+   "I want to establish a colour treatment that distinguishes active and
+   inactive orbs based on if they have been started or completed. On the
+   sub-nodes, I want to use colour and some kind of visual change or 'energy'
+   applied to those sub-nodes that are started or complete."
+
+   The state is `core/globe/orbState.ts`'s, on `data-orb`, and it is spent on
+   THREE things at once — a glow's spread, its opacity, and its hue. Three,
+   because `docs/GUARDRAILS.md` forbids colour alone and because a glow that
+   only changed hue would vanish in a screenshot, in greyscale, and for most
+   people with a colour deficiency. Spread and opacity survive all three.
+
+   The two colours are `--globe-glow-live` and `--globe-glow-done`, real
+   tokens in the globe's own group. Blue for started and green for complete, in
+   that order for a reason: green is this palette's DONE everywhere else
+   (`--globe-ring`, `--globe-unified`), and a started section glowing green
+   would be claiming to be finished.
+
+   `drop-shadow` rather than a second circle: the orbs are already twelve
+   gradient-filled spheres under a scene transform, and adding a ring per node
+   would mean twelve more elements to keep in the light's model (VB-54). A
+   filter follows the shape it is on for free.
+
+   THE GLOW IS THE STATE. The pulse is only ever an extra on top of it, which
+   is what makes the reduced-motion version below lossless rather than a
+   degradation: stop every pulse and all three states still read. */
+.brainglobe-orb[data-orb='complete'],
+.brainglobe-child-node[data-orb='complete'] {
+  filter: drop-shadow(0 0 5px var(--globe-glow-done));
+}
+.brainglobe-orb[data-orb='started'],
+.brainglobe-child-node[data-orb='started'] {
+  filter: drop-shadow(0 0 3px var(--globe-glow-live));
+}
+/* `untouched` and `structural` get nothing, and nothing is the right amount:
+   an orb with no glow is already drawn muted (V1.5 VB-24's turned-down orb),
+   so the absence is legible against its neighbours rather than being an
+   absence of information. */
+
+/* THE ENERGY. Four seconds, breathing rather than blinking, and ONLY on
+   `started` — a section with something live in it. A complete section has
+   nothing live and an untouched one has nothing at all; if every orb moved,
+   the stage would be a field of motion carrying no information, which is the
+   failure mode of decorative movement.
+
+   It animates the FILTER, not the geometry: the pulse cannot move an orb off
+   its vertex, cannot change its radius, and so cannot disturb the pin
+   positions, the hit targets or the light model measured in VB-54. */
+@keyframes brainglobe-breathe {
+  0%,
+  100% {
+    filter: drop-shadow(0 0 3px var(--globe-glow-live));
+  }
+  50% {
+    filter: drop-shadow(0 0 7px var(--globe-glow-live));
+  }
+}
+.brainglobe-orb[data-pulse='on'],
+.brainglobe-child-node[data-pulse='on'] {
+  animation: brainglobe-breathe 4s var(--ease, ease-in-out) infinite;
+}
+
+/* AND THE STILL VERSION LOSES NOTHING (docs/GUARDRAILS.md: the reduced-motion
+   equivalent still carries the instruction). The pulse stops; the glow it was
+   pulsing does not, because the glow is where the state lives. Three states,
+   three treatments, nothing moving. */
+@media (prefers-reduced-motion: reduce) {
+  .brainglobe-orb[data-pulse='on'],
+  .brainglobe-child-node[data-pulse='on'] {
+    animation: none;
+  }
+}
+
 /* ── The unified glow (V1.5 VB-25) ───────────────────────────────────────── */
 
 /* WHEN EVERY SECTION IS ANSWERED, COMPLETE AND FRESH, THE MODEL BECOMES ONE

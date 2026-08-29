@@ -1272,6 +1272,10 @@ export const S = {
   storedNone: 'Nothing stored yet.',
   storedOutro: 'That is the whole list. None of it ever leaves your browser.',
   badgeCurrent: 'Current',
+  /** R-08 (Adam, D1) — the same claim, saying WHERE. "Current: My World" on a
+   * file somebody is part way through; plain `badgeCurrent` when the flow is
+   * not standing in any section. [DRAFT] */
+  badgeCurrentIn: (section: string) => `Current: ${section}`,
   badgeNext: 'Next',
   badgeLater: 'Later',
   badgeDue: (n: number) => `${n} due`,
