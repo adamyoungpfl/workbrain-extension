@@ -476,3 +476,50 @@ is a feature and not a consequence.
 One commit, its own gate. It touches the question zone and nothing below it:
 the cluster, the dock's arithmetic and the drawer are all untouched, which is
 what keeps this out of R-09's blast radius.
+
+
+## R-16 — BUILT, MEASURED, AND STOOD DOWN AT ONE NUMBER
+
+Concept 2 was built end to end on 2026-08-29: the turn, the bubble, the mark,
+and the rephrase control removed. It works, it looks right, and it fails one
+shipped law by 22 pixels. The work is on `stash@{0}`, not in `master`, because
+the number is Adam's to spend and not mine.
+
+**What survived contact.** The rephrase arithmetic held exactly as specced —
+removing it paid for the bubble's horizontal cost, and `question-fill`'s ten
+cluster tests pass with the question at 285px of measure. The bubble's own
+vertical padding had to come down from 11px to 7px: at 11, `terms_depend_on`
+(a five-line question) wanted 240px in the 149px the two-zone rule gives it,
+and the deep-dive beneath overflowed into the answer area — VB-17's seam
+inspector read the collision as a 107px dead band.
+
+**What the suite decided.** Drawn side by side, mark then bubble, the question
+is indented 48px and its left edge stops lining up with anything beneath it.
+Two shipped laws depend on that alignment and both went red: VB-57's *"the
+follow-up is left-justified with the question above it"* and VB-60's *"the
+first orb's painted edge lands on the question's"*. They are not incidental —
+they are why the screen reads as one column.
+
+Fixed in two moves, both of which improved the design: the mark **stacks above**
+the bubble rather than sitting beside it, and the bubble is pulled left by
+exactly its own padding so the TEXT sits on the column while the GROUND bleeds
+into the panel's 16px gutter. Every left edge agrees again.
+
+**Where it stops.** Stacking the mark costs about 31px of vertical on every
+screen. VB-17 requires the whole cluster to sit in the upper third of the
+question area; it now lands at 190px where the law allows 167. That is the
+compromise I named as #2 in the spec — *"a bordered box behaves worse than a
+bare heading when the room runs out"* — arriving as a hard number rather than
+as a worry.
+
+**Three ways forward, and the choice is a product one:**
+
+| | What it does | What it costs |
+|---|---|---|
+| **Spend the 31px** | Raise VB-17's upper-third threshold, as §6's height ceiling was raised for copy Adam chose | Weakens a law that has caught real regressions three times this sprint |
+| **Inline the mark** | Float it into the question's first line rather than giving it a row | Costs ~26px of the first line's measure only, not every line — cheapest, and the turn still reads |
+| **Drop the mark** | Bubble alone, which still reads as a turn | Adam ruled "keep the mark", so this needs his word to reverse |
+
+My recommendation is the middle one: the mark belongs to the first line of what
+is being said, and a speaker's mark that only costs the first line is the same
+trade every chat interface already makes.
