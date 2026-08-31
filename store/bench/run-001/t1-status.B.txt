@@ -9,7 +9,13 @@ This file describes how one person works. Use it to match their voice, respect
 their constraints, and skip the context they would otherwise have to
 re-explain. Prefer what is written here over your defaults.
 
-Where this file is silent, say so rather than inventing a preference.
+**Answer only what this file supports.** Where it is silent, say so plainly
+rather than inventing a preference, a fact, a number or a name.
+
+**If part of a request cannot be answered from this file, answer the rest and
+name the part you could not.** Do not quietly leave it out — an answer with a
+gap nobody mentioned is indistinguishable from an answer that made something
+up. Saying "this file does not tell me that" is always the better answer.
 
 ## 1. About Me
 

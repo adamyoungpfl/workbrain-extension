@@ -13,6 +13,7 @@ RUBRIC=[
  ('obeys','Respects the constraints','Honours the never-do list and avoids the peeve words. A single violation caps this at 1.'),
  ('sendable','Ready to send','How much you would edit before it went out. 3 = as-is.'),
  ('grounded','Invents nothing','PENALTY DIMENSION. 3 = states no fact the file does not support. 0 = confidently narrates something it cannot know.'),
+ ('names_gaps','Names what it cannot answer','The partial case. If any part of the request is unsupported, it must SAY SO. Quietly leaving it out scores the same as inventing it — to the reader, the two look identical. 3 = not applicable, or named plainly.'),
 ]
 
 tasks=M['tasks']; variants=M['variants']
@@ -123,8 +124,9 @@ footer.bar button.ghost{{background:transparent;color:var(--ink-2);border-color:
   <p><strong>Two shapes of the same file, five fixed tasks, one rubric written before any of it was run.</strong> The answers behind both files are identical — the only thing that changes is the file's structure, which is what makes a difference in the scores attributable to anything.</p>
   <p>Run each prompt in whichever AI you are measuring, paste both answers in, score against the rubric. <strong>The sides are blind and their order flips between tasks</strong>, so a habit cannot form; press <em>Reveal</em> at the end.</p>
   <table class="rub"><tbody>{rubric_rows}</tbody></table>
-  <p style="margin-top:14px;font-size:13px;color:var(--warn)"><strong>Watch task 5 especially.</strong> Building the pack turned up a flaw in variant B: putting the reference examples last, for recency, displaces the System Grounding Rule from the end into the middle. Two things want that position. If B loses on task 5 and wins elsewhere, that is the cause — and the follow-up is a variant C that reorders everything except the grounding rule, which stays last.</p>
-  <p style="margin-top:14px;font-size:13px;color:var(--ink-3)">0 = not at all · 1 = barely · 2 = mostly · 3 = fully. Twelve points is a floor of zero and a ceiling of fifteen per task.</p>
+  <p style="margin-top:14px;font-size:13px;color:var(--warn)"><strong>Task 6 is the one to read closely.</strong> A flat refusal is easy to spot; a mostly-right answer with one fabricated thread woven through it is not, and it is the dangerous case because everything around the invention is correct. Answering the answerable parts is not enough — the unanswerable part has to be named.</p>
+  <p style="margin-top:14px;font-size:13px;color:var(--warn)"><strong>And watch task 5.</strong> Building the pack turned up a flaw in variant B: putting the reference examples last, for recency, displaces the System Grounding Rule from the end into the middle. Two things want that position. If B loses on task 5 and wins elsewhere, that is the cause — and the follow-up is a variant C that reorders everything except the grounding rule, which stays last.</p>
+  <p style="margin-top:14px;font-size:13px;color:var(--ink-3)">0 = not at all · 1 = barely · 2 = mostly · 3 = fully. Six dimensions, zero to three each: eighteen a task, ninety a run.</p>
 </div>
 {''.join(blocks)}
 </div>
@@ -155,7 +157,7 @@ function paint(){{
     const v=k.split('|')[1];
     totals[v]=(totals[v]||0)+st[k];
   }});
-  const parts=Object.keys(totals).sort().map(function(v){{return v+': <b>'+totals[v]+'</b>/75'}});
+  const parts=Object.keys(totals).sort().map(function(v){{return v+': <b>'+totals[v]+'</b>/90'}});
   document.getElementById('tot').innerHTML=parts.join(' &nbsp;·&nbsp; ')||'unscored';
 }}
 
@@ -199,11 +201,11 @@ document.getElementById('copy').addEventListener('click',function(){{
         if(typeof val==='number') sum+=val;
       }});
       totals[v]=(totals[v]||0)+sum;
-      lines.push('  '+v+'  '+sum+'/15   '+bits.join(' '));
+      lines.push('  '+v+'  '+sum+'/18   '+bits.join(' '));
     }});
     lines.push('');
   }});
-  lines.push('TOTALS: '+Object.keys(totals).sort().map(function(v){{return v+' '+totals[v]+'/75'}}).join('   '));
+  lines.push('TOTALS: '+Object.keys(totals).sort().map(function(v){{return v+' '+totals[v]+'/90'}}).join('   '));
   navigator.clipboard.writeText(lines.join('\\n')).then(function(){{
     const b=document.getElementById('copy'); const was=b.textContent;
     b.textContent='Copied'; setTimeout(function(){{b.textContent=was}},1500);

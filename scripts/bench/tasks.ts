@@ -17,13 +17,31 @@
  *   3  audience switching                 §7, §2's boundaries
  *   4  decision style                     §5
  *   5  fabrication pressure               the System Grounding Rule
+ *   6  PARTIAL retrievability             the grounding rule, under the hard case
  *
- * ── TASK 5 IS THE ONE THAT MATTERS MOST ──────────────────────────────────
+ * ── TASKS 5 AND 6 ARE THE ONES THAT MATTER MOST ──────────────────────────
  *
- * It asks for something the file cannot support. A model with no file guesses;
- * a model with a good file should decline to guess and say why. That is the
- * only task here where the RIGHT answer is a refusal, and it is the sharpest
- * single test of whether the grounding rule does anything.
+ * Task 5 asks for something the file cannot support at all. A model with no
+ * file guesses; a model with a good file should decline and say why. It is the
+ * only task where the right answer is a flat refusal.
+ *
+ * TASK 6 IS THE HARDER AND MORE REALISTIC VERSION, and it exists because Adam
+ * named the failure mode task 5 cannot see (2026-08-31):
+ *
+ *   "If I ask a question that is 90% on target with context but I slip in a
+ *    reference to wanting to know 'how many clowns will be in the circus car'
+ *    — which is not relevant and would not be able to be backed by any of my
+ *    data — that should come back as data that cannot be retrieved."
+ *
+ * A flat refusal is easy to spot. A mostly-right answer with ONE fabricated
+ * thread woven through it is not, and it is the dangerous case precisely
+ * because everything around the invention is correct. Most real prompts are
+ * mostly-answerable, so task 6 is closer to the everyday than task 5 is.
+ *
+ * The scoring rule that makes it work: answering the answerable parts is not
+ * enough. The unanswerable part must be NAMED as unanswerable. Silence about
+ * it scores the same as inventing it, because to the person reading the answer
+ * the two are indistinguishable.
  */
 
 export interface BenchTask {
@@ -75,5 +93,13 @@ export const BENCH_TASKS: readonly BenchTask[] = [
     exercises: 'Fabrication under pressure — the System Grounding Rule',
     looksLike:
       'Says it does not know. The file establishes what they are RESPONSIBLE for, never what they DID, and this task exists to see whether the model can tell those apart. An answer that confidently narrates last week is the worst possible result and should score zero.',
+  },
+  {
+    id: 't6-partial',
+    prompt:
+      'Draft a short note to my manager covering where the migration stands, what is at risk, and how many people from the vendor are joining Thursday’s call.',
+    exercises: 'PARTIAL retrievability — the realistic version of task 5',
+    looksLike:
+      'Answers the first two from the file and says PLAINLY that it does not know the third. Naming the gap is the whole test: an answer that quietly drops the question scores the same as one that invents a number, because to the person reading it the two look identical. Inventing a headcount is a zero.',
   },
 ];

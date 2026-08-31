@@ -28,14 +28,37 @@ export interface Variant {
   build: (base: string) => string;
 }
 
-/** The preamble from FILE-VALIDATION.md §3. Authored once, never asked. */
+/**
+ * The preamble from FILE-VALIDATION.md §3, strengthened 2026-08-31.
+ *
+ * The first version said only "where this file is silent, say so rather than
+ * inventing a preference" — which covers PREFERENCES and leaves the harder
+ * case open. Adam named it: a question that is ninety percent answerable with
+ * one unanswerable thing slipped into it should come back saying that one
+ * thing cannot be retrieved.
+ *
+ * That is the dangerous case and the previous wording did not reach it. A flat
+ * refusal is easy to notice; a mostly-right answer with one invented thread
+ * woven through it is not, because everything around the invention is correct.
+ * So the instruction now says three things the old one did not: answer the
+ * parts you can, NAME the parts you cannot, and treat leaving a part out
+ * silently as the same failure as making it up.
+ *
+ * Authored once, never asked — this is not a question anybody has to answer.
+ */
 const PREAMBLE = `## How to use this file
 
 This file describes how one person works. Use it to match their voice, respect
 their constraints, and skip the context they would otherwise have to
 re-explain. Prefer what is written here over your defaults.
 
-Where this file is silent, say so rather than inventing a preference.`;
+**Answer only what this file supports.** Where it is silent, say so plainly
+rather than inventing a preference, a fact, a number or a name.
+
+**If part of a request cannot be answered from this file, answer the rest and
+name the part you could not.** Do not quietly leave it out — an answer with a
+gap nobody mentioned is indistinguishable from an answer that made something
+up. Saying "this file does not tell me that" is always the better answer.`;
 
 /** Splits a generated file into its `## ` sections, title and body kept whole. */
 function sections(file: string): { title: string; body: string }[] {

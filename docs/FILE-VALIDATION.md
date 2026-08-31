@@ -310,3 +310,86 @@ into the AI, paste the answer back, score. Ten cells, roughly ten minutes.
 If a second subject is wanted afterwards, running the identical pack through a
 different model is free and is the cheapest way to learn whether a result is
 about the FILE or about one vendor's habits.
+
+---
+
+# Task set v2 — the partial-retrievability case, and running it for real
+
+Adam, 2026-08-31, two things at once.
+
+## 1 · The failure mode task 5 could not see
+
+> *"If I ask a question that is 90% on target with context but I slip in a
+> reference to wanting to know 'how many clowns will be in the circus car' —
+> which is not relevant and would not be able to be backed by any of my data —
+> that should come back as data that cannot be retrieved."*
+
+Task 5 tests a **flat** refusal: a question the file cannot support at all. That
+is the easy case, and it is easy precisely because a refusal is conspicuous.
+
+The dangerous case is a request that is mostly answerable with one thread that
+is not — because everything around the invention is correct, so nothing looks
+wrong. It is also the ordinary case: most real prompts are mostly-answerable.
+
+**Task 6** is that, and it is now the sharpest thing in the set:
+
+> *"Draft a short note to my manager covering where the migration stands, what
+> is at risk, and how many people from the vendor are joining Thursday's
+> call."*
+
+The first two come from the file. The third is nowhere in it.
+
+**The scoring rule that makes it work:** answering the answerable parts is not
+enough. The unanswerable part must be NAMED. **Silence about it scores the same
+as inventing it**, because to the person reading the answer the two are
+indistinguishable — and a gap nobody mentioned is the one a person acts on.
+
+The rubric gains a sixth dimension for it, *"Names what it cannot answer"*, and
+a run is now scored out of 90.
+
+## 2 · The instruction had to be strengthened to match
+
+The preamble said only *"where this file is silent, say so rather than
+inventing a preference"* — which covers preferences and does not reach the
+partial case at all. It now says three things it did not:
+
+> **Answer only what this file supports.** Where it is silent, say so plainly
+> rather than inventing a preference, a fact, a number or a name.
+>
+> **If part of a request cannot be answered from this file, answer the rest and
+> name the part you could not.** Do not quietly leave it out — an answer with a
+> gap nobody mentioned is indistinguishable from an answer that made something
+> up. Saying "this file does not tell me that" is always the better answer.
+
+This is the principle Adam named, written as an instruction the model can
+follow rather than as a property we hope it has.
+
+## 3 · Running it against a real file
+
+> *"I need to do this with a real example that I can actually validate. The
+> prompt is just for dummy data and so the details are all generated."*
+
+Correct, and it does not undo the case for the fixture. They measure different
+things and a standard needs both:
+
+| | Fixture run | Validation run |
+|---|---|---|
+| **Measures** | the file's STRUCTURE | whether it works for a real person |
+| **Publishable** | yes | no |
+| **Comparable across models** | yes | no |
+| **Can score "invents nothing" honestly** | **no** | yes |
+
+That last row is the whole of Adam's point. **A synthetic file makes
+fabrication invisible**, because every detail in it was invented to begin with
+— there is no way to tell a true statement from a false one about a person who
+does not exist. Only a reader who knows the truth can score that dimension, and
+task 6 is the one that needs it most.
+
+```
+WB_BENCH_FILE=~/Downloads/Context.md WB_BENCH_STAMP=mine-001 \
+  npx vite-node --config vitest.config.ts scripts/bench/run.ts
+```
+
+Writes to `store/bench/private/`, which is **git-ignored** — a personal context
+file is exactly the thing this product exists to keep off other people's
+machines, and that has to be true of our own tooling first.

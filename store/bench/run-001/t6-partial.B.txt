@@ -163,4 +163,4 @@ Finished the quarterly count this morning — three locations are fully reconcil
 
 ---
 
-What did I get done on the migration last week?
+Draft a short note to my manager covering where the migration stands, what is at risk, and how many people from the vendor are joining Thursday’s call.

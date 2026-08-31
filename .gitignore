@@ -7,3 +7,4 @@ test-results/
 .handoff-source.zip
 .claude/
 .DS_Store
+store/bench/private/

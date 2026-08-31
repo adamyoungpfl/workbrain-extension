@@ -32,7 +32,7 @@
  * tell whether they are looking at a result or at two different experiments.
  */
 import { createHash } from 'node:crypto';
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { contextModules } from '../../src/core/flow/flow';
 import { generateContextFile } from '../../src/core/files/generate';
@@ -44,7 +44,12 @@ import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schem
 
 const ROOT = new URL('../..', import.meta.url).pathname;
 const STAMP = process.env.WB_BENCH_STAMP ?? 'run-001';
-const OUT = join(ROOT, 'store/bench', STAMP);
+const OUT = join(
+  ROOT,
+  // A run against a real file goes somewhere git-ignored. See below.
+  process.env.WB_BENCH_FILE ? 'store/bench/private' : 'store/bench',
+  STAMP,
+);
 mkdirSync(OUT, { recursive: true });
 
 /**
@@ -92,9 +97,44 @@ function fixture(): Answers {
   return { values, repeatables, answeredAt, reflectedAt: {} };
 }
 
+/**
+ * ── THE TWO KINDS OF RUN, AND WHY BOTH ARE NEEDED ────────────────────────
+ *
+ * Adam, 2026-08-31: "I need to do this with a real example that I can actually
+ * validate. The prompt is just for dummy data and so the details are all
+ * generated."
+ *
+ * He is right, and it does not undo the case for the fixture — they measure
+ * different things and a standard needs both:
+ *
+ *   · THE STANDARD RUN (the fixture, the default). Publishable, re-runnable by
+ *     anybody, comparable across models. It measures the file's STRUCTURE, and
+ *     it can do that because the person in it is nobody.
+ *
+ *   · THE VALIDATION RUN (`WB_BENCH_FILE`, a real downloaded Context.md).
+ *     Private, not publishable, not comparable to anybody else's. It is the
+ *     only way to score the dimensions that need a reader who knows the truth
+ *     — "specific to them" and "invents nothing" cannot be judged honestly
+ *     against a person who does not exist. A synthetic file makes fabrication
+ *     INVISIBLE, because every detail in it was invented to begin with.
+ *
+ * Point it at a file the extension downloaded:
+ *
+ *   WB_BENCH_FILE=~/Downloads/Context.md WB_BENCH_STAMP=mine-001 \
+ *     npx vite-node --config vitest.config.ts scripts/bench/run.ts
+ *
+ * A real run writes to `store/bench/private/` which is git-ignored, because a
+ * personal context file is exactly the thing this product exists to keep off
+ * other people's machines.
+ */
+const realFile = process.env.WB_BENCH_FILE;
 const answers = fixture();
-const base = generateContextFile(answers, '31 August 2026');
-const fixtureHash = createHash('sha256').update(JSON.stringify(answers)).digest('hex').slice(0, 12);
+const base = realFile
+  ? readFileSync(realFile, 'utf8')
+  : generateContextFile(answers, '31 August 2026');
+const fixtureHash = realFile
+  ? `real:${createHash('sha256').update(base).digest('hex').slice(0, 12)}`
+  : createHash('sha256').update(JSON.stringify(answers)).digest('hex').slice(0, 12);
 
 /** The prompt a person actually pastes: the file, then the task. */
 function promptFor(file: string, task: (typeof BENCH_TASKS)[number]): string {
@@ -103,7 +143,7 @@ function promptFor(file: string, task: (typeof BENCH_TASKS)[number]): string {
 
 const manifest = {
   stamp: STAMP,
-  taskSetVersion: 1,
+  taskSetVersion: 2,
   fixtureHash,
   generatedAt: '(stamp this when the run is filed — scripts cannot read the clock)',
   variants: VARIANTS.map((v) => ({ id: v.id, name: v.name, claim: v.claim })),
@@ -128,4 +168,7 @@ for (const v of VARIANTS) {
   const bytes = manifest.cells.find((c) => c.variant === v.id)!.bytes;
   console.log(`    ${v.id}  ${String(bytes).padStart(5)} bytes  ${v.name}`);
 }
-console.log(`  fixture ${fixtureHash} — wrote store/bench/${STAMP}/`);
+console.log(`  fixture ${fixtureHash} — wrote ${realFile ? 'store/bench/private/' : 'store/bench/'}${STAMP}/`);
+if (realFile) {
+  console.log('  REAL FILE — this run is private, git-ignored, and not comparable to a fixture run.');
+}
