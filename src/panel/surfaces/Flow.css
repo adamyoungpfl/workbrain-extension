@@ -2054,3 +2054,42 @@
 }
 
 /* BS-05f (§5) — the door itself. The row it lives in is up beside BS-02's. */
+
+/* ── The AI's own report on what it used (core/proof/selfReport.ts) ───────
+   Quieter than the answers above it, because it is the model talking about
+   itself rather than the work being judged. The claim line at the foot is not
+   decoration: a self-report read as a finding would have somebody rewriting a
+   file on the strength of a guess. */
+.selfreport {
+  margin: 14px 0 0;
+  padding: 12px 14px;
+  border-radius: var(--r-md);
+  background: var(--sunken);
+}
+.selfreport-title {
+  margin: 0 0 8px;
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--ink);
+}
+.selfreport-row {
+  margin-bottom: 8px;
+}
+.selfreport-label {
+  margin: 0 0 2px;
+  font-size: var(--type-fine);
+  color: var(--ink-3);
+}
+.selfreport-list {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.selfreport-claim {
+  margin: 10px 0 0;
+  font-size: var(--type-fine);
+  line-height: 1.45;
+  color: var(--ink-3);
+}

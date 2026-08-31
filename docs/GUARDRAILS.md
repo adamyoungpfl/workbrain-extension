@@ -34,6 +34,17 @@ row exists so that is a written decision rather than a quiet exception.
 | **The question ID is in; the question TEXT is out.** | `role_mandate` says where somebody was. The wording says nothing more, and moving interview content around starts a habit. |
 | **The sheet states what the block holds, on the sheet, above the buttons.** | "We take nothing you wrote" is a claim somebody should be able to check before they act, not after. The block itself is four lines and they can read it. |
 
+**And one thing the prompt now asks for (R-16, 2026-08-31).** The with-file
+proof prompt ends with a visible block asking the AI to report which parts of
+the file it drew on, what it needed and could not find, and what it guessed at.
+
+| Rule | Why |
+|---|---|
+| **The ask is IN the prompt the person reads before sending.** It is not hidden, not appended after they press copy, and not different from what they see. | The clause above is "not to their AI **without them seeing the exact text first**". A hidden instruction breaks precisely that, and it is the first thing anybody auditing this product would look for. Visible extra instructions are prompt; invisible ones would be the product doing to its users what it warns them about. |
+| **Nothing it returns is stored.** `core/proof/selfReport.ts` parses the pasted answer on render and the result dies with the screen. | A log of what somebody's AI said about their file, accumulated across runs, is a usage log — the flat ban above. The authorship test settles it cleanly: the person did not type it and we did not observe it. |
+| **It is shown as a CLAIM, in those words.** "What your AI said it used", and a line saying to treat it as a hint rather than a finding. | A model's self-report is not instrumentation. Read as fact, a wrong one would have somebody rewriting a good file. |
+| **The baseline run never carries it.** | The two conditions differ by the file and nothing else, and asking a model with no file which parts of the file it used would also tell it a file exists. |
+
 **Still forbidden, unchanged:** anything that measures without being asked,
 anything that reports on its own schedule, and any count of what the person did
 — including local-only. The test in the next section is what separates them: a

@@ -20,6 +20,7 @@ import {
   VerticalPick,
 } from '../components';
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
+import { parseSelfReport, stripSelfReport } from '../../core/proof/selfReport';
 import {
   CAPABILITY_ANSWER_KEY,
   CAPABILITY_SKILL_KEY,
@@ -2838,9 +2839,53 @@ function StepView({
               </div>
               <div className="proofjudge-col is-with">
                 <p className="proofjudge-col-label">{S.proofColWithFile}</p>
-                <p className="proofjudge-answer">{String(answers.values[PROOF_CONTEXT_ANSWER_KEY] ?? '')}</p>
+                {/* The block comes OFF the draft — it is instrumentation the
+                    person did not ask for and should not read past to see
+                    their own answer. */}
+                <p className="proofjudge-answer">
+                  {stripSelfReport(String(answers.values[PROOF_CONTEXT_ANSWER_KEY] ?? ''))}
+                </p>
               </div>
             </div>
+            {/* WHAT THE AI SAID IT USED — and, more usefully, what it said it
+                could not find. The with-file prompt asks for this in a block
+                the person reads before sending (core/flow/proofAdapter.ts);
+                this reads it back out of the answer they pasted.
+
+                NOTHING IS STORED. It is rendered from the pasted text on every
+                render and dropped with the screen. A log of what somebody's AI
+                said about their file, accumulated across runs, is a usage log
+                — docs/GUARDRAILS.md's flat ban, and the authorship test settles
+                it: the person did not type this and we did not observe it. */}
+            {(() => {
+              const report = parseSelfReport(String(answers.values[PROOF_CONTEXT_ANSWER_KEY] ?? ''));
+              if (!report) return null;
+              const rows = (
+                [
+                  [S.selfReportUsed, report.used],
+                  [S.selfReportMissing, report.missing],
+                  [S.selfReportUnsure, report.unsure],
+                ] as const
+              ).filter((row) => row[1].length > 0);
+              if (rows.length === 0) return null;
+              return (
+                <section className="selfreport">
+                  <h3 className="selfreport-title">{S.selfReportTitle}</h3>
+                  {rows.map(([label, list]) => (
+                    <div key={label} className="selfreport-row">
+                      <p className="selfreport-label">{label}</p>
+                      <ul className="selfreport-list">
+                        {list.map((item) => (
+                          <li key={item}>{item}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  ))}
+                  <p className="selfreport-claim">{S.selfReportClaim}</p>
+                </section>
+              );
+            })()}
+
             <fieldset className="proofjudge-checks">
               <legend>{S.proofWhichRight}</legend>
               {proofChecks(answers).map((check) => (

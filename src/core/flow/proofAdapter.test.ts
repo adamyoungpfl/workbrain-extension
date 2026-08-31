@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { FlowContext } from '../../schema/flow.types';
 import { PROOF_SERVICES, BASELINE_PROMPT, evaluationPrompt } from './proofSource';
+import { SELF_REPORT_ASK } from '../proof/selfReport';
 import {
   buildProofModule,
   serviceStepOptions,
@@ -288,7 +289,25 @@ describe('the file rides inside the with-file prompt', () => {
 
   it('composes in one order and one shape, so the AI meets the ask first', () => {
     const withFile = withContextPrompt('THE ASK', 'THE FILE', 'THE LEAD');
-    expect(withFile).toBe('THE ASK\n\n---\nTHE LEAD\n\nTHE FILE');
+    expect(withFile).toBe(`THE ASK\n\n---\nTHE LEAD\n\nTHE FILE\n\n---\n\n${SELF_REPORT_ASK}`);
     expect(withFile.indexOf('THE ASK')).toBeLessThan(withFile.indexOf('THE FILE'));
+  });
+
+  it('carries the self-report ask, LAST and only on the with-file run', () => {
+    // Last, because it is instrumentation and the person's own task should be
+    // the first thing they and the model both read.
+    const withFile = withContextPrompt('THE ASK', 'THE FILE', 'THE LEAD');
+    expect(withFile.indexOf(SELF_REPORT_ASK)).toBeGreaterThan(withFile.indexOf('THE FILE'));
+    // And VISIBLE — it is in the text the person reads before sending, which
+    // is what separates it from an injection (docs/GUARDRAILS.md).
+    expect(withFile).toContain('MISSING:');
+  });
+
+  it('never asks the baseline which parts of a file it used', () => {
+    // The two conditions differ by the FILE and nothing else. A baseline asked
+    // "which parts of my file did you draw on" is a question with one possible
+    // answer, and it would also tell the model a file exists.
+    const bare = promptFor('baseline', { answers: {}, repeatables: {} });
+    expect(bare).not.toContain('MISSING:');
   });
 });

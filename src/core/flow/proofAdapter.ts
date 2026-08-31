@@ -1,5 +1,6 @@
 import { BASELINE_PROMPT, ATTACH_FALLBACK_SUFFIX } from './proofSource';
 import { ALL_PROOF_SERVICES } from './proofAdditions';
+import { SELF_REPORT_ASK } from '../proof/selfReport';
 import type { FlowContext, Module, Option, Step } from '../../schema/flow.types';
 
 /**
@@ -273,7 +274,17 @@ export function proofQuestion(ctx: FlowContext): string {
  * on screen, where they can read it before they press anything.
  */
 export function withContextPrompt(task: string, fileText: string, lead: string): string {
-  return `${task}\n\n---\n${lead}\n\n${fileText}`;
+  /* The self-report block rides on the WITH-FILE run only, and that is the
+     whole design. Asking the baseline "which parts of my file did you use"
+     when it has no file would be a question with one possible answer, and the
+     two conditions have to differ by the FILE and nothing else — which is the
+     rule BS-03b's own comment states two lines up.
+
+     It is visible in the prompt the person reads before sending, which is what
+     separates it from an injection (docs/GUARDRAILS.md: never to their AI
+     "without them seeing the exact text first"). Nothing it returns is
+     stored — see core/proof/selfReport.ts. */
+  return `${task}\n\n---\n${lead}\n\n${fileText}\n\n---\n\n${SELF_REPORT_ASK}`;
 }
 
 /* BS-03d deleted the `grade` branch and, with it, the product's only use of

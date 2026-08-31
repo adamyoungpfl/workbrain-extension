@@ -1037,6 +1037,19 @@ export const S = {
   rephraseShort: 'Reword',
   copied: 'Copied',
   proofCta: 'Will It Really Make A Difference?',
+  /* The AI's own report on what it used and what it could not find. Shown on
+     the landing, never stored (core/proof/selfReport.ts).
+
+     "Said" and "could not find" rather than "used" and "missing": this is a
+     CLAIM the model made about itself, not instrumentation, and the words have
+     to carry that or a person will read a wrong self-report as a fact about
+     their file. The last line is the one that earns its place — a gap the AI
+     names is the strongest signal we have about what to ask next. [DRAFT] */
+  selfReportTitle: 'What your AI said it used',
+  selfReportUsed: 'It said it drew on:',
+  selfReportMissing: 'It said your file did not cover:',
+  selfReportUnsure: 'It said it had to guess at:',
+  selfReportClaim: 'This is your AI describing its own work, so treat it as a hint rather than a finding.',
   proofFinished: "That's the whole loop.",
   // Chip labels for the service picker — key order matches
   // core/flow/proofAdditions.ts's ALL_PROOF_SERVICES: the manifest's four

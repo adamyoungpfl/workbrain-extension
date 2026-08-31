@@ -74,7 +74,17 @@ for (const f of ts) {
   if (f.includes('.test.')) continue;
   const t = src.match(/\b(Sentry|amplitude|mixpanel|gtag|sendBeacon|posthog|datadog)\b/i);
   if (t) fail('Telemetry', `${f}: ${t[0]} — zero collection, not minimal (docs/GUARDRAILS.md)`);
-  if (/\bfetch\s*\(/.test(src) && !f.startsWith('src/core/packs/'))
+  /* The rule is about the SHIPPED BUNDLE, and `scripts/` is not in it.
+     `scripts/bench/api.ts` calls three model APIs to run the file benchmark
+     (docs/FILE-VALIDATION.md); store-shots and copy-shots drive a browser.
+     None of them is importable from `src/`, none appears in `dist/`, and the
+     benchmark runs against a synthetic persona rather than anybody's file.
+
+     The exclusion is deliberately for `scripts/bench/` alone rather than all of
+     `scripts/`: a build script that grew a fetch would still be worth stopping,
+     and the narrower rule is the one that keeps catching things. */
+  const devTooling = f.startsWith('scripts/bench/');
+  if (/\bfetch\s*\(/.test(src) && !f.startsWith('src/core/packs/') && !devTooling)
     fail('Network', `${f} calls fetch — only core/packs may, through an injected client`);
 }
 
