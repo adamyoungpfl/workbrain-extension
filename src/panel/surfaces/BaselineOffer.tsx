@@ -38,6 +38,7 @@ export interface BaselineOfferProps {
 
 export function BaselineOffer({ task, onDone, onSkip }: BaselineOfferProps) {
   const [pasted, setPasted] = useState('');
+  const [copied, setCopied] = useState(false);
   const ready = pasted.trim().length > 0;
 
   return (
@@ -63,6 +64,28 @@ export function BaselineOffer({ task, onDone, onSkip }: BaselineOfferProps) {
           person has just come from, and the one they are about to spend fifty
           questions in. */}
       <p className="flow-q baselineoffer-task">{task}</p>
+
+      {/* THE COPY BUTTON, on its own rather than inside `ReadOnlyBlock`'s
+          chrome. The chrome went because it claimed a provenance this sentence
+          does not have — these are the person's own words, not a prompt we
+          assembled — but the COPYING was never the problem: the screen asks
+          somebody to take this to their AI, and making them select a paragraph
+          by hand is asking them to do the one thing a button does better. */}
+      <button
+        type="button"
+        className="baselineoffer-copy"
+        onClick={() => {
+          navigator.clipboard?.writeText(task).then(
+            () => {
+              setCopied(true);
+              window.setTimeout(() => setCopied(false), 1600);
+            },
+            () => {},
+          );
+        }}
+      >
+        {copied ? S.baselineCopied : S.baselineCopy}
+      </button>
 
       <Field
         id="baseline-paste"

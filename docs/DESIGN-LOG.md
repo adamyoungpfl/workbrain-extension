@@ -159,6 +159,45 @@ currently the first thing a model reads.
 **Status:** Reasoned — recommended for removal from the file while still being
 asked. Variant B drops them.
 
+### 3.4b · A question's FRAME beats its hint, every time
+**Targets:** whether the baseline is runnable at all.
+**Found by:** Adam, 2026-08-31, answering `goal_want` "as naturally as I could":
+
+> *"I would like to be able to point my AI at an email or all my emails from
+> this morning and have it tell me which ones are important… I'd like to have
+> that be the way I start every day."*
+
+An excellent answer to the question asked, and **unrunnable as a baseline**: no
+AI can reach his inbox, so both conditions fail identically and the comparison
+measures nothing.
+
+**The finding is not that the answer was wrong.** The hint already said exactly
+the right thing — *"one real task from this week beats a wish… pick something
+it can actually do"* — and it did not work. **When a question's frame and its
+hint disagree, the frame wins**, because the frame is what somebody answers.
+*"What do you want it to do better"* is a wish frame, and no hint argues a
+person out of answering the question they were asked.
+
+**Fixed by reframing rather than by structuring the input.** The question now
+asks *"What would you hand your AI right now?"* — an instance rather than an
+ambition — and the instruction to type it as they would type it moved into the
+hint, where the design system puts instructions.
+**Status:** Reasoned. Unmeasured, and the measurement is cheap: the next few
+real answers either come back runnable or they do not.
+**Would be falsified by:** answers that are still wishes, in which case the
+input probably does want structuring — a short form rather than a box — and
+this entry becomes Contested rather than quietly rewritten.
+
+### 3.4c · `goal_want` is carrying three jobs
+It is the product's motivating question, the assist's goal line, AND the
+baseline task. Those want different things from one sentence: motivation likes
+ambition, measurement needs an instance. The reframe above bets that an
+instance serves all three, because a concrete task motivates fine and an
+ambition cannot be run.
+**Status:** Reasoned. If 3.4b is falsified, splitting the question — keep the
+ambition, ask separately for one runnable task — is the next move, and it costs
+a screen at the most expensive moment in the product.
+
 ### 3.5 · Nothing resolves two preferences that contradict each other
 "As short as possible" and "show your work" can pull against each other and
 nothing says which wins, so the model picks — differently on different days,

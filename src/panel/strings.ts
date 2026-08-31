@@ -1669,6 +1669,8 @@ export const S = {
   baselineTitle: 'Run it once with nothing loaded',
   baselineBody:
     'Paste this into your AI now and keep what comes back. It is the only chance to record where you started — everything after this has your file in it.',
+  baselineCopy: 'Copy the question',
+  baselineCopied: 'Copied',
   baselineGo: 'I ran it — paste what came back',
   baselineLater: 'Not now',
   baselineSaved: 'Saved as your starting point.',

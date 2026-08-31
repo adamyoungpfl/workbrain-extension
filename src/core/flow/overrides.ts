@@ -640,8 +640,37 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
     type: 'text',
     multiline: true,
     // [DRAFT]
-    prompt: () => "What's the one thing you want it to do better today?",
-    hint: 'Be specific and small — one real task from this week beats a wish. At the end, you will run exactly this and watch the difference. Your AI may decline some topics; pick something it can actually do.',
+    /* REWORDED 2026-08-31, and the reason is a real answer from real use.
+       Adam, answering "as naturally as I could", wrote:
+
+         "I would like to be able to point my AI at an email or all my emails
+          from this morning and have it tell me which ones are important…
+          I'd like to have that be the way I start every day."
+
+       An excellent answer to the question asked, and unrunnable as a baseline:
+       no AI can reach his inbox, so both conditions fail identically and the
+       comparison measures nothing.
+
+       THE HINT BELOW ALREADY SAID SO — "one real task from this week beats a
+       wish… pick something it can actually do" — and it did not work. That is
+       the finding. When a question's FRAME and its hint disagree, the frame
+       wins, because the frame is what somebody answers. "What do you want it
+       to do better" is a wish frame; no amount of hint argues a person out of
+       answering the question they were asked.
+
+       So the frame asks for the thing itself. "Hand" rather than "want done
+       better" is the whole change: it asks for an instance rather than an
+       ambition, and an instance is what both jobs this answer does actually
+       want — the proof needs a runnable prompt, and the assist's goal line
+       reads better with a concrete task than with an aspiration.
+
+       The INSTRUCTION lives in the hint, where the design system puts
+       instructions — a first build put "type it the way you would type it to
+       them" into the prompt and the suite caught it: every authored prompt
+       ends in a question mark, and a question with a command bolted on is two
+       things pretending to be one. [DRAFT] */
+    prompt: () => 'What would you hand your AI right now?',
+    hint: 'Type it the way you would type it to them. One real task, small enough to run today. Something it can do with what you paste in — not something that needs your inbox. You will run exactly this at the end and watch the difference.',
     placeholder: 'e.g. Draft my Monday status update the way I would',
     ideas: [
       'Draft a status update for my manager that sounds like me.',

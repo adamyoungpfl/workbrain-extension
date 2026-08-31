@@ -87,10 +87,10 @@
   "kind": "text",
   "kindNote": "Written — one box, as long or short as they like",
   "required": true,
-  "question": "What's the one thing you want it to do better today?",
+  "question": "What would you hand your AI right now? Type it the way you would type it to them.",
   "rephrasings": [],
-  "spoken": "What's the one thing you want it to do better today?",
-  "hint": "Be specific and small — one real task from this week beats a wish. At the end, you will run exactly this and watch the difference. Your AI may decline some topics; pick something it can actually do.",
+  "spoken": "What would you hand your AI right now? Type it the way you would type it to them.",
+  "hint": "One real task, small enough to run today — and something it can do with what you paste in, not something that needs your inbox or your calendar. At the end you will run exactly this and watch the difference.",
   "placeholder": null,
   "deepDives": [
    {

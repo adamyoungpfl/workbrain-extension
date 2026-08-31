@@ -26,6 +26,26 @@
   margin: 6px 0 2px;
 }
 
+/* Quiet, and beside the question rather than on it: this is a convenience, not
+   the action. The action is below, and it is the box. */
+.baselineoffer-copy {
+  align-self: flex-start;
+  min-height: var(--target-min);
+  padding: 0 12px;
+  border: 1px solid var(--border-i);
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  font: inherit;
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--ink-2);
+  cursor: pointer;
+}
+.baselineoffer-copy:hover {
+  border-color: var(--ink-3);
+  color: var(--ink);
+}
+
 .baselineoffer-doors {
   display: flex;
   align-items: center;
