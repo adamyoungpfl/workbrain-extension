@@ -1671,6 +1671,26 @@ export const S = {
   baselineGo: 'I ran it — paste what came back',
   baselineLater: 'Not now',
   baselineSaved: 'Saved as your starting point.',
+  /* Spine step 3 — the comparison surface. The product's whole argument in one
+     view: the same task, answered at each stage.
+
+     The stage names are what a person would call them, not what the code does.
+     "Before your file" beats "baseline"; "with your file" beats "context". The
+     third says plainly that it has not happened rather than sitting greyed and
+     unexplained. [DRAFT] */
+  compareTitle: 'The same question, before and after',
+  compareLead: (task: string) => `You asked: “${task}”`,
+  compareStageBaseline: 'Before your file',
+  compareStageContext: 'With your file',
+  compareStageSkill: 'With your file and a recipe',
+  compareScored: (value: number, of: number) => `You marked ${value} of ${of} right.`,
+  compareMissing: 'Your AI said your file did not cover:',
+  compareNotYet: 'Not yet — this arrives when you turn this into a skill.',
+  compareNoBaseline:
+    'No starting point recorded. It could only be taken before you began, from the opening screen.',
+  compareEmpty: 'Nothing to compare yet. Run the proof and this fills in.',
+  compareOpen: 'See the difference',
+  compareSub: 'Your own question, answered before and after your file',
   /** §9's tour door — the one moment somebody accepts an orientation. It
    * goes straight into the three slides the interview already opens with
    * (components/TourSlide.tsx), rather than by way of Home. */

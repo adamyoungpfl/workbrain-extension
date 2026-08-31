@@ -1,0 +1,98 @@
+/* Spine step 3. A vertical stack, not columns: at 400px two columns of prose
+   are ~172px each and three are ~110px, which is the arithmetic that decided
+   this screen exists rather than a third column on the proof's landing. */
+.comparison {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.comparison-title {
+  margin: 0;
+  font-size: var(--type-h2);
+  line-height: 1.25;
+  font-weight: 640;
+  letter-spacing: -0.02em;
+}
+.comparison-lead {
+  margin: 0;
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.comparison-empty {
+  margin: 0;
+  font-size: var(--type-support);
+  color: var(--ink-3);
+}
+.comparison-stages {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.comparison-stage {
+  padding: 12px 14px;
+  border-radius: var(--r-lg);
+  border: 1px solid var(--divider);
+  background: var(--canvas);
+}
+/* The one with the file is the one worth looking at, so it is the one that is
+   lit — an edge in the primary rather than a fill, because the CONTENT is the
+   argument and a filled card would compete with it. */
+.comparison-stage[data-stage='context'][data-has='yes'] {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-tint);
+}
+/* Absent stages sit back without disappearing: the sentence inside them is the
+   point, and a box nobody can read is not an explanation. */
+.comparison-stage[data-has='no'] {
+  background: var(--ground);
+  border-style: dashed;
+}
+.comparison-stage-name {
+  margin: 0 0 6px;
+  font-size: var(--type-fine);
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.comparison-answer {
+  margin: 0;
+  font-size: var(--type-support);
+  line-height: 1.55;
+  color: var(--ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.comparison-score {
+  margin: 8px 0 0;
+  font-size: var(--type-fine);
+  font-weight: 600;
+  color: var(--green);
+}
+.comparison-missing {
+  margin-top: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--divider);
+}
+.comparison-missing-label {
+  margin: 0 0 3px;
+  font-size: var(--type-fine);
+  color: var(--ink-3);
+}
+.comparison-missing ul {
+  margin: 0;
+  padding-left: 18px;
+  font-size: var(--type-fine);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.comparison-absent {
+  margin: 0;
+  font-size: var(--type-fine);
+  line-height: 1.5;
+  color: var(--ink-3);
+}

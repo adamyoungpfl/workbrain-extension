@@ -205,9 +205,51 @@ is behaviour rather than work and is what D2's row forbids keeping.
 runs later. Anything that made this feel required would trade the interview for
 the measurement of it.
 
-**3 · The comparison surface.** One screen that shows the same task answered at
-each stage, in order. This is the product's whole argument in one view, and it
-is the thing worth putting in front of somebody who asks what this is for.
+**3 · The comparison surface. DONE (2026-08-31).**
+`surfaces/Comparison.tsx`, opened from a Home row that appears only once there
+is something to compare — a row onto an empty screen teaches somebody the
+product is not ready.
+
+Both proof runs are recorded **at the verdict**, not at the two commits that
+produced them. One place, and the only one that holds everything a run needs at
+once: the task, both answers, the score and the self-report. Writing at each
+commit would mean two half-runs and a later stitch, and a stitch comes apart.
+It also means a run exists only once somebody has JUDGED it, which is exactly
+where D2 draws its line.
+
+**Nothing is derived into a verdict.** No percentage, no arrow, no score out of
+a hundred — `GUARDRAILS.md` bans a composite score and the reason bites here:
+a number we computed over two pieces of prose would be the one thing on that
+screen we made up. The reader is the judge, which is also the only way the
+comparison means anything to them.
+
+**A missing stage is a stated absence, not a gap.** Most people will have two
+stages and — until step 4 — nobody has three, so the skill row says what would
+fill it and a missing baseline says why it can no longer be filled. A greyed
+box with no explanation reads as something broken.
+
+### One shipped claim this superseded, and it is worth knowing
+
+`proof.spec.ts` has asserted since R1-11: *"NEITHER ANSWER EVER REACHES THE
+REPORT. The panel shows them and records a number the person chose; it never
+keeps what the AI wrote."*
+
+D2 rules the opposite, explicitly — *"the product may keep runs the person
+performed and judged — the task, what their AI wrote back, their own verdict"*.
+So the claim is superseded rather than deleted, and both halves of why are
+recorded in the test:
+
+- What R1-11 was really protecting **survives in a narrower form**: we do not
+  accumulate AI output nobody judged. A run is written at the verdict, which is
+  the moment somebody judged it.
+- The answers were **never actually absent from storage.** `wb:answers` has held
+  both in single slots since R1-11. What the report gains is a HISTORY, which
+  is the whole of G2 — a single slot cannot say "compared to where you started"
+  because the second run overwrites the first.
+
+**Flagged for Adam:** D2 was ruled without this prior claim being on the table.
+The supersession is defensible on both counts above, but the ruling deserves to
+be made knowingly rather than inherited.
 
 **4 · Close G3/G4 with D4(b).** After a proof, if the goal is repeatable, offer
 to make it a skill — then the third comparison lands in the same surface.

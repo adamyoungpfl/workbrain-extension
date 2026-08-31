@@ -1830,8 +1830,42 @@ function StepView({
 
     if (!alreadyScored) {
       const existingReport = await getLocal('wb:report');
-      const entry = makeScoreEntry(tally.value, tally.of, new Date().toISOString());
-      await setLocal('wb:report', appendScore(existingReport, entry));
+      const at = new Date().toISOString();
+      const entry = makeScoreEntry(tally.value, tally.of, at);
+      /**
+       * SPINE STEP 3 — the proof's two runs are recorded HERE, at the verdict,
+       * rather than at the two commits that produced them.
+       *
+       * One place, and it is the only place that holds everything a run needs
+       * at once: the task, both answers, the person's own score, and the
+       * self-report their AI returned. Writing at each commit would mean two
+       * half-runs and a later stitch, and a stitch is a thing that comes apart.
+       *
+       * It also means a run exists only once somebody has JUDGED it, which is
+       * the D2 line: what is kept is work the person performed and judged.
+       */
+      const task = proofQuestion({ answers: next.values, repeatables: next.repeatables });
+      const withFile = String(next.values[PROOF_CONTEXT_ANSWER_KEY] ?? '');
+      let report = appendScore(existingReport, entry);
+      report = appendRun(report, {
+        at,
+        task,
+        stage: 'baseline',
+        answer: String(next.values[PROOF_BASELINE_ANSWER_KEY] ?? ''),
+      });
+      report = appendRun(report, {
+        at,
+        task,
+        stage: 'context',
+        answer: withFile,
+        score: { value: tally.value, of: tally.of },
+        // The only part of a self-report that is kept, because it is the only
+        // part that feeds a decision later (docs/GUARDRAILS.md, D2).
+        ...(parseSelfReport(withFile)?.missing?.length
+          ? { missing: parseSelfReport(withFile)!.missing }
+          : {}),
+      });
+      await setLocal('wb:report', report);
     }
   }
 

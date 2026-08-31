@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
 import { S } from '../../src/panel/strings';
-import type { Answers } from '../../src/schema/storage.types';
+import type { Answers, ReportState } from '../../src/schema/storage.types';
 import { readFile } from 'node:fs/promises';
 
 // R1-11 accept criteria (docs/RELEASE-1.md): "Four steps: baseline,
@@ -311,7 +311,9 @@ test.describe('The proof loop (R1-11)', () => {
     // --- storage: read directly, not just the UI ---
     const stored = await storedLocal(sw);
     const answers = stored['wb:answers'] as Answers;
-    const report = stored['wb:report'] as { scores: { at: string; value: number; of: number }[] } | undefined;
+    // The real type rather than a hand-rolled shape: the spine added `runs`
+    // and an inline literal would have gone on asserting the old world.
+    const report = stored['wb:report'] as ReportState | undefined;
 
     expect(report?.scores).toHaveLength(1);
     // Their tally, and the denominator that makes it mean something.
@@ -319,10 +321,44 @@ test.describe('The proof loop (R1-11)', () => {
     expect(report!.scores[0]!.of).toBe(4);
     expect(typeof report!.scores[0]!.at).toBe('string');
 
-    // NEITHER ANSWER EVER REACHES THE REPORT. The panel shows them and
-    // records a number the person chose; it never keeps what the AI wrote.
-    expect(JSON.stringify(report)).not.toContain(baselineAnswer);
-    expect(JSON.stringify(report)).not.toContain(contextAnswer);
+    /**
+     * R1-11 CLAIMED "neither answer ever reaches the report", and D2 SUPERSEDES
+     * IT (Adam, 2026-08-31, docs/MEASUREMENT-SPINE.md):
+     *
+     *   "The product may keep runs the person PERFORMED and JUDGED — the task,
+     *    what their AI wrote back, their own verdict, and the gaps the AI
+     *    named."
+     *
+     * Written down rather than quietly deleted, because the original claim had
+     * a reason and the reason survives in a narrower form. What it was really
+     * protecting is that we do not ACCUMULATE AI output nobody judged — and the
+     * spine keeps a run only at the verdict, which is the moment somebody
+     * judged it.
+     *
+     * It is also worth knowing that the answers were never actually absent
+     * from storage: `wb:answers` has held both since R1-11, in the two single
+     * slots asserted below. What the report gains is a HISTORY of them, which
+     * is the whole of G2 — a single slot cannot say "compared to where you
+     * started" because the second run overwrites the first.
+     */
+    expect(report?.runs).toHaveLength(2);
+    expect(report!.runs![0]!.stage).toBe('baseline');
+    expect(report!.runs![0]!.answer).toBe(baselineAnswer);
+    expect(report!.runs![1]!.stage).toBe('context');
+    expect(report!.runs![1]!.answer).toBe(contextAnswer);
+    expect(report!.runs![1]!.score).toEqual({ value: 2, of: 4 });
+    // Both runs carry the same task, which is what makes them comparable.
+    expect(report!.runs![0]!.task).toBe(report!.runs![1]!.task);
+    // AND STILL NOTHING ABOUT BEHAVIOUR. No count of opens, no duration, no
+    // record that a run was abandoned — the other half of D2's row, and the
+    // half that would be easy to add without noticing.
+    for (const run of report!.runs!) {
+      expect(Object.keys(run).sort()).toEqual(
+        expect.arrayContaining(['answer', 'at', 'stage', 'task']),
+      );
+      expect(Object.keys(run)).not.toContain('opened');
+      expect(Object.keys(run)).not.toContain('duration');
+    }
 
     // The two pasted answers live where they were pasted, and nowhere else.
     expect(answers.values.proof_baseline_answer).toBe(baselineAnswer);

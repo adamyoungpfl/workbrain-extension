@@ -42,6 +42,8 @@ import { UploadSheet } from './UploadSheet';
 import { RedeemSheet } from './RedeemSheet';
 import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
+import { Comparison } from './Comparison';
+import { latestTask } from '../../core/report/runs';
 import './Home.css';
 
 export interface HomeProps {
@@ -481,6 +483,11 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
   const [homeToast, setHomeToast] = useState<string | null>(null);
   /** V2.8 VB-133 — the Skill Redeemer's sheet, and its landed-toast. */
   const [redeemOpen, setRedeemOpen] = useState(false);
+  /** Spine step 3 — the comparison sheet. `report` is already loaded above for
+   *  the meter's Share segment, so this reads it rather than fetching it twice
+   *  and risking two answers to one question. */
+  const [compareOpen, setCompareOpen] = useState(false);
+  const compareTask = latestTask(report);
   const [redeemToast, setRedeemToast] = useState<string | null>(null);
   /** V2.6 VB-127 — the What's-stored sheet, and the two keys it lists that
    * nothing else on Home reads: the version stamp and the narrator choice.
@@ -959,6 +966,21 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
           ready={capabilityOpen}
           onPress={capabilityOpen ? onOpenCapability : undefined}
         />
+        {/* SPINE STEP 3 (docs/MEASUREMENT-SPINE.md) — the door onto the
+            comparison. It appears only once there is something to compare,
+            because a row that opens an empty screen is a row that teaches
+            somebody the product is not ready. `latestTask` is null until a
+            run exists, which is the same condition the surface itself uses. */}
+        {compareTask && (
+          <HomeRow
+            id="compare"
+            icon={PROVE_ICON}
+            label={S.compareOpen}
+            sub={S.compareSub}
+            ready
+            onPress={() => setCompareOpen(true)}
+          />
+        )}
         <HomeRow
           id="redeem"
           icon={REDEEM_ICON}
@@ -1025,6 +1047,12 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
         }}
         onRedeemed={(added, skipped) => setRedeemToast(S.skillsShareAdded(added, skipped))}
       />
+      {/* Spine step 3 — a sheet rather than a surface, because it is a thing
+          you look at and close rather than a place you work. GUARDRAILS allows
+          exactly one overlay and this is one: short, self-contained, escapable. */}
+      <Sheet open={compareOpen} onClose={() => setCompareOpen(false)} title={S.compareTitle} full>
+        <Comparison report={report} />
+      </Sheet>
       {redeemToast && <Toast message={redeemToast} onDismiss={() => setRedeemToast(null)} />}
 
       {/* V2.6 VB-127 — the storage, listed in plain words. Rows exist only
