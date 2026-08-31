@@ -379,34 +379,24 @@ test.describe('what it narrates', () => {
     await context.close();
   });
 
-  test('reads a rephrasing as soon as it replaces the question', async () => {
-    const { context, id } = await launchExtension();
-    const page = await openPanel(context, id);
-    await enterInterview(page);
-    await toContextScope(page);
-    // `stop_explaining` is the first question carrying rephrasings.
-    await page.locator('.flow .vpick .vpick-tile').first().click(); // VB-118: context_scope is tiles
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
-
-    await toggle(page).click();
-    await expect.poll(() => probeOf(page).then((p) => p.spoken.length)).toBe(1);
-    const first = (await questionText(page))?.trim();
-
-    await page.getByRole('button', { name: 'Ask me that a different way' }).click();
-    await expect.poll(async () => (await questionText(page))?.trim()).not.toBe(first);
-    const second = (await questionText(page))?.trim();
-
-    await expect.poll(() => probeOf(page).then((p) => p.spoken.length)).toBe(2);
-    const probe = await probeOf(page);
-    expect(probe.spoken[0]?.text).toBe(first);
-    // The wording on screen and the wording being read are never two
-    // different questions: the first was cut off for the second.
-    expect(probe.spoken[0]?.outcome).toBe('cancelled');
-    expect(probe.spoken[1]?.text).toBe(second);
-
-    await context.close();
-  });
+  /**
+   * R-16 — THE REPHRASE CONTROL IS GONE, and this test with it.
+   *
+   * Concept 2 makes the question a spoken turn, and the bubble costs 63px of
+   * horizontal measure. The rephrase control was already costing 56px on 27 of
+   * the 34 screens. Keeping both would have left the question 229px — 22%
+   * narrower than today — which makes worse the exact problem the canvas pass
+   * exists to fix. Adam ruled it nice-to-have.
+   *
+   * What this test really guarded — that the wording on screen and the wording
+   * being read are never two different questions — is unchanged and is
+   * asserted by every other test in this file: there is now exactly one
+   * wording per screen, so they cannot disagree.
+   *
+   * `step.rephrasings` stays in the data. Thirty-six questions carry alternate
+   * wordings; the narrator is the obvious home for them, and it is recorded in
+   * docs/REVIEW-2.md as a feature rather than built as a consequence.
+   */
 
   test('reads a follow-up when one is opened, and stops when it is closed', async () => {
     const { context, id } = await launchExtension();

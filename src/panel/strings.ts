@@ -128,7 +128,6 @@ export const S = {
         : `Added ${added} skills.`
       : `Added ${added}, and ${skipped} could not come along.`,
   skip: 'Skip',
-  rephrase: 'Ask me that a different way',
   /**
    * V1.1 VB-08. The label on the button that drops a written starter answer
    * into a text question's field (see core/flow/ideas.ts — static content,
@@ -1027,14 +1026,11 @@ export const S = {
   copyShort: 'Copy',
   closeShort: 'Close',
   narratorShort: 'Read aloud',
-  /* BS-05 (§5) — the twelfth of BS-01c's icon-only controls, and the last.
-     It went UNDER the glyph rather than beside it: BS-01c measured "Reword"
-     into the question row and it opened a 103px dead band, because the row is
-     the question and the question is what gets narrower. Stacked, the control
-     keeps the 44px width it already had and takes its height out of a heading
-     that is two lines or more on every question that has rephrasings.
-     [DRAFT] */
-  rephraseShort: 'Reword',
+  /* R-16 — `rephrase` and `rephraseShort` are gone with the control. BS-01c
+     gave the glyph its word on 2026-08-28 and Concept 2 removed the glyph on
+     2026-08-29; the arithmetic is in docs/REVIEW-2.md. `step.rephrasings`
+     stays in the flow data — thirty-six questions carry alternate wordings and
+     the narrator is where they belong next. */
   copied: 'Copied',
   proofCta: 'Will It Really Make A Difference?',
   /* The AI's own report on what it used and what it could not find. Shown on

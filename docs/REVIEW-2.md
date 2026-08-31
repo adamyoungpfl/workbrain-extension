@@ -478,12 +478,39 @@ the cluster, the dock's arithmetic and the drawer are all untouched, which is
 what keeps this out of R-09's blast radius.
 
 
-## R-16 — BUILT, MEASURED, AND STOOD DOWN AT ONE NUMBER
+## R-16 — SHIPPED (2026-08-31). The mark floats.
+
+Green-lit, and the 22px was resolved by the third placement rather than by
+spending it. The mark is **floated inside the bubble**: the text wraps around
+it, the first line pays 35px of its own measure, every line after it starts at
+the column, and the vertical cost is **zero** because the mark is shorter than
+the line it sits in.
+
+That is the trade every chat interface already makes — a speaker's mark belongs
+to the line it is speaking — and it is the one arrangement that satisfies all
+three constraints at once:
+
+| Placement | VB-57 / VB-60 alignment | VB-17 upper third | Verdict |
+|---|---|---|---|
+| Beside the bubble | ✗ 48px indent | ✓ | broke two shipped laws |
+| Stacked above it | ✓ | ✗ 190px vs 167px | cost 31px on every screen |
+| **Floated inside it** | **✓** | **✓** | shipped |
+
+The rephrase control is gone with it, as specced — the arithmetic held: it was
+costing 56px of measure on 27 of 34 screens, and the bubble costs 63px.
+
+**And `panelQ` landed in the same pass**, which the line budget needed: four
+questions ran to five and six visual lines, and the schema field for exactly
+that had been declared since R1-05 and never read.
+
+### The record of what it took
+
+
 
 Concept 2 was built end to end on 2026-08-29: the turn, the bubble, the mark,
-and the rephrase control removed. It works, it looks right, and it fails one
-shipped law by 22 pixels. The work is on `stash@{0}`, not in `master`, because
-the number is Adam's to spend and not mine.
+and the rephrase control removed. It worked, it looked right, and it failed one
+shipped law by 22 pixels — so it waited on a stash rather than going in, because
+the number was Adam's to spend and not mine. He did not have to spend it.
 
 **What survived contact.** The rephrase arithmetic held exactly as specced —
 removing it paid for the bubble's horizontal cost, and `question-fill`'s ten

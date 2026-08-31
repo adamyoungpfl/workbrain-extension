@@ -785,18 +785,12 @@ test.describe('VB-60 — the outline travels, and stops permanently on any inter
     await context.close();
   });
 
-  test('pressing rephrase stops the orbs, and nothing restarts them', async () => {
-    const { context, sw, id } = await launchExtension();
-    const page = await openAtRoleNames(context, sw, id);
-    await expect(page.locator('.flow .flow-rephrase')).toHaveCount(1);
-    const held = await proveItIsTravelling(page);
-
-    await page.locator('.flow .flow-rephrase').click();
-    await letGo(page);
-    await expectStillStopped(page, held, 'pressing rephrase');
-
-    await context.close();
-  });
+  /* R-16 retired the test that stood here: its subject was the rephrase
+     control, which is gone. A bubble costs 63px of horizontal measure and the
+     control was already costing 56px on 27 of 34 screens; keeping both would
+     have left the question 22% narrower than today, which is the opposite of
+     what the canvas pass is for. Adam ruled it nice-to-have (docs/REVIEW-2.md,
+     R-16). Everything else this file pins is untouched. */
 
   test('the pulsing + stops with it — nothing is left running or merely invisible', async () => {
     const { context, sw, id } = await launchExtension();

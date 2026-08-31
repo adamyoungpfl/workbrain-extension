@@ -617,21 +617,12 @@ test.describe('VB-57 — the rotation stops on any interaction and never resumes
     await context.close();
   });
 
-  test('pressing rephrase', async () => {
-    const { context, sw, id } = await launchExtension();
-    const page = await resumeAt(sw, context, id, 'contribution_boundaries');
-    await expect(page.locator('.flow .flow-rephrase')).toHaveCount(1);
-
-    const first = await showing(page);
-    await expect.poll(() => showing(page), { timeout: ROTATE_MS + 4000 }).not.toBe(first);
-    const held = await showing(page);
-
-    await page.locator('.flow .flow-rephrase').click();
-    await letGo(page);
-    await expectStillStopped(page, held, 'pressing rephrase');
-
-    await context.close();
-  });
+  /* R-16 retired the test that stood here: its subject was the rephrase
+     control, which is gone. A bubble costs 63px of horizontal measure and the
+     control was already costing 56px on 27 of 34 screens; keeping both would
+     have left the question 22% narrower than today, which is the opposite of
+     what the canvas pass is for. Adam ruled it nice-to-have (docs/REVIEW-2.md,
+     R-16). Everything else this file pins is untouched. */
 
   test('it stays stopped for that question, and the next question rotates again', async () => {
     // The scope FLAG 1 gives it: "once stopped it stays stopped FOR THAT

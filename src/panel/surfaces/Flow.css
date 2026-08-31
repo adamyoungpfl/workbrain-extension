@@ -503,14 +503,96 @@
   box-sizing: border-box;
 }
 
-/* VB-04: the question and its rephrase icon-button share one row. The heading
-   keeps its own bottom margin so the spacing below is unchanged from when the
-   <h2> sat here alone. `min-width: 0` lets a long question wrap instead of
-   forcing the row wider than the 400px panel. */
+/* ── R-16 — THE QUESTION IS A SPOKEN TURN ────────────────────────────────
+   Concept 2 of R-14's four. A mark, a bubble, and the answer as the reply
+   beneath — chosen because a bubble is a form that is SUPPOSED to vary in
+   length, so the census's six-fold swing in question height stops being a
+   defect the layout hides and becomes the shape working normally.
+
+   VB-04's row held the question and its rephrase icon. The icon is gone (see
+   Flow.tsx for the arithmetic that decided it) and the 56px of measure it was
+   taking is what pays for the mark and the bubble's padding. */
+/* THE MARK SITS ABOVE THE BUBBLE, NOT BESIDE IT — and the suite decided that,
+   not taste.
+
+   Drawn side by side the question is indented 48px (mark + gap + padding) and
+   its left edge stops lining up with anything beneath it. Two shipped laws
+   depend on that alignment and both went red: VB-57's "the follow-up is
+   left-justified with the question above it", and VB-60's "the first orb's
+   painted edge lands on the question's". Those are not incidental assertions —
+   they are the reason the screen reads as one column rather than as a stack of
+   unrelated blocks.
+
+   Stacked, the turn survives intact (a speaker, then what they said) and every
+   left edge on the screen agrees again. It costs vertical room where the census
+   says we are tightest, which is why the bubble's own padding is as thin as it
+   is. That is the trade, and it is the right way round: horizontal room is
+   scarce at 400px and alignment is free. */
 .flow-q-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 6px;
+  min-height: 0;
+}
+
+/* The speaker. 26px, the product's own gradient, `aria-hidden` — it says
+   somebody is talking and claims nothing else.
+
+   FLOATED INSIDE THE BUBBLE, which is the third placement and the one that
+   works. Beside the bubble it indented the question 48px and broke two shipped
+   alignment laws (VB-57's follow-up, VB-60's orb). Stacked above it, it cost
+   ~31px of vertical on every screen and VB-17's upper-third rule would not
+   give them. Floated, the text wraps around it: the first line pays 35px of
+   its own measure, every line after it starts at the column, and the vertical
+   cost is zero because the mark is shorter than the line it sits in. */
+.flow-mark {
+  float: left;
+  width: 26px;
+  height: 26px;
+  margin: 2px 9px 0 0;
+  border-radius: var(--r-pill);
+  background: linear-gradient(140deg, var(--globe-node-1-mid), var(--globe-node-2-mid));
+}
+
+/* THE BUBBLE HAS A GROUND AND NO BORDER, and that is a layout decision rather
+   than a taste one.
+
+   V2.8's two-zone rule shrinks the question zone at weight 3 against the
+   answer's 1, so on a short screen this box loses room. A bare heading that
+   loses room simply scrolls. A BORDERED box that loses room clips its own
+   frame — a line that stops halfway down the side of a shape reads as broken,
+   not as tight. A filled box with no border clips to nothing visible: the
+   ground just continues past the cut, which is the call `ReadOnlyBlock`
+   already makes for the same reason.
+
+   `min-width: 0` lets a long question wrap rather than forcing the row wider
+   than the 400px panel — VB-04's own note, still true. */
+.flow-bubble {
+  min-width: 0;
+  /* The float is inside, so the bubble has to contain it or the ground stops
+     short of the mark on a one-line question. */
+  overflow: hidden;
+  min-height: 0;
+  overflow: hidden;
+  /* SEVEN PIXELS, NOT ELEVEN, and the measurement is why. `terms_depend_on`
+     is a five-line question: at 11px of vertical padding the zone's content
+     wanted 240px in the 149px the two-zone rule gives it, and the deep-dive
+     under the bubble overflowed into the answer area — VB-17's seam inspector
+     read the collision as a 107px dead band. Vertical padding is the one part
+     of a bubble that buys nothing: the ground already says "a turn", and the
+     shape is carried by the corner radius and the mark beside it. */
+  /* THE GROUND BLEEDS INTO THE GUTTER SO THE TEXT SITS ON THE COLUMN.
+
+     A bubble needs horizontal padding to be a bubble, and that padding pushes
+     the question's first letter off the line every other left edge on the
+     screen shares — VB-57's follow-up and VB-60's orb both measure against it.
+     Pulling the box left by exactly its own padding puts the TEXT back on the
+     column and lets the GROUND run into the panel's 16px gutter, which is
+     space nothing else is using. Four pixels of gutter are left, which is
+     enough that the bubble still reads as an object rather than as a bleed. */
+  margin-left: -12px;
+  padding: 7px 12px;
+  /* The corner nearest the mark is the square one — the tail of the bubble
+     points back at whoever is talking, which is the only job that shape has. */
+  border-radius: 4px 14px 14px 14px;
+  background: var(--canvas);
 }
 /* BS-02 — the interview's chrome row: the feedback door and the narrator
    toggle, hanging together in the empty right-hand end of the header the
@@ -710,33 +792,9 @@
   min-width: 0;
 }
 
-/* Icon-only, so the 44x44 floor (docs/GUARDRAILS.md) has to come from the box
-   itself rather than from padding around a word: `.btn` already sets
-   min-height, this adds the matching min-width. The negative top margin pulls
-   the tall target up so the 17px glyph optically centres on the question's
-   first line, without pushing the heading down — the hit area is untouched,
-   it just starts level with the row's top edge instead of below it. Colour
-   comes from `.btn-quiet` (--ink-2); nothing here is distinguished by colour. */
-.flow-rephrase {
-  flex: 0 0 auto;
-  min-width: var(--target-min);
-  padding: 0;
-  margin-top: -8px;
-  /* BS-05 (§5) — the word goes UNDER the ring, not beside it. Beside it the
-     control widens and the question narrows, which is what opened BS-01c's
-     103px dead band; under it the control is exactly as wide as it already
-     was and spends height a two-line heading has already paid for. */
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1px;
-}
-.flow-rephrase-word {
-  font-size: var(--type-fine);
-  line-height: 1;
-  color: var(--ink-3);
-}
-
+/* R-16 — `.flow-rephrase` and its word are gone with the control. VB-04's
+   press cue ("spin and swap") goes with them: it was a mark saying "same
+   question, other wording", and there is no other wording to arrive. */
 /* VB-04's press cue — "spin and swap". The ring turns once ("again") while the
    question mark dips out and comes back ("different words"), which together
    say what the button did: same question, other wording. Both halves run for
@@ -751,53 +809,14 @@
    own corner. Pinned to the view box, `12px 12px` is the ring's centre and
    `12px 13px` is the mark's, in the 24-unit drawing's own coordinates,
    whatever pixel size the glyph is rendered at. */
-.flow-rephrase .rephrase-ring,
-.flow-rephrase .rephrase-mark {
-  transform-box: view-box;
-}
-.flow-rephrase .rephrase-ring {
-  transform-origin: 12px 12px;
-}
-.flow-rephrase .rephrase-mark {
-  transform-origin: 12px 13px;
-}
-
-@keyframes rephrase-ring-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
 
 /* Out at 45% and back. The opacity dip is what keeps the shrink from reading
    as "smaller"; together they read as the mark being swapped for another one. */
-@keyframes rephrase-mark-swap {
-  0% {
-    transform: scale(1);
-    opacity: 1;
-  }
-  45% {
-    transform: scale(0.62);
-    opacity: 0.45;
-  }
-  100% {
-    transform: scale(1);
-    opacity: 1;
-  }
-}
 
 /* No fill mode on purpose: both keyframe sets end exactly where the still
    glyph sits, so the cue leaves nothing behind and the class can stay on the
    button between presses. Flow.tsx's restartRephraseCue is what makes a press
    during a press start over rather than be ignored. */
-.flow-rephrase.is-rephrasing .rephrase-ring {
-  animation: rephrase-ring-spin var(--base) var(--ease);
-}
-.flow-rephrase.is-rephrasing .rephrase-mark {
-  animation: rephrase-mark-swap var(--base) var(--ease);
-}
 
 /* Reduced motion is not "no feedback" (docs/design-system.html §06): a control
    that does nothing visible when pressed reads as broken. Nothing moves — no
@@ -809,23 +828,6 @@
    resting state; the spec fixes the change as instant, not its length.
    The wording change beside it is the substantive feedback in both forms, so
    nothing here is carried by colour alone. */
-@media (prefers-reduced-motion: reduce) {
-  .flow-rephrase.is-rephrasing .rephrase-ring,
-  .flow-rephrase.is-rephrasing .rephrase-mark {
-    animation: none;
-  }
-  .flow-rephrase.is-rephrasing {
-    animation: rephrase-confirm var(--slow) var(--ease) backwards;
-  }
-  @keyframes rephrase-confirm {
-    from,
-    to {
-      background: var(--primary-tint);
-      color: var(--primary);
-    }
-  }
-}
-
 /* ── VB-08's example button + VB-94's escape hatch, restyled by V2.4 VB-106:
    THE HELPER ROW IS BUBBLE CHIPS ──────────────────────────────────────────
    Per Adam's mockup: the two helper actions under a text question's input

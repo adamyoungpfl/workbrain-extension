@@ -1427,7 +1427,6 @@ function StepView({
   /* BS-03d deleted the grade step's two self-reported "out of 10" drafts:
      the person ticks statements now, and `ticked` above is what replaces
      them. */
-  const [rephraseIndex, setRephraseIndex] = useState(0);
   /**
    * V1.8 VB-42, rewritten by V2.0 VB-57 — has the person touched this question
    * yet, and what did they do first.
@@ -1654,7 +1653,7 @@ function StepView({
   const { on: narratorOn } = useNarratorPref();
   const onReflectSubScreen = pos.kind === 'reflect' && reflectMode !== 'view';
   useNarration(
-    onReflectSubScreen ? null : narrationFor(pos, answers, NARRATION_COPY, { rephraseIndex }),
+    onReflectSubScreen ? null : narrationFor(pos, answers, NARRATION_COPY),
     narratorOn,
   );
 
@@ -2341,14 +2340,12 @@ function StepView({
   }
 
   const { step } = pos;
-  const rephrasings = step.rephrasings ?? [];
-  const hasRephrasings = rephrasings.length > 0;
-  const questionText = resolvePhrase(
-    rephraseIndex === 0 ? panelPhrase(step) : (rephrasings[rephraseIndex - 1] ?? panelPhrase(step)),
-    ctx,
-  );
+  /* Both intents, merged: R-16 removed the rephrase control, so there is one
+     wording per screen — and `panelQ` decides which one, so the 400px version
+     is what shows and the file keeps the full one. */
+  const questionText = resolvePhrase(panelPhrase(step), ctx);
   const displayOptions =
-    rephraseIndex === 0 ? step.options : (step.optionRephrasings?.[rephraseIndex - 1] ?? step.options);
+    step.options;
   const showSkip = step.kind !== 'intro' && step.kind !== 'demo';
   // Only an intro reveals itself as beats — every other kind has something
   // to answer, and hiding the question behind a timer would make it harder.
@@ -2357,23 +2354,20 @@ function StepView({
   // own button; the interview's nav row sits every one of them out.
   const tourSlide = step.kind === 'intro' && usesTourSlide(step.id);
 
-  /**
-   * The wording changes and the glyph plays its cue. The button element comes
-   * from the event rather than a ref: it is the element the cue belongs to,
-   * it is already in hand, and the class is applied straight to the DOM
-   * because a React state round-trip cannot express "this again, from the
-   * start" — the same value re-rendered is, to React, no change at all.
-   * Safe here because nothing else ever rewrites this button's className:
-   * `variant`, `className` and the rest are constants at this call site.
-   */
-  function cycleRephrase(button: HTMLButtonElement) {
-    // FLAG 1 names rephrase on its own, so it is wired on its own: a new
-    // wording is a new sentence to read, and nothing beside it should be
-    // changing while they read it.
-    stopRotating('rephrase');
-    setRephraseIndex((i) => (i + 1) % (rephrasings.length + 1));
-    restartRephraseCue(button);
-  }
+  /* R-16 — `cycleRephrase` is gone with the control that called it.
+
+     The rephrase button cost the question 56px of measure on 27 of the 34
+     screens (census: 292px with it, 348px without), and the bubble costs 63px.
+     Keeping both would have left the question 229px — 22% narrower than today
+     — which makes the length problem this whole pass exists to fix worse. Adam
+     ruled it nice-to-have; the arithmetic says it is what pays for the
+     conversation.
+
+     `step.rephrasings` STAYS in the data: thirty-six questions carry alternate
+     wordings and they are good ones. They simply have no button. The obvious
+     home for them is the narrator, which can offer a different wording on a
+     repeat listen without spending a pixel — recorded in docs/REVIEW-2.md
+     rather than built, because that is a feature and not a consequence. */
 
   // V2.4 VB-109 — the two name questions trade their examples for the
   // generator (core/flow/nameGenerator.ts says which): the ported `ideas`
@@ -2583,34 +2577,43 @@ function StepView({
           {beats ? (
             <Beats beats={beats} />
           ) : (
-            /* VB-04: the rephrase control sits beside the question, as a
-               sibling of the heading rather than inside it — putting a button
-               inside <h2> would fold its label into the heading's accessible
-               name and change what a screen reader announces when it lands on
-               the question. */
+            /* R-16 — THE QUESTION IS A SPOKEN TURN.
+                Concept 2 of R-14's four: a mark, a bubble, and the answer as
+                the reply beneath. The point is not decoration — it is that a
+                bubble is a form which is SUPPOSED to vary in length, so the
+                census's six-fold swing in question height stops being a defect
+                the layout has to hide and becomes the shape working normally.
+
+                THE MARK AND THE BUBBLE ARE DECORATION. The question is still
+                the `<h2>` it always was, still first in the reading order,
+                still the narrator's own text — `aria-hidden` on the mark keeps
+                the announced tree byte-for-byte what it was.
+
+                And the answer does NOT indent under it. Drawn as a real
+                conversation it would, and it would cost the answer area
+                another ~35px of width on screens the census already measured
+                at the 44px floor. The turn reads from the mark and the bubble;
+                a reply does not have to be inset to be understood as one.
+
+                VB-04's note stood here — "the rephrase control sits beside the
+                question, as a sibling of the heading rather than inside it" —
+                and goes with the control. Its reasoning survives in the shape:
+                nothing interactive lives inside the `<h2>`. */
             <div className="flow-q-row">
-              {/* V1.2 VB-10: the question types itself in on arrival, and on
-                  every rephrasing — a new wording is a new sentence arriving,
-                  which is the same moment. Skippable and non-blocking. */}
-              <TypedHeading className="flow-q" text={questionText} />
-              {hasRephrasings && (
-                <Button
-                  type="button"
-                  variant="quiet"
-                  className="flow-rephrase"
-                  aria-label={S.rephrase}
-                  title={S.rephrase}
-                  onClick={(e) => cycleRephrase(e.currentTarget)}
-                >
-                  {REPHRASE_ICON}
-                  {/* BS-01c's twelfth control gets its word. `aria-label`
-                      above still wins the accessible name, so the long
-                      sentence is what is announced and "Reword" is what is
-                      read — the same split the other three labelled glyphs
-                      use. */}
-                  <span className="flow-rephrase-word">{S.rephraseShort}</span>
-                </Button>
-              )}
+              <div className="flow-bubble">
+                {/* INSIDE the bubble and floated, not above it. Stacked, the
+                    mark cost ~31px of vertical on every screen and VB-17's
+                    "the cluster sits in the upper third" would not give them
+                    — it landed at 190px against a 167px allowance. Floated,
+                    it costs the FIRST LINE's measure and nothing else, which
+                    is the trade every chat interface already makes: a
+                    speaker's mark belongs to the line it is speaking. */}
+                <span className="flow-mark" aria-hidden="true" />
+                {/* V1.2 VB-10: the question types itself in on arrival. Inside
+                    a bubble that stops being an effect and becomes the obvious
+                    thing — a message being written. */}
+                <TypedHeading className="flow-q" text={questionText} />
+              </div>
             </div>
           )}
           <QuestionHelp step={step} onDisclose={narrateFollowUp} stoppedBy={reasonFor(rotation)} />
