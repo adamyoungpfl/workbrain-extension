@@ -45,6 +45,16 @@ the file it drew on, what it needed and could not find, and what it guessed at.
 | **It is shown as a CLAIM, in those words.** "What your AI said it used", and a line saying to treat it as a hint rather than a finding. | A model's self-report is not instrumentation. Read as fact, a wrong one would have somebody rewriting a good file. |
 | **The baseline run never carries it.** | The two conditions differ by the file and nothing else, and asking a model with no file which parts of the file it used would also tell it a file exists. |
 
+**And the run history (D2, Adam, 2026-08-31).** `docs/MEASUREMENT-SPINE.md`
+keeps the same task's answers across stages, so a person can see where they
+started against where they are.
+
+| Rule | Why |
+|---|---|
+| **The product may keep runs the person PERFORMED and JUDGED** — the task, what their AI wrote back, their own verdict, and the gaps the AI named. | Authorship, not transmission. They pasted the answer and ticked the verdict; the product observed neither. Same footing as `wb:report.scores`, kept since R1-11. |
+| **It may keep NOTHING about their behaviour around those runs.** Not when they opened the proof, not how often, not how long they took, not whether they abandoned one. | Those are facts about the person rather than about the work, and not one of them is authored. This is the line the authorship test draws, and a run history is exactly the feature that would blur it if nobody wrote it down. |
+| **Of a self-report, only `MISSING` is kept.** `used` and `unsure` are read on the screen and dropped. | `MISSING` feeds a decision — it is the evidence a question is retired on (D5). The other two inform nothing later, and keeping data because it might one day be useful is how a usage log begins. |
+
 **Still forbidden, unchanged:** anything that measures without being asked,
 anything that reports on its own schedule, and any count of what the person did
 — including local-only. The test in the next section is what separates them: a

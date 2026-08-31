@@ -134,11 +134,54 @@ signs, not a threshold that fires. The log records who and why.
 
 ---
 
+---
+
+## The decisions, RULED (Adam, 2026-08-31)
+
+| | Ruling |
+|---|---|
+| **D1** | Door, not step — **and the door goes on the splash page.** |
+| **D2** | Agreed. Runs are keepable; behaviour around them is not. Written into `GUARDRAILS.md`. |
+| **D3** | Agreed. File vs file+recipe as two prompts, before any execution machinery. |
+| **D4** | Agreed. Ask whether it repeats rather than classifying it. |
+| **D5** | Agreed. Contested, then retired by a decision somebody signs. |
+
+### One thing D1 needs resolving before it can be built
+
+**The splash runs before the goal exists.** `goal_want` is the first question of
+the interview (V2.3 VB-93's gate), and the splash is upstream of all of it — so
+a door there has no task to run yet. Three ways, and the third is the one that
+keeps Adam's placement:
+
+1. **Move the goal gate onto the splash.** Truest to "the door is on the
+   splash", and it puts a text question on a screen designed as a held moment.
+2. **Run the canned baseline prompt instead.** No goal needed, and it measures
+   a task that is nobody's — which is the one thing the spine cannot afford,
+   since the whole argument is that it is *their* task, three times.
+3. **The splash door opens a short path** — *"start by seeing where you are"* →
+   the goal gate → the offer to run it now → the interview. **Recommended.**
+   The door is on the splash, and what it opens is the two questions that make
+   a baseline possible. It also reads better than the alternative: the splash
+   already offers the tour, and this is the same shape of offer.
+
+---
+
 ## The sequence
 
-**1 · Close G2 — make runs a history.** `wb:report.scores` becomes a list of
-runs, each carrying its task, its two answers, the verdict and the self-report.
-Needs D2 settled first. Small, and everything else depends on it.
+**1 · Close G2 — make runs a history. DONE (2026-08-31).**
+`ProofRun` on `ReportState`, and `core/report/runs.ts`: `appendRun`,
+`runsForTask`, `comparison`, `latestTask`, `missingTally`.
+
+Two decisions inside it worth knowing:
+
+- **Grouping is by TASK, not by time.** A person can change their goal, and
+  when they do the old runs must stay under the old task rather than silently
+  joining the new one. A comparison between two different questions is not a
+  comparison.
+- **The baseline is pinned to the FIRST run; context and skill take the
+  LATEST.** The baseline is a historical fact — where they started — and a
+  later "no file" run by somebody who has since done the interview is not that.
+  The other two measure the file as it is now, so the newest is the true one.
 
 **2 · Close G1 with D1(c).** The arrival door: after the goal gate, offer to
 run the goal now, with nothing loaded. One screen, entirely skippable, and the

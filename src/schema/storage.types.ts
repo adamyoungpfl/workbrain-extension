@@ -94,6 +94,47 @@ export interface PackSubscription {
  */
 export interface ScoreEntry { at: string; value: number; of: number; }
 
+/**
+ * ONE RUN OF ONE TASK, at one stage of the measurement spine.
+ *
+ * D2 (Adam, 2026-08-31) settles whether keeping these is a usage log, and the
+ * authorship test settles it cleanly: the person pasted the answer and ticked
+ * the verdict. Neither is observed by the product. That is the same footing as
+ * `scores` above, which has been kept since R1-11.
+ *
+ * What may NOT be kept alongside it: when they opened the proof, how often,
+ * how long they took. Those are facts about behaviour rather than about work,
+ * and none of them is authored (docs/GUARDRAILS.md).
+ *
+ * ── WHY THE TASK IS STORED WITH THE RUN ──────────────────────────────────
+ *
+ * The whole point of the spine is the same task answered at three stages, so
+ * the task is what groups them. Storing it per run rather than looking it up
+ * means a comparison survives somebody changing their goal later — the old
+ * runs stay grouped under the old task instead of silently re-labelling
+ * themselves under the new one.
+ */
+export interface ProofRun {
+  at: string;
+  /** The task, verbatim. What was asked — identical across the stages. */
+  task: string;
+  /** Which arrow of the spine this run measures. */
+  stage: 'baseline' | 'context' | 'skill';
+  /** What their AI wrote back, as they pasted it. */
+  answer: string;
+  /** Their own verdict, when they gave one. Absent is not zero. */
+  score?: { value: number; of: number };
+  /**
+   * What the AI said the file did not cover (core/proof/selfReport.ts).
+   *
+   * Kept, unlike the rest of the self-report, and only because it is the one
+   * part that feeds a decision: `MISSING` aggregated across runs is the
+   * evidence D5 retires questions on. `used` and `unsure` are read once on the
+   * screen and dropped — they inform nothing later.
+   */
+  missing?: string[];
+}
+
 export interface ReportState {
   /** computed once from a chat export; the "before" */
   baseline?: {
@@ -106,6 +147,12 @@ export interface ReportState {
     repeatedPhrases: { text: string; conversations: number }[];
   };
   scores: ScoreEntry[];
+  /**
+   * The measurement spine (docs/MEASUREMENT-SPINE.md). Optional because every
+   * install before it existed has none, and a missing history is a product
+   * with nothing to compare rather than a broken one.
+   */
+  runs?: ProofRun[];
   /** rolling counts from tier-2 observation, if enabled */
   ongoing?: {
     since: string;
