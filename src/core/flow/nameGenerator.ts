@@ -45,6 +45,32 @@ export const NAME_GENERATOR_QUESTIONS: readonly string[] = ['preferred_name', 'p
 
 /** Text questions only — the same boundary `ideasFor` draws, for the same
  * reasons (core/flow/ideas.ts). */
+/**
+ * QUESTIONS THAT TRAVEL LIGHT — no examples, no AI Assist, just the box.
+ *
+ * V2.5 VB-121 established the idea for the two name questions: "an interview
+ * about a two-word box is a hammer for a pin". The goal gate joins them on
+ * 2026-08-31, for a measured reason rather than a matching one.
+ *
+ * `goal_want` is the heaviest question in the flow — a deep-dive, a hint,
+ * examples AND the assist — and the baseline door made it the FIRST thing
+ * anybody sees. Measured on the real panel it wanted 177px of question zone in
+ * 137, and 235px of answer area in 217: the deep-dive chip was clipped in half
+ * and "AI Assist" was cut off at the fold. Two overflows on the opening screen.
+ *
+ * The helper row is 94px of that, and it is the part that earns its place
+ * least here. This question asks somebody to type one sentence they already
+ * know the answer to — and the answer is going straight to their own AI, so
+ * offering to have an AI write it is offering to automate the input to the
+ * measurement. The deep-dive stays: "what makes a good answer" is exactly the
+ * thing the reframed question is trying to teach.
+ */
+const TRAVELS_LIGHT = new Set(['goal_want', 'goal_service']);
+
+export function travelsLight(step: { id: string }): boolean {
+  return TRAVELS_LIGHT.has(step.id);
+}
+
 export function usesNameGenerator(step: { id: string; kind: string }): boolean {
   return step.kind === 'text' && NAME_GENERATOR_QUESTIONS.includes(step.id);
 }

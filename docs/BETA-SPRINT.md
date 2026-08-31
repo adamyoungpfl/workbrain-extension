@@ -801,6 +801,11 @@ red: run it 3x isolated. If it passes, re-run the gate and move on** — do not
 edit the assertion, because the claim is true and the readback is the fragile
 part.
 
+**`question-fill.spec.ts` — "the room travels with the drawer"** timed out
+once under load (2026-08-31) and passed 3x isolated in ~4s. Same protocol. It
+drags the drawer twice and measures at both ends, which is real work under five
+headed browsers.
+
 **`drawer-modes.spec.ts` — "dragging below the threshold"** timed out once
 under load (BS-01c's gate) and passed 3x isolated. Same protocol.
 

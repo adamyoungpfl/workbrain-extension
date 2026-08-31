@@ -115,7 +115,7 @@ import { heldLineOptions, offeredLineOptions, usesDividedLine } from '../../core
 import { PAIR_CAPTIONS, pairFor, pairedStepsFor, usesPairedPick } from '../../core/choice/pairedPick';
 import { LINE_CUSTOM_GLYPH, PAIR_GLYPHS, PERSONA_GLYPHS, ROLE_FOR_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
-import { generatedNameAt, usesNameGenerator } from '../../core/flow/nameGenerator';
+import { generatedNameAt, travelsLight, usesNameGenerator } from '../../core/flow/nameGenerator';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { assistServiceUrlFor } from '../../core/flow/assistServices';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
@@ -2374,11 +2374,16 @@ function StepView({
   // stay in the data untouched, but these screens no longer offer them —
   // "lose examples-as-suggestions" is the spec's own phrase.
   const nameGenerator = usesNameGenerator(step);
+  /* The goal gate travels light too (core/flow/nameGenerator.ts): no examples,
+     no assist, just the box. Same seam the name questions use, and `--snug`
+     with it, so the input and the cluster close up rather than leaving the gap
+     a removed row would. */
+  const light = travelsLight(step);
   // V1.1 VB-08. The written starter answers this question carries, if any —
   // 22 of them do, and nothing rendered a single one before now. Which
   // questions qualify is core/flow/ideas.ts's decision, not a condition
   // spelled out here (see `ideasFor` on why `gen` fields are excluded).
-  const ideas = nameGenerator ? [] : ideasFor(step);
+  const ideas = nameGenerator || light ? [] : ideasFor(step);
 
   /**
    * Drops the next example into the field the person is already typing in.
@@ -2734,7 +2739,11 @@ function StepView({
                 the seam between the input and the helper/nav lockup closes
                 up (`--snug`, Flow.css). Every other text question keeps the
                 full row. */}
-            <div className={nameGenerator ? 'flow-idea-row flow-idea-row--snug' : 'flow-idea-row'}>
+            <div
+              className={
+                nameGenerator || light ? 'flow-idea-row flow-idea-row--snug' : 'flow-idea-row'
+              }
+            >
               {/* V2.4 VB-109 — on the two name questions, the example button's
                   seat is the generator's: same secondary weight, same row,
                   same drop-into-the-field mechanic, same live region. Never
@@ -2789,7 +2798,7 @@ function StepView({
                   changing your mind costs nothing. VB-121: not on the two
                   name questions — the generator is their whole helper
                   set. */}
-              {!nameGenerator && (
+              {!nameGenerator && !light && (
                 <>
                   <Button
                     type="button"
