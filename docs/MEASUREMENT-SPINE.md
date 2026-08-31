@@ -247,9 +247,11 @@ recorded in the test:
   is the whole of G2 — a single slot cannot say "compared to where you started"
   because the second run overwrites the first.
 
-**Flagged for Adam:** D2 was ruled without this prior claim being on the table.
-The supersession is defensible on both counts above, but the ruling deserves to
-be made knowingly rather than inherited.
+**RULED (Adam, 2026-08-31):** *"D2 is good with the change that preserves the
+intent of the guardrail."* So the supersession is signed rather than inherited,
+and the intent it preserves is the narrower claim above — **we do not
+accumulate AI output nobody judged.** That sentence, not the original absolute,
+is what a future change has to answer to.
 
 **4 · Close G3/G4 with D4(b).** After a proof, if the goal is repeatable, offer
 to make it a skill — then the third comparison lands in the same surface.
