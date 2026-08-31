@@ -487,6 +487,43 @@ export const BLOCK_OVERRIDES: Record<string, BlockOverride> = {
  * The service list is PROOF_SERVICES — the one list this product has, reused,
  * with its own "something else" already in it.
  */
+/**
+ * PANEL WORDINGS — the four questions too long for a 400px screen.
+ *
+ * CLAUDE.md's rule, kept: *"where a question is too long for a 400px panel,
+ * add a `panelQ` field — do not edit `q`."* The generated file still prints the
+ * full ported wording; only the screen is shortened, and both are authored
+ * rather than one being a paraphrase of the other made at render time.
+ *
+ * R-14's census measured what these cost: `initiatives_gate` runs to SIX visual
+ * lines and `entities_gate` to five, against a flow where two thirds of
+ * questions sit at two or three. Those two are also the pair that leave the
+ * answer area exactly 44px at the drawer's ceiling — the accessibility floor,
+ * nothing spare.
+ *
+ * ── WHAT WAS CUT, AND WHAT WAS NOT ───────────────────────────────────────
+ *
+ * The em-dash clause in each of these is an EXAMPLE or a disambiguation, not
+ * the question. "Not just your general responsibilities, but named efforts
+ * with their own goals and timeline" tells somebody what counts — which is
+ * exactly what `hint` is for, and every one of these questions already has one.
+ * So the clause is not lost; it is one line down, in the place the design
+ * system already has for it.
+ *
+ * The ASK itself is untouched in all four. [DRAFT]
+ */
+const PANEL_Q: Readonly<Record<string, string>> = {
+  initiatives_gate: 'Any projects or initiatives AI should know about by name?',
+  entities_gate: 'Any people, teams, or tools AI should know by name?',
+  risk_tolerance: 'Fast and good enough, or slower and more certain?',
+  role_names: 'What are your roles?',
+};
+
+/** The panel wording for a question, if it has been given one. */
+export function panelQFor(id: string): string | undefined {
+  return PANEL_Q[id];
+}
+
 export const GOAL_GATE_QUESTION_IDS = ['goal_service', 'goal_want'] as const;
 
 /**

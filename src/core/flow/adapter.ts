@@ -13,6 +13,7 @@ import {
   PLACEHOLDERS,
   applyFlowOverrides,
   applyOutlineOverrides,
+  panelQFor,
 } from './overrides';
 import type {
   Question as SrcQuestion,
@@ -123,6 +124,12 @@ function adaptQuestion(
   };
   if (question.type !== 'intro') step.key = question.id;
   if (question.hint !== undefined) step.hint = question.hint;
+  /* The 400px wording, where one is authored (./overrides.ts's PANEL_Q).
+     Attached here rather than on the source question for the same reason the
+     deep-dives are: source.ts is a verbatim snapshot of the ported interview
+     and stays that way. The FILE still prints `q`. */
+  const panel = panelQFor(question.id);
+  if (panel !== undefined) step.panelQ = panel;
   // Attached here, not authored on the source question — source.ts is a
   // verbatim snapshot of the ported interview and stays that way. V2.0
   // VB-61/VB-63: a question this repo INSERTED may borrow the follow-ups

@@ -461,6 +461,25 @@ function positionKey(position: Position): string {
   return location.in === 'top' ? `top:${step.id}` : `rep:${location.blockId}:${location.recordIndex}:${step.id}`;
 }
 
+/**
+ * THE WORDING THIS PANEL SHOWS — `panelQ` where a question has one, `q`
+ * otherwise.
+ *
+ * `panelQ` has been in the schema since R1-05 and CLAUDE.md has promised it
+ * since then — *"where a question is too long for a 400px panel, add a
+ * `panelQ` field — do not edit `q`"* — and nothing ever read it. Four
+ * questions run to five and six visual lines because of that, which is what
+ * R-14's census measured and what Concept 2's line budget cannot absorb.
+ *
+ * THE FILE STILL PRINTS `q`. That is the whole point of the split: the
+ * generated document keeps the full, careful wording that was ported verbatim,
+ * and the 400px screen gets a version that fits. Neither is a paraphrase of
+ * the other made up at render time — both are authored.
+ */
+function panelPhrase(step: Step): Step['q'] {
+  return step.panelQ ?? step.q;
+}
+
 function resolvePhrase(phrase: Step['q'], ctx: FlowContext): string {
   return typeof phrase === 'function' ? phrase(ctx) : phrase;
 }
@@ -1138,7 +1157,15 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
    */
   const baselineTask = String(answers.values['goal_want'] ?? '').trim();
   if (offerBaseline && baselineTask && !baselineTaken) {
-    return withDrawer(
+    /* NO DRAWER ON THIS SCREEN (Adam, 2026-08-31): "we don't want to introduce
+       that new functionality during this quick action."
+
+       Right, and the reason generalises: the drawer is the file taking shape,
+       and at this moment there is no file. Showing it here would introduce the
+       product's most complicated affordance at the one moment somebody has
+       been asked to go and do something else — and it would be showing them an
+       empty version of it. Every other screen in the flow keeps it. */
+    return (
       <BaselineOffer
         task={baselineTask}
         onSkip={() => {
@@ -1161,7 +1188,7 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
             );
           })();
         }}
-      />,
+      />
     );
   }
 
@@ -2220,7 +2247,7 @@ function StepView({
     }
 
     if (reflectMode === 'edit') {
-      const questionText = resolvePhrase(step.q, ctx);
+      const questionText = resolvePhrase(panelPhrase(step), ctx);
       return (
         <form
           className="flow"
@@ -2316,7 +2343,10 @@ function StepView({
   const { step } = pos;
   const rephrasings = step.rephrasings ?? [];
   const hasRephrasings = rephrasings.length > 0;
-  const questionText = resolvePhrase(rephraseIndex === 0 ? step.q : (rephrasings[rephraseIndex - 1] ?? step.q), ctx);
+  const questionText = resolvePhrase(
+    rephraseIndex === 0 ? panelPhrase(step) : (rephrasings[rephraseIndex - 1] ?? panelPhrase(step)),
+    ctx,
+  );
   const displayOptions =
     rephraseIndex === 0 ? step.options : (step.optionRephrasings?.[rephraseIndex - 1] ?? step.options);
   const showSkip = step.kind !== 'intro' && step.kind !== 'demo';

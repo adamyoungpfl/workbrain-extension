@@ -19,6 +19,13 @@
   line-height: 1.5;
   color: var(--ink-2);
 }
+/* The question, inheriting `.flow-q` and adding only the space around it: on
+   the interview's own screen the prompt sits in a zone that gives it room, and
+   here it is one element in a stack. */
+.baselineoffer-task {
+  margin: 6px 0 2px;
+}
+
 .baselineoffer-doors {
   display: flex;
   align-items: center;

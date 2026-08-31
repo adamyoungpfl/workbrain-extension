@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Field, ReadOnlyBlock } from '../components';
+import { Button, Field } from '../components';
 import { S } from '../strings';
 import './BaselineOffer.css';
 
@@ -48,10 +48,21 @@ export function BaselineOffer({ task, onDone, onSkip }: BaselineOfferProps) {
       <h2 className="baselineoffer-title">{S.baselineTitle}</h2>
       <p className="baselineoffer-body">{S.baselineBody}</p>
 
-      {/* Their own words, in the trust chrome every prompt in this product
-          wears. Nothing is added to it — a baseline that carried an
-          instruction would be measuring the instruction. */}
-      <ReadOnlyBlock tag={S.reflectPromptTag}>{task}</ReadOnlyBlock>
+      {/* THE TASK READS AS A QUESTION, because that is what it is.
+
+          The first build put it in `ReadOnlyBlock` — the violet trust chrome
+          with a copy button that every AI-facing prompt in this product wears.
+          Wrong here twice over: this is the person's OWN sentence rather than
+          something we assembled for a machine, so the chrome is claiming a
+          provenance it does not have; and the copy button offers a second way
+          to do the thing the box below already asks for, on a screen whose
+          whole job is one small action. Adam, 2026-08-31: remove the purple
+          background and that copy button, inherit the interview's design.
+
+          So it is `.flow-q`, the interview's own question type — the screen a
+          person has just come from, and the one they are about to spend fifty
+          questions in. */}
+      <p className="flow-q baselineoffer-task">{task}</p>
 
       <Field
         id="baseline-paste"
