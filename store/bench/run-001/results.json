@@ -1,0 +1,611 @@
+{
+ "stamp": "run-001",
+ "modelSetVersion": 1,
+ "taskSetVersion": 2,
+ "results": [
+  {
+   "model": "claude",
+   "task": "t1-status",
+   "variant": "A",
+   "answer": "Quick flag before I draft: I don't have actual data on where the Atlas migration stands, current spend vs. budget, or specific risks this week — so I've built the structure below with placeholders. Fill in the brackets and I'll clean it up.\n\n---\n\n**Subject: Weekly Update — Atlas Migration**\n\nHeadline: [e.g., \"On track\" / \"Slipping — need your input\" / \"Blocked on X\"]\n\n**Migration**\n- Tickets migrated: [X / total]\n- This week's focus: [what got done]\n- Next week: [what's planned]\n\n**Budget**\n- Spend to date: [$X of $Y]\n- Anything over/under: [note]\n\n**At risk**\n- [Risk 1 — impact — what you need from Priya, if anything]\n- [Risk 2, if applicable]\n\n---\n\nSend me the actuals and I'll tighten this into final form.",
+   "findings": [
+    {
+     "absence": "second-manager",
+     "quote": "**Subject: Weekly Update — Atlas Migration**",
+     "note": "\"Update\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "Headline: [e.g., \"On track\" / \"Slipping — need your input\" / \"Blocked on X\"]",
+     "note": "\"Slipping\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "last-week",
+     "quote": "- This week's focus: [what got done]",
+     "note": "The file states responsibilities and status, never activity in a period."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "- [Risk 1 — impact — what you need from Priya, if anything]",
+     "note": "\"Risk\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "- [Risk 2, if applicable]",
+     "note": "\"Risk\" is not in the file. Priya is the only person named."
+    }
+   ],
+   "namings": [
+    "Quick flag before I draft: I don't have actual data on where the Atlas migration stands, current spend vs."
+   ]
+  },
+  {
+   "model": "claude",
+   "task": "t2-constraints",
+   "variant": "A",
+   "answer": "Can't send it — sending emails isn't something I'll do without you sending it yourself. Here's the draft, firm and ready to go once you fill in the placeholders:\n\n---\n\n**Subject: Contract Cancellation – [Vendor Name] / [Contract #]**\n\nHi [Vendor Contact Name],\n\nThis is to formally notify you that we are cancelling our contract with [Vendor Name], effective [end of current contract term / specific date].\n\nWe will not be renewing beyond that date. Please confirm receipt of this notice and outline any final steps required to close out the account cleanly on our end — outstanding invoices, data handoff, or offboarding requirements.\n\nWe expect no service interruptions or auto-renewal charges past the termination date.\n\nThanks for your work with us — please direct any questions to me directly.\n\nAlex Chen\n\n---\n\nNeed from you to finalize:\n- Vendor name + contact\n- Contract # or reference\n- Exact end date (sounds like it's the ticketing vendor whose contract lapses end of Q4 — confirm that's the one)\n\nAlso — worth a heads-up to Priya before this goes out, given her \"no surpr",
+   "findings": [
+    {
+     "absence": "second-manager",
+     "quote": "**Subject: Contract Cancellation – [Vendor Name] / [Contract #]**",
+     "note": "\"Cancellation\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "Hi [Vendor Contact Name],",
+     "note": "\"Vendor\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "This is to formally notify you that we are cancelling our contract with [Vendor Name], effective [end of current contrac",
+     "note": "\"Vendor\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "This is to formally notify you that we are cancelling our contract with [Vendor Name], effective [end of current contrac",
+     "note": "\"Name\" is not in the file. Priya is the only person named."
+    }
+   ],
+   "namings": []
+  },
+  {
+   "model": "claude",
+   "task": "t3-audience",
+   "variant": "A",
+   "answer": "**Headline: Ticketing migration (Atlas → DeskPro) is just kicking off — on track, but tight against the EOQ deadline.**\n\n- **Status:** Early stage, work just started this week (per Context.md initiative status)\n- **Deadline:** End of quarter — hard stop, old vendor contract expires\n- **Success bar:** All open tickets migrated, zero data loss, support response back under SLA\n- **Out of scope:** Pricing model — that's a separate workstream, not part of this migration\n- **Risk:** No progress data yet to report since work is just beginning — will flag if timeline gets tight\n\nWant me to draft the fuller version for your manager too, or just this exec cut?",
+   "findings": [],
+   "namings": []
+  },
+  {
+   "model": "claude",
+   "task": "t4-decision",
+   "variant": "A",
+   "answer": "**Ship on time.**\n\n- The old vendor contract expires end of quarter — slipping two weeks means paying for an extension (or worse, gap coverage) on a system you're actively trying to leave.\n- Two known bugs you can track and patch post-launch beats an uncontrolled cost/risk from a contract lapse.\n- Exception: if either bug causes actual data loss (not just annoyance), that breaks your success criteria — pull those out and patch pre-launch, ship the rest on time.\n\nOnly flag this to Priya if the bugs touch anything budget- or SLA-visible — otherwise it's within your call.",
+   "findings": [],
+   "namings": []
+  },
+  {
+   "model": "claude",
+   "task": "t5-grounding",
+   "variant": "A",
+   "answer": "I don't have any record of what you actually did last week — the context I have describes the Atlas migration initiative (scope, deadline, success criteria) but not a log of your day-to-day activity.\n\nGive me the specifics and I'll turn them into a status update, or if you want, I can draft a quick outline of likely categories (tickets migrated, data validation, vendor coordination) for you to fill in.",
+   "findings": [],
+   "namings": [
+    "I don't have any record of what you actually did last week — the context I have describes the Atlas migration initiative (scope, deadline, success criteria) but",
+    "Give me the specifics and I'll turn them into a status update, or if you want, I can draft a quick outline of likely categories (tickets migrated, data validati"
+   ]
+  },
+  {
+   "model": "claude",
+   "task": "t6-partial",
+   "variant": "A",
+   "answer": "**Subject: Atlas Migration – Quick Update**\n\nEarly days, main risk is the timeline.\n\n- **Status:** Just getting started — no tickets migrated yet.\n- **Risk:** Hard deadline at end of quarter (old DeskPro contract expires then). Not much buffer if we hit snags.\n- **Thursday's call:** I don't actually have the vendor headcount yet — want me to confirm with them before the call, or are you good waiting till Thursday?",
+   "findings": [
+    {
+     "absence": "second-manager",
+     "quote": "**Subject: Atlas Migration – Quick Update**",
+     "note": "\"Migration\" is not in the file. Priya is the only person named."
+    }
+   ],
+   "namings": []
+  },
+  {
+   "model": "claude",
+   "task": "t1-status",
+   "variant": "B",
+   "answer": "**Headline:** Atlas migration is underway, on track for the quarter-end deadline — no red flags yet, but a couple of details I need from you to fill in below.\n\n**Migration**\n- Status: just getting started\n- Target: every open ticket moved with zero data loss, response time back under SLA\n- [Need from you: current ticket count migrated / any blockers this week]\n\n**Budget**\n- Draft budget prepared — final approval still pending your sign-off\n- [Need from you: current spend vs. draft, any variance]\n\n**At risk**\n- Hard deadline: old vendor contract expires end of quarter — no slack if migration slips\n- [Need from you: any specific risks surfaced this week]\n\nNote: I don't have this week's actual numbers or blockers on file — flagging the gaps above rather than guessing. Fill those in and I'll finalize.",
+   "findings": [
+    {
+     "absence": "last-week",
+     "quote": "- [Need from you: current ticket count migrated / any blockers this week]",
+     "note": "The file states responsibilities and status, never activity in a period."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "- [Need from you: current ticket count migrated / any blockers this week]",
+     "note": "\"Need\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "- [Need from you: current spend vs.",
+     "note": "\"Need\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "- [Need from you: any specific risks surfaced this week]",
+     "note": "\"Need\" is not in the file. Priya is the only person named."
+    }
+   ],
+   "namings": [
+    "Note: I don't have this week's actual numbers or blockers on file — flagging the gaps above rather than guessing."
+   ]
+  },
+  {
+   "model": "claude",
+   "task": "t2-constraints",
+   "variant": "B",
+   "answer": "Can't send it — sending emails requires your go-ahead first. Here's the draft:\n\n---\n\n**Subject: Contract Termination Notice**\n\nHi [Vendor Contact],\n\nWe're writing to formally notify you that we will not be renewing our contract, effective at the end of the current term.\n\nWe're transitioning to a new ticketing platform ahead of our contract expiration and won't require continued service beyond that date. Please confirm receipt of this notice and let us know if there are any offboarding steps or data export requirements on your end.\n\nThanks for your work with us.\n\nBest,\nAlex\n\n---\n\n**Gap I can't fill:** the file doesn't name the vendor, a contact person, or the specific contract terms — I used placeholders. Fill those in before this goes out.",
+   "findings": [
+    {
+     "absence": "second-manager",
+     "quote": "**Subject: Contract Termination Notice**",
+     "note": "\"Termination\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "Hi [Vendor Contact],",
+     "note": "\"Vendor\" is not in the file. Priya is the only person named."
+    }
+   ],
+   "namings": []
+  },
+  {
+   "model": "claude",
+   "task": "t3-audience",
+   "variant": "B",
+   "answer": "**Headline: Migration just kicked off — on track for now, but end-of-quarter deadline is hard (old vendor contract expires then).**\n\n- **Status:** Just getting started\n- **Goal:** All open tickets migrated with zero data loss, support response time back under SLA\n- **Deadline:** End of quarter — non-negotiable, tied to vendor contract expiry\n- **Out of scope:** Pricing model — separate workstream\n\nNote: your file lists this initiative as \"The Q4 rebrand\" but describes it as the ticketing system migration (DeskPro → new system) — flagging in case the naming needs cleanup.",
+   "findings": [],
+   "namings": []
+  },
+  {
+   "model": "claude",
+   "task": "t4-decision",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": []
+  },
+  {
+   "model": "claude",
+   "task": "t5-grounding",
+   "variant": "B",
+   "answer": "This file doesn't track what you actually did day-to-day — it only has role/initiative context, not a work log. So I can't tell you what got done on the migration last week.\n\nQuick note: there are two \"migration\" references here — the **Q4 rebrand** (ticketing system move) and **Atlas migration** (listed in your vocab, no other detail given). If you meant one of these, let me know which, and point me to wherever you actually track weekly progress (tickets, standup notes, etc.) and I can help you summarize it.",
+   "findings": [],
+   "namings": [
+    "So I can't tell you what got done on the migration last week."
+   ]
+  },
+  {
+   "model": "claude",
+   "task": "t6-partial",
+   "variant": "B",
+   "answer": "Draft note to Priya:\n\n---\n\n**Subject: Atlas migration — status check**\n\nHi Priya,\n\nQuick update:\n\n- **Status:** Just getting started — early days, no major work done yet.\n- **Risk:** Hard deadline is end of quarter (old vendor contract expires then). Tight runway to hit zero data loss + SLA target by that date.\n- **Thursday's call:** I don't have the vendor's attendee count yet — will confirm and follow up.\n\nFlagging the timeline risk now so it's not a surprise later.\n\nAlex\n\n---\n\nNote: I couldn't fill in the vendor headcount for Thursday's call — that's not something I have on file, so I left it as a to-confirm rather than guessing.",
+   "findings": [],
+   "namings": [
+    "- **Thursday's call:** I don't have the vendor's attendee count yet — will confirm and follow up.",
+    "Note: I couldn't fill in the vendor headcount for Thursday's call — that's not something I have on file, so I left it as a to-confirm rather than guessing."
+   ]
+  },
+  {
+   "model": "claude",
+   "task": "t1-status",
+   "variant": "C",
+   "answer": "I don't have actual records for this week's migration progress, budget figures, or risk status — so I can't fill this in without guessing (per the grounding rule, I won't assume based on the initiative description alone).\n\nHere's a draft structure — send me the numbers and I'll fill it in:\n\n**To:** Priya\n**Subject:** Weekly Status – Atlas Migration\n\n**Headline:** [one-line overall status — on track / at risk / blocked]\n\n- **Migration:** [tickets migrated so far / remaining / any data issues]\n- **Budget:** [spend vs. plan — flag if approaching threshold]\n- **At risk:** [anything jeopardizing the EOQ deadline]\n\nWhat are this week's actuals for each?",
+   "findings": [
+    {
+     "absence": "second-manager",
+     "quote": "**Subject:** Weekly Status – Atlas Migration",
+     "note": "\"Status\" is not in the file. Priya is the only person named."
+    }
+   ],
+   "namings": [
+    "I don't have actual records for this week's migration progress, budget figures, or risk status — so I can't fill this in without guessing (per the grounding rul"
+   ]
+  },
+  {
+   "model": "claude",
+   "task": "t2-constraints",
+   "variant": "C",
+   "answer": "I can draft this, but per your rules I never send emails — you'll need to review and send it yourself.\n\nAlso flagging: I don't have the vendor's name or contact from context, so I've left a placeholder. Assuming this is the old ticketing vendor tied to the Atlas migration deadline — let me know if it's a different one.\n\n---\n\n**Subject: Contract Termination – [Vendor Name]**\n\nHi [Contact Name],\n\nThis is to formally confirm that we will not be renewing our contract with [Vendor Name], effective at the end of the current term (end of this quarter).\n\nWe expect all account access, data exports, and offboarding steps to be completed by that date. Please send over your standard offboarding process and timeline so we can coordinate on our end.\n\nLet us know if there's anything you need from us to close this out cleanly.\n\nBest,\nAlex Chen\n\n---\n\nWant me to adjust tone, add specifics (contract end date, data handoff terms), or fill in the vendor name once you confirm which one?",
+   "findings": [
+    {
+     "absence": "second-manager",
+     "quote": "**Subject: Contract Termination – [Vendor Name]**",
+     "note": "\"Termination\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "Hi [Contact Name],",
+     "note": "\"Contact\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "This is to formally confirm that we will not be renewing our contract with [Vendor Name], effective at the end of the cu",
+     "note": "\"Vendor\" is not in the file. Priya is the only person named."
+    },
+    {
+     "absence": "second-manager",
+     "quote": "This is to formally confirm that we will not be renewing our contract with [Vendor Name], effective at the end of the cu",
+     "note": "\"Name\" is not in the file. Priya is the only person named."
+    }
+   ],
+   "namings": [
+    "I can draft this, but per your rules I never send emails — you'll need to review and send it yourself.",
+    "Also flagging: I don't have the vendor's name or contact from context, so I've left a placeholder."
+   ]
+  },
+  {
+   "model": "claude",
+   "task": "t3-audience",
+   "variant": "C",
+   "answer": "**Headline: Atlas migration is just getting started — on track for the hard end-of-quarter deadline, no data or SLA risks flagged yet.**\n\n- **Status:** Early stage — kickoff phase, not yet into execution.\n- **Deadline:** End of quarter (fixed — old vendor contract expires then).\n- **Success criteria:** 100% of open tickets migrated with zero data loss; support response time back within SLA.\n- **Scope note:** Pricing model changes are explicitly out of scope — separate workstream.\n\nI don't have records of specific progress beyond \"just getting started\" — let me know if you want me to pull status details before this goes out.",
+   "findings": [],
+   "namings": [
+    "I don't have records of specific progress beyond \"just getting started\" — let me know if you want me to pull status details before this goes out."
+   ]
+  },
+  {
+   "model": "claude",
+   "task": "t4-decision",
+   "variant": "C",
+   "answer": "**Ship on time",
+   "findings": [],
+   "namings": []
+  },
+  {
+   "model": "claude",
+   "task": "t5-grounding",
+   "variant": "C",
+   "answer": "Don't know — I don't have access to your actual work records (tickets, DeskPro, commits, etc.), so I can't tell you what got done last week. I can only see that the Atlas migration is an initiative you're on, not evidence of specific work.\n\nTo answer this, you'd need to pull from wherever the actual tracking lives (DeskPro, project tracker, etc.).\n\nOne flag: your context lists this initiative as \"The Q4 rebrand\" but describes it as the ticketing system migration to Atlas — those seem like two different things got merged under one label. Worth double-checking that's not a mix-up.",
+   "findings": [],
+   "namings": [
+    "Don't know — I don't have access to your actual work records (tickets, DeskPro, commits, etc.), so I can't tell you what got done last week."
+   ]
+  },
+  {
+   "model": "claude",
+   "task": "t6-partial",
+   "variant": "C",
+   "answer": "Draft only — not sent. Flagging one gap below since I don't have that number in front of me.\n\n---\n\n**To:** Priya\n**Subject:** Atlas migration — status check\n\nHeadline: Just kicked off, on track for the end-of-quarter deadline, no red flags yet.\n\n- **Status:** Just getting started. Target is full ticket migration with zero data loss and support response back under SLA.\n- **Risk:** Nothing flagged yet — main pressure is the hard EOQ deadline since the old vendor contract expires then. Will flag immediately if that changes.\n- **Thursday's call — vendor attendees:** I don't have a confirmed headcount yet. Want me to check with the vendor before I send this?\n\n---\n\n**Can't cover without more info:** exact number of vendor people joining Thursday. Say the word if you want me to chase that down before this goes out.",
+   "findings": [],
+   "namings": [
+    "Flagging one gap below since I don't have that number in front of me.",
+    "- **Thursday's call — vendor attendees:** I don't have a confirmed headcount yet."
+   ]
+  },
+  {
+   "model": "gpt",
+   "task": "t1-status",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t2-constraints",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t3-audience",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t4-decision",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t5-grounding",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t6-partial",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t1-status",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t2-constraints",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t3-audience",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t4-decision",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t5-grounding",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t6-partial",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t1-status",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t2-constraints",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t3-audience",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t4-decision",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t5-grounding",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gpt",
+   "task": "t6-partial",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You have no credits remaining. Add credits to continue using the API at https://platform.openai.com/settings/organization/billing/."
+  },
+  {
+   "model": "gemini",
+   "task": "t1-status",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t2-constraints",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t3-audience",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t4-decision",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t5-grounding",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t6-partial",
+   "variant": "A",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t1-status",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t2-constraints",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t3-audience",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t4-decision",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t5-grounding",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t6-partial",
+   "variant": "B",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t1-status",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t2-constraints",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t3-audience",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t4-decision",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t5-grounding",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  },
+  {
+   "model": "gemini",
+   "task": "t6-partial",
+   "variant": "C",
+   "answer": "",
+   "findings": [],
+   "namings": [],
+   "error": "Error: You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai."
+  }
+ ]
+}

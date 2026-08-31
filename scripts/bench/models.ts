@@ -27,12 +27,31 @@ export interface BenchModel {
   vendor: 'anthropic' | 'openai' | 'google';
   /** The model string the vendor's API expects. */
   model: string;
-  /** The env var holding the key. Absent key = this model is skipped, loudly. */
-  keyEnv: string;
+  /**
+   * Env vars that may hold the key, in order of preference. A LIST rather than
+   * one name because keys live where they already live: Adam's are in
+   * `../modelcitizen/.env.local` under `CHATGPT_API_KEY`, which is a perfectly
+   * good name for a key and not worth a rename to satisfy this file.
+   */
+  keyEnv: readonly string[];
 }
 
+/** The first of a model's candidate vars that is actually set. */
+export function keyFor(model: BenchModel): string | undefined {
+  for (const name of model.keyEnv) {
+    const value = process.env[name];
+    if (value) return value;
+  }
+  return undefined;
+}
+
+/* gemini-2.5-pro is closed to new API users ("no longer available to new
+   users", 2026-08-31), so the set names `gemini-pro-latest` — an alias, which
+   is a deliberate trade: it survives a model retirement, and it means the
+   manifest must record what the alias RESOLVED to on the day, or two runs a
+   month apart quietly measure two different models. */
 export const MODELS: readonly BenchModel[] = [
-  { id: 'claude', vendor: 'anthropic', model: 'claude-sonnet-5', keyEnv: 'ANTHROPIC_API_KEY' },
-  { id: 'gpt', vendor: 'openai', model: 'gpt-5', keyEnv: 'OPENAI_API_KEY' },
-  { id: 'gemini', vendor: 'google', model: 'gemini-2.5-pro', keyEnv: 'GEMINI_API_KEY' },
+  { id: 'claude', vendor: 'anthropic', model: 'claude-sonnet-5', keyEnv: ['ANTHROPIC_API_KEY', 'CLAUDE_API_KEY'] },
+  { id: 'gpt', vendor: 'openai', model: 'gpt-5', keyEnv: ['OPENAI_API_KEY', 'CHATGPT_API_KEY'] },
+  { id: 'gemini', vendor: 'google', model: 'gemini-pro-latest', keyEnv: ['GEMINI_API_KEY', 'GOOGLE_API_KEY'] },
 ];

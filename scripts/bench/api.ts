@@ -35,8 +35,8 @@
  */
 import { readFileSync, writeFileSync, existsSync } from 'node:fs';
 import { join } from 'node:path';
-import { MODELS, MODEL_SET_VERSION } from './models';
-import { detectAbsences } from './detect';
+import { MODELS, MODEL_SET_VERSION, keyFor } from './models';
+import { detect } from './detect';
 import type { Finding } from './detect';
 
 const ROOT = new URL('../..', import.meta.url).pathname;
@@ -56,9 +56,11 @@ if (!existsSync(join(PACK, 'manifest.json'))) {
 }
 const manifest = JSON.parse(readFileSync(join(PACK, 'manifest.json'), 'utf8'));
 
-const live = MODELS.filter((m) => process.env[m.keyEnv]);
-const skipped = MODELS.filter((m) => !process.env[m.keyEnv]);
-for (const m of skipped) console.log(`  SKIPPING ${m.id} — ${m.keyEnv} is not set`);
+const live = MODELS.filter((m) => keyFor(m));
+const skipped = MODELS.filter((m) => !keyFor(m));
+for (const m of skipped) {
+  console.log(`  SKIPPING ${m.id} — none of ${m.keyEnv.join(', ')} is set`);
+}
 if (!DRY && live.length === 0) {
   console.error('  no keys present. Set one, or pass --dry to see what would be sent.');
   process.exit(1);
@@ -66,7 +68,7 @@ if (!DRY && live.length === 0) {
 
 /** One call, per vendor. Text in, text out — nothing else is needed here. */
 async function ask(model: (typeof MODELS)[number], prompt: string): Promise<string> {
-  const key = process.env[model.keyEnv]!;
+  const key = keyFor(model)!;
   if (model.vendor === 'anthropic') {
     const r = await fetch('https://api.anthropic.com/v1/messages', {
       method: 'POST',
@@ -109,6 +111,9 @@ interface Result {
   variant: string;
   answer: string;
   findings: Finding[];
+  /** Sentences that plainly say what is not known — evidence for the
+   *  "names what it cannot answer" score. */
+  namings: string[];
   error?: string;
 }
 
@@ -132,13 +137,15 @@ outer: for (const model of DRY ? MODELS : live) {
     }
     try {
       const answer = await ask(model, prompt);
-      const findings = detectAbsences(answer, file);
-      results.push({ model: model.id, task: cell.task, variant: cell.variant, answer, findings });
-      const flag = findings.length ? `  ⚑ ${findings.map((f) => f.absence).join(', ')}` : '';
-      console.log(`  ${model.id} ${cell.task}/${cell.variant} — ${answer.length} chars${flag}`);
+      const { findings, namings } = detect(answer, file);
+      results.push({ model: model.id, task: cell.task, variant: cell.variant, answer, findings, namings });
+      const uniq = [...new Set(findings.map((f) => f.absence))];
+      const flag = uniq.length ? `  ⚑ ${uniq.join(', ')}` : '';
+      const named = namings.length ? `  ✓named:${namings.length}` : '';
+      console.log(`  ${model.id} ${cell.task}/${cell.variant} — ${answer.length} chars${flag}${named}`);
     } catch (err) {
       results.push({
-        model: model.id, task: cell.task, variant: cell.variant, answer: '', findings: [],
+        model: model.id, task: cell.task, variant: cell.variant, answer: '', findings: [], namings: [],
         error: String(err).slice(0, 140),
       });
       console.log(`  ${model.id} ${cell.task}/${cell.variant} — FAILED ${String(err).slice(0, 80)}`);
