@@ -111,8 +111,11 @@
 .splash-lockup .splash-what {
   animation-delay: 1.05s;
 }
+.splash-lockup .splash-baseline {
+  animation-delay: 1.3s;
+}
 .splash-lockup .splash-tour {
-  animation-delay: 1.35s;
+  animation-delay: 1.42s;
 }
 
 .splash-wordmark {
@@ -174,8 +177,37 @@
 }
 
 /* The tour door — quiet beside the primary, and a real 44px control. */
+/* D1's door. Drawn ABOVE the tour's and a step louder than it — a filled pill
+   against the tour's underlined word — because it is the one offer on this
+   screen that expires. The tour can be taken any time; a baseline can only be
+   taken before somebody starts, and a door that quiet would be the product
+   hiding the thing it is about. Still not the primary: the primary on this
+   screen is arriving, and that is the whole surface. */
+.splash-baseline {
+  margin-top: 14px;
+  min-height: var(--target-min);
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  font-family: var(--font-sans);
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--ink-inv);
+  cursor: pointer;
+}
+.splash-baseline:hover {
+  background: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+.splash-baseline:focus-visible,
+.splash-tour:focus-visible {
+  outline: 2px solid var(--ink-inv);
+  outline-offset: 2px;
+}
+
 .splash-tour {
-  margin-top: 12px;
+  margin-top: 10px;
   min-height: var(--target-min);
   padding: 0 10px;
   border: 0;

@@ -54,6 +54,7 @@ import type { ProofCheck, ProofCheckId } from '../../core/proof/checklist';
 import { ModuleIntro } from './ModuleIntro';
 import { downloadMarkdown } from './FileActions';
 import { RunCard } from './RunCard';
+import { BaselineOffer } from './BaselineOffer';
 import { FileDrawer } from './FileDrawer';
 import { AssistBar } from './AssistBar';
 import { ASSIST_LINE_RETURN } from '../../core/flow/assistCopy';
@@ -120,6 +121,7 @@ import { assistServiceUrlFor } from '../../core/flow/assistServices';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
 import { TourSlide, usesTourSlide, type TourSlideId } from '../components/TourSlide';
 import { makeScoreEntry, appendScore } from '../../core/report/scoring';
+import { appendRun } from '../../core/report/runs';
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
 import { NARRATION_COPY } from '../voice/copy';
 import { useNarration } from '../voice/useNarration';
@@ -138,6 +140,15 @@ import './Flow.css';
 
 export interface FlowProps {
   modules: Module[];
+  /**
+   * D1 (docs/MEASUREMENT-SPINE.md) — offer the baseline run at the end of the
+   * goal gate. True only for a session that came in through the splash's door;
+   * everybody else meets the interview exactly as it was.
+   */
+  offerBaseline?: boolean | undefined;
+  /** Called once the offer has been taken or passed on, so it stands once per
+   * arrival rather than every time the gate re-renders. */
+  onBaselineDone?: (() => void) | undefined;
   /** What to show once every step in `modules` is answered, for a flow that
    * ends with its own screen (the proof loop's recommendations recap, R1-11).
    * Ignored when `onDone` is given — see `onDone`. */
@@ -599,7 +610,7 @@ function scoreSubStep(key: string): Step {
  * everything specific to the question on screen lives in `StepView`, mounted
  * fresh per position via `key` — see its own comment for why.
  */
-export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialPosition, outline, answersKey = ANSWERS_KEY.context, fileId, fileCopy }: FlowProps) {
+export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialPosition, outline, answersKey = ANSWERS_KEY.context, fileId, fileCopy, offerBaseline, onBaselineDone }: FlowProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [declinedBlocks, setDeclinedBlocks] = useState<ReadonlySet<string>>(new Set());
   // V1.1 VB-05: module ids whose transition screen has been continued past
@@ -611,6 +622,8 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
   const [seenIntros, setSeenIntros] = useState<ReadonlySet<string>>(new Set());
   /** BS-05d — the run whose card is on screen, or null. A moment, not a
    * state: it lives for this session and is never written down. */
+  /** D1 — offered once per arrival, not once per render of the gate. */
+  const [baselineTaken, setBaselineTaken] = useState(false);
   const [runCard, setRunCard] = useState<Run | null>(null);
   /** …and which runs have already been applauded, so going Back and forward
    * through a boundary does not replay it. The same ephemeral shape
@@ -1111,6 +1124,46 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
    * is a moment laid over it. Dismissing it leaves the flow precisely where
    * it already was.
    */
+
+  /**
+   * D1 — the baseline offer, at the one moment it can honestly be made.
+   *
+   * Conditions, and each of them is doing work:
+   *   · `offerBaseline` — they came in through the splash's door. Nobody else
+   *     ever meets this screen.
+   *   · the goal exists — there is no task to run before `goal_want` is
+   *     answered, which is why the door opens a PATH rather than a prompt.
+   *   · no baseline for this task yet — a baseline is a historical fact and is
+   *     recorded once (core/report/runs.ts pins it to the first run).
+   */
+  const baselineTask = String(answers.values['goal_want'] ?? '').trim();
+  if (offerBaseline && baselineTask && !baselineTaken) {
+    return withDrawer(
+      <BaselineOffer
+        task={baselineTask}
+        onSkip={() => {
+          setBaselineTaken(true);
+          onBaselineDone?.();
+        }}
+        onDone={(pasted) => {
+          setBaselineTaken(true);
+          onBaselineDone?.();
+          void (async () => {
+            const report = await getLocal('wb:report');
+            await setLocal(
+              'wb:report',
+              appendRun(report, {
+                at: new Date().toISOString(),
+                task: baselineTask,
+                stage: 'baseline',
+                answer: pasted,
+              }),
+            );
+          })();
+        }}
+      />,
+    );
+  }
 
   if (runCard) {
     const section = modules.find((m) => m.id === runCard.moduleId)?.title ?? '';

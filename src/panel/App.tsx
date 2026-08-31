@@ -98,6 +98,16 @@ type SplashState = 'asking' | 'showing' | 'gone';
 export default function App() {
   const [surface, setSurface] = useState<Surface>('home');
   const [flowKind, setFlowKind] = useState<FlowKind>('context');
+  /**
+   * D1 — whether this session came in through the splash's baseline door.
+   *
+   * EPHEMERAL, like `seenIntros` and `paidRuns` in Flow: a stored flag would be
+   * a fact about how somebody arrived, which is behaviour rather than work and
+   * is exactly what D2's guardrail row forbids keeping. Reopening the panel
+   * lands them in the interview with no offer, which is correct — the door was
+   * an offer at a moment, not a setting.
+   */
+  const [wantBaseline, setWantBaseline] = useState(false);
   /** BS-02 — the feedback sheet the proof's own second offer opens. */
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   /** V2.2 — which file the 'file' surface is showing. In-memory like every
@@ -476,6 +486,11 @@ export default function App() {
         modules={contextModules}
         outline={contextOutline}
         initialPosition={jumpTo}
+        /* D1 — this session came through the splash's baseline door, so the
+           offer to run the goal with nothing loaded stands at the end of the
+           gate rather than being skipped past. */
+        offerBaseline={wantBaseline}
+        onBaselineDone={() => setWantBaseline(false)}
         // BS-03a/P3 — finishing hands into the proof, not back to Home.
         onDone={() => void finishContext()}
         onHome={goHome}
@@ -540,6 +555,16 @@ export default function App() {
              whose first three steps ARE the tour (components/TourSlide.tsx),
              rather than by way of Home. The splash ends either way; only the
              destination differs. */
+          /* D1 (docs/MEASUREMENT-SPINE.md) — the spine's front door. Same
+             destination as the tour's, and that is the point: the path IS the
+             interview's own opening, because `goal_want` is its first real
+             question. What the door changes is that the baseline offer stands
+             at the end of the gate instead of being skipped past. */
+          onBaseline={() => {
+            endSplash();
+            setWantBaseline(true);
+            openContext();
+          }}
           onTour={() => {
             endSplash();
             openContext();

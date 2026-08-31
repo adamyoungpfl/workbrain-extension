@@ -183,9 +183,27 @@ Two decisions inside it worth knowing:
   later "no file" run by somebody who has since done the interview is not that.
   The other two measure the file as it is now, so the newest is the true one.
 
-**2 · Close G1 with D1(c).** The arrival door: after the goal gate, offer to
-run the goal now, with nothing loaded. One screen, entirely skippable, and the
-answer becomes run zero.
+**2 · Close G1 with D1(c). DONE (2026-08-31), resolution 3.**
+
+The splash gains a door — *"Start by seeing where you are"* — drawn above the
+tour's and a step louder than it, because it is the one offer on that screen
+that **expires**. The tour can be taken any time; a baseline only before
+somebody starts.
+
+What it opens is the path, not a prompt: the goal gate, then
+`surfaces/BaselineOffer.tsx`, then the interview. That is what resolves the
+ordering problem — at the splash there is no goal yet, so a door that tried to
+run one would be running a task that is nobody's.
+
+Three conditions gate the offer, and each is load-bearing: the session came
+through the door, the goal exists, and no baseline for that task has been
+recorded. Whether they came through the door is **ephemeral state in `App`**,
+not storage — a stored flag would be a fact about how somebody arrived, which
+is behaviour rather than work and is what D2's row forbids keeping.
+
+"Not now" is a real answer and costs nothing: the proof's own baseline still
+runs later. Anything that made this feel required would trade the interview for
+the measurement of it.
 
 **3 · The comparison surface.** One screen that shows the same task answered at
 each stage, in order. This is the product's whole argument in one view, and it

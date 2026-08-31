@@ -146,12 +146,24 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
    * the tour is the one thing somebody might choose INSTEAD of arriving, and
    * "enter" was a button for a move the entire surface already makes.
    */
-  it('every control on it is a real one — skip, and the tour when it is offered', () => {
+  it('every control on it is a real one — skip, the baseline door, and the tour', () => {
+    vi.useFakeTimers();
+    stubMedia(true);
+    const { container } = mount(
+      <Splash onDone={() => {}} onTour={() => {}} onBaseline={() => {}} />,
+    );
+    const labels = [...container.querySelectorAll('.splash button')].map((b) => b.textContent);
+    // D1's door precedes the tour's: it is the one offer on this screen that
+    // expires. The tour can be taken any time; a baseline only before you
+    // start (docs/MEASUREMENT-SPINE.md).
+    expect(labels).toEqual([S.splashSkip, S.splashBaseline, S.splashTour]);
+  });
+
+  it('draws no baseline door when there is nowhere to take one', () => {
     vi.useFakeTimers();
     stubMedia(true);
     const { container } = mount(<Splash onDone={() => {}} onTour={() => {}} />);
-    const labels = [...container.querySelectorAll('.splash button')].map((b) => b.textContent);
-    expect(labels).toEqual([S.splashSkip, S.splashTour]);
+    expect(container.querySelector('.splash-baseline')).toBeNull();
   });
 
   it('draws no tour door when there is nowhere to take one', () => {

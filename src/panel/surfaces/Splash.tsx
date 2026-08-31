@@ -76,9 +76,20 @@ export interface SplashProps {
    * door is not drawn.
    */
   onTour?: (() => void) | undefined;
+  /**
+   * D1 (2026-08-31) — the measurement spine's front door
+   * (docs/MEASUREMENT-SPINE.md). It opens a short path: the goal gate, then
+   * the offer to run that goal with nothing loaded, then the interview.
+   *
+   * It could not simply "run the goal now": at the splash there is no goal
+   * yet — `goal_want` is the interview's own first question — so the door has
+   * to open the two questions that make a baseline possible rather than a
+   * prompt with nothing in it. Optional, like the tour door beside it.
+   */
+  onBaseline?: (() => void) | undefined;
 }
 
-export function Splash({ onDone, onTour }: SplashProps) {
+export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
   const [leaving, setLeaving] = useState(false);
   /** Decided during the first render (NarratorToggle's rule): an effect
    * would paint the show a frame late — or paint it at all for someone who
@@ -249,6 +260,14 @@ export function Splash({ onDone, onTour }: SplashProps) {
               overlay pointing at UI, not on orientation somebody asked for.
               This is the one moment anyone accepts it — after question one,
               nobody will. */}
+          {/* D1's door, above the tour's: it is the one that leads somewhere
+              the person cannot get to later by accident. The tour they can
+              always take; a baseline can only be taken before they start. */}
+          {onBaseline && (
+            <button type="button" className="splash-baseline" onClick={() => leave.current(onBaseline)}>
+              {S.splashBaseline}
+            </button>
+          )}
           {onTour && (
             <button type="button" className="splash-tour" onClick={() => leave.current(onTour)}>
               {S.splashTour}

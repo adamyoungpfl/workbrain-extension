@@ -1649,6 +1649,28 @@ export const S = {
   /** The way past it, said out loud. Any click already left; nothing said so,
    * so people sat through it politely (§9). */
   splashSkip: 'Skip',
+  /* D1 (Adam, 2026-08-31) — the measurement spine's front door, and it is a
+     DOOR rather than a step: skipping it costs nothing and the interview is
+     identical either way.
+
+     It does not say "run a test", because nobody wants to run a test. It says
+     what the person gets — a record of where they were before any of this —
+     which is the only thing this screen can honestly promise at minute one.
+     [DRAFT] */
+  splashBaseline: 'Start by seeing where you are',
+  /* D1's offer screen, at the end of the goal gate. The one moment a true
+     baseline can be taken — after they have said what they want, before the
+     file exists to help with it.
+
+     It asks for real work at the highest-friction moment in the product, so it
+     says what the work BUYS in the same breath, and "later" is a real answer
+     that costs nothing. [DRAFT] */
+  baselineTitle: 'Run it once with nothing loaded',
+  baselineBody:
+    'Paste this into your AI now and keep what comes back. It is the only chance to record where you started — everything after this has your file in it.',
+  baselineGo: 'I ran it — paste what came back',
+  baselineLater: 'Not now',
+  baselineSaved: 'Saved as your starting point.',
   /** §9's tour door — the one moment somebody accepts an orientation. It
    * goes straight into the three slides the interview already opens with
    * (components/TourSlide.tsx), rather than by way of Home. */

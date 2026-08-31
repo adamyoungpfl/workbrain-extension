@@ -382,17 +382,18 @@ test.describe('VB-128 — every exit, at every moment', () => {
     await expect(page.locator('main[inert]')).toHaveCount(1);
 
     await page.waitForSelector('.splash-cost', { timeout: REVEAL_TIMEOUT });
-    // BS-09 took the screen from one control to three; BR-01 takes it to two.
-    // Skip comes first because it is drawn first — it is the corner a person
-    // reaches for when they do not want the movie, and making them tab past
-    // the thing they are declining would be the wrong order.
+    // BS-09 took the screen from one control to three; BR-01 to two; D1's
+    // baseline door makes it three again. Skip stays first because it is drawn
+    // first — it is the corner a person reaches for when they do not want the
+    // movie, and making them tab past the thing they are declining would be
+    // the wrong order. The baseline door precedes the tour because it is the
+    // one offer here that expires (docs/MEASUREMENT-SPINE.md, D1).
     const order: string[] = [];
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       await page.keyboard.press('Tab');
       order.push(await page.evaluate(() => document.activeElement?.textContent ?? ''));
     }
-    // Two doors since BR-01, not three.
-    expect(order).toEqual([S.splashSkip, S.splashTour]);
+    expect(order).toEqual([S.splashSkip, S.splashBaseline, S.splashTour]);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
