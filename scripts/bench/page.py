@@ -2,6 +2,9 @@ import json, html, os
 ROOT='/Users/adamyoung/Documents/dev/workbrain-extension'
 SP=os.path.dirname(os.path.abspath(__file__))
 M=json.load(open(os.path.join(ROOT,'store/bench/run-001/manifest.json')))
+PROMPTS={}
+for c in M['cells']:
+    PROMPTS[(c['task'],c['variant'])]=open(os.path.join(ROOT,'store/bench',M['stamp'],c['file'])).read()
 esc=html.escape
 
 RUBRIC=[
@@ -24,6 +27,7 @@ def cell(t, v, side):
         for key,label,_ in RUBRIC)
     return f'''<div class="side" data-side="{side}">
   <div class="side-head"><span class="blind">Output {side}</span><span class="reveal" hidden>Variant {esc(vid)} — {esc(v['name'])}</span></div>
+  <button type="button" class="cp" data-prompt="{esc(PROMPTS[(tid,vid)])}">Copy this prompt</button>
   <label class="paste"><span>Paste what came back</span>
     <textarea class="out" data-t="{tid}" data-v="{vid}" rows="8" placeholder="Paste the model's answer here…"></textarea></label>
   <div class="rubric">{rub}</div>
@@ -90,6 +94,9 @@ table.rub td b{{color:var(--ink)}}
 .side-head{{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}}
 .blind{{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3)}}
 .reveal{{font-size:11px;color:var(--accent-2);font-family:var(--mono)}}
+.cp{{font:600 12px var(--sans);width:100%;min-height:36px;margin-bottom:10px;cursor:pointer;border-radius:7px;border:1px solid var(--accent-2);background:transparent;color:var(--accent-2)}}
+.cp:hover{{background:var(--accent-2);color:#0A1220}}
+.cp:focus-visible{{outline:2px solid var(--accent);outline-offset:2px}}
 .paste span{{display:block;font-size:11px;color:var(--ink-3);margin-bottom:5px}}
 textarea.out{{width:100%;font-family:var(--sans);font-size:13.5px;line-height:1.5;color:var(--ink);background:var(--card);border:1px solid var(--rule);border-radius:8px;padding:9px 11px;resize:vertical}}
 textarea.out:focus{{outline:2px solid var(--accent-2);outline-offset:2px}}
@@ -116,6 +123,7 @@ footer.bar button.ghost{{background:transparent;color:var(--ink-2);border-color:
   <p><strong>Two shapes of the same file, five fixed tasks, one rubric written before any of it was run.</strong> The answers behind both files are identical — the only thing that changes is the file's structure, which is what makes a difference in the scores attributable to anything.</p>
   <p>Run each prompt in whichever AI you are measuring, paste both answers in, score against the rubric. <strong>The sides are blind and their order flips between tasks</strong>, so a habit cannot form; press <em>Reveal</em> at the end.</p>
   <table class="rub"><tbody>{rubric_rows}</tbody></table>
+  <p style="margin-top:14px;font-size:13px;color:var(--warn)"><strong>Watch task 5 especially.</strong> Building the pack turned up a flaw in variant B: putting the reference examples last, for recency, displaces the System Grounding Rule from the end into the middle. Two things want that position. If B loses on task 5 and wins elsewhere, that is the cause — and the follow-up is a variant C that reorders everything except the grounding rule, which stays last.</p>
   <p style="margin-top:14px;font-size:13px;color:var(--ink-3)">0 = not at all · 1 = barely · 2 = mostly · 3 = fully. Twelve points is a floor of zero and a ceiling of fifteen per task.</p>
 </div>
 {''.join(blocks)}
@@ -152,6 +160,14 @@ function paint(){{
 }}
 
 document.addEventListener('click',function(ev){{
+  const cp=ev.target.closest('.cp');
+  if(cp){{
+    navigator.clipboard.writeText(cp.dataset.prompt).then(function(){{
+      const was=cp.textContent; cp.textContent='Copied — paste it into the AI';
+      setTimeout(function(){{cp.textContent=was}},1800);
+    }});
+    return;
+  }}
   const b=ev.target.closest('.scale button'); if(!b) return;
   const sc=b.closest('.scale');
   const k=key(sc.dataset.t,sc.dataset.v,sc.dataset.d);

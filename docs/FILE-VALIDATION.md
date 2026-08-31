@@ -273,3 +273,40 @@ product questions costs more than the preamble adds.
 
 **Nothing has been run yet.** The apparatus exists; the baseline is the first
 thing it produces.
+
+## A flaw the apparatus found in variant B, before a single run
+
+Verifying the pack end to end turned up something the argument had missed:
+**two things want the last position.**
+
+`FILE-VALIDATION.md` §2 argues the reference examples should go last, where
+recency weighting helps them most. That is probably right. But putting them
+there displaces the **System Grounding Rule** from the end of the file — where
+it has always sat — into the middle, position six of ten.
+
+The grounding rule is the one instruction in the file whose whole job is to
+survive being read. Moving it to the least-weighted position to make room for
+the examples may cost exactly the thing task 5 measures.
+
+**So watch task 5.** If B wins elsewhere and loses there, that is the cause,
+and the follow-up is a **variant C**: everything B does, except the grounding
+rule stays last. That is a one-line change to `ORDER` in `variants.ts` and it
+isolates the question cleanly.
+
+This is what the harness is for. The argument in this document did not catch
+it; building the thing the argument implied did.
+
+## On who runs it
+
+**Not me, and the reason is the point of the whole exercise.** I wrote variant
+B and I wrote the rubric. A model that knows the hypothesis is not a clean
+subject, and reporting its own outputs as the first data point would be
+advocacy with a number attached.
+
+The first run wants a model that has never seen this conversation. The scoring
+page has a **Copy this prompt** button on every cell, so a run is: copy, paste
+into the AI, paste the answer back, score. Ten cells, roughly ten minutes.
+
+If a second subject is wanted afterwards, running the identical pack through a
+different model is free and is the cheapest way to learn whether a result is
+about the FILE or about one vendor's habits.
