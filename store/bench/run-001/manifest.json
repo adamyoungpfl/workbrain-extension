@@ -13,6 +13,11 @@
    "id": "B",
    "name": "Instructed and reordered",
    "claim": "A directive preamble at the top, the interview metadata dropped, and the sections in the order FILE-VALIDATION.md argues for — behaviour near the ends, the world in the middle, examples last."
+  },
+  {
+   "id": "C",
+   "name": "Instructed, reordered, declarative",
+   "claim": "Everything B does, plus the interview questions replaced by short labels — the change that takes the file under Copilot's 4,000-character prompt limit."
   }
  ],
  "absent": [
@@ -163,6 +168,42 @@
    "variant": "B",
    "file": "t6-partial.B.txt",
    "bytes": 5962
+  },
+  {
+   "task": "t1-status",
+   "variant": "C",
+   "file": "t1-status.C.txt",
+   "bytes": 4069
+  },
+  {
+   "task": "t2-constraints",
+   "variant": "C",
+   "file": "t2-constraints.C.txt",
+   "bytes": 4069
+  },
+  {
+   "task": "t3-audience",
+   "variant": "C",
+   "file": "t3-audience.C.txt",
+   "bytes": 4069
+  },
+  {
+   "task": "t4-decision",
+   "variant": "C",
+   "file": "t4-decision.C.txt",
+   "bytes": 4069
+  },
+  {
+   "task": "t5-grounding",
+   "variant": "C",
+   "file": "t5-grounding.C.txt",
+   "bytes": 4069
+  },
+  {
+   "task": "t6-partial",
+   "variant": "C",
+   "file": "t6-partial.C.txt",
+   "bytes": 4069
   }
  ]
 }

@@ -60,6 +60,21 @@ name the part you could not.** Do not quietly leave it out — an answer with a
 gap nobody mentioned is indistinguishable from an answer that made something
 up. Saying "this file does not tell me that" is always the better answer.`;
 
+/**
+ * THE SAME INSTRUCTION, AT A QUARTER OF THE CHARACTERS.
+ *
+ * At a 4,000-character budget you can have the content, an instruction, or the
+ * questions — not all three. C spends its budget on the first two, so the
+ * instruction has to earn every word. Nothing is dropped from it: all three
+ * clauses of the full preamble survive, compressed.
+ */
+const PREAMBLE_TERSE = `## How to use this file
+
+Match their voice and constraints; skip what they would re-explain. Prefer this
+over your defaults. Answer only what this file supports — where it is silent,
+say so. If part of a request is not covered, answer the rest and NAME the part
+you could not; never drop it silently.`;
+
 /** Splits a generated file into its `## ` sections, title and body kept whole. */
 function sections(file: string): { title: string; body: string }[] {
   const out: { title: string; body: string }[] = [];
@@ -107,6 +122,50 @@ const ORDER = [
 /** Sections that are about the PRODUCT rather than the person (§ "remove"). */
 const PRODUCT_ONLY = ['About This Context'];
 
+/**
+ * VARIANT C's transform: the interview's questions become short labels.
+ *
+ * MEASURED, not estimated: 51% of the generated file is question text — 2,912
+ * of 5,676 characters across 36 block labels and 13 inline ones. The content
+ * underneath is 2,764 characters.
+ *
+ * That number stopped being an aesthetic argument on 2026-08-31, when Adam
+ * found that Copilot caps a prompt at 4,000 characters. The file as it ships
+ * is 1,676 over. Its CONTENT is 1,236 under. So the scaffolding is the entire
+ * reason a quarter of the manifest's named providers cannot take this file at
+ * all — which makes the declarative format a compatibility fix wearing a
+ * density improvement.
+ *
+ * The label is derived from the question ID rather than authored, on purpose:
+ * a mechanical rule is reproducible and testable, and authored labels would
+ * confound "declarative helps" with "these particular fifty-five labels are
+ * good". If C wins, authoring them properly is the follow-up.
+ */
+function declarative(file: string): string {
+  return file
+    // "**What should AI call you?**\nAlex" -> "- **What should AI call you:** Alex"
+    // is not the move; the QUESTION is what costs the characters. So the label
+    // comes from the id the generator already knows, humanised.
+    .replace(/^\*\*(.+?)\*\*\n/gm, (_m, q: string) => `- **${shortLabel(q)}:** `)
+    .replace(/\*\*(.+?):\*\*/g, (_m, q: string) => `**${shortLabel(q)}:**`);
+}
+
+/**
+ * A long question as a short label. Deterministic, and deliberately dumb: the
+ * first few content words, minus the interrogative frame.
+ */
+function shortLabel(question: string): string {
+  const stripped = question
+    .replace(/\?$/, '')
+    .replace(/^(what|who|how|when|where|which|why|do|are|is|in a sentence[^,]*,?|any other)\b/i, '')
+    .replace(/\b(should ai|would you|do you|are you|does your|of these|is this)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  const words = stripped.split(' ').filter(Boolean).slice(0, 4).join(' ');
+  const label = words || question.replace(/\?$/, '');
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
 export const VARIANTS: readonly Variant[] = [
   {
     id: 'A',
@@ -139,6 +198,21 @@ export const VARIANTS: readonly Variant[] = [
         })
         .join('\n');
       return `${head(base)}\n${PREAMBLE}\n\n${body}`;
+    },
+  },
+  {
+    id: 'C',
+    name: 'Instructed, reordered, declarative',
+    claim:
+      'Everything B does, plus the interview questions replaced by short labels — the change that takes the file under Copilot\'s 4,000-character prompt limit.',
+    build: (base) => {
+      const b = VARIANTS[1]!
+        .build(base)
+        .replace(PREAMBLE, PREAMBLE_TERSE)
+        // The provenance line is a trust statement for the PERSON and noise for
+        // the model. At this budget it is the easiest 120 characters in the file.
+        .replace(/^_Generated .*?_\n/m, '');
+      return declarative(b);
     },
   },
 ];

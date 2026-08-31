@@ -458,3 +458,60 @@ dimension where a persona nobody knows is useless, because there is nothing to
 be unfaithful to.
 
 Precision and face validity are two tests. This is the first one.
+
+---
+
+# The 4,000-character finding
+
+Adam, 2026-08-31, from trying to run the pack: **Copilot caps a prompt at about
+4,000 characters.** The first prompts could not be run at all.
+
+That is not a benchmark problem. Copilot is one of the four origins the
+manifest names, so this is a quarter of the product's declared surface area
+unable to accept the artefact the product exists to produce.
+
+## What the file is actually made of
+
+| | chars | |
+|---|---|---|
+| the file as it ships | **5,676** | 1,676 over Copilot's budget |
+| its question labels | **2,912** | **51%** — 36 block, 13 inline |
+| its content | **2,764** | 1,236 **under** the budget |
+
+**The scaffolding is the entire reason the file does not fit.** That turns
+FILE-VALIDATION's problem #1 — the interview-transcript format — from the most
+expensive improvement on the list into a compatibility fix.
+
+## Variant C, and what it proves
+
+`variants.ts` gains a third shape: everything B does, plus question labels in
+place of questions, a terse preamble, and the provenance line dropped.
+
+| variant | file | prompt (file + task) |
+|---|---|---|
+| A as it ships | 5,676 | 5,811–5,864 |
+| B instructed + reordered | 5,962 | 6,099–6,152 |
+| **C + declarative** | **4,069** | **4,200–4,253** |
+
+**C still does not fit, and that is the finding.** A 28% reduction — the
+largest available without cutting content — lands 200 characters over on the
+prompt. So:
+
+> **At Copilot's budget the whole file cannot ride inside a prompt. Not in any
+> shape. It needs a different delivery path.**
+
+Three ways out, and they are not exclusive:
+
+1. **Attach rather than paste.** Where a provider takes a file upload, the
+   limit is on the message and not the attachment. This is the least lossy and
+   should be the product's first answer for constrained providers.
+2. **A compact export.** A deliberately shorter file — the behaviour sections
+   and the constraints, without the roster of people and projects. Smaller and
+   honestly worse, offered as such rather than silently.
+3. **Split across two messages.** Works, and asks the person to do something
+   fiddly at the exact moment they are deciding whether this product is worth
+   it. Last resort.
+
+**The design decision this forces:** the file has a SIZE TIER, and "optimal
+structure" is only answerable against a stated budget. That belongs in the
+design log as a constraint on every entry, not as one more entry.
