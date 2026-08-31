@@ -1,7 +1,6 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act } from 'react';
 import { Splash, SPLASH_FADE_MS, taglineLines } from './Splash';
-import { SPLASH_BEATS } from '../../core/splash/sequence';
 import { S } from '../strings';
 import { mount } from '../components/testUtils';
 
@@ -146,24 +145,23 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
    * the tour is the one thing somebody might choose INSTEAD of arriving, and
    * "enter" was a button for a move the entire surface already makes.
    */
-  it('every control on it is a real one — skip, the baseline door, and the tour', () => {
+  it('is TWO buttons and no more — the screen asks one question', () => {
     vi.useFakeTimers();
     stubMedia(true);
-    const { container } = mount(
-      <Splash onDone={() => {}} onTour={() => {}} onBaseline={() => {}} />,
-    );
+    const { container } = mount(<Splash onDone={() => {}} onBaseline={() => {}} />);
     const labels = [...container.querySelectorAll('.splash button')].map((b) => b.textContent);
-    // D1's door precedes the tour's: it is the one offer on this screen that
-    // expires. The tour can be taken any time; a baseline only before you
-    // start (docs/MEASUREMENT-SPINE.md).
-    expect(labels).toEqual([S.splashSkip, S.splashBaseline, S.splashTour]);
+    // The baseline path first, because it is the one that expires. The corner
+    // Skip and the tour door are both gone: "go straight in" is one of these
+    // two now, and the tour is still the interview's own first three steps.
+    expect(labels).toEqual([S.splashBaseline, S.splashStraight]);
   });
 
-  it('draws no baseline door when there is nowhere to take one', () => {
+  it('still offers the shorter road when there is no baseline to take', () => {
     vi.useFakeTimers();
     stubMedia(true);
-    const { container } = mount(<Splash onDone={() => {}} onTour={() => {}} />);
-    expect(container.querySelector('.splash-baseline')).toBeNull();
+    const { container } = mount(<Splash onDone={() => {}} />);
+    const labels = [...container.querySelectorAll('.splash button')].map((b) => b.textContent);
+    expect(labels).toEqual([S.splashStraight]);
   });
 
   it('draws no tour door when there is nowhere to take one', () => {
@@ -174,15 +172,23 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     expect(container.querySelectorAll('.splash button').length).toBe(1);
   });
 
-  it('still lets anybody in — the surface itself is the door', () => {
-    // The claim the removed button was standing in for. If this ever fails,
-    // the splash has become a screen somebody can be stuck on.
+  it('the REVEAL is not dismissed by a stray click — it is a question with two answers', () => {
+    // Reversed on 2026-08-31, and deliberately. While the show runs, a click
+    // means "yes, in" and costs nothing but the rest of the movie. Once the
+    // choice is on screen, a stray click that picked one of the two answers
+    // for somebody would be the screen answering for them.
     vi.useFakeTimers();
     stubMedia(true);
     const onDone = vi.fn();
-    const { container } = mount(<Splash onDone={onDone} />);
+    const { container } = mount(<Splash onDone={onDone} onBaseline={() => {}} />);
     act(() => {
       (container.querySelector('.splash') as HTMLElement).click();
+    });
+    expect(onDone).not.toHaveBeenCalled();
+    // Escape is still the keyboard's way out, at every phase.
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+      vi.advanceTimersByTime(SPLASH_FADE_MS);
     });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
@@ -195,45 +201,55 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
   });
 
   it('a press hands over instantly — no fade to sit through', () => {
-    // Was the enter button's test; it is the SKIP button's now, which is the
-    // control that survived BR-01. The claim is the same and is about the
-    // hand-off, not about which control made it.
+    // The claim is about the hand-off rather than about which control made it,
+    // and the control that carries it is now "just get started".
     vi.useFakeTimers();
     stubMedia(true);
     const onDone = vi.fn();
     const { container } = mount(<Splash onDone={onDone} />);
 
     act(() => {
-      container.querySelector<HTMLButtonElement>('.splash-skip')!.click();
+      [...container.querySelectorAll<HTMLButtonElement>('.splash-door')].at(-1)!.click();
     });
     expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('after the ten-count the splash hands itself over — the show ends', () => {
+  /**
+   * REVERSED 2026-08-31: the splash no longer hands itself over.
+   *
+   * VB-131 held it six seconds and then left for Home on its own, which was
+   * right when arriving was the only thing this screen could do. It offers a
+   * CHOICE now — the baseline path or the shorter road — and a screen that
+   * answers its own question after ten seconds is not offering one.
+   *
+   * The two tests that stood here asserted the count and that a click beat it.
+   * What replaces them is the claim that matters more: waiting does nothing,
+   * and the only ways out are the two buttons and Escape.
+   */
+  it('waits indefinitely — the choice is not made for anybody', () => {
     vi.useFakeTimers();
     stubMedia(true);
     const onDone = vi.fn();
-    mount(<Splash onDone={onDone} />);
+    mount(<Splash onDone={onDone} onBaseline={() => {}} />);
 
     act(() => {
-      vi.advanceTimersByTime(SPLASH_BEATS.idleMs - 50);
+      // Far past every clock this screen ever had.
+      vi.advanceTimersByTime(60_000);
     });
     expect(onDone).not.toHaveBeenCalled();
-    act(() => {
-      vi.advanceTimersByTime(60);
-    });
-    expect(onDone).toHaveBeenCalledTimes(1);
   });
 
-  it('a click beats the count — exactly one handover, never two', () => {
+  it('hands over exactly once, however many times a door is pressed', () => {
     vi.useFakeTimers();
     stubMedia(true);
     const onDone = vi.fn();
     const { container } = mount(<Splash onDone={onDone} />);
 
     act(() => {
-      container.querySelector<HTMLElement>('.splash')!.click();
-      vi.advanceTimersByTime(SPLASH_BEATS.idleMs * 2);
+      const door = container.querySelector<HTMLButtonElement>('.splash-door')!;
+      door.click();
+      door.click();
+      vi.advanceTimersByTime(SPLASH_FADE_MS * 3);
     });
     expect(onDone).toHaveBeenCalledTimes(1);
   });

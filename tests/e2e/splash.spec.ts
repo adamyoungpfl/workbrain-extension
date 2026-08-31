@@ -221,22 +221,30 @@ test.describe('VB-128 — the show opens', () => {
     expect(S.splashWhat).not.toMatch(/\bthree\b/i);
 
     // The way past, said out loud rather than merely available.
-    await expect(page.getByRole('button', { name: S.splashSkip, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible();
 
     await context.close();
   });
 
-  test('the tour door is offered, and it goes somewhere other than Home', async () => {
+  /**
+   * The tour door's test, re-aimed at the door that replaced it.
+   *
+   * BS-09's tour door came off on 2026-08-31 when the splash became a
+   * two-button choice — and what it opened is not lost: V2.5 VB-114's dime
+   * tour IS the interview's first three steps, so a person taking EITHER
+   * button still meets it. That is what this now asserts, which is the
+   * stronger claim: the orientation does not depend on a door.
+   */
+  test('the baseline door goes into the interview, not by way of Home', async () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-lockup').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    const tour = page.getByRole('button', { name: S.splashTour, exact: true });
-    await expect(tour).toBeVisible();
-    await tour.click();
+    const door = page.getByRole('button', { name: S.splashBaseline, exact: true });
+    await expect(door).toBeVisible();
+    await door.click();
 
-    // Straight into the interview's own first slides, not by way of Home —
-    // §9: this is the one moment anybody accepts an orientation.
     await page.waitForSelector('.flow', { timeout: 10_000 });
+    // The interview's own opening, which is where the tour lives now.
     await expect(page.locator('.tourslide')).toHaveCount(1);
     await expect(page.locator('.home')).toHaveCount(0);
 
@@ -349,7 +357,7 @@ test.describe('VB-128 — every exit, at every moment', () => {
   test('the reveal’s button is real: named, focusable, Enter works', async () => {
     // Was the enter button's; it is SKIP's since BR-01 removed the other one.
     const { context, page } = await launchPanel();
-    const cta = page.getByRole('button', { name: S.splashSkip, exact: true });
+    const cta = page.getByRole('button', { name: S.splashStraight, exact: true });
     await cta.waitFor({ timeout: REVEAL_TIMEOUT });
 
     await cta.focus();
@@ -382,18 +390,16 @@ test.describe('VB-128 — every exit, at every moment', () => {
     await expect(page.locator('main[inert]')).toHaveCount(1);
 
     await page.waitForSelector('.splash-cost', { timeout: REVEAL_TIMEOUT });
-    // BS-09 took the screen from one control to three; BR-01 to two; D1's
-    // baseline door makes it three again. Skip stays first because it is drawn
-    // first — it is the corner a person reaches for when they do not want the
-    // movie, and making them tab past the thing they are declining would be
-    // the wrong order. The baseline door precedes the tour because it is the
-    // one offer here that expires (docs/MEASUREMENT-SPINE.md, D1).
+    // 2026-08-31: the screen is a two-button CHOICE. The corner's Skip and the
+    // tour door are gone — "go straight in" is one of these two now, and the
+    // tour is still the interview's own first three steps. The baseline path
+    // is first because it is the one that expires.
     const order: string[] = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 2; i++) {
       await page.keyboard.press('Tab');
       order.push(await page.evaluate(() => document.activeElement?.textContent ?? ''));
     }
-    expect(order).toEqual([S.splashSkip, S.splashBaseline, S.splashTour]);
+    expect(order).toEqual([S.splashBaseline, S.splashStraight]);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
@@ -402,19 +408,22 @@ test.describe('VB-128 — every exit, at every moment', () => {
     await context.close();
   });
 
-  test('the show ends on its own — the ten-count hands over to Home', async () => {
+  test('the show does NOT end on its own — it waits for a choice', async () => {
     test.setTimeout(40_000);
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash-cost', { timeout: REVEAL_TIMEOUT });
 
-    // Not yet: the count has barely started.
-    await page.waitForTimeout(1500);
+    /* THE SPLASH NO LONGER HANDS ITSELF OVER (2026-08-31). It waits, because
+       it is asking a question with two answers and a screen that answers its
+       own question after ten seconds is not asking one. Well past every clock
+       this screen ever had, it is still there. */
+    await page.waitForTimeout(SPLASH_BEATS.idleMs + 2000);
     await expect(page.locator('.splash')).toHaveCount(1);
-
-    // Then, with nobody touching anything, Home.
-    await expect(page.locator('.splash')).toHaveCount(0, { timeout: SPLASH_BEATS.idleMs + 3000 });
-    await expect(page.locator('.home')).toBeVisible();
-    await expect(page.locator('.flow')).toHaveCount(0);
+    /* `.home` is UNDER the splash the whole time and always has been — VB-34:
+       "the surface first, always, and the splash after it", so the panel never
+       waits on the splash to paint. What "has not handed over" means here is
+       that the splash is still up and still asking, not that Home is absent. */
+    await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible();
 
     await context.close();
   });
@@ -487,19 +496,23 @@ test.describe('VB-128 — reduced motion', () => {
     await expect(page.locator('.splash-cost')).toHaveText(S.splashCost);
     await expect(page.locator('.splash-what')).toHaveText(S.splashWhat);
     await expect(page.locator('.splash-cost')).toBeVisible();
-    await expect(page.getByRole('button', { name: S.splashSkip, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible();
     await expect(page.locator('.splash-drain')).toHaveCount(0);
 
     await context.close();
   });
 
-  test('the ten-count still hands over — the still version keeps the whole contract', async () => {
+  test('reduced motion waits too — the still version keeps the whole contract', async () => {
     test.setTimeout(30_000);
     const { context, page } = await launchPanel({ reduce: true });
     await page.waitForSelector('.splash-cost', { timeout: 4000 });
 
-    await expect(page.locator('.splash')).toHaveCount(0, { timeout: SPLASH_BEATS.idleMs + 3000 });
-    await expect(page.locator('.home')).toBeVisible();
+    /* The still version keeps the WHOLE contract, and that now includes
+       waiting: reduced motion changes how the screen arrives, never what it
+       asks. Both doors are there and nothing hands over on its own. */
+    await page.waitForTimeout(SPLASH_BEATS.idleMs + 2000);
+    await expect(page.locator('.splash')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible();
     expect(await frameCount(page)).toBe(0);
 
     await context.close();

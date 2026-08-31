@@ -111,11 +111,106 @@
 .splash-lockup .splash-what {
   animation-delay: 1.05s;
 }
-.splash-lockup .splash-baseline {
-  animation-delay: 1.3s;
+.splash-lockup .splash-choice {
+  animation-delay: 1.32s;
 }
-.splash-lockup .splash-tour {
-  animation-delay: 1.42s;
+
+.splash-wordmark {
+  font-size: 26px;
+  line-height: 1.1;
+  font-weight: 680;
+  letter-spacing: -0.022em;
+  /* White on the field (~18:1). The one violet stays for light surfaces;
+     on the dark stage the name is light itself. */
+  color: var(--ink-inv);
+  margin: 14px 0 0;
+}
+
+.splash-tagline {
+  font-size: 15px;
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.78);
+  margin: 10px 0 0;
+}
+
+.splash-tagline-line {
+  display: block;
+}
+
+/* The button: the house primary, sized for the moment, with the dark
+   stage's own focus ring — --primary's ring measures under 3:1 here, the
+   same physics that gave the globe its ring. */
+.splash-enter {
+  margin-top: 26px;
+  min-width: 232px;
+}
+.splash .btn:focus-visible {
+  outline-color: var(--splash-focus);
+}
+
+/* ── BS-09: what the held seconds buy ───────────────────────────────────
+   V2.7 spent them on a cycling word and a draining bar; both are gone
+   (§9). These two lines answer "what is this and what will it cost me" at
+   the moment the decision is made, and they are the same promise
+   `welcomeTime` makes one screen later.
+
+   White alphas on the near-black field, measured the way the wordmark above
+   was: 0.82 reads at about 14:1, well clear of the floor for body text. */
+.splash-cost,
+.splash-what {
+  margin: 14px 0 0;
+  max-width: 300px;
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.82);
+  text-wrap: balance;
+}
+.splash-cost {
+  font-weight: 650;
+  color: var(--ink-inv);
+}
+.splash-what {
+  margin-top: 6px;
+}
+
+/* The tour door — quiet beside the primary, and a real 44px control. */
+/* THE CHOICE. Two doors, side by side, equally weighted.
+
+   Neither is dressed as the primary and that is deliberate: this is a fork,
+   not a recommendation, and a filled button beside an outlined one would be us
+   answering the question the screen is asking. The baseline path is FIRST
+   because it is the one that expires — a starting point can only be taken
+   before somebody starts — not because it is preferred.
+
+   The corner's Skip and the tour door both came off with the auto hand-off:
+   "go straight in" is one of these two now, and a third control saying the
+   same thing is the screen asking twice. */
+.splash-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 18px;
+}
+.splash-door {
+  min-height: var(--target-min);
+  padding: 0 18px;
+  border: 1px solid rgba(255, 255, 255, 0.34);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.08);
+  font-family: var(--font-sans);
+  font-size: var(--type-support);
+  font-weight: 640;
+  color: var(--ink-inv);
+  cursor: pointer;
+}
+.splash-door:hover {
+  background: rgba(255, 255, 255, 0.18);
+  border-color: rgba(255, 255, 255, 0.55);
+}
+.splash-door:focus-visible {
+  outline: 2px solid var(--ink-inv);
+  outline-offset: 2px;
 }
 
 .splash-wordmark {

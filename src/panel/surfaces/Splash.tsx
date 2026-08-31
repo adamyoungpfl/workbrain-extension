@@ -3,7 +3,6 @@ import { BrandMark, BuildStamp } from '../components';
 import { SplashStage } from './SplashStage';
 import type { SplashStageHandle } from './SplashStage';
 import {
-  SPLASH_BEATS,
   pullStrength,
   splashPhase,
   swellOpacity,
@@ -69,13 +68,17 @@ export function taglineLines(text: string): string[] {
 export interface SplashProps {
   /** Called when the splash is finished and may be unmounted. */
   onDone: () => void;
-  /**
-   * BS-09 (§9) — the tour door. Straight into the three slides the interview
-   * already opens with (components/TourSlide.tsx), rather than by way of
-   * Home. Optional: a surface that cannot offer it simply does not, and the
-   * door is not drawn.
-   */
-  onTour?: (() => void) | undefined;
+  /* BS-09 (§9) put a TOUR DOOR here and 2026-08-31 takes it off, because the
+     splash is a two-button choice now and a third control is the screen asking
+     a second question at the moment it is asking its first.
+
+     WHAT IS LOST IS THE SHORTCUT, NOT THE TOUR. V2.5 VB-114's dime tour IS the
+     interview's first three steps, with the runner's `skipIf` keeping it away
+     from anybody already underway — so a person who takes either button still
+     meets it. The door was only a way to reach the same slides sooner.
+
+     Recorded rather than deleted, per the `splashBuild` precedent: if the
+     choice ever goes back to three, this is the one that was here. */
   /**
    * D1 (2026-08-31) — the measurement spine's front door
    * (docs/MEASUREMENT-SPINE.md). It opens a short path: the goal gate, then
@@ -89,7 +92,7 @@ export interface SplashProps {
   onBaseline?: (() => void) | undefined;
 }
 
-export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
+export function Splash({ onDone, onBaseline }: SplashProps) {
   const [leaving, setLeaving] = useState(false);
   /** Decided during the first render (NarratorToggle's rule): an effect
    * would paint the show a frame late — or paint it at all for someone who
@@ -105,7 +108,6 @@ export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
   const stageRef = useRef<SplashStageHandle | null>(null);
   /** One handover, however many ways it is triggered at once. */
   const handedOver = useRef(false);
-  const idleTimer = useRef<number | undefined>(undefined);
 
   /** BS-09: one handover, and now two possible destinations — Home, or the
    * tour door's own. The guard and the fade are the same either way, which
@@ -114,7 +116,6 @@ export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
   leave.current = (then?: () => void) => {
     if (handedOver.current) return;
     handedOver.current = true;
-    window.clearTimeout(idleTimer.current);
     const finish = then ?? onDone;
     if (reduced) {
       finish();
@@ -143,9 +144,7 @@ export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
       // the draining bar, and the once-per-second stepper that drove it goes
       // with it: there is nothing left to step, and a timer with no drawing
       // is a timer nobody asked for. The zero-rAF law is unaffected.
-      idleTimer.current = window.setTimeout(() => leave.current(), SPLASH_BEATS.idleMs);
       return () => {
-        window.clearTimeout(idleTimer.current);
       };
     }
 
@@ -156,7 +155,6 @@ export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
     const t0 = performance.now();
     let raf = 0;
     let lastPhase: SplashPhase = 'show';
-    let enterAtMs: number | null = null;
     const tick = (now: number) => {
       const t = (now - t0) / 1000;
       const p = splashPhase(t);
@@ -172,22 +170,17 @@ export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
       // The shards fly on the same clock (VB-129); once the reveal has the
       // screen the stage is unmounted and this is a no-op.
       stageRef.current?.paint(t);
-      if (t >= SPLASH_BEATS.enterAt) {
-        if (enterAtMs === null) {
-          enterAtMs = now;
-          idleTimer.current = window.setTimeout(() => leave.current(), SPLASH_BEATS.idleMs);
-        }
-        // BS-09: the hold is unchanged (VB-131's six seconds) and nothing
-        // draws it any more. §9: "nothing spins and nothing counts down" —
-        // a bar draining toward a hand-over is pressure applied to a
-        // decision, and the decision is the point of the seconds.
-      }
+      /* THE SPLASH NO LONGER HANDS ITSELF OVER (Adam, 2026-08-31).
+         VB-131 held it six seconds and then left for Home on its own. That
+         made sense when arriving was the only thing this screen could do. It
+         now offers a CHOICE — the baseline path or the shorter road — and a
+         screen that answers its own question after six seconds is not offering
+         one. So the clock still drives the show and drives nothing else. */
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
     return () => {
       cancelAnimationFrame(raf);
-      window.clearTimeout(idleTimer.current);
     };
   }, [reduced]);
 
@@ -200,7 +193,12 @@ export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
       className="splash"
       data-phase={phase}
       data-leaving={leaving ? 'on' : 'off'}
-      onClick={() => leave.current()}
+      /* THE SURFACE IS THE DISMISSAL ONLY WHILE THE SHOW IS RUNNING.
+         A click mid-movie means "yes, in" and costs nothing but the rest of
+         the animation. Once the reveal is up there is a question on screen
+         with two answers, and a stray click that picked one of them for
+         somebody would be the screen answering for them. */
+      onClick={phase === 'reveal' ? undefined : () => leave.current()}
     >
       {/* The stage. VB-128 ships it with the mark burning in its gravity
           glow; VB-129 flies the shard windows in this same box. Decoration
@@ -222,12 +220,13 @@ export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
           you have" is the first question a report raises. Outside the lockup
           so both pin to the PANEL's corners rather than to the composition's,
           and so neither costs the lockup a pixel of its vertical rhythm. */}
+      {/* The corner's Skip is gone with the auto hand-off: "go straight in" is
+          one of the two buttons below now, and a third control saying the same
+          thing is the screen asking twice. The stamp stays — "which build did
+          you have" is the first question a report raises. */}
       {phase === 'reveal' && (
         <div className="splash-corners">
           <BuildStamp />
-          <button type="button" className="splash-skip" onClick={() => leave.current()}>
-            {S.splashSkip}
-          </button>
         </div>
       )}
       {phase === 'reveal' && (
@@ -260,19 +259,24 @@ export function Splash({ onDone, onTour, onBaseline }: SplashProps) {
               overlay pointing at UI, not on orientation somebody asked for.
               This is the one moment anyone accepts it — after question one,
               nobody will. */}
-          {/* D1's door, above the tour's: it is the one that leads somewhere
-              the person cannot get to later by accident. The tour they can
-              always take; a baseline can only be taken before they start. */}
-          {onBaseline && (
-            <button type="button" className="splash-baseline" onClick={() => leave.current(onBaseline)}>
-              {S.splashBaseline}
+          {/* TWO BUTTONS, AND THEY ARE THE WHOLE OF THE SCREEN'S QUESTION.
+
+              The baseline path first, because it is the one that expires —
+              a starting point can only be taken before somebody starts, and
+              the other road is available for the rest of the product's life.
+              Neither is dressed as the primary: this is a fork, not a
+              recommendation, and a filled button beside an outlined one would
+              be us answering it. */}
+          <div className="splash-choice">
+            {onBaseline && (
+              <button type="button" className="splash-door" onClick={() => leave.current(onBaseline)}>
+                {S.splashBaseline}
+              </button>
+            )}
+            <button type="button" className="splash-door" onClick={() => leave.current()}>
+              {S.splashStraight}
             </button>
-          )}
-          {onTour && (
-            <button type="button" className="splash-tour" onClick={() => leave.current(onTour)}>
-              {S.splashTour}
-            </button>
-          )}
+          </div>
         </div>
       )}
     </div>

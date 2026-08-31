@@ -1654,6 +1654,11 @@ export const S = {
      which is the only thing this screen can honestly promise at minute one.
      [DRAFT] */
   splashBaseline: 'Start by seeing where you are',
+  /* The other half of the choice. It is not "skip" — nothing is being skipped,
+     it is the same interview by the shorter road — and it is not "no thanks",
+     because declining is not what somebody is doing when they pick the way
+     most people will pick. [DRAFT] */
+  splashStraight: 'Just get started',
   /* D1's offer screen, at the end of the goal gate. The one moment a true
      baseline can be taken — after they have said what they want, before the
      file exists to help with it.

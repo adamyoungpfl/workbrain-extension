@@ -565,10 +565,6 @@ export default function App() {
             setWantBaseline(true);
             openContext();
           }}
-          onTour={() => {
-            endSplash();
-            openContext();
-          }}
         />
       )}
     </>
