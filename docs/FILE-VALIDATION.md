@@ -515,3 +515,31 @@ Three ways out, and they are not exclusive:
 **The design decision this forces:** the file has a SIZE TIER, and "optimal
 structure" is only answerable against a stated budget. That belongs in the
 design log as a constraint on every entry, not as one more entry.
+
+---
+
+# Copilot is out of the standard (Adam, 2026-08-31)
+
+> *"Copilot users are not important enough to make them priority, and Copilot
+> can be configured in lots of different rules based on corporate environments,
+> so bending to those is a waste of time. We'll never get it tight enough to
+> meet every version of Copilot prompt guards."*
+
+Recorded as a decision rather than a lapse, because the 4,000-character finding
+above still stands and somebody will read it later and wonder why nothing was
+done about it.
+
+**The reasoning is about generalisability, not effort.** A tenant-configured
+prompt guard means a result measured against one organisation's Copilot
+predicts nothing about another's. A benchmark cell whose value depends on the
+customer's IT department is not a measurement — and chasing a moving floor
+would have the file's structure being decided by the strictest configuration
+anybody happens to have.
+
+**What survives from that finding anyway:** 51% of the file is question
+scaffolding, and variant C proves it can come out. That is worth having on its
+own merits — smaller, denser, and the same content — and the benchmark will say
+whether it is also better. It is simply no longer justified by Copilot.
+
+Copilot is therefore absent from `scripts/bench/models.ts`, and the reason is
+in that file too.
