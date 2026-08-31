@@ -29,13 +29,12 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { contextModules, contextOutline } from '../src/core/flow/flow';
-import { buildFlowLookups, keyOf, resolvePhrase } from '../src/core/files/lookups';
+import { buildFlowLookups, resolvePhrase } from '../src/core/files/lookups';
 import { positionForQuestionId } from '../src/core/flow/outline';
 import { narrationFor } from '../src/core/voice/narration';
 import { deepDiveFor } from '../src/core/flow/deepDive';
 import { splitSectionLabel } from '../src/core/flow/sectionLabel';
-import { S } from '../src/panel/strings';
-import { goalServiceLabelFor } from '../src/core/flow/reflectFrames';
+import { NARRATION_COPY } from '../src/panel/voice/copy';
 import type { FileOutlineNode, FlowContext, Step } from '../src/schema/flow.types';
 import type { Answers } from '../src/schema/storage.types';
 
@@ -50,10 +49,7 @@ const CTX: FlowContext = { answers: {}, repeatables: {} };
 
 /** The panel's own two strings, handed to core the way `Flow` hands them over —
  *  so the script this reports is the script that plays. */
-const COPY = {
-  reflectCta: (ctx: FlowContext) => S.reflectCta(goalServiceLabelFor(ctx)),
-  moduleIntro: (moduleId: string) => S.moduleIntro?.[moduleId] ?? [],
-};
+const COPY = NARRATION_COPY;
 
 /** What shape of answer a question wants, in words somebody can think with. */
 const KINDS: Record<string, string> = {
@@ -130,7 +126,7 @@ function walk(nodes: readonly FileOutlineNode[]) {
         rephrasings: (step.rephrasings ?? []).map((r) => resolvePhrase(r, CTX)),
         spoken,
         hint: step.hint ?? null,
-        placeholder: step.placeholder ?? null,
+        placeholder: null,
         deepDives: [...(deepDiveFor(qid) ?? [])],
         ideas: step.ideas?.length ?? 0,
         options: (step.options ?? []).map((o) => o.l),

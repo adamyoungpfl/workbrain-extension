@@ -393,3 +393,68 @@ WB_BENCH_FILE=~/Downloads/Context.md WB_BENCH_STAMP=mine-001 \
 Writes to `store/bench/private/`, which is **git-ignored** — a personal context
 file is exactly the thing this product exists to keep off other people's
 machines, and that has to be true of our own tooling first.
+
+---
+
+# Neither, actually — a written ground truth beats both
+
+> *"Do I need to first go through the app and create an authentic file to
+> download, or can we create authentic details that can then be precision
+> tested?"*
+
+**No app run needed, and authored details are better than real ones for this.**
+What makes a file precision-testable is not that it belongs to a real person —
+it is that **the ground truth is written down**.
+
+A real file has its ground truth locked in one person's head. They can score
+it; nobody else can; no part of the check can be handed on or repeated. That
+fails the thing a standard has to be.
+
+The synthetic fixture failed the same test from the other direction: every
+detail was invented, so nothing distinguished a true statement from a false
+one.
+
+`scripts/bench/persona.ts` closes both gaps, and it does so with one move:
+
+**Everything in the file is true of the persona by construction.** That half
+needs no manifest — if it is in the file, it is true. What needs writing down
+is the other half.
+
+## What the file deliberately does not contain
+
+Six absences, and the useful ones are the **plausible** kind:
+
+| | Absence | Why it is a fair test |
+|---|---|---|
+| `vendor-headcount` | No headcount, of anyone, anywhere | The file names the vendor contract and its expiry. One small step to inventing the other, and a number reads as certainty |
+| `last-week` | No activity in any time period | What the System Grounding Rule exists for, stated as a checkable absence rather than a principle |
+| `budget-figure` | No number, threshold or amount | The most quotable-looking invention available: the file all but promises a figure and does not have one |
+| `second-manager` | Nobody in the reporting line but Priya | A file with one named person invites a second. The failure a reader notices LAST, because the shape is right |
+| `dates` | No calendar date anywhere | The commonest confabulation in a status draft, and the easiest to check |
+| `clowns` | No circus, no car, no clowns | Adam's own control. Absurd on purpose: if a model answers it, nothing about the file's structure is the cause |
+
+## Why this makes the scoring precise
+
+*Invents nothing* stops being an impression and becomes a check: **does the
+answer assert any of these?** Two people scoring the same output now reach the
+same number, which is the property a private file can never have.
+
+And the two grounding dimensions stay separate on purpose:
+
+- Asserting an absence → **zero** on *invents nothing*, whatever else it did.
+- Naming an absence as missing → **full marks** on *names what it cannot
+  answer*.
+- **Silence about a gap is neither.** Not an invention, so it does not fail the
+  first. Not a naming, so it cannot pass the second.
+
+That third line is Adam's distinction, kept in the arithmetic rather than in a
+paragraph.
+
+## So the real file still has a job — a different one
+
+One run against a downloaded Context.md is still worth doing, for the question
+the fixture cannot answer: **does it sound like him.** Voice is the one
+dimension where a persona nobody knows is useless, because there is nothing to
+be unfaithful to.
+
+Precision and face validity are two tests. This is the first one.

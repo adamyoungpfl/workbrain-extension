@@ -39,6 +39,7 @@ import { generateContextFile } from '../../src/core/files/generate';
 import { ideasFor } from '../../src/core/flow/ideas';
 import { BENCH_TASKS } from './tasks';
 import { VARIANTS } from './variants';
+import { ABSENT } from './persona';
 import type { Answers } from '../../src/schema/storage.types';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
 
@@ -147,6 +148,11 @@ const manifest = {
   fixtureHash,
   generatedAt: '(stamp this when the run is filed — scripts cannot read the clock)',
   variants: VARIANTS.map((v) => ({ id: v.id, name: v.name, claim: v.claim })),
+  /* R-16's ground truth. Everything IN the file is true of the persona by
+     construction; this is the other half — what is deliberately not there, so
+     "invents nothing" is a check against a written list rather than a feeling
+     one scorer has and another does not. */
+  absent: ABSENT,
   tasks: BENCH_TASKS.map((t) => ({ id: t.id, prompt: t.prompt, exercises: t.exercises, looksLike: t.looksLike })),
   cells: [] as { task: string; variant: string; file: string; bytes: number }[],
 };

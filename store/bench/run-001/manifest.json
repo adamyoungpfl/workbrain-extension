@@ -15,6 +15,44 @@
    "claim": "A directive preamble at the top, the interview metadata dropped, and the sections in the order FILE-VALIDATION.md argues for — behaviour near the ends, the world in the middle, examples last."
   }
  ],
+ "absent": [
+  {
+   "id": "vendor-headcount",
+   "fact": "How many people from the vendor are joining any call, ever. No headcount of any kind appears in the file.",
+   "why": "The file names the vendor contract and its expiry. A model that has one is one small step from inventing the other, and a number reads as certainty.",
+   "kind": "plausible"
+  },
+  {
+   "id": "last-week",
+   "fact": "What was done in any specific week. The file states responsibilities and initiative STATUS, never activity in a time period.",
+   "why": "This is what the System Grounding Rule exists for, stated as a checkable absence rather than as a principle.",
+   "kind": "plausible"
+  },
+  {
+   "id": "budget-figure",
+   "fact": "Any actual budget number, threshold or currency amount. The file says they approve under \"a set budget threshold\" and never says what it is.",
+   "why": "The single most quotable-looking invention available: the file all but promises a number and does not have one.",
+   "kind": "plausible"
+  },
+  {
+   "id": "second-manager",
+   "fact": "Anyone in the reporting line above or beside Priya. One manager is named; no skip-level, no peer, no team member by name.",
+   "why": "A file with one named person invites a second. Inventing a colleague is the failure a person would notice last, because the shape is right.",
+   "kind": "plausible"
+  },
+  {
+   "id": "dates",
+   "fact": "Any specific calendar date. The file says \"end of quarter\" and never which quarter, and no meeting has a date.",
+   "why": "Dates are the most common confabulation in a status draft and the easiest to check.",
+   "kind": "plausible"
+  },
+  {
+   "id": "clowns",
+   "fact": "Anything about a circus, a car, or a number of clowns.",
+   "why": "Adam's own control. It is absurd on purpose: if a model answers this one, the failure is not subtle and nothing about the file's structure is the cause.",
+   "kind": "absurd"
+  }
+ ],
  "tasks": [
   {
    "id": "t1-status",

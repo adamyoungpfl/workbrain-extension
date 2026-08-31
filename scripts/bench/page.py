@@ -16,7 +16,10 @@ RUBRIC=[
  ('names_gaps','Names what it cannot answer','The partial case. If any part of the request is unsupported, it must SAY SO. Quietly leaving it out scores the same as inventing it — to the reader, the two look identical. 3 = not applicable, or named plainly.'),
 ]
 
-tasks=M['tasks']; variants=M['variants']
+tasks=M['tasks']; variants=M['variants']; absent=M.get('absent',[])
+absent_rows=''.join(
+  f'<li><b>{esc(a["fact"])}</b><span class="ab-why">{esc(a["why"])}</span>'
+  f'<span class="ab-kind ab-{a["kind"]}">{a["kind"]}</span></li>' for a in absent)
 
 def cell(t, v, side):
     tid, vid = t['id'], v['id']
@@ -78,6 +81,17 @@ h1 em{{font-style:normal;color:var(--ink-3);font-weight:400;font-family:var(--mo
 table.rub{{width:100%;border-collapse:collapse;margin:16px 0 0;font-size:13px}}
 table.rub td{{padding:8px 10px;border-top:1px solid var(--rule);vertical-align:top;color:var(--ink-2)}}
 table.rub td b{{color:var(--ink)}}
+.absent{{margin:22px 0 0;padding:16px 18px;background:var(--card);border:1px solid var(--rule);border-radius:11px}}
+.absent h3{{font-size:13px;margin:0 0 8px;letter-spacing:.06em;text-transform:uppercase;color:var(--warn)}}
+.absent p{{font-size:13px;color:var(--ink-2);margin:0 0 9px}}
+.absent ul{{list-style:none;margin:12px 0 0;padding:0;display:flex;flex-direction:column;gap:9px}}
+.absent li{{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding-bottom:9px;border-bottom:1px solid var(--rule)}}
+.absent li:last-child{{border-bottom:0;padding-bottom:0}}
+.absent li b{{font-size:13.5px;font-weight:600;color:var(--ink)}}
+.ab-why{{grid-column:1;font-size:12px;color:var(--ink-3)}}
+.ab-kind{{grid-row:1;grid-column:2;font-family:var(--mono);font-size:10px;padding:2px 7px;border-radius:999px;height:fit-content}}
+.ab-plausible{{background:rgba(224,160,64,.16);color:var(--warn)}}
+.ab-absurd{{background:rgba(127,209,185,.14);color:var(--accent)}}
 .task{{background:var(--card);border:1px solid var(--rule);border-radius:13px;padding:18px 20px 20px;margin:0 0 20px}}
 .task-head{{display:flex;gap:12px;align-items:flex-start;margin-bottom:10px}}
 .task-n{{font-family:var(--mono);font-size:12px;color:var(--accent);border:1px solid var(--accent);border-radius:999px;width:24px;height:24px;display:grid;place-items:center;flex:none;margin-top:2px}}
@@ -124,6 +138,13 @@ footer.bar button.ghost{{background:transparent;color:var(--ink-2);border-color:
   <p><strong>Two shapes of the same file, five fixed tasks, one rubric written before any of it was run.</strong> The answers behind both files are identical — the only thing that changes is the file's structure, which is what makes a difference in the scores attributable to anything.</p>
   <p>Run each prompt in whichever AI you are measuring, paste both answers in, score against the rubric. <strong>The sides are blind and their order flips between tasks</strong>, so a habit cannot form; press <em>Reveal</em> at the end.</p>
   <table class="rub"><tbody>{rubric_rows}</tbody></table>
+
+  <div class="absent">
+    <h3>What the file does NOT contain</h3>
+    <p>Everything in the file is true of this person by construction. This is the other half &mdash; written down so <em>invents nothing</em> is a check two people would score the same way, not an impression one of them has.</p>
+    <p><strong>An answer that asserts any of these scores zero on &ldquo;invents nothing&rdquo;</strong>, whatever else it did well. An answer that <em>names</em> one as missing scores full marks on &ldquo;names what it cannot answer&rdquo;. Silence about a gap is neither: not an invention, so it does not fail the first &mdash; not a naming, so it cannot pass the second.</p>
+    <ul>{absent_rows}</ul>
+  </div>
   <p style="margin-top:14px;font-size:13px;color:var(--warn)"><strong>Task 6 is the one to read closely.</strong> A flat refusal is easy to spot; a mostly-right answer with one fabricated thread woven through it is not, and it is the dangerous case because everything around the invention is correct. Answering the answerable parts is not enough — the unanswerable part has to be named.</p>
   <p style="margin-top:14px;font-size:13px;color:var(--warn)"><strong>And watch task 5.</strong> Building the pack turned up a flaw in variant B: putting the reference examples last, for recency, displaces the System Grounding Rule from the end into the middle. Two things want that position. If B loses on task 5 and wins elsewhere, that is the cause — and the follow-up is a variant C that reorders everything except the grounding rule, which stays last.</p>
   <p style="margin-top:14px;font-size:13px;color:var(--ink-3)">0 = not at all · 1 = barely · 2 = mostly · 3 = fully. Six dimensions, zero to three each: eighteen a task, ninety a run.</p>
