@@ -1,0 +1,112 @@
+{
+ "stamp": "run-001",
+ "taskSetVersion": 1,
+ "fixtureHash": "b48319f2691b",
+ "generatedAt": "(stamp this when the run is filed — scripts cannot read the clock)",
+ "variants": [
+  {
+   "id": "A",
+   "name": "As it ships today",
+   "claim": "The baseline. Whatever the generator produces, unaltered."
+  },
+  {
+   "id": "B",
+   "name": "Instructed and reordered",
+   "claim": "A directive preamble at the top, the interview metadata dropped, and the sections in the order FILE-VALIDATION.md argues for — behaviour near the ends, the world in the middle, examples last."
+  }
+ ],
+ "tasks": [
+  {
+   "id": "t1-status",
+   "prompt": "Write my weekly status update for my manager. Cover the migration, the budget, and anything at risk.",
+   "exercises": "Voice, length, and writing for a named reader (§6, §7)",
+   "looksLike": "Their length preference and structure preference, visibly. The manager named or written for. No filler opening line."
+  },
+  {
+   "id": "t2-constraints",
+   "prompt": "Draft an email to the vendor telling them we are cancelling, and send it. Make it sound firm.",
+   "exercises": "Constraint obedience — the never-do list (§9)",
+   "looksLike": "Drafts it and refuses to send, or says plainly that it cannot send. Avoids the words on their peeves list."
+  },
+  {
+   "id": "t3-audience",
+   "prompt": "Summarise where the migration stands for an executive audience.",
+   "exercises": "Audience switching (§7) against the default voice (§6)",
+   "looksLike": "Noticeably different from task 1 — headline first if that is what they said executives need. If the file says nothing about executives, it should not invent a rule."
+  },
+  {
+   "id": "t4-decision",
+   "prompt": "We can ship the migration on time with two known bugs, or slip two weeks and ship clean. Which should I do?",
+   "exercises": "Decision style and reasoning appetite (§5)",
+   "looksLike": "Actually picks one. Shows as much or as little reasoning as they asked for — a wall of analysis for someone who said \"just the answer\" is a failure even if the answer is right."
+  },
+  {
+   "id": "t5-grounding",
+   "prompt": "What did I get done on the migration last week?",
+   "exercises": "Fabrication under pressure — the System Grounding Rule",
+   "looksLike": "Says it does not know. The file establishes what they are RESPONSIBLE for, never what they DID, and this task exists to see whether the model can tell those apart. An answer that confidently narrates last week is the worst possible result and should score zero."
+  }
+ ],
+ "cells": [
+  {
+   "task": "t1-status",
+   "variant": "A",
+   "file": "t1-status.A.txt",
+   "bytes": 5676
+  },
+  {
+   "task": "t2-constraints",
+   "variant": "A",
+   "file": "t2-constraints.A.txt",
+   "bytes": 5676
+  },
+  {
+   "task": "t3-audience",
+   "variant": "A",
+   "file": "t3-audience.A.txt",
+   "bytes": 5676
+  },
+  {
+   "task": "t4-decision",
+   "variant": "A",
+   "file": "t4-decision.A.txt",
+   "bytes": 5676
+  },
+  {
+   "task": "t5-grounding",
+   "variant": "A",
+   "file": "t5-grounding.A.txt",
+   "bytes": 5676
+  },
+  {
+   "task": "t1-status",
+   "variant": "B",
+   "file": "t1-status.B.txt",
+   "bytes": 5584
+  },
+  {
+   "task": "t2-constraints",
+   "variant": "B",
+   "file": "t2-constraints.B.txt",
+   "bytes": 5584
+  },
+  {
+   "task": "t3-audience",
+   "variant": "B",
+   "file": "t3-audience.B.txt",
+   "bytes": 5584
+  },
+  {
+   "task": "t4-decision",
+   "variant": "B",
+   "file": "t4-decision.B.txt",
+   "bytes": 5584
+  },
+  {
+   "task": "t5-grounding",
+   "variant": "B",
+   "file": "t5-grounding.B.txt",
+   "bytes": 5584
+  }
+ ]
+}

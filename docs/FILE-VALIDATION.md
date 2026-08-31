@@ -201,3 +201,75 @@ The honest ranking of confidence:
 **The cheapest real validation:** generate the file in two shapes, run the same
 three prompts through both, and read the outputs side by side. Half a day, and
 it turns every "high confidence" above into a fact.
+
+---
+
+# The benchmark — `scripts/bench/`
+
+Built 2026-08-31. Adam: *"Let's start with the comparison apparatus so that we
+can establish a baseline to improve from starting from the first test. If there
+is no standard, then I will work to establish a standard that other models will
+have to measure up to."*
+
+**Scoring page: https://claude.ai/code/artifact/6ae104ff-6d00-46ec-b3b3-abffa673cd91**
+
+```
+npx vite-node --config vitest.config.ts scripts/bench/run.ts
+```
+
+Writes `store/bench/<stamp>/` — one paste-ready prompt per task × variant, both
+variant files, and a manifest.
+
+## What makes it a standard rather than an opinion
+
+**One fixture, many shapes.** Every variant is built from the same synthetic
+answers, each text answer being that question's own shipped `ideas[0]`. The
+file's structure is the only thing that changes between cells, so a difference
+in the scores is attributable to it and to nothing else.
+
+**Synthetic on purpose.** A benchmark run against a real person's file cannot
+be published, cannot be re-run by anybody else, and cannot be compared across
+models — which is three of the four things a standard has to be.
+
+**Five tasks, fixed for good.** A benchmark whose tasks move is not a
+benchmark. Changing one means a new task-set version, never an edit. Each is
+pointed at a different section so no single improvement can carry the score,
+and each carries a *what a good answer looks like* written before any run — so
+the rubric cannot be bent to fit whatever came back.
+
+**Task 5 is the sharpest.** It asks for something the file cannot support
+("what did I get done last week?"). The right answer is a refusal. It is the
+only direct test of whether the System Grounding Rule does anything, and a
+confident narration of last week scores zero.
+
+**A rubric fixed in advance**, five dimensions, 0–3 each: specific to them,
+sounds like them, respects the constraints, ready to send, and invents nothing.
+The last is a penalty dimension — most rubrics only reward, and a file that
+makes a model more fluent AND more confidently wrong is worse than no file.
+
+**Blind, with the sides flipped between tasks** so a habit cannot form.
+
+**Model-agnostic, and that is the point.** The harness calls no AI. It prints
+prompts a person pastes anywhere, which measures the FILE rather than a vendor
+— and it can be pointed at a model nobody has shipped yet without changing a
+line.
+
+**Comparable across runs.** The manifest pins the task-set version, the
+fixture's hash and the variant ids. Change any of them and the runs are two
+different experiments, which the manifest makes visible rather than silent.
+
+## The guardrail question, answered
+
+`docs/GUARDRAILS.md` says the product makes no AI calls and never transmits the
+person's content. Nothing here touches the extension: it lives in `scripts/`,
+ships in nothing, calls nothing, and the content it prints is a synthetic
+fixture rather than anybody's file.
+
+## Run 001
+
+Variant A (as it ships) is 5,676 bytes; variant B (instructed and reordered) is
+5,585 — B is *smaller* despite gaining a preamble, because dropping the two
+product questions costs more than the preamble adds.
+
+**Nothing has been run yet.** The apparatus exists; the baseline is the first
+thing it produces.

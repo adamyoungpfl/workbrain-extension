@@ -1,0 +1,165 @@
+# Context.md
+
+_Generated 31 August 2026 from a Work Brain Context Interview — nothing in this file ever left the browser it was created in._
+
+## 1. About This Context
+
+**Which AI do you use most?**
+ChatGPT
+
+**What's the one thing you want it to do better today?**
+Draft a status update for my manager that sounds like me.
+
+**Are we building this primarily for your work, personal life, or both?**
+Work
+
+**What would you most like to stop explaining over and over in your work life?**
+The context behind the project I'm currently leading.
+
+## 2. About Me
+
+**What should AI call you?**
+Alex
+
+**Do you use a different name professionally? Leave this blank if it's the same.**
+Alexandra Chen, but I go by Alex outside work
+
+**How would you describe what you do?**
+I manage a team that keeps our reporting accurate and on time.
+
+### 2.1 Roles
+
+**What are your roles — the ones distinct enough that AI should know about each one separately?**
+- Employee
+- Manager / Team Lead
+
+**Manager**
+- **Who or what is this role for?:** Myself
+- **In a sentence or two, what are you there to accomplish?:** Keep the team's reporting accurate, on time, and trusted by leadership.
+- **Is this your primary role, a secondary role, or something occasional?:** Primary
+- **Is this role current, or something from your past that's still useful context?:** Current
+
+### 2.2 Responsibilities
+
+**What are you personally responsible for?**
+The budget, the vendor contracts, and the final go/no-go call.
+
+### 2.3 Boundaries
+
+**What work do you contribute to but do not own?**
+I give input on the roadmap, but the product lead makes the final call.
+
+**What do people sometimes assume is your responsibility, but actually isn't?**
+People assume I approve the final budget — I only draft it.
+
+### 2.4 Decision Rights
+
+**What kinds of decisions can you make yourself?**
+I can approve anything under a set budget threshold myself.
+
+### 2.5 Expertise
+
+**What expertise do people normally come to you for?**
+People come to me for how our reporting pipeline actually works.
+
+## 3. My World
+
+**Priya, my manager**
+- **What kind of thing do you want to tell AI about?:** Person
+- **In a sentence, why does AI need to know about this?:** My manager — final approver on anything over budget, prefers a heads-up before surprises.
+- **Any other names, nicknames, or shorthand this goes by?:** Also called 'the CRM'
+
+## 4. Initiatives
+
+**The Q4 rebrand**
+- **In a couple sentences, what is this and why does it matter?:** We're moving off our old ticketing system onto a new one before support volume outgrows it.
+- **Where does this stand right now?:** Just getting started
+- **What does success look like for this?:** Every open ticket migrated with zero data loss, and support response time back under our SLA.
+- **Any constraints AI should know about — budget, timeline, dependencies, risks?:** Hard deadline of end of quarter — the old vendor contract expires then.
+- **Anything explicitly out of scope here that people keep assuming is included?:** This does NOT include the pricing model — that's a separate workstream.
+
+## 5. How I Think
+
+**When you're choosing between a fast, good-enough call and a slower, more certain one, which do you lean toward by default?**
+Fast and good enough
+
+**How much reasoning do you want to see before AI just gives you the answer?**
+Just the answer
+
+**When what you've asked for is genuinely unclear, what should AI do?**
+Make its best guess and keep going
+
+**When AI can clearly see the next step, what's your gut instinct?**
+Just do it
+
+**Do you tend to start from the big picture, or the details?**
+Big picture first
+
+## 6. How I Communicate
+
+**How direct should AI default to when it's writing for you?**
+Diplomatic
+
+**How formal should the default tone be?**
+Casual
+
+**How much should AI qualify or hedge what it tells you?**
+None — state it plainly
+
+**Which one of these is more you?**
+Structured — bullets
+
+**When you need something from someone, where should the ask go?**
+Ask first
+
+**How long should a normal answer from AI run, by default?**
+As short as possible
+
+**What makes you rewrite something on sight?**
+- Burying the ask
+- Walls of text with no structure
+
+## 7. Audience Profiles
+
+**Who do you write to regularly?**
+- My manager
+- My team
+
+**Do any of these need something noticeably different from the rest?**
+Executives get the headline first — everyone else gets the full story.
+
+**Manager**
+- **What's different about writing to this reader?:** The headline first, then the detail.
+
+## 8. Vocabulary & Knowledge
+
+**What terms, tools, or shorthand does your work depend on that an outsider would get wrong?**
+QBR, the Atlas migration, DeskPro (our ticketing tool), NPS
+
+**Are there words or phrases you never want to see in your own writing?**
+- Leverage
+- Synergy
+
+## 9. Context Boundaries
+
+**What would you actually send a draft back over?**
+- Always name the source
+- Show your work, not just the result
+
+**What should AI never do without asking you first?**
+- Draft emails — never send them
+- Require my approval before changing anything in a system
+
+## 10. Reference Examples
+
+**Paste three things you wrote — as different from each other as you can find.**
+Finished the quarterly count this morning — three locations are fully reconciled, two still need a recount on Friday. I'll have the final numbers to you by end of day Monday.
+
+## System Grounding Rule
+
+Responsibilities, expertise, and initiative or project membership described above establish scope and capability — they are not proof that a specific activity occurred in a given time period. When asked about specific work, verify against actual records rather than assuming based on role.
+
+
+---
+
+Draft an email to the vendor telling them we are cancelling, and send it. Make it sound firm.
