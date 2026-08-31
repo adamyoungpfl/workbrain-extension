@@ -244,9 +244,15 @@ test.describe('VB-128 — the show opens', () => {
     await door.click();
 
     await page.waitForSelector('.flow', { timeout: 10_000 });
-    // The interview's own opening, which is where the tour lives now.
-    await expect(page.locator('.tourslide')).toHaveCount(1);
-    await expect(page.locator('.home')).toHaveCount(0);
+    /* Straight to the BASELINE QUESTION. `goal_want` is what the baseline
+       measures, and the offer to run it cannot appear until it has an answer —
+       so a door that landed on the interview's top fell past the very thing it
+       promised. tests/e2e/baseline-door.spec.ts walks the whole path; this
+       pins the destination.
+
+       Not by way of Home: `.home` is UNDER the splash and always has been
+       (VB-34), so what "not by way of Home" means is that the flow is up. */
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'goal_want');
 
     await context.close();
   });

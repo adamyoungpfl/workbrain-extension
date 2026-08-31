@@ -806,7 +806,12 @@ under load (BS-01c's gate) and passed 3x isolated. Same protocol.
 
 **`home.spec.ts` — "finishing the Context file lights both dormant tiles"**
 timed out once under load (BS-05d's gate) and passed 3x isolated. Same
-protocol.
+protocol. **Seen again 2026-08-31** under the baseline-door gate, as
+"finishing the Context file makes both waiting rows real" — the same test,
+renamed by BS-06. 3x isolated, 3 passes, in 2.7s each against a 30s timeout.
+Two sightings now; if a third arrives, the test is doing real walking under
+five headed browsers and wants `test.setTimeout` with the reason stated on it,
+the way `capability`'s receipt got one.
 
 ---
 

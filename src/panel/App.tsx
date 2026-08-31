@@ -12,6 +12,7 @@ import { WallPanels } from './components/WallPanels';
 import { getSession, setSession } from '../core/storage/client';
 import { FeedbackSheet, Button } from './components';
 import { getLocal } from '../core/storage/client';
+import { positionForQuestionId } from '../core/flow/outline';
 import { contextModules, contextOutline, skillsModules, skillsOutline, buildProofModules, buildCapabilityModules } from '../core/flow/flow';
 import { SKILLS_FILE_COPY } from '../core/files/skillsFile';
 import { ANSWERS_KEY } from '../core/files/answersKey';
@@ -563,7 +564,17 @@ export default function App() {
           onBaseline={() => {
             endSplash();
             setWantBaseline(true);
-            openContext();
+            /* STRAIGHT TO THE GOAL QUESTION, not to the top of the interview.
+               `goal_want` IS the baseline question — "the one thing you want it
+               to do better today" — and the offer to run it cannot appear until
+               it has an answer, so landing on orientation slide one meant
+               falling past the offer entirely and never seeing it.
+               Adam, 2026-08-31: the door should go to the baseline question,
+               and THEN on to orientation.
+               Answering it hands back to `findPosition`, which resumes at the
+               first unanswered step — orientation's opening — so the shorter
+               road and this one converge one screen later. */
+            openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
           }}
         />
       )}
