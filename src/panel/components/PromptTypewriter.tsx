@@ -1,16 +1,23 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { frameAt } from '../../core/flow/typewriter';
-import type { TypewriterFrame } from '../../core/flow/typewriter';
+import { linesAt } from '../../core/flow/typewriter';
+import type { TypewriterLine } from '../../core/flow/typewriter';
 import './PromptTypewriter.css';
 
 /**
  * V2.9 — the baseline box's starter verb (Adam, 2026-08-31).
  *
- * A verb types itself into the empty box, its caret blinks, it erases, and the
- * next one follows. Clicking it drops that word into the box with a trailing
- * space and puts the caret after it, so the shortest path into this question
- * already starts with a command. All timing is core/flow/typewriter.ts's —
- * this owns a clock and a click and nothing else.
+ * An example types itself into the empty box; when it is done the next one is
+ * written ABOVE it and it descends, dimming a rung per line until it is gone.
+ * Every visible line is clickable and drops in whole, so the last three ideas
+ * are all still there to be taken rather than only whichever one happens to be
+ * on screen at the instant somebody decides to act. All timing is
+ * core/flow/typewriter.ts's — this owns a clock and a click and nothing else.
+ *
+ * The DESCENT is not animated by hand. A new line is inserted at the top of a
+ * plain column, so the ones below are pushed down by ordinary layout, and the
+ * dimming is a CSS transition on an opacity the core hands over. React keys on
+ * the seed index, so an existing line keeps its DOM node and transitions
+ * rather than being torn down and rebuilt one rung lower.
  *
  * ── IT IS AN OVERLAY, NOT A PLACEHOLDER, AND HAS TO BE ────────────────────
  * A real `placeholder` cannot be clicked and cannot carry the shimmer, which
@@ -59,25 +66,32 @@ export function PromptTypewriter({ seeds, onTake, label }: PromptTypewriterProps
     () => typeof window.matchMedia !== 'function' || window.matchMedia(REDUCE_QUERY).matches,
   );
 
-  const [frame, setFrame] = useState<TypewriterFrame>(() =>
+  /* Under reduced motion the stack is a SHORT LIST rather than one frozen
+     line. Nothing moves and nothing is scheduled, but the fade ladder is
+     dropped too — a dimmed line means "this one is leaving", and with no
+     motion there is no leaving for it to mean. Three examples, all at full
+     strength, all clickable. That carries more of the instruction than a
+     single still line did, which is the standard docs/GUARDRAILS.md sets. */
+  const [lines, setLines] = useState<TypewriterLine[]>(() =>
     reduced
-      ? {
-          text: seeds[0] ?? '',
-          seed: seeds[0] ?? '',
-          index: 0,
-          phase: 'holding',
-          caret: false,
+      ? seeds.slice(0, 3).map((seed, i) => ({
+          seed,
+          text: seed,
+          index: i,
+          age: 0,
           opacity: 1,
-          takeable: (seeds[0] ?? '') !== '',
-        }
-      : frameAt(0, seeds),
+          caret: false,
+          phase: 'holding' as const,
+          takeable: true,
+        }))
+      : linesAt(0, seeds),
   );
 
   useEffect(() => {
     if (reduced) return;
     const t0 = performance.now();
     const id = window.setInterval(() => {
-      setFrame(frameAt(performance.now() - t0, seeds));
+      setLines(linesAt(performance.now() - t0, seeds));
     }, TICK_MS);
     return () => window.clearInterval(id);
   }, [reduced, seeds]);
@@ -123,38 +137,42 @@ export function PromptTypewriter({ seeds, onTake, label }: PromptTypewriterProps
     return () => ro.disconnect();
   }, []);
 
-  const seed = frame.seed || seeds[0] || '';
-
   return (
     <div className="prompt-tw-host" ref={hostRef}>
-      <button
-        type="button"
-        className="prompt-tw"
-        // Dark to the pointer in the gap between examples, so a click on
-        // nothing cannot commit the one that is about to appear.
-        disabled={!frame.takeable}
+      <div
+        className="prompt-tw-stack"
         style={
           origin
-            ? {
-                top: `${origin.top}px`,
-                left: `${origin.left}px`,
-                width: `${origin.width}px`,
-                opacity: frame.opacity,
-              }
+            ? { top: `${origin.top}px`, left: `${origin.left}px`, width: `${origin.width}px` }
             : { visibility: 'hidden' }
         }
-        aria-label={label(seed)}
-        onClick={() => onTake(seed)}
       >
-        {/* One inline run, not two flex items: the caret has to sit after the
-            last character of a WRAPPED line, and a flex row would park it
-            beside the whole block instead. */}
-        <span className="prompt-tw-word">{frame.text}</span>
-        <span
-          className={frame.caret ? 'prompt-tw-caret is-lit' : 'prompt-tw-caret'}
-          aria-hidden="true"
-        />
-      </button>
+        {lines.map((line) => (
+          <div
+            className="prompt-tw-line"
+            key={line.index}
+            style={{ opacity: line.opacity }}
+            /* Painted, never announced. A divider that appears above a line as
+               it is pushed down is a picture of the stack moving; a screen
+               reader hearing "separator" four times a loop is noise. */
+            data-age={line.age}
+          >
+            <span className="prompt-tw-rule" aria-hidden="true" />
+            <button
+              type="button"
+              className="prompt-tw"
+              aria-label={label(line.seed)}
+              onClick={() => onTake(line.seed)}
+            >
+              {/* One inline run, not two flex items: the caret has to sit
+                  after the last character of a WRAPPED line, and a flex row
+                  would park it beside the whole block instead. */}
+              <span className="prompt-tw-word">{line.text}</span>
+              {line.caret && <span className="prompt-tw-caret is-lit" aria-hidden="true" />}
+            </button>
+          </div>
+        ))}
+      </div>
     </div>
   );
 }

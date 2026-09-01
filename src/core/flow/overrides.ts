@@ -527,68 +527,81 @@ export function panelQFor(id: string): string | undefined {
 export const GOAL_GATE_QUESTION_IDS = ['goal_service', 'goal_want'] as const;
 
 /**
- * THE SEED EXAMPLES — the baseline box's cycling placeholder (Adam,
- * 2026-09-01). One types itself out, holds long enough to be read, fades, and
- * the next follows (components/PromptTypewriter.tsx). Clicking one drops it
- * whole into the box.
+ * THE SEED EXAMPLES — the baseline box's cycling stack (Adam, 2026-09-01).
+ * One types itself out, the next is written above it, and it descends through
+ * the fade ladder (core/flow/typewriter.ts). Every visible line is clickable
+ * and drops in whole.
  *
- * ── WHY WHOLE PROMPTS AND NOT VERBS ───────────────────────────────────────
- * The first build cycled six bare verbs — Draft, Summarise, Review. That
- * showed somebody the SHAPE of a command without showing them a command, so
- * the work of turning "Draft" into something worth running was still entirely
- * theirs. These are the finished thing. Adam: "we are giving quick full ideas
- * in an interactive way."
+ * ── EVERY ONE OF THESE RUNS WITH NOTHING ATTACHED ─────────────────────────
+ * This is the rule the first draft broke, and Adam caught it: those examples
+ * opened "Turn these notes into…", "Summarise this document…", "Scan this
+ * contract…". Every one of them referred to material that is not there.
  *
- * ── THE LENGTH RULE IS THE HARD ONE ───────────────────────────────────────
+ * That is not a wording problem, it is the same defect as the answer that
+ * started this whole thread — "point my AI at my emails", unrunnable because
+ * no AI can reach the inbox. A prompt whose subject is missing fails
+ * IDENTICALLY with and without a Context file: both runs reply "please paste
+ * the document", the comparison shows no difference, and the measurement
+ * spine records nothing. Seeding the box with eighteen of those would have
+ * quietly poisoned the benchmark with unrunnable baselines.
+ *
+ * Adam's two shapes, and both are here:
+ *
+ *   SELF-CONTAINED — the material is IN the line, so there is nothing to
+ *   attach. Short enough to still be recognised at a glance, which is what
+ *   keeps this shape rare: most real inputs cannot be inlined in one clause.
+ *
+ *   GENERALLY GENERATIVE — asks for something MADE rather than something read,
+ *   so it needs no attachment at all: a status update, a decline, an agenda.
+ *   These are also the best possible baseline tasks, which is the happy part.
+ *   With no file an AI writes a generic template; with a Context file it
+ *   writes the person's role, their projects and their voice into it. The gap
+ *   between those two is exactly what the spine is trying to measure, so the
+ *   prompts that read most naturally here are also the ones that measure best.
+ *
+ * ── THE LENGTH RULE ───────────────────────────────────────────────────────
  * Adam: "short enough to not need to think about it twice to know if it
- * applies as a good one for your personal instance as a user." That is a
- * recognition test, not a comprehension test, and it is why these are shorter
- * than the prompts they are drawn from. The source list's entries carry their
- * own qualifiers — "keeping each point under 15 words", "with edge-case
- * tests" — which are exactly right in a prompt library somebody is reading on
- * purpose, and exactly wrong on a line that has about a second to be
- * recognised or dismissed. Every one below is one clause, and every one names
- * the artefact rather than the method.
+ * applies as a good one for your personal instance as a user." A recognition
+ * test, not a comprehension test. One clause each, naming the artefact rather
+ * than the method — the source list's qualifiers ("keeping each point under 15
+ * words", "with edge-case tests") are right in a library somebody reads on
+ * purpose and wrong on a line with a second to be recognised or dismissed.
  *
- * ── WHAT THEY ARE DRAWN FROM ──────────────────────────────────────────────
- * Adam's list of the 25 most repeatedly hand-entered prompts, across its six
- * groups: status and reporting, communication, meetings and transcripts,
- * planning, analysis, and technical work. The spread here is deliberate — an
- * even sample of that list rather than the shortest entries in it, because
- * these ARE the corpus the measurement spine ends up comparing against and a
- * list clustered on one kind of work would quietly narrow what the product is
- * ever measured on.
+ * ── AND THE SPREAD IS DELIBERATE ──────────────────────────────────────────
+ * An even sample across the six groups in Adam's list of the 25 most
+ * repeatedly hand-entered prompts, rather than a pick of the shortest. These
+ * ARE the corpus the spine compares against, so a list clustered on one kind
+ * of work would quietly narrow what the product is ever measured on.
  *
- * They are bare imperatives because the box finishes the stem printed above
- * it: "Tell your AI to…" + "Cut this to 75 words" is a whole sentence. None
- * of them opens with "Tell me", which would stutter against that stem.
- * [DRAFT]
+ * Bare imperatives, because the box finishes the stem printed above it:
+ * "Tell your AI to…" + "Draft my weekly status update" is a whole sentence.
+ * None opens with "Tell me", which would stutter against that stem. [DRAFT]
  */
 export const BASELINE_SEEDS = [
   // Status, reporting and updates
-  'Turn these notes into a 3-bullet update: win, risk, next',
-  'Flag who is blocked and what needs escalating',
-  'Explain what moved in these numbers, in 3 sentences',
+  'Draft my weekly status update for my manager',
+  'Write my standup: yesterday, today, blockers',
+  'Summarise this: shipped late, client happy, budget tight',
   // Communication and messaging
-  'Rewrite this to sound warmer but hold the deadline',
-  'Cut this to 75 words, decision in the first line',
-  'Draft a polite no with an alternative timeline',
-  'Write a 2-line follow-up on a thread that went quiet',
-  'Put this in plain English for a non-technical reader',
+  'Draft a polite no to a request I have no time for',
+  'Write a follow-up for a thread that went quiet',
+  "Rewrite this warmly: 'The deadline is not moving.'",
+  'Explain what I do to someone non-technical',
+  'Draft an intro message to someone I want to meet',
   // Meetings, transcripts and action items
-  'Pull the action items out as Owner / Task / Due',
-  'List only the decisions made, and why',
-  'Build a 30-minute agenda from these open topics',
+  'Summarise my meetings this week into action items',
+  'Build a 30-minute agenda for my next 1-on-1',
+  'Write the questions I should ask in my next 1-on-1',
   // Planning, strategy and prioritisation
-  'Sort this brain dump into do today, defer, drop',
-  'List the top 3 ways this plan could fail',
-  'Compare A and B on cost, speed, and risk',
-  // Analysis and research
-  'Summarise this document in 5 bullet points',
-  'Scan this contract for auto-renewal and exit terms',
+  'Sort my week into do today, defer, and drop',
+  'List the top 3 ways my current plan could fail',
+  'Break my next project into 3 phases with milestones',
+  'Plan my first hour tomorrow morning',
+  // Analysis, research and handover
+  'Triage my inbox and tell me the 3 that matter',
+  'Draft the brief I would hand someone taking over my work',
   // Technical and operational
-  'Explain what this code does and where it is slow',
-  'Find the root cause in this error log and suggest a fix',
+  'Write a checklist for something I do every week',
 ] as const;
 
 /**

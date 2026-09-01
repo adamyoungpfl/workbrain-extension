@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { S } from '../../src/panel/strings';
 import { BASELINE_SEEDS } from '../../src/core/flow/overrides';
+import { MAX_LINES } from '../../src/core/flow/typewriter';
 
 /**
  * THE BASELINE SCREEN — the one question drawn as a prompt box rather than as
@@ -90,21 +91,21 @@ test('the stem and the note under the box are set at one size', async () => {
 test('the seed example types itself, and taking one leaves a whole command', async () => {
   const { context, page } = await openBaseline(false);
   try {
-    const word = page.locator('.prompt-tw-word');
-    // The field's own placeholder is empty — the cycling example IS the
+    const newest = page.locator(".prompt-tw-line[data-age='0'] .prompt-tw-word");
+    // The field's own placeholder is empty — the cycling stack IS the
     // placeholder, and two ghosts in one box was the thing being removed.
     expect(await page.locator('textarea.field').getAttribute('placeholder')).toBe('');
 
-    /* It writes rather than cutting: the word is caught part-built.
+    /* It writes rather than cutting: the line is caught part-built.
 
        Sampled across a whole cycle rather than for a fixed count. The first
        version took 14 samples 90ms apart, which is 1.26s — comfortably
-       INSIDE the 1.6s hold, so it could open on a finished word, see the
-       same finished word fourteen times, and report that nothing was ever
-       typed. Breaking early keeps the usual run short. */
+       INSIDE the hold, so it could open on a finished line, see the same
+       finished line fourteen times, and report that nothing was ever typed.
+       Breaking early keeps the usual run short. */
     let partial: string | null = null;
     for (let i = 0; i < 90 && partial === null; i += 1) {
-      const t = (await word.textContent()) ?? '';
+      const t = (await newest.textContent()) ?? '';
       if (t !== '' && BASELINE_SEEDS.some((v) => v.startsWith(t) && v !== t)) partial = t;
       await page.waitForTimeout(40);
     }
@@ -112,7 +113,7 @@ test('the seed example types itself, and taking one leaves a whole command', asy
 
     // Exactly where the box's own first character will land, and no wider than
     // the box — so taking it shifts nothing and it wraps where the field wraps.
-    const { wordLeft, textLeft, press, over } = await page.evaluate(() => {
+    const { wordLeft, textLeft, over } = await page.evaluate(() => {
       const b = document.querySelector('.prompt-tw')!.getBoundingClientRect();
       const f = document.querySelector('textarea.field') as HTMLElement;
       const r = f.getBoundingClientRect();
@@ -120,24 +121,21 @@ test('the seed example types itself, and taking one leaves a whole command', asy
       return {
         wordLeft: Math.round(b.left),
         textLeft: Math.round(r.left + parseFloat(cs.paddingLeft) + parseFloat(cs.borderLeftWidth)),
-        press: Math.round(b.height),
         over: Math.round(b.right - (r.right - parseFloat(cs.paddingRight))),
       };
     });
     expect(wordLeft).toBe(textLeft);
-    expect(press).toBeGreaterThanOrEqual(44);
     expect(over).toBeLessThanOrEqual(1);
 
-    /* Taking it commits a WHOLE word — never the fragment on screen — with one
-       trailing space and the caret after it.
+    /* Taking it commits a WHOLE example — never the fragment on screen — with
+       one trailing space and the caret after it.
 
-       The assertion is "some verb from the list", not "the verb that was
-       painted a moment ago": the clock keeps running between reading the
-       screen and pressing it, so pinning the exact word here would be a race
-       this test loses on a slow machine. That the whole word survives a
-       mid-type press is core/flow/typewriter.test.ts's job, where it is
-       decidable. */
-    await page.locator('.prompt-tw').click();
+       The assertion is "some example from the list", not "the one painted a
+       moment ago": the clock keeps running between reading the screen and
+       pressing it, so pinning the exact line here would be a race this test
+       loses on a slow machine. That the whole line survives a mid-type press
+       is core/flow/typewriter.test.ts's job, where it is decidable. */
+    await page.locator('.prompt-tw').first().click();
     const state = await page.evaluate(() => {
       const f = document.querySelector('textarea.field') as HTMLTextAreaElement;
       return { value: f.value, caret: f.selectionStart, focused: document.activeElement === f };
@@ -148,8 +146,67 @@ test('the seed example types itself, and taking one leaves a whole command', asy
     expect(state.caret).toBe(state.value.length);
     expect(state.focused).toBe(true);
 
-    // And it stands down once there is a character it could destroy.
+    // And the whole stack stands down once there is a character it could
+    // destroy.
     await expect(page.locator('.prompt-tw')).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});
+
+test('the stack builds, dims one rung per line, and caps', async () => {
+  const { context, page } = await openBaseline(false);
+  try {
+    // It opens on one line: on the first pass there is no history, and showing
+    // the end of the list as though it had gone by would be a lie.
+    await expect(page.locator('.prompt-tw-line')).toHaveCount(1);
+
+    // Then a line per completed example, up to the ladder's height.
+    await expect(page.locator('.prompt-tw-line')).toHaveCount(MAX_LINES, { timeout: 30_000 });
+    await page.waitForTimeout(4000);
+    await expect(page.locator('.prompt-tw-line')).toHaveCount(MAX_LINES);
+
+    const rungs = await page
+      .locator('.prompt-tw-line')
+      .evaluateAll((els) => els.map((e) => parseFloat((e as HTMLElement).style.opacity)));
+    expect(rungs[0]).toBe(1);
+    for (let i = 1; i < rungs.length; i += 1) {
+      expect(rungs[i]!).toBeLessThan(rungs[i - 1]!);
+    }
+    // The last rung is near enough to the ground to read as leaving.
+    expect(rungs[rungs.length - 1]!).toBeLessThan(0.1);
+
+    // Only the newest carries a caret — two would be two claims about where
+    // the writing is happening.
+    expect(await page.locator('.prompt-tw-caret').count()).toBeLessThanOrEqual(1);
+  } finally {
+    await context.close();
+  }
+});
+
+test('every line in the stack is its own 44px target, and none overlap', async () => {
+  const { context, page } = await openBaseline(false);
+  try {
+    await expect(page.locator('.prompt-tw-line')).toHaveCount(MAX_LINES, { timeout: 30_000 });
+    const boxes = await page
+      .locator('.prompt-tw')
+      .evaluateAll((els) =>
+        els.map((e) => {
+          const r = e.getBoundingClientRect();
+          return { top: Math.round(r.top), bottom: Math.round(r.bottom) };
+        }),
+      );
+    for (const b of boxes) expect(b.bottom - b.top).toBeGreaterThanOrEqual(44);
+    for (let i = 1; i < boxes.length; i += 1) {
+      expect(boxes[i]!.top).toBeGreaterThanOrEqual(boxes[i - 1]!.bottom);
+    }
+
+    // A dim line is still a real offer: somebody who recognises the example
+    // from two lines ago should not wait a loop for it to come back.
+    const oldest = page.locator('.prompt-tw').last();
+    const wanted = (await oldest.locator('.prompt-tw-word').textContent()) ?? '';
+    await oldest.click();
+    expect(await page.locator('textarea.field').inputValue()).toBe(`${wanted} `);
   } finally {
     await context.close();
   }
@@ -158,20 +215,30 @@ test('the seed example types itself, and taking one leaves a whole command', asy
 test('under reduced motion the example is still, and the instruction survives it', async () => {
   const { context, page } = await openBaseline(true);
   try {
-    const word = page.locator('.prompt-tw-word');
-    const first = await word.textContent();
-    await page.waitForTimeout(1500);
-    // Nothing moves — not the word, not the sweep.
-    expect(await word.textContent()).toBe(first);
+    /* Under reduced motion the stack is a SHORT LIST rather than one frozen
+       line: nothing is scheduled, and the fade ladder is dropped too, because
+       a dimmed line means "this one is leaving" and with no motion there is
+       no leaving for it to mean. */
+    const lines = page.locator('.prompt-tw-line');
+    await expect(lines).toHaveCount(3);
+    const before = await lines.first().locator('.prompt-tw-word').textContent();
+    await page.waitForTimeout(2500);
+    expect(await lines.first().locator('.prompt-tw-word').textContent()).toBe(before);
+    await expect(lines).toHaveCount(3);
     expect(
-      await word.evaluate((el) => getComputedStyle(el).animationName),
+      await page.locator('.prompt-tw-word').first().evaluate((el) => getComputedStyle(el).animationName),
     ).toBe('none');
+    // No caret to blink, and every line at full strength.
+    await expect(page.locator('.prompt-tw-caret')).toHaveCount(0);
+    const rungs = await lines.evaluateAll((els) =>
+      els.map((e) => parseFloat((e as HTMLElement).style.opacity)),
+    );
+    expect(rungs.every((o) => o === 1)).toBe(true);
 
-    // But it is still offered and still works, which is the floor
+    // But they are still offered and still work, which is the floor
     // docs/GUARDRAILS.md sets: the still version carries the instruction.
-    await expect(page.locator('.prompt-tw')).toBeEnabled();
-    await page.locator('.prompt-tw').click();
-    expect(await page.locator('textarea.field').inputValue()).toBe(`${first} `);
+    await page.locator('.prompt-tw').first().click();
+    expect(await page.locator('textarea.field').inputValue()).toBe(`${before} `);
   } finally {
     await context.close();
   }

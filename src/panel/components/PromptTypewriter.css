@@ -6,12 +6,44 @@
   height: 0;
 }
 
-/* The word sits exactly where the box's own first character will, so taking it
-   shifts nothing on screen. A 44px pressable height, per the accessibility
-   floor, centred on the line it is standing in rather than pushed below it —
-   the paint is one line of text and the press is the full target. */
-.prompt-tw {
+/* The newest line sits exactly where the box's own first character will, so
+   taking it shifts nothing on screen. Every line clears the 44px pressable
+   floor on its own, which is also what keeps the stack's rows far enough apart
+   that two targets never overlap. */
+.prompt-tw-stack {
   position: absolute;
+}
+
+/* One line of the stack. The divider belongs to the line BELOW it, so a line
+   gaining its first rung of age is what makes a rule appear above it — Adam:
+   "a light divider pops up above and pushes the question text down". Nothing
+   animates the push: a new line is inserted at the top of a plain column and
+   ordinary layout moves the rest down. */
+.prompt-tw-line {
+  transition: opacity 320ms ease-out;
+}
+.prompt-tw-rule {
+  display: block;
+  height: 1px;
+  margin: 7px 0;
+  background: var(--divider);
+  opacity: 0;
+  transition: opacity 320ms ease-out;
+}
+/* The newest line is the top of the stack and has nothing above it to be
+   divided from, so its rule stays dark and holds no space until the line has
+   descended a rung. */
+.prompt-tw-line[data-age='0'] .prompt-tw-rule {
+  margin: 0;
+  opacity: 0;
+}
+.prompt-tw-line:not([data-age='0']) .prompt-tw-rule {
+  opacity: 1;
+}
+
+.prompt-tw {
+  position: relative;
+  width: 100%;
   /* BLOCK, NOT FLEX. These are sentences now, and they wrap. A flex row lays
      the text and the caret out as two items, which parks the caret beside the
      whole wrapped block instead of after its last character. As one inline
@@ -111,6 +143,20 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+  /* No descent to soften, and every line is at full strength anyway. */
+  .prompt-tw-line,
+  .prompt-tw-rule {
+    transition: none;
+  }
+  .prompt-tw-line .prompt-tw-rule {
+    opacity: 1;
+    margin: 7px 0;
+  }
+  .prompt-tw-line:first-child .prompt-tw-rule {
+    opacity: 0;
+    margin: 0;
+  }
+
   /* No sweep, no blink — and the word is still there and still clickable, so
      the instruction survives the stillness. The colour is stated outright
      rather than left to the gradient, because a background-clipped text with
