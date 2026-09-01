@@ -527,6 +527,37 @@ export function panelQFor(id: string): string | undefined {
 export const GOAL_GATE_QUESTION_IDS = ['goal_service', 'goal_want'] as const;
 
 /**
+ * THE STARTER VERBS — the baseline box's cycling placeholder (Adam,
+ * 2026-08-31). Typed out one at a time by components/PromptTypewriter.tsx,
+ * and takeable: a click drops the word into the box with a trailing space.
+ *
+ * They are bare imperatives because the box is finishing the stem printed
+ * above it — "Tell your AI to…" + "Draft" is a whole sentence, and the point
+ * of the pair is that somebody sees the shape of a command before they have
+ * written a word of one.
+ *
+ * SIX VERBS THAT NAME DIFFERENT KINDS OF WORK, deliberately, and the reason is
+ * the benchmark rather than the writing. These prompts ARE the corpus the
+ * measurement spine compares against, so a list clustered on one kind of task
+ * would quietly narrow what the product is ever measured on. Making, reducing,
+ * checking, sequencing, retrieving and revising is roughly the span of what
+ * anybody asks an assistant for.
+ *
+ * This is the seeded-verb cost being paid on purpose: what is offered here
+ * will show up in what people write. That is the trade for making a command
+ * the cheapest thing to type, and it is the reason the list is content that
+ * can be argued with rather than a detail inside a component. [DRAFT]
+ */
+export const BASELINE_VERBS = [
+  'Draft',
+  'Summarise',
+  'Review',
+  'Plan',
+  'Find',
+  'Rewrite',
+] as const;
+
+/**
  * V2.3 VB-90 — the orientation ladder: why this file, then a demo of the
  * canvas, replacing the ported first explainer's flat treatment. Real
  * interview steps on the same beat machinery, advancing on the same Next —

@@ -1,0 +1,102 @@
+/* The host is a zero-size anchor: it takes part in no layout and exists only
+   to give the absolutely-positioned button a frame to sit in and a sibling
+   textarea to measure against. */
+.prompt-tw-host {
+  position: relative;
+  height: 0;
+}
+
+/* The word sits exactly where the box's own first character will, so taking it
+   shifts nothing on screen. A 44px pressable height, per the accessibility
+   floor, centred on the line it is standing in rather than pushed below it —
+   the paint is one line of text and the press is the full target. */
+.prompt-tw {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  min-height: 44px;
+  margin-top: -11px;
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 15px;
+  line-height: 22px;
+  cursor: text;
+  text-align: left;
+}
+.prompt-tw:disabled {
+  cursor: default;
+}
+.prompt-tw:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+  border-radius: 3px;
+}
+
+/* ── THE SHIMMER ───────────────────────────────────────────────────────────
+   The same sweep runs on the stem above the box (`.flow--prompt`'s label) and
+   on this word, which is the point of it: Adam asked for an effect that
+   "visually draws the two texts together in their respective places". They
+   are one sentence broken across the box's edge, and the light crossing both
+   is what says so.
+
+   Both ends of the gradient clear 4.5:1 on the panel ground — the trough is
+   `--ink-2`, which is the colour this text would be anyway, and the crest is
+   `--primary`. The text is never lighter than legible at any point in the
+   sweep, so the contrast floor holds on every frame rather than on average. */
+@keyframes prompt-tw-shimmer {
+  from {
+    background-position: 140% 0;
+  }
+  to {
+    background-position: -40% 0;
+  }
+}
+
+.prompt-tw-word,
+.flow--prompt .flow-field-sr-label .field-label {
+  background-image: linear-gradient(
+    100deg,
+    var(--ink-2) 0%,
+    var(--ink-2) 42%,
+    var(--primary) 50%,
+    var(--ink-2) 58%,
+    var(--ink-2) 100%
+  );
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: prompt-tw-shimmer 3.6s linear infinite;
+}
+
+/* The caret. Painted, not a character, so it never affects the measure of the
+   word beside it and never gets read out. */
+.prompt-tw-caret {
+  width: 1.5px;
+  height: 17px;
+  background: var(--ink-2);
+  opacity: 0;
+}
+.prompt-tw-caret.is-lit {
+  opacity: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No sweep, no blink — and the word is still there and still clickable, so
+     the instruction survives the stillness. The colour is stated outright
+     rather than left to the gradient, because a background-clipped text with
+     no animation is a still gradient, not a plain colour. */
+  .prompt-tw-word,
+  .flow--prompt .flow-field-sr-label .field-label {
+    background-image: none;
+    animation: none;
+    color: var(--ink-2);
+  }
+  .prompt-tw-caret {
+    opacity: 0;
+  }
+}

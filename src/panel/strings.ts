@@ -1686,6 +1686,10 @@ export const S = {
      own sentence. */
   orderLead: 'As an order:',
   orderTake: 'Use this',
+  /* The starter verb's accessible name. It names the ACTION rather than
+     reading the word out, because "Draft" alone tells somebody arriving on Tab
+     nothing about what pressing it would do. */
+  verbTake: (word: string) => `Start your answer with "${word}"`,
   baselineCopy: 'Copy the question',
   baselineCopied: 'Copied',
   baselineGo: 'I ran it — paste what came back',

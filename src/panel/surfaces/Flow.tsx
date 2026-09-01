@@ -117,6 +117,8 @@ import { LINE_CUSTOM_GLYPH, PAIR_GLYPHS, PERSONA_GLYPHS, ROLE_FOR_GLYPHS, SCOPE_
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { generatedNameAt, promptOnly, travelsLight, usesNameGenerator } from '../../core/flow/nameGenerator';
 import { asOrder } from '../../core/flow/imperative';
+import { PromptTypewriter } from '../components/PromptTypewriter';
+import { BASELINE_VERBS } from '../../core/flow/overrides';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { assistServiceUrlFor } from '../../core/flow/assistServices';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
@@ -2739,10 +2741,14 @@ function StepView({
                   // VB-138: the reopened box says what it is waiting for.
                   assistPhase === 'returned' && draftText === ''
                     ? ASSIST_LINE_RETURN
-                    : // BS-05g: a pressed "Prompt me" shows its example HERE,
-                      // as ghost text, so the box is still empty and the first
-                      // keystroke is the person's own.
-                      (promptIdea ?? resolveOptionalPhrase(step.ph, ctx))
+                    : /* The baseline box has no placeholder of its own — the
+                         cycling verb below IS its placeholder, and a static
+                         "e.g. …" underneath a typing one would be two ghosts
+                         in the same box. Adam: "drop the e.g." A pressed
+                         "Prompt me" still wins, because that is somebody
+                         asking for a specific example. */
+                      promptIdea ??
+                      (bare ? '' : resolveOptionalPhrase(step.ph, ctx))
                 }
                 error={pendingError ?? undefined}
                 // V2.4 VB-106/107, re-aimed by V2.5 VB-119 — the one
@@ -2763,6 +2769,28 @@ function StepView({
                 }}
               />
             </div>
+            )}
+            {/* THE STARTER VERB (components/PromptTypewriter.tsx). Only
+                while the box is empty and no assist example is standing in
+                it: the moment there is a character to lose, a click that
+                replaced it would be destroying somebody's typing. Taking a
+                verb appends a trailing space and puts the caret after it, so
+                what they type next continues the command rather than
+                colliding with it. */}
+            {bare && draftText === '' && !promptIdea && (
+              <PromptTypewriter
+                words={BASELINE_VERBS}
+                label={S.verbTake}
+                onTake={(verb) => {
+                  answerText(`${verb} `);
+                  const field = document.getElementById(`flow-${step.id}`);
+                  if (field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement) {
+                    field.focus();
+                    const end = field.value.length;
+                    field.setSelectionRange(end, end);
+                  }
+                }}
+              />
             )}
             {/* THE HEDGE REPAIR (core/flow/imperative.ts). Offered, never
                 applied: what is on screen is what will be sent, so a rewrite
