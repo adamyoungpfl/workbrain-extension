@@ -92,10 +92,16 @@ const SCRIPT: Record<RevealPart, Key[]> = {
     { at: 3.5, opacity: 1, x: 0, y: 0 },
     { at: 4.2, opacity: 1, x: -16, y: -34 },
   ],
-  // The second section, right of centre, linked to the first.
+  /* The second section, and it settles slightly RIGHT of centre (Adam,
+     2026-09-01: "the same treatment as the About 15 minutes but offset just
+     slightly to the right"). The time section moved left at 4.2s; this one
+     answers it, and the two offsets are what give the connector between them
+     something to bend around — a path down a straight line is a rule, and a
+     path that leans is a route. Fourteen against the other's sixteen: enough
+     to read as deliberate, not enough to look like a mistake. */
   privacy: [
     { at: 3.8, opacity: 0, x: 0, y: 22 },
-    { at: 4.5, opacity: 1, x: 0, y: 0 },
+    { at: 4.5, opacity: 1, x: 14, y: 0 },
   ],
   doors: [
     { at: 4.4, opacity: 0, x: 0, y: 14 },
@@ -168,7 +174,7 @@ export function countAt(t: number): number {
 /* ── THE ROLODEX ─────────────────────────────────────────────────────────── */
 
 /** Adam: "have the entire question seem to rotate like a rolodex". */
-const ROLODEX_STARTS = 3.0;
+export const ROLODEX_STARTS = 3.0;
 /**
  * EXPORTED BECAUSE THE STYLESHEET NEEDS THE SAME NUMBER. The turn is drawn by
  * a CSS keyframe and counted here, and a duration written in both places is
@@ -215,58 +221,193 @@ export function rolodexAt(t: number): Rolodex {
   };
 }
 
-/* ── THE TWO PRIVACY LINES ───────────────────────────────────────────────── */
+/* ── THE SECOND SECTION'S TWO CLAIMS ─────────────────────────────────────
+   V2.9 slice 3b (Adam, 2026-09-01). This section gets the first section's
+   treatment: a bold line with two words picked out in colour, and under it a
+   quiet line with a device in it that runs and then stops.
+
+   IT REPLACES THE ALTERNATING SLOT. Slice 3 had these two claims taking turns
+   in one slot, and the reason was room — two sentences, space for one. Both
+   are on screen together now, which costs one line of height and buys the
+   thing the alternation could never have: they can be READ as a pair, and the
+   second one can carry a device of its own. */
 
 /**
- * Adam: "'The file is yours from start to finish' and then it fades out and is
- * replaced by 'Nothing leaves your browser' fading in and then out."
+ * "Nothing leaves your browser" — arrived at by ELIMINATION.
  *
- * They take turns rather than ending on nothing. Two claims that both matter,
- * in a space with room for one — an empty slot between them would read as a
- * section that had finished and left.
+ * Adam: "we use the flip on the word 'Nothing', we start with Everything then
+ * Most Things then Some Things and finish on Nothing. For each wrong answer
+ * the new word flips in and then gets crossed out and the crossed out word
+ * flips over to the back as the new word flips in. Once it hits Nothing, it
+ * stays solid, just like One question at a time stays solid in the above
+ * section."
  *
- * ── EACH CLAIM SHOWS ONCE, AND THE LAST ONE STAYS ─────────────────────────
- * Slice 2 cycled them forever, which the filmstrip caught: ten seconds in,
- * with the doors long since landed, the screen was still swapping a sentence
- * under somebody's decision. That is the same objection the rolodex answers
- * with three turns and a rest — a screen asking a question should not still
- * be moving while it is being answered — and it applies harder here, because
- * a changing SENTENCE asks to be re-read in a way a turning card does not.
+ * So the claim is not asserted, it is ARRIVED AT. Three wrong answers are put
+ * up and struck out in front of the person, and the true one is what is left
+ * standing. A promise somebody watched three alternatives fail is a different
+ * kind of promise from one printed on a screen.
  *
- * So each claim gets its moment and the second one holds. As the numbers
- * stand that makes this the LAST thing on the screen to stop — the second
- * claim lands at 7.56s, nine tenths of a second after the rolodex's final
- * turn — so `REVEAL_REST` is this, and re-timing either device moves it.
+ * ── THE VERB TRAVELS WITH THE SUBJECT ─────────────────────────────────────
+ * "Most things leaves your browser" is not English. The flipping slot holds
+ * the subject AND its verb — "Most things leave", "Nothing leaves" — and the
+ * static tail is "your browser." The alternative was subjects that all take a
+ * singular verb ("Most of it", "Some of it"), which keeps the slot to one
+ * word and costs the plainness of Adam's own words. The panel pins the slot
+ * to its widest phrase so the tail never moves; see `SplashReveal.tsx`.
  */
-export const PRIVACY_LINES = 2;
-const LINE_STARTS = 4.5;
-const LINE_FADE_MS = 420;
-const LINE_HOLD_MS = 1800;
+export const CLAIM_WORDS = 4;
+/** The last one is the true one, and the only one that never gets struck. */
+export const CLAIM_TRUE = CLAIM_WORDS - 1;
 
-export interface PrivacyLine {
-  /** Which line, 0-based, into whatever copy the caller holds. */
+/** Just after the section has landed, the way the rolodex follows its own. */
+const CLAIM_STARTS = 4.6;
+/* EVERY NUMBER BELOW IS ADAM'S, SET AT THE BENCH (2026-09-01) rather than
+   argued for here: he scrubbed the device at real size and landed on these.
+   The first pass had them at 310 / 400 / 240 / 240 and the whole run at 4.8s;
+   his are slower and deliberately so — each wrong answer is now up long
+   enough to be read, believed and then refused, which is the argument the
+   device is making. The run is 8.0s and the screen stops at 12.9s. */
+const CLAIM_IN_MS = 470;
+const CLAIM_OUT_MS = 470;
+/** Long enough to read a three-word phrase and believe it for a moment. */
+const CLAIM_HOLD_MS = 800;
+/** The line drawing itself across, left to right. */
+const CLAIM_STRIKE_MS = 380;
+/** Struck, and held there — the beat that says "no, not that one". */
+const CLAIM_STRUCK_MS = 380;
+/**
+ * THE TRUE ONE IS UNDERLINED, NOT STRUCK (Adam, 2026-09-01: "make the last
+ * strike be an underline for the word Nothing").
+ *
+ * The same gesture in the same place, inverted: three answers get a line
+ * through them and the fourth gets a line under it. A different mark would
+ * have been a different idea; the same mark, moved, is the device finishing
+ * its own sentence. It is drawn in `--splash-answer` — warm rather than white,
+ * because every other line on this screen is a rejection and this is the one
+ * that is not.
+ *
+ * It waits a beat after the phrase lands: underlining a word the instant it
+ * arrives reads as one movement, and the point is that the answer is what is
+ * LEFT once the others have gone.
+ */
+const CLAIM_SETTLE_MS = 300;
+/**
+ * How far a phrase tips. The rolodex's own angle: same screen, same device,
+ * and a card that leaves at a different angle from the one above it reads as
+ * two mechanisms.
+ */
+export const CLAIM_ANGLE = 84;
+
+const WRONG_MS = CLAIM_IN_MS + CLAIM_HOLD_MS + CLAIM_STRIKE_MS + CLAIM_STRUCK_MS + CLAIM_OUT_MS;
+
+export interface ClaimWord {
+  /** Which phrase, 0-based, into whatever copy the caller holds. */
   index: number;
+  /** Degrees about the horizontal axis. 0 is face-on. */
+  rotate: number;
+  /** 0 absent, 1 fully present. */
   opacity: number;
-}
-
-export function privacyLineAt(t: number): PrivacyLine {
-  const fade = LINE_FADE_MS / 1000;
-  const hold = LINE_HOLD_MS / 1000;
-  const cycle = fade * 2 + hold;
-  if (t <= LINE_STARTS) return { index: 0, opacity: 0 };
-  const into = t - LINE_STARTS;
-  const index = Math.min(PRIVACY_LINES - 1, Math.floor(into / cycle));
-  const within = into - index * cycle;
-  if (within < fade) return { index, opacity: within / fade };
-  // The last one does not fade out — there is nothing after it to arrive.
-  if (index === PRIVACY_LINES - 1) return { index, opacity: 1 };
-  if (within < fade + hold) return { index, opacity: 1 };
-  return { index, opacity: Math.max(0, 1 - (within - fade - hold) / fade) };
+  /** How far the line is drawn THROUGH it, 0 to 1. Wrong answers only. */
+  strike: number;
+  /** How far the line is drawn UNDER its first word, 0 to 1. The true one only. */
+  underline: number;
+  /** The true one has landed, its line is drawn, and nothing will move again. */
+  resting: boolean;
 }
 
 /**
- * THE MOMENT NOTHING IS MOVING ANY MORE — the last claim landed, the last
- * turn finished, every part at rest.
+ * OPACITY IS A FUNCTION OF THE ROTATION, not a second curve running beside it.
+ *
+ * A card that fades on its own schedule can be half-lit while face-on, or
+ * solid while edge-on — both of which read as a bug rather than as a card.
+ * Tied to the angle there is one truth: face-on is legible, edge-on is gone,
+ * and the smoothstep keeps it readable through the first half of the tip and
+ * takes it out quickly at the end, where a smear would give the trick away.
+ */
+function faceOpacity(rotate: number): number {
+  return easeSmooth(1 - Math.abs(rotate) / CLAIM_ANGLE);
+}
+
+/**
+ * The phrase showing, `t` seconds into the reveal, and how it is standing.
+ *
+ * Each wrong phrase gets the same five beats: it arrives, it is read, it is
+ * struck, it is held struck, and it falls away carrying its line with it. The
+ * next arrives out of the same edge the last left through, which is what makes
+ * three separate answers read as one slot being corrected rather than three
+ * unrelated lines.
+ */
+export function claimWordAt(t: number): ClaimWord {
+  const inS = CLAIM_IN_MS / 1000;
+  const holdS = CLAIM_HOLD_MS / 1000;
+  const strikeS = CLAIM_STRIKE_MS / 1000;
+  const struckS = CLAIM_STRUCK_MS / 1000;
+  const outS = CLAIM_OUT_MS / 1000;
+  const wrongS = WRONG_MS / 1000;
+
+  if (t <= CLAIM_STARTS) {
+    // Waiting in the wings, tipped back and invisible — so the first arrival
+    // is an arrival rather than a fade-up from nothing.
+    return { index: 0, rotate: CLAIM_ANGLE, opacity: 0, strike: 0, underline: 0, resting: false };
+  }
+
+  const into = t - CLAIM_STARTS;
+  const index = Math.min(CLAIM_TRUE, Math.floor(into / wrongS));
+  const within = into - index * wrongS;
+
+  if (index === CLAIM_TRUE) {
+    // The true one arrives, waits a beat, is underlined, and stays. No strike,
+    // no exit, nothing after it.
+    const settleS = CLAIM_SETTLE_MS / 1000;
+    const p = Math.min(1, within / inS);
+    const rotate = CLAIM_ANGLE * (1 - easeSmooth(p));
+    const since = within - inS - settleS;
+    const underline = since <= 0 ? 0 : Math.min(1, easeSmooth(since / strikeS));
+    return {
+      index,
+      rotate,
+      opacity: faceOpacity(rotate),
+      strike: 0,
+      underline,
+      resting: underline >= 1,
+    };
+  }
+
+  if (within < inS) {
+    const rotate = CLAIM_ANGLE * (1 - easeSmooth(within / inS));
+    return { index, rotate, opacity: faceOpacity(rotate), strike: 0, underline: 0, resting: false };
+  }
+  if (within < inS + holdS) {
+    return { index, rotate: 0, opacity: 1, strike: 0, underline: 0, resting: false };
+  }
+  if (within < inS + holdS + strikeS) {
+    return {
+      index,
+      rotate: 0,
+      opacity: 1,
+      strike: easeSmooth((within - inS - holdS) / strikeS),
+      underline: 0,
+      resting: false,
+    };
+  }
+  if (within < inS + holdS + strikeS + struckS) {
+    return { index, rotate: 0, opacity: 1, strike: 1, underline: 0, resting: false };
+  }
+  // Falling away over the top, still struck: the correction leaves with it.
+  const p = easeSmooth((within - inS - holdS - strikeS - struckS) / outS);
+  const rotate = -CLAIM_ANGLE * p;
+  return { index, rotate, opacity: faceOpacity(rotate), strike: 1, underline: 0, resting: false };
+}
+
+/** The moment the true claim has arrived AND been underlined — the last thing
+ *  on this screen to stop. */
+export const CLAIM_LANDS =
+  CLAIM_STARTS +
+  (CLAIM_TRUE * WRONG_MS + CLAIM_IN_MS + CLAIM_SETTLE_MS + CLAIM_STRIKE_MS) / 1000;
+
+/**
+ * THE MOMENT NOTHING IS MOVING ANY MORE — the last turn finished, the true
+ * claim landed, every part at rest.
  *
  * Distinct from `REVEAL_SETTLED`, which is when the PARTS stop moving and is
  * what the still frame renders. The sections keep living for a few seconds
@@ -279,7 +420,7 @@ export const REVEAL_REST = Math.max(
      moves nearly a second after nothing was moving. */
   ROLODEX_STARTS +
     ((ROLODEX_TURNS - 1) * (ROLODEX_TURN_MS + ROLODEX_REST_MS) + ROLODEX_TURN_MS) / 1000,
-  LINE_STARTS + ((PRIVACY_LINES - 1) * (LINE_FADE_MS * 2 + LINE_HOLD_MS) + LINE_FADE_MS) / 1000,
+  CLAIM_LANDS,
 );
 
 /* ── THE CONNECTOR ───────────────────────────────────────────────────────── */

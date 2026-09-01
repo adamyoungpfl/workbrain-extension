@@ -1,13 +1,16 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BrandMark } from '../components';
 import {
+  CLAIM_TRUE,
   COUNT_FROM,
+  REVEAL_REST,
   REVEAL_SETTLED,
   ROLODEX_TURN_MS,
+  claimWordAt,
   countAt,
   linkAt,
   partAt,
-  privacyLineAt,
+  partStartsAt,
   rolodexAt,
 } from '../../core/splash/reveal';
 import type { RevealPart } from '../../core/splash/reveal';
@@ -64,12 +67,20 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
   const rootRef = useRef<HTMLDivElement | null>(null);
   const partRefs = useRef<Partial<Record<RevealPart, HTMLDivElement | null>>>({});
   const pathRef = useRef<SVGPathElement | null>(null);
+  const path2Ref = useRef<SVGPathElement | null>(null);
+  const slotRef = useRef<HTMLSpanElement | null>(null);
+  const rolodexRef = useRef<HTMLParagraphElement | null>(null);
   const restRef = useRef<Partial<Record<RevealPart, Box>>>({});
 
   /* Only what changes a handful of times lives in React. */
   const [count, setCount] = useState(still ? countAt(REVEAL_SETTLED) : COUNT_FROM);
-  const [turn, setTurn] = useState(0);
-  const [line, setLine] = useState(0);
+  /* Which phrase is in the slot. It starts on the TRUE one in the still
+     version, so the false phrases are never on screen for even the one frame
+     between mount and the first paint — this is the claim the whole product
+     rests on, and "briefly wrong" is not a state it may be in. Four values
+     over five seconds otherwise — React's business. Where it is tipped to and how far it is struck are sixty values
+     a second, and go straight to style below. */
+  const [claim, setClaim] = useState(still ? CLAIM_TRUE : 0);
 
   /* THE RESTING BOXES, measured once after layout and never again. Measuring
      per frame would be a forced reflow sixty times a second to learn something
@@ -83,6 +94,9 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
        style prop for the same reason every other number here does: this is a
        fact the paint needs, not state. */
     root.style.setProperty('--rolodex-turn', `${ROLODEX_TURN_MS}ms`);
+    /* The flag starts waving when its own section starts arriving, not when
+       the reveal does — the same number the spine brings the section in on. */
+    root.style.setProperty('--flag-wait', `${partStartsAt('privacy')}s`);
     const frame = root.getBoundingClientRect();
     const next: Partial<Record<RevealPart, Box>> = {};
     for (const part of PARTS) {
@@ -112,17 +126,26 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
         el.setAttribute('aria-hidden', at.opacity < 0.05 ? 'true' : 'false');
       }
 
-      /* The path, from the bottom of the tagline to the top of the time
-         section, both offset by wherever the spine has those parts right now.
+      /* THE TWO CONNECTORS, each from the bottom of one section to the top of
+         the next, both offset by wherever the spine has those parts right now.
          A gentle S rather than a straight line: a curve reads as a route and a
-         straight line reads as a rule. */
-      const path = pathRef.current;
-      const from = restRef.current.tagline;
-      const to = restRef.current.time;
-      if (path && from && to) {
-        const link = linkAt(t, 'time');
-        const a = partAt(t, 'tagline');
-        const b = partAt(t, 'time');
+         straight line reads as a rule — and with one section leaning left and
+         the next leaning right, the S is what the lean is FOR.
+
+         Written once and run twice rather than copied: the second link is the
+         same geometry between a different pair, and two copies of this would
+         be two places to fix the day the curve changes. */
+      const drawLink = (
+        path: SVGPathElement | null,
+        fromPart: RevealPart,
+        toPart: RevealPart,
+      ) => {
+        const from = restRef.current[fromPart];
+        const to = restRef.current[toPart];
+        if (!path || !from || !to) return;
+        const link = linkAt(t, toPart);
+        const a = partAt(t, fromPart);
+        const b = partAt(t, toPart);
         const x1 = from.cx + a.x;
         const y1 = from.bottom + a.y + 6;
         const x2 = to.cx + b.x;
@@ -145,16 +168,42 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
           path.style.strokeDashoffset = `${len * (1 - link.drawn)}`;
         }
         path.style.opacity = link.idle ? '0' : '1';
-      }
+      };
+      drawLink(pathRef.current, 'tagline', 'time');
+      drawLink(path2Ref.current, 'time', 'privacy');
 
       const c = countAt(t);
       setCount((was) => (was === c ? was : c));
+      /* THE TURN IS AN ATTRIBUTE, NOT A REACT KEY.
+         It was `key={turn}`, which remounts the element and replays its CSS
+         animation — and that was wrong twice over. `rolodexAt` reports turn 0
+         both BEFORE the first turn and DURING it, so the key never changed
+         when the first turn was due: what actually played was the mount, at
+         reveal zero, with the section still invisible. Two of the three turns
+         reached the screen, and the one that did not was the first.
+
+         Keyed to `turning` instead, the animation is applied exactly while
+         core says a turn is happening and removed when it is not. It cannot
+         play at a moment core did not ask for, because there is no moment
+         outside `turning` when the declaration exists. */
       const r = rolodexAt(t);
-      setTurn((was) => (was === r.turn ? was : r.turn));
-      const l = privacyLineAt(t);
-      setLine((was) => (was === l.index ? was : l.index));
-      const el = partRefs.current.privacy;
-      if (el) el.style.setProperty('--line-o', l.opacity.toFixed(3));
+      const rolodex = rolodexRef.current;
+      const turning = r.turning ? 'on' : 'off';
+      if (rolodex && rolodex.dataset.turning !== turning) rolodex.dataset.turning = turning;
+
+      /* The elimination. Which phrase is showing goes through React four
+         times; how far it is tipped and how far it is struck are written
+         straight to the slot, sixty times a second. Both come from the one
+         call, so they cannot disagree about which phrase is being struck. */
+      const w = claimWordAt(t);
+      setClaim((was) => (was === w.index ? was : w.index));
+      const slot = slotRef.current;
+      if (slot) {
+        slot.style.transform = `perspective(340px) rotateX(${w.rotate.toFixed(1)}deg)`;
+        slot.style.opacity = w.opacity.toFixed(3);
+        slot.style.setProperty('--strike', w.strike.toFixed(3));
+        slot.style.setProperty('--underline', w.underline.toFixed(3));
+      }
     };
 
     const safePaint = (t: number) => {
@@ -171,9 +220,16 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
     };
 
     if (still) {
-      // Not one frame scheduled. The settled frame IS the still version —
-      // core's table gives it for free rather than needing a second layout.
-      safePaint(REVEAL_SETTLED);
+      /* Not one frame scheduled. The settled frame IS the still version —
+         core's table gives it for free rather than needing a second layout.
+
+         PAINTED AT `REVEAL_REST`, NOT `REVEAL_SETTLED`. The parts are identical
+         at both (they stop at the earlier one and never move again), but the
+         SECTIONS are not: at REVEAL_SETTLED the elimination is still on its
+         first wrong answer, so a still frame drawn there would say "Everything
+         leaves your browser" and leave it there. The still version has to be
+         the END of the argument, not a photograph taken during it. */
+      safePaint(REVEAL_REST);
       return;
     }
     let raf = 0;
@@ -204,6 +260,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
       {!still && (
         <svg className="splashreveal-links" aria-hidden="true" focusable="false">
           <path ref={pathRef} className="splashreveal-path" fill="none" />
+          <path ref={path2Ref} className="splashreveal-path" fill="none" />
         </svg>
       )}
 
@@ -231,34 +288,85 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
               running thirty numbers is the only thing anybody sees. */}
           <span className="splashreveal-count">{count}</span> {S.splashCostUnit}
         </p>
-        {/* The rolodex. `key` on the turn restarts the animation — without it
-            React keeps the element and it plays once, ever. */}
-        <p className="splashreveal-rolodex" key={turn}>
+        {/* The rolodex. The paint loop marks it while core says it is turning;
+            the stylesheet hangs the animation off that mark. */}
+        <p className="splashreveal-rolodex" data-turning="off" ref={rolodexRef}>
           {S.splashCostSub}
         </p>
       </div>
 
-      {/* THE TWO CLAIMS: one slot taking turns, or both at once when nothing
-          may move. Alternating is how two sentences fit in the room for one,
-          and it is motion doing the fitting — so under reduced motion the
-          still frame would carry the first claim and quietly drop the second.
-          Stacked, both are kept. The section is a few pixels taller and says
-          everything it was always meant to say. */}
-      <div
-        className="splashreveal-part"
-        data-part="privacy"
-        data-still={still ? 'on' : 'off'}
-        ref={hold('privacy')}
-      >
-        {still ? (
-          S.splashWhatLines.map((claim) => (
-            <p key={claim} className="splashreveal-line">
-              {claim}
-            </p>
-          ))
-        ) : (
-          <p className="splashreveal-line">{S.splashWhatLines[line]}</p>
-        )}
+      {/* THE SECOND SECTION, built like the first: a bold line with two words
+          picked out, and under it a quiet line with a device that runs and
+          then stops.
+
+          IT IS ONE SENTENCE THE PERSON WATCHES BE ARRIVED AT. Three wrong
+          answers go up and are struck out, and the true one is what is left
+          standing — which is a different kind of promise from the same words
+          printed on a screen.
+
+          AND THE FALSE ONES ARE NEVER SAID OUT LOUD. Everything in the slot is
+          decoration of a claim, so the slot is hidden from assistive tech and
+          the claim itself is stated once, plainly, in `.app-sr` beside it. A
+          screen reader that arrived mid-animation would otherwise read
+          "Everything leaves your browser" — the exact opposite of the
+          promise, in the one place the product cannot afford to be misread. */}
+      <div className="splashreveal-part" data-part="privacy" ref={hold('privacy')}>
+        <p className="splashreveal-own">
+          {S.splashOwnLead} <span className="splashreveal-start">{S.splashOwnStart}</span>{' '}
+          {S.splashOwnJoin}{' '}
+          {/* THE WORD IS THE FLAG (Adam, 2026-09-01). It was a separate mark
+              floating above the line, which made it an illustration OF the
+              sentence; attached to "finish" it is part of it. The word stays
+              legible and the flag beside it does the waving — a word tipping
+              24 degrees is a word somebody has to work to read, and this line
+              is the promise, not the ornament. */}
+          <span className="splashreveal-finish">
+            {S.splashOwnFinish}
+            <span className="splashreveal-flag" aria-hidden="true">
+              {/* Hand-drawn rather than brought in: docs/DEPENDENCIES.md would
+                  have to argue for an icon set, and this is six rectangles and
+                  a line. */}
+              <svg viewBox="0 0 24 24" width="17" height="17" focusable="false">
+                <path className="splashreveal-flagpole" d="M4 3.5 V20" />
+                <g className="splashreveal-flagcloth">
+                  <rect x="5" y="4" width="4.5" height="3.5" />
+                  <rect x="14" y="4" width="4.5" height="3.5" />
+                  <rect x="9.5" y="7.5" width="4.5" height="3.5" />
+                  <rect x="18.5" y="7.5" width="3" height="3.5" />
+                  <rect x="5" y="11" width="4.5" height="3.5" />
+                  <rect x="14" y="11" width="4.5" height="3.5" />
+                </g>
+              </svg>
+            </span>
+          </span>
+          {S.splashOwnTail}
+        </p>
+
+        <p className="splashreveal-leave" aria-hidden="true">
+          {/* EVERY PHRASE IS IN THE DOM, ALL THE TIME, one on top of another in
+              a single grid cell — so the slot is as wide as the widest of them
+              and the tail never moves as they swap. Measuring the widest and
+              pinning it in JavaScript would be the same answer, computed less
+              reliably and re-computed on every font change. */}
+          <span className="splashreveal-slot" ref={slotRef}>
+            {S.splashLeaveAnswers.map((answer, i) => (
+              <span
+                key={answer.amount}
+                className="splashreveal-phrase"
+                data-on={i === claim ? 'on' : 'off'}
+              >
+                {/* The amount is its own span because the last one is
+                    underlined and the verb after it is not. */}
+                <span className="splashreveal-amount">{answer.amount}</span> {answer.verb}
+              </span>
+            ))}
+          </span>{' '}
+          {S.splashLeaveTail}
+        </p>
+        <p className="app-sr">
+          {S.splashLeaveAnswers[CLAIM_TRUE]?.amount} {S.splashLeaveAnswers[CLAIM_TRUE]?.verb}{' '}
+          {S.splashLeaveTail}
+        </p>
       </div>
 
       <div className="splashreveal-part" data-part="doors" ref={hold('doors')}>

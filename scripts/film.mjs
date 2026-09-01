@@ -20,8 +20,12 @@
 import { chromium } from '@playwright/test';
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
-const ROOT = new URL('..', import.meta.url).pathname;
+/* `fileURLToPath`, not `.pathname`: a URL path is percent-encoded, so a repo
+   checked out under a directory with a space in it would hand Chromium a
+   `--load-extension=/Users/.../my%20repo/dist` that does not exist. */
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const DIST = join(ROOT, 'dist');
 const OUT = join(ROOT, 'film');
 mkdirSync(OUT, { recursive: true });

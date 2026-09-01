@@ -1,6 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act } from 'react';
 import { Splash, SPLASH_FADE_MS, taglineLines } from './Splash';
+import { CLAIM_TRUE } from '../../core/splash/reveal';
 import { S } from '../strings';
 import { mount } from '../components/testUtils';
 
@@ -151,16 +152,24 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     // stands in their place is what the held seconds are for.
     expect(container.querySelector('.splash-loader')).toBeNull();
     expect(container.querySelector('.splash-drain')).toBeNull();
-    /* V2.9 slice 2: the two sentences became two ANIMATED sections — the
-       minutes stream from thirty and the privacy claims alternate in one slot
-       — so they are no longer two static paragraphs to read back. The claim
-       that survives is the one that mattered: both are on the reveal, in the
-       DOM, from the settled frame. */
+    /* V2.9 slice 3b: the two sentences are two ANIMATED sections — the minutes
+       stream down from thirty, and the second claim is arrived at by striking
+       out three wrong answers. Neither is a static paragraph to read back. The
+       claim that survives is the one that mattered: both are on the reveal, in
+       the DOM, from the settled frame.
+
+       And the second one is checked as the TRUE sentence rather than as
+       whatever is in the slot: this render is the still version, where the
+       elimination has already happened and "Nothing leaves your browser" is
+       the only thing it may say. */
     expect(container.querySelector('.splashreveal-cost')!.textContent).toContain(
       S.splashCostUnit,
     );
-    expect(container.querySelector('.splashreveal-line')!.textContent).toBe(
-      S.splashWhatLines[0],
+    expect(container.querySelector('.splashreveal-leave')!.textContent).toContain(
+      S.splashLeaveAnswers[CLAIM_TRUE]!.amount,
+    );
+    expect(container.querySelector('.splashreveal-own')!.textContent).toContain(
+      S.splashOwnFinish,
     );
     // And no white layer: there is nothing to swell from.
     expect(container.querySelector('.splash-swell')).toBeNull();

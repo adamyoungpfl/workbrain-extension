@@ -69,33 +69,31 @@
    what makes it a rotation rather than a vertical squash — without it the
    line flattens and springs back, which reads as a glitch.
 
-   ── ONE CARD LEAVES AND THE NEXT ARRIVES ────────────────────────────────
-   The first pass rotated to -88deg and came BACK the way it went, which is
-   one card flapping rather than a rolodex advancing — and the filmstrip
-   showed it: a line that squashed, went grey, and un-squashed. A rolodex
-   only reads as one if something LEAVES and something else takes its place.
+   ── ADAM PICKED THIS ONE (2026-09-01): "On the One question at a time,
+   Slice 2." ────────────────────────────────────────────────────────────────
+   Slice 3 replaced it with a two-card advance — the card falling away over
+   the top and the next coming up from below — on the argument that a card
+   tipping back and returning the way it went is one card flapping rather than
+   a rolodex turning. Both were built and put on a bench at real size with a
+   scrub, and this is the one he chose after watching them.
 
-   So the turn goes 0 to -84deg (the card falling away over the top), swaps at
-   the invisible edge, and comes up from +84deg (the next card arriving). It
-   is the same sentence both times — Adam: "shows the same thing on a loop" —
-   and that is precisely why the MOTION has to carry the illusion: nothing in
-   the content will.
+   That settles it, and the reasoning it overrules is worth keeping rather
+   than deleting: the two-card version is more literally a rolodex, and it is
+   also busier, because a card that leaves and a card that arrives are two
+   events in the corner of somebody's eye where this one is a single beat. The
+   line says the same thing before and after; only the flourish differed.
 
-   The swap is at 49/51% and the card is fully transparent through it. At the
-   old 0.25 the smear was visible at the crossover, which is the one frame
-   that gives the trick away. */
+   The dip to 0.25 rather than to 0 is part of what he chose — the line stays
+   faintly there through the turn, so it reads as one object moving rather
+   than as text disappearing and text returning. */
 @keyframes splashreveal-rolodex {
   0% {
     transform: perspective(340px) rotateX(0deg);
     opacity: 1;
   }
-  49% {
-    transform: perspective(340px) translateY(-10px) rotateX(-84deg);
-    opacity: 0;
-  }
-  51% {
-    transform: perspective(340px) translateY(10px) rotateX(84deg);
-    opacity: 0;
+  50% {
+    transform: perspective(340px) rotateX(-88deg);
+    opacity: 0.25;
   }
   100% {
     transform: perspective(340px) rotateX(0deg);
@@ -106,34 +104,161 @@
   margin: 6px 0 0;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.72);
-  /* THE LENGTH COMES FROM CORE. `--rolodex-turn` is written by the panel from
-     `ROLODEX_TURN_MS`, which is also what counts the turns — a duration typed
-     in both places is one that a re-timing changes in only one of them. No
-     fallback on purpose: with the property missing the declaration is invalid
-     and the line simply sits still, which is the degradation law's answer and
-     not a second copy of the number. */
+}
+/* THE TURN HAPPENS WHEN CORE SAYS IT DOES, and at no other moment: the
+   declaration only exists while the panel has marked the line as turning, so
+   there is no mount, no remount and no re-render that can play it early.
+
+   THE LENGTH COMES FROM CORE TOO. `--rolodex-turn` is written by the panel
+   from `ROLODEX_TURN_MS`, which is also what counts the turns — a duration
+   typed in both places is one that a re-timing changes in only one of them. No
+   fallback on purpose: with the property missing the declaration is invalid
+   and the line simply sits still, which is the degradation law's answer and
+   not a second copy of the number. */
+.splashreveal-rolodex[data-turning='on'] {
   animation: splashreveal-rolodex var(--rolodex-turn) ease-in-out;
 }
 
-/* The privacy claims share one slot, so the opacity is driven per frame from
-   the spine rather than by a CSS animation that would have to be restarted in
-   step with a changing string. */
-.splashreveal-line {
-  margin: 0;
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.72);
-  opacity: var(--line-o, 0);
+/* ── THE SECOND SECTION ────────────────────────────────────────────────────
+   Built like the first: a bold line with two words picked out, and a quiet
+   line under it carrying a device. The two sections lean opposite ways, which
+   is what the connector between them bends around. */
+.splashreveal-part[data-part='privacy'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
 }
 
-/* STILL, BOTH CLAIMS ARE ON SCREEN AT ONCE. One slot taking turns is a
-   solution to having more to say than room to say it in, and it needs motion
-   to work. Where nothing may move, the room is found by stacking: two short
-   lines, both readable, no promise dropped. */
-.splashreveal-part[data-still='on'] .splashreveal-line {
-  opacity: 1;
+/* THE FLAG, ON THE WORD. It sat above the line as its own mark until Adam
+   asked for "the word finish to be the flag with the waving" — which is the
+   better idea: above the line it illustrated the sentence, and inside it, it
+   is part of it. Baseline-nudged so the cloth sits on the x-height rather than
+   hanging off the cap line. */
+.splashreveal-flag {
+  display: inline-block;
+  line-height: 0;
+  margin-left: 1px;
+  vertical-align: -3px;
 }
-.splashreveal-line + .splashreveal-line {
-  margin-top: 6px;
+.splashreveal-flagpole {
+  stroke: rgba(255, 255, 255, 0.55);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  fill: none;
+}
+.splashreveal-flagcloth {
+  fill: var(--ink-inv);
+  /* Hinged at the pole, so the cloth swings from where it is attached rather
+     than pivoting about its own middle like a sign on a nail. */
+  transform-origin: 4px 9px;
+  animation: splashreveal-wave 1.6s ease-in-out var(--flag-wait, 0s) 3 both;
+}
+@keyframes splashreveal-wave {
+  0%,
+  100% {
+    transform: perspective(90px) rotateY(0deg) skewY(0deg);
+  }
+  30% {
+    transform: perspective(90px) rotateY(24deg) skewY(-3.5deg);
+  }
+  70% {
+    transform: perspective(90px) rotateY(-16deg) skewY(2.5deg);
+  }
+}
+
+/* The bold claim, at the weight and tracking of "ABOUT 15 MINUTES" above it —
+   sentence case rather than caps, because thirty-seven characters of capitals
+   wrap onto two lines in a 400px panel and a two-line shout is not the same
+   treatment, it is a louder one. */
+.splashreveal-own {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--ink-inv);
+}
+/* GO, and the flag. The two ends of the sentence are the two ends of the
+   thing it promises; nothing is distinguished by colour ALONE here, because
+   the words are the words either way. */
+.splashreveal-start {
+  color: var(--splash-start);
+}
+.splashreveal-finish {
+  /* The counted number's own colour, one section up. The pair is the point. */
+  color: var(--globe-node-2-mid);
+  /* The word and its flag travel together — one object, so a line break can
+     never leave the flag stranded at the start of the next line. */
+  white-space: nowrap;
+}
+
+/* ── THE ELIMINATION ───────────────────────────────────────────────────────
+   Three wrong answers go up and are struck out; the true one is what is left
+   standing. Adam: "Once it hits Nothing, it stays solid, just like One
+   question at a time stays solid in the above section." */
+.splashreveal-leave {
+  margin: 4px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+/* EVERY PHRASE OCCUPIES THE SAME GRID CELL, so the slot is as wide as the
+   widest of them and the tail after it never moves as they swap. The
+   alternative — measuring the widest in JavaScript and pinning a width — is
+   the same answer computed less reliably, and recomputed wrongly the first
+   time a font loads late. */
+.splashreveal-slot {
+  display: inline-grid;
+  vertical-align: baseline;
+  will-change: transform, opacity;
+}
+.splashreveal-phrase {
+  grid-area: 1 / 1;
+  position: relative;
+  white-space: nowrap;
+  /* FLUSH RIGHT, so the tail follows the phrase rather than the slot. Centred
+     in a cell sized to the longest answer, "Nothing leaves" left a hole in
+     front of "your browser." wide enough to read as a missing word. Aligned to
+     the end, the sentence is always tight and the slack falls on the left —
+     where it changes only while the phrase is edge-on and invisible. */
+  text-align: right;
+  /* Hidden, not absent: it still sizes the cell. */
+  visibility: hidden;
+}
+.splashreveal-phrase[data-on='on'] {
+  visibility: visible;
+}
+/* The line through a wrong answer, drawn left to right by the spine. It is
+   not `text-decoration: line-through`, which arrives all at once and cannot
+   be drawn — and the drawing IS the correction. */
+.splashreveal-phrase[data-on='on']::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 52%;
+  height: 1.5px;
+  width: calc(var(--strike, 0) * 100%);
+  background: var(--ink-inv);
+  border-radius: 1px;
+}
+
+/* AND THE SAME MARK, MOVED, UNDER THE TRUE ONE. Three answers get a line
+   through them and the fourth gets a line under it — drawn the same way, at
+   the same speed, in a warm colour rather than white, because it is the one
+   line on this screen that is not a rejection. Under the AMOUNT alone: the
+   word that changed is the word the sentence turns on. */
+.splashreveal-amount {
+  position: relative;
+}
+.splashreveal-phrase[data-on='on'] .splashreveal-amount::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -3px;
+  height: 2px;
+  width: calc(var(--underline, 0) * 100%);
+  background: var(--splash-answer);
+  border-radius: 1px;
 }
 
 .splashreveal-part[data-part='doors'] {
@@ -147,7 +272,30 @@
 @media (prefers-reduced-motion: reduce) {
   /* No turn. The line is simply there — it was never carrying anything the
      movement was needed for. */
-  .splashreveal-rolodex {
+  .splashreveal-rolodex[data-turning='on'] {
     animation: none;
+  }
+  /* The flag is a flag, not a flapping one. */
+  .splashreveal-flagcloth {
+    animation: none;
+  }
+  /* THE STILL VERSION SHOWS THE ANSWER, NOT THE WORKING. The elimination is
+     an argument made in time — three wrong answers struck out in front of
+     somebody — and time is the one thing this render does not have. What it
+     keeps is the conclusion, which is the whole instruction: nothing leaves
+     your browser. The struck-out phrases are not summarised, because a
+     silent still of three false claims with lines through them is a worse
+     way to say it than simply saying it. */
+  .splashreveal-slot {
+    transform: none !important;
+    opacity: 1 !important;
+  }
+  .splashreveal-phrase[data-on='on']::after {
+    display: none;
+  }
+  /* The underline STAYS. It is not a cue that has to move to mean something —
+     it is the mark on the answer, and the still version keeps the answer. */
+  .splashreveal-phrase[data-on='on'] .splashreveal-amount::after {
+    width: 100%;
   }
 }

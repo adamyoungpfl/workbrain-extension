@@ -1651,13 +1651,41 @@ export const S = {
   splashCostLead: 'ABOUT',
   splashCostUnit: 'MINUTES',
   splashCostSub: 'One question at a time.',
-  /* The two claims alternate in one slot now (core/splash/reveal.ts's
-     `privacyLineAt`) rather than sitting as one sentence, so each gets its
-     own moment instead of being skimmed as a pair. */
-  splashWhatLines: [
-    'The file is yours from start to finish.',
-    'Nothing leaves your browser.',
+  /* [DRAFT] V2.9 slice 3b (Adam, 2026-09-01) — SUPERSEDES `splashWhatLines`,
+     which held these two claims as one array for a slot they took turns in.
+     They are a PAIR now, both on screen, and each has its own device — so
+     each is split where the panel needs a seam.
+
+     The bold line, in the pieces it is coloured in: "start" and "finish" are
+     picked out the way the counter's number is, which is what makes this
+     section a sibling of the one above it rather than a paragraph under it. */
+  splashOwnLead: 'The file is yours from',
+  splashOwnStart: 'start',
+  splashOwnJoin: 'to',
+  splashOwnFinish: 'finish',
+  splashOwnTail: '.',
+  /* [DRAFT] The elimination, worst first. Each wrong answer is put up and
+     struck out, and the true one is what is left standing — a promise somebody
+     watched three alternatives fail to is a different kind of promise from one
+     printed on a screen.
+
+     THE SLOT HOLDS THE VERB TOO. "Most things leaves your browser" is not
+     English, and the alternative — subjects that all take a singular verb,
+     "Most of it", "Some of it" — keeps the slot to one word and costs the
+     plainness of these. The panel pins the slot to its widest phrase so the
+     tail never moves. */
+  /* SPLIT AT THE SUBJECT, because the last one is underlined and only the
+     WORD is (Adam, 2026-09-01: "an underline for the word Nothing"). The
+     strike still crosses the whole answer — it is the whole answer that is
+     wrong — and the underline sits under the amount alone, which is the part
+     that changed. */
+  splashLeaveAnswers: [
+    { amount: 'Everything', verb: 'leaves' },
+    { amount: 'Most things', verb: 'leave' },
+    { amount: 'Some things', verb: 'leave' },
+    { amount: 'Nothing', verb: 'leaves' },
   ] as const,
+  splashLeaveTail: 'your browser.',
   /** The way past it, said out loud. Any click already left; nothing said so,
    * so people sat through it politely (§9). */
   splashSkip: 'Skip',

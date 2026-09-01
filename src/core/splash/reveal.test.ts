@@ -1,16 +1,19 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CLAIM_ANGLE,
+  CLAIM_LANDS,
+  CLAIM_TRUE,
+  CLAIM_WORDS,
   COUNT_FROM,
   COUNT_TO,
-  PRIVACY_LINES,
   REVEAL_REST,
   REVEAL_SETTLED,
   ROLODEX_TURNS,
+  claimWordAt,
   countAt,
   linkAt,
   partAt,
   partStartsAt,
-  privacyLineAt,
   rolodexAt,
 } from './reveal';
 import type { RevealPart } from './reveal';
@@ -60,9 +63,19 @@ describe('partAt — the storyboard', () => {
     expect(moved.x).toBeLessThan(0);
   });
 
-  it('never moves anything sideways except the time section', () => {
-    for (const part of PARTS) {
-      if (part === 'time') continue;
+  it('leans the two sections OPPOSITE ways, and moves nothing else sideways', () => {
+    /* SUPERSEDED 2026-09-01 (slice 3b, Adam: "the same treatment as the About
+       15 minutes but offset just slightly to the right"). This used to say
+       nothing moved sideways except the time section. The second section now
+       answers the first's lean, and the two offsets are what the connector
+       between them bends around — a path down a straight line is a rule, and
+       a path that leans is a route.
+
+       The lockup and the tagline still never move sideways: they are the axis
+       everything else is arranged around, and an axis that drifts is not one. */
+    expect(partAt(REVEAL_SETTLED, 'time').x).toBeLessThan(0);
+    expect(partAt(REVEAL_SETTLED, 'privacy').x).toBeGreaterThan(0);
+    for (const part of ['lockup', 'tagline', 'doors'] as RevealPart[]) {
       for (let t = 0; t <= 6; t += 0.1) expect(partAt(t, part).x).toBe(0);
     }
   });
@@ -178,56 +191,157 @@ describe('rolodexAt — it turns, then rests', () => {
   });
 });
 
-describe('privacyLineAt — two claims, one slot', () => {
-  it('shows nothing before the section arrives', () => {
-    expect(privacyLineAt(0).opacity).toBe(0);
+describe('claimWordAt — the true claim is arrived at, not asserted', () => {
+  it('shows nothing before the section is there to hold it', () => {
+    expect(claimWordAt(0).opacity).toBe(0);
+    expect(claimWordAt(0).strike).toBe(0);
   });
 
-  it('alternates rather than ending on an empty slot', () => {
-    // An empty slot between them would read as a section that had finished
-    // and left.
+  it('gets through every phrase, in order, and never goes back', () => {
     const seen = new Set<number>();
-    for (let t = 4.5; t < 20; t += 0.05) {
-      const l = privacyLineAt(t);
-      if (l.opacity > 0.9) seen.add(l.index);
-    }
-    expect(seen.size).toBe(PRIVACY_LINES);
-  });
-
-  it('never shows two at once — one index at any instant', () => {
-    for (let t = 4.5; t < 20; t += 0.02) {
-      const l = privacyLineAt(t);
-      expect(l.index).toBeGreaterThanOrEqual(0);
-      expect(l.index).toBeLessThan(PRIVACY_LINES);
-      expect(l.opacity).toBeGreaterThanOrEqual(0);
-      expect(l.opacity).toBeLessThanOrEqual(1);
-    }
-  });
-
-  it('fully reaches each line rather than cross-fading through the middle', () => {
-    let sawFull = false;
-    for (let t = 4.5; t < 8; t += 0.02) if (privacyLineAt(t).opacity === 1) sawFull = true;
-    expect(sawFull).toBe(true);
-  });
-
-  it('COMES TO REST on the last claim rather than swapping forever', () => {
-    /* Slice 2 cycled these two sentences for as long as the panel was open.
-       A screen that is asking a question should not still be changing a
-       sentence underneath it while somebody decides — the same objection the
-       rolodex answers with three turns and a rest. */
-    for (const t of [20, 60, 600]) {
-      expect(privacyLineAt(t)).toEqual({ index: PRIVACY_LINES - 1, opacity: 1 });
-    }
-  });
-
-  it('shows each claim once, in order, and never goes back', () => {
     let last = 0;
-    for (let t = 4.5; t < 30; t += 0.02) {
-      const { index } = privacyLineAt(t);
+    for (let t = 4.6; t < 20; t += 0.01) {
+      const { index } = claimWordAt(t);
       expect(index).toBeGreaterThanOrEqual(last);
       last = index;
+      seen.add(index);
     }
-    expect(last).toBe(PRIVACY_LINES - 1);
+    expect(seen.size).toBe(CLAIM_WORDS);
+    expect(last).toBe(CLAIM_TRUE);
+  });
+
+  it('strikes every wrong answer through, fully', () => {
+    const struck = new Set<number>();
+    for (let t = 4.6; t < 20; t += 0.005) {
+      const w = claimWordAt(t);
+      if (w.strike === 1) struck.add(w.index);
+    }
+    // Every wrong one, and only the wrong ones.
+    expect([...struck].sort()).toEqual([0, 1, 2]);
+  });
+
+  it('NEVER strikes the true one — it is what is left standing', () => {
+    for (let t = 4.6; t < 60; t += 0.005) {
+      const w = claimWordAt(t);
+      if (w.index === CLAIM_TRUE) expect(w.strike).toBe(0);
+    }
+  });
+
+  it('comes to rest face-on, underlined, and stays there', () => {
+    // Continuously across the first seconds past the landing, not only at a
+    // few far-apart points: a device that twitched once a second after it
+    // settled would pass a sample at 60s and be wrong on screen.
+    for (let t = CLAIM_LANDS; t < CLAIM_LANDS + 6; t += 0.01) {
+      expect(claimWordAt(t).resting).toBe(true);
+      expect(claimWordAt(t).rotate).toBe(0);
+    }
+    for (const t of [CLAIM_LANDS, CLAIM_LANDS + 1, 60, 600]) {
+      expect(claimWordAt(t)).toEqual({
+        index: CLAIM_TRUE,
+        rotate: 0,
+        opacity: 1,
+        strike: 0,
+        underline: 1,
+        resting: true,
+      });
+    }
+  });
+
+  it('UNDERLINES the true one and strikes nothing else — the same mark, moved', () => {
+    /* Adam: "make the last strike be an underline for the word Nothing".
+       Three answers get a line through them and the fourth gets a line under
+       it. What must never happen is both on one phrase, or an underline on an
+       answer that is about to be thrown away. */
+    let sawDrawing = false;
+    for (let t = 4.6; t < 20; t += 0.005) {
+      const w = claimWordAt(t);
+      if (w.underline > 0) {
+        expect(w.index).toBe(CLAIM_TRUE);
+        expect(w.strike).toBe(0);
+        if (w.underline < 1) sawDrawing = true;
+      }
+      if (w.strike > 0) expect(w.index).not.toBe(CLAIM_TRUE);
+    }
+    // Drawn, not switched on: the line arrives across the word.
+    expect(sawDrawing).toBe(true);
+  });
+
+  it('waits a beat before underlining — the answer is what is LEFT', () => {
+    /* Underlining the word the instant it lands reads as one movement. The
+       point of the device is that three others had to go first. */
+    const landed = CLAIM_LANDS - 0.5;
+    expect(claimWordAt(landed).index).toBe(CLAIM_TRUE);
+    expect(claimWordAt(landed).rotate).toBe(0);
+    let firstMark = 0;
+    for (let t = 4.6; t < 20; t += 0.005) {
+      if (claimWordAt(t).underline > 0) {
+        firstMark = t;
+        break;
+      }
+    }
+    let faceOn = 0;
+    for (let t = 4.6; t < 20; t += 0.005) {
+      const w = claimWordAt(t);
+      if (w.index === CLAIM_TRUE && w.rotate === 0) {
+        faceOn = t;
+        break;
+      }
+    }
+    expect(firstMark - faceOn).toBeGreaterThan(0.2);
+  });
+
+  it('is invisible whenever it is edge-on, and solid whenever it is face-on', () => {
+    /* Opacity is a function of the rotation rather than a second curve beside
+       it. A card that is half-lit while face-on, or solid while edge-on, reads
+       as a bug rather than as a card. */
+    for (let t = 4.6; t < 12; t += 0.005) {
+      const w = claimWordAt(t);
+      if (Math.abs(w.rotate) < 0.01) expect(w.opacity).toBeCloseTo(1, 5);
+      if (Math.abs(w.rotate) > CLAIM_ANGLE - 0.01) expect(w.opacity).toBeCloseTo(0, 5);
+    }
+  });
+
+  it('hands over at the edge — no phrase is ever readable while another leaves', () => {
+    /* The swap is the one frame that could give the trick away: two phrases
+       are never on screen together, so the outgoing one must be gone before
+       the incoming one is anything. Both are the same element, so what this
+       actually asserts is that the index only changes while nothing is
+       visible. */
+    let previous = claimWordAt(4.6);
+    for (let t = 4.6; t < 12; t += 0.002) {
+      const w = claimWordAt(t);
+      if (w.index !== previous.index) {
+        expect(previous.opacity).toBeLessThan(0.02);
+        expect(w.opacity).toBeLessThan(0.02);
+      }
+      previous = w;
+    }
+  });
+
+  it('never reports a strike outside 0 to 1, or a tip past the angle', () => {
+    for (let t = 0; t < 20; t += 0.005) {
+      const w = claimWordAt(t);
+      expect(w.strike).toBeGreaterThanOrEqual(0);
+      expect(w.strike).toBeLessThanOrEqual(1);
+      expect(w.opacity).toBeGreaterThanOrEqual(0);
+      expect(w.opacity).toBeLessThanOrEqual(1);
+      expect(Math.abs(w.rotate)).toBeLessThanOrEqual(CLAIM_ANGLE);
+    }
+  });
+
+  it('carries its correction away with it — a struck phrase leaves struck', () => {
+    // Adam: "the crossed out word flips over to the back as the new word
+    // flips in." The line does not clear before the exit; that would read as
+    // the answer being un-rejected.
+    let sawLeavingStruck = false;
+    for (let t = 4.6; t < 12; t += 0.005) {
+      const w = claimWordAt(t);
+      if (w.index !== CLAIM_TRUE && w.rotate < -1) {
+        expect(w.strike).toBe(1);
+        sawLeavingStruck = true;
+      }
+    }
+    expect(sawLeavingStruck).toBe(true);
   });
 });
 
@@ -240,23 +354,39 @@ describe('REVEAL_REST — the moment the screen stops moving', () => {
 
   it('nothing turns, fades or moves after it — ever', () => {
     const after = REVEAL_REST + 0.01;
-    expect(rolodexAt(after).turning).toBe(false);
+    // Swept, not sampled: one instant proves one instant. The rolodex rests
+    // between turns, so a single check after the end cannot tell a device
+    // that has stopped from one that is merely between beats.
+    for (let t = after; t < after + 12; t += 0.01) expect(rolodexAt(t).turning).toBe(false);
     for (const t of [after, after + 5, after + 300]) {
-      expect(privacyLineAt(t)).toEqual(privacyLineAt(after));
+      expect(claimWordAt(t)).toEqual(claimWordAt(after));
       for (const part of PARTS) expect(partAt(t, part)).toEqual(partAt(after, part));
     }
   });
 
   it('is late enough to cover the last turn AND the last claim', () => {
-    // Whichever device ends last sets it, so re-timing either keeps it true
-    // rather than leaving a constant behind that used to be right.
+    /* Whichever device ends last sets it, so re-timing either keeps it true
+       rather than leaving a constant behind that used to be right.
+
+       Motion means EVERY kind on this screen, not just fades: a turning card,
+       a tipping phrase, a line being drawn, and any part still travelling.
+       Scanning opacity alone would have missed the rotation entirely and
+       called a moving screen still. */
     let lastMotion = 0;
-    for (let t = 0; t < 30; t += 0.01) {
-      if (rolodexAt(t).turning) lastMotion = t;
-      const o = privacyLineAt(t).opacity;
-      if (o > 0 && o < 1) lastMotion = t;
-    }
-    expect(lastMotion).toBeLessThanOrEqual(REVEAL_REST + 0.01);
+    const moving = (t: number): boolean => {
+      if (rolodexAt(t).turning) return true;
+      const w = claimWordAt(t);
+      if (!w.resting) return true;
+      const next = claimWordAt(t + 0.01);
+      if (w.rotate !== next.rotate || w.strike !== next.strike) return true;
+      return PARTS.some((p) => {
+        const a = partAt(t, p);
+        const b = partAt(t + 0.01, p);
+        return a.x !== b.x || a.y !== b.y || a.opacity !== b.opacity;
+      });
+    };
+    for (let t = 0; t < 30; t += 0.01) if (moving(t)) lastMotion = t;
+    expect(lastMotion).toBeLessThanOrEqual(REVEAL_REST + 0.02);
   });
 });
 
