@@ -96,7 +96,7 @@ test('axe finds no violations with the narrator off or on (VB-18)', async () => 
   const named = await new AxeBuilder({ page })
     /* V2.9: TIM is the narrator control now, so this scans him. The claim is
        unchanged — the control on its own, off and on, with no violations. */
-    .include('.tim')
+    .include('.narratormark')
     .withRules(['button-name', 'aria-toggle-field-name', 'nested-interactive'])
     .analyze();
   expect(named.violations).toEqual([]);
@@ -133,10 +133,15 @@ test('the whole screen stays keyboard-reachable, with the toggle first (VB-18)',
      DOM order, reading order and tab order still agree — which is what WCAG
      2.4.3 asks — and the substantive claim below is untouched: Tab reaches
      him, Space and Enter both work him, and focus never moves as a result. */
+  /* REACHED BEFORE THE QUESTION, which is the claim — not "the Nth stop",
+     which is a fact about the header's current shape and has now changed
+     twice. Tabbing until it is focused holds the thing that matters and
+     survives the next rearrangement. */
   await page.evaluate(() => document.body.focus());
-  await page.keyboard.press('Tab');
-  await page.keyboard.press('Tab');
   const toggle = page.getByRole('button', { name: 'Read questions aloud' });
+  for (let i = 0; i < 4 && !(await toggle.evaluate((el) => el === document.activeElement)); i += 1) {
+    await page.keyboard.press('Tab');
+  }
   await expect(toggle).toBeFocused();
 
   await page.keyboard.press('Space');

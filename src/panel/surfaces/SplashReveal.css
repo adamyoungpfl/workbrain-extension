@@ -1,0 +1,116 @@
+/* The reveal's frame. Everything inside is positioned by the spine, so this
+   only has to be a centred column with somewhere for the connector to draw. */
+.splashreveal {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 20px;
+  width: 100%;
+  padding: 0 26px;
+  text-align: center;
+}
+
+/* Each part moves by TRANSFORM only. Transforms do not touch layout, which is
+   what lets the resting boxes be measured once and trusted for the whole
+   sequence — and what keeps five parts moving at sixty frames a second off the
+   layout thread entirely. */
+.splashreveal-part {
+  will-change: transform, opacity;
+}
+.splashreveal-part[data-part='lockup'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+}
+
+/* ── THE CONNECTOR ─────────────────────────────────────────────────────────
+   Drawn over the whole frame and ignoring pointers: it is a route between two
+   sections, not a control, and it must never be in the way of the doors. */
+.splashreveal-links {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: visible;
+}
+.splashreveal-path {
+  stroke: var(--globe-node-2-mid);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  /* The glow. Two shadows rather than one: a tight bright core and a wide
+     soft halo is what reads as light, where a single large blur reads as a
+     smudge. */
+  filter: drop-shadow(0 0 3px var(--globe-node-2-mid))
+    drop-shadow(0 0 9px var(--globe-node-1-mid));
+  opacity: 0;
+}
+
+/* ── THE MINUTES ───────────────────────────────────────────────────────────
+   `tabular-nums` is not a nicety here. Without it the digits change width as
+   the counter runs and the whole line jogs sideways thirty times, which is
+   the only thing anybody would see. */
+.splashreveal-cost {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: var(--ink-inv);
+}
+.splashreveal-count {
+  font-variant-numeric: tabular-nums;
+  color: var(--globe-node-2-mid);
+}
+
+/* ── THE ROLODEX ───────────────────────────────────────────────────────────
+   A card turning on its horizontal axis. `perspective` on the transform is
+   what makes it a rotation rather than a vertical squash — without it the
+   line flattens and springs back, which reads as a glitch. */
+@keyframes splashreveal-rolodex {
+  0% {
+    transform: perspective(340px) rotateX(0deg);
+    opacity: 1;
+  }
+  50% {
+    transform: perspective(340px) rotateX(-88deg);
+    opacity: 0.25;
+  }
+  100% {
+    transform: perspective(340px) rotateX(0deg);
+    opacity: 1;
+  }
+}
+.splashreveal-rolodex {
+  margin: 6px 0 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  animation: splashreveal-rolodex 620ms ease-in-out;
+}
+
+/* The privacy claims share one slot, so the opacity is driven per frame from
+   the spine rather than by a CSS animation that would have to be restarted in
+   step with a changing string. */
+.splashreveal-line {
+  margin: 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.72);
+  opacity: var(--line-o, 0);
+}
+
+.splashreveal-part[data-part='doors'] {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No turn. The line is simply there — it was never carrying anything the
+     movement was needed for. */
+  .splashreveal-rolodex {
+    animation: none;
+  }
+}

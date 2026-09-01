@@ -151,8 +151,17 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     // stands in their place is what the held seconds are for.
     expect(container.querySelector('.splash-loader')).toBeNull();
     expect(container.querySelector('.splash-drain')).toBeNull();
-    expect(container.querySelector('.splash-cost')!.textContent).toBe(S.splashCost);
-    expect(container.querySelector('.splash-what')!.textContent).toBe(S.splashWhat);
+    /* V2.9 slice 2: the two sentences became two ANIMATED sections — the
+       minutes stream from thirty and the privacy claims alternate in one slot
+       — so they are no longer two static paragraphs to read back. The claim
+       that survives is the one that mattered: both are on the reveal, in the
+       DOM, from the settled frame. */
+    expect(container.querySelector('.splashreveal-cost')!.textContent).toContain(
+      S.splashCostUnit,
+    );
+    expect(container.querySelector('.splashreveal-line')!.textContent).toBe(
+      S.splashWhatLines[0],
+    );
     // And no white layer: there is nothing to swell from.
     expect(container.querySelector('.splash-swell')).toBeNull();
   });

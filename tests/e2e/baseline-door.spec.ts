@@ -24,7 +24,7 @@ async function open() {
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 760 });
   await page.goto(`chrome-extension://${new URL(sw.url()).host}/panel.html`);
-  await page.waitForSelector('.splash-lockup', { timeout: 15_000 });
+  await page.waitForSelector('.splashreveal', { timeout: 15_000 });
   return { context, page };
 }
 

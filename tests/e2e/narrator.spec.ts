@@ -261,9 +261,12 @@ test.describe('the toggle', () => {
        still reachable BEFORE the question, which is the point. What is given
        up is being first of two, and the trade was a corner placement Adam
        asked for by name. */
+    /* Reached before the question is the claim; "the Nth stop" is a fact
+       about the header's shape, which has now changed twice. */
     await page.evaluate(() => document.body.focus());
-    await page.keyboard.press('Tab');
-    await page.keyboard.press('Tab');
+    for (let i = 0; i < 4 && !(await button.evaluate((el) => el === document.activeElement)); i += 1) {
+      await page.keyboard.press('Tab');
+    }
     await expect(button).toBeFocused();
     /* V2.9: TIM fills his own 44px target, so the ring goes on the BUTTON
        rather than on a pseudo-element standing in for a 30px face. The claim
@@ -292,7 +295,7 @@ test.describe('the toggle', () => {
        PRESENT when muted and ABSENT when not — a whole element appearing and
        disappearing, which is a stronger form of the guarantee than the
        cross-fade it replaces: there is nothing to read as "on" but faint. */
-    const muteBadge = () => page.locator('.tim-mute').count();
+    const muteBadge = () => page.locator('.narratormark-mute').count();
 
     expect(await muteBadge()).toBe(1);
 
@@ -583,7 +586,7 @@ test.describe('what it must never do', () => {
 
     // And there is exactly one control up there, not two. V2.9: it is TIM,
     // who replaced the speaker icon in the corner — the claim is unchanged.
-    await expect(page.locator('.tim')).toHaveCount(1);
+    await expect(page.locator('.narratormark')).toHaveCount(1);
 
     // The manifest is untouched: install-time permissions are still the two.
     const manifest = JSON.parse(readFileSync(path.join(DIST, 'manifest.json'), 'utf8')) as {
@@ -670,7 +673,7 @@ test.describe('what it must never do', () => {
        nothing — worse than missing, because somebody presses it and concludes
        the product is broken. This assertion is what caught its absence when he
        replaced the toggle. */
-    await expect(silent.locator('.tim')).toHaveCount(0);
+    await expect(silent.locator('.narratormark')).toHaveCount(0);
     await expect(silent.locator('.narrator-toggle')).toHaveCount(0);
     await expect(silent.locator('.flow-q').first()).toBeVisible();
     await expect(silent.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();

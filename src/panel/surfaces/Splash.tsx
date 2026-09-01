@@ -1,14 +1,15 @@
 import { useEffect, useRef, useState } from 'react';
-import { BrandMark, BuildStamp, NarratorToggle } from '../components';
+import { BuildStamp, NarratorToggle } from '../components';
 import { SplashStage } from './SplashStage';
+import { SplashReveal } from './SplashReveal';
 import type { SplashStageHandle } from './SplashStage';
+import { SPLASH_BEATS } from '../../core/splash/sequence';
 import {
   pullStrength,
   splashPhase,
   swellOpacity,
 } from '../../core/splash/sequence';
 import type { SplashPhase } from '../../core/splash/sequence';
-import { S } from '../strings';
 import './Splash.css';
 
 /**
@@ -104,6 +105,8 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
   const [phase, setPhase] = useState<SplashPhase>(reduced ? 'reveal' : 'show');
 
   const rootRef = useRef<HTMLDivElement | null>(null);
+  /* The show's own zero, shared with the reveal so the two cannot drift. */
+  const t0Ref = useRef(performance.now());
   /** VB-129 — the shard canvas, painted by this component's one clock. */
   const stageRef = useRef<SplashStageHandle | null>(null);
   /** One handover, however many ways it is triggered at once. */
@@ -153,6 +156,7 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
     // style, which is also VB-129's seam — the canvas painter reads the
     // same elapsed time this loop owns.
     const t0 = performance.now();
+    t0Ref.current = t0;
     let raf = 0;
     let lastPhase: SplashPhase = 'show';
     const tick = (now: number) => {
@@ -233,74 +237,25 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
         </div>
       )}
       {phase === 'reveal' && (
-        <div className="splash-lockup">
-          <BrandMark size={132} spin="orbit" />
-          <p className="splash-wordmark">{S.appName}</p>
-          <p className="splash-tagline">
-            {taglineLines(S.splashTagline).map((line, i) => (
-              <span key={line} className="splash-tagline-line">
-                {i > 0 ? ' ' : ''}
-                {line}
-              </span>
-            ))}
-          </p>
-          {/* BS-09 — what the held seconds buy. The tagline is read in two
-              of them; these two lines answer the question somebody is
-              actually asking at this moment, and they are the same promise
-              `welcomeTime` makes one screen later. */}
-          <p className="splash-cost">{S.splashCost}</p>
-          <p className="splash-what">{S.splashWhat}</p>
-          {/* V2.7 VB-128's "Open your work brain" button stood here and is
-              REMOVED (Adam, 2026-08-28: "remove this button, it is not
-              needed"). He is right that it was furniture: the WHOLE SURFACE
-              is the way in and has been since V2.6 VB-126 ("any click from
-              the splash page will load to the home page"), Escape is the
-              keyboard's way, and `splashSkip` says so out loud in the corner.
-              A primary button on a screen where everything is the button was
-              a fourth exit competing with three that already worked. */}
-          {/* §9's tour door, and D10: the guardrail's ban is on a dismissible
-              overlay pointing at UI, not on orientation somebody asked for.
-              This is the one moment anyone accepts it — after question one,
-              nobody will. */}
-          {/* TWO BUTTONS, AND THEY ARE THE WHOLE OF THE SCREEN'S QUESTION.
+        /* V2.9 slice 2 — the reveal is its own surface now (SplashReveal.tsx).
+           It was a static stack of paragraphs; it is a sequence, and a
+           sequence with five parts moving against each other belongs in one
+           file with one clock rather than spread through this one.
 
-              The baseline path first, because it is the one that expires —
-              a starting point can only be taken before somebody starts, and
-              the other road is available for the rest of the product's life.
-              Neither is dressed as the primary: this is a fork, not a
-              recommendation, and a filled button beside an outlined one would
-              be us answering it. */}
-          {/* THE READ-ALOUD DOOR, on the splash (Adam, 2026-09-02): "so that the
-              user can hear the baseline question being asked."
-
-              NOT LABELLED "TURN ON YOUR MIC", deliberately, and this is worth
-              stating rather than quietly changing. A mic is an INPUT — a
-              control offering one on a product whose whole proposition is "no
-              account, nothing sent anywhere" reads as a request for microphone
-              access, which this extension does not have, has never asked for,
-              and could not get without a new permission (docs/GUARDRAILS.md:
-              nothing beyond `storage` and `sidePanel`). The alarm that would
-              cause in exactly the privacy-minded person this screen is talking
-              to costs more than the phrase buys.
-
-              So it is the SAME control the interview carries, with the same
-              words: one toggle, one label, one mental model, and the setting
-              somebody chooses here is already on when the question arrives. */}
-          <div className="splash-audio">
-            <NarratorToggle />
-          </div>
-
-          <div className="splash-choice">
-            {onBaseline && (
-              <button type="button" className="splash-door" onClick={() => leave.current(onBaseline)}>
-                {S.splashBaseline}
-              </button>
-            )}
-            <button type="button" className="splash-door" onClick={() => leave.current()}>
-              {S.splashStraight}
-            </button>
-          </div>
-        </div>
+           The clock is still THIS component's — `elapsed` reads the same rAF
+           that drives the show, so the mosaic and the reveal cannot drift.
+           Under reduced motion it is handed `still` and schedules nothing. */
+        <SplashReveal
+          still={reduced}
+          elapsed={() => (performance.now() - t0Ref.current) / 1000 - SPLASH_BEATS.revealAt}
+          {...(onBaseline ? { onBaseline: () => leave.current(onBaseline) } : {})}
+          onStraight={() => leave.current()}
+          audio={
+            <div className="splash-audio">
+              <NarratorToggle />
+            </div>
+          }
+        />
       )}
     </div>
   );

@@ -1640,8 +1640,24 @@ export const S = {
    * promise of three would be the first thing the product got wrong.
    * [DRAFT]
    */
-  splashCost: 'About fifteen minutes, one question at a time.',
-  splashWhat: 'The file is yours from start to finish. Nothing leaves your browser.',
+  /* [DRAFT] V2.9 (Adam, 2026-09-02) — SPLIT INTO ITS TWO CLAIMS, because the
+     reveal now animates them differently. The minutes stream down from thirty;
+     the line under them turns like a rolodex. One sentence could do neither.
+
+     "ABOUT 15 MINUTES" in caps at Adam's word, and the 15 is a live number the
+     counter writes rather than a word — `splashCostLead` is the part around it
+     and `splashCostUnit` the part after, so nothing has to be re-parsed to
+     animate the digits. */
+  splashCostLead: 'ABOUT',
+  splashCostUnit: 'MINUTES',
+  splashCostSub: 'One question at a time.',
+  /* The two claims alternate in one slot now (core/splash/reveal.ts's
+     `privacyLineAt`) rather than sitting as one sentence, so each gets its
+     own moment instead of being skimmed as a pair. */
+  splashWhatLines: [
+    'The file is yours from start to finish.',
+    'Nothing leaves your browser.',
+  ] as const,
   /** The way past it, said out loud. Any click already left; nothing said so,
    * so people sat through it politely (§9). */
   splashSkip: 'Skip',

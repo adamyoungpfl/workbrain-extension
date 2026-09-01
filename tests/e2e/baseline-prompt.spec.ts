@@ -32,7 +32,7 @@ async function openBaseline(reduced: boolean): Promise<{ context: BrowserContext
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 760 });
   await page.goto(`chrome-extension://${new URL(sw.url()).host}/panel.html`);
-  await page.waitForSelector('.splash-lockup');
+  await page.waitForSelector('.splashreveal');
   await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
   await page.waitForSelector('.flow--prompt');
   return { context, page };
