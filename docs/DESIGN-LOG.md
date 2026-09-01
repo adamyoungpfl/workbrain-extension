@@ -173,8 +173,23 @@ measures nothing.
 
 **The finding is not that the answer was wrong.** The hint already said exactly
 the right thing — *"one real task from this week beats a wish… pick something
-it can actually do"* — and it did not work. **When a question's frame and its
-hint disagree, the frame wins**, because the frame is what somebody answers.
+it can actually do"* — and it did not work.
+
+> **CORRECTED 2026-09-02 (D9). The hint was never on screen.**
+>
+> `showsHint` (panel/surfaces/Flow.tsx) stands a hint down whenever its
+> question carries deep-dive chips, so the two do not make the same point
+> twice. `goal_want` has two chips. **That hint had never rendered, once, in
+> the life of the product** — including on the run this principle was drawn
+> from.
+>
+> So the evidence says the frame beat *nothing*. The principle below may well
+> be true, and it is a reasonable thing to expect; it is no longer something
+> this log has grounds to assert. It is an open question with a way to settle
+> it — see *Settling it* below — and it is written here as one.
+
+**Proposed, not established: when a question's frame and its hint disagree, the
+frame wins**, because the frame is what somebody answers.
 *"What do you want it to do better"* is a wish frame, and no hint argues a
 person out of answering the question they were asked.
 
@@ -260,3 +275,73 @@ An entry moves from **Reasoned** to **Observed** only with a run id, and moves
 to **Contested** the moment a run disagrees with it — *before* anybody argues
 about why. A design log that only ever accumulates confirmations is a marketing
 document wearing a lab coat, and it will be read as one.
+
+
+---
+
+## Settling "frame beats hint" (D9, Adam, 2026-09-02)
+
+Adam: *"How and where do I validate or report this so that we can lock in the
+current experience and decide if we need to modify?"*
+
+### Why there is no instrumented answer
+
+This is a question about what PEOPLE write, and the product cannot measure it.
+`docs/GUARDRAILS.md` forbids analytics including local-only counting, and that
+is not a rule to route around for a design question. So validation is
+observation, by hand, on real answers — which is slower and, for a question
+this shape, no less sound: the sample that matters is small, and reading the
+actual sentences tells you more than a count would.
+
+### What changed, so it is worth re-asking
+
+Both halves are now as strong as they can be made:
+
+- **The frame** asks what somebody would TELL their AI to do — an order, not a
+  wish.
+- **The hint** is on screen for the first time, under the box, at question
+  size, in three lines, and it lights as they type.
+- **The seeds** show eighteen finished imperative prompts before a word is
+  typed.
+
+If the frame still beats the hint, it should show as answers that mimic the
+FRAME and ignore the three lines. If the hint is now carrying weight, answers
+should look like the seeds.
+
+### The capture, and it is four fields
+
+For each real person who answers `goal_want`, with their knowledge, record:
+
+| Field | How to fill it |
+|---|---|
+| The answer, verbatim | Copy it out of the box before they press Next. |
+| **Imperative?** | Does it open with a verb? `asOrder()` in `core/flow/imperative.ts` answers this — if it returns a rewrite, the answer was a wish. |
+| **Runnable unattached?** | Could an AI do this with nothing but the sentence? "Draft my weekly update" yes; "summarise these notes" no. |
+| **Took a seed?** | Did they click an example, or type from scratch? Visible over their shoulder. |
+
+Nothing here is stored by the product. It is a notebook.
+
+### What settles it
+
+**Twelve answers from people who are not Adam.** Then:
+
+- **10+ imperative and runnable** → the direction works. Lock it, and record
+  the principle as *frame and hint together*, which is what was actually
+  shipped — the log should not credit the frame alone for a screen that has
+  both.
+- **6 or fewer** → the frame is doing the work and the hint is not, and the
+  original principle stands after all. Next move is option 2 from the
+  2026-08-31 options list: verb chips, whose cost was corpus bias and is now
+  worth paying.
+- **Between** → look at WHICH ones failed. If the wishes cluster on people who
+  never scrolled to the hint, it is a layout problem; if they read it and wrote
+  a wish anyway, it is a copy problem.
+
+### Where to write it down
+
+Here, as a dated block under this section. Twelve rows and a paragraph. The
+point of this log is that decisions are *"understood by normal people… argued
+about, disagreed with and improved upon"*, and a principle corrected in public
+by its own evidence is the strongest thing in it.
+
+**Not started.** Needs real testers, which is the beta.

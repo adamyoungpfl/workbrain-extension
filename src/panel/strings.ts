@@ -1682,6 +1682,36 @@ export const S = {
   baselineTitle: 'Run it once with nothing loaded',
   baselineBody:
     'Your prompt is copied. Paste it into your AI, copy what it writes back, and paste that here.',
+  /* [DRAFT] D1 (Adam, 2026-09-02) — THE MEMORY WARNING, and it is on the
+     screen because a real run proved it had to be.
+
+     Adam ran the first baseline in his own Gemini account and got back three
+     polished, fully-specific descriptions of his actual job. That account
+     remembers him. So the run was not "your AI with nothing loaded" — the
+     phrase this screen used to print — it was his assistant with everything it
+     had already learned about him, and the comparison would have measured the
+     file against that rather than against nothing.
+
+     Anybody who leans on one assistant has this problem, and they are exactly
+     the people most likely to try this. So the screen says so, plainly, and
+     asks for the one thing that fixes it. It costs a little friction at a
+     moment somebody has already agreed to do some work — which is the cheapest
+     place in the product to spend it, and far cheaper than a starting point
+     that is not one. */
+  /* [DRAFT] D2 (Adam, 2026-09-02) — the groundedness read on the comparison.
+
+     Worded as a COUNT of what the answer admitted, never as a verdict on it.
+     A regex over English cannot know whether a claim is true; what it can see
+     is whether the answer ever names a gap, which is real, countable, and the
+     thing a reader skimming two long answers reliably misses. Same footing as
+     the self-report: a hint to read with, not a finding to act on. */
+  groundedLabel: 'Gaps this answer named',
+  groundedNone: 'It never says there was anything it did not know.',
+  groundedSome: (n: number, of: number) =>
+    n === 1 ? `1 of ${of} lines names something it could not know.` : `${n} of ${of} lines name something it could not know.`,
+  groundedHint: 'A count of what it admitted — not a check of whether it was right.',
+  baselineFresh:
+    'Use a new or private chat. An AI that already remembers you is not a starting point.',
   /* The eyebrow on the baseline question. It replaces the module's own title
      ("Orientation") because this screen is not orientation — it is the one
      measurement the whole product is built to move, and naming it is what

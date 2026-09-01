@@ -627,7 +627,16 @@ function pastTheLadder(ctx: FlowContext): boolean {
  * `orientation_ready` (the id is load-bearing: a file from before tonight
  * has it answered, so keeping it means nobody is summoned back). */
 export const ORIENTATION_WHY_BEATS = [
-  'You already carry a way of working. AI starts from __zero__ every time you open a chat.',
+  /* REWRITTEN 2026-09-02 (D3). This said "AI starts from __zero__ every time
+     you open a chat", and that is not defensible: an assistant somebody uses
+     daily remembers them, and the first real baseline proved it — see
+     docs/NORTH-STAR.md. A person who has just watched Gemini describe their
+     job accurately is being told something they can see is false, in the first
+     thirty seconds.
+
+     The true version is also the stronger one, because it answers the
+     objection this product will meet most: "but my AI already does this." */
+  'Your AI already knows some of this — in a form you cannot __see, correct, or move__.',
   "We're going to write yours down __once__ — a plain file you hand to any AI you use.",
 ];
 
@@ -758,10 +767,20 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
        text gets run, so it should be sized like something an AI can finish.
        The "one thing" survives because it is the constraint that keeps a
        baseline runnable. [DRAFT] */
+    /* REWORKED 2026-09-02 (Adam): "I just need it to read with the dramatic
+       pause after the one thing sentence. And then provide the specific
+       encouragement on how to frame their prompt."
+
+       So: the ask, a beat, then what a good one looks like. The third line is
+       the specific part — naming the KINDS of work an AI can finish does more
+       than "make it a good prompt" ever could, because the failure this screen
+       keeps meeting is not vagueness, it is asking for something no AI can
+       reach. The beat itself is timing, not punctuation: components/
+       DeclarationLine.tsx holds the sweep between lines. */
     hint:
       'One thing…in your own words.\n' +
-      'Next, you will run this exact prompt, so…\n' +
-      'Prompt something that you think AI should be able to complete well.',
+      'You will run this exact prompt next.\n' +
+      'Ask for something you would otherwise do yourself — a draft, a summary, a plan.',
     placeholder: 'e.g. Draft my Monday status update the way I would',
     ideas: [
       'Draft a status update for my manager that sounds like me.',

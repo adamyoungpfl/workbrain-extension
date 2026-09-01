@@ -1,3 +1,4 @@
+import { DISCLAIM as CORE_DISCLAIM } from '../../src/core/proof/grounded';
 /**
  * THE ABSENCE DETECTOR — the half of the scoring a tired human does worst.
  *
@@ -41,8 +42,11 @@
  * that suppresses the false flag also produces the evidence for that score.
  * One pass, both grounding dimensions.
  */
-const DISCLAIM =
-  /\b(do(es)?n'?t (have|know|say|contain|include|specify)|no record|not (in|stated|specified|listed|something)|isn'?t (in|stated|specified)|can'?t (tell|say|confirm|find)|unable to|nothing (in|here) (says|about)|file does not|not covered|no information|you'?ll need to|give me the specifics|i don'?t (have|know))\b/i;
+/* MOVED TO CORE (D2, 2026-09-02) and imported rather than copied. The panel
+   now reads pasted answers with the same rule this harness scores runs with,
+   so an offline benchmark and the thing a person sees on screen cannot drift
+   apart — which they would have, the first time either was tuned. */
+const DISCLAIM = CORE_DISCLAIM;
 
 export interface Finding {
   /** The absence id from `persona.ts`, or `unknown-name` for the open case. */

@@ -181,3 +181,20 @@
 .flowshell--bare .baselineoffer[data-position='baseline-landed'] .flow-save {
   margin-top: auto;
 }
+
+/* The memory warning (D1). Amber rather than red: this is a condition to meet,
+   not an error somebody has made — nothing has gone wrong yet, and dressing it
+   as a failure at the top of a screen asking for work would be the product
+   scolding somebody for something they have not done.
+
+   A left rule rather than a filled card, because a filled block here would
+   compete with the instruction it qualifies. */
+.baselineoffer-fresh {
+  flex: 0 0 auto;
+  margin: 4px 0 2px;
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid var(--amber);
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.45;
+}

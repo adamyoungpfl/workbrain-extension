@@ -89,3 +89,62 @@ reachable from the app.
 The guardrails remain law for the free product, unsoftened. Every paid feature is an enhancement
 over a manual path that keeps working on a plane. The trust proposition — local, yours,
 no identity, nothing transmitted — is the moat, not the obstacle.
+
+
+---
+
+## The claim changes (D3, Adam, 2026-09-02)
+
+**Decided:** *"It has to be defensible or it's worthless."*
+
+### What we used to say
+
+That an AI starts from zero every time, and the file is what gives it a
+starting point. Some version of *"your AI knows nothing about you"* runs
+through the splash, the orientation beats and the site.
+
+### Why it is not defensible
+
+Adam ran the first real baseline in his own Gemini account and got back three
+polished, fully-specific descriptions of his actual job — dashboards for
+leaders, IT support response times, service delivery health. That account
+remembers him. `core/proof/grounded.ts` on that answer returns **zero** namings:
+it never once says it is guessing.
+
+Anybody who leans on one assistant has the same thing, and they are the people
+most likely to try this product. To them, "your AI knows nothing about you" is
+plainly false on the evidence in front of them — and a claim somebody can
+disprove in one paste takes the rest of the argument down with it.
+
+### What we say instead
+
+> **Your AI already knows some of this — in a form you cannot see, correct, or
+> take anywhere.**
+
+Every part of that is checkable, and the same run is the evidence:
+
+| Claim | How it is checked |
+|---|---|
+| It already knows some of this | Ask your usual assistant to describe your work. It will. |
+| You cannot see it | There is no page that shows you what it remembers, only settings that clear it. |
+| You cannot correct it | You can add to it. You cannot open it and fix a wrong line. |
+| You cannot take it anywhere | Gemini knew Adam. Claude and ChatGPT did not, and will not. |
+| The file is the same knowledge, portable | It is a text file. It opens in anything and pastes into everything. |
+
+### What this costs, and why it is still the better trade
+
+It is a harder bar. "Nothing versus something" is an easy comparison to win;
+"an invisible thing you cannot move versus a file you own" asks somebody to
+value portability and control, which takes a sentence more to explain.
+
+It is also the only version that survives the person who says *"but Gemini
+already does this"* — which is the objection the product will meet most often,
+from exactly the audience that matters. The old claim had no answer to it. This
+one is an answer to it.
+
+### Where it has to land
+
+- The splash's orientation beats (`ORIENTATION_WHY_BEATS` in
+  `core/flow/overrides.ts`) — currently "AI starts from **zero** every time".
+- Any site copy in `../modelcitizen` making the old claim. **Not touched from
+  here** — that repo is Adam's, and this is a note that the work exists.

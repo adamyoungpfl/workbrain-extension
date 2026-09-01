@@ -56,6 +56,15 @@ started against where they are.
 | **It may keep NOTHING about their behaviour around those runs.** Not when they opened the proof, not how often, not how long they took, not whether they abandoned one. | Those are facts about the person rather than about the work, and not one of them is authored. This is the line the authorship test draws, and a run history is exactly the feature that would blur it if nobody wrote it down. |
 | **Of a self-report, only `MISSING` is kept.** `used` and `unsure` are read on the screen and dropped. | `MISSING` feeds a decision — it is the evidence a question is retired on (D5). The other two inform nothing later, and keeping data because it might one day be useful is how a usage log begins. |
 
+**And the groundedness read (D2, Adam, 2026-09-02).** The comparison counts, on
+screen, how many lines of a pasted answer named something the AI could not know.
+
+| Rule | Why |
+|---|---|
+| **It reads what came back. It never adds anything to the prompt.** | The R-16 self-report is kept off the baseline because asking a model which parts of the file it used would tell it a file exists — the two conditions must differ by the file and nothing else. That reasoning holds, which is exactly why this does not ask. |
+| **Nothing it computes is stored.** `core/proof/grounded.ts` runs on render and the result dies with the screen. | A count of how grounded somebody's AI sounded, accumulated across runs, is a usage log. The authorship test settles it: they did not type it and we did not observe it. |
+| **It is shown as a COUNT with its caveat attached** — "a count of what it admitted, not a check of whether it was right." | A regex over English cannot know whether a claim is true. Read as a score, a low number would have somebody rewriting a good file. |
+
 **Still forbidden, unchanged:** anything that measures without being asked,
 anything that reports on its own schedule, and any count of what the person did
 — including local-only. The test in the next section is what separates them: a

@@ -43,6 +43,20 @@ import './DeclarationLine.css';
  *  gesture, slow enough to see which way it is going. */
 const STEP_MS = 8;
 
+/**
+ * THE BEAT (Adam, 2026-09-02): "I just need it to read with the dramatic pause
+ * after the one thing sentence."
+ *
+ * The sweep waits here before starting the next authored line — held in the
+ * DELAY rather than in the copy, because a pause written as punctuation is
+ * read at whatever speed somebody reads, and this one has to land at the same
+ * length every time for the line before it to sit on its own.
+ *
+ * Worth a third of a second: long enough to register as deliberate, short
+ * enough that nobody wonders whether the animation has stopped.
+ */
+const LINE_BEAT_MS = 320;
+
 export interface DeclarationLineProps {
   text: string;
   /** Latched by the caller: once lit, it stays lit. */
@@ -64,13 +78,17 @@ export function DeclarationLine({ text, lit, className }: DeclarationLineProps) 
      The stagger runs across the WHOLE text, not per line, so the sweep keeps
      going down the block in reading order instead of restarting on each. */
   let cursor = 0;
-  const lines = text.split('\n').map((line) =>
-    line.split(' ').map((word) => {
+  const lines = text.split('\n').map((line, li) => {
+    // The beat is added to the running offset, so every character after it
+    // inherits the wait — the pause moves the rest of the block, rather than
+    // opening a hole one line long.
+    if (li > 0) cursor += LINE_BEAT_MS / STEP_MS;
+    return line.split(' ').map((word) => {
       const start = cursor;
       cursor += word.length + 1;
       return { word, start };
-    }),
-  );
+    });
+  });
 
   return (
     <p className={[className, 'decl', lit ? 'is-lit' : ''].filter(Boolean).join(' ')}>
@@ -85,7 +103,7 @@ export function DeclarationLine({ text, lit, className }: DeclarationLineProps) 
                   <span
                     key={ci}
                     className="decl-ch"
-                    style={{ transitionDelay: `${(start + ci) * STEP_MS}ms` }}
+                    style={{ transitionDelay: `${Math.round((start + ci) * STEP_MS)}ms` }}
                   >
                     {ch}
                   </span>

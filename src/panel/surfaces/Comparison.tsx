@@ -1,4 +1,5 @@
 import { S } from '../strings';
+import { grounding } from '../../core/proof/grounded';
 import { STAGES, comparison, latestTask } from '../../core/report/runs';
 import type { Stage } from '../../core/report/runs';
 import type { ReportState } from '../../schema/storage.types';
@@ -79,6 +80,32 @@ export function Comparison({ report, task }: ComparisonProps) {
                   {run.score && (
                     <p className="comparison-score">{S.compareScored(run.score.value, run.score.of)}</p>
                   )}
+                  {/* D2 — THE GROUNDEDNESS READ. Computed here and dropped
+                      with the screen, exactly as the self-report is: a count
+                      of how grounded somebody's AI sounded, kept across runs,
+                      would be a usage log.
+
+                      It earns its place next to the answer rather than in a
+                      summary because the comparison it serves is between two
+                      answers that can look equally good. Adam's first real
+                      baseline was confident, specific and entirely
+                      unsupported — the quality verdict could not see that and
+                      this can. */}
+                  {(() => {
+                    const g = grounding(run.answer);
+                    if (!g.readable) return null;
+                    return (
+                      <div className="comparison-grounded" data-named={g.namings.length > 0 ? 'yes' : 'no'}>
+                        <p className="comparison-grounded-label">{S.groundedLabel}</p>
+                        <p className="comparison-grounded-count">
+                          {g.namings.length === 0
+                            ? S.groundedNone
+                            : S.groundedSome(g.namings.length, g.sentences)}
+                        </p>
+                        <p className="comparison-grounded-hint">{S.groundedHint}</p>
+                      </div>
+                    );
+                  })()}
                   {run.missing && run.missing.length > 0 && (
                     <div className="comparison-missing">
                       <p className="comparison-missing-label">{S.compareMissing}</p>

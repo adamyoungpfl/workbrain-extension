@@ -147,6 +147,13 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
           summarising a two-line instruction was a label on a label. */}
       <h2 className="flow-q baselineoffer-body">{S.baselineBody}</h2>
 
+      {/* D1 — the memory warning. Set apart from the instruction above it
+          because it is a different KIND of thing: that says what to do, this
+          says what would make doing it worthless. It sits above the recopy
+          line so it is read before anybody leaves for their AI, which is the
+          only moment it can still change what they do. */}
+      <p className="baselineoffer-fresh">{S.baselineFresh}</p>
+
       {/* THE PROMPT IS NOT RESTATED. It was on the previous screen in the
           person's own words, it is on their clipboard, and printing it again
           here made the screen about the prompt when it is about what to do
