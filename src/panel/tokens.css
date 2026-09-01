@@ -101,6 +101,16 @@
   --globe-panel: #141F44;
   --globe-panel-line: #35478A;
   --globe-detail-key: #A6B6DC;
+  --tone-red-tint: #FDECEC;
+  --tone-red-ink: #A32B2B;
+  --tone-purple-tint: #F2EDFD;
+  --tone-purple-ink: #5B32B0;
+  --tone-green-tint: #E9F6EE;
+  --tone-green-ink: #1E6B3F;
+  --tone-orange-tint: #FDF0E3;
+  --tone-orange-ink: #9A5312;
+  --tone-blue-tint: #E8F0FE;
+  --tone-blue-ink: #1F4FBF;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   --r-sm: 6px;

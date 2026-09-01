@@ -12,6 +12,10 @@
    that two targets never overlap. */
 .prompt-tw-stack {
   position: absolute;
+  /* Clipped to the field's own inner box — see the measurement in the
+     component. Four stacked lines are taller than a 132px field, and an
+     unclipped stack paints straight through the bottom border. */
+  overflow: hidden;
 }
 
 /* One line of the stack. The divider belongs to the line BELOW it, so a line

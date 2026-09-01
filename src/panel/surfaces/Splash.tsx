@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BrandMark, BuildStamp } from '../components';
+import { BrandMark, BuildStamp, NarratorToggle } from '../components';
 import { SplashStage } from './SplashStage';
 import type { SplashStageHandle } from './SplashStage';
 import {
@@ -270,6 +270,26 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
               Neither is dressed as the primary: this is a fork, not a
               recommendation, and a filled button beside an outlined one would
               be us answering it. */}
+          {/* THE READ-ALOUD DOOR, on the splash (Adam, 2026-09-02): "so that the
+              user can hear the baseline question being asked."
+
+              NOT LABELLED "TURN ON YOUR MIC", deliberately, and this is worth
+              stating rather than quietly changing. A mic is an INPUT — a
+              control offering one on a product whose whole proposition is "no
+              account, nothing sent anywhere" reads as a request for microphone
+              access, which this extension does not have, has never asked for,
+              and could not get without a new permission (docs/GUARDRAILS.md:
+              nothing beyond `storage` and `sidePanel`). The alarm that would
+              cause in exactly the privacy-minded person this screen is talking
+              to costs more than the phrase buys.
+
+              So it is the SAME control the interview carries, with the same
+              words: one toggle, one label, one mental model, and the setting
+              somebody chooses here is already on when the question arrives. */}
+          <div className="splash-audio">
+            <NarratorToggle />
+          </div>
+
           <div className="splash-choice">
             {onBaseline && (
               <button type="button" className="splash-door" onClick={() => leave.current(onBaseline)}>

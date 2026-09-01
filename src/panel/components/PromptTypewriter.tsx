@@ -99,7 +99,7 @@ export function PromptTypewriter({ seeds, onTake, label }: PromptTypewriterProps
   /* Where the box's own text begins, measured off the real textarea. See the
      header for why this is not arithmetic over the stylesheet. */
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [origin, setOrigin] = useState<{ top: number; left: number; width: number } | null>(null);
+  const [origin, setOrigin] = useState<{ top: number; left: number; width: number; height: number } | null>(null);
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -127,6 +127,18 @@ export function PromptTypewriter({ seeds, onTake, label }: PromptTypewriterProps
           parseFloat(pad.paddingRight) -
           parseFloat(pad.borderLeftWidth) -
           parseFloat(pad.borderRightWidth),
+        /* AND THE HEIGHT, so the stack is CLIPPED to the box it is pretending
+           to be inside. The field is a fixed 132px now, and four stacked lines
+           are taller than that — without a clip the oldest ones painted
+           straight through the bottom border and out onto the page, which is
+           exactly the sort of thing that only appears once a neighbouring
+           number changes. */
+        height:
+          box.height -
+          parseFloat(pad.paddingTop) -
+          parseFloat(pad.paddingBottom) -
+          parseFloat(pad.borderTopWidth) -
+          parseFloat(pad.borderBottomWidth),
       });
     };
     measure();
@@ -143,7 +155,12 @@ export function PromptTypewriter({ seeds, onTake, label }: PromptTypewriterProps
         className="prompt-tw-stack"
         style={
           origin
-            ? { top: `${origin.top}px`, left: `${origin.left}px`, width: `${origin.width}px` }
+            ? {
+                top: `${origin.top}px`,
+                left: `${origin.left}px`,
+                width: `${origin.width}px`,
+                maxHeight: `${origin.height}px`,
+              }
             : { visibility: 'hidden' }
         }
       >

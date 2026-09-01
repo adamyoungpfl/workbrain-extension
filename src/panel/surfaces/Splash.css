@@ -477,3 +477,21 @@
     transition: none;
   }
 }
+
+/* The read-aloud door. Sits between the promise and the two paths — the last
+   thing offered before a choice is made, because the choice is what it applies
+   to. Dressed for the dark field: the toggle's own tokens are lit for the
+   panel's light ground, so its ink and its rule are restated here rather than
+   left to inherit a colour that would vanish. */
+.splash-audio {
+  margin-top: 22px;
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+.splash-audio .narrator {
+  color: rgba(255, 255, 255, 0.72);
+}
+.splash-audio .narrator:hover {
+  color: var(--ink-inv);
+}

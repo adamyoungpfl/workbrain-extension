@@ -445,12 +445,17 @@ test.describe('VB-128 — every exit, at every moment', () => {
     // tour door are gone — "go straight in" is one of these two now, and the
     // tour is still the interview's own first three steps. The baseline path
     // is first because it is the one that expires.
+    /* 2026-09-02: a THIRD stop, and it is deliberately FIRST. The read-aloud
+       toggle joins the screen so somebody can turn narration on before they
+       choose a path — and a control that changes how the next screen behaves
+       has to be reachable before the controls that take you there, or the
+       keyboard route offers it only after the choice it applies to is gone. */
     const order: string[] = [];
-    for (let i = 0; i < 2; i++) {
+    for (let i = 0; i < 3; i++) {
       await page.keyboard.press('Tab');
       order.push(await page.evaluate(() => document.activeElement?.textContent ?? ''));
     }
-    expect(order).toEqual([S.splashBaseline, S.splashStraight]);
+    expect(order).toEqual([S.narratorShort, S.splashBaseline, S.splashStraight]);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });

@@ -2152,22 +2152,25 @@ function StepView({
           home. `home.spec` caught it as a 30-second timeout clicking a button
           that was visible, enabled, and underneath something. A control that
           costs the row no pixels still costs somebody else's pixels. */}
-      {/* THE BASELINE SCREEN CARRIES NO CHROME (core/flow/nameGenerator.ts's
-          `promptOnly`). The narrator toggle and Jump to… are both ways around
-          a fifty-question interview, and this screen is a prompt box — the one
-          shape somebody who has never given an AI an order already recognises.
-          Anything that says "interview" works against the thing it is trying
-          to teach. */}
-      {!bare && (
-        <div className="flow-chrome">
-          <NarratorToggle />
-          {onJumpTo && (
-            <button type="button" className="flow-jump" onClick={() => setJumpOpen(true)}>
-              {S.jumpOpen}
-            </button>
-          )}
-        </div>
-      )}
+      {/* THE BASELINE SCREEN CARRIES NO **JUMP** (core/flow/nameGenerator.ts's
+          `promptOnly`). "Jump to…" is a way around a fifty-question interview,
+          and this screen is a prompt box — anything that says "interview"
+          works against the thing it is trying to teach.
+
+          THE NARRATOR COMES BACK (Adam, 2026-09-02). The first fold took it
+          out with the Jump, on the reasoning that both were interview chrome.
+          That was wrong about this one: reading the question aloud is not a
+          way around the screen, it is the screen being clearer — and this is
+          the question most likely to be met by somebody who has never given an
+          AI an order and would rather be told what to do than read it. */}
+      <div className={bare ? 'flow-chrome flow-chrome--bare' : 'flow-chrome'}>
+        <NarratorToggle />
+        {!bare && onJumpTo && (
+          <button type="button" className="flow-jump" onClick={() => setJumpOpen(true)}>
+            {S.jumpOpen}
+          </button>
+        )}
+      </div>
       {onJumpTo && (
         <JumpSheet
           open={jumpOpen}
@@ -2886,8 +2889,13 @@ function StepView({
                 on screen. The chips are suppressed on this screen, so the
                 reason to suppress the hint goes with them. */}
             {bare && step.hint && (
+              /* SET AS THE QUESTION, not as a hint (Adam, 2026-09-02). It is
+                 the second half of the direction this screen gives — the
+                 question says what to write, this says how much and why it
+                 matters — so the two are set alike and read as one
+                 instruction, above and below the box. */
               <DeclarationLine
-                className="flow-hint flow-order-note"
+                className="flow-q flow-order-note"
                 text={step.hint}
                 lit={declared}
               />

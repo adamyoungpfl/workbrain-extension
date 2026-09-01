@@ -708,3 +708,81 @@ button.home-row-hit:hover .home-row-go,
 a.home-row-hit:hover .home-row-go {
   color: var(--primary);
 }
+
+/* ══ ROW TONES (Adam, 2026-09-02) ═════════════════════════════════════════
+   A colour family per row, keyed off the id the row already carries. The
+   chip's ground, its icon and the label all take the same hue, so a hover
+   lights ONE object rather than sliding a colour behind stationary text.
+
+   Everything here is a tint, at the weight the neutral card already had — the
+   brief was "still just as subtle as current". The hue does the telling apart;
+   it never does the shouting. `download` is not in this list and keeps the
+   standard treatment.
+
+   Text tones are the -700 end of each family so they clear 4.5:1 on their own
+   tint; the chip grounds are the -50 end, which is why the tint can be this
+   light and still read. */
+.home-row[data-tone='redeem'] {
+  --row-tint: var(--tone-red-tint);
+  --row-ink: var(--tone-red-ink);
+}
+.home-row[data-tone='library'] {
+  --row-tint: var(--tone-purple-tint);
+  --row-ink: var(--tone-purple-ink);
+}
+.home-row[data-tone='plus'] {
+  --row-tint: var(--tone-green-tint);
+  --row-ink: var(--tone-green-ink);
+}
+.home-row[data-tone='run'] {
+  --row-tint: var(--tone-orange-tint);
+  --row-ink: var(--tone-orange-ink);
+}
+.home-row[data-tone='prove'] {
+  --row-tint: var(--tone-blue-tint);
+  --row-ink: var(--tone-blue-ink);
+}
+
+/* The chip carries the tone at rest — enough to distinguish, not enough to
+   compete with the one primary action on the screen. */
+.home-row[data-tone]:not(.is-waiting) .home-row-chip {
+  background: var(--row-tint);
+  color: var(--row-ink);
+}
+.home-row[data-tone]:not(.is-waiting) .home-row-label {
+  color: var(--row-ink);
+}
+
+/* And the whole row takes it on hover. `--row-tint` again rather than a second
+   colour: the ground the chip already sits on spreading to the row is what
+   makes it read as one object lighting up. */
+.home-row[data-tone] .home-row-hit:hover,
+.home-row[data-tone] .home-row-hit:focus-visible {
+  background: var(--row-tint);
+}
+.home-row[data-tone] .home-row-hit:hover .home-row-chip,
+.home-row[data-tone] .home-row-hit:focus-visible .home-row-chip {
+  /* The chip inverts so it does not disappear into the ground it gave away. */
+  background: var(--row-ink);
+  color: var(--canvas);
+}
+
+/* A ROW WITH NOTHING TO PRESS YET DOES NOT TAKE ITS TONE, and the reason is a
+   real failure rather than a preference.
+
+   The first version kept the hue and dimmed it with `opacity: 0.55`. Opacity
+   on text does not mute a colour, it BLENDS IT INTO THE GROUND — blue landed
+   at 2.57:1 and orange at 2.32:1, straight through the 4.5:1 floor, and the
+   axe suite caught all three surfaces that render a waiting row.
+
+   (The first draft of this note quoted the blended value. The audit greps file
+   text, so a colour literal trips it even inside a comment — twice now.)
+
+   So a waiting row keeps the standard treatment it already had and earns its
+   colour when it becomes pressable. `is-waiting` still carries its own
+   non-colour cue, so nothing here is distinguished by hue alone. */
+.home-row.is-waiting[data-tone] .home-row-chip,
+.home-row.is-waiting[data-tone] .home-row-label {
+  background: none;
+  color: inherit;
+}

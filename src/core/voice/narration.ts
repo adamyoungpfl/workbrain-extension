@@ -32,6 +32,7 @@ import type { FlowContext, Step } from '../../schema/flow.types';
 import type { Position } from '../flow/runner';
 import { existingValue } from '../flow/runner';
 import { beatsPlainText } from '../flow/beats';
+import { promptOnly } from '../flow/nameGenerator';
 import { reflectLeadFor } from '../flow/reflectFrames';
 import type { VoiceRole } from './roles';
 
@@ -173,5 +174,23 @@ export function narrationFor(
   }
 
   const text = spokenQuestion(step, ctx, options.rephraseIndex ?? 0);
-  return text ? { role: 'question', text } : null;
+  if (!text) return null;
+
+  /* THE BASELINE SCREEN READS BOTH HALVES (Adam, 2026-09-02).
+     "The baseline should narrate both the upper and then the lower sections as
+     direction so the user feels like they are getting clear direction on what
+     to put in the box both visually and audibly."
+
+     Every other question narrates its question and stops, because every other
+     question's hint is a note beside it. This screen's is not: it is set at
+     question size, above and below the box, and the two together ARE the
+     direction — what to write, then how much and why it matters. Reading only
+     the top half would give a listener half of what a reader gets, which is
+     the one thing this module's own first rule forbids: someone listening and
+     someone reading are on the same sentence. */
+  if (promptOnly(step) && step.hint) {
+    const second = tidy(step.hint);
+    if (second) return { role: 'question', text: `${text} ${second}` };
+  }
+  return { role: 'question', text };
 }

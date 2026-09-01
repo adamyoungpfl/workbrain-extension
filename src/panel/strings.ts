@@ -1653,12 +1653,17 @@ export const S = {
      what the person gets — a record of where they were before any of this —
      which is the only thing this screen can honestly promise at minute one.
      [DRAFT] */
-  splashBaseline: 'Start by seeing where you are',
+  /* Names the OUTCOME rather than the posture (Adam, 2026-09-02). "Start by
+     seeing where you are" described a frame of mind; this is the thing the
+     press produces, and it is the same words the screen it leads to uses. */
+  splashBaseline: 'Set Your AI Baseline',
   /* The other half of the choice. It is not "skip" — nothing is being skipped,
      it is the same interview by the shorter road — and it is not "no thanks",
      because declining is not what somebody is doing when they pick the way
      most people will pick. [DRAFT] */
-  splashStraight: 'Just get started',
+  /* "Just get started" hedged — the word "just" made the shorter road sound
+     like the lesser one, which is not the fork this screen is offering. */
+  splashStraight: 'Launch Workbrain',
   /* D1's offer screen, at the end of the goal gate. The one moment a true
      baseline can be taken — after they have said what they want, before the
      file exists to help with it.

@@ -60,7 +60,16 @@ test('it wears none of the interview: no mark, no drawer, no dock, no deep-dives
   try {
     await expect(page.locator('.flow-mark')).toHaveCount(0);
     await expect(page.locator('.filedrawer')).toHaveCount(0);
-    await expect(page.locator('.flow-chrome')).toHaveCount(0);
+    /* SUPERSEDED 2026-09-02 (Adam): the chrome ROW is back, carrying one
+       control. The first fold took the narrator out with "Jump to…", on the
+       reasoning that both were interview chrome. That was wrong about the
+       narrator: reading the question aloud is not a way around the screen, it
+       is the screen being clearer — and this is the question most likely to be
+       met by somebody who would rather be told what to do than read it.
+
+       What the old assertion protected survives as the line below: the JUMP is
+       still gone, and it was the jump that said "interview". */
+    await expect(page.locator('.flow-jump')).toHaveCount(0);
     await expect(page.locator('.deepdive')).toHaveCount(0);
     // One ground: the question's bubble stops painting, so the only filled
     // surface left is the input itself.

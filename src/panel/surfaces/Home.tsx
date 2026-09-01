@@ -170,8 +170,19 @@ function HomeRow({
       {(onPress || href) && <span className="home-row-go" aria-hidden="true">{GO_ARROW}</span>}
     </>
   );
+  /* THE ROW'S TONE, keyed off the id it already has (Adam, 2026-09-02).
+
+     Every row was the one neutral card, so the list read as six of the same
+     thing and the only way to tell them apart was to read them. A tone per
+     row gives the eye something to land on, and — because the chip, the label
+     and the ground all move together — the hover reads as one object lighting
+     rather than as a background swapping behind fixed text.
+
+     Kept as SUBTLE as the neutral it replaces: these are tints of the panel's
+     own ground, not brand colour. `download` is deliberately absent from the
+     map and stays standard, per Adam. */
   return (
-    <li className={ready ? 'home-row' : 'home-row is-waiting'}>
+    <li className={ready ? 'home-row' : 'home-row is-waiting'} data-tone={id}>
       {href ? (
         <a
           className="home-row-hit"

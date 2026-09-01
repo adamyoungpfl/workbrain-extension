@@ -2304,3 +2304,46 @@
 .flow--prompt .flow-bubble {
   padding-bottom: 0;
 }
+
+/* ══ V2.9 (Adam, 2026-09-02) ══════════════════════════════════════════════
+
+   THE CHROME ROW ON THE BARE SCREEN holds one control, so it stops being a row
+   with two ends and becomes a single button parked at the right — where a
+   read-aloud control sits on every reading surface anybody has used. */
+.flow-chrome--bare {
+  justify-content: flex-end;
+}
+
+/* THE BOX GIVES UP THE ROOM. With the declaration now set at question size
+   below it, a field that grew to fill pushed that line — and the buttons under
+   it — off the bottom of a 400px panel. The box takes a fixed, generous height
+   instead and the slack goes back to the composition.
+
+   These have to sit at the END of the file: they undo the grow-chain set up
+   further up, and at equal specificity the last rule wins. */
+.flow--prompt .flow-answer,
+.flow--prompt .flow-field-sr-label,
+.flow--prompt .flow-field-sr-label > div {
+  flex: 0 0 auto;
+}
+.flow--prompt .flow-answer .field,
+.flow--prompt .flow-answer textarea.field {
+  flex: 0 0 auto;
+  height: 132px;
+  min-height: 132px;
+}
+
+/* The declaration is set as the question now, so it needs the question's
+   measure and rhythm rather than a hint's. */
+.flow--prompt .flow-order-note {
+  margin-top: 16px;
+  line-height: 1.25;
+}
+
+/* THE NOTE RIDES THE BOTTOM. The box no longer grows, so nothing in the column
+   was claiming the slack and the save line sat wherever the content ended —
+   mid-panel, with 200px of ground under it. An auto margin puts the slack in
+   one place, above the note rather than below it. */
+.flow--prompt .flow-save {
+  margin-top: auto;
+}
