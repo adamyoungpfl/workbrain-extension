@@ -26,45 +26,60 @@
  * not re-derive the rule.
  *
  * Taking it yields the WHOLE word, never the two letters currently painted:
- * `word`, not `text`. Somebody clicking "Dra" means Draft, and committing a
- * fragment would read as a bug in a box whose contents get sent verbatim.
+ * `seed`, not `text`. Somebody clicking a half-written line means the whole
+ * line, and committing a fragment into a box that gets sent verbatim would
+ * read as a bug.
  */
 
-export type TypewriterPhase = 'typing' | 'holding' | 'erasing' | 'gap';
+export type TypewriterPhase = 'typing' | 'holding' | 'fading' | 'gap';
 
 export interface TypewriterFrame {
-  /** What is painted right now — a prefix of `word`, possibly empty. */
+  /** What is painted right now — a prefix of `seed`, possibly empty. */
   text: string;
-  /** The whole word this frame belongs to. What a click commits. */
-  word: string;
+  /** The whole example this frame belongs to. What a click commits. */
+  seed: string;
   /** Which entry of the list, so a caller can key a render on it. */
   index: number;
   phase: TypewriterPhase;
   /** Whether the caret is lit this instant. */
   caret: boolean;
+  /** 1 everywhere except the fade, where it walks down to 0. */
+  opacity: number;
   /** Whether a click should be offered — see the header. */
   takeable: boolean;
 }
 
-/** Per character, going on. Slow enough to read as writing rather than a cut. */
-export const TYPE_MS = 78;
-/** Per character, coming off. Erasing is always faster than writing. */
-export const ERASE_MS = 34;
-/** Adam: "blink for like 1-2 seconds before it winds down." */
-export const HOLD_MS = 1600;
-/** Empty between two words, so they read as separate rather than as a morph. */
-export const GAP_MS = 260;
-/** Half a blink. Over HOLD_MS this gives the caret three flashes. */
+/* THE TIMINGS ARE SET FOR A SENTENCE, NOT A WORD. The first build cycled six
+   verbs and could afford 78ms a character; a fifty-character example at that
+   rate takes four seconds to appear, which is long enough that somebody stops
+   waiting and starts typing over it. */
+
+/** Per character, going on. Fast enough to finish a sentence in under two
+ *  seconds, slow enough to still read as writing rather than as a cut. */
+export const TYPE_MS = 30;
+/** Long enough to READ what appeared, which a single verb never needed. */
+export const HOLD_MS = 2200;
+/** The whole line fades at once, and this is why the exit is not a backspace.
+
+    A verb could erase itself letter by letter and it was legible. A sentence
+    cannot: at any per-character rate fast enough not to be tedious, the
+    backspace reads as a glitch, and at a readable rate it takes longer to
+    leave than it took to arrive. A fade removes the line as one object, which
+    is what it is. */
+export const FADE_MS = 420;
+/** Empty between two examples, so they read as separate rather than as a morph. */
+export const GAP_MS = 320;
+/** Half a blink. Over HOLD_MS this gives the caret four flashes. */
 export const BLINK_MS = 480;
 
-/** How long one word owns the box, start to finish. */
-export function cycleMs(word: string): number {
-  return word.length * TYPE_MS + HOLD_MS + word.length * ERASE_MS + GAP_MS;
+/** How long one example owns the box, start to finish. */
+export function cycleMs(seed: string): number {
+  return seed.length * TYPE_MS + HOLD_MS + FADE_MS + GAP_MS;
 }
 
 /** How long the whole list takes to come round again. */
-export function loopMs(words: readonly string[]): number {
-  return words.reduce((total, word) => total + cycleMs(word), 0);
+export function loopMs(seeds: readonly string[]): number {
+  return seeds.reduce((total, seed) => total + cycleMs(seed), 0);
 }
 
 /**
@@ -73,63 +88,84 @@ export function loopMs(words: readonly string[]): number {
  * An empty list yields a still, empty, untakeable frame rather than throwing:
  * a caller that lost its content should render nothing, not crash a question.
  */
-export function frameAt(elapsed: number, words: readonly string[]): TypewriterFrame {
+export function frameAt(elapsed: number, seeds: readonly string[]): TypewriterFrame {
   const still: TypewriterFrame = {
     text: '',
-    word: '',
+    seed: '',
     index: 0,
     phase: 'gap',
     caret: false,
+    opacity: 1,
     takeable: false,
   };
-  if (words.length === 0) return still;
+  if (seeds.length === 0) return still;
 
-  const loop = loopMs(words);
+  const loop = loopMs(seeds);
   // Negative time is treated as zero rather than wrapping to the end of the
   // loop — a clock that has not started yet should show the first frame.
   let t = elapsed <= 0 ? 0 : elapsed % loop;
 
   let index = 0;
-  while (index < words.length && t >= cycleMs(words[index] as string)) {
-    t -= cycleMs(words[index] as string);
+  while (index < seeds.length && t >= cycleMs(seeds[index] as string)) {
+    t -= cycleMs(seeds[index] as string);
     index += 1;
   }
-  // Only reachable through floating-point drift on the modulo; the last word's
-  // final frame is the honest answer.
-  if (index >= words.length) index = words.length - 1;
+  // Only reachable through floating-point drift on the modulo; the last
+  // example's final frame is the honest answer.
+  if (index >= seeds.length) index = seeds.length - 1;
 
-  const word = words[index] as string;
-  const typing = word.length * TYPE_MS;
+  const seed = seeds[index] as string;
+  const typing = seed.length * TYPE_MS;
   const holding = typing + HOLD_MS;
-  const erasing = holding + word.length * ERASE_MS;
+  const fading = holding + FADE_MS;
 
   if (t < typing) {
     const shown = Math.floor(t / TYPE_MS) + 1;
-    const text = word.slice(0, Math.min(shown, word.length));
+    const text = seed.slice(0, Math.min(shown, seed.length));
     // Solid while writing. A blink during typing reads as a fault, not a
     // cursor — this is the same rule every terminal follows.
-    return { text, word, index, phase: 'typing', caret: true, takeable: text.length > 0 };
+    return {
+      text,
+      seed,
+      index,
+      phase: 'typing',
+      caret: true,
+      opacity: 1,
+      takeable: text.length > 0,
+    };
   }
 
   if (t < holding) {
     const into = t - typing;
     return {
-      text: word,
-      word,
+      text: seed,
+      seed,
       index,
       phase: 'holding',
       caret: Math.floor(into / BLINK_MS) % 2 === 0,
+      opacity: 1,
       takeable: true,
     };
   }
 
-  if (t < erasing) {
-    const gone = Math.floor((t - holding) / ERASE_MS) + 1;
-    const text = word.slice(0, Math.max(word.length - gone, 0));
-    return { text, word, index, phase: 'erasing', caret: true, takeable: text.length > 0 };
+  if (t < fading) {
+    /* THE WHOLE LINE, GOING. Still takeable the entire way down, which is
+       Adam's own rule carried over from the verbs — live "until the same
+       letter disappears as the word closes". A line at 20% opacity is still
+       a line somebody can see and mean to click. */
+    const gone = (t - holding) / FADE_MS;
+    return {
+      text: seed,
+      seed,
+      index,
+      phase: 'fading',
+      caret: false,
+      opacity: 1 - gone,
+      takeable: true,
+    };
   }
 
   // The gap. Nothing painted, nothing to take, caret still there so the box
-  // does not look switched off between words.
-  return { text: '', word, index, phase: 'gap', caret: true, takeable: false };
+  // does not look switched off between examples.
+  return { text: '', seed, index, phase: 'gap', caret: true, opacity: 1, takeable: false };
 }

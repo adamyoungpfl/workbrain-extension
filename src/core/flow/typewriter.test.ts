@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   BLINK_MS,
-  ERASE_MS,
+  FADE_MS,
   GAP_MS,
   HOLD_MS,
   TYPE_MS,
@@ -10,9 +10,12 @@ import {
   loopMs,
 } from './typewriter';
 
+/* Two short stand-ins rather than the real BASELINE_SEEDS: the timings under
+   test are arithmetic over length, and a 55-character sentence in every
+   expectation would hide that arithmetic behind the prose. */
 const WORDS = ['Draft', 'Plan'] as const;
 
-describe('frameAt — the starter verb typing itself', () => {
+describe('frameAt — the seed example typing itself', () => {
   it('paints the first letter immediately, not after one interval', () => {
     // A box that sits empty for 78ms before anything happens reads as broken.
     expect(frameAt(0, WORDS).text).toBe('D');
@@ -40,16 +43,34 @@ describe('frameAt — the starter verb typing itself', () => {
     });
   });
 
-  it('takes letters off during the erase, fastest last', () => {
+  describe('the exit is a fade, not a backspace', () => {
     const held = 5 * TYPE_MS + HOLD_MS;
-    expect(frameAt(held + 1, WORDS).text).toBe('Draf');
-    expect(frameAt(held + ERASE_MS + 1, WORDS).text).toBe('Dra');
-    expect(frameAt(held + ERASE_MS * 4 + 1, WORDS).text).toBe('');
+
+    it('keeps the WHOLE line on screen and walks its opacity down', () => {
+      // A sentence cannot erase itself letter by letter: fast enough not to
+      // be tedious reads as a glitch, slow enough to read takes longer to
+      // leave than it took to arrive.
+      expect(frameAt(held + 1, WORDS)).toMatchObject({ text: 'Draft', phase: 'fading' });
+      expect(frameAt(held + FADE_MS / 2, WORDS).opacity).toBeCloseTo(0.5, 1);
+      expect(frameAt(held + FADE_MS - 1, WORDS).opacity).toBeLessThan(0.01);
+    });
+
+    it('is fully opaque everywhere else', () => {
+      expect(frameAt(TYPE_MS * 2, WORDS).opacity).toBe(1);
+      expect(frameAt(held - 1, WORDS).opacity).toBe(1);
+      expect(frameAt(held + FADE_MS + 1, WORDS).opacity).toBe(1);
+    });
+
+    it('drops the caret while the line is going', () => {
+      // A blinking cursor on a line that is disappearing is two cues
+      // disagreeing about whether anything is still being written.
+      expect(frameAt(held + 1, WORDS).caret).toBe(false);
+    });
   });
 
-  it('goes dark for the gap, then starts the next word', () => {
-    const erased = 5 * TYPE_MS + HOLD_MS + 5 * ERASE_MS;
-    expect(frameAt(erased + 1, WORDS)).toMatchObject({ text: '', phase: 'gap' });
+  it('goes dark for the gap, then starts the next example', () => {
+    const faded = 5 * TYPE_MS + HOLD_MS + FADE_MS;
+    expect(frameAt(faded + 1, WORDS)).toMatchObject({ text: '', phase: 'gap' });
     expect(frameAt(cycleMs('Draft') + 1, WORDS)).toMatchObject({
       text: 'P',
       index: 1,
@@ -57,7 +78,7 @@ describe('frameAt — the starter verb typing itself', () => {
     });
   });
 
-  it('loops back to the first word forever', () => {
+  it('loops back to the first example forever', () => {
     const loop = loopMs(WORDS);
     expect(loop).toBe(cycleMs('Draft') + cycleMs('Plan'));
     expect(frameAt(loop, WORDS).text).toBe('D');
@@ -65,9 +86,8 @@ describe('frameAt — the starter verb typing itself', () => {
   });
 
   describe('the caret', () => {
-    it('is solid while writing and while erasing — a blink there reads as a fault', () => {
+    it('is solid while writing — a blink there reads as a fault', () => {
       expect(frameAt(TYPE_MS * 2 + 1, WORDS).caret).toBe(true);
-      expect(frameAt(5 * TYPE_MS + HOLD_MS + ERASE_MS + 1, WORDS).caret).toBe(true);
     });
 
     it('blinks during the hold, and gets through a few flashes', () => {
@@ -75,7 +95,7 @@ describe('frameAt — the starter verb typing itself', () => {
       expect(frameAt(typed + 1, WORDS).caret).toBe(true);
       expect(frameAt(typed + BLINK_MS + 1, WORDS).caret).toBe(false);
       expect(frameAt(typed + BLINK_MS * 2 + 1, WORDS).caret).toBe(true);
-      expect(Math.floor(HOLD_MS / BLINK_MS)).toBeGreaterThanOrEqual(3);
+      expect(Math.floor(HOLD_MS / BLINK_MS)).toBeGreaterThanOrEqual(4);
     });
 
     it('stays lit through the gap so the box never looks switched off', () => {
@@ -92,21 +112,23 @@ describe('frameAt — the starter verb typing itself', () => {
       expect(frameAt(5 * TYPE_MS + HOLD_MS / 2, WORDS).takeable).toBe(true);
     });
 
-    it('stays takeable until the last letter is gone, and not after', () => {
+    it('stays takeable all the way down the fade, and not into the gap', () => {
+      // A line at 20% opacity is still a line somebody can see and mean to
+      // click. A gap is not.
       const held = 5 * TYPE_MS + HOLD_MS;
-      expect(frameAt(held + ERASE_MS * 3 + 1, WORDS).takeable).toBe(true);
-      expect(frameAt(held + ERASE_MS * 4 + 1, WORDS)).toMatchObject({
+      expect(frameAt(held + FADE_MS - 1, WORDS).takeable).toBe(true);
+      expect(frameAt(held + FADE_MS + 1, WORDS)).toMatchObject({
         text: '',
         takeable: false,
       });
     });
 
-    it('yields the WHOLE word mid-type, never the fragment on screen', () => {
+    it('yields the WHOLE line mid-type, never the fragment on screen', () => {
       // Somebody clicking "Dra" means Draft. Committing a fragment into a box
       // that gets sent verbatim would read as a bug.
       const mid = frameAt(TYPE_MS * 2 + 1, WORDS);
       expect(mid.text).toBe('Dra');
-      expect(mid.word).toBe('Draft');
+      expect(mid.seed).toBe('Draft');
     });
   });
 
@@ -124,7 +146,15 @@ describe('frameAt — the starter verb typing itself', () => {
     });
   });
 
-  it('gives every word the same shape of cycle', () => {
-    expect(cycleMs('Plan')).toBe(4 * TYPE_MS + HOLD_MS + 4 * ERASE_MS + GAP_MS);
+  it('gives every example the same shape of cycle', () => {
+    expect(cycleMs('Plan')).toBe(4 * TYPE_MS + HOLD_MS + FADE_MS + GAP_MS);
+  });
+
+  it('holds a real seed long enough to be read before it goes', () => {
+    // The recognition test Adam set — "not need to think about it twice" —
+    // only works if the line is whole and still for long enough to take in.
+    const real = 'Turn these notes into a 3-bullet update: win, risk, next';
+    expect(HOLD_MS).toBeGreaterThanOrEqual(2000);
+    expect(real.length * TYPE_MS).toBeLessThan(2000);
   });
 });

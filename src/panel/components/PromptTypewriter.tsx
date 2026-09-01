@@ -42,15 +42,15 @@ const TICK_MS = 24;
 const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
 
 export interface PromptTypewriterProps {
-  /** The verbs to cycle. Authored content — see BASELINE_VERBS. */
-  words: readonly string[];
-  /** Given the whole word, never the fragment on screen. */
-  onTake: (word: string) => void;
+  /** The examples to cycle. Authored content — see BASELINE_SEEDS. */
+  seeds: readonly string[];
+  /** Given the whole example, never the fragment on screen. */
+  onTake: (seed: string) => void;
   /** Names what taking it does, for the button's accessible name. */
-  label: (word: string) => string;
+  label: (seed: string) => string;
 }
 
-export function PromptTypewriter({ words, onTake, label }: PromptTypewriterProps) {
+export function PromptTypewriter({ seeds, onTake, label }: PromptTypewriterProps) {
   /* Decided during the first render, not in an effect: an effect would paint
      the animation for one frame before standing it down, which is the exact
      flash somebody who asked for stillness asked not to see. No matchMedia
@@ -61,23 +61,31 @@ export function PromptTypewriter({ words, onTake, label }: PromptTypewriterProps
 
   const [frame, setFrame] = useState<TypewriterFrame>(() =>
     reduced
-      ? { text: words[0] ?? '', word: words[0] ?? '', index: 0, phase: 'holding', caret: false, takeable: (words[0] ?? '') !== '' }
-      : frameAt(0, words),
+      ? {
+          text: seeds[0] ?? '',
+          seed: seeds[0] ?? '',
+          index: 0,
+          phase: 'holding',
+          caret: false,
+          opacity: 1,
+          takeable: (seeds[0] ?? '') !== '',
+        }
+      : frameAt(0, seeds),
   );
 
   useEffect(() => {
     if (reduced) return;
     const t0 = performance.now();
     const id = window.setInterval(() => {
-      setFrame(frameAt(performance.now() - t0, words));
+      setFrame(frameAt(performance.now() - t0, seeds));
     }, TICK_MS);
     return () => window.clearInterval(id);
-  }, [reduced, words]);
+  }, [reduced, seeds]);
 
   /* Where the box's own text begins, measured off the real textarea. See the
      header for why this is not arithmetic over the stylesheet. */
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [origin, setOrigin] = useState<{ top: number; left: number } | null>(null);
+  const [origin, setOrigin] = useState<{ top: number; left: number; width: number } | null>(null);
 
   useLayoutEffect(() => {
     const host = hostRef.current;
@@ -96,6 +104,15 @@ export function PromptTypewriter({ words, onTake, label }: PromptTypewriterProps
         top: box.top - frameBox.top + parseFloat(pad.paddingTop) + parseFloat(pad.borderTopWidth),
         left:
           box.left - frameBox.left + parseFloat(pad.paddingLeft) + parseFloat(pad.borderLeftWidth),
+        /* The width matters now that these are sentences: an overlay that does
+           not wrap where the textarea wraps would paint a line straight
+           through the box's right edge. Same measurement, same source. */
+        width:
+          box.width -
+          parseFloat(pad.paddingLeft) -
+          parseFloat(pad.paddingRight) -
+          parseFloat(pad.borderLeftWidth) -
+          parseFloat(pad.borderRightWidth),
       });
     };
     measure();
@@ -106,20 +123,32 @@ export function PromptTypewriter({ words, onTake, label }: PromptTypewriterProps
     return () => ro.disconnect();
   }, []);
 
-  const word = frame.word || words[0] || '';
+  const seed = frame.seed || seeds[0] || '';
 
   return (
     <div className="prompt-tw-host" ref={hostRef}>
       <button
         type="button"
         className="prompt-tw"
-        // Hidden from the pointer in the gap between words, so a click on
-        // nothing cannot commit the word that is about to appear.
+        // Dark to the pointer in the gap between examples, so a click on
+        // nothing cannot commit the one that is about to appear.
         disabled={!frame.takeable}
-        style={origin ? { top: `${origin.top}px`, left: `${origin.left}px` } : { visibility: 'hidden' }}
-        aria-label={label(word)}
-        onClick={() => onTake(word)}
+        style={
+          origin
+            ? {
+                top: `${origin.top}px`,
+                left: `${origin.left}px`,
+                width: `${origin.width}px`,
+                opacity: frame.opacity,
+              }
+            : { visibility: 'hidden' }
+        }
+        aria-label={label(seed)}
+        onClick={() => onTake(seed)}
       >
+        {/* One inline run, not two flex items: the caret has to sit after the
+            last character of a WRAPPED line, and a flex row would park it
+            beside the whole block instead. */}
         <span className="prompt-tw-word">{frame.text}</span>
         <span
           className={frame.caret ? 'prompt-tw-caret is-lit' : 'prompt-tw-caret'}

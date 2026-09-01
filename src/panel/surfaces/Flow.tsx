@@ -118,7 +118,7 @@ import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { generatedNameAt, promptOnly, travelsLight, usesNameGenerator } from '../../core/flow/nameGenerator';
 import { asOrder } from '../../core/flow/imperative';
 import { PromptTypewriter } from '../components/PromptTypewriter';
-import { BASELINE_VERBS } from '../../core/flow/overrides';
+import { BASELINE_SEEDS } from '../../core/flow/overrides';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { assistServiceUrlFor } from '../../core/flow/assistServices';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
@@ -2779,10 +2779,10 @@ function StepView({
                 colliding with it. */}
             {bare && draftText === '' && !promptIdea && (
               <PromptTypewriter
-                words={BASELINE_VERBS}
-                label={S.verbTake}
-                onTake={(verb) => {
-                  answerText(`${verb} `);
+                seeds={BASELINE_SEEDS}
+                label={S.seedTake}
+                onTake={(seed) => {
+                  answerText(`${seed} `);
                   const field = document.getElementById(`flow-${step.id}`);
                   if (field instanceof HTMLTextAreaElement || field instanceof HTMLInputElement) {
                     field.focus();

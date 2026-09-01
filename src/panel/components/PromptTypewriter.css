@@ -12,11 +12,12 @@
    the paint is one line of text and the press is the full target. */
 .prompt-tw {
   position: absolute;
-  display: flex;
-  align-items: center;
-  gap: 1px;
+  /* BLOCK, NOT FLEX. These are sentences now, and they wrap. A flex row lays
+     the text and the caret out as two items, which parks the caret beside the
+     whole wrapped block instead of after its last character. As one inline
+     run the caret simply follows the text, on whichever line it ends. */
+  display: block;
   min-height: 44px;
-  margin-top: -11px;
   padding: 0;
   border: 0;
   background: none;
@@ -48,10 +49,10 @@
    sweep, so the contrast floor holds on every frame rather than on average. */
 @keyframes prompt-tw-shimmer {
   from {
-    background-position: 140% 0;
+    background-position: 250% 0;
   }
   to {
-    background-position: -40% 0;
+    background-position: 0 0;
   }
 }
 
@@ -66,7 +67,27 @@
     var(--ink-2) 100%
   );
   background-size: 250% 100%;
-  background-repeat: no-repeat;
+  /* REPEAT, NOT NO-REPEAT, and this was a real disappearing-text bug rather
+     than a polish choice.
+
+     The text is painted by clipping a gradient to it, so any part of the
+     element the gradient does not cover has NO background — and `color:
+     transparent` renders that part invisible. With `no-repeat` and a position
+     sweeping from 140% to -40%, a 250%-wide gradient leaves the rest of the
+     box bare at both ends of every sweep. On one short verb it was hidden by
+     luck; on a wrapped sentence the second line simply was not there.
+
+     Tiling guarantees every pixel is painted at every moment. The gradient is
+     symmetric — `--ink-2` at both ends — so the seam between tiles is
+     invisible, and the animation moves exactly one tile width so the loop has
+     no jump.
+
+     `box-decoration-break: clone` gives each wrapped LINE its own background
+     box, so a two-line example shimmers as two lines rather than having the
+     gradient stretched across a union box that matches neither. */
+  background-repeat: repeat;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -74,10 +95,14 @@
 }
 
 /* The caret. Painted, not a character, so it never affects the measure of the
-   word beside it and never gets read out. */
+   text beside it and never gets read out. Inline-block so it flows with the
+   last word rather than being positioned against the block. */
 .prompt-tw-caret {
+  display: inline-block;
   width: 1.5px;
-  height: 17px;
+  height: 15px;
+  margin-left: 1px;
+  vertical-align: -2px;
   background: var(--ink-2);
   opacity: 0;
 }

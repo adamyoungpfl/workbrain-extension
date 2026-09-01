@@ -527,34 +527,68 @@ export function panelQFor(id: string): string | undefined {
 export const GOAL_GATE_QUESTION_IDS = ['goal_service', 'goal_want'] as const;
 
 /**
- * THE STARTER VERBS — the baseline box's cycling placeholder (Adam,
- * 2026-08-31). Typed out one at a time by components/PromptTypewriter.tsx,
- * and takeable: a click drops the word into the box with a trailing space.
+ * THE SEED EXAMPLES — the baseline box's cycling placeholder (Adam,
+ * 2026-09-01). One types itself out, holds long enough to be read, fades, and
+ * the next follows (components/PromptTypewriter.tsx). Clicking one drops it
+ * whole into the box.
  *
- * They are bare imperatives because the box is finishing the stem printed
- * above it — "Tell your AI to…" + "Draft" is a whole sentence, and the point
- * of the pair is that somebody sees the shape of a command before they have
- * written a word of one.
+ * ── WHY WHOLE PROMPTS AND NOT VERBS ───────────────────────────────────────
+ * The first build cycled six bare verbs — Draft, Summarise, Review. That
+ * showed somebody the SHAPE of a command without showing them a command, so
+ * the work of turning "Draft" into something worth running was still entirely
+ * theirs. These are the finished thing. Adam: "we are giving quick full ideas
+ * in an interactive way."
  *
- * SIX VERBS THAT NAME DIFFERENT KINDS OF WORK, deliberately, and the reason is
- * the benchmark rather than the writing. These prompts ARE the corpus the
- * measurement spine compares against, so a list clustered on one kind of task
- * would quietly narrow what the product is ever measured on. Making, reducing,
- * checking, sequencing, retrieving and revising is roughly the span of what
- * anybody asks an assistant for.
+ * ── THE LENGTH RULE IS THE HARD ONE ───────────────────────────────────────
+ * Adam: "short enough to not need to think about it twice to know if it
+ * applies as a good one for your personal instance as a user." That is a
+ * recognition test, not a comprehension test, and it is why these are shorter
+ * than the prompts they are drawn from. The source list's entries carry their
+ * own qualifiers — "keeping each point under 15 words", "with edge-case
+ * tests" — which are exactly right in a prompt library somebody is reading on
+ * purpose, and exactly wrong on a line that has about a second to be
+ * recognised or dismissed. Every one below is one clause, and every one names
+ * the artefact rather than the method.
  *
- * This is the seeded-verb cost being paid on purpose: what is offered here
- * will show up in what people write. That is the trade for making a command
- * the cheapest thing to type, and it is the reason the list is content that
- * can be argued with rather than a detail inside a component. [DRAFT]
+ * ── WHAT THEY ARE DRAWN FROM ──────────────────────────────────────────────
+ * Adam's list of the 25 most repeatedly hand-entered prompts, across its six
+ * groups: status and reporting, communication, meetings and transcripts,
+ * planning, analysis, and technical work. The spread here is deliberate — an
+ * even sample of that list rather than the shortest entries in it, because
+ * these ARE the corpus the measurement spine ends up comparing against and a
+ * list clustered on one kind of work would quietly narrow what the product is
+ * ever measured on.
+ *
+ * They are bare imperatives because the box finishes the stem printed above
+ * it: "Tell your AI to…" + "Cut this to 75 words" is a whole sentence. None
+ * of them opens with "Tell me", which would stutter against that stem.
+ * [DRAFT]
  */
-export const BASELINE_VERBS = [
-  'Draft',
-  'Summarise',
-  'Review',
-  'Plan',
-  'Find',
-  'Rewrite',
+export const BASELINE_SEEDS = [
+  // Status, reporting and updates
+  'Turn these notes into a 3-bullet update: win, risk, next',
+  'Flag who is blocked and what needs escalating',
+  'Explain what moved in these numbers, in 3 sentences',
+  // Communication and messaging
+  'Rewrite this to sound warmer but hold the deadline',
+  'Cut this to 75 words, decision in the first line',
+  'Draft a polite no with an alternative timeline',
+  'Write a 2-line follow-up on a thread that went quiet',
+  'Put this in plain English for a non-technical reader',
+  // Meetings, transcripts and action items
+  'Pull the action items out as Owner / Task / Due',
+  'List only the decisions made, and why',
+  'Build a 30-minute agenda from these open topics',
+  // Planning, strategy and prioritisation
+  'Sort this brain dump into do today, defer, drop',
+  'List the top 3 ways this plan could fail',
+  'Compare A and B on cost, speed, and risk',
+  // Analysis and research
+  'Summarise this document in 5 bullet points',
+  'Scan this contract for auto-renewal and exit terms',
+  // Technical and operational
+  'Explain what this code does and where it is slow',
+  'Find the root cause in this error log and suggest a fix',
 ] as const;
 
 /**

@@ -3,7 +3,7 @@ import type { BrowserContext, Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { S } from '../../src/panel/strings';
-import { BASELINE_VERBS } from '../../src/core/flow/overrides';
+import { BASELINE_SEEDS } from '../../src/core/flow/overrides';
 
 /**
  * THE BASELINE SCREEN — the one question drawn as a prompt box rather than as
@@ -87,11 +87,11 @@ test('the stem and the note under the box are set at one size', async () => {
   }
 });
 
-test('the starter verb types itself, and taking one leaves a command and a caret', async () => {
+test('the seed example types itself, and taking one leaves a whole command', async () => {
   const { context, page } = await openBaseline(false);
   try {
     const word = page.locator('.prompt-tw-word');
-    // The field's own placeholder is empty — the cycling verb IS the
+    // The field's own placeholder is empty — the cycling example IS the
     // placeholder, and two ghosts in one box was the thing being removed.
     expect(await page.locator('textarea.field').getAttribute('placeholder')).toBe('');
 
@@ -105,14 +105,14 @@ test('the starter verb types itself, and taking one leaves a command and a caret
     let partial: string | null = null;
     for (let i = 0; i < 90 && partial === null; i += 1) {
       const t = (await word.textContent()) ?? '';
-      if (t !== '' && BASELINE_VERBS.some((v) => v.startsWith(t) && v !== t)) partial = t;
+      if (t !== '' && BASELINE_SEEDS.some((v) => v.startsWith(t) && v !== t)) partial = t;
       await page.waitForTimeout(40);
     }
     expect(partial).not.toBeNull();
 
-    // Exactly where the box's own first character will land, so taking it
-    // shifts nothing on screen.
-    const { wordLeft, textLeft, press } = await page.evaluate(() => {
+    // Exactly where the box's own first character will land, and no wider than
+    // the box — so taking it shifts nothing and it wraps where the field wraps.
+    const { wordLeft, textLeft, press, over } = await page.evaluate(() => {
       const b = document.querySelector('.prompt-tw')!.getBoundingClientRect();
       const f = document.querySelector('textarea.field') as HTMLElement;
       const r = f.getBoundingClientRect();
@@ -121,10 +121,12 @@ test('the starter verb types itself, and taking one leaves a command and a caret
         wordLeft: Math.round(b.left),
         textLeft: Math.round(r.left + parseFloat(cs.paddingLeft) + parseFloat(cs.borderLeftWidth)),
         press: Math.round(b.height),
+        over: Math.round(b.right - (r.right - parseFloat(cs.paddingRight))),
       };
     });
     expect(wordLeft).toBe(textLeft);
     expect(press).toBeGreaterThanOrEqual(44);
+    expect(over).toBeLessThanOrEqual(1);
 
     /* Taking it commits a WHOLE word — never the fragment on screen — with one
        trailing space and the caret after it.
@@ -140,7 +142,7 @@ test('the starter verb types itself, and taking one leaves a command and a caret
       const f = document.querySelector('textarea.field') as HTMLTextAreaElement;
       return { value: f.value, caret: f.selectionStart, focused: document.activeElement === f };
     });
-    expect(BASELINE_VERBS).toContain(state.value.trimEnd());
+    expect(BASELINE_SEEDS).toContain(state.value.trimEnd());
     expect(state.value.endsWith(' ')).toBe(true);
     expect(state.value.trimEnd().length).toBe(state.value.length - 1);
     expect(state.caret).toBe(state.value.length);
@@ -153,7 +155,7 @@ test('the starter verb types itself, and taking one leaves a command and a caret
   }
 });
 
-test('under reduced motion the verb is still, and the instruction survives it', async () => {
+test('under reduced motion the example is still, and the instruction survives it', async () => {
   const { context, page } = await openBaseline(true);
   try {
     const word = page.locator('.prompt-tw-word');
