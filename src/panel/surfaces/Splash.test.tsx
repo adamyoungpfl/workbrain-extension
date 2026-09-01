@@ -43,21 +43,39 @@ afterEach(() => {
 });
 
 describe('Splash — the show, under full motion', () => {
-  it('opens on the stage: the mark in its glow, and NO reveal yet', () => {
+  it('opens on the WALL — no mark, no glow, and no reveal yet', () => {
+    /* SUPERSEDED 2026-09-01, at Adam's word, and recorded rather than quietly
+       rewritten.
+
+       This used to assert "the mark in its glow": VB-128 burned the logo in
+       the middle of the field for the whole show. Adam's sequence is "the
+       animation builds fading to white and then BURST with the logo lockup" —
+       and a logo that has been on screen for four seconds cannot burst. The
+       show is the wall now; the mark is what the white breaks into.
+
+       WHAT THE OLD ASSERTION PROTECTED SURVIVES, and is still checked below:
+       the show is a show, the title card has not arrived, and every word of
+       the splash still lives in the reveal's DOM rather than on the canvas. */
     stubMedia(false);
     const { container } = mount(<Splash onDone={() => {}} />);
     expect(container.querySelector('.splash')!.getAttribute('data-phase')).toBe('show');
-    expect(container.querySelector('.splash-stage .brand-mark')).not.toBeNull();
-    expect(container.querySelector('.splash-glow')).not.toBeNull();
+    expect(container.querySelector('.splash-stage')).not.toBeNull();
+    expect(container.querySelector('.splash-stage .brand-mark')).toBeNull();
+    expect(container.querySelector('.splash-glow')).toBeNull();
     // The movie has not reached its title card.
     expect(container.querySelector('.splash-wordmark')).toBeNull();
     expect(container.querySelector('.splash-enter')).toBeNull();
   });
 
-  it('runs the stage mark on the splash camera', () => {
+  it('says nothing on the canvas — the stage is scenery and marked as such', () => {
+    // What the removed mark assertions were really guarding: no text, no
+    // control and nothing announced lives in the show.
     stubMedia(false);
     const { container } = mount(<Splash onDone={() => {}} />);
-    expect(container.querySelector('.brand-mark')!.getAttribute('data-spin')).toBe('orbit');
+    const stage = container.querySelector('.splash-stage')!;
+    expect(stage.getAttribute('aria-hidden')).toBe('true');
+    expect(stage.querySelector('button')).toBeNull();
+    expect(stage.textContent).toBe('');
   });
 
   it('a click anywhere mid-show hands over — the rest of the movie is optional', () => {

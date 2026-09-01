@@ -386,3 +386,94 @@
     display: none;
   }
 }
+
+
+/* ══ V2.9 — THE REVEAL, AS A WELCOME SCREEN ═══════════════════════════════
+   The mosaic's white breaks and this is what is behind it. It was a competent
+   stack of centred text with two identical outline buttons; Adam asked for
+   "pro level design layout in this aesthetic", and the two things missing were
+   a vertical rhythm and any hierarchy at all between the doors.
+
+   THE RHYTHM. Four bands, not eight paragraphs: the mark and the name; the
+   tagline; the promise; the doors. Space between bands is double the space
+   inside them, which is the whole of why a layout reads as composed rather
+   than as a list. */
+.splash-lockup {
+  gap: 0;
+  padding: 0 26px;
+}
+.splash-wordmark {
+  margin: 18px 0 0;
+  letter-spacing: -0.02em;
+}
+.splash-tagline {
+  margin: 14px 0 0;
+  max-width: 30ch;
+}
+/* THE PROMISE, set apart by a hairline rather than by more air. It answers a
+   different question from the tagline — what this costs, not what it is — and
+   a rule says "different thing" in less space than a gap can. */
+.splash-cost {
+  margin: 26px 0 0;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.09);
+  width: 100%;
+}
+.splash-what {
+  margin: 8px 0 0;
+}
+
+/* THE DOORS, and this is where the hierarchy went in. Two outlined buttons of
+   equal weight made the person read both to find out they were different. The
+   baseline path is filled — it is the one that EXPIRES, and a starting point
+   can only be taken before somebody starts — and the shorter road is a ghost
+   beside it. Still a fork rather than a recommendation: the ghost is a real
+   door with a real border, not a link pretending to be one. */
+.splash-choice {
+  margin-top: 30px;
+  width: 100%;
+  gap: 10px;
+}
+.splash-door {
+  width: 100%;
+  min-height: 52px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  transition:
+    transform 160ms ease-out,
+    box-shadow 160ms ease-out,
+    background-color 160ms ease-out;
+}
+.splash-choice .splash-door:first-child {
+  border: 0;
+  /* `--ink-inv`, not a bare white literal — the audit caught the literal here
+     and was right to. This is the token for text ON a filled surface, which is
+     exactly what this is. (The audit greps file text, so naming the literal
+     even inside a comment trips it. Worth knowing.) */
+  color: var(--ink-inv);
+  /* The mark's own two hues, which is the only gradient in this product and
+     belongs to exactly this moment. */
+  background: linear-gradient(112deg, var(--globe-node-1-mid), var(--globe-node-2-mid));
+  box-shadow: 0 6px 22px -8px var(--globe-node-2-mid);
+}
+.splash-choice .splash-door:last-child {
+  background: transparent;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+}
+.splash-door:hover {
+  transform: translateY(-1px);
+}
+.splash-choice .splash-door:last-child:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The lift goes; the colour and the border stay, because they are what
+     distinguishes the two doors and that must not depend on motion. */
+  .splash-door,
+  .splash-door:hover {
+    transform: none;
+    transition: none;
+  }
+}

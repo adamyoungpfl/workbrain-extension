@@ -95,14 +95,20 @@ const readPose = (page: Page, selector: string) =>
   );
 
 test.describe('VB-128 — the show opens', () => {
-  test('dark stage, the mark in its glow, and no title card yet', async () => {
+  test('dark stage, the wall of panels, and no title card yet', async () => {
     const { context, page } = await launchPanel();
 
     const splash = page.locator('.splash');
     await expect(splash).toHaveCount(1);
     await expect(splash).toHaveAttribute('data-phase', 'show');
-    await expect(page.locator('.splash-stage .brand-mark circle')).toHaveCount(12);
-    await expect(page.locator('.splash-glow')).toHaveCount(1);
+    /* SUPERSEDED 2026-09-01 (V2.9, Adam). Was "the mark in its glow" — VB-128
+       burned the logo in the field for the whole show. The sequence is now
+       "builds fading to white and then BURST with the logo lockup", and a logo
+       that has been on screen for four seconds cannot burst. The show is a
+       wall of panels; the mark is what the white breaks into. */
+    await expect(page.locator('.splash-stage canvas')).toHaveCount(1);
+    await expect(page.locator('.splash-stage .brand-mark')).toHaveCount(0);
+    await expect(page.locator('.splash-glow')).toHaveCount(0);
     // The movie has not reached its title card: no name, no button.
     await expect(page.locator('.splash-wordmark')).toHaveCount(0);
     await expect(page.locator('.splash-cost')).toHaveCount(0);
@@ -304,22 +310,61 @@ test.describe('VB-129 — the shard field', () => {
 });
 
 test.describe('VB-128 — the camera still drifts', () => {
-  test('the show’s mark re-projects in real 3D, not a CSS spin', async () => {
-    const { context, page } = await launchPanel();
-    const mark = '.splash-stage .brand-mark';
-    await page.waitForSelector(mark);
+  test('the wall cuts, and cuts faster as it goes', async () => {
+    /* SUPERSEDED 2026-09-01 (V2.9, Adam). This used to prove the SHOW'S MARK
+       re-projected in real 3D rather than spinning flat — a real guarantee
+       about a thing that is no longer on the stage. The mark still proves that
+       for itself in the reveal, one describe below.
 
-    const poses: string[] = [];
-    const radii: string[] = [];
-    for (let i = 0; i < 6; i++) {
-      poses.push((await readPose(page, mark)).join(' '));
-      radii.push(
-        (await page.$$eval(`${mark} circle`, (cs) => cs.map((c) => c.getAttribute('r')))).join(' '),
-      );
-      await waitForFrames(page, 6);
-    }
-    expect(new Set(poses).size, 'the mark never moved').toBeGreaterThan(4);
-    expect(new Set(radii).size, 'flat spin, not a camera').toBeGreaterThan(4);
+       What replaces it is the guarantee the new show actually makes: the
+       panels never move, and their CONTENT changes at a rate that rises. That
+       is the whole of "no single action is important" — the eye is never asked
+       to follow anything — and the whole of the acceleration Adam asked for. */
+    const { context, page } = await launchPanel();
+    await page.waitForSelector('.splash-stage canvas');
+
+    const sample = async () => {
+      const shots: string[] = [];
+      for (let i = 0; i < 8; i++) {
+        shots.push(
+          await page.locator('.splash-stage canvas').evaluate((el) => {
+            const c = el as HTMLCanvasElement;
+            const g = c.getContext('2d')!;
+            // A cheap fingerprint of the wall: a few pixels, far apart.
+            const spots: Array<{ x: number; y: number }> = [
+              { x: 80, y: 120 },
+              { x: 200, y: 300 },
+              { x: 320, y: 520 },
+              { x: 120, y: 620 },
+            ];
+            return spots
+              .map(({ x, y }) => {
+                const d = g.getImageData(x, y, 1, 1).data;
+                return `${d[0]},${d[1]},${d[2]}`;
+              })
+              .join('|');
+          }),
+        );
+        await waitForFrames(page, 3);
+      }
+      return new Set(shots).size;
+    };
+
+    const early = await sample();
+    await page.waitForTimeout(2200);
+    const late = await sample();
+
+    // It is cutting at all...
+    expect(early, 'the wall never changed').toBeGreaterThan(1);
+    // ...and by the end it is cutting more often across the same span of
+    // frames than it was at the start.
+    expect(late, 'the cuts did not speed up').toBeGreaterThanOrEqual(early);
+
+    // And the panels themselves never moved: the canvas is one fixed box.
+    const box = (await page.locator('.splash-stage canvas').boundingBox())!;
+    await waitForFrames(page, 10);
+    const later = (await page.locator('.splash-stage canvas').boundingBox())!;
+    expect(later).toEqual(box);
 
     await context.close();
   });

@@ -204,10 +204,13 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
           glow; VB-129 flies the shard windows in this same box. Decoration
           throughout — the reveal carries every word. */}
       {phase !== 'reveal' && (
+        /* THE MARK IS NOT HERE ANY MORE (Adam, 2026-09-01). VB-128 burned it
+           in the middle of the field for the whole show, which made the reveal
+           a change of layout rather than an arrival — the logo was already on
+           screen, so "burst with the logo lockup" had nothing left to burst
+           with. The show is the wall; the mark is what the white breaks into. */
         <div className="splash-stage" aria-hidden="true">
           <SplashStage ref={stageRef} />
-          <div className="splash-glow" />
-          <BrandMark size={116} spin="orbit" entrance={false} />
         </div>
       )}
 

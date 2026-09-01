@@ -1,35 +1,37 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import {
-  kenBurnsOffset,
-  makeField,
-  projectShard,
-  stepField,
-} from '../../core/splash/field';
-import type { Shard } from '../../core/splash/field';
-import { pullStrength } from '../../core/splash/sequence';
+import { STAGE_H, STAGE_W, bleachAt, frameAt, makeMosaic } from '../../core/splash/mosaic';
+import type { Point } from '../../core/splash/mosaic';
+import { SPLASH_BEATS } from '../../core/splash/sequence';
 
 /**
- * V2.7 VB-129 — the show's canvas: the shard windows tumbling in the
- * mark's gravity. The physics lives in core/splash/field.ts; this file
- * only draws, on one imperative `paint(t)` the Splash clock calls per
- * frame. No rAF of its own — one clock owns the show — and under reduced
- * motion this component never mounts at all (Splash renders the composed
- * reveal from the first frame), so the zero-frames law is kept by
- * construction rather than by discipline.
+ * V2.9 — THE MOSAIC (Adam, 2026-09-01). V2.7 VB-129's shard field tumbled
+ * twenty-six windows through the mark's gravity; this holds fifteen irregular
+ * panels perfectly still and cuts their CONTENT instead.
  *
- * ── THE WINDOWS' GLASS: TEXTURES ─────────────────────────────────────────
- * Five procedural paintings of a working life — a portrait at a window, a
- * spreadsheet, a report page, a bank statement, a meeting — drawn once to
- * offscreen canvases at mount. Their hues are the fenced `--splash-scene-*`
- * tokens plus two working colours the interface already owns, read at
- * runtime exactly the way WallPanels reads its texture hues: one source of
- * colour, even for scenery. VB-130 lands the real photography IN FRONT of
- * these — an image that decodes replaces its painted sibling; an image
- * that fails leaves the painting in place, silently (the degradation law,
- * applied to scenery). The glass is never blank.
+ * Adam: "instead of it starting as spinning elements… irregular shaped cells
+ * or panels that are each flashing through a series of short images or quick
+ * animated actions. No single action should be detailed or important, but all
+ * should feel distantly familiar."
  *
- * The canvas is scenery inside a stage that is already `aria-hidden`;
- * every word of the splash lives in the reveal's real DOM.
+ * Nothing moves across the screen, so the eye is not asked to follow anything
+ * — which is what makes "no single action is important" true rather than
+ * merely intended. What accelerates is the cut rate: a slow colourful flicker
+ * quickening until the panels change faster than they can be read, draining of
+ * colour as they go, and that is what breaks into the white.
+ *
+ * The layout and every timing is core/splash/mosaic.ts's, unit-tested. This
+ * file only draws, on the one imperative `paint(t)` the Splash clock calls per
+ * frame — no rAF of its own, one clock owns the show. Under reduced motion it
+ * never mounts at all (Splash renders the composed reveal from the first
+ * frame), so the zero-frames law is kept by construction.
+ *
+ * ── THE GLASS ─────────────────────────────────────────────────────────────
+ * The eighteen bundled photographs of a working life that VB-130 brought in,
+ * with the five procedural paintings behind them as the silent fallback: an
+ * image that decodes is used, one that fails leaves its painted sibling in
+ * place. Nothing is fetched at runtime from anywhere but the extension's own
+ * package. The canvas is scenery inside a stage that is already `aria-hidden`
+ * — every word of the splash lives in the reveal's real DOM.
  */
 
 export interface SplashStageHandle {
@@ -49,11 +51,7 @@ const SHARD_IMAGE_URLS = Object.values(
 ) as string[];
 
 const TEXTURE_SIZE = 140;
-const SHARD_COUNT = 26;
-export const STAGE_W = 400;
-export const STAGE_H = 700;
-const WELL_X = STAGE_W / 2;
-const WELL_Y = 330;
+export { STAGE_H, STAGE_W };
 
 /** The scenery palette, read off the running stylesheet once per mount —
  * the WallPanels pattern, so tokens.css stays the one source of colour. */
@@ -208,20 +206,24 @@ function makeTexture(painter: Painter, scene: Scene): HTMLCanvasElement {
 
 export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_props, ref) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const fieldRef = useRef<Shard[] | null>(null);
-  const texturesRef = useRef<CanvasImageSource[]>([]);
-  const lastT = useRef(0);
+  /* The panels are FIXED for the life of the splash — that is the whole change
+     from VB-129. Built once, from a constant seed, so the mosaic is the same
+     shape every open: a wall that rearranges itself each time reads as a
+     different product rather than as this one. */
+  const mosaicRef = useRef<Point[][]>(makeMosaic());
+  /* Narrowed from `CanvasImageSource` to the two things this actually holds —
+     a decoded photograph or the offscreen canvas its painting was drawn to.
+     The wide type includes `VideoFrame`, which has no `width`, and cover-fit
+     needs the source's real dimensions. */
+  const texturesRef = useRef<(HTMLImageElement | HTMLCanvasElement)[]>([]);
 
   useEffect(() => {
-    // Seeded from the clock: repeatable through core in a test that passes
-    // its own seed, subtly fresh on every real open. One texture slot per
-    // bundled photograph (VB-130), each opening on its procedural painting
-    // and swapping to the photo the instant it decodes — an image that
-    // never decodes leaves the painting in place, silently, and the show
-    // is merely less photographic (the degradation law, applied to
+    // One texture slot per bundled photograph (VB-130), each opening on its
+    // procedural painting and swapping to the photo the instant it decodes —
+    // an image that never decodes leaves the painting in place, silently, and
+    // the show is merely less photographic (the degradation law, applied to
     // scenery).
     const slots = SHARD_IMAGE_URLS.length || PAINTERS.length;
-    fieldRef.current = makeField(SHARD_COUNT, Date.now() % 100_000, slots);
     const scene = readScene();
     texturesRef.current = Array.from({ length: slots }, (_, i) =>
       makeTexture(PAINTERS[i % PAINTERS.length]!, scene),
@@ -246,39 +248,64 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
   useImperativeHandle(ref, () => ({
     paint(t: number) {
       const canvas = canvasRef.current;
-      const field = fieldRef.current;
       const g = canvas?.getContext('2d');
-      if (!canvas || !field || !g) return;
+      if (!canvas || !g) return;
 
-      const dt = Math.min(0.05, Math.max(0, t - lastT.current));
-      lastT.current = t;
-      const pull = pullStrength(t);
-      stepField(field, dt, pull);
-
+      const cells = mosaicRef.current;
+      const glass = texturesRef.current;
+      const count = glass.length;
       g.clearRect(0, 0, STAGE_W, STAGE_H);
+      if (count === 0) return;
 
-      // Far-to-near, so close shards overlap distant ones.
-      const ordered = field
-        .map((shard) => ({ shard, view: projectShard(shard, WELL_X, WELL_Y) }))
-        .sort((a, b) => a.view.near - b.view.near);
+      const bleach = bleachAt(t, SPLASH_BEATS.swellAt);
 
-      for (const { shard, view } of ordered) {
-        const texture = texturesRef.current[shard.texture];
-        if (!texture) continue;
+      for (let i = 0; i < cells.length; i += 1) {
+        const cell = cells[i]!;
+        const picture = glass[frameAt(t, i, count, SPLASH_BEATS.swellAt)];
+        if (!picture) continue;
+
+        // The panel's own box, so the picture can be drawn to cover it.
+        let minX = Infinity;
+        let minY = Infinity;
+        let maxX = -Infinity;
+        let maxY = -Infinity;
+        for (const p of cell) {
+          if (p.x < minX) minX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y > maxY) maxY = p.y;
+        }
+        const w = maxX - minX;
+        const h = maxY - minY;
+
         g.save();
-        g.translate(view.x, view.y);
-        g.rotate(shard.rot + shard.angle * 0.25);
-        g.scale(view.scale, view.scale);
-        g.globalAlpha = view.alpha;
         g.beginPath();
-        shard.points.forEach(([x, y], i) => (i ? g.lineTo(x, y) : g.moveTo(x, y)));
+        cell.forEach((p, n) => (n ? g.lineTo(p.x, p.y) : g.moveTo(p.x, p.y)));
         g.closePath();
-        g.save();
         g.clip();
-        const kb = kenBurnsOffset(shard, t);
-        g.drawImage(texture, -46 + kb.dx, -46 + kb.dy, 92 + kb.grow, 92 + kb.grow);
-        g.restore();
-        g.strokeStyle = `rgba(190, 205, 255, ${(0.16 + view.near * 0.3).toFixed(3)})`;
+
+        /* COVER, NEVER FIT. A picture letterboxed inside an irregular quad
+           leaves the ground showing in the corners, which turns a wall of
+           panels back into a scatter of tiles. */
+        const scale = Math.max(w / picture.width, h / picture.height);
+        const dw = picture.width * scale;
+        const dh = picture.height * scale;
+        g.drawImage(picture, minX + (w - dw) / 2, minY + (h - dh) / 2, dw, dh);
+
+        /* THE COLOUR DRAINS INTO THE WHITE rather than being covered by it.
+           `bleachAt` starts before the swell does, so by the time the white
+           sheet arrives the wall is already going — one event arriving rather
+           than two things happening. */
+        if (bleach > 0) {
+          g.globalCompositeOperation = 'lighten';
+          g.fillStyle = `rgba(255, 255, 255, ${(bleach * 0.92).toFixed(3)})`;
+          g.fillRect(minX, minY, w, h);
+          g.globalCompositeOperation = 'source-over';
+        }
+
+        // The seam. Light enough to read as glass between panels rather than
+        // as a drawn border, and it fades out with everything else.
+        g.strokeStyle = `rgba(255, 255, 255, ${(0.22 * (1 - bleach)).toFixed(3)})`;
         g.lineWidth = 1;
         g.stroke();
         g.restore();
