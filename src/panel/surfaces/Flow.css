@@ -2192,3 +2192,71 @@
   position: static;
   padding-top: 14px;
 }
+
+/* ── THE STEM ──────────────────────────────────────────────────────────────
+   Everywhere else the field's label is the question repeated for screen
+   readers and hidden (`.flow-field-sr-label .field-label` above). Here it is
+   a different string doing a different job — the sentence the box finishes —
+   so it comes back into view. Undoing a clip-rect sr-only block takes all of
+   it, not just the width and height. */
+.flow--prompt .flow-field-sr-label .field-label {
+  position: static;
+  width: auto;
+  height: auto;
+  overflow: visible;
+  clip: auto;
+  clip-path: none;
+  white-space: normal;
+  display: block;
+  margin-bottom: 6px;
+  color: var(--ink-2);
+  font-size: var(--fs-sm);
+  font-weight: 500;
+}
+
+/* ── THE HEDGE REPAIR ──────────────────────────────────────────────────────
+   A quiet card, not an error. Nothing here is red, nothing is an alert icon,
+   and the lead is two words: somebody wrote a perfectly reasonable English
+   sentence and the screen is offering a different one, which is a suggestion
+   and must not be dressed as a correction.
+
+   `flex: 0 0 auto` because it is a sibling of the growing field wrapper —
+   without it the suggestion would take an equal share of the slack and push
+   the buttons off the bottom of a 400px panel. */
+.flow--prompt .flow-order,
+.flow--prompt .flow-order-note {
+  flex: 0 0 auto;
+}
+.flow--prompt .flow-order {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--border-i);
+  border-radius: 10px;
+  background: var(--canvas);
+}
+.flow--prompt .flow-order-lead {
+  margin: 0 0 4px;
+  color: var(--ink-2);
+  font-size: var(--fs-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+.flow--prompt .flow-order-text {
+  /* The suggestion is the argument, so it is set as text somebody would read
+     rather than as a code block — this is their own sentence, tidied. */
+  margin: 0 0 8px;
+  color: var(--ink);
+  font-size: var(--fs-sm);
+  line-height: 1.4;
+}
+.flow--prompt .flow-order-note {
+  margin-top: 10px;
+}
+/* The button's own padding pushed its label out of line with the two lines of
+   text above it, which reads as a stray indent in a 400px column. Pulled flush
+   so the card has one left edge. The 44px pressable area is untouched — this
+   moves the box, it does not shrink it. */
+.flow--prompt .flow-order .btn {
+  margin-left: -10px;
+}

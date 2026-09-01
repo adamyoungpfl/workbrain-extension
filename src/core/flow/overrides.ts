@@ -670,7 +670,17 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
        ends in a question mark, and a question with a command bolted on is two
        things pretending to be one. [DRAFT] */
     prompt: () => 'If you knew it would be done right, right now — what would you tell your AI to do?',
-    hint: 'Write it as an order, not a wish. One thing, now, in your own words. You will run exactly this and watch the difference.',
+    /* RETUNED 2026-08-31, because the STEM now does the first half of this
+       job. The field's visible label is "Tell your AI to…", and a sentence
+       ending in "to" can only be finished with a bare verb — so "write it as
+       an order" is being argued by the grammar somebody is typing into, which
+       is a far stronger place to argue it from than a line of advice.
+
+       That frees the hint to say the thing the stem cannot: that this exact
+       text gets run, so it should be sized like something an AI can finish.
+       The "one thing" survives because it is the constraint that keeps a
+       baseline runnable. [DRAFT] */
+    hint: 'One thing, in your own words. You will run exactly this, so ask for something it can finish.',
     placeholder: 'e.g. Draft my Monday status update the way I would',
     ideas: [
       'Draft a status update for my manager that sounds like me.',

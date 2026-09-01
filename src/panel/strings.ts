@@ -1674,6 +1674,18 @@ export const S = {
      measurement the whole product is built to move, and naming it is what
      makes the comparison later mean something. [DRAFT] */
   baselineEyebrow: 'AI baseline',
+  /* THE STEM. The visible label on the baseline box, and the grammatical rail
+     that does the teaching: a sentence ending "to" can only be finished with a
+     bare verb, so the box is hard to start with "I would like". It costs
+     nothing, adds no control, and — unlike the placeholder it replaces —
+     it is still on the screen after somebody clicks into the box. */
+  baselineStem: 'Tell your AI to…',
+  /* [DRAFT] Shown with the rewrite, never on its own. Two words, because the
+     suggestion underneath it is the actual argument and a paragraph
+     explaining word order would be the screen lecturing somebody about their
+     own sentence. */
+  orderLead: 'As an order:',
+  orderTake: 'Use this',
   baselineCopy: 'Copy the question',
   baselineCopied: 'Copied',
   baselineGo: 'I ran it — paste what came back',

@@ -116,6 +116,7 @@ import { PAIR_CAPTIONS, pairFor, pairedStepsFor, usesPairedPick } from '../../co
 import { LINE_CUSTOM_GLYPH, PAIR_GLYPHS, PERSONA_GLYPHS, ROLE_FOR_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { generatedNameAt, promptOnly, travelsLight, usesNameGenerator } from '../../core/flow/nameGenerator';
+import { asOrder } from '../../core/flow/imperative';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { assistServiceUrlFor } from '../../core/flow/assistServices';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
@@ -2066,6 +2067,11 @@ function StepView({
      changes is the SURFACE — the chrome row, the progress label and the drawer
      — not the question. */
   const bare = pos.kind === 'step' && promptOnly(pos.step);
+  /* Derived, never stored — the suggestion is a function of what is in the box
+     right now, so there is no state to get out of step with the text and
+     nothing to clear when they accept it (accepting changes `draftText`, which
+     is what this reads). Only computed on the one screen that shows it. */
+  const orderSuggestion = bare ? asOrder(draftText) : null;
 
   const topSection = (
     <>
@@ -2707,7 +2713,19 @@ function StepView({
             >
               <Field
                 id={`flow-${step.id}`}
-                label={questionText}
+                /* THE STEM (Adam, 2026-08-31). On the baseline screen the
+                   field's label stops being the question repeated for screen
+                   readers and becomes a sentence the BOX finishes: "Tell your
+                   AI to ___". Only a bare verb completes that, which is the
+                   whole trick — the grammar teaches the imperative without a
+                   control, a validation message, or a word of instruction.
+
+                   Visible here, and the accessible name is the same string, so
+                   what is read and what is seen do not disagree (WCAG 2.5.3).
+                   The question itself is the h2 above and is still announced;
+                   this is a better name for the box than the full sentence
+                   was. */
+                label={bare ? S.baselineStem : questionText}
                 as={step.multiline ? 'textarea' : 'input'}
                 value={draftText}
                 onChange={answerText}
@@ -2740,6 +2758,42 @@ function StepView({
               />
             </div>
             )}
+            {/* THE HEDGE REPAIR (core/flow/imperative.ts). Offered, never
+                applied: what is on screen is what will be sent, so a rewrite
+                that happened under somebody would break the one promise this
+                screen makes. Live rather than on blur, because on a 400px
+                panel the thing that takes focus off the box is usually Next,
+                and a suggestion nobody can reach is not one.
+
+                `role="status"` so it is announced politely and steals no
+                focus. It clears itself the moment the text stops matching —
+                accepting it IS such a change, so the block removes itself. */}
+            {bare && orderSuggestion && (
+              <div className="flow-order" role="status">
+                <p className="flow-order-lead">{S.orderLead}</p>
+                <p className="flow-order-text">{orderSuggestion}</p>
+                <Button
+                  type="button"
+                  variant="quiet"
+                  onClick={() => answerText(orderSuggestion)}
+                >
+                  {S.orderTake}
+                </Button>
+              </div>
+            )}
+            {/* THE HINT, MOVED UNDER THE BOX. It is the instruction, and
+                above the box it was read before there was anything to apply
+                it to — under the box it is in view at the moment somebody is
+                typing. `QuestionHelp` stays suppressed on this screen: that
+                renders the hint AND the deep-dive chips, and the chips are
+                what makes a prompt box look like a questionnaire. */}
+            {/* `showsHint` is deliberately NOT consulted here. Its rule is
+                that a hint stands down when the question carries deep-dive
+                chips, so the two are not making the same point twice —
+                goal_want has two, which is why this hint has never once been
+                on screen. The chips are suppressed on this screen, so the
+                reason to suppress the hint goes with them. */}
+            {bare && step.hint && <p className="flow-hint flow-order-note">{step.hint}</p>}
             {/* V1.8 VB-49. Under the box, because it is about the box: the
                 dictation the person's own computer already has types into
                 this field, and nobody knows it. One question, one line, gone
