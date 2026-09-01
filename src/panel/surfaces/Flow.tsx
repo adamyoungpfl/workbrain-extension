@@ -8,7 +8,7 @@ import {
   DividedLine,
   Field,
   FlowProgress,
-  NarratorToggle,
+  Tim,
   NavButton,
   JumpSheet,
   NavCluster,
@@ -2163,13 +2163,29 @@ function StepView({
           way around the screen, it is the screen being clearer — and this is
           the question most likely to be met by somebody who has never given an
           AI an order and would rather be told what to do than read it. */}
+      {/* V2.9 — TIM TAKES THE CORNER (Adam, 2026-09-02). The narrator's face
+          where the speaker icon was, with a ring that moves on the words while
+          he reads.
+
+          PRESSING HIM TOGGLES THE NARRATOR, directly. The first build put him
+          in front of a SHEET holding the narrator switch and Jump to — Adam's
+          note reads "the control for mute/unmute, mic, jump to, etc." — and
+          the narrator suite failed fifteen ways, which was the right answer to
+          a wrong design. Muting is the most frequent action on this screen and
+          jumping is among the rarest; putting the first behind a container for
+          the second costs a press every single time, forever. The slash on his
+          corner already says what pressing him does.
+
+          Jump to keeps its own quiet control beside him, exactly where it was.
+          When a third control arrives the sheet is the right answer — it is
+          two controls today, and a sheet for two is furniture. */}
       <div className={bare ? 'flow-chrome flow-chrome--bare' : 'flow-chrome'}>
-        <NarratorToggle />
         {!bare && onJumpTo && (
           <button type="button" className="flow-jump" onClick={() => setJumpOpen(true)}>
             {S.jumpOpen}
           </button>
         )}
+        <Tim />
       </div>
       {onJumpTo && (
         <JumpSheet

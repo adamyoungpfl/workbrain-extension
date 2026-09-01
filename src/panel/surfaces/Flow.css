@@ -2347,3 +2347,12 @@
 .flow--prompt .flow-save {
   margin-top: auto;
 }
+
+/* THE CORNER HOLDS TIM. The row keeps two ends on an interview screen — jump
+   at the left, TIM at the right — and collapses to him alone on the baseline
+   screen, where there is nothing yet to jump to. His 44px target overhangs the
+   26px painted row exactly as the old toggle's did, so the header's height is
+   unchanged. */
+.flow-chrome .tim {
+  margin: -9px 0;
+}

@@ -124,3 +124,8 @@ export type { FeedbackSheetProps } from './FeedbackSheet';
 // declaration in the person's own reading order. See DeclarationLine.tsx.
 export { DeclarationLine } from './DeclarationLine';
 export type { DeclarationLineProps } from './DeclarationLine';
+
+// V2.9. TIM — the narrator's face, and the control for reading aloud. The ring
+// around him moves on the words. See TimAvatar.tsx.
+export { Tim, TimFace, useSpeechPulse } from './TimAvatar';
+export type { TimAvatarProps } from './TimAvatar';

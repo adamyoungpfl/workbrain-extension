@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { hasSpokenBefore } from './speech';
 import { getSync, setSync } from '../../core/storage/client';
 import type { Prefs } from '../../schema/storage.types';
 
@@ -140,7 +141,39 @@ export function loadPrefs(): Promise<void> {
  * the press, not on the round-trip, and a write that fails leaves the toggle
  * exactly where the person put it.
  */
+/**
+ * V2.9 — TIM's return drop (Adam, 2026-09-02).
+ *
+ * "When you unmute the narrator during the interview process, before it plays
+ * the message, let's have a pre-recorded drop for 'Sorry. I was on mute, where
+ * was I?'. It will read as kinda funny and relatable without taking more than
+ * a second."
+ *
+ * Set when the toggle goes OFF→ON, read and cleared by whoever speaks next.
+ * A one-shot flag rather than a queued utterance because the drop has to come
+ * before whatever the screen would have said anyway, and the screen decides
+ * that — queueing here would have TIM apologising into silence on a screen
+ * with nothing to read.
+ *
+ * Not persisted. It belongs to one press, and a drop that survived a reload
+ * would apologise for a mute nobody remembers setting.
+ */
+let pendingDrop = false;
+
+/** True once, for the press that turned the narrator back on. */
+export function takeNarratorDrop(): boolean {
+  const due = pendingDrop;
+  pendingDrop = false;
+  return due;
+}
+
 export async function setNarrator(on: boolean): Promise<void> {
+  /* Armed only on the way back ON, only if it was actually off, and only if
+     TIM has already spoken at some point — pressing "on" when it is already on
+     is not somebody returning from anywhere, and the first enable of a session
+     is not a return either. He has to have been interrupted to apologise for
+     it. */
+  if (on && !currentPrefs().narrator && hasSpokenBefore()) pendingDrop = true;
   await setPref('narrator', on);
 }
 

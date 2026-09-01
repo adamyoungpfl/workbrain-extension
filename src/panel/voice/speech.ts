@@ -157,6 +157,54 @@ export function isSpeaking(): boolean {
  * call in a browser that cannot speak at all. */
 export function stopSpeaking(): void {
   speechApis()?.synth.cancel();
+  // `cancel()` does not always fire `onend`, and a ring left pulsing after
+  // silence is worse than one that never moved.
+  announce(false);
+}
+
+/**
+ * WHO IS LISTENING FOR THE VOICE (V2.9, Adam, 2026-09-02).
+ *
+ * TIM's avatar pulses while the narrator is speaking, and it pulses on the
+ * WORDS rather than on a loop of its own. `onboundary` fires once per spoken
+ * word, so a ring driven from it is genuinely tracking the voice — it slows
+ * where the sentence slows, stops on a comma, and ends when the narrator does.
+ * A decorative pulse on a timer would look approximately the same for about
+ * two seconds and then visibly disagree with what is being said.
+ *
+ * A set of callbacks rather than a React context: `speak` is a plain function
+ * called from a hook, and the thing that needs to know is a component that may
+ * not be mounted. Subscribers that come and go cost nothing.
+ */
+type SpeechListener = (state: { speaking: boolean; word: number }) => void;
+const listeners = new Set<SpeechListener>();
+let spokenWords = 0;
+
+/**
+ * Whether TIM has said anything yet this session.
+ *
+ * It gates his return drop, and the narrator suite is what found the need for
+ * it: the drop fired the very first time somebody switched narration on, where
+ * he has never spoken and there is nothing to have been interrupted. "Sorry, I
+ * was on mute, where was I?" is only funny if he WAS somewhere — said cold, it
+ * is a stranger apologising for a conversation that never happened.
+ */
+let everSpoke = false;
+
+export function hasSpokenBefore(): boolean {
+  return everSpoke;
+}
+
+/** Subscribe to speech activity. Returns its own unsubscribe. */
+export function onSpeechActivity(fn: SpeechListener): () => void {
+  listeners.add(fn);
+  return () => {
+    listeners.delete(fn);
+  };
+}
+
+function announce(speaking: boolean): void {
+  for (const fn of listeners) fn({ speaking, word: spokenWords });
 }
 
 /**
@@ -187,6 +235,24 @@ export function speak(narration: Narration): void {
     if (match) utterance.voice = match;
   }
 
+  /* The activity signal. Wired on the utterance rather than polled, so the
+     ring is driven by the engine's own account of where it is rather than by
+     a guess sampled every hundred milliseconds. `onerror` is treated as an
+     end: a narrator that fails silently must not leave a ring pulsing at
+     something that stopped speaking. */
+  utterance.onstart = () => {
+    spokenWords = 0;
+    announce(true);
+  };
+  utterance.onboundary = () => {
+    spokenWords += 1;
+    announce(true);
+  };
+  utterance.onend = () => announce(false);
+  utterance.onerror = () => announce(false);
+
   apis.synth.cancel();
+  announce(false);
+  everSpoke = true;
   apis.synth.speak(utterance);
 }

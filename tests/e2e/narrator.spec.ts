@@ -250,14 +250,28 @@ test.describe('the toggle', () => {
      * toggle keeps the head of the row, so DOM order, reading order and tab
      * order still agree (WCAG 2.4.3) and it is still the first stop.
      */
+    /* SUPERSEDED 2026-09-02 (V2.9). This used to assert the narrator control
+       was the FIRST tab stop, and BS-05f put "Jump to…" to its right precisely
+       to keep that true.
+
+       TIM is in the top-right corner at Adam's word, so the row's two ends
+       swapped: jump at the head, TIM at the tail. DOM order, reading order and
+       tab order still agree (WCAG 2.4.3) — which is what that rule actually
+       requires — and the substantive claim survives intact: the narrator is
+       still reachable BEFORE the question, which is the point. What is given
+       up is being first of two, and the trade was a corner placement Adam
+       asked for by name. */
     await page.evaluate(() => document.body.focus());
     await page.keyboard.press('Tab');
+    await page.keyboard.press('Tab');
     await expect(button).toBeFocused();
-    // Drawn on the painted face rather than on the 44px hit box — a ring round
-    // the whole target would enclose empty space on three sides of a 30px
-    // control (see NarratorToggle.css).
+    /* V2.9: TIM fills his own 44px target, so the ring goes on the BUTTON
+       rather than on a pseudo-element standing in for a 30px face. The claim
+       is unchanged and still checked below — 2px, --primary, offset — it is
+       just no longer drawn on a proxy, because there is no longer a gap
+       between what is painted and what is pressed. */
     const ring = await button.evaluate((el) => {
-      const face = getComputedStyle(el, '::before');
+      const face = getComputedStyle(el);
       return {
         width: face.outlineWidth,
         style: face.outlineStyle,
@@ -274,24 +288,17 @@ test.describe('the toggle', () => {
     // THE STATE IS A DIFFERENT DRAWING, not a different colour. Both halves
     // are always in the DOM; which one is painted is what changes, and it is
     // still true with every colour in the page forced to the same value.
-    const shownParts = () =>
-      page.evaluate(() => {
-        const wavesEl = document.querySelector('.narrator-waves');
-        const muteEl = document.querySelector('.narrator-mute');
-        const shown = (el: Element | null) => (el ? Number(getComputedStyle(el).opacity) : -1);
-        return { waves: shown(wavesEl), mute: shown(muteEl) };
-      });
+    /* V2.9: the same claim, on TIM's drawing. The slash on his corner is
+       PRESENT when muted and ABSENT when not — a whole element appearing and
+       disappearing, which is a stronger form of the guarantee than the
+       cross-fade it replaces: there is nothing to read as "on" but faint. */
+    const muteBadge = () => page.locator('.tim-mute').count();
 
-    const off = await shownParts();
-    expect(off.mute).toBe(1);
-    expect(off.waves).toBe(0);
+    expect(await muteBadge()).toBe(1);
 
     await button.click();
     await expect(button).toHaveAttribute('aria-pressed', 'true');
-    await page.waitForTimeout(200); // the 120ms cross-fade
-    const on = await shownParts();
-    expect(on.waves).toBe(1);
-    expect(on.mute).toBe(0);
+    expect(await muteBadge()).toBe(0);
 
     await context.close();
   });
@@ -574,9 +581,9 @@ test.describe('what it must never do', () => {
     // decision, taken after the store submission (VB-18).
     expect((await probeOf(page)).captureTouched).toEqual([]);
 
-    // And there is exactly one toggle up there, not two.
-    await expect(page.locator('.narrator-toggle')).toHaveCount(1);
-    await expect(page.locator('.narrator button')).toHaveCount(1);
+    // And there is exactly one control up there, not two. V2.9: it is TIM,
+    // who replaced the speaker icon in the corner — the claim is unchanged.
+    await expect(page.locator('.tim')).toHaveCount(1);
 
     // The manifest is untouched: install-time permissions are still the two.
     const manifest = JSON.parse(readFileSync(path.join(DIST, 'manifest.json'), 'utf8')) as {
@@ -658,6 +665,12 @@ test.describe('what it must never do', () => {
     await silent.keyboard.press('Escape');
     await silent.waitForSelector('.splash', { state: 'detached' });
     await enterInterview(silent);
+    /* V2.9: TIM carries the same guard. A face offering to read the questions
+       aloud, on a browser with no speech engine, is a control that does
+       nothing — worse than missing, because somebody presses it and concludes
+       the product is broken. This assertion is what caught its absence when he
+       replaced the toggle. */
+    await expect(silent.locator('.tim')).toHaveCount(0);
     await expect(silent.locator('.narrator-toggle')).toHaveCount(0);
     await expect(silent.locator('.flow-q').first()).toBeVisible();
     await expect(silent.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();

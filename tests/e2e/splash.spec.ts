@@ -323,40 +323,70 @@ test.describe('VB-128 — the camera still drifts', () => {
     const { context, page } = await launchPanel();
     await page.waitForSelector('.splash-stage canvas');
 
-    const sample = async () => {
-      /* Sampled across MORE THAN ONE HOLD. The first hold is the longest of
-         the show, so a window shorter than it can legitimately catch no cut at
-         all and call the wall dead. */
-      const shots: string[] = [];
-      for (let i = 0; i < 22; i++) {
-        shots.push(
-          await page.locator('.splash-stage canvas').evaluate((el) => {
-            const c = el as HTMLCanvasElement;
-            const g = c.getContext('2d')!;
-            // A cheap fingerprint of the wall: a few pixels, far apart.
-            /* A COARSE GRID, not four points. The photographs this replaced
-               differed at almost any single pixel; the drawn panels are large
-               flat shapes, so one fixed point can sit on the same colour
-               either side of a cut and report that nothing happened. Sixty
-               samples spread over the wall cannot all be fooled at once. */
-            const px: string[] = [];
-            for (let y = 40; y < 700; y += 90) {
-              for (let x = 40; x < 400; x += 45) {
-                const d = g.getImageData(x, y, 1, 1).data;
-                px.push(`${d[0]},${d[1]},${d[2]}`);
-              }
-            }
-            return px.join('|');
-          }),
-        );
-        await waitForFrames(page, 3);
-      }
-      return new Set(shots).size;
-    };
+    /* ONE ROUND-TRIP PER WINDOW. The sampling loop runs inside the page and
+       returns a count, rather than the harness stepping frames and reading
+       pixels forty-four times.
 
-    const early = await sample();
-    await page.waitForTimeout(2200);
-    const late = await sample();
+       That was the actual cost of the first two versions of this test — not
+       the pixels but the round-trips. It passed alone and timed out at thirty
+       seconds under a full parallel suite, twice, because each `evaluate` and
+       each frame-step is a message across the wire and this was doing about
+       ninety of them.
+
+       Six patches rather than single pixels: one fixed pixel can sit on the
+       same flat colour either side of a cut and report the wall dead, which is
+       how the drawn panels broke the original. A patch cannot be fooled that
+       way. */
+    /* The canvas is resolved ONCE, up front. It is removed from the DOM when
+       the reveal lands at 4.35s, and a locator resolved after that point waits
+       thirty seconds for an element that is never coming back — which is
+       exactly how this test timed out even running alone. Everything below has
+       to finish inside the show. */
+    const stage = await page.locator('.splash-stage canvas').elementHandle();
+    const sample = (ms: number) =>
+      stage!.evaluate((el, span) => {
+        const c = el as HTMLCanvasElement;
+        const g = c.getContext('2d')!;
+        const patches = [
+          [60, 90],
+          [280, 200],
+          [140, 350],
+          [320, 470],
+          [80, 560],
+          [240, 650],
+        ];
+        const seen = new Set<string>();
+        const started = performance.now();
+        return new Promise<number>((resolve) => {
+          const tick = () => {
+            const px: string[] = [];
+            for (const [x, y] of patches) {
+              const d = g.getImageData(x as number, y as number, 10, 10).data;
+              let r = 0;
+              let gr = 0;
+              let b = 0;
+              for (let i = 0; i < d.length; i += 4) {
+                r += d[i] as number;
+                gr += d[i + 1] as number;
+                b += d[i + 2] as number;
+              }
+              const n = d.length / 4;
+              px.push(`${Math.round(r / n)},${Math.round(gr / n)},${Math.round(b / n)}`);
+            }
+            seen.add(px.join('|'));
+            if (performance.now() - started < span) requestAnimationFrame(tick);
+            else resolve(seen.size);
+          };
+          requestAnimationFrame(tick);
+        });
+      }, ms);
+
+    /* Sampled across MORE THAN ONE HOLD. The first hold is the longest of the
+       show, so a window shorter than it can legitimately catch no cut at all
+       and call the wall dead. */
+    const early = await sample(800);
+    await page.waitForTimeout(700);
+    const late = await sample(800);
 
     // It is cutting at all...
     expect(early, 'the wall never changed').toBeGreaterThan(1);

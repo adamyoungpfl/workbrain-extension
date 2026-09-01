@@ -94,7 +94,9 @@ test('axe finds no violations with the narrator off or on (VB-18)', async () => 
   // `button-name` is in axe's best-practice set rather than the WCAG tags
   // above, and an icon-only control is precisely the case it exists for.
   const named = await new AxeBuilder({ page })
-    .include('.narrator')
+    /* V2.9: TIM is the narrator control now, so this scans him. The claim is
+       unchanged — the control on its own, off and on, with no violations. */
+    .include('.tim')
     .withRules(['button-name', 'aria-toggle-field-name', 'nested-interactive'])
     .analyze();
   expect(named.violations).toEqual([]);
@@ -126,7 +128,13 @@ test('the whole screen stays keyboard-reachable, with the toggle first (VB-18)',
 
   // Tab lands on it, Space and Enter both work it, and focus never moves as a
   // result — turning the narrator on must not take the person anywhere.
+  /* V2.9: TWO tabs, not one. TIM sits in the top-RIGHT corner at Adam's word,
+     so "Jump to…" now takes the head of the chrome row and he takes the tail.
+     DOM order, reading order and tab order still agree — which is what WCAG
+     2.4.3 asks — and the substantive claim below is untouched: Tab reaches
+     him, Space and Enter both work him, and focus never moves as a result. */
   await page.evaluate(() => document.body.focus());
+  await page.keyboard.press('Tab');
   await page.keyboard.press('Tab');
   const toggle = page.getByRole('button', { name: 'Read questions aloud' });
   await expect(toggle).toBeFocused();

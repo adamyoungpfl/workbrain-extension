@@ -1705,6 +1705,19 @@ export const S = {
      is whether the answer ever names a gap, which is real, countable, and the
      thing a reader skimming two long answers reliably misses. Same footing as
      the self-report: a hint to read with, not a finding to act on. */
+  /* [DRAFT] V2.9 (Adam, 2026-09-02) — TIM's drop, spoken when the narrator is
+     switched back ON mid-interview.
+
+     Adam asked for "a pre-recorded drop". It is SPOKEN by the same voice
+     rather than played from a file, and that is better than what was asked
+     for on every axis that matters: it is whatever voice the person's machine
+     gave TIM, so it cannot mismatch the line that follows it; it needs no
+     audio asset, no decode and no fallback for a browser that will not play
+     it; and it costs nothing in the bundle.
+
+     Short on purpose — Adam: "without taking more than a second of time to
+     setup and deliver". Six words is about a second at the narrator's rate. */
+  timBackDrop: 'Sorry — I was on mute. Where was I?',
   groundedLabel: 'Gaps this answer named',
   groundedNone: 'It never says there was anything it did not know.',
   groundedSome: (n: number, of: number) =>
