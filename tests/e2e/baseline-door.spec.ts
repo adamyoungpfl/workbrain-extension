@@ -42,7 +42,7 @@ test.describe('the baseline door', () => {
     await context.close();
   });
 
-  test('answering it brings up the offer, and passing carries on into the interview', async () => {
+  test('answering it brings up the offer, and passing leaves for Home', async () => {
     const { context, page } = await open();
     await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
     await page.waitForSelector('.flow');
@@ -51,17 +51,34 @@ test.describe('the baseline door', () => {
     await page.locator('.flow .field').first().fill('Draft my Monday update the way I would.');
     await page.getByRole('button', { name: 'Next', exact: true }).click();
 
-    // The offer, with their own words as the task and NO DRAWER — the file
-    // does not exist yet, so there is nothing for it to show.
+    // The offer, with NO DRAWER — the file does not exist yet, so there is
+    // nothing for it to show.
     await expect(page.locator('.baselineoffer')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('.baselineoffer-task')).toContainText('Draft my Monday update');
     await expect(page.locator('.filedrawer')).toHaveCount(0);
 
-    // Passing costs nothing and the interview carries on — `findPosition`
-    // resumes at the first unanswered step, which is orientation's opening.
+    /* SUPERSEDED 2026-09-01, at Adam's word, and recorded rather than quietly
+       rewritten.
+
+       This assertion used to read "passing costs nothing and the interview
+       carries on", and it was right for the screen it was written against: the
+       offer was a step somebody could decline on the way past. Two things
+       changed it.
+
+       The prompt is no longer restated here, so this screen is no longer part
+       of the goal question — it is an errand, and an errand somebody declines
+       is an errand they leave. And "Not now" landing on question one made the
+       bail-out a door into the very thing being declined, which is the one
+       thing a bail-out must not be.
+
+       WHAT THE OLD ASSERTION PROTECTED SURVIVES: passing still costs nothing,
+       the interview is still identical for anybody who never saw this, and the
+       proof's own baseline still runs later. Home is where starting lives, so
+       nothing is out of reach — it is one press further away, and that press
+       is the person's. */
     await page.getByRole('button', { name: S.baselineLater, exact: true }).click();
     await expect(page.locator('.baselineoffer')).toHaveCount(0);
-    await expect(page.locator('.flow')).toHaveCount(1);
+    await expect(page.locator('.flow')).toHaveCount(0);
+    await expect(page.locator('.home')).toBeVisible({ timeout: 10_000 });
 
     await context.close();
   });

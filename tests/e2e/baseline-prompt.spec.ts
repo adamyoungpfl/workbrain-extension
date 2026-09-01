@@ -427,3 +427,72 @@ test('the offer screen fills the panel too — no dock hole, no scroll', async (
     await context.close();
   }
 });
+
+test('the offer screen is laid out like the question before it', async () => {
+  const { context, page } = await openBaseline(true);
+  try {
+    await page.waitForSelector('.prompt-tw');
+    // The same header, with the same bar in the same state: this screen is an
+    // errand from the goal question, not a step past it, and a header that
+    // changes shape between two screens of one path reads as two designs.
+    /* Compared through the progressbar's own ARIA values, not its pixels. That
+       is the stable contract — where the bar says the person is — and it does
+       not break the day the bar is redrawn. (My first pass compared
+       `.flowprogress-run`, which is the run beat, not the bar at all.) */
+    const bar = page.locator('[role="progressbar"]');
+    const goalBar = await bar.evaluate((el) => ({
+      now: el.getAttribute('aria-valuenow'),
+      max: el.getAttribute('aria-valuemax'),
+    }));
+
+    await page.locator('.prompt-tw').first().click();
+    await page.getByRole('button', { name: /Next/ }).click();
+    await page.waitForSelector('.baselineoffer');
+
+    await expect(page.locator('.flowprogress')).toContainText(S.baselineEyebrow);
+    const offerBar = await bar.evaluate((el) => ({
+      now: el.getAttribute('aria-valuenow'),
+      max: el.getAttribute('aria-valuemax'),
+    }));
+    // Nothing advanced: this screen is an errand from the goal question, and
+    // the bar says nothing advanced.
+    expect(offerBar).toEqual(goalBar);
+
+    // The prompt is NOT restated — it is on their clipboard and was on the
+    // screen before in their own words.
+    await expect(page.locator('.baselineoffer-task')).toHaveCount(0);
+
+    // The box takes the room, the way the previous screen's does, and the note
+    // sits on the bottom edge with nothing to scroll.
+    const { boxH, saveBottom, viewport, overflow } = await page.evaluate(() => ({
+      boxH: Math.round(document.querySelector('textarea.field')!.getBoundingClientRect().height),
+      saveBottom: Math.round(document.querySelector('.flow-save')!.getBoundingClientRect().bottom),
+      viewport: window.innerHeight,
+      overflow: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+    }));
+    expect(boxH).toBeGreaterThan(240);
+    expect(viewport - saveBottom).toBeLessThanOrEqual(12);
+    expect(overflow).toBe(0);
+
+    // One centred action with the bail-out under it, in that order.
+    const doors = await page.locator('.baselineoffer-doors button').allTextContents();
+    expect(doors).toEqual([S.baselineGo, S.baselineLater]);
+  } finally {
+    await context.close();
+  }
+});
+
+test('"Not now" leaves for Home instead of walking deeper into the interview', async () => {
+  const { context, page } = await openBaseline(true);
+  try {
+    await toBaselineOffer(page);
+    await page.getByRole('button', { name: S.baselineLater }).click();
+    await page.waitForTimeout(400);
+    // It used to mark the baseline passed and advance to question one, which
+    // made the bail-out a door into the very thing somebody was declining.
+    await expect(page.locator('.baselineoffer')).toHaveCount(0);
+    await expect(page.locator('.flow--prompt')).toHaveCount(0);
+  } finally {
+    await context.close();
+  }
+});

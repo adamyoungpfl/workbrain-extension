@@ -1,7 +1,18 @@
 import { useState } from 'react';
-import { Button, Field } from '../components';
+import { Button, Field, FlowProgress } from '../components';
 import { S } from '../strings';
 import './BaselineOffer.css';
+
+/* THE BAR CARRIES THE PREVIOUS SCREEN'S NUMBERS, deliberately.
+
+   This screen is not a question in the interview — it sits between the goal
+   gate and question one — so it has no index of its own. Given a total of 1 it
+   drew one solid filled line where the screen before it draws four segments
+   with two lit, and a header that changes shape between two screens of one
+   path is the opposite of what "keep the header consistent" asks for.
+
+   So it reports where the person actually is: still at the goal question, on
+   an errand. Nothing has advanced, and the bar says nothing has. */
 
 /**
  * D1 (docs/MEASUREMENT-SPINE.md) — the one moment a true baseline can be taken.
@@ -30,6 +41,10 @@ import './BaselineOffer.css';
 export interface BaselineOfferProps {
   /** The person's own goal, verbatim — the task all three stages answer. */
   task: string;
+  /** The goal question's own position, so the header does not change shape
+   *  between the two screens of this path. See the note above. */
+  current: number;
+  total: number;
   /**
    * Save the run. Called the moment the answer LANDS, before either door is
    * picked — a baseline somebody took is theirs whichever way they leave this
@@ -41,11 +56,17 @@ export interface BaselineOfferProps {
   onContinue: () => void;
   /** Passed on without running it. The interview carries on as it would have. */
   onSkip: () => void;
-  /** The fork's second door. Absent means the door is not offered. */
+  /**
+   * Home. Used by three things now: the header's mark, the fork's second door,
+   * and "Not now" — which is a real bail-out rather than a skip deeper into
+   * the interview (Adam, 2026-09-01). Somebody who does not want to run this
+   * does not want the next fifty questions either, and Home is where starting
+   * lives.
+   */
   onHome?: (() => void) | undefined;
 }
 
-export function BaselineOffer({ task, onRecord, onContinue, onSkip, onHome }: BaselineOfferProps) {
+export function BaselineOffer({ task, current, total, onRecord, onContinue, onSkip, onHome }: BaselineOfferProps) {
   const [pasted, setPasted] = useState('');
   const [copied, setCopied] = useState(false);
   /* THE FORK (Adam, 2026-09-01). Pressing the primary button used to record
@@ -68,6 +89,12 @@ export function BaselineOffer({ task, onRecord, onContinue, onSkip, onHome }: Ba
   if (landed !== null) {
     return (
       <div className="flow baselineoffer" data-position="baseline-landed">
+        <FlowProgress
+          title={S.baselineEyebrow}
+          current={current}
+          total={total}
+          {...(onHome ? { onHome } : {})}
+        />
         {/* Polite, not assertive: the answer arriving is not an alert, and
             nothing here takes focus (docs/GUARDRAILS.md). */}
         <p className="baselineoffer-saved" role="status">
@@ -101,38 +128,35 @@ export function BaselineOffer({ task, onRecord, onContinue, onSkip, onHome }: Ba
   }
 
   return (
-    // `.flow` as well as its own class, the way RunCard and ModuleIntro root
-    // themselves: this is a screen ON the flow surface and takes the surface's
-    // frame, its reserve above the drawer and its save note.
+    /* LAID OUT LIKE THE QUESTION BEFORE IT (Adam, 2026-09-01): same eyebrow,
+       a body set in the question's own type, the box under it, the action
+       under that. Arriving here should feel like the next step of one path
+       rather than a different kind of screen — which it did not, when this had
+       its own title, its own restated prompt and its own copy button stacked
+       above a small field. */
     <div className="flow baselineoffer" data-position="baseline-offer">
-      <h2 className="baselineoffer-title">{S.baselineTitle}</h2>
-      <p className="baselineoffer-body">{S.baselineBody}</p>
+      <FlowProgress
+        title={S.baselineEyebrow}
+        current={current}
+        total={total}
+        {...(onHome ? { onHome } : {})}
+      />
 
-      {/* THE TASK READS AS A QUESTION, because that is what it is.
+      {/* THE BODY IS THE QUESTION. There is no title above it any more: on
+          this screen the instruction is the only content, and a heading
+          summarising a two-line instruction was a label on a label. */}
+      <h2 className="flow-q baselineoffer-body">{S.baselineBody}</h2>
 
-          The first build put it in `ReadOnlyBlock` — the violet trust chrome
-          with a copy button that every AI-facing prompt in this product wears.
-          Wrong here twice over: this is the person's OWN sentence rather than
-          something we assembled for a machine, so the chrome is claiming a
-          provenance it does not have; and the copy button offers a second way
-          to do the thing the box below already asks for, on a screen whose
-          whole job is one small action. Adam, 2026-08-31: remove the purple
-          background and that copy button, inherit the interview's design.
+      {/* THE PROMPT IS NOT RESTATED. It was on the previous screen in the
+          person's own words, it is on their clipboard, and printing it again
+          here made the screen about the prompt when it is about what to do
+          with it. Adam: "don't restate the prompt they created."
 
-          So it is `.flow-q`, the interview's own question type — the screen a
-          person has just come from, and the one they are about to spend fifty
-          questions in. */}
-      <p className="flow-q baselineoffer-task">{task}</p>
-
-      {/* THE COPY BUTTON, on its own rather than inside `ReadOnlyBlock`'s
-          chrome. The chrome went because it claimed a provenance this sentence
-          does not have — these are the person's own words, not a prompt we
-          assembled — but the COPYING was never the problem: the screen asks
-          somebody to take this to their AI, and making them select a paragraph
-          by hand is asking them to do the one thing a button does better. */}
+          What survives is the way back to it, as a line rather than a control
+          — for anybody whose clipboard has moved on. */}
       <button
         type="button"
-        className="baselineoffer-copy"
+        className="baselineoffer-recopy"
         onClick={() => {
           navigator.clipboard?.writeText(task).then(
             () => {
@@ -143,25 +167,29 @@ export function BaselineOffer({ task, onRecord, onContinue, onSkip, onHome }: Ba
           );
         }}
       >
-        {copied ? S.baselineCopied : S.baselineCopy}
+        {copied ? S.baselineRecopied : S.baselineRecopy}
       </button>
 
-      <Field
-        id="baseline-paste"
-        label={S.baselineGo}
-        value={pasted}
-        onChange={setPasted}
-        as='textarea'
-        rows={5}
-      />
+      <div className="flow-answer">
+        <div className="flow-field-sr-label">
+          <Field
+            id="baseline-paste"
+            label={S.baselineBody}
+            value={pasted}
+            onChange={setPasted}
+            as="textarea"
+          />
+        </div>
+      </div>
 
+      {/* One centred action with the bail-out under it, which is the shape
+          this screen's decision actually has: one thing to do, and a way out
+          that is not a competing choice. */}
       <div className="baselineoffer-doors">
         <Button
           type="button"
           variant="primary"
           disabled={!ready}
-          /* Does NOT leave the screen. The answer is held, the fork is shown,
-             and `onDone` is what the fork's own primary door calls. */
           onClick={() => {
             const answer = pasted.trim();
             onRecord(answer);

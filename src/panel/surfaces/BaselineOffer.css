@@ -6,6 +6,78 @@
   flex-direction: column;
   gap: 10px;
 }
+
+/* ── THE GOAL SCREEN'S COMPOSITION, ON THIS SCREEN ────────────────────────
+   Header, a body set as the question, the box, the action, the note. The
+   numbers are the ones `.flow--prompt` uses, because the point is that the two
+   screens read as one path rather than as two designs. */
+/* `.flow-q` carries `flex-grow: 1` — that is how the interview's question zone
+   claims its share — and inside this column it meant the HEADING absorbed all
+   the slack, opening 260px between the instruction and the box. Here the
+   heading is content and the box is what grows. */
+.baselineoffer .baselineoffer-body {
+  flex: 0 0 auto;
+  margin: 14px 0 2px;
+}
+/* The box takes the room, the same way the previous screen's does: on a screen
+   whose whole job is one paste, the field IS the screen. */
+/* `.flowshell .flow-answer` is `flex: 0 1 auto` — VB-117's rule that the answer
+   area HUGS its content so the nav follows the box. Right for a question in the
+   interview; wrong here, where the box is the screen. Same specificity as that
+   rule and in a different file, so it is qualified by the shell rather than
+   left to depend on which stylesheet the bundler happens to emit last. */
+.flowshell--bare .baselineoffer .flow-answer {
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
+}
+.baselineoffer .flow-field-sr-label,
+.baselineoffer .flow-field-sr-label > div {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  flex-direction: column;
+}
+.baselineoffer .flow-answer textarea.field {
+  flex: 1;
+  min-height: 140px;
+  max-height: none;
+  border-radius: 16px;
+  padding: 15px 17px;
+}
+
+/* The way back to the prompt. A line, not a control — the copying itself now
+   happens on the press that left the previous screen, and this only exists for
+   a clipboard that has moved on. */
+.baselineoffer-recopy {
+  align-self: flex-start;
+  min-height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--ink-2);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+.baselineoffer-recopy:hover {
+  color: var(--primary);
+}
+
+/* One centred action with the bail-out under it — the real shape of this
+   screen's decision: one thing to do, and a way out that is not competing
+   with it for the same row. */
+.baselineoffer .baselineoffer-doors {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.baselineoffer .baselineoffer-doors .btn {
+  width: 100%;
+}
 .baselineoffer-title {
   margin: 0;
   font-size: var(--type-h2);
@@ -101,6 +173,11 @@
 .flowshell--bare .baselineoffer {
   height: 100%;
 }
-.flowshell--bare .baselineoffer .flow-save {
+/* ONLY ON THE LANDED SCREEN. An `auto` margin absorbs a flex container's free
+   space BEFORE `flex-grow` is distributed, so this rule applied to the offer
+   was quietly outbidding `.flow-answer { flex: 1 }` — the box stayed at its
+   140px floor and the slack piled up under the buttons instead. The landed
+   screen has no growing box, so there it is exactly right. */
+.flowshell--bare .baselineoffer[data-position='baseline-landed'] .flow-save {
   margin-top: auto;
 }

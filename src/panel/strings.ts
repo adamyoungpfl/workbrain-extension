@@ -1666,9 +1666,17 @@ export const S = {
      It asks for real work at the highest-friction moment in the product, so it
      says what the work BUYS in the same breath, and "later" is a real answer
      that costs nothing. [DRAFT] */
+  /* [DRAFT] The title is RETIRED (Adam, 2026-09-01). On this screen the
+     instruction is the only content, and a heading summarising a two-line
+     instruction was a label on a label. Kept as a string because the surface
+     still names the run in its own aria plumbing.
+
+     REWRITTEN so the screen reads like the question before it: same eyebrow,
+     a body set in the question's own type, the box under it, the action under
+     that. Arriving here should feel like the next step of one path. */
   baselineTitle: 'Run it once with nothing loaded',
   baselineBody:
-    'Paste this into your AI now and keep what comes back. It is the only chance to record where you started — everything after this has your file in it.',
+    'Your prompt is copied. Paste it into your AI, copy what it writes back, and paste that here.',
   /* The eyebrow on the baseline question. It replaces the module's own title
      ("Orientation") because this screen is not orientation — it is the one
      measurement the whole product is built to move, and naming it is what
@@ -1686,7 +1694,17 @@ export const S = {
   seedTake: (seed: string) => `Use this example: ${seed}`,
   baselineCopy: 'Copy the question',
   baselineCopied: 'Copied',
-  baselineGo: 'I ran it — paste what came back',
+  /* Names the RESULT, not the housekeeping. "I ran it — paste what came back"
+     described the mechanic; this says what the press is for. */
+  baselineGo: 'Establish my baseline',
+  /* The copy that used to be this screen's most prominent control now happens
+     on the press that LEAVES the previous screen. This is the way back for
+     anybody whose clipboard has moved on since — a line, not a feature. */
+  baselineRecopy: 'Copy my prompt again',
+  baselineRecopied: 'Copied',
+  /* A real bail-out to Home now, rather than a skip deeper into the interview
+     (Adam, 2026-09-01). Somebody who does not want to run this does not want
+     the next fifty questions either, and Home is where starting lives. */
   baselineLater: 'Not now',
   baselineSaved: 'Saved as your starting point.',
   /* [DRAFT] THE FORK, after the answer has landed (Adam, 2026-09-01). Two

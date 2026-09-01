@@ -1178,9 +1178,21 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
       <div className="flowshell flowshell--bare" style={{ '--flow-area-offset': '0px' } as CSSProperties}>
       <BaselineOffer
         task={baselineTask}
+        current={positionForQuestionId(modules, 'goal_want') ? topLevelIndex(modules, positionForQuestionId(modules, 'goal_want')!) : total}
+        total={total}
+        /* "NOT NOW" LEAVES, rather than skipping deeper in (Adam, 2026-09-01).
+           It used to mark the baseline passed and walk on into question one,
+           which made the bail-out a door into the very thing somebody was
+           declining. It goes Home, where starting lives — and still marks the
+           baseline taken, because the window for a true one has closed either
+           way and re-offering it later would be measuring the wrong moment.
+
+           If there is no Home to go to, the old behaviour stands: better to
+           carry on than to strand somebody on a screen with no way off. */
         onSkip={() => {
           setBaselineTaken(true);
-          onBaselineDone?.();
+          if (onHome) onHome();
+          else onBaselineDone?.();
         }}
         /* Saved on landing, before the fork is answered. Whichever door they
            take, the run they just performed is theirs. */
@@ -1941,6 +1953,23 @@ function StepView({
       return;
     }
     const { step, location } = pos;
+
+    /* THE BASELINE PROMPT COPIES ITSELF ON THE WAY OUT (Adam, 2026-09-01).
+       Leaving this screen IS taking the prompt to their AI, so the copy that
+       used to be the next screen's most prominent control happens here, on the
+       press that means "I am going". The next screen then only has to say what
+       to do with it, and keeps a quiet way to copy it again for anybody whose
+       clipboard moved on.
+
+       Best-effort and silent: a rejected clipboard costs nothing, because the
+       copy-again link is still there and the answer is on the previous screen.
+       Never blocks the advance — the press is a navigation, and a failed
+       convenience must not hold it up (docs/GUARDRAILS.md: degradation is
+       silent). */
+    if (bare) {
+      const prompt = draftText.trim();
+      if (prompt !== '') navigator.clipboard?.writeText(prompt).catch(() => {});
+    }
 
     // BS-03d: before the generic intro/demo skip below — the judge screen is
     // a `demo` (nothing to copy, nothing to paste) but it is the one that
