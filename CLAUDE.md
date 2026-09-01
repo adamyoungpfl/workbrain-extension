@@ -66,6 +66,8 @@ npm run e2e          # playwright, loads dist/ as an unpacked extension
 npm run a11y         # axe-core pass over panel surfaces
 npm run audit        # guardrail checks — deps, core purity, permissions, copy location, reading level
 npm run check        # typecheck + audit + test + build + e2e + a11y — the gate before you say "done"
+npm run check:fast   # the half needing no browser — typecheck + audit + unit + build (~30s)
+npm run check:e2e    # the half that does — build + e2e + a11y (~6 min on an idle machine)
 ```
 
 Load unpacked: `chrome://extensions` → Developer mode → Load unpacked → select `dist/`.
@@ -123,6 +125,16 @@ from a list of names. Same gate, same reasoning, same proof — `src/panel/voice
 4. **Tests with fixtures.** `tests/fixtures/` holds synthetic data with known expected outputs.
    Anything in `core/audit` or `core/report` gets a test asserting exact numbers against a fixture.
 5. **Run `npm run check` before claiming a task is finished.** A task with a failing check is not finished.
+   Use `check:fast` while iterating — thirty seconds, and it catches most of what breaks. The full
+   gate is still what "done" means.
+
+   **The suite is timing-sensitive and this machine is also a workstation.** On 2026-09-02 the full
+   gate ran 6 minutes and green while the machine was idle, and 11–21 minutes with nine to twelve
+   animation tests failing while Chrome and an editor were open — every one of them passing again
+   run serially. If a run comes back red with timing tests in it, re-run the failing FILES with
+   `--workers=2` before believing it. CI (`.github/workflows/check.yml`) exists to take that
+   judgement call away: the same two commands on a machine doing nothing else, with `retries: 2`
+   on, reporting a blip as *flaky* rather than as a failure.
 6. **Ask rather than assume** on anything in `docs/OPEN.md`. Those are unresolved product decisions,
    not gaps for you to fill.
 
