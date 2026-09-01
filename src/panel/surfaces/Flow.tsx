@@ -115,7 +115,7 @@ import { heldLineOptions, offeredLineOptions, usesDividedLine } from '../../core
 import { PAIR_CAPTIONS, pairFor, pairedStepsFor, usesPairedPick } from '../../core/choice/pairedPick';
 import { LINE_CUSTOM_GLYPH, PAIR_GLYPHS, PERSONA_GLYPHS, ROLE_FOR_GLYPHS, SCOPE_GLYPHS } from '../components/choiceGlyphs';
 import { ideaAt, ideasFor } from '../../core/flow/ideas';
-import { generatedNameAt, travelsLight, usesNameGenerator } from '../../core/flow/nameGenerator';
+import { generatedNameAt, promptOnly, travelsLight, usesNameGenerator } from '../../core/flow/nameGenerator';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { assistServiceUrlFor } from '../../core/flow/assistServices';
 import { goalServiceLabelFor, reflectLeadFor, reflectVoiceLine } from '../../core/flow/reflectFrames';
@@ -1235,7 +1235,12 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
     );
   }
 
-  return withDrawer(
+  /* THE BASELINE SCREEN GETS NO DRAWER. The file does not exist yet, so the
+     drawer would be showing an empty version of the product's most complicated
+     affordance at the one moment somebody is being taught to type an order.
+     Same call the baseline offer makes two screens later, for the same
+     reason. */
+  const stepView = (
     <StepView
       key={positionKey(position)}
       cue={positionKey(position)}
@@ -1255,8 +1260,24 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
       onFixSteps={onFixSteps}
       onJumpTo={outline ? jumpToQuestion : undefined}
       jumpList={jumpList}
-    />,
+    />
   );
+
+  /* THE BASELINE SCREEN GETS A SHELL THAT RESERVES NOTHING.
+     It cannot use `withDrawer` — there is no drawer — but it cannot go bare
+     either: `.flow`'s `min-height: calc(100dvh - var(--flow-area-offset))`
+     falls back to 262px without one, so the surface collapsed to the top third
+     of the panel and left the wallpaper showing underneath. Its own shell sets
+     the offset to zero, and the form fills the panel the way a composer
+     does. */
+  if (position.kind === 'step' && promptOnly(position.step)) {
+    return (
+      <div className="flowshell flowshell--bare" style={{ '--flow-area-offset': '0px' } as CSSProperties}>
+        {stepView}
+      </div>
+    );
+  }
+  return withDrawer(stepView);
 }
 
 /** Fires `onDone` once, before paint, and renders nothing — see `onDone`'s
@@ -2040,6 +2061,12 @@ function StepView({
     };
   })();
 
+  /* THE BASELINE SCREEN'S OWN SHAPE (core/flow/nameGenerator.ts's
+     `promptOnly`). Read here rather than inside the step body because what it
+     changes is the SURFACE — the chrome row, the progress label and the drawer
+     — not the question. */
+  const bare = pos.kind === 'step' && promptOnly(pos.step);
+
   const topSection = (
     <>
       {/* BS-05f (§5) — "Jump to…", beside the narrator's own toggle. Both
@@ -2063,14 +2090,22 @@ function StepView({
           home. `home.spec` caught it as a 30-second timeout clicking a button
           that was visible, enabled, and underneath something. A control that
           costs the row no pixels still costs somebody else's pixels. */}
-      <div className="flow-chrome">
-        <NarratorToggle />
-        {onJumpTo && (
-          <button type="button" className="flow-jump" onClick={() => setJumpOpen(true)}>
-            {S.jumpOpen}
-          </button>
-        )}
-      </div>
+      {/* THE BASELINE SCREEN CARRIES NO CHROME (core/flow/nameGenerator.ts's
+          `promptOnly`). The narrator toggle and Jump to… are both ways around
+          a fifty-question interview, and this screen is a prompt box — the one
+          shape somebody who has never given an AI an order already recognises.
+          Anything that says "interview" works against the thing it is trying
+          to teach. */}
+      {!bare && (
+        <div className="flow-chrome">
+          <NarratorToggle />
+          {onJumpTo && (
+            <button type="button" className="flow-jump" onClick={() => setJumpOpen(true)}>
+              {S.jumpOpen}
+            </button>
+          )}
+        </div>
+      )}
       {onJumpTo && (
         <JumpSheet
           open={jumpOpen}
@@ -2083,7 +2118,9 @@ function StepView({
         />
       )}
       <FlowProgress
-        title={moduleFor(modules, pos)?.title ?? ''}
+        /* "AI baseline", not "Orientation": this screen is not orientation, it
+           is the one measurement the whole product is built to move. */
+        title={bare ? S.baselineEyebrow : (moduleFor(modules, pos)?.title ?? '')}
         current={topLevelIndex(modules, pos)}
         total={total}
         onHome={onHome}
@@ -2536,7 +2573,7 @@ function StepView({
 
   return (
     <form
-      className="flow"
+      className={bare ? 'flow flow--prompt' : 'flow'}
       data-position="step"
       data-step-id={step.id}
       {...stopHere}
@@ -2621,7 +2658,15 @@ function StepView({
               </div>
             </div>
           )}
-          <QuestionHelp step={step} onDisclose={narrateFollowUp} stoppedBy={reasonFor(rotation)} />
+          {/* Adam: "remove the follow up question, this one can stand on its
+              own". A question that needs two follow-ups to be answerable has a
+              problem the follow-ups are hiding — and on a screen whose job is
+              to look like a prompt box, a row of chips is the clearest signal
+              that it is not one. The HINT still shows: it is the instruction,
+              and every AI composer has placeholder text doing the same job. */}
+          {!bare && (
+            <QuestionHelp step={step} onDisclose={narrateFollowUp} stoppedBy={reasonFor(rotation)} />
+          )}
         </div>
       )}
 

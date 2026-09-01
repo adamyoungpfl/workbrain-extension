@@ -71,6 +71,42 @@ export function travelsLight(step: { id: string }): boolean {
   return TRAVELS_LIGHT.has(step.id);
 }
 
+/**
+ * THE BASELINE SCREEN — a question drawn as a prompt box, not as an interview
+ * step.
+ *
+ * Adam, 2026-08-31: *"I want this to look like a prompt input on a standard AI
+ * service. It needs to feel the same for them to naturally understand how to
+ * just give an order if they are not accustomed to that."*
+ *
+ * That is a teaching goal wearing a visual one, and it is the sharpest thing
+ * this screen can do. Somebody who has never given an AI an instruction does
+ * not learn to from a hint; they learn it from a box that looks like the box
+ * they have seen other people type orders into. So the screen borrows the one
+ * shape everybody already recognises and drops everything that says
+ * "interview".
+ *
+ * WHAT GOES, AND WHY EACH ONE:
+ *   · the drawer — the file does not exist yet, so it would show an empty
+ *     version of the product's most complicated affordance;
+ *   · the narrator toggle and Jump to… — both are ways around a fifty-question
+ *     interview, and this screen is not one;
+ *   · the deep-dives — Adam: "this one can stand on its own", and a question
+ *     that needs two follow-ups to be answerable is a question with a problem
+ *     the follow-ups are hiding;
+ *   · examples and the assist (already, via `travelsLight`) — the answer goes
+ *     straight to their own AI, so an AI writing it automates the input to the
+ *     measurement.
+ *
+ * What stays is a label, a question, a box and one button. That is the whole
+ * of a prompt input, which is the point.
+ */
+const PROMPT_ONLY = new Set(['goal_want']);
+
+export function promptOnly(step: { id: string }): boolean {
+  return PROMPT_ONLY.has(step.id);
+}
+
 export function usesNameGenerator(step: { id: string; kind: string }): boolean {
   return step.kind === 'text' && NAME_GENERATOR_QUESTIONS.includes(step.id);
 }

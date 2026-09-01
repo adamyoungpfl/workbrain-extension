@@ -669,8 +669,8 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
        them" into the prompt and the suite caught it: every authored prompt
        ends in a question mark, and a question with a command bolted on is two
        things pretending to be one. [DRAFT] */
-    prompt: () => 'What would you hand your AI right now?',
-    hint: 'Type it the way you would type it to them. One real task, small enough to run today. Something it can do with what you paste in — not something that needs your inbox. You will run exactly this at the end and watch the difference.',
+    prompt: () => 'If you knew it would be done right, right now — what would you tell your AI to do?',
+    hint: 'Write it as an order, not a wish. One thing, now, in your own words. You will run exactly this and watch the difference.',
     placeholder: 'e.g. Draft my Monday status update the way I would',
     ideas: [
       'Draft a status update for my manager that sounds like me.',

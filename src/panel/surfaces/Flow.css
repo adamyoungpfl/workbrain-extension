@@ -2095,3 +2095,100 @@
   line-height: 1.45;
   color: var(--ink-3);
 }
+
+/* ── THE BASELINE SCREEN, drawn as a prompt box ──────────────────────────
+   Adam, 2026-08-31: "I want this to look like a prompt input on a standard AI
+   service. It needs to feel the same for them to naturally understand how to
+   just give an order if they are not accustomed to that."
+
+   A teaching goal wearing a visual one, and the sharpest thing this screen can
+   do. Somebody who has never given an AI an instruction does not learn to from
+   a hint — they learn it from a box that looks like the box they have seen
+   other people type orders into. So the screen borrows that one shape and the
+   surface drops everything that says "interview" (Flow.tsx's `bare`).
+
+   What is left is a label, a question, a box and one button. */
+
+/* THE BOX TAKES THE ROOM, which is a deliberate divergence from V2.8 VB-137.
+
+   That slice retired the multiline stretch for interview questions, at Adam's
+   word: "a box that grows pushes the buttons away from the typing, and the
+   action buttons are near the input outranks a bigger box is an invitation."
+   Right — for a question in an interview, where the next press is the point.
+
+   This screen is not that. It is a composer, and on a composer the box IS the
+   screen: it is the thing being invited, the buttons are its send, and a large
+   empty field is the single clearest signal that somebody is meant to type
+   something substantial into it. So here, and only here, the answer area
+   stretches and the field fills it. */
+.flow--prompt .flow-answer {
+  flex: 1;
+}
+/* THE BOX IS THREE WRAPPERS DEEP, and every one of them has to pass the room
+   down or the growth stops there and simply opens a gap. `.flow-answer` grows
+   inside the form, `.flow-field-sr-label` grows inside it, `Field`'s own
+   unclassed div grows inside that, and only then does the textarea fill.
+   Every step is `display: flex` because a block box does not hand a share of
+   its height to a child. */
+.flow--prompt .flow-field-sr-label,
+.flow--prompt .flow-field-sr-label > div {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+/* The dictation/assist row rides UNDER the box at its own height. It is a
+   sibling of the field wrapper, so without this it takes an equal share of
+   the slack and pushes the buttons down for nothing. */
+.flow--prompt .flow-idea-row {
+  flex: 0 0 auto;
+}
+/* And the 320px ceiling comes off. It is there so a field cannot become a
+   page — on this screen a field IS the page. */
+.flow--prompt .flow-answer textarea.field {
+  max-height: none;
+}
+.flow--prompt .flow-answer .field {
+  flex: 1;
+  min-height: 168px;
+  border-radius: 16px;
+  border-color: var(--border-i);
+  padding: 15px 17px;
+  font-size: var(--type-body);
+  line-height: 1.55;
+}
+.flow--prompt .flow-answer .field:focus {
+  border-color: var(--primary);
+  box-shadow:
+    inset 1px -1px 2px rgba(21, 24, 29, 0.06),
+    0 0 0 4px var(--primary-tint);
+}
+
+/* The question sits closer to the box than an interview question does: on a
+   composer the label and the field are one object, not two. */
+.flow--prompt .flow-q-row {
+  margin-bottom: 2px;
+}
+
+/* And the cluster reads as a send: one filled control, no second word beside
+   it competing for the press. Skip stays — the screen is still skippable, and
+   a baseline nobody can decline is a step rather than an offer — but it sits
+   back where a composer's secondary sits. */
+.flow--prompt .flow-foot {
+  padding-top: 4px;
+}
+
+/* The baseline screen's shell. It exists only to hand the form a zero
+   reservation — there is no dock to reserve for — and to paint the panel's own
+   ground under it, which `.flowshell` normally leaves to the dock's palette. */
+.flowshell--bare {
+  min-height: 100dvh;
+  background: var(--ground);
+}
+/* The save note is `position: fixed` inside a normal shell so it rides above
+   the dock. There is no dock here, so it sits where it falls — at the end of
+   the form, which is where a composer's fine print goes. */
+.flowshell--bare .flow-save {
+  position: static;
+  padding-top: 14px;
+}
