@@ -169,7 +169,13 @@ export function countAt(t: number): number {
 
 /** Adam: "have the entire question seem to rotate like a rolodex". */
 const ROLODEX_STARTS = 3.0;
-const ROLODEX_TURN_MS = 620;
+/**
+ * EXPORTED BECAUSE THE STYLESHEET NEEDS THE SAME NUMBER. The turn is drawn by
+ * a CSS keyframe and counted here, and a duration written in both places is
+ * one a re-timing changes in one of them. The panel hands this to the
+ * stylesheet as a custom property; nothing hard-codes 620 anywhere else.
+ */
+export const ROLODEX_TURN_MS = 620;
 const ROLODEX_REST_MS = 900;
 /**
  * THREE TURNS, THEN STILL — a deliberate departure from "shows the same thing
@@ -215,9 +221,22 @@ export function rolodexAt(t: number): Rolodex {
  * Adam: "'The file is yours from start to finish' and then it fades out and is
  * replaced by 'Nothing leaves your browser' fading in and then out."
  *
- * They alternate rather than ending on nothing. Two claims that both matter,
+ * They take turns rather than ending on nothing. Two claims that both matter,
  * in a space with room for one — an empty slot between them would read as a
  * section that had finished and left.
+ *
+ * ── EACH CLAIM SHOWS ONCE, AND THE LAST ONE STAYS ─────────────────────────
+ * Slice 2 cycled them forever, which the filmstrip caught: ten seconds in,
+ * with the doors long since landed, the screen was still swapping a sentence
+ * under somebody's decision. That is the same objection the rolodex answers
+ * with three turns and a rest — a screen asking a question should not still
+ * be moving while it is being answered — and it applies harder here, because
+ * a changing SENTENCE asks to be re-read in a way a turning card does not.
+ *
+ * So each claim gets its moment and the second one holds. As the numbers
+ * stand that makes this the LAST thing on the screen to stop — the second
+ * claim lands at 7.56s, nine tenths of a second after the rolodex's final
+ * turn — so `REVEAL_REST` is this, and re-timing either device moves it.
  */
 export const PRIVACY_LINES = 2;
 const LINE_STARTS = 4.5;
@@ -236,12 +255,32 @@ export function privacyLineAt(t: number): PrivacyLine {
   const cycle = fade * 2 + hold;
   if (t <= LINE_STARTS) return { index: 0, opacity: 0 };
   const into = t - LINE_STARTS;
-  const index = Math.floor(into / cycle) % PRIVACY_LINES;
-  const within = into - Math.floor(into / cycle) * cycle;
+  const index = Math.min(PRIVACY_LINES - 1, Math.floor(into / cycle));
+  const within = into - index * cycle;
   if (within < fade) return { index, opacity: within / fade };
+  // The last one does not fade out — there is nothing after it to arrive.
+  if (index === PRIVACY_LINES - 1) return { index, opacity: 1 };
   if (within < fade + hold) return { index, opacity: 1 };
   return { index, opacity: Math.max(0, 1 - (within - fade - hold) / fade) };
 }
+
+/**
+ * THE MOMENT NOTHING IS MOVING ANY MORE — the last claim landed, the last
+ * turn finished, every part at rest.
+ *
+ * Distinct from `REVEAL_SETTLED`, which is when the PARTS stop moving and is
+ * what the still frame renders. The sections keep living for a few seconds
+ * after that, and this is when they stop. Derived rather than typed, so it
+ * cannot go stale: a re-timing of either device moves it.
+ */
+export const REVEAL_REST = Math.max(
+  /* The last TURN ending, not the rest period after it: the rolodex spends its
+     final 900ms already still, and counting that would put the moment nothing
+     moves nearly a second after nothing was moving. */
+  ROLODEX_STARTS +
+    ((ROLODEX_TURNS - 1) * (ROLODEX_TURN_MS + ROLODEX_REST_MS) + ROLODEX_TURN_MS) / 1000,
+  LINE_STARTS + ((PRIVACY_LINES - 1) * (LINE_FADE_MS * 2 + LINE_HOLD_MS) + LINE_FADE_MS) / 1000,
+);
 
 /* ── THE CONNECTOR ───────────────────────────────────────────────────────── */
 

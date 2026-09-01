@@ -3,6 +3,7 @@ import {
   COUNT_FROM,
   COUNT_TO,
   PRIVACY_LINES,
+  REVEAL_REST,
   REVEAL_SETTLED,
   ROLODEX_TURNS,
   countAt,
@@ -207,6 +208,55 @@ describe('privacyLineAt — two claims, one slot', () => {
     let sawFull = false;
     for (let t = 4.5; t < 8; t += 0.02) if (privacyLineAt(t).opacity === 1) sawFull = true;
     expect(sawFull).toBe(true);
+  });
+
+  it('COMES TO REST on the last claim rather than swapping forever', () => {
+    /* Slice 2 cycled these two sentences for as long as the panel was open.
+       A screen that is asking a question should not still be changing a
+       sentence underneath it while somebody decides — the same objection the
+       rolodex answers with three turns and a rest. */
+    for (const t of [20, 60, 600]) {
+      expect(privacyLineAt(t)).toEqual({ index: PRIVACY_LINES - 1, opacity: 1 });
+    }
+  });
+
+  it('shows each claim once, in order, and never goes back', () => {
+    let last = 0;
+    for (let t = 4.5; t < 30; t += 0.02) {
+      const { index } = privacyLineAt(t);
+      expect(index).toBeGreaterThanOrEqual(last);
+      last = index;
+    }
+    expect(last).toBe(PRIVACY_LINES - 1);
+  });
+});
+
+describe('REVEAL_REST — the moment the screen stops moving', () => {
+  it('is after the parts have settled: the sections live on a while', () => {
+    // Distinct claims. The PARTS stop moving at REVEAL_SETTLED, which is what
+    // the still frame renders; the sections inside them keep going.
+    expect(REVEAL_REST).toBeGreaterThan(REVEAL_SETTLED);
+  });
+
+  it('nothing turns, fades or moves after it — ever', () => {
+    const after = REVEAL_REST + 0.01;
+    expect(rolodexAt(after).turning).toBe(false);
+    for (const t of [after, after + 5, after + 300]) {
+      expect(privacyLineAt(t)).toEqual(privacyLineAt(after));
+      for (const part of PARTS) expect(partAt(t, part)).toEqual(partAt(after, part));
+    }
+  });
+
+  it('is late enough to cover the last turn AND the last claim', () => {
+    // Whichever device ends last sets it, so re-timing either keeps it true
+    // rather than leaving a constant behind that used to be right.
+    let lastMotion = 0;
+    for (let t = 0; t < 30; t += 0.01) {
+      if (rolodexAt(t).turning) lastMotion = t;
+      const o = privacyLineAt(t).opacity;
+      if (o > 0 && o < 1) lastMotion = t;
+    }
+    expect(lastMotion).toBeLessThanOrEqual(REVEAL_REST + 0.01);
   });
 });
 

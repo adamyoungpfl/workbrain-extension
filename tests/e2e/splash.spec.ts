@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { ORBIT_STILL } from '../../src/core/geometry/markOrbit';
 import { SPLASH_BEATS } from '../../src/core/splash/sequence';
 import { S } from '../../src/panel/strings';
-import { COUNT_TO, REVEAL_SETTLED } from '../../src/core/splash/reveal';
+import { COUNT_TO, REVEAL_REST, REVEAL_SETTLED, ROLODEX_TURN_MS } from '../../src/core/splash/reveal';
 
 /**
  * V2.7 VB-128 — the splash is the show (docs/V2.7-SPLASH-WOW.md, Option 1):
@@ -576,6 +576,87 @@ test.describe('VB-34 — once per session', () => {
   });
 });
 
+test.describe('V2.9 slice 3 — the sections stop', () => {
+  test('the claims come to rest instead of swapping under the decision', async () => {
+    test.setTimeout(40_000);
+    const { context, page } = await launchPanel();
+    await page.locator('.splashreveal').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* Slice 2 cycled the two claims for as long as the panel was open. The
+       doors land at five seconds; ten seconds in, a sentence was still being
+       swapped underneath somebody's decision. `REVEAL_REST` is when core says
+       the last one has landed — after it, the screen is a picture. */
+    await page.waitForTimeout((REVEAL_REST + 0.5) * 1000);
+    const settled = await page.locator('.splashreveal-line').textContent();
+    expect(settled?.trim()).toBe(S.splashWhatLines[S.splashWhatLines.length - 1]);
+
+    await page.waitForTimeout(4000);
+    expect(await page.locator('.splashreveal-line').textContent()).toBe(settled);
+
+    await context.close();
+  });
+
+  test('the counter streams without the line jogging sideways', async () => {
+    const { context, page } = await launchPanel();
+    const count = page.locator('.splashreveal-count');
+    await count.waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* Thirty numbers land in this slot in under a second. Without tabular
+       figures each one is a different width, and because the line is centred
+       every digit change shoves the words either side of it — which on a
+       counter is the only thing anybody sees. The box is the proof: same
+       left edge, same width, whatever number is in it. */
+    /* Sampled against a DEADLINE rather than a fixed number of polls: the
+       count begins at 2.6s and lasts under a second, and a loop of sixty
+       round trips ran out before it started on a fast machine — which is a
+       test that passes for the wrong reason waiting to happen. */
+    /* MEASURED INSIDE ITS OWN LINE, not against the viewport. The section
+       itself moves up and left while the count is still running, and a
+       viewport measurement reads that choreography as a jog — the first
+       version of this test failed on the last number for exactly that reason
+       and was right about the pixels and wrong about the cause. What a jog
+       IS, is the digits changing width under the words either side of them,
+       so the number's offset within its own paragraph is the thing to hold. */
+    const seen = new Map<string, string>();
+    const until = Date.now() + 5000;
+    while (Date.now() < until) {
+      const sample = await count.evaluate((el) => {
+        const line = el.parentElement;
+        if (!line) return null;
+        const box = el.getBoundingClientRect();
+        const within = line.getBoundingClientRect();
+        return {
+          text: el.textContent ?? '',
+          at: `${(box.left - within.left).toFixed(1)}x${box.width.toFixed(1)}`,
+        };
+      });
+      if (sample) seen.set(sample.text, sample.at);
+      await page.waitForTimeout(25);
+    }
+
+    expect(seen.size, 'the counter really ran').toBeGreaterThan(2);
+    expect(new Set(seen.values()).size, `the box moved: ${[...seen].join(', ')}`).toBe(1);
+
+    await context.close();
+  });
+
+  test('the turn is timed from ONE number — core writes it, the stylesheet reads it', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splashreveal-rolodex').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* The turn is drawn by a CSS keyframe and counted by core. A duration
+       typed in both places is one that a re-timing changes in only one of
+       them — so the panel hands core's number to the stylesheet, and this is
+       the proof the wire is connected. */
+    const duration = await page.locator('.splashreveal-rolodex').evaluate(
+      (el) => getComputedStyle(el).animationDuration,
+    );
+    expect(duration).toBe(`${ROLODEX_TURN_MS / 1000}s`);
+
+    await context.close();
+  });
+});
+
 test.describe('VB-128 — reduced motion', () => {
   test('is the composed reveal immediately, and not one animation frame is scheduled', async () => {
     const { context, page } = await launchPanel({ reduce: true });
@@ -613,7 +694,16 @@ test.describe('VB-128 — reduced motion', () => {
        already landed on its final number rather than mid-stream. */
     await expect(page.locator('.splashreveal-cost')).toBeVisible();
     await expect(page.locator('.splashreveal-count')).toHaveText(String(COUNT_TO));
-    await expect(page.locator('.splashreveal-line')).not.toBeEmpty();
+    /* V2.9 slice 3 — BOTH claims, stacked. The moving version fits two
+       sentences in the room for one by taking turns, and it is the MOTION
+       doing the fitting: a still frame of that shows the first claim and
+       silently drops the second. This is the test that would have caught it,
+       and it is what the title has said all along. */
+    const lines = page.locator('.splashreveal-line');
+    await expect(lines).toHaveCount(S.splashWhatLines.length);
+    for (const claim of S.splashWhatLines) {
+      await expect(page.getByText(claim, { exact: true })).toBeVisible();
+    }
     await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible();
     await expect(page.locator('.splash-drain')).toHaveCount(0);
 

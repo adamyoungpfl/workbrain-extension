@@ -114,6 +114,23 @@ question in turn (`stop()` to stop). It exists so the narrator's voice is chosen
 from a list of names. Same gate, same reasoning, same proof — `src/panel/voice/audition.ts`, and
 `tests/e2e/narrator.spec.ts` greps `dist/` to show it never ships.
 
+**Looking at a sequence (V2.9 slice 3).** `node scripts/film.mjs` writes `film/strip.png` — one
+browser launch, N frames of the real extension, one contact sheet with the time under each frame.
+A screenshot at a single instant says almost nothing about choreography, and relaunching a browser
+per frame is the cost that makes people stop looking. `film/` is gitignored.
+
+```bash
+npm run build
+node scripts/film.mjs --from 2 --to 6 --n 9                       # across the reveal
+node scripts/film.mjs --el ".splashreveal-part[data-part='time']" # one section, big enough to judge
+node scripts/film.mjs --rolodex --from 0 --to 0.62 --n 8          # one CSS turn, posed
+node scripts/film.mjs --still                                     # the reduced-motion frame
+```
+
+`--rolodex` waits for the whole reveal to settle, then restarts the animation paused at a negative
+delay. The shutter is slower than a 620ms turn, so a mid-turn frame has to be POSED rather than
+chased — waiting for one gets whatever the screenshot happens to land on.
+
 ## How to work here
 
 1. **Plan before building.** For anything larger than a single file, produce a plan and check it

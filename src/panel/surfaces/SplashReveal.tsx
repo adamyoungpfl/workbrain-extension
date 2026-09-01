@@ -3,6 +3,7 @@ import { BrandMark } from '../components';
 import {
   COUNT_FROM,
   REVEAL_SETTLED,
+  ROLODEX_TURN_MS,
   countAt,
   linkAt,
   partAt,
@@ -77,6 +78,11 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
+    /* The turn's length, handed to the stylesheet from the same constant that
+       counts the turns. It goes through the DOM rather than through a React
+       style prop for the same reason every other number here does: this is a
+       fact the paint needs, not state. */
+    root.style.setProperty('--rolodex-turn', `${ROLODEX_TURN_MS}ms`);
     const frame = root.getBoundingClientRect();
     const next: Partial<Record<RevealPart, Box>> = {};
     for (const part of PARTS) {
@@ -186,10 +192,20 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
   return (
     <div className="splashreveal" ref={rootRef}>
       {/* Decoration, and says so: the route between two sections carries no
-          information a reader does not already have from the sections. */}
-      <svg className="splashreveal-links" aria-hidden="true" focusable="false">
-        <path ref={pathRef} className="splashreveal-path" fill="none" />
-      </svg>
+          information a reader does not already have from the sections.
+
+          AND SO IT IS NOT IN THE STILL VERSION. Its whole job is to lead the
+          eye INTO something arriving — it draws itself just ahead of the
+          section it points at. Where nothing arrives because everything is
+          already there, it points at nothing, and what is left on a settled
+          screen is a small bright squiggle between two paragraphs. Nothing is
+          lost by dropping it: the guardrail is that the still version keeps
+          the INSTRUCTION, and this line never carried one. */}
+      {!still && (
+        <svg className="splashreveal-links" aria-hidden="true" focusable="false">
+          <path ref={pathRef} className="splashreveal-path" fill="none" />
+        </svg>
+      )}
 
       <div className="splashreveal-part" data-part="lockup" ref={hold('lockup')}>
         <BrandMark size={104} spin="orbit" />
@@ -222,8 +238,27 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
         </p>
       </div>
 
-      <div className="splashreveal-part" data-part="privacy" ref={hold('privacy')}>
-        <p className="splashreveal-line">{S.splashWhatLines[line]}</p>
+      {/* THE TWO CLAIMS: one slot taking turns, or both at once when nothing
+          may move. Alternating is how two sentences fit in the room for one,
+          and it is motion doing the fitting — so under reduced motion the
+          still frame would carry the first claim and quietly drop the second.
+          Stacked, both are kept. The section is a few pixels taller and says
+          everything it was always meant to say. */}
+      <div
+        className="splashreveal-part"
+        data-part="privacy"
+        data-still={still ? 'on' : 'off'}
+        ref={hold('privacy')}
+      >
+        {still ? (
+          S.splashWhatLines.map((claim) => (
+            <p key={claim} className="splashreveal-line">
+              {claim}
+            </p>
+          ))
+        ) : (
+          <p className="splashreveal-line">{S.splashWhatLines[line]}</p>
+        )}
       </div>
 
       <div className="splashreveal-part" data-part="doors" ref={hold('doors')}>
