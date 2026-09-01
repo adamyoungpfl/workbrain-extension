@@ -73,16 +73,82 @@ test('it wears none of the interview: no mark, no drawer, no dock, no deep-dives
   }
 });
 
-test('the stem and the note under the box are set at one size', async () => {
+test('there is no stem, and the question sits on the box', async () => {
   const { context, page } = await openBaseline(true);
   try {
+    /* The stem ("Tell your AI to…") was a grammatical rail, and the seeds
+       becoming whole imperative prompts made it a second teacher for a lesson
+       already taught. The label reverts to the question, hidden — it is still
+       the field's programmatic NAME, and deleting it would leave a box with no
+       accessible name at all. */
     const label = page.locator('.flow-field-sr-label .field-label');
-    await expect(label).toHaveText(S.baselineStem);
-    const [stem, note] = await Promise.all([
-      label.evaluate((el) => getComputedStyle(el).fontSize),
-      page.locator('.flow-order-note').evaluate((el) => getComputedStyle(el).fontSize),
-    ]);
-    expect(stem).toBe(note);
+    await expect(label).toHaveCount(1);
+    const box = await label.boundingBox();
+    expect(box?.width ?? 0).toBeLessThan(3);
+    // The field still answers to it.
+    await expect(page.locator('textarea.field')).toHaveAccessibleName(/would you tell your AI/);
+
+    // And the space it held is closed rather than left as a hole.
+    const gap = await page.evaluate(() => {
+      const q = document.querySelector('.flow-q')!.getBoundingClientRect();
+      const f = document.querySelector('textarea.field')!.getBoundingClientRect();
+      return Math.round(f.top - q.bottom);
+    });
+    expect(gap).toBeLessThanOrEqual(24);
+  } finally {
+    await context.close();
+  }
+});
+
+test('the note turns from advice into a declaration once typing starts', async () => {
+  const { context, page } = await openBaseline(false);
+  try {
+    const chars = page.locator('.decl-ch');
+    /* Read the two colours off the document rather than writing them in. The
+       claim is a RELATIONSHIP — resting grey is the hint colour, lit is the
+       same `--primary` the Next button beside it is painted in — and a literal
+       hex here would just break the day a token moves. */
+    const { grey, primary } = await page.evaluate(() => {
+      const cs = getComputedStyle(document.documentElement);
+      const paint = (v: string) => {
+        const probe = document.createElement('span');
+        probe.style.color = v;
+        document.body.appendChild(probe);
+        const out = getComputedStyle(probe).color;
+        probe.remove();
+        return out;
+      };
+      return { grey: paint(cs.getPropertyValue('--ink-2')), primary: paint(cs.getPropertyValue('--primary')) };
+    });
+    expect(grey).not.toBe(primary);
+    await expect(chars.first()).toHaveCSS('color', grey);
+
+    // The whole sentence reaches assistive technology as ONE string, not as
+    // ninety fragments — the split run beside it is aria-hidden.
+    await expect(page.locator('.decl-whole')).toHaveText(/One thing, in your own words/);
+
+    await page.locator('textarea.field').click();
+    await page.keyboard.type('D');
+
+    // Mid-sweep the front of the line has turned and the end has not: that
+    // difference IS the reading-order effect, and a gradient across the
+    // element's box could not produce it on a wrapped paragraph.
+    let staggered = false;
+    for (let i = 0; i < 40 && !staggered; i += 1) {
+      const [head, tail] = await Promise.all([
+        chars.first().evaluate((el) => getComputedStyle(el).color),
+        chars.last().evaluate((el) => getComputedStyle(el).color),
+      ]);
+      if (head !== tail) staggered = true;
+      await page.waitForTimeout(20);
+    }
+    expect(staggered).toBe(true);
+
+    // It finishes lit, and stays lit even when the box is emptied again: the
+    // line stopped being advice the moment they started writing.
+    await expect(chars.last()).toHaveCSS('color', primary, { timeout: 5000 });
+    await page.locator('textarea.field').fill('');
+    await expect(chars.first()).toHaveCSS('color', primary);
   } finally {
     await context.close();
   }

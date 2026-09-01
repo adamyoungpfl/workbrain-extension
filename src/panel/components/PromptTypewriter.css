@@ -69,11 +69,9 @@
 }
 
 /* ── THE SHIMMER ───────────────────────────────────────────────────────────
-   The same sweep runs on the stem above the box (`.flow--prompt`'s label) and
-   on this word, which is the point of it: Adam asked for an effect that
-   "visually draws the two texts together in their respective places". They
-   are one sentence broken across the box's edge, and the light crossing both
-   is what says so.
+   It ran on the stem above the box as well as on this text, to tie the two
+   halves of one sentence together. The stem is gone (2026-09-01), so the
+   sweep now has one subject: the example being written.
 
    Both ends of the gradient clear 4.5:1 on the panel ground — the trough is
    `--ink-2`, which is the colour this text would be anyway, and the crest is
@@ -88,8 +86,7 @@
   }
 }
 
-.prompt-tw-word,
-.flow--prompt .flow-field-sr-label .field-label {
+.prompt-tw-word {
   background-image: linear-gradient(
     100deg,
     var(--ink-2) 0%,
@@ -161,8 +158,7 @@
      the instruction survives the stillness. The colour is stated outright
      rather than left to the gradient, because a background-clipped text with
      no animation is a still gradient, not a plain colour. */
-  .prompt-tw-word,
-  .flow--prompt .flow-field-sr-label .field-label {
+  .prompt-tw-word {
     background-image: none;
     animation: none;
     color: var(--ink-2);

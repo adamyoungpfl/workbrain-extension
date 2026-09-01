@@ -119,3 +119,8 @@ export { FeedbackSheet, FeedbackDoor, BuildStamp } from './FeedbackSheet';
 export { RecordRow, AddRecordRow } from './RecordRow';
 export { JumpSheet } from './JumpSheet';
 export type { FeedbackSheetProps } from './FeedbackSheet';
+
+// V2.9. The note under the baseline box, turning from grey advice into a
+// declaration in the person's own reading order. See DeclarationLine.tsx.
+export { DeclarationLine } from './DeclarationLine';
+export type { DeclarationLineProps } from './DeclarationLine';

@@ -118,6 +118,7 @@ import { ideaAt, ideasFor } from '../../core/flow/ideas';
 import { generatedNameAt, promptOnly, travelsLight, usesNameGenerator } from '../../core/flow/nameGenerator';
 import { asOrder } from '../../core/flow/imperative';
 import { PromptTypewriter } from '../components/PromptTypewriter';
+import { DeclarationLine } from '../components/DeclarationLine';
 import { BASELINE_SEEDS } from '../../core/flow/overrides';
 import { interviewMePrompt, looksLikeFencedReply, normalizePastedReply } from '../../core/flow/interviewMe';
 import { assistServiceUrlFor } from '../../core/flow/assistServices';
@@ -2089,6 +2090,15 @@ function StepView({
      nothing to clear when they accept it (accepting changes `draftText`, which
      is what this reads). Only computed on the one screen that shows it. */
   const orderSuggestion = bare ? asOrder(draftText) : null;
+  /* THE DECLARATION LATCHES. It lights on the first character and stays lit
+     even if the box is emptied again: the line stopped being advice the moment
+     somebody started writing, and un-lighting it would be the screen taking
+     that back. Latched in state rather than derived from `draftText` for
+     exactly that reason. */
+  const [declared, setDeclared] = useState(false);
+  useEffect(() => {
+    if (bare && draftText.trim() !== '') setDeclared(true);
+  }, [bare, draftText]);
 
   const topSection = (
     <>
@@ -2736,19 +2746,23 @@ function StepView({
             >
               <Field
                 id={`flow-${step.id}`}
-                /* THE STEM (Adam, 2026-08-31). On the baseline screen the
-                   field's label stops being the question repeated for screen
-                   readers and becomes a sentence the BOX finishes: "Tell your
-                   AI to ___". Only a bare verb completes that, which is the
-                   whole trick — the grammar teaches the imperative without a
-                   control, a validation message, or a word of instruction.
+                /* THE STEM IS GONE (Adam, 2026-09-01), and what it was
+                   doing is now done better by the thing underneath it.
 
-                   Visible here, and the accessible name is the same string, so
-                   what is read and what is seen do not disagree (WCAG 2.5.3).
-                   The question itself is the h2 above and is still announced;
-                   this is a better name for the box than the full sentence
-                   was. */
-                label={bare ? S.baselineStem : questionText}
+                   "Tell your AI to…" was a grammatical rail: a sentence ending
+                   in "to" can only be finished with a bare verb, so the box was
+                   hard to start with "I would like". That mattered when the
+                   box's example was a single word. It stopped mattering the
+                   moment the seeds became whole imperative prompts — "Draft my
+                   weekly status update for my manager" teaches the shape by
+                   BEING the shape, and a label above the box saying the same
+                   thing in grammar was a second teacher for a lesson already
+                   taught.
+
+                   The label reverts to the question, hidden: it is still the
+                   field's programmatic name and deleting it would leave a box
+                   with no accessible name at all. */
+                label={questionText}
                 as={step.multiline ? 'textarea' : 'input'}
                 value={draftText}
                 onChange={answerText}
@@ -2842,7 +2856,13 @@ function StepView({
                 goal_want has two, which is why this hint has never once been
                 on screen. The chips are suppressed on this screen, so the
                 reason to suppress the hint goes with them. */}
-            {bare && step.hint && <p className="flow-hint flow-order-note">{step.hint}</p>}
+            {bare && step.hint && (
+              <DeclarationLine
+                className="flow-hint flow-order-note"
+                text={step.hint}
+                lit={declared}
+              />
+            )}
             {/* V1.8 VB-49. Under the box, because it is about the box: the
                 dictation the person's own computer already has types into
                 this field, and nobody knows it. One question, one line, gone

@@ -2193,26 +2193,9 @@
   padding-top: 14px;
 }
 
-/* ── THE STEM ──────────────────────────────────────────────────────────────
-   Everywhere else the field's label is the question repeated for screen
-   readers and hidden (`.flow-field-sr-label .field-label` above). Here it is
-   a different string doing a different job — the sentence the box finishes —
-   so it comes back into view. Undoing a clip-rect sr-only block takes all of
-   it, not just the width and height. */
-.flow--prompt .flow-field-sr-label .field-label {
-  position: static;
-  width: auto;
-  height: auto;
-  overflow: visible;
-  clip: auto;
-  clip-path: none;
-  white-space: normal;
-  display: block;
-  margin-bottom: 6px;
-  color: var(--ink-2);
-  font-size: var(--fs-sm);
-  font-weight: 500;
-}
+/* THE STEM'S RULES ARE GONE with the stem itself. The label reverts to the
+   sr-only treatment every other question's gets — it is the field's
+   programmatic name and nothing else now. */
 
 /* ── THE HEDGE REPAIR ──────────────────────────────────────────────────────
    A quiet card, not an error. Nothing here is red, nothing is an alert icon,
@@ -2304,9 +2287,20 @@
   padding-right: 0;
 }
 
-/* The stem and the note under the box are one pair saying one thing, so they
-   are set at one size — `.flow-hint`'s 14px, matched as a literal rather than
-   through a token because that is how the rule it is matching is written. */
-.flow--prompt .flow-field-sr-label .field-label {
-  font-size: 14px;
+/* THE QUESTION SITS ON THE BOX. With the stem gone there is nothing between
+   them, and the interview's usual gap — sized for a hint and a row of
+   deep-dive chips that this screen does not have — left a hole where the
+   label used to be. Adam: "close the space between the prompt and input box." */
+.flow--prompt .flow-qzone {
+  margin-bottom: 0;
+  padding-bottom: 0;
+}
+.flow--prompt .flow-q-row {
+  margin-bottom: 2px;
+}
+/* The bubble's own bottom padding is part of that space too. It was sized to
+   sit a hint and a row of chips under the question; with neither here it is
+   just distance between the question and the box it belongs to. */
+.flow--prompt .flow-bubble {
+  padding-bottom: 0;
 }
