@@ -758,7 +758,10 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
        text gets run, so it should be sized like something an AI can finish.
        The "one thing" survives because it is the constraint that keeps a
        baseline runnable. [DRAFT] */
-    hint: 'One thing, in your own words. You will run exactly this, so ask for something it can finish.',
+    hint:
+      'One thing…in your own words.\n' +
+      'Next, you will run this exact prompt, so…\n' +
+      'Prompt something that you think AI should be able to complete well.',
     placeholder: 'e.g. Draft my Monday status update the way I would',
     ideas: [
       'Draft a status update for my manager that sounds like me.',

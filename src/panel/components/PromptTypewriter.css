@@ -14,8 +14,21 @@
   position: absolute;
   /* Clipped to the field's own inner box — see the measurement in the
      component. Four stacked lines are taller than a 132px field, and an
-     unclipped stack paints straight through the bottom border. */
+     unclipped stack paints straight through the bottom border.
+
+     A HARD CLIP CUT A LINE IN HALF, which reads as a rendering fault rather
+     than as a stack continuing past the edge. The mask fades the last few
+     pixels out so the boundary is a horizon: the oldest line leaves by getting
+     fainter, which is the same thing the fade ladder is already saying about
+     it, and the cut never lands mid-glyph as a visible slice. */
   overflow: hidden;
+  /* `black`/`transparent` keywords rather than a token, and that is not the
+     one-source-of-colour rule being dodged. A mask reads only the ALPHA
+     channel — the hue is inert, and the two stops mean "keep" and "drop". A
+     token here would imply a design colour where there is none, and the next
+     reader would waste time wondering which one it should have been. */
+  -webkit-mask-image: linear-gradient(to bottom, black 68%, transparent 100%);
+  mask-image: linear-gradient(to bottom, black 68%, transparent 100%);
 }
 
 /* One line of the stack. The divider belongs to the line BELOW it, so a line

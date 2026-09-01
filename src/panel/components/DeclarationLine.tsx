@@ -51,33 +51,48 @@ export interface DeclarationLineProps {
 }
 
 export function DeclarationLine({ text, lit, className }: DeclarationLineProps) {
-  /* Split on words, not straight into characters, so ordinary line breaking
-     still happens at the spaces. A sentence of per-character spans with the
-     spaces inside them wraps in the wrong places or not at all. */
+  /* AUTHORED LINE BREAKS ARE KEPT (Adam, 2026-09-02). The direction is three
+     separate statements — what to write, what happens next, what makes a good
+     one — and running them into a paragraph makes them one long sentence
+     nobody finishes. Each `\n` is its own line here.
+
+     Within a line, split on WORDS rather than straight into characters, so
+     ordinary line breaking still happens at the spaces: a run of
+     per-character spans with the spaces inside them wraps in the wrong places
+     or not at all.
+
+     The stagger runs across the WHOLE text, not per line, so the sweep keeps
+     going down the block in reading order instead of restarting on each. */
   let cursor = 0;
-  const words = text.split(' ').map((word) => {
-    const start = cursor;
-    cursor += word.length + 1;
-    return { word, start };
-  });
+  const lines = text.split('\n').map((line) =>
+    line.split(' ').map((word) => {
+      const start = cursor;
+      cursor += word.length + 1;
+      return { word, start };
+    }),
+  );
 
   return (
     <p className={[className, 'decl', lit ? 'is-lit' : ''].filter(Boolean).join(' ')}>
       <span className="decl-whole">{text}</span>
       <span aria-hidden="true">
-        {words.map(({ word, start }, wi) => (
-          <Fragment key={`${start}-${word}`}>
-            {wi > 0 ? ' ' : null}
-            {[...word].map((ch, ci) => (
-              <span
-                key={ci}
-                className="decl-ch"
-                style={{ transitionDelay: `${(start + ci) * STEP_MS}ms` }}
-              >
-                {ch}
-              </span>
+        {lines.map((words, li) => (
+          <span className="decl-line" key={li}>
+            {words.map(({ word, start }, wi) => (
+              <Fragment key={`${start}-${word}`}>
+                {wi > 0 ? ' ' : null}
+                {[...word].map((ch, ci) => (
+                  <span
+                    key={ci}
+                    className="decl-ch"
+                    style={{ transitionDelay: `${(start + ci) * STEP_MS}ms` }}
+                  >
+                    {ch}
+                  </span>
+                ))}
+              </Fragment>
             ))}
-          </Fragment>
+          </span>
         ))}
       </span>
     </p>

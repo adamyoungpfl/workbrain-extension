@@ -111,6 +111,17 @@
   --tone-orange-ink: #9A5312;
   --tone-blue-tint: #E8F0FE;
   --tone-blue-ink: #1F4FBF;
+  --pop-1: #FF4D4D;
+  --pop-2: #FF8A3D;
+  --pop-3: #FFC53D;
+  --pop-4: #4ECB71;
+  --pop-5: #2BC4C4;
+  --pop-6: #3D9BFF;
+  --pop-7: #6C5CE7;
+  --pop-8: #E85BC4;
+  --pop-paper: #FFFFFF;
+  --pop-ink: #1B1F2A;
+  --pop-shade: #0E1220;
   --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Inter, Roboto, 'Helvetica Neue', Arial, sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, 'Liberation Mono', monospace;
   --r-sm: 6px;

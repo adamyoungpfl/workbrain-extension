@@ -41,3 +41,9 @@
     transition-delay: 0s !important;
   }
 }
+
+/* One authored statement per line. `block` rather than a `<br>` so each line
+   is a box that can wrap on its own without the next one riding up into it. */
+.decl-line {
+  display: block;
+}

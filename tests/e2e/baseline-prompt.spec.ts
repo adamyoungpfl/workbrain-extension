@@ -132,9 +132,20 @@ test('the note turns from advice into a declaration once typing starts', async (
     expect(grey).not.toBe(primary);
     await expect(chars.first()).toHaveCSS('color', grey);
 
-    // The whole sentence reaches assistive technology as ONE string, not as
-    // ninety fragments — the split run beside it is aria-hidden.
-    await expect(page.locator('.decl-whole')).toHaveText(/One thing, in your own words/);
+    /* The whole direction reaches assistive technology as ONE string, not as
+       ninety fragments — the split run beside it is aria-hidden.
+
+       Asserted on STRUCTURE rather than on the prose. The first version quoted
+       the sentence and broke the next time Adam edited a word, which taught
+       nothing: what must hold is that the hidden copy is the same text the
+       visible run is built from, and that authored line breaks survive as
+       lines. */
+    const whole = (await page.locator('.decl-whole').textContent()) ?? '';
+    expect(whole.trim().length).toBeGreaterThan(20);
+    const authoredLines = whole.split('\n').filter((l) => l.trim() !== '').length;
+    await expect(page.locator('.decl-line')).toHaveCount(authoredLines);
+    const painted = (await page.locator('.decl-line').allTextContents()).join(' ').replace(/\s+/g, ' ');
+    expect(painted.trim()).toBe(whole.replace(/\s+/g, ' ').trim());
 
     await page.locator('textarea.field').click();
     await page.keyboard.type('D');

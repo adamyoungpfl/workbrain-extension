@@ -40,168 +40,400 @@ export interface SplashStageHandle {
 }
 
 /**
- * V2.7 VB-130 — the real glass: eighteen photographs of a working life
- * (AI-produced and licensed through Canva's export pipeline, cropped and
- * graded to one cool voice — docs/V2.7-SPLASH-WOW.md), bundled as ~250KB
- * of WebP and emitted by Vite with the rest of the bundle. Nothing is
- * fetched at runtime from anywhere but the extension's own package.
+ * V2.9 — THE PANELS ARE DRAWN (Adam, 2026-09-02). "Let's draw our own vibrant
+ * stuff. Then no guessing and it can fit exactly what we need on panel sizes
+ * and durations."
+ *
+ * VB-130's eighteen photographs are no longer bundled. They were graded cool
+ * and muted to sit behind a mark, which is the opposite of what this show
+ * wants now: Adam's brief is "more vibrant, colorful and maybe simpler… it's
+ * really more eye candy than it is contextual relevance."
+ *
+ * Drawing them wins three things a photo set cannot. They are sized to the
+ * panel instead of cropped to it, so nothing important is ever cut off by a
+ * jittered corner. They are a few hundred bytes of code instead of 250KB of
+ * WebP. And the palette is OURS — eight fenced `--pop-*` hues, spaced around
+ * the wheel, so any handful on screen at once reads as variety rather than as
+ * whatever a photographer happened to light.
+ *
+ * ── WHAT THEY DEPICT, AND HOW LITTLE ──────────────────────────────────────
+ * Each is one recognisable working surface at the lowest fidelity that still
+ * reads: a chart, a calendar, a thread, a board. Adam's rule from the first
+ * pass still governs — "no single action should be detailed or important, but
+ * all should feel distantly familiar" — and drawing makes it easier to obey
+ * than photography did, because a drawing can stop at the silhouette. There is
+ * no text anywhere in them; every glyph is a block. Nothing here is a likeness
+ * of any product.
  */
-const SHARD_IMAGE_URLS = Object.values(
-  import.meta.glob('../../assets/splash/*.webp', { eager: true, query: '?url', import: 'default' }),
-) as string[];
 
-const TEXTURE_SIZE = 140;
-export { STAGE_H, STAGE_W };
+/** Big enough to stay crisp: a jittered panel runs to ~180px and the canvas
+ *  paints at up to 2x, so a 140px texture — the old photo size — would be
+ *  visibly soft scaled up. These are flat shapes, so the cost is nothing. */
+const TEXTURE_SIZE = 256;
+const T = TEXTURE_SIZE;
 
-/** The scenery palette, read off the running stylesheet once per mount —
- * the WallPanels pattern, so tokens.css stays the one source of colour. */
-interface Scene {
+/** The scenery palette, read off the running stylesheet once per mount, so
+ *  tokens.css stays the one source of colour even for scenery. */
+interface Pop {
+  hue: string[];
   paper: string;
-  warmHi: string;
-  warmLo: string;
-  coolHi: string;
-  coolLo: string;
   ink: string;
-  chart: string;
-  sheet: string;
+  shade: string;
 }
 
-function readScene(): Scene {
+function readPop(): Pop {
   const style = getComputedStyle(document.documentElement);
   const token = (name: string) => style.getPropertyValue(name).trim() || 'transparent';
   return {
-    paper: token('--splash-scene-paper'),
-    warmHi: token('--splash-scene-warm-hi'),
-    warmLo: token('--splash-scene-warm-lo'),
-    coolHi: token('--splash-scene-cool-hi'),
-    coolLo: token('--splash-scene-cool-lo'),
-    ink: token('--splash-scene-ink'),
-    chart: token('--primary'),
-    sheet: token('--green'),
+    hue: [1, 2, 3, 4, 5, 6, 7, 8].map((n) => token(`--pop-${n}`)),
+    paper: token('--pop-paper'),
+    ink: token('--pop-ink'),
+    shade: token('--pop-shade'),
   };
 }
 
-type Painter = (g: CanvasRenderingContext2D, scene: Scene) => void;
+type Painter = (g: CanvasRenderingContext2D, p: Pop, hue: (n: number) => string) => void;
 
-/** A portrait by window light — warm against the cool field. */
-const paintPortrait: Painter = (g, scene) => {
-  const bg = g.createLinearGradient(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-  bg.addColorStop(0, scene.warmHi);
-  bg.addColorStop(1, scene.warmLo);
-  g.fillStyle = bg;
-  g.fillRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-  g.fillStyle = 'rgba(255, 240, 220, 0.28)';
-  g.fillRect(86, 0, 30, TEXTURE_SIZE);
-  g.fillStyle = 'rgba(30, 24, 20, 0.9)';
+/** A rounded rect, since every panel below wants one and the 2D context's own
+ *  `roundRect` is not in every runtime the tests spin up. */
+function box(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r = 10) {
+  const rad = Math.min(r, w / 2, h / 2);
   g.beginPath();
-  g.arc(64, 52, 22, 0, 7);
+  g.moveTo(x + rad, y);
+  g.arcTo(x + w, y, x + w, y + h, rad);
+  g.arcTo(x + w, y + h, x, y + h, rad);
+  g.arcTo(x, y + h, x, y, rad);
+  g.arcTo(x, y, x + w, y, rad);
+  g.closePath();
   g.fill();
-  g.beginPath();
-  g.ellipse(64, 112, 40, 34, 0, 0, 7);
-  g.fill();
-  g.fillStyle = scene.paper;
-  g.fillRect(46, 92, 12, 20);
+}
+
+const ground = (g: CanvasRenderingContext2D, fill: string) => {
+  g.fillStyle = fill;
+  g.fillRect(0, 0, T, T);
 };
 
-const paintSpreadsheet: Painter = (g, scene) => {
-  g.fillStyle = scene.paper;
-  g.fillRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-  g.fillStyle = scene.sheet;
-  g.fillRect(0, 0, TEXTURE_SIZE, 18);
-  g.strokeStyle = 'rgba(80, 96, 84, 0.28)';
-  g.lineWidth = 1;
-  for (let y = 18; y < TEXTURE_SIZE; y += 15) {
-    g.beginPath();
-    g.moveTo(0, y);
-    g.lineTo(TEXTURE_SIZE, y);
-    g.stroke();
-  }
-  for (let x = 0; x < TEXTURE_SIZE; x += 28) {
-    g.beginPath();
-    g.moveTo(x, 18);
-    g.lineTo(x, TEXTURE_SIZE);
-    g.stroke();
-  }
-  g.fillStyle = scene.ink;
-  for (let row = 0; row < 8; row++)
-    for (let col = 0; col < 5; col++)
-      if ((row * 5 + col) % 3) g.fillRect(4 + col * 28, 24 + row * 15, 12 + ((row + col) % 3) * 4, 4);
+/** Bars. The single most recognisable shape in any working life. */
+const bars: Painter = (g, p, hue) => {
+  ground(g, hue(0));
+  const heights = [0.42, 0.68, 0.34, 0.86, 0.56];
+  heights.forEach((h, i) => {
+    g.fillStyle = i % 2 ? p.paper : hue(3);
+    box(g, 26 + i * 42, T - 28 - h * 168, 30, h * 168, 8);
+  });
 };
 
-const paintReport: Painter = (g, scene) => {
-  g.fillStyle = scene.paper;
-  g.fillRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-  g.fillStyle = scene.ink;
-  g.fillRect(12, 12, 80, 7);
-  g.fillRect(12, 26, 116, 4);
-  g.fillRect(12, 34, 104, 4);
-  g.fillStyle = scene.chart;
-  const bars = [22, 40, 30, 52, 44, 60];
-  bars.forEach((h, i) => g.fillRect(14 + i * 20, 128 - h, 12, h));
-  g.strokeStyle = scene.warmLo;
-  g.lineWidth = 2;
+/** A line and the area under it. */
+const trend: Painter = (g, p, hue) => {
+  ground(g, hue(0));
+  const pts = [24, 150, 66, 108, 108, 132, 150, 70, 192, 96, 232, 44];
   g.beginPath();
-  g.moveTo(14, 100);
-  bars.forEach((h, i) => g.lineTo(20 + i * 20, 118 - h));
+  g.moveTo(pts[0]!, T);
+  for (let i = 0; i < pts.length; i += 2) g.lineTo(pts[i]!, pts[i + 1]!);
+  g.lineTo(pts[pts.length - 2]!, T);
+  g.closePath();
+  g.fillStyle = hue(2);
+  g.fill();
+  g.beginPath();
+  for (let i = 0; i < pts.length; i += 2) (i ? g.lineTo : g.moveTo).call(g, pts[i]!, pts[i + 1]!);
+  g.strokeStyle = p.paper;
+  g.lineWidth = 7;
+  g.lineJoin = 'round';
   g.stroke();
 };
 
-const paintStatement: Painter = (g, scene) => {
-  g.fillStyle = scene.paper;
-  g.fillRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-  g.fillStyle = scene.coolLo;
-  g.fillRect(0, 0, TEXTURE_SIZE, 22);
-  g.fillStyle = scene.warmHi;
+/** A ring, filled most of the way round. */
+const ring: Painter = (g, p, hue) => {
+  ground(g, hue(0));
+  g.lineWidth = 34;
+  g.strokeStyle = hue(4);
   g.beginPath();
-  g.arc(16, 11, 6, 0, 7);
-  g.fill();
-  g.fillStyle = scene.ink;
-  for (let row = 0; row < 7; row++) {
-    g.fillRect(10, 32 + row * 15, 56, 4);
-    g.fillRect(96, 32 + row * 15, 30, 4);
+  g.arc(T / 2, T / 2, 74, 0, Math.PI * 2);
+  g.stroke();
+  g.strokeStyle = p.paper;
+  g.lineCap = 'round';
+  g.beginPath();
+  g.arc(T / 2, T / 2, 74, -1.6, 2.1);
+  g.stroke();
+  g.lineCap = 'butt';
+};
+
+/** A month. Some days are busy. */
+const calendar: Painter = (g, p, hue) => {
+  ground(g, p.paper);
+  g.fillStyle = hue(0);
+  g.fillRect(0, 0, T, 54);
+  const busy = new Set([1, 4, 7, 8, 12, 17, 18, 22]);
+  for (let i = 0; i < 24; i += 1) {
+    g.fillStyle = busy.has(i) ? hue(2) : hue(5);
+    g.globalAlpha = busy.has(i) ? 1 : 0.18;
+    box(g, 22 + (i % 6) * 36, 76 + Math.floor(i / 6) * 42, 26, 26, 7);
   }
-  g.fillStyle = scene.sheet;
-  g.fillRect(96, 92, 30, 4);
+  g.globalAlpha = 1;
 };
 
-const paintMeeting: Painter = (g, scene) => {
-  const bg = g.createLinearGradient(0, 0, 0, TEXTURE_SIZE);
-  bg.addColorStop(0, scene.coolHi);
-  bg.addColorStop(1, scene.ink);
-  g.fillStyle = bg;
-  g.fillRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-  g.fillStyle = 'rgba(25, 28, 36, 0.85)';
-  [24, 62, 102].forEach((x, i) => {
-    g.beginPath();
-    g.arc(x, 78 + (i % 2) * 8, 13, 0, 7);
-    g.fill();
-    g.beginPath();
-    g.ellipse(x, 112 + (i % 2) * 6, 22, 20, 0, 0, 7);
-    g.fill();
+/** A thread. Somebody said something and somebody answered. */
+const thread: Painter = (g, p, hue) => {
+  ground(g, hue(0));
+  const rows: [number, number, number][] = [
+    [22, 34, 150],
+    [84, 96, 130],
+    [22, 158, 176],
+    [110, 214, 124],
+  ];
+  rows.forEach(([x, y, w], i) => {
+    g.fillStyle = i % 2 ? p.paper : hue(3);
+    box(g, x, y, w, 44, 16);
   });
-  g.fillStyle = 'rgba(255, 255, 255, 0.5)';
-  g.fillRect(0, 20, TEXTURE_SIZE, 3);
 };
 
-const PAINTERS: Painter[] = [paintPortrait, paintSpreadsheet, paintReport, paintStatement, paintMeeting];
+/** Three columns of cards. */
+const board: Painter = (g, p, hue) => {
+  ground(g, p.shade);
+  const counts = [3, 1, 2];
+  counts.forEach((n, c) => {
+    g.fillStyle = hue(1);
+    g.globalAlpha = 0.16;
+    box(g, 14 + c * 80, 20, 68, 216, 12);
+    g.globalAlpha = 1;
+    for (let i = 0; i < n; i += 1) {
+      g.fillStyle = i === 0 ? hue(c + 2) : p.paper;
+      box(g, 22 + c * 80, 32 + i * 58, 52, 46, 10);
+    }
+  });
+};
 
-/** Draw one texture window, vignetted so every kind reads photographic.
- * An environment with no 2D context (jsdom; a hostile embedder) gets the
- * blank canvas back and the show simply has darker glass — the degradation
- * law, and what lets the unit suite mount the whole splash. */
-function makeTexture(painter: Painter, scene: Scene): HTMLCanvasElement {
-  const c = document.createElement('canvas');
-  c.width = TEXTURE_SIZE;
-  c.height = TEXTURE_SIZE;
-  const g = c.getContext('2d');
-  if (!g) return c;
-  painter(g, scene);
-  const v = g.createRadialGradient(70, 70, 30, 70, 70, 100);
-  v.addColorStop(0, 'rgba(0, 0, 0, 0)');
-  v.addColorStop(1, 'rgba(0, 0, 0, 0.36)');
-  g.fillStyle = v;
-  g.fillRect(0, 0, TEXTURE_SIZE, TEXTURE_SIZE);
-  return c;
+/** A wall of pictures, which is what a gallery is at this distance. */
+const gallery: Painter = (g, _p, hue) => {
+  ground(g, hue(0));
+  for (let i = 0; i < 9; i += 1) {
+    g.fillStyle = hue(i + 1);
+    box(g, 16 + (i % 3) * 78, 16 + Math.floor(i / 3) * 78, 68, 68, 12);
+  }
+};
+
+/** A page with something written on it. */
+const page: Painter = (g, p, hue) => {
+  ground(g, hue(0));
+  g.fillStyle = p.paper;
+  box(g, 30, 22, 196, 212, 12);
+  g.fillStyle = hue(3);
+  box(g, 50, 46, 104, 22, 6);
+  g.fillStyle = p.ink;
+  g.globalAlpha = 0.16;
+  [156, 176, 152, 170, 96].forEach((w, i) => box(g, 50, 88 + i * 26, w, 12, 5));
+  g.globalAlpha = 1;
+};
+
+/** Things done, and one still to do. */
+const checklist: Painter = (g, p, hue) => {
+  ground(g, hue(0));
+  for (let i = 0; i < 4; i += 1) {
+    const done = i < 3;
+    g.fillStyle = done ? hue(3) : p.paper;
+    box(g, 26, 34 + i * 56, 40, 40, 12);
+    if (done) {
+      g.strokeStyle = p.paper;
+      g.lineWidth = 6;
+      g.lineCap = 'round';
+      g.beginPath();
+      g.moveTo(36, 54 + i * 56);
+      g.lineTo(44, 62 + i * 56);
+      g.lineTo(58, 44 + i * 56);
+      g.stroke();
+      g.lineCap = 'butt';
+    }
+    g.fillStyle = p.paper;
+    g.globalAlpha = done ? 0.4 : 0.9;
+    box(g, 80, 46 + i * 56, done ? 108 : 146, 16, 8);
+    g.globalAlpha = 1;
+  }
+};
+
+/** Rows and columns, one row picked out. */
+const sheet: Painter = (g, p, hue) => {
+  ground(g, p.paper);
+  g.fillStyle = hue(4);
+  g.fillRect(0, 0, T, 40);
+  g.fillStyle = hue(1);
+  g.globalAlpha = 0.22;
+  g.fillRect(0, 124, T, 34);
+  g.globalAlpha = 1;
+  g.strokeStyle = hue(5);
+  g.globalAlpha = 0.34;
+  g.lineWidth = 2;
+  for (let y = 40; y < T; y += 34) {
+    g.beginPath();
+    g.moveTo(0, y);
+    g.lineTo(T, y);
+    g.stroke();
+  }
+  for (let x = 64; x < T; x += 64) {
+    g.beginPath();
+    g.moveTo(x, 40);
+    g.lineTo(x, T);
+    g.stroke();
+  }
+  g.globalAlpha = 1;
+};
+
+/** A list of people who want something. */
+const inbox: Painter = (g, p, hue) => {
+  ground(g, p.paper);
+  for (let i = 0; i < 4; i += 1) {
+    g.fillStyle = hue(i + 1);
+    g.beginPath();
+    g.arc(46, 46 + i * 60, 22, 0, Math.PI * 2);
+    g.fill();
+    g.fillStyle = p.ink;
+    g.globalAlpha = 0.8;
+    box(g, 82, 32 + i * 60, 120 - i * 12, 13, 6);
+    g.globalAlpha = 0.2;
+    box(g, 82, 54 + i * 60, 148, 11, 5);
+    g.globalAlpha = 1;
+  }
+};
+
+/** Sound, as everybody draws it. */
+const levels: Painter = (g, _p, hue) => {
+  ground(g, hue(0));
+  const hs = [0.3, 0.62, 0.94, 0.5, 0.76, 0.36, 0.86, 0.44, 0.66];
+  hs.forEach((h, i) => {
+    g.fillStyle = hue(i + 1);
+    const bh = h * 168;
+    box(g, 20 + i * 25, (T - bh) / 2, 15, bh, 7);
+  });
+};
+
+/** A clip on a timeline. */
+const timeline: Painter = (g, p, hue) => {
+  ground(g, p.shade);
+  for (let i = 0; i < 5; i += 1) {
+    g.fillStyle = hue(i + 1);
+    box(g, 14 + i * 47, 60, 40, 80, 8);
+  }
+  g.fillStyle = hue(0);
+  box(g, 14, 168, 228, 12, 6);
+  g.fillStyle = p.paper;
+  box(g, 132, 156, 10, 36, 5);
+};
+
+/** Somewhere, and a pin in it. */
+const map: Painter = (g, p, hue) => {
+  ground(g, hue(4));
+  g.strokeStyle = p.paper;
+  g.globalAlpha = 0.5;
+  g.lineWidth = 12;
+  g.beginPath();
+  g.moveTo(-10, 90);
+  g.lineTo(96, 90);
+  g.lineTo(150, 190);
+  g.lineTo(266, 190);
+  g.stroke();
+  g.beginPath();
+  g.moveTo(186, -10);
+  g.lineTo(186, 190);
+  g.stroke();
+  g.globalAlpha = 1;
+  g.fillStyle = hue(0);
+  g.beginPath();
+  g.arc(96, 90, 30, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = p.paper;
+  g.beginPath();
+  g.arc(96, 90, 12, 0, Math.PI * 2);
+  g.fill();
+};
+
+/** One big idea and a line under it. */
+const slide: Painter = (g, p, hue) => {
+  ground(g, hue(0));
+  g.fillStyle = hue(3);
+  g.beginPath();
+  g.arc(T / 2, 104, 56, 0, Math.PI * 2);
+  g.fill();
+  g.fillStyle = p.paper;
+  box(g, 52, 190, 152, 18, 9);
+  g.globalAlpha = 0.45;
+  box(g, 82, 220, 92, 12, 6);
+  g.globalAlpha = 1;
+};
+
+/** Two dials and a number, which is every dashboard ever drawn. */
+const dials: Painter = (g, p, hue) => {
+  ground(g, p.shade);
+  [[76, 84], [180, 84]].forEach(([x, y], i) => {
+    g.lineWidth = 20;
+    g.strokeStyle = hue(i + 4);
+    g.globalAlpha = 0.28;
+    g.beginPath();
+    g.arc(x!, y!, 46, 0, Math.PI * 2);
+    g.stroke();
+    g.globalAlpha = 1;
+    g.strokeStyle = hue(i + 1);
+    g.lineCap = 'round';
+    g.beginPath();
+    g.arc(x!, y!, 46, -1.57, i ? 1.2 : 2.6);
+    g.stroke();
+    g.lineCap = 'butt';
+  });
+  g.fillStyle = hue(2);
+  box(g, 40, 176, 176, 52, 14);
+  g.fillStyle = p.shade;
+  g.globalAlpha = 0.5;
+  box(g, 62, 194, 132, 16, 8);
+  g.globalAlpha = 1;
+};
+
+/** A window with a form in it. */
+const form: Painter = (g, p, hue) => {
+  ground(g, hue(0));
+  g.fillStyle = p.paper;
+  box(g, 26, 40, 204, 176, 16);
+  [0, 1, 2].forEach((i) => {
+    g.fillStyle = hue(5);
+    g.globalAlpha = 0.16;
+    box(g, 48, 64 + i * 46, 160, 32, 9);
+    g.globalAlpha = 1;
+  });
+  g.fillStyle = hue(3);
+  box(g, 48, 176, 84, 26, 13);
+};
+
+/** The set. Sixteen, and the order matters only in that neighbours in the
+ *  image list should not look alike — the mosaic walks them one at a time. */
+const PAINTERS: Painter[] = [
+  bars,
+  calendar,
+  thread,
+  gallery,
+  trend,
+  board,
+  checklist,
+  ring,
+  sheet,
+  levels,
+  inbox,
+  map,
+  page,
+  timeline,
+  slide,
+  dials,
+  form,
+];
+
+/**
+ * Each panel gets its own rotation through the palette, so the same painter
+ * drawn at two places on the wall is not the same picture. `hue(0)` is the
+ * scene's ground and the rest walk on from there.
+ */
+function makeTexture(paint: Painter, pop: Pop, index: number): HTMLCanvasElement {
+  const canvas = document.createElement('canvas');
+  canvas.width = T;
+  canvas.height = T;
+  const g = canvas.getContext('2d');
+  if (g) paint(g, pop, (n) => pop.hue[(index * 3 + n) % pop.hue.length] ?? pop.paper);
+  return canvas;
 }
 
 export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_props, ref) {
@@ -218,24 +450,14 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
   const texturesRef = useRef<(HTMLImageElement | HTMLCanvasElement)[]>([]);
 
   useEffect(() => {
-    // One texture slot per bundled photograph (VB-130), each opening on its
-    // procedural painting and swapping to the photo the instant it decodes —
-    // an image that never decodes leaves the painting in place, silently, and
-    // the show is merely less photographic (the degradation law, applied to
-    // scenery).
-    const slots = SHARD_IMAGE_URLS.length || PAINTERS.length;
-    const scene = readScene();
-    texturesRef.current = Array.from({ length: slots }, (_, i) =>
-      makeTexture(PAINTERS[i % PAINTERS.length]!, scene),
-    );
-    for (let i = 0; i < SHARD_IMAGE_URLS.length; i++) {
-      const url = SHARD_IMAGE_URLS[i]!;
-      const image = new Image();
-      image.onload = () => {
-        texturesRef.current[i] = image;
-      };
-      image.src = url;
-    }
+    /* Drawn once at mount, then only read. Sixteen flat compositions at 256px
+       is a few milliseconds of canvas work and no network at all — which is
+       the other half of why these are drawn rather than photographed: there is
+       nothing to decode, nothing to fail, and so no degradation path to write.
+       The wall is never blank because it was never waiting. */
+    const pop = readPop();
+    texturesRef.current = PAINTERS.map((paint, i) => makeTexture(paint, pop, i));
+
     const canvas = canvasRef.current;
     if (canvas) {
       const dpr = Math.min(2, window.devicePixelRatio || 1);

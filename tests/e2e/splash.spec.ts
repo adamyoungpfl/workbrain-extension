@@ -324,25 +324,29 @@ test.describe('VB-128 — the camera still drifts', () => {
     await page.waitForSelector('.splash-stage canvas');
 
     const sample = async () => {
+      /* Sampled across MORE THAN ONE HOLD. The first hold is the longest of
+         the show, so a window shorter than it can legitimately catch no cut at
+         all and call the wall dead. */
       const shots: string[] = [];
-      for (let i = 0; i < 8; i++) {
+      for (let i = 0; i < 22; i++) {
         shots.push(
           await page.locator('.splash-stage canvas').evaluate((el) => {
             const c = el as HTMLCanvasElement;
             const g = c.getContext('2d')!;
             // A cheap fingerprint of the wall: a few pixels, far apart.
-            const spots: Array<{ x: number; y: number }> = [
-              { x: 80, y: 120 },
-              { x: 200, y: 300 },
-              { x: 320, y: 520 },
-              { x: 120, y: 620 },
-            ];
-            return spots
-              .map(({ x, y }) => {
+            /* A COARSE GRID, not four points. The photographs this replaced
+               differed at almost any single pixel; the drawn panels are large
+               flat shapes, so one fixed point can sit on the same colour
+               either side of a cut and report that nothing happened. Sixty
+               samples spread over the wall cannot all be fooled at once. */
+            const px: string[] = [];
+            for (let y = 40; y < 700; y += 90) {
+              for (let x = 40; x < 400; x += 45) {
                 const d = g.getImageData(x, y, 1, 1).data;
-                return `${d[0]},${d[1]},${d[2]}`;
-              })
-              .join('|');
+                px.push(`${d[0]},${d[1]},${d[2]}`);
+              }
+            }
+            return px.join('|');
           }),
         );
         await waitForFrames(page, 3);
