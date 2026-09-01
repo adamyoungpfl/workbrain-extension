@@ -66,3 +66,41 @@
 .baselineoffer-later:hover {
   color: var(--ink);
 }
+
+/* ── THE FORK, after the answer lands ──────────────────────────────────────
+   The receipt line. Quiet and small: "we kept it" is a reassurance, not the
+   point of the screen, and the point of the screen is the question below it. */
+.baselineoffer-saved {
+  margin: 0 0 14px;
+  color: var(--green);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+/* Their AI's answer, handed back. Set as a quotation because that is what it
+   is — somebody else's words on this screen, and the thing the primary door is
+   offering to improve. Capped and scrollable: a full model answer can run to
+   several hundred words and this screen's job is the question underneath it,
+   not the reading. */
+.baselineoffer-answer {
+  max-height: 168px;
+  overflow-y: auto;
+  margin: 0 0 20px;
+  padding: 10px 12px 10px 14px;
+  border-left: 2px solid var(--border-i);
+  color: var(--ink-2);
+  font-size: 13px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+/* Inside the bare shell the offer fills the panel and the save note rides the
+   bottom edge, the same composition the goal screen got. The `auto` margin is
+   what pushes it there — everything above keeps its natural height and the
+   slack collects in one place instead of trailing off the end of the content. */
+.flowshell--bare .baselineoffer {
+  height: 100%;
+}
+.flowshell--bare .baselineoffer .flow-save {
+  margin-top: auto;
+}

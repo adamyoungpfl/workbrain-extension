@@ -1695,6 +1695,19 @@ export const S = {
   baselineGo: 'I ran it — paste what came back',
   baselineLater: 'Not now',
   baselineSaved: 'Saved as your starting point.',
+  /* [DRAFT] THE FORK, after the answer has landed (Adam, 2026-09-01). Two
+     doors, and the primary one names what the interview is FOR in the only
+     moment where the person is holding the evidence: they have just read what
+     their AI gave them with nothing loaded, and the offer is to make that
+     answer better. Every other framing of the interview ("answer 50
+     questions", "build your file") describes the work. This one describes the
+     result, to somebody who can see for themselves what the result would be
+     improving on. */
+  baselineNextTitle: 'That is where you start from.',
+  baselineNextBody:
+    'Your AI wrote that with nothing about you loaded. The interview writes the file that changes it.',
+  baselineImprove: 'Improve this answer',
+  baselineHome: 'Go home',
   /* Spine step 3 — the comparison surface. The product's whole argument in one
      view: the same task, answered at each stage.
 

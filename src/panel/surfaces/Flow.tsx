@@ -1168,16 +1168,22 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
        product's most complicated affordance at the one moment somebody has
        been asked to go and do something else — and it would be showing them an
        empty version of it. Every other screen in the flow keeps it. */
+    /* THE SAME BARE SHELL THE GOAL SCREEN GETS, and for the same reason. This
+       screen has no drawer either, so without it `.flowshell`'s dock
+       reservation and `.flow`'s `100dvh` min-height left the surface stopping
+       around half way down with the panel's wallpaper showing underneath.
+       Found by screenshot while testing the fork, not by any assertion. */
     return (
+      <div className="flowshell flowshell--bare" style={{ '--flow-area-offset': '0px' } as CSSProperties}>
       <BaselineOffer
         task={baselineTask}
         onSkip={() => {
           setBaselineTaken(true);
           onBaselineDone?.();
         }}
-        onDone={(pasted) => {
-          setBaselineTaken(true);
-          onBaselineDone?.();
+        /* Saved on landing, before the fork is answered. Whichever door they
+           take, the run they just performed is theirs. */
+        onRecord={(pasted) => {
           void (async () => {
             const report = await getLocal('wb:report');
             await setLocal(
@@ -1191,7 +1197,16 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
             );
           })();
         }}
+        onContinue={() => {
+          setBaselineTaken(true);
+          onBaselineDone?.();
+        }}
+        /* Home is a real ending, not an abandonment: the baseline is already
+           written, so the offer must not come round again — same flag the
+           other two doors set. */
+        {...(onHome ? { onHome: () => { setBaselineTaken(true); onHome(); } } : {})}
       />
+      </div>
     );
   }
 

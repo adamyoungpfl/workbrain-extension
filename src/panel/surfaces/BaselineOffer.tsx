@@ -30,16 +30,75 @@ import './BaselineOffer.css';
 export interface BaselineOfferProps {
   /** The person's own goal, verbatim — the task all three stages answer. */
   task: string;
-  /** Their pasted answer, for the run that gets recorded. */
-  onDone: (answer: string) => void;
-  /** Passed on. The interview carries on exactly as it would have. */
+  /**
+   * Save the run. Called the moment the answer LANDS, before either door is
+   * picked — a baseline somebody took is theirs whichever way they leave this
+   * screen, and routing the write through one of the doors would lose it for
+   * anybody who chose the other.
+   */
+  onRecord: (answer: string) => void;
+  /** The fork's primary door: on into the interview. */
+  onContinue: () => void;
+  /** Passed on without running it. The interview carries on as it would have. */
   onSkip: () => void;
+  /** The fork's second door. Absent means the door is not offered. */
+  onHome?: (() => void) | undefined;
 }
 
-export function BaselineOffer({ task, onDone, onSkip }: BaselineOfferProps) {
+export function BaselineOffer({ task, onRecord, onContinue, onSkip, onHome }: BaselineOfferProps) {
   const [pasted, setPasted] = useState('');
   const [copied, setCopied] = useState(false);
+  /* THE FORK (Adam, 2026-09-01). Pressing the primary button used to record
+     the run and walk straight into question one. That spent the single best
+     moment in the product without using it: the person is holding their AI's
+     no-file answer, having just read it, and that is the only point where
+     "build the file" can be put to them as "improve THIS" rather than as
+     fifty questions.
+
+     So the answer lands, it is saved, and the screen asks. Two doors, both
+     real — one into the interview, one home. Adam: "so the user is empowered
+     on taking action to improve their prompt."
+
+     Local state, not a position in the runner: this is one screen changing
+     what it shows after an action on it, the same way the copy button does.
+     Nothing about it is worth resuming to. */
+  const [landed, setLanded] = useState<string | null>(null);
   const ready = pasted.trim().length > 0;
+
+  if (landed !== null) {
+    return (
+      <div className="flow baselineoffer" data-position="baseline-landed">
+        {/* Polite, not assertive: the answer arriving is not an alert, and
+            nothing here takes focus (docs/GUARDRAILS.md). */}
+        <p className="baselineoffer-saved" role="status">
+          {S.baselineSaved}
+        </p>
+        <h2 className="baselineoffer-title">{S.baselineNextTitle}</h2>
+        <p className="baselineoffer-body">{S.baselineNextBody}</p>
+
+        {/* Their AI's answer, given back to them — the thing the primary door
+            is offering to improve. Read-only and quiet: it is evidence on this
+            screen, not something to edit. */}
+        <blockquote className="baselineoffer-answer">{landed}</blockquote>
+
+        <div className="baselineoffer-doors">
+          <Button type="button" variant="primary" onClick={onContinue}>
+            {S.baselineImprove}
+          </Button>
+          {onHome && (
+            <button type="button" className="baselineoffer-later" onClick={onHome}>
+              {S.baselineHome}
+            </button>
+          )}
+        </div>
+
+        <p className="flow-save">
+          <span>{S.savedNote}</span>
+          <span>{S.privacyNote}</span>
+        </p>
+      </div>
+    );
+  }
 
   return (
     // `.flow` as well as its own class, the way RunCard and ModuleIntro root
@@ -97,7 +156,18 @@ export function BaselineOffer({ task, onDone, onSkip }: BaselineOfferProps) {
       />
 
       <div className="baselineoffer-doors">
-        <Button type="button" variant="primary" disabled={!ready} onClick={() => onDone(pasted)}>
+        <Button
+          type="button"
+          variant="primary"
+          disabled={!ready}
+          /* Does NOT leave the screen. The answer is held, the fork is shown,
+             and `onDone` is what the fork's own primary door calls. */
+          onClick={() => {
+            const answer = pasted.trim();
+            onRecord(answer);
+            setLanded(answer);
+          }}
+        >
           {S.baselineGo}
         </Button>
         <button type="button" className="baselineoffer-later" onClick={onSkip}>

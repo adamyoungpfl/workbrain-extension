@@ -274,3 +274,90 @@ test('an answer that is already an order is left completely alone', async () => 
     await context.close();
   }
 });
+
+/**
+ * THE FORK, after the answer lands (Adam, 2026-09-01). Pressing "I ran it"
+ * used to record the run and walk straight into question one. That spent the
+ * best moment in the product without using it: somebody holding their AI's
+ * no-file answer is the only audience for whom "build the file" can be put as
+ * "improve THIS" rather than as fifty questions.
+ */
+async function toBaselineOffer(page: Page): Promise<void> {
+  await page.waitForSelector('.prompt-tw');
+  await page.locator('.prompt-tw').first().click();
+  await page.getByRole('button', { name: /Next/ }).click();
+  await page.waitForSelector('.baselineoffer');
+}
+
+const ANSWER =
+  'Here are a few ways to explain your role. The Quick Dinner Party Pitch: ' +
+  '"Companies generate massive amounts of raw operational data every second."';
+
+test('the answer lands on a fork, and is saved before either door is taken', async () => {
+  const { context, page } = await openBaseline(true);
+  try {
+    await toBaselineOffer(page);
+    await page.locator('#baseline-paste').fill(ANSWER);
+    await page.getByRole('button', { name: S.baselineGo }).click();
+
+    // It does NOT leave the screen.
+    await expect(page.locator("[data-position='baseline-landed']")).toBeVisible();
+    await expect(page.getByRole('button', { name: S.baselineImprove })).toBeVisible();
+    await expect(page.getByRole('button', { name: S.baselineHome })).toBeVisible();
+    // Their AI's answer is handed back — it is the thing the primary door
+    // offers to improve, so it has to be on screen when the offer is made.
+    await expect(page.locator('.baselineoffer-answer')).toContainText('Dinner Party');
+
+    // Written on landing, not routed through a door: a baseline somebody took
+    // is theirs whichever way they leave.
+    const runs = await page.evaluate(
+      () =>
+        new Promise<{ stage: string }[]>((r) =>
+          chrome.storage.local.get('wb:report', (x) => r(x['wb:report']?.runs ?? [])),
+        ),
+    );
+    expect(runs.map((v) => v.stage)).toEqual(['baseline']);
+  } finally {
+    await context.close();
+  }
+});
+
+test('going home keeps the baseline, and does not re-offer it', async () => {
+  const { context, page } = await openBaseline(true);
+  try {
+    await toBaselineOffer(page);
+    await page.locator('#baseline-paste').fill(ANSWER);
+    await page.getByRole('button', { name: S.baselineGo }).click();
+    await page.getByRole('button', { name: S.baselineHome }).click();
+
+    await expect(page.locator('.baselineoffer')).toHaveCount(0);
+    const runs = await page.evaluate(
+      () =>
+        new Promise<{ stage: string; answer: string }[]>((r) =>
+          chrome.storage.local.get('wb:report', (x) => r(x['wb:report']?.runs ?? [])),
+        ),
+    );
+    expect(runs).toHaveLength(1);
+    expect(runs[0]!.answer).toContain('Dinner Party');
+  } finally {
+    await context.close();
+  }
+});
+
+test('the offer screen fills the panel too — no dock hole, no scroll', async () => {
+  const { context, page } = await openBaseline(true);
+  try {
+    await toBaselineOffer(page);
+    // The same defect the goal screen had, on the very next screen of the same
+    // path: no drawer, but `.flowshell`'s dock reservation held the hole open.
+    const { overflow, saveBottom, viewport } = await page.evaluate(() => ({
+      overflow: document.documentElement.scrollHeight - document.documentElement.clientHeight,
+      saveBottom: Math.round(document.querySelector('.flow-save')!.getBoundingClientRect().bottom),
+      viewport: window.innerHeight,
+    }));
+    expect(overflow).toBe(0);
+    expect(viewport - saveBottom).toBeLessThanOrEqual(12);
+  } finally {
+    await context.close();
+  }
+});

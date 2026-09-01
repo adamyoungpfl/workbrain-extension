@@ -277,3 +277,83 @@ new storage shape, arriving while §5's canvas work and R-16's Concept 2 are
 mid-flight. Sequencing it after the beta ships is defensible; sequencing it
 before means the beta ships with the argument the product is actually about.
 That is Adam's call and it is a real one.
+
+---
+
+## The baseline is contaminated by memory, and we found out by running it
+
+**2026-09-01. Adam ran the first real baseline.** He took the seeded example
+"Explain what I do to someone non-technical" and ran it in his personal Gemini
+account — the one he uses for work and personal things. It returned three
+polished, fully-specified descriptions of his actual job: dashboards for
+leaders, IT support response times, service delivery health, enterprise
+reporting.
+
+`scripts/bench/detect.ts` on that answer returns **zero namings**. Not one
+sentence in it says "I don't know what you do."
+
+### What that means
+
+That account has memory of him. So the run was not "your AI with nothing
+loaded" — the phrase this product prints on the screen. It was *Gemini with
+everything it has already learned about Adam over months of use.*
+
+The condition the spine calls "baseline" is not, for most people, an empty
+model. It is whatever their assistant has already accumulated: memory, custom
+instructions, prior threads. Anybody who has used one AI heavily has a
+contaminated baseline by definition, and they are exactly the people most
+likely to try this product.
+
+### It changes the claim, and the honest version is stronger
+
+The claim on the screen is *file versus nothing*. The measurable claim is
+**file versus whatever that one assistant happens to remember**, which is a
+harder bar and a different sentence.
+
+It is also the better product argument, and the run is the evidence:
+
+- Gemini knew him. Claude and ChatGPT did not, and will not.
+- That memory is **per-vendor, per-account, invisible, and non-portable.** He
+  cannot read it, correct it, or take it anywhere.
+- The file is the same knowledge made portable, inspectable and correctable.
+
+"Your AI already knows some of this, in a form you cannot see or move" is a
+truer pitch than "your AI knows nothing about you", and it survives contact
+with the exact user who would otherwise say *"but Gemini already does this."*
+
+### The measurement problem underneath it
+
+The comparison as designed asks somebody to judge two answers. That measures
+**perceived quality**, and this answer would score well on it while telling us
+almost nothing.
+
+The axis that matters is **groundedness** — is this true about me, and does it
+say so when it is not. A fabricated answer and a well-grounded one can look
+equally good on a screen. The detector distinguishes them; a reader's verdict
+does not.
+
+`docs/GUARDRAILS.md` deliberately keeps the self-report block off the baseline
+run, because asking a model which parts of the file it used would tell it a
+file exists. That reasoning holds. But it also means baseline fabrication is
+undetectable *by design* — and this run shows the way through: `detect()`
+measured it **from the answer text alone**, with no added instruction and
+nothing sent anywhere. Counting namings on a pasted answer is the same shape
+as the R-16 self-report parse: read on render, dies with the screen.
+
+### Open, for Adam
+
+1. Does the baseline screen say what it currently says, or does it name the
+   memory problem and ask them to use a temporary chat?
+2. Does the comparison stay a quality verdict, or gain a groundedness signal?
+3. Does the marketing claim become the portable-memory argument above?
+
+**None of these are resolved in code.** They are product decisions in the sense
+`docs/OPEN.md` means it.
+
+### A detector bug found on the way
+
+Running `detect()` on this answer produced eight `second-manager` findings, all
+of them markdown headings — "The Simple 3-Part Breakdown" read as an asserted
+name. The same false-positive class was fixed once for `**Status:**` labels and
+was clearly not fixed generally. The `namings` count is sound; the `findings`
+list needs the structural rule tightened before it is trusted again.
