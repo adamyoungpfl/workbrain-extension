@@ -1,6 +1,5 @@
 import { test, expect, chromium } from '@playwright/test';
 import type { BrowserContext, Page } from '@playwright/test';
-import { readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ORBIT_STILL } from '../../src/core/geometry/markOrbit';
@@ -25,24 +24,6 @@ import type { MarkFrame } from '../../src/core/geometry/markSpin';
  */
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.resolve(HERE, '../../dist');
-
-/**
- * Which of the two status-bar behaviours is shipping, read out of the source
- * rather than imported from it.
- *
- * `FlowProgress.tsx` imports its own stylesheet and Playwright's runner cannot
- * parse CSS, so the module cannot be imported here the way core modules can.
- * Reading the one line keeps the spec pinned to the real constant: flip it and
- * these tests follow, rather than quietly testing the other mode.
- */
-const STATUS_MARK_SPIN = (() => {
-  const source = readFileSync(path.resolve(HERE, '../../src/panel/components/FlowProgress.tsx'), 'utf8');
-  const found = /STATUS_MARK_SPIN\s*:\s*BrandMarkSpin\s*=\s*'([a-z]+)'/.exec(source)?.[1];
-  if (found !== 'continuous' && found !== 'once') {
-    throw new Error(`STATUS_MARK_SPIN is "${found}" — VB-13 ships one of continuous | once`);
-  }
-  return found;
-})();
 
 const poseOf = (frame: MarkFrame) => frame.nodes.map((n) => `${n.cx},${n.cy},${n.r}`);
 
@@ -278,14 +259,17 @@ test.describe('VB-13 — reduced motion stops the loop, not just the movement', 
   test('the interview screen schedules nothing either', async () => {
     const { context, page } = await launchPanel({ reduce: true });
     await intoTheFlow(page);
-    await page.waitForSelector('.flowprogress-mark');
+    /* V2.9: the header's mark moved to the opposite corner and became the
+       narrator's control. The CLAIM here is unchanged and is the one worth
+       keeping — an interview screen under reduced motion schedules no frames
+       at all — so it now waits for the mark where the mark actually is. */
+    await page.waitForSelector('.narratormark .brand-mark');
 
     await page.waitForTimeout(800);
     expect(await frameCount(page)).toBe(0);
-    // The status mark is the GRAPH again (Adam, 2026-08-28), so the still
-    // equivalent is the same still pose the big one rests at — the claim is
-    // unchanged, only the shape it is made of.
-    expect(await readPose(page, '.flowprogress-mark')).toEqual(SPIN_STILL_POSE);
+    // Still the graph, and still resting at the same still pose the big one
+    // does — the claim is unchanged, only which corner it is drawn in.
+    expect(await readPose(page, '.narratormark .brand-mark')).toEqual(SPIN_STILL_POSE);
 
     await context.close();
   });
@@ -303,256 +287,27 @@ test.describe('VB-13 — reduced motion stops the loop, not just the movement', 
   });
 });
 
-test.describe('VB-13 — the status-bar mark', () => {
-  test('is present, left of the label, and set to the mode the ship constant names', async () => {
-    const { context, page } = await launchPanel();
-    await intoTheFlow(page);
+/* ── V2.9 — THE STATUS-BAR MARK IS GONE (Adam, 2026-09-02) ────────────────
 
-    const mark = page.locator('.flowprogress-mark');
-    await expect(mark).toHaveCount(1);
-    await expect(mark).toHaveAttribute('data-spin', STATUS_MARK_SPIN);
+   Two whole describes stood here. They held real claims: that it drew the
+   STATIC pose rather than a spinning one, that it turned once per MODULE and
+   not per question, and that it was the same logo as everywhere else rather
+   than a simplified stand-in.
 
-    const markBox = (await mark.boundingBox())!;
-    const titleBox = (await page.locator('.flowprogress-title').boundingBox())!;
-    expect(markBox.x + markBox.width).toBeLessThanOrEqual(titleBox.x);
-    // The 44px control floor does not apply: this is decorative, not a
-    // control. It is aria-hidden and nothing can focus or click it.
-    await expect(mark).toHaveAttribute('aria-hidden', 'true');
+   Adam moved it: "dump the TIM character and instead replace that spot with
+   the logo image (no title). It becomes the pulse that goes with the voice of
+   the narrator." The header's left slot is empty now so the section label sits
+   flush with the question block below it, and the mark is in the opposite
+   corner driving the narrator.
 
-    await context.close();
-  });
+   NOT EVERY CLAIM SURVIVED, and that is a decision rather than an oversight.
+   It no longer turns once per module: it breathes on the narrator's word
+   boundaries instead, and two motions on one element compete — the one tied to
+   something audible wins. `STATUS_MARK_SPIN` is retired with the behaviour it
+   named.
 
-  test('does not shift the label’s baseline as it turns', async () => {
-    const { context, page } = await launchPanel();
-    await intoTheFlow(page);
-    await page.waitForSelector('.flowprogress-mark');
-
-    const samples: string[] = [];
-    const poses: string[] = [];
-    for (let i = 0; i < 24; i++) {
-      samples.push(
-        await page.$eval('.flowprogress-title', (el) => {
-          // The bottom of the first line box is the baseline's own reference.
-          // Reading it to three decimals catches sub-pixel drift a rounded
-          // boundingBox() would hide.
-          const rect = el.getClientRects()[0]!;
-          return `${rect.top.toFixed(3)}|${rect.bottom.toFixed(3)}|${rect.left.toFixed(3)}`;
-        }),
-      );
-      poses.push((await readPose(page, '.flowprogress-mark')).join(' '));
-      if (STATUS_MARK_SPIN === 'continuous') await waitForFrames(page, 3);
-      else await page.waitForTimeout(40);
-    }
-
-    // The mark has to actually be moving during the window, or "the baseline
-    // held" is a statement about a still picture.
-    if (STATUS_MARK_SPIN === 'continuous') {
-      expect(new Set(poses).size, 'the status mark was not turning').toBeGreaterThan(5);
-    }
-    expect(new Set(samples).size, `the label moved: ${[...new Set(samples)].join(' / ')}`).toBe(1);
-
-    await context.close();
-  });
-
-  test('drops no frames on an interview screen', async () => {
-    // The honest form of "no measurable frame cost". An animation that runs
-    // necessarily costs *something* — the question is whether it costs enough
-    // to be felt, and the thing that would be felt is a missed frame. So this
-    // measures frame delivery, which is the observable, and the CPU share
-    // separately below, which is the early warning.
-    const { context, page } = await launchPanel();
-    await intoTheFlow(page);
-    await page.waitForSelector('.flowprogress-mark');
-
-    const frames = await page.evaluate(
-      () =>
-        new Promise<{ count: number; median: number; p90: number }>((resolve) => {
-          const stamps: number[] = [];
-          const start = performance.now();
-          function sample(t: number) {
-            stamps.push(t);
-            if (t - start < 2000) requestAnimationFrame(sample);
-            else {
-              const gaps = stamps.slice(1).map((v, i) => v - stamps[i]!).sort((a, b) => a - b);
-              resolve({
-                count: stamps.length,
-                median: gaps[Math.floor(gaps.length / 2)] ?? 0,
-                p90: gaps[Math.floor(gaps.length * 0.9)] ?? 0,
-              });
-            }
-          }
-          requestAnimationFrame(sample);
-        }),
-    );
-
-    // Measured here: 120 frames in two seconds, median gap 16.7ms, worst 17.6.
-    // The median is the assertion that matters — it says the steady state is a
-    // full 60Hz with the mark running. The 90th percentile allows one frame in
-    // ten to double up, which five headed Chrome windows sharing a laptop will
-    // occasionally do for reasons that are not this component. `count` catches
-    // the failure the other two would not: frames stopping altogether.
-    expect(frames.count, `only ${frames.count} frames in 2s`).toBeGreaterThan(60);
-    expect(frames.median, `median frame gap was ${frames.median.toFixed(1)}ms`).toBeLessThan(20);
-    expect(frames.p90, `90th-percentile frame gap was ${frames.p90.toFixed(1)}ms`).toBeLessThan(34);
-
-    await context.close();
-  });
-
-  test('costs a small, bounded share of the main thread', async () => {
-    const { context, page } = await launchPanel();
-    await intoTheFlow(page);
-    await page.waitForSelector('.flowprogress-mark');
-
-    // Chrome's own accounting, not a guess: total script time across a
-    // two-second idle window on the question screen.
-    const cdp = await context.newCDPSession(page);
-    await cdp.send('Performance.enable');
-    const read = async () => {
-      const { metrics } = await cdp.send('Performance.getMetrics');
-      const get = (name: string) => metrics.find((m) => m.name === name)?.value ?? 0;
-      return { script: get('ScriptDuration'), task: get('TaskDuration'), at: get('Timestamp') };
-    };
-
-    const start = await read();
-    await page.waitForTimeout(2000);
-    const end = await read();
-
-    const wall = end.at - start.at; // seconds
-    const scriptShare = (end.script - start.script) / wall;
-    const taskShare = (end.task - start.task) / wall;
-
-    // Measured on this machine: about 1.5–2.5% script and 7–10% total task
-    // time, against 0.05% with the loop switched off entirely by reduced
-    // motion. Most of that difference is the browser producing 120 frames at
-    // all, not the mark's own arithmetic. The thresholds are deliberately
-    // generous — this is a smoke alarm for a loop that has become expensive
-    // (a per-frame React render, a layout thrash), not a benchmark.
-    expect(scriptShare, `script time was ${(scriptShare * 100).toFixed(1)}% of wall`).toBeLessThan(
-      0.1,
-    );
-    expect(taskShare, `main thread was busy ${(taskShare * 100).toFixed(1)}% of wall`).toBeLessThan(
-      0.25,
-    );
-
-    // And nothing about the question is being re-rendered to achieve it: the
-    // question text node must be the same object it was two seconds ago.
-    const stable = await page.evaluate(() => {
-      const before = document.querySelector('.flow-q');
-      return new Promise<boolean>((resolve) => {
-        setTimeout(() => resolve(before === document.querySelector('.flow-q')), 300);
-      });
-    });
-    expect(stable).toBe(true);
-
-    await context.close();
-  });
-});
-
-/**
- * V1.7 VB-39 — the status-bar mark, REVERSED 2026-08-28.
- *
- * VB-39 made this mark a silhouette: one filled solid instead of twelve nodes
- * and thirty edges, on a legibility argument at 24px and a cheapness argument
- * for the turn. Adam overruled both — "make the icon the standard logo" — and
- * the reason is plainer than either: the door home should wear the mark people
- * already know, not a reduction of it.
- *
- * The claims below are VB-39's own, re-aimed at the graph. Every one is still
- * a measurement rather than a class check, because "the mark is the logo" is a
- * claim about what is painted, and an element with the right attribute that
- * paints nothing would pass any assertion about markup.
- */
-test.describe('the status-bar mark is the standard logo', () => {
-  test('is the whole graph, in the small mark and the big one alike', async () => {
-    const { context, page } = await launchPanel({ keepSplash: true });
-
-    await atTheBigMark(page);
-    await expect(page.locator(BIG_MARK)).toHaveAttribute('data-variant', 'graph');
-    expect(await page.locator(`${BIG_MARK} circle`).count()).toBe(12);
-    expect(await page.locator(`${BIG_MARK} line`).count()).toBe(30);
-
-    await intoTheFlow(page);
-    const mark = page.locator('.flowprogress-mark');
-    await expect(mark).toHaveAttribute('data-variant', 'graph');
-    // The same twelve and thirty. One mark, at two sizes — which is the whole
-    // point of the reversal.
-    expect(await page.locator('.flowprogress-mark circle').count()).toBe(12);
-    expect(await page.locator('.flowprogress-mark line').count()).toBe(30);
-    expect(await page.locator('.flowprogress-mark polygon').count()).toBe(0);
-
-    await context.close();
-  });
-
-  test('the ink is really on the screen, not merely in the DOM', async () => {
-    // The strongest form of "it paints": screenshot the 24px box and count how
-    // much of it stops being the panel's background. A mark that renders as
-    // nothing, or in the surface's own colour, fails this and passes every
-    // attribute check above it.
-    //
-    // The threshold is lower than the silhouette's 0.35 and that is not a
-    // weakening: a graph of nodes and edges genuinely covers less of its box
-    // than a filled solid does. What it must not be is empty.
-    const { context, page } = await launchPanel({ reduce: true });
-    await intoTheFlow(page);
-    const mark = page.locator('.flowprogress-mark');
-    await mark.waitFor();
-
-    const shot = await mark.screenshot();
-    const decoded = await page.evaluate(async (bytes) => {
-      const blob = new Blob([new Uint8Array(bytes)], { type: 'image/png' });
-      const bitmap = await createImageBitmap(blob);
-      const canvas = new OffscreenCanvas(bitmap.width, bitmap.height);
-      const context2d = canvas.getContext('2d')!;
-      context2d.drawImage(bitmap, 0, 0);
-      const { data } = context2d.getImageData(0, 0, bitmap.width, bitmap.height);
-      // The corner pixel is the surface behind the mark; anything far from it
-      // is ink. Distance, not equality, so antialiasing counts as neither.
-      const base = [data[0]!, data[1]!, data[2]!];
-      let ink = 0;
-      let blue = 0;
-      for (let i = 0; i < data.length; i += 4) {
-        const d =
-          Math.abs(data[i]! - base[0]!) +
-          Math.abs(data[i + 1]! - base[1]!) +
-          Math.abs(data[i + 2]! - base[2]!);
-        if (d > 90) {
-          ink += 1;
-          if (data[i + 2]! > data[i]!) blue += 1;
-        }
-      }
-      return { ink, blue, total: bitmap.width * bitmap.height };
-    }, [...shot]);
-
-    expect(decoded.ink / decoded.total, `only ${decoded.ink} of ${decoded.total} pixels painted`)
-      .toBeGreaterThan(0.1);
-    // And it is the brand's blue-to-teal, not a grey or a black fallback.
-    expect(decoded.blue / decoded.ink).toBeGreaterThan(0.9);
-
-    await context.close();
-  });
-
-  test('turns when the module changes, and lands back on the still pose', async () => {
-    const { context, page } = await launchPanel();
-    await intoTheFlow(page);
-    await page.waitForSelector('.flowprogress-mark circle');
-
-    // The first module's turn happens on arrival. Sample through it: the pose
-    // must genuinely change, and stay a whole icosahedron while it does — a
-    // frame with fewer than twelve nodes would be a collapsed mark.
-    const seen = new Set<string>();
-    for (let i = 0; i < 16; i++) {
-      const pose = await readPose(page, '.flowprogress-mark');
-      seen.add(pose.join(' '));
-      expect(pose).toHaveLength(12);
-      await page.waitForTimeout(24);
-    }
-    expect(seen.size, 'the mark never moved').toBeGreaterThan(1);
-
-    // Settled, it is exactly the pose the still mark ships — the same one
-    // reduced motion gets, so motion carried nothing.
-    await page.waitForTimeout(500);
-    expect(await readPose(page, '.flowprogress-mark')).toEqual(SPIN_STILL_POSE);
-
-    await context.close();
-  });
-});
+   The surviving claims are checked elsewhere rather than restated here:
+   `narrator.spec` holds that it is a real named control whose state is a
+   drawing, and `narrator.a11y.spec` scans it. This file keeps the claims about
+   the mark that are still about the MARK — the welcome screen's orbit and the
+   reduced-motion still — which is what it was always for. */

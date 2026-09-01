@@ -8,7 +8,7 @@ import {
   DividedLine,
   Field,
   FlowProgress,
-  Tim,
+  NarratorMark,
   NavButton,
   JumpSheet,
   NavCluster,
@@ -2179,16 +2179,19 @@ function StepView({
           Jump to keeps its own quiet control beside him, exactly where it was.
           When a third control arrives the sheet is the right answer — it is
           two controls today, and a sheet for two is furniture. */}
-      <div className={bare ? 'flow-chrome flow-chrome--bare' : 'flow-chrome'}>
-        {!bare && onJumpTo && (
-          <button type="button" className="flow-jump" onClick={() => setJumpOpen(true)}>
-            {S.jumpOpen}
-          </button>
-        )}
-        <Tim />
+      {/* THE MARK IN THE CORNER IS THE NARRATOR (Adam, 2026-09-02). It breathes
+          on the words while the questions are read, and pressing it turns the
+          reading on and off.
+
+          "Jump to…" left this row — the section label and its bar carry it now
+          (components/FlowProgress.tsx), which is why the row holds one control
+          on every screen and no longer has two ends to balance. */}
+      <div className="flow-chrome flow-chrome--bare">
+        <NarratorMark />
       </div>
       {onJumpTo && (
         <JumpSheet
+          {...(onHome ? { onHome } : {})}
           open={jumpOpen}
           onClose={() => setJumpOpen(false)}
           targets={jumpList}
@@ -2204,7 +2207,7 @@ function StepView({
         title={bare ? S.baselineEyebrow : (moduleFor(modules, pos)?.title ?? '')}
         current={topLevelIndex(modules, pos)}
         total={total}
-        onHome={onHome}
+        {...(!bare && onJumpTo ? { onJumpTo: () => setJumpOpen(true) } : {})}
         run={runBeat}
       />
     </>
@@ -2731,13 +2734,17 @@ function StepView({
                     it costs the FIRST LINE's measure and nothing else, which
                     is the trade every chat interface already makes: a
                     speaker's mark belongs to the line it is speaking. */}
-                {/* The speaker's mark is dropped on the baseline screen
-                    (Adam, 2026-08-31). It is Concept 2's device for making a
-                    question read as a spoken turn — right for an interview,
-                    wrong here: a prompt box has no speaker, and a mark beside
-                    the text is the last thing making this look like somebody
-                    else's message rather than the person's own composer. */}
-                {!bare && <span className="flow-mark" aria-hidden="true" />}
+                {/* THE SPEAKER'S MARK IS GONE FROM EVERY QUESTION (Adam,
+                    2026-09-02: "remove the blue dot from all of the interview
+                    questions, it is adding no value").
+
+                    It was Concept 2's device for making a question read as a
+                    spoken turn, and it was dropped from the baseline screen a
+                    fortnight earlier for the same reason it goes everywhere
+                    now: it implies a second party in a conversation that has
+                    only ever had one. The narrator's mark in the corner is
+                    where the voice lives, and it is the honest place for it —
+                    it actually moves when something is being said. */}
                 {/* V1.2 VB-10: the question types itself in on arrival. Inside
                     a bubble that stops being an effect and becomes the obvious
                     thing — a message being written. */}

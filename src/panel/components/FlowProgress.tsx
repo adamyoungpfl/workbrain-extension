@@ -1,5 +1,4 @@
 import type React from 'react';
-import { BrandMark, type BrandMarkSpin, type BrandMarkVariant } from './BrandMark';
 import { TypedModuleLabel } from './Typed';
 import { S } from '../strings';
 import './FlowProgress.css';
@@ -32,7 +31,10 @@ import './FlowProgress.css';
  * and neither schedules a frame, so this constant is not an accessibility
  * decision. It is a taste decision, and it is one line.
  */
-export const STATUS_MARK_SPIN: BrandMarkSpin = 'once';
+/* Kept as the recorded value even though the header no longer draws a mark:
+   `narrator.spec` and the pose tests still name it, and it is the answer to
+   "how did the status mark move" for anybody reading back. */
+export const STATUS_MARK_SPIN = 'once' as const;
 
 /**
  * How big the status-bar mark is, in px.
@@ -45,7 +47,7 @@ export const STATUS_MARK_SPIN: BrandMarkSpin = 'once';
  * legible and still subordinate. The sibling site mounts the same sphere at
  * 30–38px beside nav text; 400px of panel does not have that room.
  */
-const STATUS_MARK_SIZE = 24;
+
 
 /**
  * V1.7 VB-39 — the status-bar mark is the silhouette, not the node graph.
@@ -72,7 +74,7 @@ const STATUS_MARK_SIZE = 24;
  * path, for 320ms per MODULE (`STATUS_MARK_SPIN = 'once'`) — not per question.
  * That is the cost, and it is small enough to pay for the mark being itself.
  */
-const STATUS_MARK_VARIANT: BrandMarkVariant = 'graph';
+
 
 export interface FlowProgressProps {
   /** The current module's own title — "Orientation", "How I Communicate".
@@ -81,7 +83,19 @@ export interface FlowProgressProps {
   /** V2.4 VB-112 — when present, the MARK (icon only, never the title)
    * becomes a real button back to the Home page, and the progressbar role
    * moves off the wrapper so a control never sits inside a value. */
-  onHome?: (() => void) | undefined;
+  /**
+   * V2.9 (Adam, 2026-09-02) — the label and its bar ARE the jump now.
+   *
+   * The mark used to sit to their left and go Home. It has moved to the
+   * opposite corner and become the narrator's control, so this row starts
+   * where the question block below it starts and the two are flush — which is
+   * the whole of what the left slot was costing.
+   *
+   * Home did not disappear with it: `JumpSheet` opens with Home as its first
+   * destination, so one control reaches every question AND the way out, which
+   * is fewer things in a header than a mark and a link were.
+   */
+  onJumpTo?: (() => void) | undefined;
   /** 1-based index of the question on screen, across the whole flow.
    * Computed by the caller (core/flow/runner's `topLevelIndex`) — this
    * component derives nothing and stores nothing. */
@@ -154,7 +168,7 @@ export interface FlowProgressProps {
  * visible inside it is `aria-hidden`, so the title is announced once as the
  * bar's name rather than twice — once as a paragraph and again as a label.
  */
-export function FlowProgress({ title, current, total, onHome, run }: FlowProgressProps) {
+export function FlowProgress({ title, current, total, onJumpTo, run }: FlowProgressProps) {
   const pct = total > 0 ? Math.min(100, Math.max(0, (current / total) * 100)) : 0;
   /**
    * BS-05a (§5) — THE BAR BECOMES A RUN OF FIVE.
@@ -170,21 +184,15 @@ export function FlowProgress({ title, current, total, onHome, run }: FlowProgres
    * loop — still renders the bar it always had. Degrade, never break.
    */
 
-  // V2.4 VB-112 — the mark is a door home (Adam: "people instinctively
-  // assume whatever is there will take you home"). The ICON only, never the
-  // title text. A button cannot live inside a progressbar (a control inside
-  // a value), so when the door exists the role moves to an inner wrapper —
-  // same accessible name, same values, announced once as before.
-  const mark = (
-    <BrandMark
-      className="flowprogress-mark"
-      size={STATUS_MARK_SIZE}
-      variant={STATUS_MARK_VARIANT}
-      spin={STATUS_MARK_SPIN}
-      spinCue={title}
-      entrance={false}
-    />
-  );
+  /* THE MARK USED TO BE HERE, as a door home (V2.4 VB-112: "people
+     instinctively assume whatever is there will take you home"). It has moved
+     to the opposite corner and become the narrator's control, and Home moved
+     into the jump sheet with everything else — one control now reaches every
+     question AND the way out.
+
+     The left slot going empty is the point rather than a side effect: this row
+     starts where the question block below it starts, and the two are flush. */
+
   const bar = (barContent: React.ReactNode) => (
     <div
       className="flowprogress"
@@ -203,28 +211,14 @@ export function FlowProgress({ title, current, total, onHome, run }: FlowProgres
       {barContent}
     </div>
   );
-  if (onHome) {
+  if (onJumpTo) {
     return (
-      <div className="flowprogress-shell">
-        <button type="button" className="flowprogress-home" aria-label={S.goHome} onClick={onHome}>
-          {/* NO WORD UNDER IT (Adam, 2026-08-28: "get rid of the label").
-              BS-01c gave this control "Home" under the mark to satisfy §1's
-              "zero controls communicate by icon alone". Overruled, and the
-              reasoning is worth keeping: a product's own mark in the top-left
-              corner returning you home is the most-learned control on the web,
-              and it is the ONE icon whose meaning does not depend on reading
-              it. `aria-label` still carries the full sentence, so nothing is
-              lost to a screen reader — the exemption is visual only. This is
-              now the second judged exception to §1, beside FileTree's orb
-              toggle (labelled by adjacency). Recorded in docs/BETA-SPRINT.md
-              so it is a decision rather than an oversight. */}
-          {mark}
-        </button>
+      <button type="button" className="flowprogress-jump" onClick={onJumpTo} aria-label={S.jumpOpen}>
         {bar(
           <>
             <div className="flowprogress-head">
               <TypedModuleLabel className="flowprogress-title" title={title} />
-                    </div>
+            </div>
             {run ? <Beats run={run} /> : (
               <div className="flowprogress-track" aria-hidden="true">
                 <span className="flowprogress-fill" style={{ width: `${pct}%` }} />
@@ -232,7 +226,7 @@ export function FlowProgress({ title, current, total, onHome, run }: FlowProgres
             )}
           </>,
         )}
-      </div>
+      </button>
     );
   }
 
@@ -242,7 +236,9 @@ export function FlowProgress({ title, current, total, onHome, run }: FlowProgres
           and the title keeps the one VB-02 gave it, so the announced tree is
           byte-for-byte what it was before the mark arrived. */}
       <div className="flowprogress-head">
-        {mark}
+        {/* THE MARK IS GONE FROM HERE (2026-09-02). It moved to the opposite
+            corner and became the narrator's control, so the label starts at
+            the panel's own left edge and sits flush with the question below. */}
         {/* V1.2 VB-10: the label types itself in when the module changes, and
             sits there unchanged for every question inside it. The remount-per-
             question problem `spinCue` solves for the mark is the same one

@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll } from 'vitest';
-import { FlowProgress, STATUS_MARK_SPIN } from './FlowProgress';
+import { FlowProgress } from './FlowProgress';
 import { mount } from './testUtils';
 import { S } from '../strings';
 
@@ -120,73 +120,50 @@ describe('FlowProgress', () => {
     expect((container.querySelector('.flowprogress-fill') as HTMLElement).style.width).toBe('0%');
   });
 
-  // ── V1.2 VB-13 — the mark to the left of the label ───────────────────────
-  describe('the status-bar mark', () => {
-    it('sits before the title, in the same row', () => {
-      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
-      const head = container.querySelector('.flowprogress-head')!;
-      const children = [...head.children];
-      expect(children).toHaveLength(2);
-      expect(children[0]!.tagName.toLowerCase()).toBe('svg');
-      expect(children[0]!.classList.contains('flowprogress-mark')).toBe(true);
-      expect(children[1]!.classList.contains('flowprogress-title')).toBe(true);
-    });
+});
 
-    it('adds nothing to what is read out, and nothing to what is on screen as text', () => {
-      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
-      expect(container.querySelector('.flowprogress-mark')!.getAttribute('aria-hidden')).toBe('true');
-      expect(container.textContent).toBe('About Me');
-    });
+/* ── V2.9 — THE HOME DOOR MOVED (Adam, 2026-09-02) ─────────────────────────
 
-    it('is a fixed 24px box, so no frame of the turn can move the label', () => {
-      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
-      const mark = container.querySelector('.flowprogress-mark')!;
-      expect(mark.getAttribute('width')).toBe('24');
-      expect(mark.getAttribute('height')).toBe('24');
-    });
+   The mark used to sit at the head of this row and go Home, and these tests
+   held two real claims about it: that it drew the STATIC pose rather than a
+   spinning one, and that it communicated by icon alone as a judged exception
+   to §1.
 
-    it('does not replay the entrance animation on every question', () => {
-      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
-      expect(container.querySelector('.flowprogress-mark')!.getAttribute('data-entrance')).toBe('off');
-    });
+   Both are retired with the control. The mark is in the opposite corner now
+   driving the narrator, and Home moved into the jump sheet — so the exception
+   to §1 is retired rather than merely relocated, which is the better outcome:
+   there is no icon-only control in this header at all any more.
 
-    it('takes the module title as its spin cue, so "once" turns per module', () => {
-      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
-      // The rendered mode is whatever the ship constant says; the cue wiring
-      // has to be right either way, because flipping the constant must not
-      // also require rewiring the component.
-      expect(container.querySelector('.flowprogress-mark')!.getAttribute('data-spin')).toBe(
-        STATUS_MARK_SPIN,
-      );
-      expect(['continuous', 'once']).toContain(STATUS_MARK_SPIN);
-    });
+   WHAT REPLACES THEM is the claim the new arrangement makes. */
 
-    /**
-     * V1.7 VB-39 made this mark a silhouette; Adam reversed it on 2026-08-28
-     * — "make the icon the standard logo." The door home wears the mark people
-     * already know, at 24px, rather than a reduction of it.
-     */
-    it('is the standard logo — the whole graph, no silhouette', () => {
-      const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
-      const mark = container.querySelector('.flowprogress-mark')!;
-      expect(mark.getAttribute('data-variant')).toBe('graph');
-      expect(mark.querySelectorAll('circle')).toHaveLength(12);
-      expect(mark.querySelectorAll('line')).toHaveLength(30);
-      expect(mark.querySelectorAll('polygon')).toHaveLength(0);
-    });
+describe('FlowProgress — the label and bar are the way out', () => {
+  it('is a real control, named, when there is somewhere to jump', () => {
+    const { container } = mount(
+      <FlowProgress title="About Me" current={5} total={38} onJumpTo={() => {}} />,
+    );
+    const jump = container.querySelector('.flowprogress-jump')!;
+    expect(jump.tagName).toBe('BUTTON');
+    expect(jump.getAttribute('aria-label')).toBe(S.jumpOpen);
+    // The title is still inside it, so the control is the status line itself
+    // rather than a button sitting next to one.
+    expect(jump.textContent).toContain('About Me');
+  });
 
-    it('carries no word beside it, and still announces one', () => {
-      // §1 asks that no control communicate by icon alone, and this is the
-      // second judged exception to it (FileTree's orb toggle is the first).
-      // The exemption is VISUAL only — the accessible name is unchanged, so
-      // nothing is lost to a screen reader.
-      const { container } = mount(
-        <FlowProgress title="About Me" current={5} total={38} onHome={() => {}} />,
-      );
-      const home = container.querySelector('.flowprogress-home')!;
-      expect(home.textContent).toBe('');
-      expect(home.getAttribute('aria-label')).toBe(S.goHome);
-    });
+  it('draws no mark at all — the row starts at the panel edge', () => {
+    // The left slot going empty is the point: this row now begins exactly
+    // where the question block below it does.
+    const { container } = mount(
+      <FlowProgress title="About Me" current={5} total={38} onJumpTo={() => {}} />,
+    );
+    expect(container.querySelector('.flowprogress-mark')).toBeNull();
+  });
+
+  it('is not a control at all when there is nowhere to jump', () => {
+    // A button that does nothing is worse than no button: it is a promise the
+    // screen cannot keep, and it takes a tab stop to make it.
+    const { container } = mount(<FlowProgress title="About Me" current={5} total={38} />);
+    expect(container.querySelector('.flowprogress-jump')).toBeNull();
+    expect(container.querySelector('[role="progressbar"]')).not.toBeNull();
   });
 });
 

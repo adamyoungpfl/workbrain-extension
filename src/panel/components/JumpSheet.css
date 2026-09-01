@@ -137,3 +137,26 @@
   outline: 2px solid var(--primary);
   outline-offset: 2px;
 }
+
+/* Home, above the search and outside the filter. It is not a question, and it
+   must not be something a person can type themselves out of reach of. Set as a
+   row rather than a link so it reads as the same kind of thing as the
+   destinations under it. */
+.jump-home {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  min-height: 44px;
+  margin-bottom: 10px;
+  padding: 0 12px;
+  border: 1px solid var(--border-i);
+  border-radius: 10px;
+  background: none;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.jump-home:hover {
+  background: var(--sunken);
+}

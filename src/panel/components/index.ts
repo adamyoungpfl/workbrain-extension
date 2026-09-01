@@ -125,7 +125,6 @@ export type { FeedbackSheetProps } from './FeedbackSheet';
 export { DeclarationLine } from './DeclarationLine';
 export type { DeclarationLineProps } from './DeclarationLine';
 
-// V2.9. TIM — the narrator's face, and the control for reading aloud. The ring
-// around him moves on the words. See TimAvatar.tsx.
-export { Tim, TimFace, useSpeechPulse } from './TimAvatar';
-export type { TimAvatarProps } from './TimAvatar';
+// V2.9. The mark, as the narrator's control: it breathes on the words while
+// the questions are read. See NarratorMark.tsx.
+export { NarratorMark, useSpeechPulse } from './NarratorMark';

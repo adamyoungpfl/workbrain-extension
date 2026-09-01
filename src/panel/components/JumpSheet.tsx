@@ -46,14 +46,34 @@ export interface JumpSheetProps {
   /** Where a chosen question goes. The caller turns the id into a position
    * with `positionForQuestionId`, which is the door R1-12 already built. */
   onJump: (questionId: string) => void;
+  /**
+   * V2.9 (Adam, 2026-09-02) — HOME LIVES HERE NOW.
+   *
+   * The mark in the header used to be the door home, and it has moved to the
+   * opposite corner to become the narrator's control. Rather than find the
+   * exit a new corner of its own, it joins the one control that already means
+   * "take me somewhere else": Adam's own framing — "the label and status bar
+   * become the jump to which also lets them get to home."
+   *
+   * ABOVE the search field and outside the filter, deliberately. Home is not a
+   * question and must not be something a person can type themselves out of
+   * reach of.
+   */
+  onHome?: (() => void) | undefined;
 }
 
-export function JumpSheet({ open, onClose, targets, onJump }: JumpSheetProps) {
+export function JumpSheet({ open, onClose, targets, onJump, onHome }: JumpSheetProps) {
   const [query, setQuery] = useState('');
   const matches = useMemo(() => jumpMatches(query, targets), [query, targets]);
 
   return (
     <Sheet open={open} onClose={onClose} title={S.jumpTitle} className="jump" full>
+      {onHome && (
+        <button type="button" className="jump-home" onClick={onHome}>
+          {S.goHome}
+        </button>
+      )}
+
       <Field
         id="jump-query"
         label={S.jumpFieldLabel}

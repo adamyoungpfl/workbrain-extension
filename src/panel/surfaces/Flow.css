@@ -2356,3 +2356,37 @@
 .flow-chrome .tim {
   margin: -9px 0;
 }
+
+/* ══ V2.9 (Adam, 2026-09-02) — THE HEADER ═════════════════════════════════
+
+   THE HEADER STARTS AT THE PANEL EDGE. The mark used to hold the left slot and
+   go home; it is in the opposite corner now, driving the narrator, so the
+   section label and its bar begin exactly where the question below them does.
+   Flush, which is what the left slot was costing.
+
+   The whole label-and-bar group is the jump control, so it needs a press
+   surface and a focus ring — and no button chrome, because it must still read
+   as a status line rather than as a button somebody has to decide about. */
+.flowprogress-jump {
+  display: block;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  border-radius: 6px;
+}
+.flowprogress-jump:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.flowprogress-jump:hover .flowprogress-title {
+  color: var(--primary);
+}
+
+/* One control in the row on every screen now, parked at the right where a
+   read-aloud control sits on every reading surface anybody has used. */
+.flow-chrome .narratormark {
+  margin: -9px 0;
+}

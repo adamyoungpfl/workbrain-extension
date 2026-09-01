@@ -1,0 +1,93 @@
+/* The mark in the corner, as the narrator's control. The paint/press split
+   every control in this panel makes: 30px of drawing inside a 44px target. */
+.narratormark {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+}
+.narratormark:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  border-radius: var(--r-pill);
+}
+
+/* ── THE RING ──────────────────────────────────────────────────────────────
+   Present at all times so nothing shifts when the voice starts; invisible
+   until there is a voice to show. Outside the mark rather than over it — a
+   ring drawn on top would cover the drawing every time it breathed. */
+.narratormark-ring {
+  position: absolute;
+  inset: 4px;
+  border-radius: var(--r-pill);
+  border: 2px solid var(--primary);
+  opacity: 0;
+  transform: scale(1);
+  pointer-events: none;
+}
+
+/* Muted is a whole element appearing and disappearing, not a dimming: there
+   is nothing to read as "on but faint", and nothing carried by colour alone. */
+.narratormark-mute {
+  position: absolute;
+  right: 1px;
+  bottom: 1px;
+  width: 14px;
+  height: 14px;
+  border-radius: var(--r-pill);
+  background: var(--ground);
+  box-shadow: 0 0 0 1px var(--divider);
+  color: var(--ink-2);
+  display: grid;
+  place-items: center;
+}
+
+/* One breath per spoken word, restarted from the component by keying on the
+   word count — driven by the engine's own account of where the voice is
+   rather than by a loop guessing at it. */
+@keyframes narratormark-word {
+  0% {
+    opacity: 0.5;
+    transform: scale(1);
+  }
+  60% {
+    opacity: 0.14;
+    transform: scale(1.2);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.28);
+  }
+}
+.narratormark[data-speaking='yes'] .narratormark-ring {
+  animation: narratormark-word 620ms ease-out;
+}
+/* A second ring half a beat behind, so a run of words reads as speech rather
+   than as a strobe. */
+.narratormark-ring.is-trail {
+  inset: 0;
+  border-width: 1px;
+}
+.narratormark[data-speaking='yes'] .narratormark-ring.is-trail {
+  animation: narratormark-word 900ms ease-out;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* No breath. A steady lit ring instead — "it is speaking" survives the
+     stillness, which is the floor. */
+  .narratormark[data-speaking='yes'] .narratormark-ring {
+    animation: none;
+    opacity: 0.45;
+    transform: none;
+  }
+  .narratormark[data-speaking='yes'] .narratormark-ring.is-trail {
+    animation: none;
+    opacity: 0;
+  }
+}
