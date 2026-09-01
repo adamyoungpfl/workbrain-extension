@@ -1656,14 +1656,25 @@ export const S = {
      They are a PAIR now, both on screen, and each has its own device — so
      each is split where the panel needs a seam.
 
-     The bold line, in the pieces it is coloured in: "start" and "finish" are
-     picked out the way the counter's number is, which is what makes this
-     section a sibling of the one above it rather than a paragraph under it. */
-  splashOwnLead: 'The file is yours from',
-  splashOwnStart: 'start',
-  splashOwnJoin: 'to',
-  splashOwnFinish: 'finish',
-  splashOwnTail: '.',
+     The bold line, in the two pieces it is coloured in. IN CAPITALS AND AT
+     THE COUNTER'S OWN SIZE (Adam, 2026-09-01), which is what makes this a
+     sibling of the section above rather than a paragraph under it — the two
+     read as one pair of headings with one device each.
+
+     Written in capitals here rather than transformed in CSS, because that is
+     what `splashCostLead` and `splashCostUnit` already do: the string in this
+     file is the string on the screen, and a reader of this file should not
+     have to hold a stylesheet in their head to know what it says. */
+  splashOwnLead: 'THE FILE IS YOURS FROM',
+  /* The three words the gradient runs across — it starts in the colour of the
+     path that led here and arrives at a purple, so the sentence is the last
+     leg of the journey down the page. One span, because a gradient has to run
+     across one box to be a gradient. */
+  /* NO FULL STOP, the way "ABOUT 15 MINUTES" has none. These two are a pair
+     of headings and a pair only reads as one if they are punctuated alike —
+     and a heading in capitals does not take a stop. The quiet line under each
+     of them is a sentence and keeps its own. */
+  splashOwnSpan: 'START TO FINISH',
   /* [DRAFT] The elimination, worst first. Each wrong answer is put up and
      struck out, and the true one is what is left standing — a promise somebody
      watched three alternatives fail to is a different kind of promise from one

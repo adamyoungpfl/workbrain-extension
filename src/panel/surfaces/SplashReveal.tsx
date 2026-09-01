@@ -10,7 +10,6 @@ import {
   countAt,
   linkAt,
   partAt,
-  partStartsAt,
   rolodexAt,
 } from '../../core/splash/reveal';
 import type { RevealPart } from '../../core/splash/reveal';
@@ -94,9 +93,6 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
        style prop for the same reason every other number here does: this is a
        fact the paint needs, not state. */
     root.style.setProperty('--rolodex-turn', `${ROLODEX_TURN_MS}ms`);
-    /* The flag starts waving when its own section starts arriving, not when
-       the reveal does — the same number the spine brings the section in on. */
-    root.style.setProperty('--flag-wait', `${partStartsAt('privacy')}s`);
     const frame = root.getBoundingClientRect();
     const next: Partial<Record<RevealPart, Box>> = {};
     for (const part of PARTS) {
@@ -259,8 +255,12 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
           the INSTRUCTION, and this line never carried one. */}
       {!still && (
         <svg className="splashreveal-links" aria-hidden="true" focusable="false">
-          <path ref={pathRef} className="splashreveal-path" fill="none" />
-          <path ref={path2Ref} className="splashreveal-path" fill="none" />
+          {/* Each names what it leads to, and the second one is a different
+              colour for it: the first path belongs to the section above and is
+              drawn in its cyan, the second hands over to the fuchsia the words
+              below it start in. The change of colour IS the hand-off. */}
+          <path ref={pathRef} className="splashreveal-path" data-link="time" fill="none" />
+          <path ref={path2Ref} className="splashreveal-path" data-link="privacy" fill="none" />
         </svg>
       )}
 
@@ -312,34 +312,16 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
           promise, in the one place the product cannot afford to be misread. */}
       <div className="splashreveal-part" data-part="privacy" ref={hold('privacy')}>
         <p className="splashreveal-own">
-          {S.splashOwnLead} <span className="splashreveal-start">{S.splashOwnStart}</span>{' '}
-          {S.splashOwnJoin}{' '}
-          {/* THE WORD IS THE FLAG (Adam, 2026-09-01). It was a separate mark
-              floating above the line, which made it an illustration OF the
-              sentence; attached to "finish" it is part of it. The word stays
-              legible and the flag beside it does the waving — a word tipping
-              24 degrees is a word somebody has to work to read, and this line
-              is the promise, not the ornament. */}
-          <span className="splashreveal-finish">
-            {S.splashOwnFinish}
-            <span className="splashreveal-flag" aria-hidden="true">
-              {/* Hand-drawn rather than brought in: docs/DEPENDENCIES.md would
-                  have to argue for an icon set, and this is six rectangles and
-                  a line. */}
-              <svg viewBox="0 0 24 24" width="17" height="17" focusable="false">
-                <path className="splashreveal-flagpole" d="M4 3.5 V20" />
-                <g className="splashreveal-flagcloth">
-                  <rect x="5" y="4" width="4.5" height="3.5" />
-                  <rect x="14" y="4" width="4.5" height="3.5" />
-                  <rect x="9.5" y="7.5" width="4.5" height="3.5" />
-                  <rect x="18.5" y="7.5" width="3" height="3.5" />
-                  <rect x="5" y="11" width="4.5" height="3.5" />
-                  <rect x="14" y="11" width="4.5" height="3.5" />
-                </g>
-              </svg>
-            </span>
-          </span>
-          {S.splashOwnTail}
+          {S.splashOwnLead}{' '}
+          {/* THE FLAG IS GONE (Adam, 2026-09-01). It was a chequered flag on
+              the word "finish", and before that a mark floating above the
+              line. What replaced it is the colour: the path into this section
+              is fuchsia, these words start in that same fuchsia and travel to
+              a purple, and the line under the answer below is fuchsia again.
+              A drawn icon said "finish line" once, in one place; the through-
+              line says it three times down the screen without a second idea
+              on the field. */}
+          <span className="splashreveal-span">{S.splashOwnSpan}</span>
         </p>
 
         <p className="splashreveal-leave" aria-hidden="true">

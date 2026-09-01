@@ -169,7 +169,7 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
       S.splashLeaveAnswers[CLAIM_TRUE]!.amount,
     );
     expect(container.querySelector('.splashreveal-own')!.textContent).toContain(
-      S.splashOwnFinish,
+      S.splashOwnSpan,
     );
     // And no white layer: there is nothing to swell from.
     expect(container.querySelector('.splash-swell')).toBeNull();

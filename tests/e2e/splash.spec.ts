@@ -261,7 +261,7 @@ test.describe('VB-128 — the show opens', () => {
     /* V2.9 slice 3b: the second claim is arrived at rather than printed, so
        what lands is the bold line plus whichever answer the elimination is
        currently standing on — never an empty slot. */
-    await expect(page.locator('.splashreveal-own')).toContainText(S.splashOwnFinish);
+    await expect(page.locator('.splashreveal-own')).toContainText(S.splashOwnSpan);
     await expect(page.locator(".splashreveal-phrase[data-on='on']")).not.toBeEmpty();
 
     // And the product does not promise a file it hides: Actions is out for
@@ -871,8 +871,7 @@ test.describe('VB-128 — reduced motion', () => {
        which is the exact opposite of the promise, so this is checked rather
        than assumed. */
     await expect(page.locator('.splashreveal-own')).toBeVisible();
-    await expect(page.getByText(S.splashOwnStart, { exact: true })).toBeVisible();
-    await expect(page.getByText(S.splashOwnFinish, { exact: true })).toBeVisible();
+    await expect(page.getByText(S.splashOwnSpan, { exact: true })).toBeVisible();
     await expect(page.locator(".splashreveal-phrase[data-on='on']")).toHaveText(
       TRUE_PHRASE,
     );

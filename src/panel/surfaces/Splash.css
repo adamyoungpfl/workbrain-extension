@@ -453,8 +453,14 @@
      exactly what this is. (The audit greps file text, so naming the literal
      even inside a comment trips it. Worth knowing.) */
   color: var(--ink-inv);
-  /* The mark's own two hues, which is the only gradient in this product and
-     belongs to exactly this moment. */
+  /* The mark's own two hues. SUPERSEDED IN PART, 2026-09-01: this said it was
+     "the only gradient in this product", which stopped being true when V2.9
+     slice 3d ran a fuchsia-to-purple one across START TO FINISH two sections
+     up. There are two, they are on the same screen, and they are doing
+     different jobs — this one is the mark's own colours on the primary door,
+     that one is the through-line arriving in the words it led to. Neither is
+     decoration looking for a home, which is what the original note was
+     guarding against. */
   background: linear-gradient(112deg, var(--globe-node-1-mid), var(--globe-node-2-mid));
   box-shadow: 0 6px 22px -8px var(--globe-node-2-mid);
 }
