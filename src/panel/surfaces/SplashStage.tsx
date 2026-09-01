@@ -520,45 +520,39 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
         g.closePath();
         g.clip();
 
-        if (stage === 'tone') {
-          /* ONE LIGHT SHADE, so the mosaic reads as a PATCHWORK before it
-             reads as anything else. The shape lands first and nothing has to
-             be looked at yet. The per-panel nudge is tiny and exists only so
-             the seams are visible — a wall of one flat colour is one shape,
-             not fifteen. */
-          g.fillStyle = pop.tone;
-          g.fillRect(minX, minY, w, h);
-          g.globalAlpha = (i % 3) * 0.03;
-          g.fillStyle = pop.ink;
-          g.fillRect(minX, minY, w, h);
-          g.globalAlpha = 1;
-        } else {
-          const tint = pop.hue[tintAt(t, i, pop.hue.length, SPLASH_BEATS.swellAt)] ?? pop.tone;
+        /* EVERY TILE IS A RECOLOUR OF A PICTURE (Adam, 2026-09-02) — the
+           PowerPoint treatment, not a wash over the top.
 
-          if (stage === 'full') {
-            const picture = glass[frameAt(t, i, count, SPLASH_BEATS.swellAt)];
-            if (picture) {
-              /* COVER, NEVER FIT. A picture letterboxed inside an irregular
-                 quad leaves the ground showing in the corners, which turns a
-                 wall of panels back into a scatter of tiles. */
-              const scale = Math.max(w / picture.width, h / picture.height);
-              const dw = picture.width * scale;
-              const dh = picture.height * scale;
-              g.drawImage(picture, minX + (w - dw) / 2, minY + (h - dh) / 2, dw, dh);
-            }
-            /* The colour rides OVER the picture rather than replacing it, so
-               the two cut on their own beats and the panel is one object
-               changing in two ways rather than two objects swapping. */
-            g.globalAlpha = 0.42;
-            g.fillStyle = tint;
-            g.fillRect(minX, minY, w, h);
-            g.globalAlpha = 1;
-          } else {
-            // Colour only. A wall of flat colour changing is a rhythm; a wall
-            // of pictures changing is a demand, and the rhythm goes first.
-            g.fillStyle = tint;
-            g.fillRect(minX, minY, w, h);
-          }
+           The difference is which channel survives. A translucent fill blends
+           toward the tint and takes the picture's contrast down with it, so a
+           wall of them goes muddy. `globalCompositeOperation = 'color'` keeps
+           the picture's LUMINOSITY and takes only the hue and saturation of
+           the fill — which is exactly what "recolour" means in every tool that
+           offers it, and why the shapes stay as crisp at full tint as they are
+           untinted.
+
+           In the first stage the picture is PINNED to whatever that tile
+           opened on (`frameAt(0, …)`), so only the treatment moves. One thing
+           changing is a rhythm; two things changing is a flicker. */
+        const pinned = stage === 'colour';
+        const picture = glass[frameAt(pinned ? 0 : t, i, count, SPLASH_BEATS.swellAt)];
+        const tint = pop.hue[tintAt(t, i, pop.hue.length, SPLASH_BEATS.swellAt)] ?? pop.tone;
+
+        if (picture) {
+          const scale = Math.max(w / picture.width, h / picture.height);
+          const dw = picture.width * scale;
+          const dh = picture.height * scale;
+          g.drawImage(picture, minX + (w - dw) / 2, minY + (h - dh) / 2, dw, dh);
+
+          g.globalCompositeOperation = 'color';
+          g.fillStyle = tint;
+          g.fillRect(minX, minY, w, h);
+          g.globalCompositeOperation = 'source-over';
+        } else {
+          // No picture decoded for this slot: the tint alone still reads as a
+          // panel. Degrade, never break.
+          g.fillStyle = tint;
+          g.fillRect(minX, minY, w, h);
         }
 
         /* THE COLOUR DRAINS INTO THE WHITE rather than being covered by it —

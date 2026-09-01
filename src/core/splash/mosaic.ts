@@ -168,32 +168,32 @@ export function frameAt(t: number, cell: number, imageCount: number, over: numbe
  * as speed picks up cycles through both images and colors getting lighter and
  * lighter until it fades to white."
  *
- * Three stages, in order:
+ * REVISED 2026-09-02, at Adam's word: "I want the individual tiles to be full
+ * individual tints of the original image. So, like how PowerPoint would let
+ * you choose a different color treatment for the overall image, I want that
+ * affect on each individual tile. First tint color changes on the same image
+ * in each tile. Then the images start to cycle along with the tint colors."
  *
- *   `tone`   — one light shade across the whole wall. The mosaic reads as a
- *              patchwork before it reads as anything else, so the SHAPE lands
- *              before the content does and nothing has to be looked at yet.
- *   `colour` — the panels start cutting, but only between colours. A wall of
- *              flat colour changing is a rhythm; a wall of pictures changing is
- *              a demand. The rhythm goes first.
- *   `full`   — pictures join the colours, both accelerating, both draining.
+ * So the flat opening is gone. There are two stages now:
  *
- * This ordering is what makes the ending work. Adam: "the current colors are a
- * little too vibrant and distract too much from the logo during the sequence,
- * I want to draw the eye to it materializing out of the white." A show that
- * opens at full strength has nowhere to go and nothing to hand over to; one
- * that builds from a single tone spends its whole length getting louder, and
- * then stops — and the quiet after it is where the mark arrives.
+ *   `colour` — every tile holds ONE picture and recolours it. The wall is
+ *              already showing something from the first frame, and what moves
+ *              is the treatment rather than the subject. One thing changing
+ *              is a rhythm; two would be a flicker.
+ *   `full`   — the pictures start cutting too, so both are moving, and the
+ *              combinations run together into the white.
+ *
+ * The build still runs one-thing-then-two, which is what gives the ending
+ * somewhere to come from — it just starts from a picture instead of from a
+ * flat shade, which is a stronger opening frame and costs nothing.
  */
-export type MosaicStage = 'tone' | 'colour' | 'full';
+export type MosaicStage = 'colour' | 'full';
 
-/** Fractions of the run to the swell. */
-const TONE_UNTIL = 0.16;
+/** Fraction of the run to the swell at which pictures start cutting too. */
 const COLOUR_UNTIL = 0.46;
 
 export function stageAt(t: number, over: number): MosaicStage {
   const p = over <= 0 ? 1 : Math.max(0, t) / over;
-  if (p < TONE_UNTIL) return 'tone';
   if (p < COLOUR_UNTIL) return 'colour';
   return 'full';
 }

@@ -146,25 +146,21 @@ describe('frameAt — what each panel is holding', () => {
   });
 });
 
-describe('stageAt — the wall builds before it shouts', () => {
-  it('opens on one tone, so the patchwork lands before the content does', () => {
-    expect(stageAt(0, OVER)).toBe('tone');
-    expect(stageAt(OVER * 0.1, OVER)).toBe('tone');
-  });
-
-  it('cuts colours before it cuts pictures', () => {
-    // A wall of flat colour changing is a rhythm; a wall of pictures changing
-    // is a demand. The rhythm goes first.
+describe('stageAt — one thing moves, then two', () => {
+  it('opens already showing a picture, with only the treatment moving', () => {
+    // The flat opening shade is gone (2026-09-02): every tile holds a picture
+    // from the first frame and recolours it. One thing changing is a rhythm.
+    expect(stageAt(0, OVER)).toBe('colour');
     expect(stageAt(OVER * 0.3, OVER)).toBe('colour');
   });
 
-  it('brings the pictures in for the back half', () => {
+  it('starts cutting pictures too for the back half', () => {
     expect(stageAt(OVER * 0.6, OVER)).toBe('full');
     expect(stageAt(OVER, OVER)).toBe('full');
   });
 
   it('only ever moves forward', () => {
-    const order: Record<string, number> = { tone: 0, colour: 1, full: 2 };
+    const order: Record<string, number> = { colour: 0, full: 1 };
     let previous = -1;
     for (let t = 0; t <= OVER * 1.4; t += 0.05) {
       const rank = order[stageAt(t, OVER)] as number;
