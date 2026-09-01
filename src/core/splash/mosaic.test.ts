@@ -12,6 +12,8 @@ import {
   frameAt,
   holdAt,
   makeMosaic,
+  stageAt,
+  tintAt,
 } from './mosaic';
 
 const OVER = 3.8; // SPLASH_BEATS.swellAt
@@ -144,19 +146,89 @@ describe('frameAt — what each panel is holding', () => {
   });
 });
 
-describe('bleachAt — the colour drains before the white lands', () => {
-  it('is full colour through the early show', () => {
-    expect(bleachAt(0, OVER)).toBe(0);
-    expect(bleachAt(1.5, OVER)).toBe(0);
+describe('stageAt — the wall builds before it shouts', () => {
+  it('opens on one tone, so the patchwork lands before the content does', () => {
+    expect(stageAt(0, OVER)).toBe('tone');
+    expect(stageAt(OVER * 0.1, OVER)).toBe('tone');
   });
 
-  it('starts draining BEFORE the swell, and is white by the time it arrives', () => {
-    // A wall still fully saturated when a white sheet drops over it reads as a
-    // cut; one already draining reads as the same event arriving.
-    expect(bleachAt(OVER * 0.8, OVER)).toBeGreaterThan(0);
-    expect(bleachAt(OVER * 0.8, OVER)).toBeLessThan(1);
+  it('cuts colours before it cuts pictures', () => {
+    // A wall of flat colour changing is a rhythm; a wall of pictures changing
+    // is a demand. The rhythm goes first.
+    expect(stageAt(OVER * 0.3, OVER)).toBe('colour');
+  });
+
+  it('brings the pictures in for the back half', () => {
+    expect(stageAt(OVER * 0.6, OVER)).toBe('full');
+    expect(stageAt(OVER, OVER)).toBe('full');
+  });
+
+  it('only ever moves forward', () => {
+    const order: Record<string, number> = { tone: 0, colour: 1, full: 2 };
+    let previous = -1;
+    for (let t = 0; t <= OVER * 1.4; t += 0.05) {
+      const rank = order[stageAt(t, OVER)] as number;
+      expect(rank).toBeGreaterThanOrEqual(previous);
+      previous = rank;
+    }
+  });
+});
+
+describe('tintAt — colour cuts on its own beat', () => {
+  it('stays inside the palette', () => {
+    for (let t = 0; t < 5; t += 0.05) {
+      for (let cell = 0; cell < CELL_COUNT; cell += 1) {
+        const i = tintAt(t, cell, 8, OVER);
+        expect(i).toBeGreaterThanOrEqual(0);
+        expect(i).toBeLessThan(8);
+      }
+    }
+  });
+
+  it('does not change colour on the same frame it changes picture', () => {
+    // Two things moving together read as one thing flickering. Over a whole
+    // run, the two sequences must not be the same sequence.
+    let sameEverywhere = true;
+    for (let t = 0; t < 3.5; t += 0.04) {
+      for (let cell = 0; cell < CELL_COUNT; cell += 1) {
+        if (tintAt(t, cell, 8, OVER) !== frameAt(t, cell, 8, OVER)) sameEverywhere = false;
+      }
+    }
+    expect(sameEverywhere).toBe(false);
+  });
+
+  it('gives a spread of colours across the wall at any instant', () => {
+    const shown = new Set(
+      Array.from({ length: CELL_COUNT }, (_, c) => tintAt(1.4, c, 8, OVER)),
+    );
+    expect(shown.size).toBeGreaterThan(3);
+  });
+
+  it('degrades to a single colour rather than dividing by nothing', () => {
+    expect(tintAt(2, 3, 0, OVER)).toBe(0);
+  });
+});
+
+describe('bleachAt — the wall drains through the whole back half', () => {
+  it('is full colour while the wall is still building', () => {
+    expect(bleachAt(0, OVER)).toBe(0);
+    expect(bleachAt(OVER * 0.4, OVER)).toBe(0);
+  });
+
+  it('starts draining where the pictures start, and is white by the swell', () => {
+    // One continuous drain rather than a wall at full strength meeting a
+    // white sheet.
+    expect(bleachAt(OVER * 0.6, OVER)).toBeGreaterThan(0);
+    expect(bleachAt(OVER * 0.6, OVER)).toBeLessThan(1);
     expect(bleachAt(OVER, OVER)).toBe(1);
     expect(bleachAt(OVER + 2, OVER)).toBe(1);
+  });
+
+  it('holds its colour late, then goes quickly', () => {
+    // Eased, not linear: the wall stays legible while it is worth looking at,
+    // and the white then reads as an event rather than a slow dissolve.
+    const half = bleachAt(OVER * 0.73, OVER);
+    expect(half).toBeLessThan(0.4);
   });
 
   it('rises without ever stepping back', () => {

@@ -161,18 +161,74 @@ export function frameAt(t: number, cell: number, imageCount: number, over: numbe
 }
 
 /**
+ * WHAT THE WALL IS SHOWING, `t` seconds in (Adam, 2026-09-02).
+ *
+ * "Each panel starts in a single light tone shade and the panels are like a
+ * patchwork behind it. The panels first start to cycle through colors and then
+ * as speed picks up cycles through both images and colors getting lighter and
+ * lighter until it fades to white."
+ *
+ * Three stages, in order:
+ *
+ *   `tone`   — one light shade across the whole wall. The mosaic reads as a
+ *              patchwork before it reads as anything else, so the SHAPE lands
+ *              before the content does and nothing has to be looked at yet.
+ *   `colour` — the panels start cutting, but only between colours. A wall of
+ *              flat colour changing is a rhythm; a wall of pictures changing is
+ *              a demand. The rhythm goes first.
+ *   `full`   — pictures join the colours, both accelerating, both draining.
+ *
+ * This ordering is what makes the ending work. Adam: "the current colors are a
+ * little too vibrant and distract too much from the logo during the sequence,
+ * I want to draw the eye to it materializing out of the white." A show that
+ * opens at full strength has nowhere to go and nothing to hand over to; one
+ * that builds from a single tone spends its whole length getting louder, and
+ * then stops — and the quiet after it is where the mark arrives.
+ */
+export type MosaicStage = 'tone' | 'colour' | 'full';
+
+/** Fractions of the run to the swell. */
+const TONE_UNTIL = 0.16;
+const COLOUR_UNTIL = 0.46;
+
+export function stageAt(t: number, over: number): MosaicStage {
+  const p = over <= 0 ? 1 : Math.max(0, t) / over;
+  if (p < TONE_UNTIL) return 'tone';
+  if (p < COLOUR_UNTIL) return 'colour';
+  return 'full';
+}
+
+/**
+ * Which hue a panel is wearing.
+ *
+ * Separate from `frameAt` on purpose: colour and picture cut on the same clock
+ * but not in step, so a panel changing its picture is not also changing its
+ * colour on the same frame. Two things moving together read as one thing
+ * flickering.
+ */
+export function tintAt(t: number, cell: number, hues: number, over: number): number {
+  if (hues <= 0) return 0;
+  const n = Math.floor(cutsBy(Math.max(0, t), over) + ((cell * 5701) % 1000) / 1000);
+  return (((n + cell * 3) % hues) + hues) % hues;
+}
+
+/**
  * How far the mosaic has bleached, 0 to 1, `t` seconds in.
  *
  * The cells do not simply get covered by the white overlay — they LOSE THEIR
- * COLOUR into it, starting a little before the swell does. Adam: "they start
- * with colour and as the animation cycle speeds up, the animation builds
- * fading to white." A wall that is still fully saturated at the instant a
- * white sheet drops over it reads as a cut; one already draining reads as the
- * same event arriving.
+ * COLOUR into it. Adam: "getting lighter and lighter until it fades to white."
+ *
+ * It begins where the pictures do, so the whole second half of the show is one
+ * continuous drain rather than a wall at full strength meeting a white sheet.
+ * The curve is eased rather than linear: most of the lightening happens late,
+ * so the wall stays legible while it is still worth looking at and then goes
+ * quickly, which is what makes the white read as an event rather than as a
+ * slow dissolve.
  */
 export function bleachAt(t: number, swellAt: number): number {
-  const from = swellAt * 0.55;
+  const from = swellAt * COLOUR_UNTIL;
   if (t <= from) return 0;
   if (t >= swellAt) return 1;
-  return (t - from) / (swellAt - from);
+  const p = (t - from) / (swellAt - from);
+  return p * p;
 }

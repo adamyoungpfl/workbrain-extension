@@ -288,6 +288,16 @@ test.describe('VB-129 — the shard field', () => {
         return { painted, strip: sig.join(',') };
       });
 
+    /* PAST THE TONE STAGE FIRST (2026-09-02). The wall now deliberately opens
+       STILL — one light shade across every panel, so the mosaic reads as a
+       patchwork before it reads as anything else — and only then starts
+       cutting. Two samples taken inside that opening are identical, which is
+       the design working, not the canvas being dead.
+
+       `stageAt` puts the tone stage at 16% of the run to the swell; this
+       clears it with room and still lands well before the stage unmounts. */
+    await page.waitForTimeout(900);
+
     const first = await sample();
     expect(first, 'the stage left before the first look').not.toBeNull();
     expect(first!.painted, 'the canvas is blank — no shards were drawn').toBeGreaterThan(40);

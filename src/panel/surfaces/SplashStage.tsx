@@ -1,5 +1,13 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef } from 'react';
-import { STAGE_H, STAGE_W, bleachAt, frameAt, makeMosaic } from '../../core/splash/mosaic';
+import {
+  STAGE_H,
+  STAGE_W,
+  bleachAt,
+  frameAt,
+  makeMosaic,
+  stageAt,
+  tintAt,
+} from '../../core/splash/mosaic';
 import type { Point } from '../../core/splash/mosaic';
 import { SPLASH_BEATS } from '../../core/splash/sequence';
 
@@ -79,6 +87,8 @@ interface Pop {
   paper: string;
   ink: string;
   shade: string;
+  /** The single light shade the wall opens in. */
+  tone: string;
 }
 
 function readPop(): Pop {
@@ -89,6 +99,7 @@ function readPop(): Pop {
     paper: token('--pop-paper'),
     ink: token('--pop-ink'),
     shade: token('--pop-shade'),
+    tone: token('--pop-tone'),
   };
 }
 
@@ -448,6 +459,7 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
      The wide type includes `VideoFrame`, which has no `width`, and cover-fit
      needs the source's real dimensions. */
   const texturesRef = useRef<(HTMLImageElement | HTMLCanvasElement)[]>([]);
+  const popRef = useRef<Pop>({ hue: [], paper: '', ink: '', shade: '', tone: '' });
 
   useEffect(() => {
     /* Drawn once at mount, then only read. Sixteen flat compositions at 256px
@@ -456,6 +468,7 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
        nothing to decode, nothing to fail, and so no degradation path to write.
        The wall is never blank because it was never waiting. */
     const pop = readPop();
+    popRef.current = pop;
     texturesRef.current = PAINTERS.map((paint, i) => makeTexture(paint, pop, i));
 
     const canvas = canvasRef.current;
@@ -481,12 +494,13 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
 
       const bleach = bleachAt(t, SPLASH_BEATS.swellAt);
 
+      const stage = stageAt(t, SPLASH_BEATS.swellAt);
+      const pop = popRef.current;
+
       for (let i = 0; i < cells.length; i += 1) {
         const cell = cells[i]!;
-        const picture = glass[frameAt(t, i, count, SPLASH_BEATS.swellAt)];
-        if (!picture) continue;
 
-        // The panel's own box, so the picture can be drawn to cover it.
+        // The panel's own box, so a picture can be drawn to cover it.
         let minX = Infinity;
         let minY = Infinity;
         let maxX = -Infinity;
@@ -506,28 +520,61 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
         g.closePath();
         g.clip();
 
-        /* COVER, NEVER FIT. A picture letterboxed inside an irregular quad
-           leaves the ground showing in the corners, which turns a wall of
-           panels back into a scatter of tiles. */
-        const scale = Math.max(w / picture.width, h / picture.height);
-        const dw = picture.width * scale;
-        const dh = picture.height * scale;
-        g.drawImage(picture, minX + (w - dw) / 2, minY + (h - dh) / 2, dw, dh);
+        if (stage === 'tone') {
+          /* ONE LIGHT SHADE, so the mosaic reads as a PATCHWORK before it
+             reads as anything else. The shape lands first and nothing has to
+             be looked at yet. The per-panel nudge is tiny and exists only so
+             the seams are visible — a wall of one flat colour is one shape,
+             not fifteen. */
+          g.fillStyle = pop.tone;
+          g.fillRect(minX, minY, w, h);
+          g.globalAlpha = (i % 3) * 0.03;
+          g.fillStyle = pop.ink;
+          g.fillRect(minX, minY, w, h);
+          g.globalAlpha = 1;
+        } else {
+          const tint = pop.hue[tintAt(t, i, pop.hue.length, SPLASH_BEATS.swellAt)] ?? pop.tone;
 
-        /* THE COLOUR DRAINS INTO THE WHITE rather than being covered by it.
-           `bleachAt` starts before the swell does, so by the time the white
-           sheet arrives the wall is already going — one event arriving rather
-           than two things happening. */
+          if (stage === 'full') {
+            const picture = glass[frameAt(t, i, count, SPLASH_BEATS.swellAt)];
+            if (picture) {
+              /* COVER, NEVER FIT. A picture letterboxed inside an irregular
+                 quad leaves the ground showing in the corners, which turns a
+                 wall of panels back into a scatter of tiles. */
+              const scale = Math.max(w / picture.width, h / picture.height);
+              const dw = picture.width * scale;
+              const dh = picture.height * scale;
+              g.drawImage(picture, minX + (w - dw) / 2, minY + (h - dh) / 2, dw, dh);
+            }
+            /* The colour rides OVER the picture rather than replacing it, so
+               the two cut on their own beats and the panel is one object
+               changing in two ways rather than two objects swapping. */
+            g.globalAlpha = 0.42;
+            g.fillStyle = tint;
+            g.fillRect(minX, minY, w, h);
+            g.globalAlpha = 1;
+          } else {
+            // Colour only. A wall of flat colour changing is a rhythm; a wall
+            // of pictures changing is a demand, and the rhythm goes first.
+            g.fillStyle = tint;
+            g.fillRect(minX, minY, w, h);
+          }
+        }
+
+        /* THE COLOUR DRAINS INTO THE WHITE rather than being covered by it —
+           the whole back half of the show is one continuous lightening, so by
+           the time the swell arrives the wall is already going. One event
+           arriving rather than two things happening. */
         if (bleach > 0) {
           g.globalCompositeOperation = 'lighten';
-          g.fillStyle = `rgba(255, 255, 255, ${(bleach * 0.92).toFixed(3)})`;
+          g.fillStyle = `rgba(255, 255, 255, ${(bleach * 0.95).toFixed(3)})`;
           g.fillRect(minX, minY, w, h);
           g.globalCompositeOperation = 'source-over';
         }
 
         // The seam. Light enough to read as glass between panels rather than
         // as a drawn border, and it fades out with everything else.
-        g.strokeStyle = `rgba(255, 255, 255, ${(0.22 * (1 - bleach)).toFixed(3)})`;
+        g.strokeStyle = `rgba(255, 255, 255, ${(0.3 * (1 - bleach)).toFixed(3)})`;
         g.lineWidth = 1;
         g.stroke();
         g.restore();
