@@ -2260,3 +2260,53 @@
 .flow--prompt .flow-order .btn {
   margin-left: -10px;
 }
+
+/* ── NO SCROLL BELOW THE SAVE NOTE ─────────────────────────────────────────
+   The bare shell was min-height 100dvh holding a form that was ALSO 100dvh
+   (its own min-height, minus an offset this screen sets to zero), so the save
+   note and the body's top margin were pure overflow: 1022px of document in a
+   760px panel, and 262px of nothing to scroll through underneath.
+
+   `position: fixed` rather than more arithmetic. This screen is the only
+   thing on the panel — no drawer, no dock — so it can simply BE the panel,
+   and a fixed box cannot be pushed past the viewport by anything inside it.
+   The document then has no scrollable height at all, which is the actual
+   requirement: not "less scroll" but none. */
+.flowshell--bare {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  /* `.flowshell` reserves `--flow-reserve` at the bottom for the dock. This
+     screen sets no shell style props at all — there is no dock to measure —
+     so it was taking the 254px FALLBACK and holding a dock-shaped hole open
+     under a screen with no dock. That was the whole of the 262px. */
+  padding-bottom: 0;
+}
+.flowshell--bare .flow {
+  flex: 1;
+  min-height: 0;
+}
+
+/* ── ONE GROUND, NO CARDS ──────────────────────────────────────────────────
+   The question sat in a white bubble on the grey ground, which is Concept 2's
+   chat treatment. On a composer it reads as a second surface laid over the
+   first (Adam: "some has a solid background and is covering the pattern").
+   The bubble keeps its box for layout and stops painting: one ground, and the
+   only white left on the screen is the input, which SHOULD look like an
+   input. */
+.flow--prompt .flow-bubble {
+  background: none;
+  border-radius: 0;
+  margin-left: 0;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+/* The stem and the note under the box are one pair saying one thing, so they
+   are set at one size — `.flow-hint`'s 14px, matched as a literal rather than
+   through a token because that is how the rule it is matching is written. */
+.flow--prompt .flow-field-sr-label .field-label {
+  font-size: 14px;
+}

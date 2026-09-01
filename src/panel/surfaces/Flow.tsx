@@ -2656,7 +2656,13 @@ function StepView({
                     it costs the FIRST LINE's measure and nothing else, which
                     is the trade every chat interface already makes: a
                     speaker's mark belongs to the line it is speaking. */}
-                <span className="flow-mark" aria-hidden="true" />
+                {/* The speaker's mark is dropped on the baseline screen
+                    (Adam, 2026-08-31). It is Concept 2's device for making a
+                    question read as a spoken turn — right for an interview,
+                    wrong here: a prompt box has no speaker, and a mark beside
+                    the text is the last thing making this look like somebody
+                    else's message rather than the person's own composer. */}
+                {!bare && <span className="flow-mark" aria-hidden="true" />}
                 {/* V1.2 VB-10: the question types itself in on arrival. Inside
                     a bubble that stops being an effect and becomes the obvious
                     thing — a message being written. */}
