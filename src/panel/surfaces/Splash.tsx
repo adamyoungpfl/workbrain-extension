@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react';
-import { BuildStamp, NarratorToggle } from '../components';
+import { BuildStamp } from '../components';
 import { SplashStage } from './SplashStage';
 import { SplashReveal } from './SplashReveal';
 import type { SplashStageHandle } from './SplashStage';
@@ -244,17 +244,20 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
 
            The clock is still THIS component's — `elapsed` reads the same rAF
            that drives the show, so the mosaic and the reveal cannot drift.
-           Under reduced motion it is handed `still` and schedules nothing. */
+           Under reduced motion it is handed `still` and schedules nothing.
+
+           V2.9 slice 4a: THE READ-ALOUD TOGGLE IS NOT PASSED IN ANY MORE. The
+           baseline door became two doors — narrated and silent — so a mute
+           control above them was the screen asking the same question twice,
+           which is the objection BR-01 made when it deleted the third control
+           from here. Nothing is lost: the toggle lives in the interview
+           header, which is where somebody changes their mind rather than
+           where they first decide. */
         <SplashReveal
           still={reduced}
           elapsed={() => (performance.now() - t0Ref.current) / 1000 - SPLASH_BEATS.revealAt}
           {...(onBaseline ? { onBaseline: () => leave.current(onBaseline) } : {})}
           onStraight={() => leave.current()}
-          audio={
-            <div className="splash-audio">
-              <NarratorToggle />
-            </div>
-          }
         />
       )}
     </div>

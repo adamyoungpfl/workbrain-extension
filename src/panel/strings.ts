@@ -1712,6 +1712,17 @@ export const S = {
      seeing where you are" described a frame of mind; this is the thing the
      press produces, and it is the same words the screen it leads to uses. */
   splashBaseline: 'Set Your AI Baseline',
+  /* [DRAFT] V2.9 slice 4a (Adam, 2026-09-01) — the baseline door is two doors
+     that read as one object: "I want to make it feel loosely like the are
+     choosing the narrated or silent baseline and that the narrated is the
+     heavy lean, but optional. Like choosing which door you enter the rocket
+     from."
+
+     So the quiet half is not a rejection of the loud one. It says what it
+     does, in the same voice, and it is a verb somebody would actually say —
+     not "without narration", which describes the absence of a feature rather
+     than the thing they are choosing. */
+  splashBaselineSilent: 'Set it silently',
   /* The other half of the choice. It is not "skip" — nothing is being skipped,
      it is the same interview by the shorter road — and it is not "no thanks",
      because declining is not what somebody is doing when they pick the way

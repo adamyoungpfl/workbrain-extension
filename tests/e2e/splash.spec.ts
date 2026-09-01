@@ -83,7 +83,7 @@ async function launchPanel(
   /* `init` runs before the first navigation. It has to: the show is once per
      browser session (VB-34), so a script installed by reloading arrives at a
      panel that has already decided not to play. */
-  options: { reduce?: boolean; init?: () => void } = {},
+  options: { reduce?: boolean; init?: () => void; narrator?: boolean } = {},
 ): Promise<{ context: BrowserContext; page: Page; url: string }> {
   const context = await chromium.launchPersistentContext('', {
     channel: 'chromium',
@@ -99,6 +99,13 @@ async function launchPanel(
   const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
   const id = new URL(sw.url()).host;
   const url = `chrome-extension://${id}/panel.html`;
+  /* Seeded through the worker, before the panel exists to read it. `wb:prefs`
+     is one item written whole (prefs.ts), so this writes it whole too. */
+  if (options.narrator !== undefined) {
+    await sw.evaluate(async (on) => {
+      await chrome.storage.sync.set({ 'wb:prefs': { narrator: on } });
+    }, options.narrator);
+  }
   const page = await context.newPage();
   await installFrameProbe(page);
   if (options.init) await page.addInitScript(options.init);
@@ -535,17 +542,28 @@ test.describe('VB-128 — every exit, at every moment', () => {
     // tour door are gone — "go straight in" is one of these two now, and the
     // tour is still the interview's own first three steps. The baseline path
     // is first because it is the one that expires.
-    /* 2026-09-02: a THIRD stop, and it is deliberately FIRST. The read-aloud
-       toggle joins the screen so somebody can turn narration on before they
-       choose a path — and a control that changes how the next screen behaves
-       has to be reachable before the controls that take you there, or the
-       keyboard route offers it only after the choice it applies to is gone. */
+    /* 2026-09-02: a THIRD stop, and it is deliberately FIRST — a read-aloud
+       toggle, so narration could be turned on before the path it applies to
+       was chosen.
+
+       SUPERSEDED, V2.9 slice 4a: the toggle is gone and the choice it offered
+       is inside the door now. The baseline is two halves of one object —
+       narrated and silent — so the preference is set by which half is pressed
+       rather than by a control above them, and the keyboard walks exactly the
+       three things this screen does: the loud door, the quiet one, the way
+       straight in. A control reachable only after the choice it applies to is
+       gone was the problem the toggle-first order solved; a choice that IS the
+       door cannot have it. */
     const order: string[] = [];
     for (let i = 0; i < 3; i++) {
       await page.keyboard.press('Tab');
       order.push(await page.evaluate(() => document.activeElement?.textContent ?? ''));
     }
-    expect(order).toEqual([S.narratorShort, S.splashBaseline, S.splashStraight]);
+    expect(order).toEqual([
+      S.splashBaseline,
+      S.splashBaselineSilent,
+      S.splashStraight,
+    ]);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
@@ -822,6 +840,88 @@ test.describe('V2.9 slice 3 — the sections stop', () => {
 
     // Timed from one number: every turn runs for the length core counts it in.
     for (const turn of turns) expect(turn.ms).toBe(`${ROLODEX_TURN_MS / 1000}s`);
+
+    await context.close();
+  });
+});
+
+test.describe('V2.9 slice 4a — the baseline door is two doors', () => {
+  /* `.sync`, not `.local`: preferences follow the person to their other
+     machine, which is what `setSync` in core/storage/client.ts means and what
+     `wb:prefs` has always been written to. Read from the page rather than
+     asserted through the UI, because what is being checked is that the press
+     SAVED the answer — a toggle that flips on screen and forgets is exactly
+     the bug this door replaces. */
+  const narratorPref = (page: Page) =>
+    page.evaluate(async () => {
+      const stored = await chrome.storage.sync.get('wb:prefs');
+      return (stored['wb:prefs'] as { narrator?: boolean } | undefined)?.narrator ?? null;
+    });
+
+  test('one object, two doors: the loud one turns narration ON and goes in', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* Adam: "feel loosely like the are choosing the narrated or silent
+       baseline… Like choosing which door you enter the rocket from." So the
+       press is BOTH the answer and the way through — nobody is asked a second
+       question to confirm the one they just answered. */
+    await expect(page.locator('.splash-cluster button')).toHaveCount(2);
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 4000 });
+    expect(await narratorPref(page)).toBe(true);
+
+    await context.close();
+  });
+
+  test('and the quiet one turns it OFF and goes to the same place', async () => {
+    /* Opened with the narrator ALREADY ON, which is the only state in which
+       this door has anything to write: `setPref` returns early when the value
+       is unchanged, so pressing "silently" from the default writes nothing and
+       proves nothing. The case that matters is somebody who had the voice on
+       and is choosing to go without it. */
+    const { context, page } = await launchPanel({ narrator: true });
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    expect(await narratorPref(page)).toBe(true);
+
+    await page.getByRole('button', { name: S.splashBaselineSilent, exact: true }).click();
+
+    // The same destination. The halves differ by the voice and nothing else.
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 4000 });
+    expect(await narratorPref(page)).toBe(false);
+
+    await context.close();
+  });
+
+  test('the screen does not ask twice — no mute toggle above the doors', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* BR-01's objection, applied again: a screen that asks "with the voice or
+       without" and also carries a mute control is asking the same question
+       twice. The toggle is not lost — it lives in the interview header, where
+       somebody changes their mind rather than where they first decide. */
+    await expect(page.locator('.splash-audio')).toHaveCount(0);
+    await expect(page.locator('.splash .narrator-toggle')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('the quiet door is a real door, at the full target size', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* "Optional" describes the narration, not the choice. The quiet half is
+       not a link, not a smaller control and not a greyed one — it clears the
+       same 44px floor as everything else in this product, and it is inside the
+       object rather than beside it. */
+    const quiet = page.getByRole('button', { name: S.splashBaselineSilent, exact: true });
+    const box = (await quiet.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
+
+    const object = (await page.locator('.splash-cluster').boundingBox())!;
+    expect(box.width).toBeCloseTo(object.width, 0);
 
     await context.close();
   });

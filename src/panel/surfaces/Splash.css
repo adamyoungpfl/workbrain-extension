@@ -489,15 +489,92 @@
    to. Dressed for the dark field: the toggle's own tokens are lit for the
    panel's light ground, so its ink and its rule are restated here rather than
    left to inherit a colour that would vanish. */
-.splash-audio {
-  margin-top: 22px;
+/* ── V2.9 slice 4a — THE BASELINE CLUSTER ──────────────────────────────────
+   Two doors that read as one object. Adam: "a 2 button cluster displaying like
+   a single object… the narrated is the heavy lean, but optional. Like choosing
+   which door you enter the rocket from."
+
+   ONE BORDER, ONE SHADOW, ONE SEAM. The object is the container; the halves
+   are what is inside it. Two separate buttons with their own borders would be
+   two doors standing next to each other, which is what this screen already had
+   and is not what was asked for.
+
+   THE LEAN IS WEIGHT, NOT WORDING. The loud half keeps the filled gradient the
+   single door wore; the quiet half is a strip under it at the same width. The
+   quiet one is not smaller, not greyed and not a link — it is a real door,
+   because "optional" describes the narration and not the choice. */
+.splash-cluster {
   display: flex;
-  justify-content: center;
+  flex-direction: column;
   width: 100%;
+  border-radius: 14px;
+  /* The shadow belongs to the OBJECT, so the two halves cast one. */
+  box-shadow: 0 6px 22px -8px var(--globe-node-2-mid);
+  overflow: hidden;
 }
-.splash-audio .narrator {
-  color: rgba(255, 255, 255, 0.72);
+.splash-cluster .splash-door {
+  border-radius: 0;
+  box-shadow: none;
 }
-.splash-audio .narrator:hover {
+/* The loud half. `:first-child` in `.splash-choice` no longer selects it — it
+   is one level down now — so its fill is stated here rather than inherited
+   from a selector that stopped matching. */
+.splash-cluster-loud {
+  border: 0;
   color: var(--ink-inv);
+  background: linear-gradient(112deg, var(--globe-node-1-mid), var(--globe-node-2-mid));
+  /* The label centres; the icon rides at the end without pushing it off
+     centre, which is what the absolute placement is for. */
+  position: relative;
+}
+.splash-cluster-icon {
+  position: absolute;
+  right: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  /* Dimmed against the fill: it is a note about which door this is, not a
+     second thing to look at. The glyph carries it — same drawing as the
+     interview's own toggle, so the two are recognisably one idea. */
+  opacity: 0.82;
+}
+/* WAVES ONLY. `NARRATOR_ICON` is one drawing holding both states, and which
+   one shows is decided by `aria-pressed` on the toggle it was written for.
+   Outside that button neither rule matches, so the speaker arrives wearing its
+   sound waves AND its mute cross at once — which is what shipped for exactly
+   as long as it took to look at it. Here the icon is a LABEL, not a state:
+   this is the door that talks, and there is no second state for it to be in. */
+.splash-cluster-icon .narrator-mute {
+  display: none;
+}
+/* The quiet half. A hairline seam rather than a gap: a gap would make two
+   objects of it again. */
+.splash-cluster-quiet {
+  min-height: var(--target-min);
+  width: 100%;
+  border: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.16);
+  background: rgba(255, 255, 255, 0.06);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--ink-inv);
+  cursor: pointer;
+  transition: background-color 160ms ease-out;
+}
+.splash-cluster-quiet:hover {
+  background: rgba(255, 255, 255, 0.12);
+}
+.splash-cluster-quiet:focus-visible,
+.splash-cluster-loud:focus-visible {
+  /* Inset, because the object clips its own children: a ring drawn outside
+     the half would be cut off by the container's `overflow: hidden`. */
+  outline: 2px solid var(--ink-inv);
+  outline-offset: -3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-cluster-quiet {
+    transition: none;
+  }
 }

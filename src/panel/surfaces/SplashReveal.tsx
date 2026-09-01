@@ -1,5 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BrandMark } from '../components';
+import { NARRATOR_ICON } from '../components/NarratorToggle';
+import { narratorSupported } from '../voice/speech';
+import { loadPrefs, useNarratorPref } from '../voice/prefs';
 import {
   CLAIM_TRUE,
   COUNT_FROM,
@@ -58,11 +61,98 @@ export interface SplashRevealProps {
   still: boolean;
   onBaseline?: (() => void) | undefined;
   onStraight: () => void;
-  /** The read-aloud door, rendered by the caller so this file holds no prefs. */
-  audio: React.ReactNode;
 }
 
-export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: SplashRevealProps) {
+/**
+ * V2.9 slice 4a — THE BASELINE DOOR IS TWO DOORS THAT READ AS ONE OBJECT.
+ *
+ * Adam: "let's make it like a 2 button cluster displaying like a single
+ * object… feel loosely like the are choosing the narrated or silent baseline
+ * and that the narrated is the heavy lean, but optional. Like choosing which
+ * door you enter the rocket from."
+ *
+ * The lean is carried by WEIGHT, not by wording: the narrated half is the
+ * filled one with the mark's own gradient on it, the silent half is a quiet
+ * strip under the same border. Both go to the same place. Which one is pressed
+ * is how the narrator preference gets set, so nobody is asked a second
+ * question to answer the one they just answered.
+ *
+ * ── WHERE THERE IS NO SPEECH ENGINE, THERE IS NO CHOICE ───────────────────
+ * The cluster collapses to the single door it used to be. `NarratorToggle`
+ * already works this way — "not a disabled button, not a note explaining
+ * itself" — and offering somebody a narrated door their device cannot open
+ * would be worse than the toggle this replaces. The support answer is decided
+ * during the first render for the same reason it is there: a control that
+ * appears one frame late moves everything under it.
+ */
+function BaselineCluster({ onEnter }: { onEnter: () => void }) {
+  const { setOn } = useNarratorPref();
+  const [choosable] = useState(() => narratorSupported());
+
+  /* THE PREFERENCE HAS TO BE READ BEFORE IT CAN BE WRITTEN, and until this
+     door existed something else always had. `setPref` returns early when the
+     value it is handed matches the one in memory — so with nothing having
+     loaded the stored answer, memory holds the default `false`, and somebody
+     who had the narrator ON and pressed "Set it silently" wrote NOTHING and
+     got the voice anyway. It was the read-aloud toggle that used to load them,
+     and this door replaced it.
+
+     Loaded on mount so the value is warm, AND awaited in the press so the
+     ordering cannot race: the load resolves in a millisecond and the doors are
+     not pressable for five seconds, but "in practice it has resolved" is not
+     the same as "it has resolved". */
+  useEffect(() => {
+    void loadPrefs();
+  }, []);
+
+  const choose = async (on: boolean) => {
+    await loadPrefs();
+    setOn(on);
+    onEnter();
+  };
+
+  if (!choosable) {
+    return (
+      <button type="button" className="splash-door" onClick={onEnter}>
+        {S.splashBaseline}
+      </button>
+    );
+  }
+
+  /* `role="group"` and not a radiogroup: these are two doors, not two settings
+     with a submit after them. Pressing one is both the answer and the way
+     through, which is what "which door you enter from" means.
+
+     THE GROUP'S LABEL ECHOES ITS FIRST BUTTON, and that is the cheaper of two
+     costs. Without it, "Set it silently" is announced with nothing to say what
+     is being set. With it, the loud door is read as "Set Your AI Baseline
+     group, Set Your AI Baseline button" — repetitive, and heard once. The
+     alternative was an `aria-label` on the quiet door carrying the context,
+     which would make its accessible name differ from the words on it: a voice-
+     control user says what they see, and a name that does not match the label
+     is a control they cannot ask for. */
+  return (
+    <div className="splash-cluster" role="group" aria-label={S.splashBaseline}>
+      <button
+        type="button"
+        className="splash-door splash-cluster-loud"
+        onClick={() => void choose(true)}
+      >
+        {S.splashBaseline}
+        <span className="splash-cluster-icon">{NARRATOR_ICON}</span>
+      </button>
+      <button
+        type="button"
+        className="splash-cluster-quiet"
+        onClick={() => void choose(false)}
+      >
+        {S.splashBaselineSilent}
+      </button>
+    </div>
+  );
+}
+
+export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashRevealProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const partRefs = useRef<Partial<Record<RevealPart, HTMLDivElement | null>>>({});
   const pathRef = useRef<SVGPathElement | null>(null);
@@ -352,13 +442,8 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight, audio }: 
       </div>
 
       <div className="splashreveal-part" data-part="doors" ref={hold('doors')}>
-        {audio}
         <div className="splash-choice">
-          {onBaseline && (
-            <button type="button" className="splash-door" onClick={onBaseline}>
-              {S.splashBaseline}
-            </button>
-          )}
+          {onBaseline && <BaselineCluster onEnter={onBaseline} />}
           <button type="button" className="splash-door" onClick={onStraight}>
             {S.splashStraight}
           </button>
