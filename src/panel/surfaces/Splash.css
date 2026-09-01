@@ -578,3 +578,84 @@
     transition: none;
   }
 }
+
+/* ── V2.9 slice 4b — THE LAUNCH DOOR AND ITS CABLE ─────────────────────────
+   Adam: "a simple control panel button in the modern theme and aesthetic of
+   the site. It should have a 'cable' that is attached to it that is glowing
+   faintly."
+
+   The cable is drawn BEHIND the button and hangs below it, out of the way of
+   everything: the doors are the last thing on this screen and there is nothing
+   under them to collide with. It is scenery — `pointer-events: none`, painted
+   under, and the door is exactly as pressable with it as without. */
+.splash-launch {
+  position: relative;
+}
+.splash-cable {
+  position: absolute;
+  /* Starts at the button's bottom edge and hangs into the space below it. */
+  top: 100%;
+  left: 50%;
+  width: 120px;
+  /* Longer than the room under the door, ON PURPOSE: the cable runs off the
+     bottom of the panel rather than stopping in mid-air. A wire that ends
+     nowhere is a squiggle; a wire that leaves the frame is plugged into
+     something. */
+  height: 86px;
+  transform: translateX(-50%);
+  overflow: visible;
+  pointer-events: none;
+}
+.splash-cable-line {
+  stroke: var(--globe-node-2-mid);
+  stroke-width: 2;
+  stroke-linecap: round;
+  /* Lit from the first frame: the opacity is written per frame by the panel
+     from core's own slow breath, and this is where it starts. */
+  opacity: 0.34;
+  filter: drop-shadow(0 0 4px var(--globe-node-2-deep));
+}
+/* The light in the wire. A short bright segment walking the same path — one
+   geometry, drawn twice, so the light can never be beside the cable. */
+.splash-cable-light {
+  stroke: var(--globe-node-2-solid);
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  opacity: 0;
+  filter: drop-shadow(0 0 6px var(--globe-node-2-solid));
+}
+
+/* THE CONTROL PANEL KEY. Squarer than the doors above it, with a face rather
+   than a wash: an inset highlight along the top edge and a shadow under the
+   bottom is what reads as a physical key at this size, where a border alone
+   reads as an outline. */
+.splash-launch-key {
+  border-radius: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 2px 0 rgba(0, 0, 0, 0.45);
+}
+.splash-launch-key:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+}
+/* Pressed, and it stays pressed: the key travels down onto its own shadow and
+   the door is on its way. There is no second press to make, so there is no
+   state to come back from. */
+.splash-launch-key[data-live='on'] {
+  transform: translateY(2px);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 0 rgba(0, 0, 0, 0.45),
+    0 0 18px -2px var(--globe-node-2-solid);
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The key does not travel. The state is still carried — the glow stays, and
+     the door has already handed over by the time anybody could look. */
+  .splash-launch-key[data-live='on'] {
+    transform: none;
+  }
+}

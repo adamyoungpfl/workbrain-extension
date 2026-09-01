@@ -3,6 +3,7 @@ import { BrandMark } from '../components';
 import { NARRATOR_ICON } from '../components/NarratorToggle';
 import { narratorSupported } from '../voice/speech';
 import { loadPrefs, useNarratorPref } from '../voice/prefs';
+import { idleGlowAt, pulseAt } from '../../core/splash/launch';
 import {
   CLAIM_TRUE,
   COUNT_FROM,
@@ -147,6 +148,141 @@ function BaselineCluster({ onEnter }: { onEnter: () => void }) {
         onClick={() => void choose(false)}
       >
         {S.splashBaselineSilent}
+      </button>
+    </div>
+  );
+}
+
+/**
+ * V2.9 slice 4b — THE LAUNCH DOOR, AND THE CABLE IT IS PLUGGED INTO.
+ *
+ * Adam: "Below the Launch Button when dormant, should look like a simple
+ * control panel button in the modern theme and aesthetic of the site. It
+ * should have a 'cable' that is attached to it that is glowing faintly. When
+ * the launch button is hit, the animation is a pulse coming through the wire,
+ * into the button and then the fade out and rocket sequence."
+ *
+ * ── THE PRESS IS ACCEPTED BEFORE THE LIGHT MOVES ──────────────────────────
+ * The button goes to its pressed state on the press, and the pulse runs
+ * underneath it. Four hundred milliseconds is short, but a control that waits
+ * for its own animation before admitting it was pressed is a control that
+ * feels broken — and this one cannot be pressed twice, so the guard is here
+ * rather than in a disabled attribute somebody has to reason about.
+ *
+ * ── NO CLOCK UNDER REDUCED MOTION ─────────────────────────────────────────
+ * Not a faster pulse, not a still one: the door hands over immediately, which
+ * is what this screen already does everywhere else. The cable stays, drawn and
+ * lit — it is scenery, and scenery is not motion.
+ */
+function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean }) {
+  const cableRef = useRef<SVGPathElement | null>(null);
+  const lightRef = useRef<SVGPathElement | null>(null);
+  const firing = useRef(false);
+  /* WHETHER THERE IS A LOOP TO CARRY THE LIGHT. The press used to decide by
+     re-testing the effect's own guards from outside it — `still`, and whether
+     the path element exists — which is a copy of a condition rather than the
+     condition. Two ways it went wrong: the effect also bails when the cable
+     reports no length, and a press in that state armed a pulse nothing was
+     running, so the door never opened at all; and a press that arrived while
+     the effect was between a cleanup and its next run took the instant branch
+     and skipped the pulse, which is the flake this replaces. One flag, set by
+     the loop that does the work. */
+  const wired = useRef(false);
+  const [live, setLive] = useState(false);
+
+  /* The wire's slow breath, and then the light travelling it. One loop for
+     both: they are the same wire and a second clock could only disagree with
+     the first. */
+  useEffect(() => {
+    if (still) return;
+    const path = lightRef.current;
+    const cable = cableRef.current;
+    if (!path || !cable) return;
+    const length = typeof cable.getTotalLength === 'function' ? cable.getTotalLength() : 0;
+    if (!length) return;
+    path.style.strokeDasharray = `${length * 0.16} ${length}`;
+
+    wired.current = true;
+    let raf = 0;
+    const t0 = performance.now();
+    let firedAt = 0;
+    const tick = (now: number) => {
+      try {
+        cable.style.opacity = idleGlowAt(now - t0).toFixed(3);
+        if (firing.current) {
+          if (!firedAt) firedAt = now;
+          const pulse = pulseAt(now - firedAt);
+          path.style.opacity = '1';
+          /* Drawn from the far end INTO the button: the dash walks the path
+             backwards, so travelled 1 is the light sitting where the cable
+             meets the door. */
+          path.style.strokeDashoffset = `${length * (1 - pulse.travelled)}`;
+          if (pulse.arrived) {
+            firing.current = false;
+            onLaunch();
+            return;
+          }
+        }
+      } catch {
+        /* Silent, per docs/GUARDRAILS.md. A cable that cannot draw itself
+           costs the animation and never the door: the press has already been
+           taken, and `onLaunch` is called on the same frame the light lands. */
+      }
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => {
+      wired.current = false;
+      cancelAnimationFrame(raf);
+    };
+  }, [still, onLaunch]);
+
+  const press = () => {
+    if (live) return;
+    setLive(true);
+    if (!wired.current) {
+      // Nothing is running to carry the light. Open the door.
+      onLaunch();
+      return;
+    }
+    firing.current = true;
+  };
+
+  return (
+    <div className="splash-launch">
+      {/* The cable. Decoration, and says so — it carries no instruction the
+          button does not, and the door works with it painted or not. */}
+      <svg
+        className="splash-cable"
+        viewBox="0 0 120 64"
+        preserveAspectRatio="none"
+        aria-hidden="true"
+        focusable="false"
+      >
+        <path
+          ref={cableRef}
+          className="splash-cable-line"
+          d="M60 0 C60 22, 96 26, 100 44 C103 57, 88 64, 74 64"
+          fill="none"
+        />
+        <path
+          ref={lightRef}
+          className="splash-cable-light"
+          d="M60 0 C60 22, 96 26, 100 44 C103 57, 88 64, 74 64"
+          fill="none"
+        />
+      </svg>
+      <button
+        type="button"
+        className="splash-door splash-launch-key"
+        data-live={live ? 'on' : 'off'}
+        /* Which route the press took, for anything asking why the door opened
+           when it did. It is one attribute and it makes a timing test
+           diagnosable instead of mysterious. */
+        data-route={live ? (firing.current ? 'wire' : 'direct') : ''}
+        onClick={press}
+      >
+        {S.splashStraight}
       </button>
     </div>
   );
@@ -444,9 +580,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
       <div className="splashreveal-part" data-part="doors" ref={hold('doors')}>
         <div className="splash-choice">
           {onBaseline && <BaselineCluster onEnter={onBaseline} />}
-          <button type="button" className="splash-door" onClick={onStraight}>
-            {S.splashStraight}
-          </button>
+          <LaunchDoor onLaunch={onStraight} still={still} />
         </div>
       </div>
     </div>

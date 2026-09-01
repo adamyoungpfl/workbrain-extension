@@ -16,6 +16,7 @@ import {
   ROLODEX_TURNS,
   ROLODEX_TURN_MS,
 } from '../../src/core/splash/reveal';
+import { PULSE_MS } from '../../src/core/splash/launch';
 
 /**
  * V2.7 VB-128 — the splash is the show (docs/V2.7-SPLASH-WOW.md, Option 1):
@@ -922,6 +923,132 @@ test.describe('V2.9 slice 4a — the baseline door is two doors', () => {
 
     const object = (await page.locator('.splash-cluster').boundingBox())!;
     expect(box.width).toBeCloseTo(object.width, 0);
+
+    await context.close();
+  });
+});
+
+test.describe('V2.9 slice 4b — the cable and the pulse', () => {
+  test('the press is taken at once, and the door opens a beat later', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-launch').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* MEASURED, NOT SAMPLED. A watcher polling the wire's opacity is racing a
+       420ms animation on a splash that is removed the moment it ends — it
+       passed alone and failed beside three others, twice, for no reason the
+       product would care about.
+
+       What the product actually promises is in the TIMING: the press is
+       acknowledged immediately and the door opens when the light lands. The
+       beat between them is `PULSE_MS`, and the reduced-motion test below is
+       the control — same press, no beat. */
+    const key = page.getByRole('button', { name: S.splashStraight, exact: true });
+    await expect(key).toHaveAttribute('data-live', 'off');
+
+    const from = Date.now();
+    await key.click();
+    // Acknowledged on the press, not when the light arrives.
+    await expect(key).toHaveAttribute('data-live', 'on');
+
+    /* THE MARKER IS THE SPLASH LEAVING, NOT HOME ARRIVING. Home is built
+       underneath this screen from the first paint — deliberately, and there is
+       a test for it — so `.home` is visible the whole time and waiting for it
+       measures Playwright's own round trip. The first version of this test
+       asserted 420ms against a 306ms number that had nothing to do with the
+       product. */
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 4000 });
+    const took = Date.now() - from;
+    expect(took, 'the door opened before the light could have landed').toBeGreaterThanOrEqual(
+      PULSE_MS * 0.8,
+    );
+
+    await context.close();
+  });
+
+  test('the wire lights, and the light walks it towards the door', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-launch').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* Held mid-pulse rather than chased: the light is asked about while it is
+       still travelling, which is possible because the door does not open until
+       it lands. Two reads, a frame apart, so this says "travelling" and not
+       merely "on". */
+    const light = page.locator('.splash-cable-light');
+    await expect(light).toHaveCSS('opacity', '0');
+
+    await page.getByRole('button', { name: S.splashStraight, exact: true }).click();
+    await page.waitForTimeout(PULSE_MS * 0.35);
+
+    const first = await light.evaluate((el) => ({
+      opacity: getComputedStyle(el).opacity,
+      offset: parseFloat(getComputedStyle(el).strokeDashoffset),
+    }));
+    await page.waitForTimeout(PULSE_MS * 0.3);
+    const second = await light.evaluate((el) => parseFloat(getComputedStyle(el).strokeDashoffset));
+
+    expect(Number(first.opacity)).toBe(1);
+    // The dash walks from the far end INTO the door, so the offset falls.
+    expect(second).toBeLessThan(first.offset);
+
+    await context.close();
+  });
+
+  test('it cannot be pressed twice — one launch, however many clicks', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-launch').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* There is nothing to come back from: the key stays down and the door is
+       on its way. A second press mid-pulse must not start a second one. */
+    const key = page.getByRole('button', { name: S.splashStraight, exact: true });
+    await key.click();
+    await key.click({ force: true }).catch(() => {});
+    await key.click({ force: true }).catch(() => {});
+
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 4000 });
+    await expect(page.locator('.home')).toBeVisible();
+
+    await context.close();
+  });
+
+  test('the cable is scenery: aria-hidden, and never in the way of the door', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-launch').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    const cable = page.locator('.splash-cable');
+    await expect(cable).toHaveAttribute('aria-hidden', 'true');
+    expect(
+      await cable.evaluate((el) => getComputedStyle(el).pointerEvents),
+    ).toBe('none');
+
+    /* It hangs BELOW the door, into the space under it — the doors are the
+       last thing on this screen, so there is nothing down there to collide
+       with, and nothing above it moves to make room. */
+    const key = (await page.locator('.splash-launch-key').boundingBox())!;
+    const wire = (await cable.boundingBox())!;
+    expect(wire.y).toBeGreaterThanOrEqual(key.y + key.height - 1);
+
+    await context.close();
+  });
+
+  test('reduced motion: no pulse, no clock, and the door still opens', async () => {
+    const { context, page } = await launchPanel({ reduce: true });
+    await page.locator('.splash-launch').waitFor({ timeout: 4000 });
+
+    /* Not a faster pulse and not a still one — the door hands over at once,
+       which is what this screen already does everywhere else. The cable stays,
+       drawn and lit: it is scenery, and scenery is not motion. */
+    await expect(page.locator('.splash-cable')).toHaveCount(1);
+    const before = await frameCount(page);
+
+    const from = Date.now();
+    await page.getByRole('button', { name: S.splashStraight, exact: true }).click();
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 2000 });
+    await expect(page.locator('.home')).toBeVisible();
+
+    // The control for the test above: the same press, without the beat. There
+    // is no fade under reduced motion either, so this is the whole cost.
+    expect(Date.now() - from).toBeLessThan(PULSE_MS);
+    expect(await frameCount(page), 'a frame loop ran under reduced motion').toBe(before);
 
     await context.close();
   });
