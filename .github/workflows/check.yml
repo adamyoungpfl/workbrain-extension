@@ -1,0 +1,81 @@
+# The gate, off Adam's machine.
+#
+# `npm run check` is the definition of done (CLAUDE.md), and until now the only
+# place it ran was the laptop it was written on. That made every slice cost six
+# to twenty minutes of a machine that was also running Chrome and an editor —
+# and worse, made the result depend on how busy that machine happened to be.
+# Nine timing tests failed on 2026-09-02 and all nine passed serially minutes
+# later. A gate that answers differently depending on what else is open is not
+# a gate.
+#
+# This runs the same command on a machine doing nothing else.
+name: check
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  # So a red main can be re-run after a flake without an empty commit.
+  workflow_dispatch:
+
+# A newer push to the same branch makes the older run pointless. Cancelling
+# keeps the queue honest and the feedback fast.
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    # The full gate is ~6 minutes on an idle machine. Twenty is generous
+    # enough to absorb a slow runner and tight enough that a hang is caught
+    # rather than billed.
+    timeout-minutes: 20
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          # Matches the local runtime. `npm ci` is deterministic from the
+          # lockfile; `npm install` would let CI resolve different versions
+          # from the machine that wrote the lock, which is how a green CI and
+          # a red laptop start disagreeing.
+          node-version: 24
+          cache: npm
+
+      - run: npm ci
+
+      # The browser the tests actually launch: `channel: 'chromium'`, which is
+      # Playwright's own build rather than the system Chrome. `--with-deps`
+      # pulls the shared libraries a headless Chromium needs on a bare runner.
+      - run: npx playwright install --with-deps chromium
+
+      # ── THE WHOLE GATE, ONE COMMAND ────────────────────────────────────────
+      # typecheck + audit + test + build + e2e + a11y, in that order, failing
+      # at the first one that fails. Identical to what runs locally, on purpose:
+      # a CI script that differs from the local one is a second definition of
+      # done, and the two drift.
+      #
+      # `xvfb-run` because these are EXTENSION tests. They use
+      # `launchPersistentContext` with `--load-extension`, and extension
+      # support is the one place headless Chromium has historically been
+      # fragile. A virtual display costs nothing and removes the question.
+      #
+      # GitHub sets CI=true, which is what turns on `retries: 2` in
+      # playwright.config.ts — so a timing test that blips gets two more
+      # goes and is reported as FLAKY rather than as a failure. Flaky is
+      # visible; it just does not stop the build.
+      - run: xvfb-run -a npm run check
+
+      # Screenshots and traces from anything that did fail. Without this a red
+      # CI run tells you a name and nothing else, which is worse than the
+      # laptop it replaced.
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: |
+            playwright-report/
+            test-results/
+          retention-days: 7
