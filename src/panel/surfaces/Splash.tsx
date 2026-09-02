@@ -115,21 +115,28 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
 
   /** BS-09: one handover, and now two possible destinations — Home, or the
    * tour door's own. The guard and the fade are the same either way, which
-   * is why this takes a `then` rather than growing a second function. */
+   * is why this takes a `then` rather than growing a second function.
+   *
+   * V2.9 slice 4 polish: `then` OPENS the destination and `onDone` ALWAYS
+   * ends the splash — they are no longer alternatives. The destination is
+   * opened at the START of the exit rather than after it, so whatever is
+   * being revealed has the exit's whole length to mount. App's `onBaseline`
+   * stopped ending the splash itself for exactly this reason. */
   const leave = useRef((_then?: () => void) => {});
   leave.current = (then?: () => void) => {
     if (handedOver.current) return;
     handedOver.current = true;
-    const finish = then ?? onDone;
     if (reduced) {
-      finish();
+      then?.();
+      onDone();
       return;
     }
+    then?.();
     // Fades out, then hands over. `pointer-events` drops for the fade (see
     // Splash.css), so the panel underneath is live from the first frame of
     // the leaving rather than the last.
     setLeaving(true);
-    window.setTimeout(() => finish(), SPLASH_FADE_MS);
+    window.setTimeout(() => onDone(), SPLASH_FADE_MS);
   };
 
   /* ── V2.9 slice 4c — THE ROCKET SITS BETWEEN THE PRESS AND THE LEAVING ────
@@ -148,6 +155,11 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
      `leave` already does exactly that, and the still version's instruction
      ("you are in") is the arrival itself. */
   const [launching, setLaunching] = useState(false);
+  /* THE FOG IS CLEARING (V2.9 slice 4 polish). Set at the whiteout, when the
+     destination has been opened underneath: the splash stops being a surface
+     (Splash.css strips its ground and its reveal) and what remains is the
+     rocket stage's fog thinning over the place the person chose. */
+  const [dissolving, setDissolving] = useState(false);
   const launchThen = useRef<(() => void) | undefined>(undefined);
   /** The guard is a ref, not the state: two presses in one tick both read
    * the state's stale `false`, and the second would re-aim the flight. */
@@ -163,9 +175,26 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
     }
     setLaunching(true);
   };
-  /** Stable on purpose: a new identity per render would remount the flight's
-   * clock mid-air. Both captures are refs, so it never goes stale. */
-  const landFlight = useCallback(() => leave.current(launchThen.current), []);
+  /** The prop, held for the stable callbacks below — their identities must
+   * survive re-renders or they would remount the flight's clock mid-air. */
+  const onDoneRef = useRef(onDone);
+  onDoneRef.current = onDone;
+  /** The whiteout is total: open the chosen door under the fog, once. The
+   * destination is then CLEARED from the ref, so an Escape during the fog
+   * cannot open it a second time — it only ends the splash early. */
+  const arrive = useCallback(() => {
+    if (handedOver.current) return;
+    launchThen.current?.();
+    launchThen.current = undefined;
+    setDissolving(true);
+  }, []);
+  /** The fog has cleared. Everything is already open; only the unmount is
+   * left, and the guard is shared with every other exit. */
+  const landFlight = useCallback(() => {
+    if (handedOver.current) return;
+    handedOver.current = true;
+    onDoneRef.current();
+  }, []);
 
   useEffect(() => {
     // Escape still means "close this", at every phase — the keyboard's way
@@ -236,6 +265,7 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
       className="splash"
       data-phase={phase}
       data-leaving={leaving ? 'on' : 'off'}
+      data-dissolving={dissolving ? 'on' : 'off'}
       /* THE SURFACE IS THE DISMISSAL ONLY WHILE THE SHOW IS RUNNING.
          A click mid-movie means "yes, in" and costs nothing but the rest of
          the animation. Once the reveal is up there is a question on screen
@@ -314,11 +344,13 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
           />
         </div>
       )}
-      {/* The flight. Mounted over everything this surface has — the reveal,
-          the corners, the stamp — because it IS the surface leaving. Its own
-          fallback timer holds the door, so the hand-off survives anything
-          the drawing does. */}
-      {launching && <SplashRocket onDone={landFlight} />}
+      {/* The flight, then the fog. Mounted over everything this surface has —
+          the reveal, the corners, the stamp — because it IS the surface
+          leaving: the whiteout opens the chosen door underneath (`arrive`),
+          the fog clears onto it, and only then does the splash unmount. Its
+          own fallback timer holds the door, so the hand-off survives
+          anything the drawing does. */}
+      {launching && <SplashRocket onWhiteout={arrive} onDone={landFlight} />}
     </div>
   );
 }

@@ -1,5 +1,12 @@
 import { useEffect, useLayoutEffect, useRef } from 'react';
-import { LAUNCH_MS, SHAKE_MAX, rocketAt } from '../../core/splash/rocket';
+import {
+  DISSOLVE_HOLD_MS,
+  DISSOLVE_MS,
+  LAUNCH_MS,
+  SHAKE_MAX,
+  dissolveAt,
+  rocketAt,
+} from '../../core/splash/rocket';
 import './SplashRocket.css';
 
 /**
@@ -36,6 +43,29 @@ import './SplashRocket.css';
 /** Where the pad sits, as a fraction of the stage's height. Below centre,
  *  because the flight needs more sky above it than ground under it. */
 const PAD_AT = 0.62;
+
+/**
+ * THE FOG (Adam, 2026-09-01): "smoke then sort of digitally dematerializing
+ * like a fog disappearing to reveal either the home page or the baseline
+ * page." Eight blurred puffs over a flat white base. The base thins first;
+ * each puff holds a beat longer than its neighbour, drifts a little and
+ * goes — which is the difference between fog CLEARING and a screen fading.
+ *
+ * The scatter is fixed, not rolled: a pure clock cannot roll dice, and fog
+ * that clears the same way every arrival is fog a test can hold still.
+ * Positions are percentages of the stage; sizes are px of blurred diameter;
+ * `hold` is the fraction of the clearing each puff sits out before joining.
+ */
+const PUFFS = [
+  { x: 12, y: 14, s: 250, hold: 0.0, dx: -36, dy: -26 },
+  { x: 60, y: 8, s: 270, hold: 0.18, dx: 30, dy: -32 },
+  { x: 30, y: 40, s: 300, hold: 0.34, dx: -28, dy: 8 },
+  { x: 80, y: 36, s: 260, hold: 0.1, dx: 40, dy: 4 },
+  { x: 8, y: 64, s: 280, hold: 0.26, dx: -34, dy: 20 },
+  { x: 52, y: 60, s: 330, hold: 0.42, dx: 12, dy: 24 },
+  { x: 86, y: 74, s: 250, hold: 0.2, dx: 38, dy: 30 },
+  { x: 34, y: 88, s: 290, hold: 0.12, dx: -22, dy: 34 },
+];
 /** The drawing's own numbers: the svg is 84×210, with the nozzle's lip — the
  *  point that sits ON the pad — at y 166, and the flame filling the rest. */
 const SHIP_W = 84;
@@ -45,15 +75,28 @@ const NOZZLE_Y = 166;
  *  flame clears the frame too and nothing lingers at the edge. */
 const CLEAR_PX = 48;
 
-export function SplashRocket({ onDone }: { onDone: () => void }) {
+export interface SplashRocketProps {
+  /** The whiteout is total. Open the destination NOW, under the fog — what
+   *  the clearing reveals must be the place the person chose, not a screen
+   *  still loading. This is the seam that fixes the flash of Home the
+   *  baseline route used to show. */
+  onWhiteout: () => void;
+  /** The fog has cleared; the splash may unmount. */
+  onDone: () => void;
+}
+
+export function SplashRocket({ onWhiteout, onDone }: SplashRocketProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const shipRef = useRef<SVGSVGElement | null>(null);
   const flameRef = useRef<SVGGElement | null>(null);
   const trailRef = useRef<HTMLDivElement | null>(null);
   const bloomRef = useRef<HTMLDivElement | null>(null);
   const whiteRef = useRef<HTMLDivElement | null>(null);
+  const puffRefs = useRef<(HTMLDivElement | null)[]>([]);
   /** One arrival, whichever of the loop or the fallback timer gets there. */
   const landed = useRef(false);
+  /** One whiteout — the loop and the fallback must not both open the door. */
+  const whitedOut = useRef(false);
   const geom = useRef({ climb: 700 });
 
   /* The pad, measured once. The stage is the whole splash, so the pad is a
@@ -80,20 +123,90 @@ export function SplashRocket({ onDone }: { onDone: () => void }) {
     /* A re-run after the flight (the splash re-renders as it starts leaving)
        must not fly it again from zero. */
     if (landed.current) return;
+    const arrive = () => {
+      if (whitedOut.current) return;
+      whitedOut.current = true;
+      /* The stage flips to its fog dress — dark ground gone, flight hidden —
+         through one attribute, so the drawing cannot half-change. Nothing is
+         seen changing: the swap happens under a frame that is solid white,
+         and the fog's own layers open solid white. */
+      rootRef.current?.setAttribute('data-fog', 'on');
+      onWhiteout();
+    };
     const finish = () => {
       if (landed.current) return;
       landed.current = true;
+      arrive();
       onDone();
     };
     /* THE DOOR OPENS ON TIME EVEN IF NOT ONE FRAME PAINTS. A throttled tab,
        a broken canvas, a throw in the loop — none of them may cost the
-       person their arrival. Silent, per docs/GUARDRAILS.md. */
-    const fallback = window.setTimeout(finish, LAUNCH_MS + 240);
+       person their arrival. Silent, per docs/GUARDRAILS.md. The flight's
+       timer is swapped for the fog's at the whiteout, and the fog's is
+       GENEROUS: opening the destination can hold the main thread for a
+       while on a slow day, and a timer queued behind that block would fire
+       the moment it lifted — cutting the fog exactly when it finally had
+       frames to paint. A dead loop still ends inside three seconds. */
+    let fallback = window.setTimeout(() => {
+      arrive();
+      fallback = window.setTimeout(finish, DISSOLVE_HOLD_MS + DISSOLVE_MS + 2000);
+    }, LAUNCH_MS + 400);
 
     let raf = 0;
     const t0 = performance.now();
+    /** The whiteout has happened; the next painted frame anchors the fog. */
+    let arrived = false;
+    /** The fog's zero — the first frame PAINTED after the destination went
+     * in. Anchored to wall time at the whiteout instead, the interview's
+     * mount (main-thread work between two ticks) would eat the fog's whole
+     * length and the dissolve would never be seen — which is exactly what
+     * the first cut of this did. The white frame simply HOLDS through the
+     * block; white held is indistinguishable from white animating. */
+    let foggedAt = 0;
     const tick = (now: number) => {
       const f = rocketAt(now - t0);
+
+      /* ── PHASE TWO: THE FOG ─────────────────────────────────────────── */
+      if (f.done) {
+        if (!arrived) {
+          arrived = true;
+          arrive();
+          window.clearTimeout(fallback);
+          fallback = window.setTimeout(finish, DISSOLVE_HOLD_MS + DISSOLVE_MS + 2000);
+          /* The destination mounts between this frame and the next; the
+             fog starts counting when the next frame actually paints. */
+          raf = requestAnimationFrame(tick);
+          return;
+        }
+        if (!foggedAt) foggedAt = now;
+        const fog = dissolveAt(now - foggedAt);
+        try {
+          const white = whiteRef.current;
+          /* The base thins ahead of the puffs, so the destination starts
+             showing THROUGH the fog rather than after it. */
+          if (white) white.style.opacity = Math.max(0, 1 - fog.clear * 1.5).toFixed(3);
+          PUFFS.forEach((puff, i) => {
+            const el = puffRefs.current[i];
+            if (!el) return;
+            const local = Math.max(0, Math.min(1, (fog.clear - puff.hold) / (1 - puff.hold)));
+            el.style.opacity = (1 - local).toFixed(3);
+            el.style.transform =
+              `translate(-50%, -50%) translate(${(puff.dx * local).toFixed(1)}px, ` +
+              `${(puff.dy * local).toFixed(1)}px) scale(${(1 + 0.25 * local).toFixed(3)})`;
+          });
+        } catch {
+          /* Silent, per docs/GUARDRAILS.md — fog that cannot draw costs the
+             dissolve, and the fallback timer is already holding the door. */
+        }
+        if (fog.done) {
+          finish();
+          return;
+        }
+        raf = requestAnimationFrame(tick);
+        return;
+      }
+
+      /* ── PHASE ONE: THE FLIGHT ──────────────────────────────────────── */
       try {
         const root = rootRef.current;
         const ship = shipRef.current;
@@ -144,10 +257,6 @@ export function SplashRocket({ onDone }: { onDone: () => void }) {
         /* Silent, per docs/GUARDRAILS.md: the flight is scenery, and the
            fallback timer is already holding the door. */
       }
-      if (f.done) {
-        finish();
-        return;
-      }
       raf = requestAnimationFrame(tick);
     };
     raf = requestAnimationFrame(tick);
@@ -155,7 +264,7 @@ export function SplashRocket({ onDone }: { onDone: () => void }) {
       cancelAnimationFrame(raf);
       window.clearTimeout(fallback);
     };
-  }, [onDone]);
+  }, [onWhiteout, onDone]);
 
   return (
     /* Scenery, all of it, and it says so. Every word this screen had was
@@ -166,6 +275,26 @@ export function SplashRocket({ onDone }: { onDone: () => void }) {
       <div className="splash-rocket-trail" ref={trailRef} />
       <div className="splash-rocket-bloom" ref={bloomRef} />
       <div className="splash-rocket-white" ref={whiteRef} />
+      {/* The fog, waiting its turn: invisible through the flight, and the
+          shape the whiteout breaks into once it is total. Above the white so
+          the puffs are what linger as the base thins. */}
+      <div className="splash-rocket-fog">
+        {PUFFS.map((puff, i) => (
+          <div
+            key={`${puff.x}-${puff.y}`}
+            className="splash-rocket-puff"
+            ref={(el) => {
+              puffRefs.current[i] = el;
+            }}
+            style={{
+              left: `${puff.x}%`,
+              top: `${puff.y}%`,
+              width: `${puff.s}px`,
+              height: `${puff.s}px`,
+            }}
+          />
+        ))}
+      </div>
       <svg
         className="splash-rocket"
         ref={shipRef}

@@ -132,3 +132,41 @@ export function rocketAt(ms: number): RocketShow {
     done: t >= LAUNCH_MS,
   };
 }
+
+/* ── THE FOG (Adam, 2026-09-01) ──────────────────────────────────────────
+   "Let's do a dissolve from white to the target screen… smoke then sort of
+   digitally dematerializing like a fog disappearing to reveal either the
+   home page or the baseline page based on whichever button they click."
+
+   So the whiteout does not cut and it does not merely fade: it BECOMES fog,
+   and the fog clears off the screen the person chose. The ordering is the
+   whole point — the destination is opened UNDER the fog at the moment the
+   whiteout is total, so what the clearing reveals is the place they are
+   arriving rather than a screen still loading. That ordering fixed a real
+   seam: the baseline route used to flash Home for however long the
+   interview took to mount, because nothing was buying it the time. */
+
+/** Solid white held before the first thinning. The destination is opened at
+ *  the whiteout, but "opened" is not "painted": the interview reads its
+ *  answers from storage before it renders at all (Flow returns null until
+ *  then), and fog that starts clearing during that read clears onto the
+ *  wrong screen. A held white frame is indistinguishable from a fog that has
+ *  not started — so the hold is where the read hides. */
+export const DISSOLVE_HOLD_MS = 180;
+/** The clearing itself, hold's end to gone. */
+export const DISSOLVE_MS = 700;
+
+export interface Fog {
+  /** How cleared the fog is, 0 solid white to 1 gone. */
+  clear: number;
+  /** The fog has cleared; the splash may unmount. */
+  done: boolean;
+}
+
+/** The fog, `ms` after the whiteout was total. */
+export function dissolveAt(ms: number): Fog {
+  const into = ms - DISSOLVE_HOLD_MS;
+  if (into <= 0) return { clear: 0, done: false };
+  const p = Math.min(1, into / DISSOLVE_MS);
+  return { clear: easeSmooth(p), done: into >= DISSOLVE_MS };
+}

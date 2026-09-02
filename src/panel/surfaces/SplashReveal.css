@@ -48,6 +48,22 @@
     drop-shadow(0 0 9px var(--splash-link-end));
 }
 
+/* THE ROUTE RUNS ON INTO THE ACTIONS (Adam, 2026-09-01) — two squiggles, each
+   a gradient stroke that arrives in the colour above it and leaves in the
+   colour of the thing it lands on: fuchsia into the heading's blue, blue into
+   the key's aqua. The gradients live in the svg's own defs; the glow carries
+   both endpoint colours the way the privacy link already does. */
+.splashreveal-path[data-link='baseline'] {
+  stroke: url(#wb-link-baseline);
+  filter: drop-shadow(0 0 3px var(--splash-link))
+    drop-shadow(0 0 9px var(--globe-node-1-solid));
+}
+.splashreveal-path[data-link='launch'] {
+  stroke: url(#wb-link-launch);
+  filter: drop-shadow(0 0 3px var(--globe-node-1-solid))
+    drop-shadow(0 0 9px var(--globe-node-2-solid));
+}
+
 .splashreveal-path {
   stroke: var(--globe-node-2-mid);
   stroke-width: 1.5;
@@ -253,12 +269,28 @@
   border-radius: 1px;
 }
 
-.splashreveal-part[data-part='doors'] {
+/* The two actions, each its own part now (Adam, 2026-09-01: "make that and
+   the Launch offset at the bottom as the two action buttons"). Full width so
+   the cluster inside can be; the launch part centres a key that is sized to
+   its own words. */
+.splashreveal-part[data-part='baseline'] {
+  width: 100%;
+  margin-top: 6px;
+}
+.splashreveal-part[data-part='launch'] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 10px;
   width: 100%;
+}
+
+/* THE LOCKUP IS A LOCKUP (Adam, 2026-09-01: "Reduce the padding between
+   'Workbrain' and the tagline below it. It needs to read like a lockup.").
+   The frame's 20px gap plus the tagline's own margin had the name and its
+   line standing apart like two exhibits; pulled to ~12px they read as one
+   object with two lines, which is what a lockup is. */
+.splashreveal-part[data-part='tagline'] {
+  margin-top: -16px;
 }
 
 @media (prefers-reduced-motion: reduce) {

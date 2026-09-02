@@ -185,13 +185,6 @@
    The corner's Skip and the tour door both came off with the auto hand-off:
    "go straight in" is one of these two now, and a third control saying the
    same thing is the screen asking twice. */
-.splash-choice {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  width: 100%;
-  margin-top: 18px;
-}
 .splash-door {
   min-height: var(--target-min);
   padding: 0 18px;
@@ -384,6 +377,20 @@
   pointer-events: none;
 }
 
+/* V2.9 slice 4 polish — DISSOLVING. The whiteout has become fog and the fog
+   is clearing onto the app, so the splash stops being a surface: its dark
+   ground goes, its reveal goes, and what remains on screen is only the
+   rocket stage's fog layers thinning over the destination. Pointers pass
+   through from the first frame, same law as the fade. */
+.splash[data-dissolving='on'] {
+  background: transparent;
+  pointer-events: none;
+}
+.splash[data-dissolving='on'] .splash-hold,
+.splash[data-dissolving='on'] .splash-corners {
+  display: none;
+}
+
 /* The still equivalent is the composed reveal itself — mark, name, tagline,
    the two sentences, and every door — rendered immediately
    (Splash.tsx mounts phase="reveal" and schedules nothing). What this block
@@ -423,7 +430,10 @@
   letter-spacing: -0.02em;
 }
 .splash-tagline {
-  margin: 14px 0 0;
+  /* 8px, with the reveal pulling its part 16px closer (SplashReveal.css):
+     the name and its line are ONE lockup (Adam, 2026-09-01), not two
+     exhibits with air between them. */
+  margin: 8px 0 0;
   max-width: 30ch;
 }
 /* THE PROMISE, set apart by a hairline rather than by more air. It answers a
@@ -439,19 +449,12 @@
   margin: 8px 0 0;
 }
 
-/* THE DOORS, and this is where the hierarchy went in. Two outlined buttons of
-   equal weight made the person read both to find out they were different. The
-   baseline path is filled — it is the one that EXPIRES, and a starting point
-   can only be taken before somebody starts — and the shorter road is a ghost
-   beside it. Still a fork rather than a recommendation: the ghost is a real
-   door with a real border, not a link pretending to be one. */
-.splash-choice {
-  margin-top: 30px;
-  width: 100%;
-  gap: 10px;
-}
+/* THE ACTIONS (2026-09-01). `.splash-choice` and its filled primary door are
+   gone — the baseline is a glowing typographic cluster and the launch key an
+   outlined aqua control, each its own reveal part with its own lean. What
+   remains of the old door system is this base, which the launch key builds
+   on. */
 .splash-door {
-  width: 100%;
   min-height: 52px;
   border-radius: 14px;
   font-size: 15px;
@@ -462,33 +465,8 @@
     box-shadow 160ms ease-out,
     background-color 160ms ease-out;
 }
-.splash-choice .splash-door:first-child {
-  border: 0;
-  /* `--ink-inv`, not a bare white literal — the audit caught the literal here
-     and was right to. This is the token for text ON a filled surface, which is
-     exactly what this is. (The audit greps file text, so naming the literal
-     even inside a comment trips it. Worth knowing.) */
-  color: var(--ink-inv);
-  /* The mark's own two hues. SUPERSEDED IN PART, 2026-09-01: this said it was
-     "the only gradient in this product", which stopped being true when V2.9
-     slice 3d ran a fuchsia-to-purple one across START TO FINISH two sections
-     up. There are two, they are on the same screen, and they are doing
-     different jobs — this one is the mark's own colours on the primary door,
-     that one is the through-line arriving in the words it led to. Neither is
-     decoration looking for a home, which is what the original note was
-     guarding against. */
-  background: linear-gradient(112deg, var(--globe-node-1-mid), var(--globe-node-2-mid));
-  box-shadow: 0 6px 22px -8px var(--globe-node-2-mid);
-}
-.splash-choice .splash-door:last-child {
-  background: transparent;
-  border: 1px solid rgba(255, 255, 255, 0.16);
-}
 .splash-door:hover {
   transform: translateY(-1px);
-}
-.splash-choice .splash-door:last-child:hover {
-  background: rgba(255, 255, 255, 0.05);
 }
 @media (prefers-reduced-motion: reduce) {
   /* The lift goes; the colour and the border stay, because they are what
@@ -505,43 +483,59 @@
    to. Dressed for the dark field: the toggle's own tokens are lit for the
    panel's light ground, so its ink and its rule are restated here rather than
    left to inherit a colour that would vanish. */
-/* ── V2.9 slice 4a — THE BASELINE CLUSTER ──────────────────────────────────
-   Two doors that read as one object. Adam: "a 2 button cluster displaying like
-   a single object… the narrated is the heavy lean, but optional. Like choosing
-   which door you enter the rocket from."
+/* ── V2.9 slice 4 polish — THE BASELINE CLUSTER IS TYPOGRAPHY IN A GLOW ────
+   (Adam, 2026-09-01): "make the top section fade in as 'SET YOUR PROMPTING
+   BASELINE' with BASELINE in the blue with [the silent line] underneath it as
+   a secondary link. Give the whole thing a glowing outline so it gives the
+   signal that it is a single element that is an action."
 
-   ONE BORDER, ONE SHADOW, ONE SEAM. The object is the container; the halves
-   are what is inside it. Two separate buttons with their own borders would be
-   two doors standing next to each other, which is what this screen already had
-   and is not what was asked for.
-
-   THE LEAN IS WEIGHT, NOT WORDING. The loud half keeps the filled gradient the
-   single door wore; the quiet half is a strip under it at the same width. The
-   quiet one is not smaller, not greyed and not a link — it is a real door,
-   because "optional" describes the narration and not the choice. */
+   So the object is set like the SECTIONS — a caps heading with one word in
+   colour, a quiet line under it — and what says "action" rather than "fourth
+   paragraph" is the outline: one glowing border around both, in the blue the
+   squiggle above hands down. This supersedes 4a's filled-gradient halves; the
+   4a reasoning that survives is that the halves are still one object and the
+   quiet one is still a real 44px door, however much it dresses as a link. */
 .splash-cluster {
   display: flex;
   flex-direction: column;
   width: 100%;
+  padding: 12px 16px 8px;
   border-radius: 14px;
-  /* The shadow belongs to the OBJECT, so the two halves cast one. */
-  box-shadow: 0 6px 22px -8px var(--globe-node-2-mid);
-  overflow: hidden;
+  border: 1px solid var(--globe-node-1-solid);
+  background: rgba(62, 119, 232, 0.07);
+  /* The glow: a tight inner breath and a soft outer halo, both in the
+     outline's own blue — one lit object, not a border plus a shadow. */
+  box-shadow:
+    0 0 18px -6px var(--globe-node-1-solid),
+    inset 0 0 14px -10px var(--globe-node-1-solid);
 }
-.splash-cluster .splash-door {
-  border-radius: 0;
-  box-shadow: none;
+/* The collapsed form (no speech engine) is the same object as a single
+   button, and a button's text must flow as a line — the column is for the
+   div holding two doors, not for words. */
+button.splash-cluster {
+  display: block;
+  font-family: var(--font-sans);
+  cursor: pointer;
 }
-/* The loud half. `:first-child` in `.splash-choice` no longer selects it — it
-   is one level down now — so its fill is stated here rather than inherited
-   from a selector that stopped matching. */
+/* The heading half: the sections' own type, pressable. */
 .splash-cluster-loud {
-  border: 0;
-  color: var(--ink-inv);
-  background: linear-gradient(112deg, var(--globe-node-1-mid), var(--globe-node-2-mid));
-  /* The label centres; the icon rides at the end without pushing it off
-     centre, which is what the absolute placement is for. */
   position: relative;
+  min-height: var(--target-min);
+  border: 0;
+  background: none;
+  font-family: var(--font-sans);
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.35;
+  color: var(--ink-inv);
+  cursor: pointer;
+}
+/* The picked-out word, in the blue the route arrives in — the same device
+   as "15" and "START TO FINISH" above, which is what makes this the third
+   verse of the same song. */
+.splash-cluster-span {
+  color: var(--globe-node-1-solid);
 }
 .splash-cluster-icon {
   position: absolute;
@@ -563,31 +557,32 @@
 .splash-cluster-icon .narrator-mute {
   display: none;
 }
-/* The quiet half. A hairline seam rather than a gap: a gap would make two
-   objects of it again. */
+/* The quiet half: a secondary link in its own voice, and still a real door —
+   44px of it, full width, because "optional" describes the narration and not
+   the choice. The underline is what says "link"; the size does not drop
+   below legible and the colour does not drop below 4.5:1. */
 .splash-cluster-quiet {
   min-height: var(--target-min);
   width: 100%;
   border: 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.16);
-  background: rgba(255, 255, 255, 0.06);
+  background: none;
   font-family: var(--font-sans);
-  font-size: 14px;
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--ink-inv);
+  letter-spacing: 0;
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: underline;
+  text-underline-offset: 3px;
   cursor: pointer;
-  transition: background-color 160ms ease-out;
+  transition: color 160ms ease-out;
 }
 .splash-cluster-quiet:hover {
-  background: rgba(255, 255, 255, 0.12);
+  color: var(--ink-inv);
 }
 .splash-cluster-quiet:focus-visible,
 .splash-cluster-loud:focus-visible {
-  /* Inset, because the object clips its own children: a ring drawn outside
-     the half would be cut off by the container's `overflow: hidden`. */
   outline: 2px solid var(--ink-inv);
-  outline-offset: -3px;
+  outline-offset: 2px;
 }
 @media (prefers-reduced-motion: reduce) {
   .splash-cluster-quiet {
@@ -609,21 +604,22 @@
 }
 .splash-cable {
   position: absolute;
-  /* Starts at the button's bottom edge and hangs into the space below it. */
+  /* Anchored at the key's bottom-centre; the layout effect sizes it to reach
+     the panel's bottom-right corner (Adam, 2026-09-01: "go all the way to
+     the corner"), so these dimensions are only the degraded short wire that
+     stands in when measurement fails. */
   top: 100%;
   left: 50%;
-  width: 120px;
-  /* Longer than the room under the door, ON PURPOSE: the cable runs off the
-     bottom of the panel rather than stopping in mid-air. A wire that ends
-     nowhere is a squiggle; a wire that leaves the frame is plugged into
-     something. */
-  height: 86px;
-  transform: translateX(-50%);
+  width: 200px;
+  height: 200px;
   overflow: visible;
   pointer-events: none;
 }
 .splash-cable-line {
-  stroke: var(--globe-node-2-mid);
+  /* The gradient is the tail fading into the dark — Adam's own alternative,
+     "fade to black so it looks purposeful" — so wherever the drawn line
+     ends, it reads as running on rather than as being cut. */
+  stroke: url(#wb-cable-fade);
   stroke-width: 2;
   stroke-linecap: round;
   /* Lit from the first frame: the opacity is written per frame by the panel
@@ -641,32 +637,34 @@
   filter: drop-shadow(0 0 6px var(--globe-node-2-solid));
 }
 
-/* THE CONTROL PANEL KEY. Squarer than the doors above it, with a face rather
-   than a wash: an inset highlight along the top edge and a shadow under the
-   bottom is what reads as a physical key at this size, where a border alone
-   reads as an outline. */
+/* THE KEY WEARS THE WIRE'S OWN LIGHT (Adam, 2026-09-01: "a glowing outline,
+   transparent background in the aqua green"). The control-panel face is
+   gone; what says "key" now is the lit aqua outline — the same colour the
+   count wears and the cable carries — over nothing at all. Sized to its own
+   words rather than the column, because a key that leans right (its part
+   settles +16px, the sections' own alternation) cannot also be full-width. */
 .splash-launch-key {
-  border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.02));
+  width: auto;
+  min-width: 208px;
+  padding: 0 26px;
+  border-radius: 12px;
+  border: 1px solid var(--globe-node-2-solid);
+  background: transparent;
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 2px 0 rgba(0, 0, 0, 0.45);
+    0 0 16px -5px var(--globe-node-2-solid),
+    inset 0 0 12px -8px var(--globe-node-2-solid);
 }
 .splash-launch-key:hover {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.14), rgba(255, 255, 255, 0.05));
+  background: rgba(46, 214, 240, 0.08);
 }
-/* Pressed, and it stays pressed: the key travels down onto its own shadow and
+/* Pressed, and it stays pressed: the key travels down and its glow comes up —
    the door is on its way. There is no second press to make, so there is no
    state to come back from. */
 .splash-launch-key[data-live='on'] {
   transform: translateY(2px);
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.18),
-    0 0 0 rgba(0, 0, 0, 0.45),
-    0 0 18px -2px var(--globe-node-2-solid);
+    0 0 24px -2px var(--globe-node-2-solid),
+    inset 0 0 12px -6px var(--globe-node-2-solid);
 }
 @media (prefers-reduced-motion: reduce) {
   /* The key does not travel. The state is still carried — the glow stays, and

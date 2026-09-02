@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { LAUNCH_MS, SHAKE_MAX, rocketAt } from './rocket';
+import { DISSOLVE_HOLD_MS, DISSOLVE_MS, LAUNCH_MS, SHAKE_MAX, dissolveAt, rocketAt } from './rocket';
 
 describe('rocketAt — the flight is one clock', () => {
   it('opens dark and still: nothing has moved at zero', () => {
@@ -119,6 +119,27 @@ describe('rocketAt — the flight is one clock', () => {
       lastTrail = now.trail;
       lastWhite = now.white;
     }
+  });
+
+  it('the fog holds solid first — the beat the destination paints behind', () => {
+    for (let ms = -40; ms <= DISSOLVE_HOLD_MS; ms += 10) {
+      expect(dissolveAt(ms)).toEqual({ clear: 0, done: false });
+    }
+  });
+
+  it('then clears monotonically, and is gone exactly once', () => {
+    const whole = DISSOLVE_HOLD_MS + DISSOLVE_MS;
+    let last = -1;
+    for (let ms = 0; ms <= whole; ms += 5) {
+      const now = dissolveAt(ms).clear;
+      expect(now).toBeGreaterThanOrEqual(last);
+      expect(now).toBeLessThanOrEqual(1);
+      last = now;
+    }
+    expect(last).toBe(1);
+    expect(dissolveAt(whole - 1).done).toBe(false);
+    expect(dissolveAt(whole).done).toBe(true);
+    expect(dissolveAt(whole * 5)).toEqual({ clear: 1, done: true });
   });
 
   it('every value a frame paints is finite and in range, at any time at all', () => {

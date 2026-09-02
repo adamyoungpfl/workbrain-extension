@@ -275,6 +275,25 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     expect(onDone).not.toHaveBeenCalled();
   });
 
+  it('opens the destination AND ends the splash — the polish-pass contract', () => {
+    /* V2.9 slice 4 polish: `onBaseline` OPENS the interview and `onDone`
+       ends the splash — they are no longer alternatives, and the opening
+       comes first so the fog (or, reduced, the cut) lands on the screen the
+       person chose. App stopped calling `endSplash` inside `onBaseline` on
+       the strength of this ordering; if it stops holding, the splash never
+       unmounts on the baseline route. */
+    vi.useFakeTimers();
+    stubMedia(true);
+    const calls: string[] = [];
+    const { container } = mount(
+      <Splash onDone={() => calls.push('done')} onBaseline={() => calls.push('open')} />,
+    );
+    act(() => {
+      container.querySelector<HTMLButtonElement>('.splash-cluster')!.click();
+    });
+    expect(calls).toEqual(['open', 'done']);
+  });
+
   it('hands over exactly once, however many times a door is pressed', () => {
     vi.useFakeTimers();
     stubMedia(true);

@@ -1711,18 +1711,23 @@ export const S = {
   /* Names the OUTCOME rather than the posture (Adam, 2026-09-02). "Start by
      seeing where you are" described a frame of mind; this is the thing the
      press produces, and it is the same words the screen it leads to uses. */
-  splashBaseline: 'Set Your AI Baseline',
-  /* [DRAFT] V2.9 slice 4a (Adam, 2026-09-01) — the baseline door is two doors
-     that read as one object: "I want to make it feel loosely like the are
-     choosing the narrated or silent baseline and that the narrated is the
-     heavy lean, but optional. Like choosing which door you enter the rocket
-     from."
-
-     So the quiet half is not a rejection of the loud one. It says what it
-     does, in the same voice, and it is a verb somebody would actually say —
-     not "without narration", which describes the absence of a feature rather
-     than the thing they are choosing. */
-  splashBaselineSilent: 'Set it silently',
+  /* [DRAFT] V2.9 slice 4 polish (Adam, 2026-09-01, verbatim ask): "make the
+     top section fade in as 'SET YOUR PROMPTING BASELINE' with BASELINE in the
+     blue". The heading is set like the section headings above it — caps in
+     the string, one word picked out in colour by the panel — so the lead and
+     the span are separate strings exactly the way `splashOwnLead` and
+     `splashOwnSpan` are, and the whole line is kept too because it is the
+     door's accessible name: a voice-control user says what they see, and what
+     they see is the whole heading. A test pins lead + span to the whole. */
+  splashBaselineLead: 'SET YOUR PROMPTING',
+  splashBaselineSpan: 'BASELINE',
+  splashBaseline: 'SET YOUR PROMPTING BASELINE',
+  /* Adam's own sentence, verbatim (2026-09-01): the quiet half is a secondary
+     link under the heading now, and it carries its own voice — not a lesser
+     button but a different temperament. Supersedes "Set it silently", whose
+     reasoning survives: it is still a thing somebody would SAY, still not
+     "skip", still not "no thanks". */
+  splashBaselineSilent: "I'll set my AI baseline in silence, like a professional",
   /* The other half of the choice. It is not "skip" — nothing is being skipped,
      it is the same interview by the shorter road — and it is not "no thanks",
      because declining is not what somebody is doing when they pick the way

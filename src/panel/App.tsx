@@ -561,8 +561,13 @@ export default function App() {
              interview's own opening, because `goal_want` is its first real
              question. What the door changes is that the baseline offer stands
              at the end of the gate instead of being skipped past. */
+          /* V2.9 slice 4 polish: this OPENS the interview and no longer ends
+             the splash — the splash calls `onDone` itself once its exit (the
+             fog, since the polish pass) has cleared. Opening first is the
+             whole fix for the flash of Home the baseline route used to show:
+             the interview now mounts under the whiteout, and what the fog
+             clears onto is the screen the person chose. */
           onBaseline={() => {
-            endSplash();
             setWantBaseline(true);
             /* STRAIGHT TO THE GOAL QUESTION, not to the top of the interview.
                `goal_want` IS the baseline question — "the one thing you want it

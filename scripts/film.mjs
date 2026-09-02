@@ -54,7 +54,16 @@ const N = Number(arg('n', ROLODEX_MODE ? 6 : LAUNCH || BASELINE ? 12 : 9));
 
 const browser = await chromium.launchPersistentContext('', {
   channel: 'chromium',
-  args: [`--disable-extensions-except=${DIST}`, `--load-extension=${DIST}`],
+  /* The same anti-throttling flags the e2e harness runs with: an occluded
+     window on a busy desktop gets its rAF and timers starved, and a film of
+     a throttled animation is a film of the throttling. */
+  args: [
+    `--disable-extensions-except=${DIST}`,
+    `--load-extension=${DIST}`,
+    '--disable-backgrounding-occluded-windows',
+    '--disable-renderer-backgrounding',
+    '--disable-background-timer-throttling',
+  ],
   ...(STILL ? { reducedMotion: 'reduce' } : {}),
 });
 const sw = browser.serviceWorkers()[0] ?? (await browser.waitForEvent('serviceworker'));

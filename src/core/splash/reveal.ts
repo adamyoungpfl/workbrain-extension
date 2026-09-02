@@ -26,7 +26,7 @@ import { easeSmooth } from './sequence';
  */
 
 /** The parts of the reveal, in the order they arrive. */
-export type RevealPart = 'lockup' | 'tagline' | 'time' | 'privacy' | 'doors';
+export type RevealPart = 'lockup' | 'tagline' | 'time' | 'privacy' | 'baseline' | 'launch';
 
 export interface Placed {
   /** 0 absent, 1 fully present. */
@@ -103,9 +103,19 @@ const SCRIPT: Record<RevealPart, Key[]> = {
     { at: 3.8, opacity: 0, x: 0, y: 22 },
     { at: 4.5, opacity: 1, x: 14, y: 0 },
   ],
-  doors: [
+  /* THE TWO ACTIONS ARRIVE THE WAY THE SECTIONS DID (Adam, 2026-09-01: "In
+     the same pattern as the sections above… Let's make that and the Launch
+     offset at the bottom as the two action buttons"). One lands, then the
+     other, and they lean opposite ways — the baseline answers the privacy
+     section's right lean, the launch answers the baseline's left one, and
+     the two squiggles between them have something to bend around. */
+  baseline: [
     { at: 4.4, opacity: 0, x: 0, y: 14 },
-    { at: 5.0, opacity: 1, x: 0, y: 0 },
+    { at: 5.0, opacity: 1, x: -12, y: 0 },
+  ],
+  launch: [
+    { at: 4.7, opacity: 0, x: 0, y: 14 },
+    { at: 5.3, opacity: 1, x: 16, y: 0 },
   ],
 };
 
@@ -115,7 +125,7 @@ export function partStartsAt(part: RevealPart): number {
 }
 
 /** When every part has finished moving. The still version renders this. */
-export const REVEAL_SETTLED = 5.0;
+export const REVEAL_SETTLED = 5.3;
 
 /**
  * Where a part is, `t` seconds into the reveal.

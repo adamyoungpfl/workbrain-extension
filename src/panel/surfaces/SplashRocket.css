@@ -128,6 +128,41 @@
   opacity: 0;
 }
 
+/* ── THE FOG (Adam, 2026-09-01) ────────────────────────────────────────────
+   "Smoke then sort of digitally dematerializing like a fog disappearing to
+   reveal either the home page or the baseline page." Eight blurred puffs
+   over the flat white; the clock thins the base first and lets each puff
+   linger and drift on its own beat. Hidden until the stage flips to its fog
+   dress, and everything of the FLIGHT is hidden the same moment — the swap
+   happens under a solid white frame, so nothing is seen changing. */
+.splash-rocket-fog {
+  position: absolute;
+  inset: 0;
+  display: none;
+}
+.splash-rocket-puff {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: var(--canvas);
+  filter: blur(26px);
+  will-change: transform, opacity;
+}
+.splash-rocketstage[data-fog='on'] {
+  /* The dark field goes: from here the stage is only light thinning over
+     the destination. */
+  background: transparent;
+  pointer-events: none;
+}
+.splash-rocketstage[data-fog='on'] .splash-rocket-fog {
+  display: block;
+}
+.splash-rocketstage[data-fog='on'] .splash-rocket,
+.splash-rocketstage[data-fog='on'] .splash-rocket-trail,
+.splash-rocketstage[data-fog='on'] .splash-rocket-bloom {
+  display: none;
+}
+
 @media (prefers-reduced-motion: reduce) {
   /* Never mounted under reduced motion (Splash hands over immediately); this
      is the belt to that suspender, so a regression shows a blank beat rather

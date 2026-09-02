@@ -919,16 +919,21 @@ test.describe('V2.9 slice 4a — the baseline door is two doors', () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* "Optional" describes the narration, not the choice. The quiet half is
-       not a link, not a smaller control and not a greyed one — it clears the
-       same 44px floor as everything else in this product, and it is inside the
-       object rather than beside it. */
+    /* "Optional" describes the narration, not the choice. The quiet half now
+       DRESSES as a secondary link (the polish pass, Adam's own sentence) —
+       but it still clears the same 44px floor as everything else in this
+       product, spans the object's content, and lives inside the glowing
+       outline rather than beside it. */
     const quiet = page.getByRole('button', { name: S.splashBaselineSilent, exact: true });
     const box = (await quiet.boundingBox())!;
     expect(box.height).toBeGreaterThanOrEqual(44);
 
     const object = (await page.locator('.splash-cluster').boundingBox())!;
-    expect(box.width).toBeCloseTo(object.width, 0);
+    // Inside the object, within its padding — not a small target floating in
+    // a big glow.
+    expect(box.width).toBeGreaterThanOrEqual(object.width - 40);
+    expect(box.x).toBeGreaterThanOrEqual(object.x);
+    expect(box.x + box.width).toBeLessThanOrEqual(object.x + object.width + 1);
 
     await context.close();
   });
@@ -1176,6 +1181,122 @@ test.describe('V2.9 slice 4c — the rocket', () => {
     await page.getByRole('button', { name: S.splashBaselineSilent, exact: true }).click();
     await expect(page.locator('.flow')).toHaveCount(1, { timeout: 2500 });
     await expect(page.locator('.splash-rocketstage')).toHaveCount(0);
+
+    await context.close();
+  });
+});
+
+test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', () => {
+  test('the fog never lifts onto a screen nobody chose — zero naked-Home frames', async () => {
+    test.setTimeout(60_000);
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* THE SEAM THIS WHOLE FEATURE FIXES. The baseline route used to flash
+       Home for as long as the interview took to mount. Now the interview is
+       opened UNDER the whiteout and the splash only leaves once the fog has
+       cleared — so there must never be a painted frame in which the splash
+       is gone and the interview is not there. Counted in-page, per animation
+       frame, because a wall-clock assertion here would measure the test
+       machine instead of the product. */
+    await page.evaluate(() => {
+      const w = window as unknown as { __nakedFrames: number; __stop: boolean };
+      w.__nakedFrames = 0;
+      w.__stop = false;
+      const probe = () => {
+        if (w.__stop) return;
+        if (!document.querySelector('.splash') && !document.querySelector('.flow')) {
+          w.__nakedFrames += 1;
+        }
+        requestAnimationFrame(probe);
+      };
+      requestAnimationFrame(probe);
+    });
+
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    await page.waitForSelector('.flow', { timeout: 30_000 });
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 10_000 });
+
+    const naked = await page.evaluate(() => {
+      const w = window as unknown as { __nakedFrames: number; __stop: boolean };
+      w.__stop = true;
+      return w.__nakedFrames;
+    });
+    expect(naked, 'Home showed between the fog and the interview').toBe(0);
+
+    await context.close();
+  });
+
+  test('the fog is real: the splash outlives the whiteout and dissolves, not fades', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-launch').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    await page.getByRole('button', { name: S.splashStraight, exact: true }).click();
+    /* The stage flips to its fog dress at the whiteout — that attribute is
+       the seam between the flight and the dissolve, and the dissolving
+       splash has released its ground (Splash.css) so the fog thins over the
+       app rather than over the dark field. */
+    const stage = page.locator('.splash-rocketstage');
+    await expect(stage).toHaveAttribute('data-fog', 'on', { timeout: 10_000 });
+    await expect(page.locator('.splash')).toHaveAttribute('data-dissolving', 'on');
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 10_000 });
+    await expect(page.locator('.home')).toBeVisible();
+
+    await context.close();
+  });
+
+  test('the heading is the sections’ own device, and the copy composes exactly', async () => {
+    /* The accessible name is the whole heading; the panel renders it as lead
+       plus a coloured span. If the three strings ever drift apart, the door
+       stops being askable-for by voice — so the composition is pinned. */
+    expect(`${S.splashBaselineLead} ${S.splashBaselineSpan}`).toBe(S.splashBaseline);
+
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await expect(page.locator('.splash-cluster-span')).toHaveText(S.splashBaselineSpan);
+    await expect(
+      page.getByRole('button', { name: S.splashBaseline, exact: true }),
+    ).toBeVisible();
+
+    await context.close();
+  });
+
+  test('the cable runs to the bottom-right corner of the panel', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-launch').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* ASSERTED AS ARITHMETIC, NOT AS A BOUNDING BOX. A bounding box carries
+       whatever transform the paint loop last wrote, and on a starved machine
+       that can be a frame from mid-arrival — this test failed by exactly the
+       16px settle lean that way. The claim is about the MEASUREMENT MATH:
+       the wire's anchor (offsets ignore transforms) plus the settled lean
+       plus the size the layout effect computed must land on the panel's
+       corner, because that is what "all the way to the corner" regresses
+       through. The settle lean is core's own number, read from the page's
+       real layout via the offset chain. */
+    const geo = await page.evaluate(() => {
+      const wrap = document.querySelector('.splash-launch') as HTMLElement | null;
+      const svg = document.querySelector('.splash-cable') as SVGSVGElement | null;
+      if (!wrap || !svg) return null;
+      let x = 0;
+      let y = 0;
+      for (let el: HTMLElement | null = wrap; el; el = el.offsetParent as HTMLElement | null) {
+        x += el.offsetLeft;
+        y += el.offsetTop;
+      }
+      return {
+        right: x + wrap.offsetWidth / 2 + parseFloat(svg.style.width || '0'),
+        bottom: y + wrap.offsetHeight + parseFloat(svg.style.height || '0'),
+        vw: window.innerWidth,
+        vh: window.innerHeight,
+      };
+    });
+    expect(geo).not.toBeNull();
+    /* Anchor + 16 (the settle lean) + width = the right edge; anchor bottom
+       + height = the bottom edge. A pixel of rounding either way is fine —
+       26 missing pixels is the bug this exists to catch. */
+    expect(geo!.right + 16).toBeGreaterThanOrEqual(geo!.vw - 2);
+    expect(geo!.bottom).toBeGreaterThanOrEqual(geo!.vh - 2);
 
     await context.close();
   });

@@ -18,7 +18,7 @@ import {
 } from './reveal';
 import type { RevealPart } from './reveal';
 
-const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'doors'];
+const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'baseline', 'launch'];
 
 describe('partAt — the storyboard', () => {
   it('arrives in the order Adam described', () => {
@@ -75,7 +75,12 @@ describe('partAt — the storyboard', () => {
        everything else is arranged around, and an axis that drifts is not one. */
     expect(partAt(REVEAL_SETTLED, 'time').x).toBeLessThan(0);
     expect(partAt(REVEAL_SETTLED, 'privacy').x).toBeGreaterThan(0);
-    for (const part of ['lockup', 'tagline', 'doors'] as RevealPart[]) {
+    /* And the ACTIONS carry the alternation on down the screen (2026-09-01,
+       Adam: "make that and the Launch offset at the bottom") — baseline
+       answers privacy's right lean, launch answers the baseline's left. */
+    expect(partAt(REVEAL_SETTLED, 'baseline').x).toBeLessThan(0);
+    expect(partAt(REVEAL_SETTLED, 'launch').x).toBeGreaterThan(0);
+    for (const part of ['lockup', 'tagline'] as RevealPart[]) {
       for (let t = 0; t <= 6; t += 0.1) expect(partAt(t, part).x).toBe(0);
     }
   });
@@ -113,13 +118,17 @@ describe('partAt — the storyboard', () => {
     }
   });
 
-  it('puts the doors up while the sections are still living underneath', () => {
+  it('puts the actions up while the sections are still living underneath', () => {
     /* The judgement recorded in the module: Adam's order, taken strictly, puts
        the buttons after the second section finishes cycling — twelve to
        fifteen seconds before anything is pressable. The cinema plays; nobody
        is trapped in it. */
-    expect(partStartsAt('doors')).toBeLessThan(6);
-    expect(partAt(REVEAL_SETTLED, 'doors').opacity).toBe(1);
+    expect(partStartsAt('baseline')).toBeLessThan(6);
+    expect(partStartsAt('launch')).toBeLessThan(6);
+    expect(partAt(REVEAL_SETTLED, 'baseline').opacity).toBe(1);
+    expect(partAt(REVEAL_SETTLED, 'launch').opacity).toBe(1);
+    // One, then the other — the sections' own pattern, carried down.
+    expect(partStartsAt('baseline')).toBeLessThan(partStartsAt('launch'));
   });
 });
 

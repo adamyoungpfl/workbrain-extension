@@ -46,7 +46,7 @@ import './SplashReveal.css';
  * free rather than being animated in parallel and kept in step by hand.
  */
 
-const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'doors'];
+const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'baseline', 'launch'];
 
 interface Box {
   cx: number;
@@ -112,10 +112,17 @@ function BaselineCluster({ onEnter }: { onEnter: () => void }) {
     onEnter();
   };
 
+  /* V2.9 slice 4 polish (Adam, 2026-09-01): the cluster is TYPOGRAPHY now,
+     set like the sections above it — a caps heading with one word picked out
+     in the blue the squiggle arrives in, and the silent choice as a quiet
+     line under it in its own voice. What makes it read as an ACTION rather
+     than a third section is the glowing outline around the whole object:
+     one border, one glow, one thing to press (in two places). */
   if (!choosable) {
     return (
-      <button type="button" className="splash-door" onClick={onEnter}>
-        {S.splashBaseline}
+      <button type="button" className="splash-cluster splash-cluster-loud" onClick={onEnter}>
+        {S.splashBaselineLead}{' '}
+        <span className="splash-cluster-span">{S.splashBaselineSpan}</span>
       </button>
     );
   }
@@ -125,21 +132,22 @@ function BaselineCluster({ onEnter }: { onEnter: () => void }) {
      through, which is what "which door you enter from" means.
 
      THE GROUP'S LABEL ECHOES ITS FIRST BUTTON, and that is the cheaper of two
-     costs. Without it, "Set it silently" is announced with nothing to say what
-     is being set. With it, the loud door is read as "Set Your AI Baseline
-     group, Set Your AI Baseline button" — repetitive, and heard once. The
-     alternative was an `aria-label` on the quiet door carrying the context,
-     which would make its accessible name differ from the words on it: a voice-
-     control user says what they see, and a name that does not match the label
-     is a control they cannot ask for. */
+     costs. Without it, the silent line is announced with nothing to say what
+     is being set. With it, the loud door is read as "Set your prompting
+     baseline group, Set your prompting baseline button" — repetitive, and
+     heard once. The alternative was an `aria-label` on the quiet door carrying
+     the context, which would make its accessible name differ from the words on
+     it: a voice-control user says what they see, and a name that does not
+     match the label is a control they cannot ask for. */
   return (
     <div className="splash-cluster" role="group" aria-label={S.splashBaseline}>
       <button
         type="button"
-        className="splash-door splash-cluster-loud"
+        className="splash-cluster-loud"
         onClick={() => void choose(true)}
       >
-        {S.splashBaseline}
+        {S.splashBaselineLead}{' '}
+        <span className="splash-cluster-span">{S.splashBaselineSpan}</span>
         <span className="splash-cluster-icon">{NARRATOR_ICON}</span>
       </button>
       <button
@@ -175,9 +183,52 @@ function BaselineCluster({ onEnter }: { onEnter: () => void }) {
  * lit — it is scenery, and scenery is not motion.
  */
 function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean }) {
+  const keyRef = useRef<HTMLButtonElement | null>(null);
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const cableRef = useRef<SVGPathElement | null>(null);
   const lightRef = useRef<SVGPathElement | null>(null);
   const firing = useRef(false);
+
+  /* THE CABLE RUNS TO THE BOTTOM-RIGHT CORNER (Adam, 2026-09-01: "The
+     squiggly below should flow towards the bottom right corner but go all
+     the way to the corner"). The corner is a fact about the panel, not about
+     this drawing, so the path is built from a measurement: key to corner,
+     with two bends on the way. Measured at rest, before the paint loop
+     applies any transform — the same moment the reveal measures its own
+     boxes — and compensated by the offset the launch part settles at, which
+     comes from core rather than being typed here twice.
+
+     The tail FADES rather than stopping (his own alternative, pre-approved:
+     "we can fade to black so it looks purposeful") — a gradient to nothing
+     over the dark field, so wherever the drawn line ends it reads as running
+     on into the dark rather than as being cut. The JSX carries a short
+     fallback path: where measurement fails, the wire is merely short, and
+     the pulse still has a length to walk. */
+  useLayoutEffect(() => {
+    const key = keyRef.current;
+    const svg = svgRef.current;
+    const cable = cableRef.current;
+    const light = lightRef.current;
+    if (!key || !svg || !cable || !light) return;
+    const box = key.getBoundingClientRect();
+    const settle = partAt(REVEAL_SETTLED, 'launch');
+    const startX = box.left + box.width / 2 + settle.x;
+    const startY = box.bottom + settle.y;
+    const w = window.innerWidth - startX;
+    const h = window.innerHeight - startY;
+    if (w < 40 || h < 40) return;
+    const mx = w / 2;
+    const my = h / 2;
+    const d =
+      `M 0 0 C ${(-mx * 0.3).toFixed(1)} ${(h * 0.28).toFixed(1)}, ` +
+      `${(mx * 1.3).toFixed(1)} ${(h * 0.22).toFixed(1)}, ${mx.toFixed(1)} ${my.toFixed(1)} ` +
+      `S ${(w * 0.7).toFixed(1)} ${(h * 0.78).toFixed(1)}, ${w.toFixed(1)} ${h.toFixed(1)}`;
+    svg.style.width = `${w}px`;
+    svg.style.height = `${h}px`;
+    svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+    cable.setAttribute('d', d);
+    light.setAttribute('d', d);
+  }, []);
   /* WHETHER THERE IS A LOOP TO CARRY THE LIGHT. The press used to decide by
      re-testing the effect's own guards from outside it — `still`, and whether
      the path element exists — which is a copy of a condition rather than the
@@ -251,29 +302,43 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
   return (
     <div className="splash-launch">
       {/* The cable. Decoration, and says so — it carries no instruction the
-          button does not, and the door works with it painted or not. */}
+          button does not, and the door works with it painted or not. The
+          layout effect above rebuilds the geometry to reach the corner; this
+          markup is the degraded short wire it starts from. */}
       <svg
+        ref={svgRef}
         className="splash-cable"
-        viewBox="0 0 120 64"
-        preserveAspectRatio="none"
+        viewBox="0 0 200 200"
         aria-hidden="true"
         focusable="false"
       >
+        <defs>
+          {/* The tail's fade into the dark, in the wire's own colour. The
+              gradient runs the box's diagonal — the same direction the wire
+              travels — and the LIGHT does not use it: a pulse arriving out
+              of the faded dark is power coming in from beyond the frame. */}
+          <linearGradient id="wb-cable-fade" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" style={{ stopColor: 'var(--globe-node-2-mid)' }} />
+            <stop offset="0.72" style={{ stopColor: 'var(--globe-node-2-mid)' }} />
+            <stop offset="1" style={{ stopColor: 'var(--globe-node-2-mid)', stopOpacity: 0 }} />
+          </linearGradient>
+        </defs>
         <path
           ref={cableRef}
           className="splash-cable-line"
-          d="M60 0 C60 22, 96 26, 100 44 C103 57, 88 64, 74 64"
+          d="M 0 0 C -20 56, 130 44, 100 100 S 140 156, 200 200"
           fill="none"
         />
         <path
           ref={lightRef}
           className="splash-cable-light"
-          d="M60 0 C60 22, 96 26, 100 44 C103 57, 88 64, 74 64"
+          d="M 0 0 C -20 56, 130 44, 100 100 S 140 156, 200 200"
           fill="none"
         />
       </svg>
       <button
         type="button"
+        ref={keyRef}
         className="splash-door splash-launch-key"
         data-live={live ? 'on' : 'off'}
         /* Which route the press took, for anything asking why the door opened
@@ -293,6 +358,8 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
   const partRefs = useRef<Partial<Record<RevealPart, HTMLDivElement | null>>>({});
   const pathRef = useRef<SVGPathElement | null>(null);
   const path2Ref = useRef<SVGPathElement | null>(null);
+  const path3Ref = useRef<SVGPathElement | null>(null);
+  const path4Ref = useRef<SVGPathElement | null>(null);
   const slotRef = useRef<HTMLSpanElement | null>(null);
   const rolodexRef = useRef<HTMLParagraphElement | null>(null);
   const restRef = useRef<Partial<Record<RevealPart, Box>>>({});
@@ -361,6 +428,11 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         path: SVGPathElement | null,
         fromPart: RevealPart,
         toPart: RevealPart,
+        /* How SQUIGGLY (Adam, 2026-09-01: "a squiggly line"). Zero keeps the
+           original gentle S the sections wear; the links into the actions
+           bend twice, because a route into a button is allowed to be having
+           more fun than a route between two paragraphs. */
+        wiggle = 0,
       ) => {
         const from = restRef.current[fromPart];
         const to = restRef.current[toPart];
@@ -373,7 +445,15 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         const x2 = to.cx + b.x;
         const y2 = to.top + b.y - 6;
         const mid = (y1 + y2) / 2;
-        path.setAttribute('d', `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`);
+        const d = wiggle
+          ? /* Two bends: out one way, through the middle, in from the other —
+               the S command mirrors the last control point, which is what
+               keeps the second bend smooth however far apart the ends are. */
+            `M ${x1} ${y1} C ${x1 - wiggle} ${y1 + (y2 - y1) * 0.3}, ` +
+            `${(x1 + x2) / 2 + wiggle} ${mid - (y2 - y1) * 0.12}, ${(x1 + x2) / 2} ${mid} ` +
+            `S ${x2 + wiggle} ${y2 - (y2 - y1) * 0.3}, ${x2} ${y2}`
+          : `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
+        path.setAttribute('d', d);
         /* THE DRAW-ON IS OPTIONAL, THE PATH IS NOT. `getTotalLength` is SVG
            geometry, and not every environment implements it — jsdom does not,
            and an unguarded call took the WHOLE reveal down with it there: the
@@ -393,6 +473,12 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
       };
       drawLink(pathRef.current, 'tagline', 'time');
       drawLink(path2Ref.current, 'time', 'privacy');
+      /* The journey continues INTO the actions (Adam, 2026-09-01): fuchsia
+         to blue down into the baseline heading, blue to the aqua the count
+         wears down into the launch key. The colour keeps handing itself
+         forward, which is what makes five separate things one route. */
+      drawLink(path3Ref.current, 'privacy', 'baseline', 14);
+      drawLink(path4Ref.current, 'baseline', 'launch', 12);
 
       const c = countAt(t);
       setCount((was) => (was === c ? was : c));
@@ -481,12 +567,30 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           the INSTRUCTION, and this line never carried one. */}
       {!still && (
         <svg className="splashreveal-links" aria-hidden="true" focusable="false">
+          <defs>
+            {/* The hand-offs, as gradients this time: the route into the
+                baseline arrives in the privacy section's fuchsia and leaves
+                in the heading's blue; the route into the launch key arrives
+                in that blue and leaves in the aqua the count wears. Stops
+                carry tokens through `style` because presentation attributes
+                do not resolve `var()`. */}
+            <linearGradient id="wb-link-baseline" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style={{ stopColor: 'var(--splash-link)' }} />
+              <stop offset="1" style={{ stopColor: 'var(--globe-node-1-solid)' }} />
+            </linearGradient>
+            <linearGradient id="wb-link-launch" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" style={{ stopColor: 'var(--globe-node-1-solid)' }} />
+              <stop offset="1" style={{ stopColor: 'var(--globe-node-2-solid)' }} />
+            </linearGradient>
+          </defs>
           {/* Each names what it leads to, and the second one is a different
               colour for it: the first path belongs to the section above and is
               drawn in its cyan, the second hands over to the fuchsia the words
               below it start in. The change of colour IS the hand-off. */}
           <path ref={pathRef} className="splashreveal-path" data-link="time" fill="none" />
           <path ref={path2Ref} className="splashreveal-path" data-link="privacy" fill="none" />
+          <path ref={path3Ref} className="splashreveal-path" data-link="baseline" fill="none" />
+          <path ref={path4Ref} className="splashreveal-path" data-link="launch" fill="none" />
         </svg>
       )}
 
@@ -577,11 +681,18 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         </p>
       </div>
 
-      <div className="splashreveal-part" data-part="doors" ref={hold('doors')}>
-        <div className="splash-choice">
-          {onBaseline && <BaselineCluster onEnter={onBaseline} />}
-          <LaunchDoor onLaunch={onStraight} still={still} />
+      {/* THE ACTIONS ARE TWO PARTS NOW, in the sections' own pattern (Adam,
+          2026-09-01): each arrives on its own beat and settles with its own
+          lean. Without a baseline to offer there is no baseline part at all —
+          the links that would point at it simply find no box and draw
+          nothing, which is the degradation law doing layout. */}
+      {onBaseline && (
+        <div className="splashreveal-part" data-part="baseline" ref={hold('baseline')}>
+          <BaselineCluster onEnter={onBaseline} />
         </div>
+      )}
+      <div className="splashreveal-part" data-part="launch" ref={hold('launch')}>
+        <LaunchDoor onLaunch={onStraight} still={still} />
       </div>
     </div>
   );
