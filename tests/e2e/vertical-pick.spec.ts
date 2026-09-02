@@ -19,7 +19,7 @@ import type { BrowserContext, Page } from '@playwright/test';
  * The walk-in seeds a passed gate (the V2.3 pattern), which lands the panel
  * straight on context_scope — the subject.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function openOnContextScope(
   opts: { reducedMotion?: 'reduce' } = {},

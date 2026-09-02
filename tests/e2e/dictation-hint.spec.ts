@@ -27,7 +27,7 @@ import { DICTATION_STEP_ID } from '../../src/core/flow/dictation';
  * Self-contained launch helpers, per this repo's standalone-spec convention.
  */
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const DIST = path.join(ROOT, 'dist');
+const DIST = process.env.WB_E2E_DIST ?? path.join(ROOT, 'dist');
 
 /**
  * Every string that would mean this product had started capturing audio.

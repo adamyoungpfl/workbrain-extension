@@ -16,7 +16,7 @@ import { readFile } from 'node:fs/promises';
 // launchPersistentContext pattern — kept as its own self-contained spec
 // file, matching reflect.spec.ts's and download-import.spec.ts's own note
 // that this repo keeps each spec file standalone.
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
   const context = await chromium.launchPersistentContext('', {

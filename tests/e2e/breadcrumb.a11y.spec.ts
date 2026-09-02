@@ -28,7 +28,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * a full keyboard path, and the 44px target on every rung, every chip and both
  * icons in the bottom bar.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 const TARGET_MIN = 44;
 

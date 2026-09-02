@@ -16,7 +16,7 @@ import { S } from '../../src/panel/strings';
  * the site, CORS server-side) is decision 1's — the manifest still asks
  * for nothing beyond storage and sidePanel, which manifest.spec pins.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const NOW = '2026-08-27T12:00:00.000Z';
 
 const PACK = {

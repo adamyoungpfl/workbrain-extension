@@ -85,12 +85,17 @@ const SCRIPT: Record<RevealPart, Key[]> = {
     { at: 1.6, opacity: 1, x: 0, y: 0 },
     { at: 2.5, opacity: 1, x: 0, y: -58 },
   ],
-  // "About 15 minutes" — materialises, then moves up and slightly LEFT.
+  // "About 15 minutes" — materialises, moves up and slightly LEFT, and —
+  // the SIMPLIFICATION (Adam, 2026-09-02) — having made its claim, leaves:
+  // after the whole pitch has landed, the argument folds away until only
+  // the lockup, the tagline and the two keys remain.
   time: [
     { at: 1.9, opacity: 0, x: 0, y: 26 },
     { at: 2.6, opacity: 1, x: 0, y: 0 },
     { at: 3.5, opacity: 1, x: 0, y: 0 },
     { at: 4.2, opacity: 1, x: -16, y: -34 },
+    { at: 8.7, opacity: 1, x: -16, y: -34 },
+    { at: 9.3, opacity: 0, x: -16, y: -44 },
   ],
   /* The second section, and it settles slightly RIGHT of centre (Adam,
      2026-09-01: "the same treatment as the About 15 minutes but offset just
@@ -102,6 +107,12 @@ const SCRIPT: Record<RevealPart, Key[]> = {
   privacy: [
     { at: 3.8, opacity: 0, x: 0, y: 22 },
     { at: 4.5, opacity: 1, x: 14, y: 0 },
+    /* The simplification: rise into the space the time section left, then
+       leave the same way it did. */
+    { at: 9.0, opacity: 1, x: 14, y: 0 },
+    { at: 9.6, opacity: 1, x: 14, y: -80 },
+    { at: 9.9, opacity: 1, x: 14, y: -80 },
+    { at: 10.5, opacity: 0, x: 14, y: -92 },
   ],
   /* THE TWO ACTIONS ARRIVE THE WAY THE SECTIONS DID (Adam, 2026-09-01: "In
      the same pattern as the sections above… Let's make that and the Launch
@@ -120,10 +131,21 @@ const SCRIPT: Record<RevealPart, Key[]> = {
   baseline: [
     { at: 4.4, opacity: 0, x: 0, y: 14 },
     { at: 5.0, opacity: 1, x: 0, y: 0 },
+    /* The simplification's two lifts: into the time section's space, then
+       into the privacy section's. The keys never fade — they are what the
+       whole show narrows down to. */
+    { at: 9.0, opacity: 1, x: 0, y: 0 },
+    { at: 9.6, opacity: 1, x: 0, y: -80 },
+    { at: 10.2, opacity: 1, x: 0, y: -80 },
+    { at: 10.8, opacity: 1, x: 0, y: -184 },
   ],
   launch: [
     { at: 4.7, opacity: 0, x: 0, y: 14 },
     { at: 5.3, opacity: 1, x: 0, y: 0 },
+    { at: 9.0, opacity: 1, x: 0, y: 0 },
+    { at: 9.6, opacity: 1, x: 0, y: -80 },
+    { at: 10.2, opacity: 1, x: 0, y: -80 },
+    { at: 10.8, opacity: 1, x: 0, y: -184 },
   ],
 };
 
@@ -132,8 +154,15 @@ export function partStartsAt(part: RevealPart): number {
   return SCRIPT[part][0]!.at;
 }
 
-/** When every part has finished moving. The still version renders this. */
+/** When every part has ARRIVED and stands in the full composition. The
+ *  still version paints `REVEAL_REST` (everything landed and argued, before
+ *  the simplification below begins), so the whole pitch is in the frame. */
 export const REVEAL_SETTLED = 5.3;
+
+/** When the SIMPLIFICATION has finished (Adam, 2026-09-02): the sections
+ *  and every squiggle faded, the keys risen, and what remains is the
+ *  lockup, the tagline and the two actions. Nothing moves after this. */
+export const REVEAL_SIMPLE = 11.4;
 
 /**
  * Where a part is, `t` seconds into the reveal.
@@ -450,9 +479,21 @@ export interface Link {
   drawn: number;
   /** Where the glowing head is along it, 0 to 1. */
   head: number;
+  /** The simplification's exit: 1 fully there, 0 faded away. */
+  fade: number;
   /** Nothing to draw at all. */
   idle: boolean;
 }
+
+/* When each route fades in the simplification — the squiggle into a
+   section leaves just before the section does, and the action bows leave
+   last of all ("Finally, the remaining squiggly lines all fade away"). */
+const LINK_FADES: Partial<Record<RevealPart, [number, number]>> = {
+  time: [8.6, 9.1],
+  privacy: [9.7, 10.1],
+  baseline: [10.3, 10.7],
+  launch: [10.9, 11.3],
+};
 
 /**
  * The glowing path between two sections.
@@ -469,7 +510,9 @@ export function linkAt(t: number, toPart: RevealPart): Link {
   const arrives = partStartsAt(toPart);
   const from = arrives - 0.45;
   const span = 0.7;
-  if (t <= from) return { drawn: 0, head: 0, idle: true };
+  if (t <= from) return { drawn: 0, head: 0, fade: 1, idle: true };
   const p = Math.min(1, (t - from) / span);
-  return { drawn: easeSmooth(p), head: p, idle: false };
+  const gone = LINK_FADES[toPart];
+  const fade = gone ? 1 - easeSmooth((t - gone[0]) / (gone[1] - gone[0])) : 1;
+  return { drawn: easeSmooth(p), head: p, fade, idle: false };
 }

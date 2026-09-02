@@ -19,7 +19,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * peek and at the ceiling — the two heights where a fixed bar could land on
  * something.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const PANEL = { width: 400, height: 700 };
 const BOUNDS = drawerBounds(PANEL.height);
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];

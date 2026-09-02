@@ -11,7 +11,7 @@ import { pastRunCard } from './fixtures/runCard';
 // answers persist across a panel close/reopen." See docs/TESTING.md for the
 // launchPersistentContext pattern — Playwright can't open Chrome's own panel
 // chrome, so panel.html is driven as an ordinary extension page instead.
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const TOTAL_TOP_LEVEL = questionCount(contextModules);
 
 async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {

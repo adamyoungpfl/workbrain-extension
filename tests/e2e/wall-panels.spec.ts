@@ -14,7 +14,7 @@ import { WALL_OPACITY_MAX } from '../../src/core/ambient/wallPanels';
  *  - text painted over it still measures where it always measured, which
  *    is the constraint that wins every tie.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchFlow(reducedMotion: 'reduce' | 'no-preference'): Promise<{ context: BrowserContext; page: Page }> {
   const context = await chromium.launchPersistentContext('', {

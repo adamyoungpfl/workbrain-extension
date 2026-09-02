@@ -18,7 +18,7 @@ import {
 } from '../../src/core/splash/reveal';
 import { PULSE_MS } from '../../src/core/splash/launch';
 import { HOLD_MS, LAUNCH_MS } from '../../src/core/splash/rocket';
-import { partAt } from '../../src/core/splash/reveal';
+import { REVEAL_SIMPLE, partAt } from '../../src/core/splash/reveal';
 
 /**
  * V2.7 VB-128 — the splash is the show (docs/V2.7-SPLASH-WOW.md, Option 1):
@@ -46,7 +46,7 @@ import { partAt } from '../../src/core/splash/reveal';
  *     holding still, the hand-off still honoured.
  */
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DIST = path.resolve(HERE, '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(HERE, '../../dist');
 
 /** The pose the reveal's mark must hold when nothing is allowed to move. */
 const STILL_POSE = ORBIT_STILL.nodes.map((n) => `${n.cx},${n.cy},${n.r}`);
@@ -129,15 +129,16 @@ async function holdKey(
   which: 'baseline' | 'launch',
   side: 'voiced' | 'silent' = 'voiced',
 ) {
-  /* CLICK-TO-LOAD (2026-09-02): the press commits and the fill is the
-     ceremony — so the helper clicks and waits for the load to arm. The
-     sided form is what a real browser renders; the collapsed single button
-     exists only where speech does not (jsdom's world, the unit suite's). */
+  /* HELD, again (2026-09-02, same day the click shipped): "require the
+     hold down until they are full to activate so that someone can backoff
+     if they are unsure." The fill only advances under a held pointer. */
   const key = page.locator(
     `${which === 'baseline' ? '.splash-basekey-key' : '.splash-launch-key'} .splash-holdkey-side[data-side='${side}']`,
   );
-  await key.click();
+  await key.hover();
+  await page.mouse.down();
   await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
+  await page.mouse.up();
 }
 
 /* The answer the elimination is left standing on. Indexed by core's own count
@@ -956,27 +957,32 @@ test.describe('V2.9 — the ring is the choice: sides, not a toggle', () => {
     await context.close();
   });
 
-  test('the click does not fire the door — the LOAD does, when it completes', async () => {
+  test('a tap does not launch, and a released hold backs off to nothing', async () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* The press commits, but the ceremony still stands between a press and
-       a launch: nothing opens until the fill has swept the pill. Probed
-       right after the click, the stage must not exist yet; probed after the
-       load's own length, it must. */
+    /* The backoff is the point of the hold (Adam, 2026-09-02): "so that
+       someone can backoff if they are unsure." A tap and a half-hold must
+       both come to nothing, and the fill must drain rather than stick. */
     const side = page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']");
     await side.click();
-    await page.waitForTimeout(HOLD_MS * 0.3);
-    await expect(page.locator('.splash-rocketstage')).toHaveCount(0);
-    await expect(page.locator('.splash-basekey-key')).toHaveAttribute('data-live', 'off');
+    await side.hover();
+    await page.mouse.down();
+    await page.waitForTimeout(HOLD_MS * 0.4);
+    await page.mouse.up();
+    await page.waitForTimeout(600);
 
-    await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
-    await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2000 });
+    await expect(page.locator('.splash-rocketstage')).toHaveCount(0);
+    await expect(page.locator('.splash')).toHaveCount(1);
+    const charge = await page
+      .locator('.splash-basekey-key')
+      .evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue('--charge') || '0'));
+    expect(charge, 'the backoff did not drain the fill').toBe(0);
 
     await context.close();
   });
 
-  test('the click loads the pill left to right, and the load arms it', async () => {
+  test('the hold loads the pill left to right, and the full load arms it', async () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
@@ -990,12 +996,14 @@ test.describe('V2.9 — the ring is the choice: sides, not a toggle', () => {
       pill.evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue('--charge') || '0'));
     expect(await chargeOf()).toBe(0);
 
-    await page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']").click();
+    await page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']").hover();
+    await page.mouse.down();
     await page.waitForTimeout(HOLD_MS * 0.45);
     const mid = await chargeOf();
-    expect(mid, 'the click is not loading the fill').toBeGreaterThan(0.05);
+    expect(mid, 'the hold is not loading the fill').toBeGreaterThan(0.05);
 
     await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
+    await page.mouse.up();
     expect(await chargeOf()).toBe(1);
 
     await context.close();
@@ -1049,7 +1057,12 @@ test.describe('V2.9 slice 4b — the cable and the pulse', () => {
     const light = page.locator('.splash-cable-light');
     await expect(light).toHaveCSS('opacity', '0');
 
-    await holdKey(page, 'launch');
+    /* The SILENT side, deliberately: the voiced hold now speaks the radio
+       line, and the speech engine's first touch can stall the main thread
+       right across the 420ms pulse window — the sampler would then read a
+       finished pulse and call it broken. The wire is identical from either
+       side; the silent side samples it without the stall. */
+    await holdKey(page, 'launch', 'silent');
     await page.waitForTimeout(PULSE_MS * 0.35);
 
     const first = await light.evaluate((el) => ({
@@ -1355,12 +1368,50 @@ test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', ()
       };
     });
     expect(geo).not.toBeNull();
-    /* Anchor + the settle lean (core's own number) + width = the right
-       edge; anchor bottom + height = the bottom edge. A pixel of rounding
-       either way is fine — dozens of missing pixels is the bug this catches. */
-    const lean = partAt(REVEAL_SETTLED, 'launch').x;
-    expect(geo!.right + lean).toBeGreaterThanOrEqual(geo!.vw - 2);
-    expect(geo!.bottom).toBeGreaterThanOrEqual(geo!.vh - 2);
+    /* The wire is measured for the FINAL rest — after the simplification
+       lifts the keys — because the corner is where the person lingers.
+       Anchor + the final offsets + size must land on the viewport's corner. */
+    const rest = partAt(REVEAL_SIMPLE, 'launch');
+    expect(geo!.right + rest.x).toBeGreaterThanOrEqual(geo!.vw - 2);
+    expect(geo!.bottom + rest.y).toBeGreaterThanOrEqual(geo!.vh - 2);
+
+    await context.close();
+  });
+});
+
+test.describe('V2.9 — the simplification', () => {
+  test('the pitch folds away until only the lockup, tagline and keys remain', async () => {
+    test.setTimeout(60_000);
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* Adam (2026-09-02): sections and squiggles leave in order, the keys
+       rise, and the end state is the lockup, the tagline and the two
+       actions. Sampled after core's own final rest, with margin. */
+    const risenBy = (REVEAL_SIMPLE + 1.2) * 1000;
+    const before = (await page.locator('.splash-basekey').boundingBox())!;
+    await page.waitForTimeout(risenBy);
+
+    await expect(page.locator(".splashreveal-part[data-part='time']")).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+    await expect(page.locator(".splashreveal-part[data-part='privacy']")).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
+    await expect(page.locator('.splash-wordmark')).toBeVisible();
+    await expect(page.locator('.splash-tagline')).toBeVisible();
+    await expect(page.getByRole('button', { name: S.splashBaseline, exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible();
+
+    const after = (await page.locator('.splash-basekey').boundingBox())!;
+    expect(before.y - after.y, 'the keys never rose into the freed space').toBeGreaterThan(120);
+
+    // And every route has faded with the sections it joined.
+    for (const path of await page.locator('.splashreveal-path').all()) {
+      expect(Number(await path.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(0.05);
+    }
 
     await context.close();
   });

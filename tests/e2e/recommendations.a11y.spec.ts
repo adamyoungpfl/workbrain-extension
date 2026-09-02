@@ -20,7 +20,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * whose only visible content is an SVG, and --ink-2 on the amber tint the
  * card's cross sits over.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 

@@ -33,7 +33,7 @@ import { openPastPeek } from './fixtures/drawer';
  *
  * Self-contained launch helpers, per this repo's standalone-spec convention.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 /* BS-07a (§7.1): `SHOTS` went with the band's corner photographs. */
 const PANEL = { width: 400, height: 700 };
 

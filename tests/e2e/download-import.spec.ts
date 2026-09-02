@@ -14,7 +14,7 @@ import type { Answers } from '../../src/schema/storage.types';
 // launchPersistentContext pattern this mirrors from tests/e2e/flow.spec.ts —
 // kept as its own file/self-contained launch helpers, matching how this
 // repo keeps each spec file standalone (see reflect.spec.ts's own note).
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
   const context = await chromium.launchPersistentContext('', {

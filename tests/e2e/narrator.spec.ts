@@ -33,7 +33,7 @@ import type { Prefs } from '../../src/schema/storage.types';
  * convention (see typewriter.spec.ts and dev-reset.spec.ts).
  */
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const DIST = path.join(ROOT, 'dist');
+const DIST = process.env.WB_E2E_DIST ?? path.join(ROOT, 'dist');
 
 /** Two voices, one of each kind, so the offline rule in core/voice/roles.ts is
  * exercised by the real wiring and not only by its unit test. */

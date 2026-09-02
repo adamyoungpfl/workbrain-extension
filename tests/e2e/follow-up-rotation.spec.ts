@@ -57,7 +57,7 @@ import { pastRunCard } from './fixtures/runCard';
  * file stands alone (see reflect.spec.ts's own header).
  */
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DIST = path.resolve(HERE, '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(HERE, '../../dist');
 const SHOTS = path.resolve(HERE, '../../test-results/vb57');
 
 async function launchExtension(

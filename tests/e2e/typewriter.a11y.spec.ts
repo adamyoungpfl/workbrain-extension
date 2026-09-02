@@ -36,7 +36,7 @@ import { fileURLToPath } from 'node:url';
  * Nothing about the markup changes — this is the real half-printed DOM, held
  * long enough to look at, not a fixture built to resemble one.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 /** Slows the page's clock by `factor`, from the moment the script runs, before
  * any of the panel's own code has executed. */

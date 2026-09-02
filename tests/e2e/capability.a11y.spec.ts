@@ -15,7 +15,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * tick, and two buttons — which is four ways for a name to go missing and one
  * for a change to be announced to nobody.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 
 const TWO_SKILLS: Answers = {

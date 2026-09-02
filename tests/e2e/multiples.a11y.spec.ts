@@ -28,7 +28,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * (docs/GUARDRAILS.md: text contrast ≥ 4.5:1, nothing distinguished by colour
  * alone).
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 /** The whole interview answered, so every group has something in it. */
 function completedInterview(): Answers {

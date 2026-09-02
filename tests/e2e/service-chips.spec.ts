@@ -23,7 +23,7 @@ import { ALL_PROOF_SERVICES, SERVICE_PERSONAS } from '../../src/core/flow/servic
  * Same launchPersistentContext pattern as flow.spec.ts (docs/TESTING.md).
  * No seeded gate here, on purpose — the gate IS the subject.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 const EXPECTED = ALL_PROOF_SERVICES.map((s) => s.key);
 

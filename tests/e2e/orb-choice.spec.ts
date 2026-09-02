@@ -41,7 +41,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * Self-contained launch helpers, per this repo's standalone-spec convention.
  */
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DIST = path.resolve(HERE, '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(HERE, '../../dist');
 const SHOTS = path.resolve(HERE, '../../test-results/vb60');
 const NEW_ROLE = 'Board member';
 

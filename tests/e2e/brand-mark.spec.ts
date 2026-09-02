@@ -23,7 +23,7 @@ import type { MarkFrame } from '../../src/core/geometry/markSpin';
  * convention (see flow-progress.spec.ts and deep-dive.spec.ts).
  */
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DIST = path.resolve(HERE, '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(HERE, '../../dist');
 
 const poseOf = (frame: MarkFrame) => frame.nodes.map((n) => `${n.cx},${n.cy},${n.r}`);
 

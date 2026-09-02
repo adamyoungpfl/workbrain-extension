@@ -39,7 +39,7 @@ import { pastRunCard } from './fixtures/runCard';
  * Self-contained launch helpers, matching this repo's convention that each
  * spec file stands alone (see reflect.spec.ts's own header).
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchExtension(
   reducedMotion: 'reduce' | 'no-preference' = 'no-preference',

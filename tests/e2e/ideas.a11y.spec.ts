@@ -12,7 +12,7 @@ import { S } from '../../src/panel/strings';
  * again after a press, since the press is what puts text into the live region
  * and into the field.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 test('axe finds no violations on a question offering an example (VB-08)', async () => {
   const context = await chromium.launchPersistentContext('', {

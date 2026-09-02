@@ -38,7 +38,7 @@ import { openPastPeek } from './fixtures/drawer';
  */
 
 const PANEL = { width: 400, height: 700 };
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 // ── The globe half: the harness page ───────────────────────────────────────

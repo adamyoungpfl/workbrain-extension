@@ -23,7 +23,7 @@ import { pastRunCard } from './fixtures/runCard';
  * error, since the error is the state that adds `aria-invalid` and a described
  * -by relationship.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 /** Every answer up to `role_names` — see roles-loop.spec.ts, same walk. */
 function answersBeforeRoleNames(): Answers {

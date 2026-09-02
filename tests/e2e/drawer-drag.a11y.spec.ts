@@ -19,7 +19,7 @@ import { openPastPeek } from './fixtures/drawer';
  * axe violation introduced at any of them — including the tallest, which is
  * the one that could push the question off the screen.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const PANEL = { width: 400, height: 700 };
 const BOUNDS = drawerBounds(PANEL.height);
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];

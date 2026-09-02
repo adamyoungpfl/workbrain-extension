@@ -28,7 +28,7 @@ import { fileURLToPath } from 'node:url';
  * Self-contained, per this repo's e2e convention (see home.spec.ts).
  */
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../..');
-const DIST = path.join(ROOT, 'dist');
+const DIST = process.env.WB_E2E_DIST ?? path.join(ROOT, 'dist');
 const DEV_DIST_REL = path.join('test-results', 'dev-extension');
 const DEV_DIST = path.join(ROOT, DEV_DIST_REL);
 

@@ -22,7 +22,7 @@ import type { Answers } from '../../src/schema/storage.types';
  */
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
-const DIST = path.resolve(HERE, '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(HERE, '../../dist');
 
 /** Two runnable recipes and nothing else — deliberately NOT a finished Skills
  * interview, because "without finishing all of Skills" is the acceptance. */

@@ -19,7 +19,7 @@ import { openPastPeek } from './fixtures/drawer';
  * a tint is exactly the sort of thing that passes by eye and fails by
  * measurement — which is what this exists to catch.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const DAY_MS = 24 * 60 * 60 * 1000;
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 

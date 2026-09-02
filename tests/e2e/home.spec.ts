@@ -17,7 +17,7 @@ import { pastRunCard } from './fixtures/runCard';
 // launchPersistentContext pattern — kept as its own self-contained spec
 // file, matching this repo's other e2e specs' own note that each stays
 // standalone.
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
   const context = await chromium.launchPersistentContext('', {

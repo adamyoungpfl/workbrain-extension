@@ -640,7 +640,7 @@
 /* The word between the pills — the fork said out loud. */
 .splash-or {
   display: block;
-  margin: 6px 0 18px;
+  margin: 6px 0 28px;
   /* The section headers' own size (Adam, 2026-09-02) — the fork is a peer
      of the claims above it, not a footnote between two buttons. */
   font-size: 17px;

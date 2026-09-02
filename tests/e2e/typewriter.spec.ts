@@ -30,7 +30,7 @@ import { pastRunCard } from './fixtures/runCard';
  * Self-contained launch helpers, per this repo's one-spec-stands-alone
  * convention (see brand-mark.spec.ts and file-tree.spec.ts).
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 /**
  * The print is driven by a 10ms `setInterval`, and Chrome clamps timers to one

@@ -28,7 +28,7 @@ import type { Answers } from '../../src/schema/storage.types';
  *  - the fenced-paste path straight into the field is unchanged;
  *  - reduced motion keeps every instruction; axe finds nothing wrong.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchPanel(
   options: { reducedMotion?: 'reduce' } = {},

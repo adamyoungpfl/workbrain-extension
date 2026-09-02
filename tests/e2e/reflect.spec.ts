@@ -22,7 +22,7 @@ import { pastRunCard } from './fixtures/runCard';
 //  (c) an unassisted answer at/over threshold reflects exactly as before —
 //      every pre-existing test below is a (c) claim, its typed text grown
 //      past the 80-character bar so it keeps meaning what it always meant.
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
   const context = await chromium.launchPersistentContext('', {

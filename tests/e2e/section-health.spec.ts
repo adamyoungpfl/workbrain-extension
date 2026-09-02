@@ -48,7 +48,7 @@ import { openPastPeek } from './fixtures/drawer';
  *
  * Self-contained launch helpers, per this repo's standalone-spec convention.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const SHOTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../test-results/vb55');
 const DAY_MS = 24 * 60 * 60 * 1000;
 

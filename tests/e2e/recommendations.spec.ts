@@ -26,7 +26,7 @@ import type { Answers, Dismissals } from '../../src/schema/storage.types';
  * is a widened cousin of home.spec.ts's, kept here rather than shared so a
  * change to one spec cannot silently reshape the other's fixture.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {

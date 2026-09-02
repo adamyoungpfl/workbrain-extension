@@ -25,7 +25,7 @@ import { finishedContext } from './fixtures/answers';
  * that `Flow` actually hands it over inside Skills — which is the half that
  * was broken.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const NOW = '2026-08-28T09:00:00.000Z';
 
 /** The gate answered, in CONTEXT's store, which is the only place it is ever

@@ -13,7 +13,7 @@ import { S } from '../../src/panel/strings';
  * runs by their module, so a run boundary is always a section boundary.
  */
 
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchExtension() {
   const context = await chromium.launchPersistentContext('', {

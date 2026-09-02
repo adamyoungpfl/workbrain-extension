@@ -20,7 +20,7 @@ import { MAX_LINES } from '../../src/core/flow/typewriter';
  * person takes to this screen and the one that broke the first time (it landed
  * on orientation instead of the goal gate).
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function openBaseline(reduced: boolean): Promise<{ context: BrowserContext; page: Page }> {
   const context = await chromium.launchPersistentContext('', {
@@ -35,10 +35,14 @@ async function openBaseline(reduced: boolean): Promise<{ context: BrowserContext
   await page.waitForSelector('.splashreveal');
   /* The hold pass: under full motion the key is HELD until its ring arms; a
      reduced-motion click arms instantly, same as everywhere. */
-  await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
-  if (!reduced) {
-    // Click-to-load (2026-09-02): the fill sweeps, then the door arms.
+  if (reduced) {
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+  } else {
+    // Held (2026-09-02): the fill only advances under a held pointer.
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).hover();
+    await page.mouse.down();
     await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
+    await page.mouse.up();
   }
   await page.waitForSelector('.flow--prompt', { timeout: 20_000 });
   return { context, page };

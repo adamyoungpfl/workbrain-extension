@@ -21,7 +21,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * target, a ring or a keyboard step, at the two heights and in the two modes
  * where a mistake would show.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const PANEL = { width: 400, height: 760 };
 const BOUNDS = drawerBounds(PANEL.height);
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];

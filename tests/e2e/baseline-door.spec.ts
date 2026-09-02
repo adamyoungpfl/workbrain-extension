@@ -12,7 +12,7 @@ import { S } from '../../src/panel/strings';
  * orientation slide one instead. The door promised a baseline and delivered
  * the ordinary interview.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function open() {
   const context = await chromium.launchPersistentContext('', {

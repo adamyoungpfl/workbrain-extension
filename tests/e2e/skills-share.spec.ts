@@ -19,7 +19,7 @@ import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schem
  *  - the row exists ONLY on the skills canvas (Context has no share row);
  *  - axe finds nothing wrong.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const SCRATCH = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../test-results/vb124');
 
 const NOW = '2026-08-26T12:00:00.000Z';

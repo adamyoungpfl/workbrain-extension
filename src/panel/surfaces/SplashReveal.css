@@ -293,7 +293,9 @@
   /* Full width, centred: the pills stack on the centre line with the
      "or" between them, and the joining squiggle bows around it. */
   width: 100%;
-  margin-top: 16px;
+  /* Longer bows (Adam, 2026-09-02): visible squiggle above AND below the
+     or. The simplification's lift is where the height comes back. */
+  margin-top: 30px;
 }
 
 /* THE LOCKUP IS A LOCKUP (Adam, 2026-09-01: "Reduce the padding between

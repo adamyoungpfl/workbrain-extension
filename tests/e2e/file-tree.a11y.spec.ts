@@ -17,7 +17,7 @@ import { openPastPeek } from './fixtures/drawer';
  * unreached rows below threshold, and this is what stops that coming back),
  * and the 44x44 floor on every control the drawer adds.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launch(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
   const context = await chromium.launchPersistentContext('', {

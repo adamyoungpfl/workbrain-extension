@@ -12,7 +12,7 @@ import { fileURLToPath } from 'node:url';
  * `role="progressbar"` with no accessible name is exactly the failure mode a
  * numberless bar invites, since there is no visible text left to name it by.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 test('axe finds no violations on a question showing the progress bar (VB-02)', async () => {
   const context = await chromium.launchPersistentContext('', {

@@ -18,7 +18,7 @@ import { pastRunCard } from './fixtures/runCard';
  * Self-contained launch helpers, per this repo's one-spec-stands-alone
  * convention (see deep-dive.spec.ts and reflect.spec.ts).
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launchPanel(): Promise<{ context: BrowserContext; page: Page }> {
   const context = await chromium.launchPersistentContext('', {

@@ -51,7 +51,7 @@ import type { Answers } from '../../src/schema/storage.types';
  *
  * Self-contained launch helpers, per this repo's standalone-spec convention.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const SHOTS = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../test-results/vb44');
 const PANEL = { width: 400, height: 760 };
 const DRAWER = drawerBounds(PANEL.height);

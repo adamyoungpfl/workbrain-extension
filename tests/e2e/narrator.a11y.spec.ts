@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
  * exists at all would depend on the machine running the suite, and with the
  * real engine this spec would talk out loud.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 function installSilentSpeech(page: Page) {
   return page.addInitScript(() => {

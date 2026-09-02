@@ -34,7 +34,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * Self-contained launch helpers, per this repo's one-spec-stands-alone
  * convention (see home.spec.ts and multiples.spec.ts).
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function launch(): Promise<{ context: BrowserContext; sw: Worker; id: string }> {
   const context = await chromium.launchPersistentContext('', {

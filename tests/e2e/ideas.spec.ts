@@ -20,7 +20,7 @@ import { pastRunCard } from './fixtures/runCard';
  * (see docs/TESTING.md): Playwright can't open Chrome's own side-panel chrome,
  * so panel.html is driven as an ordinary extension page at a 400px viewport.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 /** Every step in the real flow, repeatable fields included. */
 const ALL_STEPS: Step[] = contextModules.flatMap((m) =>

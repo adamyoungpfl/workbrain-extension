@@ -36,7 +36,7 @@ import { pastRunCard } from './fixtures/runCard';
  *    read those stamps);
  *  - the keyboard is the whole path, and reduced motion + axe hold.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 const pair = PAIRED_PICKS[0]!;
 const steps = pairedStepsFor(contextModules, pair)!;

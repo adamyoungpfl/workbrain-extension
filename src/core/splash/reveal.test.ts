@@ -16,6 +16,7 @@ import {
   partStartsAt,
   rolodexAt,
 } from './reveal';
+import { REVEAL_SIMPLE } from './reveal';
 import type { RevealPart } from './reveal';
 
 const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'baseline', 'launch'];
@@ -92,9 +93,41 @@ describe('partAt — the storyboard', () => {
       }
     });
 
-    it('is byte-identical at the settle and long after — nothing drifts', () => {
+    it('is byte-identical at the SIMPLE rest and long after — nothing drifts', () => {
+      /* Since the simplification (Adam, 2026-09-02) the composition keeps
+         moving after the settle: the sections leave and the keys rise. The
+         no-drift law moved to the FINAL rest. */
       for (const part of PARTS) {
-        expect(partAt(REVEAL_SETTLED + 30, part)).toEqual(partAt(REVEAL_SETTLED, part));
+        expect(partAt(REVEAL_SIMPLE + 30, part)).toEqual(partAt(REVEAL_SIMPLE, part));
+      }
+    });
+
+    it('simplifies to the lockup, the tagline and the two keys', () => {
+      /* "At the end of the sequence, we have the logo lockup, the tagline
+         and the 2 action buttons." The sections are gone, the keys have
+         risen into their space, and the axis never moved. */
+      expect(partAt(REVEAL_SIMPLE, 'time').opacity).toBe(0);
+      expect(partAt(REVEAL_SIMPLE, 'privacy').opacity).toBe(0);
+      for (const part of ['lockup', 'tagline', 'baseline', 'launch'] as RevealPart[]) {
+        expect(partAt(REVEAL_SIMPLE, part).opacity).toBe(1);
+      }
+      expect(partAt(REVEAL_SIMPLE, 'baseline').y).toBeLessThan(-150);
+      expect(partAt(REVEAL_SIMPLE, 'launch').y).toBeLessThan(-150);
+      expect(partAt(REVEAL_SIMPLE, 'lockup')).toEqual(partAt(REVEAL_SETTLED, 'lockup'));
+      expect(partAt(REVEAL_SIMPLE, 'tagline')).toEqual(partAt(REVEAL_SETTLED, 'tagline'));
+    });
+
+    it('fades every route by the SIMPLE rest, sections first, bows last', () => {
+      for (const part of ['time', 'privacy', 'baseline', 'launch'] as RevealPart[]) {
+        expect(linkAt(REVEAL_SIMPLE, part).fade).toBe(0);
+      }
+      // The order: the section routes are gone while the action bows remain.
+      expect(linkAt(10.2, 'time').fade).toBe(0);
+      expect(linkAt(10.2, 'privacy').fade).toBe(0);
+      expect(linkAt(10.2, 'launch').fade).toBe(1);
+      // And the still frame (REVEAL_REST) has every route intact.
+      for (const part of ['time', 'privacy', 'baseline', 'launch'] as RevealPart[]) {
+        expect(linkAt(REVEAL_REST, part).fade).toBe(1);
       }
     });
 
@@ -361,8 +394,12 @@ describe('REVEAL_REST — the moment the screen stops moving', () => {
     expect(REVEAL_REST).toBeGreaterThan(REVEAL_SETTLED);
   });
 
-  it('nothing turns, fades or moves after it — ever', () => {
-    const after = REVEAL_REST + 0.01;
+  it('nothing turns, fades or moves after the SIMPLE rest — ever', () => {
+    /* REVEAL_REST is the full composition's rest — the still frame's moment,
+       every device done arguing. The simplification then moves the furniture
+       one last time (Adam, 2026-09-02), so the nothing-after law lives at
+       REVEAL_SIMPLE now. */
+    const after = REVEAL_SIMPLE + 0.01;
     // Swept, not sampled: one instant proves one instant. The rolodex rests
     // between turns, so a single check after the end cannot tell a device
     // that has stopped from one that is merely between beats.
@@ -395,7 +432,19 @@ describe('REVEAL_REST — the moment the screen stops moving', () => {
       });
     };
     for (let t = 0; t < 30; t += 0.01) if (moving(t)) lastMotion = t;
-    expect(lastMotion).toBeLessThanOrEqual(REVEAL_REST + 0.02);
+    /* The DEVICES all rest by REVEAL_REST (that is what the still frame
+       banks on); the simplification's travel ends by REVEAL_SIMPLE. */
+    const deviceMoving = (t: number): boolean => {
+      if (rolodexAt(t).turning) return true;
+      const w = claimWordAt(t);
+      if (!w.resting) return true;
+      const next = claimWordAt(t + 0.01);
+      return w.rotate !== next.rotate || w.strike !== next.strike;
+    };
+    let lastDevice = 0;
+    for (let t = 0; t < 30; t += 0.01) if (deviceMoving(t)) lastDevice = t;
+    expect(lastDevice).toBeLessThanOrEqual(REVEAL_REST + 0.02);
+    expect(lastMotion).toBeLessThanOrEqual(REVEAL_SIMPLE + 0.02);
   });
 });
 

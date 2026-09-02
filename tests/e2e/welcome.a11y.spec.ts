@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
  * introduces the product's first screen a person meets with no prior context,
  * so its keyboard path has to be right on the first try.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 
 async function openWelcome(): Promise<{ context: BrowserContext; page: Page }> {
   const context = await chromium.launchPersistentContext('', {

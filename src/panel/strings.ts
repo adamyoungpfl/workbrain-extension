@@ -1739,6 +1739,14 @@ export const S = {
   splashNarratedShort: 'Narrated',
   splashSilentShort: 'Silent',
   splashOr: 'or',
+  /* THE RADIO (Adam, 2026-09-02): "a little sound clip... like the old NASA
+     radio transmissions during launch... a little fun audible queue that
+     something is starting". Spoken through the narrator's own engine while
+     the held key loads — the words carry the flavour; no audio asset, no
+     network, nothing the guardrails would have to meet. Voiced side only:
+     somebody holding Silent asked for silence. */
+  splashRadioBaseline: 'Tower is clear for systems check.',
+  splashRadioLaunch: 'All systems go. Commence launch sequence.',
   /* Adam's own sentence, verbatim (2026-09-01): the quiet half is a secondary
      link under the heading now, and it carries its own voice — not a lesser
      button but a different temperament. Supersedes "Set it silently", whose

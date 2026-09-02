@@ -22,7 +22,7 @@ import { openPastPeek } from './fixtures/drawer';
  * Scanned with reduced motion on, like the other drawer scans: axe measures
  * one instant, and a mid-morph frame is two layers at blended opacity.
  */
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const PANEL = { width: 400, height: 700 };
 const WCAG = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'];
 

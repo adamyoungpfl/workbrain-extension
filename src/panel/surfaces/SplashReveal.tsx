@@ -1,10 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { BrandMark } from '../components';
-import { narratorSupported } from '../voice/speech';
+import { narratorSupported, speak, stopSpeaking } from '../voice/speech';
 import { loadPrefs, useNarratorPref } from '../voice/prefs';
 import { idleGlowAt, pulseAt } from '../../core/splash/launch';
-import { chargeAt } from '../../core/splash/rocket';
+import { HOLD_MS, chargeAt, dischargeAt } from '../../core/splash/rocket';
 import {
   CLAIM_TRUE,
   COUNT_FROM,
@@ -18,6 +18,7 @@ import {
   rolodexAt,
 } from '../../core/splash/reveal';
 import type { RevealPart } from '../../core/splash/reveal';
+import { REVEAL_SIMPLE } from '../../core/splash/reveal';
 import { S } from '../strings';
 import { taglineLines } from './Splash';
 import './SplashReveal.css';
@@ -181,12 +182,15 @@ function HoldKey({
   className,
   still,
   names,
+  radio,
   onArmed,
   children,
 }: {
   className: string;
   still: boolean;
   names: { voiced: string; silent: string };
+  /** The transmission spoken while the voiced side loads. */
+  radio?: string | undefined;
   onArmed: () => void;
   children: ReactNode;
 }) {
@@ -238,13 +242,17 @@ function HoldKey({
     })();
   };
 
-  /* CLICK, NOT HOLD (Adam, 2026-09-02: "if the user clicks on Set or
-     Launch buttons, let's do a color load that does a color fill of the
-     entire button from left to right"). The press commits; the LOAD is the
-     ceremony — the fill sweeps the pill on core's charge clock and arming
-     is the fill completing. One handler, and the keyboard comes free:
-     Enter and Space are clicks on a button by birthright. Escape remains
-     the way out, as it has been from frame one. */
+  /* THE HOLD IS BACK (Adam, 2026-09-02: "require the hold down until they
+     are full to activate so that someone can backoff if they are unsure").
+     The fill still sweeps left to right on core's clock — the same load he
+     asked to keep — but it only advances while the key is held, and an
+     early release drains it fast: the backoff is relief, not a rewind.
+
+     AND THE RADIO RIDES THE VOICED HOLD: "like the old NASA radio
+     transmissions during launch" — the line is spoken through the
+     narrator's engine while the fill loads, cut off by the backoff, and
+     handed over to the counted digits at the arm. Holding Silent asked for
+     silence, so Silent loads quietly. */
   const start = (voiced: boolean) => {
     if (armedRef.current || holding.current) return;
     if (still) {
@@ -252,9 +260,11 @@ function HoldKey({
       return;
     }
     holding.current = true;
+    if (voiced && radio) speak({ role: 'question', text: radio });
     cancelAnimationFrame(raf.current);
-    const t0 = performance.now();
+    const t0 = performance.now() - chargeNow.current * HOLD_MS;
     const tick = (now: number) => {
+      if (!holding.current) return;
       const c = chargeAt(now - t0);
       chargeNow.current = c.charge;
       paint(c.charge);
@@ -267,10 +277,44 @@ function HoldKey({
     raf.current = requestAnimationFrame(tick);
   };
 
+  const release = () => {
+    if (!holding.current) return;
+    holding.current = false;
+    stopSpeaking();
+    cancelAnimationFrame(raf.current);
+    const from = chargeNow.current;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      if (holding.current || armedRef.current) return;
+      const c = dischargeAt(from, now - t0);
+      chargeNow.current = c;
+      paint(c);
+      if (c > 0) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+  };
+
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
 
   const holdHandlers = (voiced: boolean) => ({
-    onClick: () => start(voiced),
+    onPointerDown: () => start(voiced),
+    onPointerUp: release,
+    onPointerLeave: release,
+    onPointerCancel: release,
+    onKeyDown: (e: { key: string; repeat: boolean; preventDefault: () => void }) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        /* preventDefault keeps Space from scrolling AND from firing the
+           native click on keyup — the click path is reduced motion's. */
+        e.preventDefault();
+        if (!e.repeat) start(voiced);
+      }
+    },
+    onKeyUp: (e: { key: string }) => {
+      if (e.key === ' ' || e.key === 'Enter') release();
+    },
+    onClick: () => {
+      if (still) arm(voiced);
+    },
   });
 
   if (!sided) {
@@ -347,6 +391,7 @@ function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }
         className="splash-basekey-key"
         still={still}
         names={{ voiced: S.splashBaseline, silent: S.splashBaselineSilent }}
+        radio={S.splashRadioBaseline}
         onArmed={onEnter}
       >
         {(() => {
@@ -415,7 +460,12 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
     const light = lightRef.current;
     if (!key || !svg || !cable || !light) return;
     const box = key.getBoundingClientRect();
-    const settle = partAt(REVEAL_SETTLED, 'launch');
+    /* The FINAL rest, not the arrival: the simplification lifts the keys
+       184px after everything else has gone, and the corner is where the
+       person lingers — so the wire is measured for where the key ENDS UP.
+       Early on it overshoots below the frame, which the tail-fade makes
+       purposeful. */
+    const settle = partAt(REVEAL_SIMPLE, 'launch');
     const startX = box.left + box.width / 2 + settle.x;
     const startY = box.bottom + settle.y;
     const w = window.innerWidth - startX;
@@ -544,6 +594,7 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
         className="splash-launch-key"
         still={still}
         names={{ voiced: S.splashStraight, silent: S.splashStraightSilent }}
+        radio={S.splashRadioLaunch}
         onArmed={armed}
       >
         {S.splashStraightLabel}
@@ -691,7 +742,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           path.style.strokeDasharray = `${len}`;
           path.style.strokeDashoffset = `${len * (1 - link.drawn)}`;
         }
-        path.style.opacity = link.idle ? '0' : '1';
+        path.style.opacity = link.idle ? '0' : link.fade.toFixed(3);
       };
       drawLink(pathRef.current, 'tagline', 'time');
       drawLink(path2Ref.current, 'time', 'privacy');
@@ -727,7 +778,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
             p5.style.strokeDasharray = `${len}`;
             p5.style.strokeDashoffset = `${len * (1 - link.drawn)}`;
           }
-          p5.style.opacity = link.idle ? '0' : '1';
+          p5.style.opacity = link.idle ? '0' : link.fade.toFixed(3);
         }
       }
 

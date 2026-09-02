@@ -13,6 +13,9 @@ import { defineConfig } from '@playwright/test';
  */
 export default defineConfig({
   testDir: './tests/e2e',
+  /* Builds the suite's OWN production bundle (dist-e2e/) so a dev build in
+     dist/ — dogfooding — can never poison a run. See global-setup.ts. */
+  globalSetup: './tests/e2e/global-setup.ts',
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,

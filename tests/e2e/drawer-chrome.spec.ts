@@ -30,7 +30,7 @@ import type { Answers } from '../../src/schema/storage.types';
  * it first would leave a flown-into section with no way out but Escape.
  */
 
-const DIST = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
+const DIST = process.env.WB_E2E_DIST ?? path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../dist');
 const PANEL = { width: 400, height: 760 };
 
 /** A top-level text question late in the file — one answer, one line, no
