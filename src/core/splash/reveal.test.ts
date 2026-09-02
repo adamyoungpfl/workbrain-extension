@@ -225,8 +225,10 @@ describe('claimWordAt — the true claim is arrived at, not asserted', () => {
       const w = claimWordAt(t);
       if (w.strike === 1) struck.add(w.index);
     }
-    // Every wrong one, and only the wrong ones.
-    expect([...struck].sort()).toEqual([0, 1, 2]);
+    // Every wrong one, and only the wrong ones — derived from the count, so
+    // the 2026-09-01 cut from four answers to two moved this with it.
+    const wrong = Array.from({ length: CLAIM_TRUE }, (_, i) => i);
+    expect([...struck].sort()).toEqual(wrong);
   });
 
   it('NEVER strikes the true one — it is what is left standing', () => {

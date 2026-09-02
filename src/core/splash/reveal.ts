@@ -265,7 +265,9 @@ export function rolodexAt(t: number): Rolodex {
  * word and costs the plainness of Adam's own words. The panel pins the slot
  * to its widest phrase so the tail never moves; see `SplashReveal.tsx`.
  */
-export const CLAIM_WORDS = 4;
+/* Two, since the polish cut (Adam, 2026-09-01: "tighter on timing") — one
+   refusal was always the whole argument; the other two were repetition. */
+export const CLAIM_WORDS = 2;
 /** The last one is the true one, and the only one that never gets struck. */
 export const CLAIM_TRUE = CLAIM_WORDS - 1;
 

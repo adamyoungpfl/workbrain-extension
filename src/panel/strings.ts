@@ -1690,10 +1690,13 @@ export const S = {
      strike still crosses the whole answer — it is the whole answer that is
      wrong — and the underline sits under the amount alone, which is the part
      that changed. */
+  /* CUT TO TWO BEATS (Adam, 2026-09-01: "We just need that tighter on
+     timing"). One wrong answer goes up and is refused; the true one lands.
+     Four answers made the argument in eight seconds; the argument only ever
+     needed one refusal to work. "Anything" is Adam's word for the wrong
+     answer — and it rhymes with the tagline's own pair two sections up. */
   splashLeaveAnswers: [
-    { amount: 'Everything', verb: 'leaves' },
-    { amount: 'Most things', verb: 'leave' },
-    { amount: 'Some things', verb: 'leave' },
+    { amount: 'Anything', verb: 'leaves' },
     { amount: 'Nothing', verb: 'leaves' },
   ] as const,
   splashLeaveTail: 'your browser.',

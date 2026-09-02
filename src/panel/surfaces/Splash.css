@@ -430,11 +430,56 @@
   letter-spacing: -0.02em;
 }
 .splash-tagline {
-  /* 8px, with the reveal pulling its part 16px closer (SplashReveal.css):
-     the name and its line are ONE lockup (Adam, 2026-09-01), not two
-     exhibits with air between them. */
-  margin: 8px 0 0;
+  /* 2px, with the reveal pulling its part 16px closer (SplashReveal.css):
+     Adam's second tightening (2026-09-01) — "about half the difference in
+     space" the first one left. The name and its line are ONE lockup. */
+  margin: 2px 0 0;
   max-width: 30ch;
+}
+
+/* THE MIRROR'S TWO POLES, in the route's own hues — fuchsia for the person,
+   aqua for the machine. Two different colours from one family: not visually
+   connected, thematically connected, which is Adam's own spec for them. Both
+   sit far above the 4.5:1 floor on the field, and the sentence reads
+   identically with the colour gone. */
+.splash-tagline-you {
+  color: var(--splash-link);
+  font-weight: 650;
+}
+.splash-tagline-ai {
+  color: var(--globe-node-2-solid);
+  font-weight: 650;
+}
+/* The landing word takes the ANSWER'S mark: an underline that draws itself
+   once the line has settled — the same gesture that lands under "Nothing"
+   three sections down, made once here so the rhyme is set up before the
+   payoff. The delay is from the reveal's own mount (the element exists from
+   reveal zero), timed to land just after the tagline does at 1.6s. */
+.splash-tagline-ever {
+  position: relative;
+}
+.splash-tagline-ever::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  height: 1.5px;
+  width: 100%;
+  background: var(--splash-link-end);
+  border-radius: 1px;
+  animation: splash-underline-draw 380ms ease-out 2.1s backwards;
+}
+@keyframes splash-underline-draw {
+  from {
+    width: 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* Drawn, not drawing: the mark IS the instruction's emphasis and stays;
+     only the motion goes. */
+  .splash-tagline-ever::after {
+    animation: none;
+  }
 }
 /* THE PROMISE, set apart by a hairline rather than by more air. It answers a
    different question from the tagline — what this costs, not what it is — and
