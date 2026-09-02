@@ -361,6 +361,22 @@
   outline-offset: 2px;
 }
 
+/* V2.9 slice 4c — the reveal's hold. Exists so one `inert` can close every
+   door under the rocket at once.
+
+   A FLEX CONTAINER, NOT A PLAIN BLOCK, and the difference is 26 visible
+   pixels: there is no global border-box reset in this product, so the
+   reveal's `width: 100%` plus its own 26px padding is wider than the frame —
+   as a flex item that overflow was quietly absorbed by shrink, and as a
+   block child it shoved the whole column 26px off centre. This restores the
+   context the reveal was written in rather than patching its box model. */
+.splash-hold {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
 /* Leaving. `pointer-events: none` from the first frame of the fade, so the
    panel underneath is live for the whole 320ms rather than after it. */
 .splash[data-leaving='on'] {

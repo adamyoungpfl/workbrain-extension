@@ -1,0 +1,138 @@
+/* V2.9 slice 4c — the rocket. See SplashRocket.tsx for the behaviour; this is
+   only how it looks.
+
+   THE SURFACE IS THE DARK FIELD ITSELF. Its opacity rising over the reveal IS
+   "everything else fades leaving only the dark background" — one layer, one
+   number, and nothing underneath had to be choreographed to die on cue.
+
+   Every colour is a token or white-at-a-measured-alpha, per Splash.css's own
+   law. The airframe is the app's paper, the pops are the doors' cyan and the
+   through-line's fuchsia-to-purple, and the flame is the palette's two warm
+   hues — the rocket is dressed in colours this screen has already taught. */
+
+.splash-rocketstage {
+  position: absolute;
+  inset: 0;
+  background: var(--splash-field);
+  /* Written per frame by the clock; this is only where it starts. */
+  opacity: 0;
+  /* The climb leaves the frame, not the layout: nothing scrolls, nothing
+     spills onto the panel underneath. */
+  overflow: hidden;
+}
+
+.splash-rocket {
+  position: absolute;
+  left: 50%;
+  width: 84px;
+  height: 210px;
+  opacity: 0;
+  transform: translate3d(-50%, 0, 0);
+  will-change: transform, opacity;
+  /* A breath of the mark's light around the airframe, so a white drawing on
+     a near-black field reads as lit rather than as pasted. */
+  filter: drop-shadow(0 0 22px rgba(46, 214, 240, 0.28));
+}
+
+.splash-rocket-body {
+  fill: var(--pop-paper);
+}
+/* One flank in shadow — read as a body, not a sticker. On the paper fill this
+   is a tint, so the flank stays comfortably light. */
+.splash-rocket-shade {
+  fill: var(--pop-shade);
+  opacity: 0.3;
+}
+.splash-rocket-fin-left {
+  fill: var(--splash-link);
+}
+.splash-rocket-fin-right {
+  fill: var(--splash-link-end);
+}
+.splash-rocket-band {
+  fill: var(--globe-node-2-mid);
+}
+.splash-rocket-glass {
+  fill: var(--globe-node-1-deep);
+}
+.splash-rocket-ring {
+  fill: none;
+  stroke: var(--globe-node-2-solid);
+  stroke-width: 3.5;
+}
+.splash-rocket-nozzle {
+  fill: var(--globe-node-2-deep);
+}
+
+/* The burn: warm pops around a paper core. Scaled and guttered per frame from
+   the nozzle's lip — the transform lives on the group, written by the clock. */
+.splash-rocket-flame {
+  opacity: 0;
+}
+.splash-rocket-flame-outer {
+  fill: var(--pop-2);
+  opacity: 0.85;
+}
+.splash-rocket-flame-mid {
+  fill: var(--pop-3);
+  opacity: 0.9;
+}
+.splash-rocket-flame-core {
+  fill: var(--pop-paper);
+}
+
+/* The trail: a narrow column of light pinned to the pad, grown per frame to
+   wherever the tail is, blooming sideways as the whiteout rises through it.
+   Solid at the tail, thinning toward the ground — an exhaust, not a pillar. */
+.splash-rocket-trail {
+  position: absolute;
+  left: 50%;
+  width: 12px;
+  height: 0;
+  opacity: 0;
+  transform: translateX(-50%);
+  will-change: transform, height, opacity;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.95),
+    rgba(255, 255, 255, 0.3)
+  );
+  border-radius: 6px;
+  filter: blur(3px);
+  box-shadow: 0 0 24px 8px rgba(255, 255, 255, 0.45);
+}
+
+/* The whiteout, in two layers off one number. The BLOOM is light spreading
+   from the pad — soft-edged, centred where the trail is — and it runs ahead;
+   the flat layer beneath the ship catches up and is total by the flight's
+   end, because the splash's exit fade starts from this frame and a dark edge
+   left in it would be a visible cut. `--canvas` IS the panel's own light —
+   the same ground the swell borrowed — so what the trail becomes is the
+   surface the person is about to be standing on. */
+.splash-rocket-bloom {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  will-change: opacity;
+  background: radial-gradient(
+    130% 95% at 50% var(--rocket-pad, 62%),
+    var(--canvas) 18%,
+    rgba(255, 255, 255, 0.55) 48%,
+    rgba(255, 255, 255, 0) 78%
+  );
+}
+.splash-rocket-white {
+  position: absolute;
+  inset: 0;
+  background: var(--canvas);
+  opacity: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Never mounted under reduced motion (Splash hands over immediately); this
+     is the belt to that suspender, so a regression shows a blank beat rather
+     than a shaking rocket. */
+  .splash-rocketstage {
+    display: none;
+  }
+}

@@ -17,6 +17,7 @@ import {
   ROLODEX_TURN_MS,
 } from '../../src/core/splash/reveal';
 import { PULSE_MS } from '../../src/core/splash/launch';
+import { LAUNCH_MS } from '../../src/core/splash/rocket';
 
 /**
  * V2.7 VB-128 — the splash is the show (docs/V2.7-SPLASH-WOW.md, Option 1):
@@ -511,7 +512,12 @@ test.describe('VB-128 — every exit, at every moment', () => {
 
     await cta.focus();
     await page.keyboard.press('Enter');
-    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
+    /* V2.9 slice 4c: Enter now buys the pulse, the flight and the fade —
+       ~2.3s before the splash is gone. The claim here is that the KEY works,
+       not that it is quick; the flight's own timing has its own tests. */
+    await expect(page.locator('.splash')).toHaveCount(0, {
+      timeout: PULSE_MS + LAUNCH_MS + 4000,
+    });
     await expect(page.locator('.home')).toHaveCount(1);
 
     await context.close();
@@ -870,7 +876,7 @@ test.describe('V2.9 slice 4a — the baseline door is two doors', () => {
     await expect(page.locator('.splash-cluster button')).toHaveCount(2);
     await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
 
-    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 4000 });
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 8000 });
     expect(await narratorPref(page)).toBe(true);
 
     await context.close();
@@ -889,7 +895,7 @@ test.describe('V2.9 slice 4a — the baseline door is two doors', () => {
     await page.getByRole('button', { name: S.splashBaselineSilent, exact: true }).click();
 
     // The same destination. The halves differ by the voice and nothing else.
-    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 4000 });
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 8000 });
     expect(await narratorPref(page)).toBe(false);
 
     await context.close();
@@ -956,7 +962,7 @@ test.describe('V2.9 slice 4b — the cable and the pulse', () => {
        measures Playwright's own round trip. The first version of this test
        asserted 420ms against a 306ms number that had nothing to do with the
        product. */
-    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 4000 });
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 8000 });
     const took = Date.now() - from;
     expect(took, 'the door opened before the light could have landed').toBeGreaterThanOrEqual(
       PULSE_MS * 0.8,
@@ -1004,7 +1010,7 @@ test.describe('V2.9 slice 4b — the cable and the pulse', () => {
     await key.click({ force: true }).catch(() => {});
     await key.click({ force: true }).catch(() => {});
 
-    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 4000 });
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 8000 });
     await expect(page.locator('.home')).toBeVisible();
 
     await context.close();
@@ -1049,6 +1055,127 @@ test.describe('V2.9 slice 4b — the cable and the pulse', () => {
     // is no fade under reduced motion either, so this is the whole cost.
     expect(Date.now() - from).toBeLessThan(PULSE_MS);
     expect(await frameCount(page), 'a frame loop ran under reduced motion').toBe(before);
+
+    await context.close();
+  });
+});
+
+test.describe('V2.9 slice 4c — the rocket', () => {
+  test('the launch door flies it, and the whiteout hands over to Home', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-launch').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* The pulse is what starts the flight (4b's seam), so the whole exit is
+       pulse + flight + the splash's own fade. The lower bound is the claim —
+       an upper bound on a loaded workstation is the flake the suite already
+       warns about, and the product makes no promise about slowness. */
+    const from = Date.now();
+    await page.getByRole('button', { name: S.splashStraight, exact: true }).click();
+    await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2500 });
+    await expect(page.locator('.splash-rocket')).toHaveCount(1);
+
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 8000 });
+    const took = Date.now() - from;
+    expect(took, 'the door opened before the flight could have flown').toBeGreaterThanOrEqual(
+      (PULSE_MS + LAUNCH_MS) * 0.8,
+    );
+    await expect(page.locator('.home')).toBeVisible();
+    await expect(page.locator('.flow')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('both doors launch: the baseline door flies the same rocket, into the interview', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* Decision #1 (docs/V2.9-SLICE-4-LAUNCH.md): "which door you enter the
+       rocket from" reads as both, and leaving the splash is one moment
+       however it is left. No cable on this route — the press goes straight
+       to the pad. */
+    const from = Date.now();
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2000 });
+
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 8000 });
+    expect(Date.now() - from, 'the interview arrived before the flight flew').toBeGreaterThanOrEqual(
+      LAUNCH_MS * 0.8,
+    );
+
+    await context.close();
+  });
+
+  test('the flight is scenery, and the doors under it are closed', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    const stage = page.locator('.splash-rocketstage');
+    await expect(stage).toHaveCount(1, { timeout: 2000 });
+
+    /* Every word this screen had was already spoken by the reveal; the
+       flight carries no instruction, and says so. And the reveal is INERT
+       for the flight's length: its doors are still in the DOM under an
+       opaque stage, and an invisible button that still took an Enter could
+       re-choose narration mid-air. */
+    await expect(stage).toHaveAttribute('aria-hidden', 'true');
+    await expect(page.locator('.splash-hold')).toHaveAttribute('inert', '');
+
+    await context.close();
+  });
+
+  test('one flight, however many doors get pressed — the first press is the answer', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2000 });
+    // A second answer thrown at the closed doors, mid-flight.
+    await page
+      .getByRole('button', { name: S.splashBaselineSilent, exact: true })
+      .click({ force: true, timeout: 1000 })
+      .catch(() => {});
+
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 8000 });
+    const narrator = await page.evaluate(async () => {
+      const stored = await chrome.storage.sync.get('wb:prefs');
+      return (stored['wb:prefs'] as { narrator?: boolean } | undefined)?.narrator ?? null;
+    });
+    expect(narrator, 'the mid-flight press re-chose the narration').toBe(true);
+
+    await context.close();
+  });
+
+  test('Escape mid-flight lands at the chosen door, not at Home', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* Escape still means "close this" at every phase — but the person
+       already chose a destination, and a shortcut that changed their answer
+       would be the screen overruling them. It finishes the transition
+       early; it does not reopen the question. */
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2000 });
+    await page.keyboard.press('Escape');
+
+    await expect(page.locator('.splash')).toHaveCount(0, { timeout: 2500 });
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 8000 });
+
+    await context.close();
+  });
+
+  test('reduced motion: no rocket from either door — arriving IS the still version', async () => {
+    const { context, page } = await launchPanel({ reduce: true });
+    await page.locator('.splash-cluster').waitFor({ timeout: 4000 });
+
+    /* docs/V2.9-SLICE-4-LAUNCH.md: "Under reduced motion there is no rocket
+       and the hand-off is immediate." The 4b reduced test is the straight
+       door's control (and its zero-frames probe would catch a rocket loop);
+       this is the baseline door's, because BOTH doors launch now and both
+       must degrade the same way. */
+    await page.getByRole('button', { name: S.splashBaselineSilent, exact: true }).click();
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 2500 });
+    await expect(page.locator('.splash-rocketstage')).toHaveCount(0);
 
     await context.close();
   });

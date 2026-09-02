@@ -42,9 +42,15 @@ const flag = (name) => process.argv.includes(`--${name}`);
 const ROLODEX_MODE = flag('rolodex');
 const EL = arg('el', '');
 const STILL = flag('still');
-const FROM = Number(arg('from', ROLODEX_MODE ? 3.0 : 2.0));
-const TO = Number(arg('to', ROLODEX_MODE ? 3.62 : 6.0));
-const N = Number(arg('n', ROLODEX_MODE ? 6 : 9));
+/* V2.9 slice 4c: film the FLIGHT. `--launch` presses the launch key (so the
+   cable's pulse is in the strip too); `--baseline` presses the loud door,
+   which reaches the same rocket without the pulse. Either way the clock
+   re-anchors at the press, so the frames are labelled in seconds since it. */
+const LAUNCH = flag('launch');
+const BASELINE = flag('baseline');
+const FROM = Number(arg('from', ROLODEX_MODE ? 3.0 : LAUNCH || BASELINE ? 0 : 2.0));
+const TO = Number(arg('to', ROLODEX_MODE ? 3.62 : LAUNCH || BASELINE ? 2.6 : 6.0));
+const N = Number(arg('n', ROLODEX_MODE ? 6 : LAUNCH || BASELINE ? 12 : 9));
 
 const browser = await chromium.launchPersistentContext('', {
   channel: 'chromium',
@@ -62,7 +68,15 @@ await page.goto(`chrome-extension://${id}/panel.html`);
    mounts when the white breaks, which is t=0 for everything in the spine — so
    every frame below is labelled in the same seconds the table is written in. */
 await page.waitForSelector('.splashreveal', { timeout: 30000 });
-const t0 = Date.now();
+let t0 = Date.now();
+
+if (LAUNCH || BASELINE) {
+  /* The doors are unpressable until the spine lands them (pointer-events is
+     off while they arrive); Playwright's own actionability wait handles that,
+     so the press happens the first moment it truly could. */
+  await page.click(BASELINE ? '.splash-cluster-loud' : '.splash-launch-key', { timeout: 20000 });
+  t0 = Date.now();
+}
 
 if (ROLODEX_MODE) {
   /* THE TURN IS POSED, NOT CHASED. CSS animations do not run on a fake clock,

@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { BuildStamp } from '../components';
 import { SplashStage } from './SplashStage';
 import { SplashReveal } from './SplashReveal';
+import { SplashRocket } from './SplashRocket';
 import type { SplashStageHandle } from './SplashStage';
 import { SPLASH_BEATS } from '../../core/splash/sequence';
 import {
@@ -131,11 +132,49 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
     window.setTimeout(() => finish(), SPLASH_FADE_MS);
   };
 
+  /* ── V2.9 slice 4c — THE ROCKET SITS BETWEEN THE PRESS AND THE LEAVING ────
+     Adam: "as the rocket materializes and… takes off upwards, behind it, a
+     trail of white becomes the whiteout that then fades into the home page."
+
+     BOTH DOORS LAUNCH (docs/V2.9-SLICE-4-LAUNCH.md #1): leaving the splash is
+     one moment however it is left, so the baseline doors arrive here directly
+     and the launch door arrives through its cable's pulse — different routes,
+     one rocket. The destination is parked in a ref for the flight's length,
+     and Escape mid-flight goes THERE rather than falling back to Home: the
+     person already chose, and a shortcut that changed their answer would be
+     the screen overruling them.
+
+     Under reduced motion there is no rocket and the hand-off is immediate —
+     `leave` already does exactly that, and the still version's instruction
+     ("you are in") is the arrival itself. */
+  const [launching, setLaunching] = useState(false);
+  const launchThen = useRef<(() => void) | undefined>(undefined);
+  /** The guard is a ref, not the state: two presses in one tick both read
+   * the state's stale `false`, and the second would re-aim the flight. */
+  const launched = useRef(false);
+  const launch = useRef((_then?: () => void) => {});
+  launch.current = (then?: () => void) => {
+    if (handedOver.current || launched.current) return;
+    launched.current = true;
+    launchThen.current = then;
+    if (reduced) {
+      leave.current(then);
+      return;
+    }
+    setLaunching(true);
+  };
+  /** Stable on purpose: a new identity per render would remount the flight's
+   * clock mid-air. Both captures are refs, so it never goes stale. */
+  const landFlight = useCallback(() => leave.current(launchThen.current), []);
+
   useEffect(() => {
     // Escape still means "close this", at every phase — the keyboard's way
     // out before the button exists to see. Letter keys still do nothing.
+    // Mid-flight it finishes the transition early, to the chosen door's own
+    // destination; before any press `launchThen` is empty and it means Home,
+    // as it always has.
     function onKey(event: KeyboardEvent) {
-      if (event.key === 'Escape') leave.current();
+      if (event.key === 'Escape') leave.current(launchThen.current);
     }
     window.addEventListener('keydown', onKey, { capture: true, passive: true });
     return () => window.removeEventListener('keydown', onKey, { capture: true });
@@ -252,14 +291,34 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
            which is the objection BR-01 made when it deleted the third control
            from here. Nothing is lost: the toggle lives in the interview
            header, which is where somebody changes their mind rather than
-           where they first decide. */
-        <SplashReveal
-          still={reduced}
-          elapsed={() => (performance.now() - t0Ref.current) / 1000 - SPLASH_BEATS.revealAt}
-          {...(onBaseline ? { onBaseline: () => leave.current(onBaseline) } : {})}
-          onStraight={() => leave.current()}
-        />
+           where they first decide.
+
+           V2.9 slice 4c: the doors call `launch`, not `leave` — the rocket
+           is what leaving looks like now, from either of them. The wrapper
+           goes `inert` for the flight: the doors are still on screen under
+           an opaque stage, and an invisible button that still takes an Enter
+           could re-choose narration mid-air. One attribute closes every such
+           door at once. */
+        <div
+          className="splash-hold"
+          /* The spread, not a JSX attribute — App.tsx's own reasoning: React
+             18 forwards `inert` as a plain attribute but its types predate
+             the property. `''` sets it, absent removes it. */
+          {...((launching ? { inert: '' } : {}) as Record<string, string>)}
+        >
+          <SplashReveal
+            still={reduced}
+            elapsed={() => (performance.now() - t0Ref.current) / 1000 - SPLASH_BEATS.revealAt}
+            {...(onBaseline ? { onBaseline: () => launch.current(onBaseline) } : {})}
+            onStraight={() => launch.current()}
+          />
+        </div>
       )}
+      {/* The flight. Mounted over everything this surface has — the reveal,
+          the corners, the stamp — because it IS the surface leaving. Its own
+          fallback timer holds the door, so the hand-off survives anything
+          the drawing does. */}
+      {launching && <SplashRocket onDone={landFlight} />}
     </div>
   );
 }
