@@ -155,8 +155,15 @@ export function isSpeaking(): boolean {
 
 /** Silence, immediately. Safe to call when nothing is speaking, and safe to
  * call in a browser that cannot speak at all. */
+/** Whether speak() has ever touched the engine. The FIRST call into
+ * `speechSynthesis` — even a bare `cancel()` — stalls the main thread for
+ * ~170ms in headless Chrome while the platform voice list loads, and a
+ * stop on an engine that never spoke buys silence it already has. Found
+ * when the splash's skip button billed that stall to its own door. */
+let engineTouched = false;
+
 export function stopSpeaking(): void {
-  speechApis()?.synth.cancel();
+  if (engineTouched) speechApis()?.synth.cancel();
   // `cancel()` does not always fire `onend`, and a ring left pulsing after
   // silence is worse than one that never moved.
   announce(false);
@@ -216,6 +223,7 @@ function announce(speaking: boolean): void {
  */
 export function speak(narration: Narration): void {
   const apis = speechApis();
+  engineTouched = apis !== null;
   if (!apis || !narration.text.trim()) return;
 
   // The first call of a document enumerates the machine's voices, which is not

@@ -3,7 +3,8 @@ import { BrandMark, BuildStamp } from '../components';
 import { SplashReveal } from './SplashReveal';
 import { SplashRocket } from './SplashRocket';
 import { S } from '../strings';
-import { speak } from '../voice/speech';
+import { speak, stopSpeaking } from '../voice/speech';
+import { cue } from '../voice/cues';
 import { useNarratorPref } from '../voice/prefs';
 import { SPLASH_BEATS } from '../../core/splash/sequence';
 import {
@@ -139,6 +140,12 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
   leave.current = (then?: () => void) => {
     if (handedOver.current) return;
     handedOver.current = true;
+    /* Leaving toward Home (no destination) is the one exit where nothing
+       else is about to speak — cut any cue mid-word rather than let the
+       splash keep talking over a screen it already left. Every exit WITH a
+       destination hands the voice over: the next screen's narration, or the
+       liftoff's own guard, decides what is heard. */
+    if (!then) stopSpeaking();
     if (reduced) {
       then?.();
       onDone();
@@ -208,9 +215,22 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
   const { on: narrated } = useNarratorPref();
   const narratedRef = useRef(narrated);
   narratedRef.current = narrated;
+  const liftoffTimer = useRef(0);
   const speakDigit = useCallback((digit: number) => {
-    if (narratedRef.current) speak({ role: 'question', text: String(digit) });
+    if (!narratedRef.current) return;
+    speak({ role: 'question', text: String(digit) });
+    /* LIFTOFF (Adam, 2026-09-02, the audio-cue pass): one word in the
+       breath after the "1" clears and before the whiteout hands the voice
+       to the destination's own narrator. Guarded at fire time — an Escape
+       during the count must not have the splash speak over what it left. */
+    if (digit === 1) {
+      window.clearTimeout(liftoffTimer.current);
+      liftoffTimer.current = window.setTimeout(() => {
+        if (!handedOver.current && narratedRef.current) cue('liftoff');
+      }, 450);
+    }
   }, []);
+  useEffect(() => () => window.clearTimeout(liftoffTimer.current), []);
   /** The prop, held for the stable callbacks below — their identities must
    * survive re-renders or they would remount the flight's clock mid-air. */
   const onDoneRef = useRef(onDone);
@@ -231,6 +251,21 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
     handedOver.current = true;
     onDoneRef.current();
   }, []);
+
+  /* THE OPENING VOICEOVER — for narrated RETURNERS only. The stored sound
+     preference is the consent: someone who turned the narrator on last time
+     hears the title card read as it builds ("Workbrain. How you do anything
+     is how your AI does everything."), timed to the name's arrival. A first
+     open stays silent — the sound choice is offered by the pills, not
+     presumed by the poster. Skipped under reduced motion with the rest of
+     the show, and checked at fire time so an early Escape stays quiet. */
+  useEffect(() => {
+    if (reduced) return undefined;
+    const t = window.setTimeout(() => {
+      if (!handedOver.current && narratedRef.current) cue('intro');
+    }, 1_400);
+    return () => window.clearTimeout(t);
+  }, [reduced]);
 
   useEffect(() => {
     // Escape still means "close this", at every phase — the keyboard's way

@@ -1,7 +1,8 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { BrandMark } from '../components';
-import { narratorSupported, speak, stopSpeaking } from '../voice/speech';
+import { narratorSupported, stopSpeaking } from '../voice/speech';
+import { cue } from '../voice/cues';
 import { loadPrefs, useNarratorPref } from '../voice/prefs';
 import { idleGlowAt, pulseAt } from '../../core/splash/launch';
 import { HOLD_MS, chargeAt, dischargeAt } from '../../core/splash/rocket';
@@ -203,7 +204,7 @@ function HoldKey({
   still: boolean;
   names: { voiced: string; silent: string };
   /** The transmission spoken while the voiced side loads. */
-  radio?: string | undefined;
+  radio?: 'radioBaseline' | 'radioLaunch' | undefined;
   onArmed: () => void;
   children: ReactNode;
 }) {
@@ -214,6 +215,7 @@ function HoldKey({
   const holding = useRef(false);
   const armedRef = useRef(false);
   const chargeNow = useRef(0);
+  const voicedHold = useRef(false);
   const [live, setLive] = useState(false);
 
   /* 4a's lesson, still load-bearing: the preference must be READ before a
@@ -276,7 +278,8 @@ function HoldKey({
       return;
     }
     holding.current = true;
-    if (voiced && radio) speak({ role: 'question', text: radio });
+    voicedHold.current = voiced;
+    if (voiced && radio) cue(radio);
     cancelAnimationFrame(raf.current);
     const t0 = performance.now() - chargeNow.current * HOLD_MS;
     const tick = (now: number) => {
@@ -296,7 +299,19 @@ function HoldKey({
   const release = () => {
     if (!holding.current) return;
     holding.current = false;
-    stopSpeaking();
+    /* The backoff, acknowledged: a voiced hold that got somewhere but NOT
+       all the way stands down out loud; a glancing touch just goes quiet.
+       An ARMED hold is neither — it fired, the count owns the audio, and
+       the release is just a finger coming off a button that already lit.
+       (Speaking here also costs the engine's first-touch stall, which the
+       reduced-motion press-cost test bills to the door.) */
+    if (armedRef.current) {
+      /* nothing — the count is talking */
+    } else if (voicedHold.current && chargeNow.current > 0.12) {
+      cue('standby');
+    } else {
+      stopSpeaking();
+    }
     cancelAnimationFrame(raf.current);
     const from = chargeNow.current;
     const t0 = performance.now();
@@ -430,7 +445,7 @@ function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }
         className="splash-basekey-key"
         still={still}
         names={{ voiced: S.splashBaseline, silent: S.splashBaselineSilent }}
-        radio={S.splashRadioBaseline}
+        radio={'radioBaseline'}
         onArmed={onEnter}
       >
         {(() => {
@@ -635,7 +650,7 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
         className="splash-launch-key"
         still={still}
         names={{ voiced: S.splashStraight, silent: S.splashStraightSilent }}
-        radio={S.splashRadioLaunch}
+        radio={'radioLaunch'}
         onArmed={armed}
       >
         {S.splashStraightLabel}

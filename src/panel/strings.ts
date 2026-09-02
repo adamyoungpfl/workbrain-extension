@@ -1752,8 +1752,20 @@ export const S = {
      number wearing the word "average" is a claim the product cannot back,
      on a screen whose other claims are all checkable. */
   splashAvgLabel: 'Average completion time',
-  splashRadioBaseline: 'Tower is clear for systems check.',
-  splashRadioLaunch: 'All systems go. Commence launch sequence.',
+  /* TRIMMED TO THE HOLD'S LENGTH (1.6s of speech at the narrator's rate).
+     Adam's originals — "Tower is clear for systems check." and "All systems
+     go. Commence launch sequence." — overran the hold and were cut mid-word
+     by the counted "3", which read as a glitch rather than as radio. If the
+     full lines are wanted, HOLD_MS is the one number to raise. */
+  splashRadioBaseline: 'Tower is clear. Systems check.',
+  splashRadioLaunch: 'All systems go.',
+  /** The backoff acknowledged — a released hold stands down, out loud. */
+  splashRadioStandby: 'Standing by.',
+  /* After the counted "1". The slot is the 0.6s between the spoken "1"
+     and the whiteout — at the whiteout the chosen screen opens under the
+     fog and the interview's own narrator takes over, so the splash's last
+     word must fit the breath. "We have liftoff." did not; one word does. */
+  splashRadioLiftoff: 'Liftoff.',
   /* Adam's own sentence, verbatim (2026-09-01): the quiet half is a secondary
      link under the heading now, and it carries its own voice — not a lesser
      button but a different temperament. Supersedes "Set it silently", whose
