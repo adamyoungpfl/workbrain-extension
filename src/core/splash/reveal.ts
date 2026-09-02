@@ -114,13 +114,15 @@ const SCRIPT: Record<RevealPart, Key[]> = {
      beside it (the pull is layout, SplashReveal.css; the lean is here). Side
      by side they cost the column less height than two stacked bars did, and
      the two squiggles get a genuine diagonal to travel. */
+  /* Pills since the split pass — the circle era's wide stagger went with
+     the circles; what stays is the alternation itself. */
   baseline: [
     { at: 4.4, opacity: 0, x: 0, y: 14 },
-    { at: 5.0, opacity: 1, x: -78, y: 0 },
+    { at: 5.0, opacity: 1, x: -10, y: 0 },
   ],
   launch: [
     { at: 4.7, opacity: 0, x: 0, y: 14 },
-    { at: 5.3, opacity: 1, x: 92, y: 0 },
+    { at: 5.3, opacity: 1, x: 14, y: 0 },
   ],
 };
 

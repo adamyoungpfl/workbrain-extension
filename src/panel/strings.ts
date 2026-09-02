@@ -1722,9 +1722,16 @@ export const S = {
      `splashOwnSpan` are, and the whole line is kept too because it is the
      door's accessible name: a voice-control user says what they see, and what
      they see is the whole heading. A test pins lead + span to the whole. */
-  splashBaselineLead: 'SET YOUR PROMPTING',
-  splashBaselineSpan: 'BASELINE',
-  splashBaseline: 'SET YOUR PROMPTING BASELINE',
+  /* THE SPLIT PILL (Adam, 2026-09-02, from a reference image): each path is
+     one button in two segments — the narrated main, named with its
+     "(narrated)" qualifier the way his reference names "Begin Journey
+     (Narrated)", and a compact Silent segment beside it. The caps-heading
+     era's lead/span pair retired with the heading; sentence case, because
+     these are buttons again and buttons are things a person would say. */
+  splashBaseline: 'Set your prompting baseline (narrated)',
+  /** The silent segment's visible caption — shared by both keys; each
+   * segment's full accessible name is its own sentence below. */
+  splashSilentShort: 'Silent',
   /* Adam's own sentence, verbatim (2026-09-01): the quiet half is a secondary
      link under the heading now, and it carries its own voice — not a lesser
      button but a different temperament. Supersedes "Set it silently", whose
@@ -1737,7 +1744,7 @@ export const S = {
      most people will pick. [DRAFT] */
   /* "Just get started" hedged — the word "just" made the shorter road sound
      like the lesser one, which is not the fork this screen is offering. */
-  splashStraight: 'Launch Workbrain',
+  splashStraight: 'Launch Workbrain (narrated)',
   /* [DRAFT] The ring pass (Adam, 2026-09-02): both keys carry the voice
      choice in their own outline — a talking silhouette on the right, the
      same struck through on the left — so the launch key needs a name for

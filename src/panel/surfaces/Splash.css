@@ -528,164 +528,95 @@
    to. Dressed for the dark field: the toggle's own tokens are lit for the
    panel's light ground, so its ink and its rule are restated here rather than
    left to inherit a colour that would vanish. */
-/* ── V2.9 — THE RING IS THE CHOICE (Adam, 2026-09-02) ──────────────────────
-   Each key is a THICK outline of its own colour with the voice choice living
-   in the band: struck silhouette at nine o'clock, talking one at three. The
-   held side charges the ring; the armed ring fills the rest of the way in
-   the key's colour across the countdown. The band's thickness is also where
-   the squiggles end — their tips tuck under it, seamlessly. */
-.splash-holdkey {
+/* ── V2.9 — THE SPLIT PILL (Adam, 2026-09-02, from a reference image) ──────
+   One button, two segments: the narrated main filled on the key's own DEEP
+   ground (white text at ~15:1 — the reference's bright fill would sink our
+   4.5:1 floor with these hues), and the compact Silent segment beside it
+   with the struck silhouette and its caption. The wrapper wears the key's
+   colour: an inset ring that thickens and a glow that grows with the hold's
+   charge (`--charge`, written per frame by the component), which is the
+   "outline grow in thickness and brightness" law carried over from the
+   circle era without a layout shift. */
+.splash-split {
   position: relative;
   display: inline-flex;
-  flex: none;
-}
-.splash-holdkey-ring {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-  /* Rotated per press so the sweep starts under the held side; the track is
-     a full circle and does not care. */
-}
-.splash-holdkey-track {
-  fill: none;
-  stroke: rgba(255, 255, 255, 0.13);
-  stroke-width: 10;
-}
-.splash-holdkey-charge {
-  fill: none;
-  stroke-linecap: round;
-  stroke-width: 4;
-  opacity: 0.35;
-}
-.splash-holdkey-fill {
-  fill: none;
-  stroke-linecap: round;
-  stroke-width: 10;
-  opacity: 0;
-}
-/* The disc: the key's words, scenery now — the SIDES are the controls. */
-.splash-holdkey-disc {
-  position: absolute;
-  inset: 14px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  padding: 10px;
-  color: var(--ink-inv);
-  pointer-events: none;
-}
-/* A side: a 44px target straddling the band, showing a small chip. */
-.splash-holdkey-side {
-  position: absolute;
-  top: 50%;
-  /* 46, not 44: the part rides a sub-pixel transform and a 44px box can
-     measure 43.99998 — two spare pixels keep the floor a floor. */
-  width: 46px;
-  height: 46px;
-  transform: translateY(-50%);
-  border: 0;
-  background: none;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-}
-.splash-holdkey-side[data-side='silent'] {
-  left: -14px;
-}
-.splash-holdkey-side[data-side='voiced'] {
-  right: -14px;
-}
-.splash-holdkey-chip {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background: var(--splash-field);
-  border: 2px solid currentColor;
-  /* The silhouette is INK, not the key's hue: a coloured glyph on the dark
-     chip mudded out at this size, and the chip's border already says whose
-     port this is. */
-  color: var(--ink-inv);
-}
-.splash-holdkey-side:focus-visible {
-  outline: 2px solid var(--ink-inv);
-  outline-offset: 2px;
-  border-radius: 50%;
-}
-.splash-holdkey-side:hover .splash-holdkey-chip {
-  box-shadow: 0 0 12px -2px currentColor;
-}
-/* Armed: the ring is full and glowing; there is no state to come back from. */
-.splash-holdkey[data-live='on'] .splash-holdkey-disc {
-  text-shadow: 0 0 18px rgba(255, 255, 255, 0.35);
-}
-
-/* The collapsed form (no speech engine): one quiet hold-target filling the
-   circle, 4a's own fallback shape. */
-.splash-holdkey-button {
+  align-items: stretch;
   width: 100%;
-  height: 100%;
-  padding: 14px;
-  border-radius: 50%;
+  border-radius: var(--r-pill);
+  overflow: hidden;
+  --charge: 0;
+  box-shadow:
+    inset 0 0 0 calc(1.5px + 1.5px * var(--charge)) currentColor,
+    0 0 calc(8px + 18px * var(--charge)) calc(-8px + 4px * var(--charge)) currentColor;
+}
+.splash-split-main {
+  flex: 1;
+  min-height: 54px;
+  padding: 0 16px;
   border: 0;
-  background: transparent;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
   font-family: var(--font-sans);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   color: var(--ink-inv);
   cursor: pointer;
 }
-.splash-holdkey-button:focus-visible {
-  outline: 2px solid var(--ink-inv);
-  outline-offset: 3px;
+.splash-split-main--only {
+  border-radius: var(--r-pill);
 }
-
-/* The baseline key: the route's blue, heading on the disc. */
-.splash-basekey {
+.splash-split-silent {
+  flex: none;
+  width: 64px;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
+  gap: 2px;
+  border: 0;
+  /* The seam: a hairline, not a gap — one object, two temperaments. */
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  background: rgba(255, 255, 255, 0.08);
+  color: var(--ink-inv);
+  font-family: var(--font-sans);
+  cursor: pointer;
+}
+.splash-split-silent:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+.splash-split-caption {
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+}
+.splash-split-main:focus-visible,
+.splash-split-silent:focus-visible {
+  outline: 2px solid var(--ink-inv);
+  outline-offset: -3px;
+}
+
+/* The baseline pill: the route's blue. */
+.splash-basekey {
+  width: 100%;
 }
 .splash-basekey-key {
   color: var(--globe-node-1-solid);
 }
-.splash-basekey-key .splash-holdkey-charge,
-.splash-basekey-key .splash-holdkey-fill {
-  stroke: var(--globe-node-1-solid);
-  filter: drop-shadow(0 0 6px var(--globe-node-1-solid));
+.splash-basekey-key .splash-split-main {
+  background: var(--globe-node-1-deep);
 }
-.splash-basekey-label {
-  font-size: 14px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1.45;
-  color: var(--ink-inv);
-}
-.splash-cluster-span {
-  color: var(--globe-node-1-solid);
+.splash-basekey-key .splash-split-main:hover {
+  background: var(--globe-node-1-muted);
 }
 
-/* The launch key: the count's aqua, same piece, still wearing its cable. */
+/* The launch pill: the count's aqua, still wearing its corner cable. */
 .splash-launch-key {
   color: var(--globe-node-2-solid);
 }
-.splash-launch-key .splash-holdkey-charge,
-.splash-launch-key .splash-holdkey-fill {
-  stroke: var(--globe-node-2-solid);
-  filter: drop-shadow(0 0 6px var(--globe-node-2-solid));
+.splash-launch-key .splash-split-main {
+  background: var(--globe-node-2-deep);
 }
-.splash-launch-label {
-  font-size: 13px;
-  font-weight: 650;
-  color: var(--ink-inv);
+.splash-launch-key .splash-split-main:hover {
+  background: var(--globe-node-2-muted);
 }
 
 /* ── V2.9 slice 4b — THE LAUNCH DOOR AND ITS CABLE ─────────────────────────

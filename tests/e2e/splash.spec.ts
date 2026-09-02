@@ -608,11 +608,13 @@ test.describe('VB-128 — every exit, at every moment', () => {
         ),
       );
     }
+    /* The split pass: the narrated MAIN leads each pill (the reference's
+       own order — recommendation first), its Silent segment beside it. */
     expect(order).toEqual([
-      S.splashBaselineSilent,
       S.splashBaseline,
-      S.splashStraightSilent,
+      S.splashBaselineSilent,
       S.splashStraight,
+      S.splashStraightSilent,
     ]);
 
     await page.keyboard.press('Escape');
@@ -977,23 +979,29 @@ test.describe('V2.9 — the ring is the choice: sides, not a toggle', () => {
     await context.close();
   });
 
-  test('the armed ring fills in the key’s colour across the count', async () => {
+  test('the held pill charges — the outline waking is the confirmation', async () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* "Which ever side the[y] click the rest of the outline fills in that
-       color during the countdown" — the fill circle's dash walks closed on
-       the count's own clock. Two reads a beat apart prove it is FILLING,
-       not merely on. */
-    await holdKey(page, 'baseline', 'voiced');
-    const fill = page.locator('.splash-basekey-key .splash-holdkey-fill');
-    await expect(fill).toHaveCSS('opacity', '1', { timeout: 3000 });
-    const at = async () =>
-      fill.evaluate((el) => parseFloat(getComputedStyle(el).strokeDashoffset));
-    const first = await at();
-    await page.waitForTimeout(500);
-    const second = await at();
-    expect(second, 'the ring is not filling').toBeLessThan(first);
+    /* The circle era's countdown fill went with the circle; what the split
+       pill keeps is the CHARGE — `--charge` written per frame from core's
+       clock, the inset ring thickening and the glow growing with it. Read
+       mid-hold and compared to rest, so this says "charging", not merely
+       "styled". */
+    const pill = page.locator('.splash-basekey-key');
+    const chargeOf = () =>
+      pill.evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue('--charge') || '0'));
+    expect(await chargeOf()).toBe(0);
+
+    await page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']").hover();
+    await page.mouse.down();
+    await page.waitForTimeout(HOLD_MS * 0.45);
+    const mid = await chargeOf();
+    expect(mid, 'the hold is not charging the outline').toBeGreaterThan(0.05);
+
+    await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
+    await page.mouse.up();
+    expect(await chargeOf()).toBe(1);
 
     await context.close();
   });
@@ -1307,20 +1315,20 @@ test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', ()
     await context.close();
   });
 
-  test('the heading is the sections’ own device, and the copy composes exactly', async () => {
-    /* The accessible name is the whole heading; the panel renders it as lead
-       plus a coloured span. If the three strings ever drift apart, the door
-       stops being askable-for by voice — so the composition is pinned. */
-    expect(`${S.splashBaselineLead} ${S.splashBaselineSpan}`).toBe(S.splashBaseline);
-
+  test('the split pill names both temperaments, distinctly', async () => {
+    /* The reference pattern (Adam, 2026-09-02): the narrated main carries
+       its "(narrated)" qualifier in its own label; the Silent segment sits
+       beside it with the struck silhouette and its caption. Distinct labels,
+       one button-shaped object. */
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
-    await expect(page.locator('.splash-basekey .splash-cluster-span')).toHaveText(
-      S.splashBaselineSpan,
-    );
+
     await expect(
-      page.getByRole('button', { name: S.splashBaseline, exact: true }),
+      page.locator('.splash-basekey-key').getByRole('button', { name: S.splashBaseline, exact: true }),
     ).toBeVisible();
+    await expect(
+      page.locator('.splash-basekey-key .splash-split-caption'),
+    ).toHaveText(S.splashSilentShort);
 
     await context.close();
   });
