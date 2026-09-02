@@ -4,7 +4,7 @@ import { BrandMark } from '../components';
 import { narratorSupported } from '../voice/speech';
 import { loadPrefs, useNarratorPref } from '../voice/prefs';
 import { idleGlowAt, pulseAt } from '../../core/splash/launch';
-import { HOLD_MS, chargeAt, dischargeAt } from '../../core/splash/rocket';
+import { chargeAt } from '../../core/splash/rocket';
 import {
   CLAIM_TRUE,
   COUNT_FROM,
@@ -101,10 +101,13 @@ interface Box {
   cx: number;
   top: number;
   bottom: number;
-  /** The circular key inside an action part, when there is one — measured
-   *  so a link can aim at the circle's rim rather than at the full-width
-   *  row the part actually is. */
+  /** The key inside an action part, when there is one — measured so a
+   *  link can aim at the pill rather than at the full-width row the part
+   *  actually is. */
   key?: { cx: number; cy: number; w: number; h: number };
+  /** The "or" between the pills, when the part carries one — the lower
+   *  squiggle runs from under it into the key below. */
+  or?: { cx: number; bottom: number };
 }
 
 export interface SplashRevealProps {
@@ -235,6 +238,13 @@ function HoldKey({
     })();
   };
 
+  /* CLICK, NOT HOLD (Adam, 2026-09-02: "if the user clicks on Set or
+     Launch buttons, let's do a color load that does a color fill of the
+     entire button from left to right"). The press commits; the LOAD is the
+     ceremony — the fill sweeps the pill on core's charge clock and arming
+     is the fill completing. One handler, and the keyboard comes free:
+     Enter and Space are clicks on a button by birthright. Escape remains
+     the way out, as it has been from frame one. */
   const start = (voiced: boolean) => {
     if (armedRef.current || holding.current) return;
     if (still) {
@@ -243,9 +253,8 @@ function HoldKey({
     }
     holding.current = true;
     cancelAnimationFrame(raf.current);
-    const t0 = performance.now() - chargeNow.current * HOLD_MS;
+    const t0 = performance.now();
     const tick = (now: number) => {
-      if (!holding.current) return;
       const c = chargeAt(now - t0);
       chargeNow.current = c.charge;
       paint(c.charge);
@@ -258,43 +267,10 @@ function HoldKey({
     raf.current = requestAnimationFrame(tick);
   };
 
-  const release = () => {
-    if (!holding.current) return;
-    holding.current = false;
-    cancelAnimationFrame(raf.current);
-    const from = chargeNow.current;
-    const t0 = performance.now();
-    const tick = (now: number) => {
-      if (holding.current || armedRef.current) return;
-      const c = dischargeAt(from, now - t0);
-      chargeNow.current = c;
-      paint(c);
-      if (c > 0) raf.current = requestAnimationFrame(tick);
-    };
-    raf.current = requestAnimationFrame(tick);
-  };
-
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
 
   const holdHandlers = (voiced: boolean) => ({
-    onPointerDown: () => start(voiced),
-    onPointerUp: release,
-    onPointerLeave: release,
-    onPointerCancel: release,
-    onKeyDown: (e: { key: string; repeat: boolean; preventDefault: () => void }) => {
-      if (e.key === ' ' || e.key === 'Enter') {
-        /* preventDefault keeps Space from scrolling AND from firing the
-           native click on keyup — the click path is reduced motion's. */
-        e.preventDefault();
-        if (!e.repeat) start(voiced);
-      }
-    },
-    onKeyUp: (e: { key: string }) => {
-      if (e.key === ' ' || e.key === 'Enter') release();
-    },
-    onClick: () => {
-      if (still) arm(voiced);
-    },
+    onClick: () => start(voiced),
   });
 
   if (!sided) {
@@ -353,6 +329,12 @@ function HoldKey({
         <VoiceGlyph off />
         <span className="splash-split-caption">{S.splashSilentShort}</span>
       </button>
+      {/* The load: a wash of the key's own colour sweeping left to right
+          across the WHOLE pill — both segments, one motion — scaled by the
+          same `--charge` the component writes each frame. Above the
+          grounds, below nothing: it is translucent, so the words stay
+          readable inside it the whole way. */}
+      <span className="splash-split-fill" aria-hidden="true" />
     </span>
   );
 }
@@ -367,7 +349,19 @@ function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }
         names={{ voiced: S.splashBaseline, silent: S.splashBaselineSilent }}
         onArmed={onEnter}
       >
-        {S.splashBaselineLabel}
+        {(() => {
+          /* The break Adam chose (2026-09-02): "SET YOUR" then "PROMPTING
+             BASELINE". Derived from the one string rather than typed twice —
+             a rewording reflows instead of splitting a stale pair. */
+          const words = S.splashBaselineLabel.split(' ');
+          return (
+            <>
+              {words.slice(0, 2).join(' ')}{' '}
+              <br />
+              {words.slice(2).join(' ')}
+            </>
+          );
+        })()}
       </HoldKey>
     </div>
   );
@@ -426,7 +420,10 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
     const startY = box.bottom + settle.y;
     const w = window.innerWidth - startX;
     const h = window.innerHeight - startY;
-    if (w < 40 || h < 40) return;
+    /* 24, was 40: on a short panel the corner run is a short hop, and a
+       short hop drawn beats a fallback squiggle pretending nothing
+       changed. Below ~24px there is genuinely nothing to draw through. */
+    if (w < 40 || h < 24) return;
     const mx = w / 2;
     const my = h / 2;
     const d =
@@ -562,6 +559,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
   const path2Ref = useRef<SVGPathElement | null>(null);
   const path3Ref = useRef<SVGPathElement | null>(null);
   const path4Ref = useRef<SVGPathElement | null>(null);
+  const path5Ref = useRef<SVGPathElement | null>(null);
   const slotRef = useRef<HTMLSpanElement | null>(null);
   const rolodexRef = useRef<HTMLParagraphElement | null>(null);
   const restRef = useRef<Partial<Record<RevealPart, Box>>>({});
@@ -607,6 +605,14 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           cy: kb.top - frame.top + kb.height / 2,
           w: kb.width,
           h: kb.height,
+        };
+      }
+      const orEl = el.querySelector('.splash-or');
+      if (orEl) {
+        const ob = orEl.getBoundingClientRect();
+        next[part]!.or = {
+          cx: ob.left - frame.left + ob.width / 2,
+          bottom: ob.bottom - frame.top,
         };
       }
     }
@@ -697,6 +703,33 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
          one route. */
       drawLink(path3Ref.current, 'privacy', 'baseline', 16);
       drawLink(path4Ref.current, 'baseline', 'launch', 13);
+      /* The lower bow (Adam, 2026-09-02): OR to the launch pill — measured
+         off the word itself, so however the type around it moves, the line
+         still leaves from under the "or" and lands on the pill. */
+      {
+        const part = restRef.current['launch'];
+        const p5 = path5Ref.current;
+        if (p5 && part?.or && part.key) {
+          const b = partAt(t, 'launch');
+          const link = linkAt(t, 'launch');
+          const x1 = part.or.cx + b.x;
+          const y1 = part.or.bottom + b.y + 4;
+          const x2 = part.key.cx + b.x;
+          const y2 = part.key.cy + b.y - part.key.h / 2 + 6;
+          const mid = (y1 + y2) / 2;
+          p5.setAttribute(
+            'd',
+            `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${(x1 - 10).toFixed(1)} ${mid.toFixed(1)}, ` +
+              `${(x2 + 10).toFixed(1)} ${mid.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`,
+          );
+          if (typeof p5.getTotalLength === 'function') {
+            const len = p5.getTotalLength();
+            p5.style.strokeDasharray = `${len}`;
+            p5.style.strokeDashoffset = `${len * (1 - link.drawn)}`;
+          }
+          p5.style.opacity = link.idle ? '0' : '1';
+        }
+      }
 
       const c = countAt(t);
       setCount((was) => (was === c ? was : c));
@@ -794,10 +827,10 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
                 do not resolve `var()`. */}
             <linearGradient id="wb-link-baseline" x1="0" y1="0" x2="0" y2="1">
               <stop offset="0" style={{ stopColor: 'var(--splash-link)' }} />
-              <stop offset="1" style={{ stopColor: 'var(--globe-node-1-solid)' }} />
+              <stop offset="1" style={{ stopColor: 'var(--splash-link-end)' }} />
             </linearGradient>
             <linearGradient id="wb-link-launch" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" style={{ stopColor: 'var(--globe-node-1-solid)' }} />
+              <stop offset="0" style={{ stopColor: 'var(--splash-link-end)' }} />
               <stop offset="1" style={{ stopColor: 'var(--globe-node-2-solid)' }} />
             </linearGradient>
           </defs>
@@ -809,6 +842,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           <path ref={path2Ref} className="splashreveal-path" data-link="privacy" fill="none" />
           <path ref={path3Ref} className="splashreveal-path" data-link="baseline" fill="none" />
           <path ref={path4Ref} className="splashreveal-path" data-link="launch" fill="none" />
+          <path ref={path5Ref} className="splashreveal-path" data-link="launch" fill="none" />
         </svg>
       )}
 

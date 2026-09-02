@@ -5,10 +5,15 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 20px;
+  gap: 16px;
   width: 100%;
   padding: 0 26px;
   text-align: center;
+  /* The whole area rode UP the screen (Adam, 2026-09-02) and the column's
+     own gaps paid for the longer squiggles below — by the final balance the
+     shift itself is nearly nothing, which is what "make room" costs when
+     the room comes out of the right pockets. */
+  margin-top: 4px;
 }
 
 /* Each part moves by TRANSFORM only. Transforms do not touch layout, which is
@@ -22,7 +27,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 14px;
+  gap: 8px;
 }
 
 /* ── THE CONNECTOR ─────────────────────────────────────────────────────────
@@ -56,11 +61,11 @@
 .splashreveal-path[data-link='baseline'] {
   stroke: url(#wb-link-baseline);
   filter: drop-shadow(0 0 3px var(--splash-link))
-    drop-shadow(0 0 9px var(--globe-node-1-solid));
+    drop-shadow(0 0 9px var(--splash-link-end));
 }
 .splashreveal-path[data-link='launch'] {
   stroke: url(#wb-link-launch);
-  filter: drop-shadow(0 0 3px var(--globe-node-1-solid))
+  filter: drop-shadow(0 0 3px var(--splash-link-end))
     drop-shadow(0 0 9px var(--globe-node-2-solid));
 }
 
@@ -277,7 +282,9 @@
   width: 100%;
   /* Down a bit (Adam, 2026-09-02) — the 3 o'clock squiggle needs the room
      above-right of the pill to make its swing. */
-  margin-top: 14px;
+  /* The long run the untangled squiggle needs to show its whole
+     fuchsia-to-purple transition (Adam, 2026-09-02). */
+  margin-top: 26px;
 }
 .splashreveal-part[data-part='launch'] {
   display: flex;
@@ -286,7 +293,7 @@
   /* Full width, centred: the pills stack on the centre line with the
      "or" between them, and the joining squiggle bows around it. */
   width: 100%;
-  margin-top: 18px;
+  margin-top: 16px;
 }
 
 /* THE LOCKUP IS A LOCKUP (Adam, 2026-09-01: "Reduce the padding between
@@ -295,7 +302,7 @@
    line standing apart like two exhibits; pulled to ~12px they read as one
    object with two lines, which is what a lockup is. */
 .splashreveal-part[data-part='tagline'] {
-  margin-top: -16px;
+  margin-top: -19px;
 }
 
 @media (prefers-reduced-motion: reduce) {

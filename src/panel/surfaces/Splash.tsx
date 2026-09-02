@@ -175,7 +175,11 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
     if (handedOver.current || launched.current) return;
     launched.current = true;
     launchThen.current = then;
-    flightRef.current = then === undefined;
+    /* BOTH routes fly since 2026-09-02 ("Once it loads the whole screen
+       dissolves to black to initiate the rocket launch sequence" — for
+       each button). The fade-only mode remains in the stage, currently
+       unreachable, should a route ever want the quiet exit back. */
+    flightRef.current = true;
     if (reduced) {
       leave.current(then);
       return;

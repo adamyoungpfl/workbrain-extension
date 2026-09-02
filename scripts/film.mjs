@@ -88,11 +88,9 @@ if (LAUNCH || BASELINE) {
     (BASELINE ? '.splash-basekey-key' : '.splash-launch-key') +
       " .splash-holdkey-side[data-side='voiced']",
   );
-  await key.hover({ timeout: 20000 });
-  await page.mouse.down();
+  await key.click({ timeout: 20000 });
   await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 8000 });
   t0 = Date.now();
-  await page.mouse.up();
 }
 
 if (ROLODEX_MODE) {

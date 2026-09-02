@@ -41,8 +41,10 @@ export const LAUNCH_MS = 3000;
    clears to the dark field while the rocket arrives on it, the engine builds
    under a rumble through "3" and "2", the climb throws it off the top on
    "1", and the white it leaves behind floods the frame at zero. */
-/** The reveal has faded into the dark field by here. */
-const COVER_MS = 300;
+/** The reveal has faded into the dark field by here — "the whole screen
+ *  dissolves to black" (Adam, 2026-09-02), so it takes a beat it can be
+ *  seen taking. */
+const COVER_MS = 480;
 /** The rocket starts arriving while the field is still clearing — one event,
  *  not a queue of two. */
 const MATERIALIZE_AT = 160;

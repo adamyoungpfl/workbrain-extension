@@ -152,6 +152,13 @@ chased — waiting for one gets whatever the screenshot happens to land on.
    `--workers=2` before believing it. CI (`.github/workflows/check.yml`) exists to take that
    judgement call away: the same two commands on a machine doing nothing else, with `retries: 2`
    on, reporting a blip as *flaky* rather than as a failure.
+
+   **And one red that is NOT load (2026-09-02):** running `npm run build:dev` (or `npm run dev`)
+   while a check's e2e phase is mid-flight rewrites `dist/` as a DEVELOPMENT bundle under the
+   running suite. The tell is `narrator.spec`'s bundle scan reporting `wbVoices` leaked into
+   production — a deterministic assertion that cannot flake — plus a handful of behavior tests
+   (React dev mode changes timings) failing beside it. The fix is `npm run build` and a re-run;
+   the lesson is: dogfood on a dev build OR run the gate, not both at once.
 6. **Ask rather than assume** on anything in `docs/OPEN.md`. Those are unresolved product decisions,
    not gaps for you to fill.
 

@@ -35,13 +35,10 @@ async function openBaseline(reduced: boolean): Promise<{ context: BrowserContext
   await page.waitForSelector('.splashreveal');
   /* The hold pass: under full motion the key is HELD until its ring arms; a
      reduced-motion click arms instantly, same as everywhere. */
-  if (reduced) {
-    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
-  } else {
-    await page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']").hover();
-    await page.mouse.down();
+  await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+  if (!reduced) {
+    // Click-to-load (2026-09-02): the fill sweeps, then the door arms.
     await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
-    await page.mouse.up();
   }
   await page.waitForSelector('.flow--prompt', { timeout: 20_000 });
   return { context, page };

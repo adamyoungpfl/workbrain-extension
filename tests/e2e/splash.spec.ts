@@ -129,16 +129,15 @@ async function holdKey(
   which: 'baseline' | 'launch',
   side: 'voiced' | 'silent' = 'voiced',
 ) {
-  /* The ring pass: the SIDES are the controls — a real browser has a speech
-     engine, so the sided form is what renders. The collapsed single button
+  /* CLICK-TO-LOAD (2026-09-02): the press commits and the fill is the
+     ceremony — so the helper clicks and waits for the load to arm. The
+     sided form is what a real browser renders; the collapsed single button
      exists only where speech does not (jsdom's world, the unit suite's). */
   const key = page.locator(
     `${which === 'baseline' ? '.splash-basekey-key' : '.splash-launch-key'} .splash-holdkey-side[data-side='${side}']`,
   );
-  await key.hover();
-  await page.mouse.down();
+  await key.click();
   await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
-  await page.mouse.up();
 }
 
 /* The answer the elimination is left standing on. Indexed by core's own count
@@ -957,29 +956,27 @@ test.describe('V2.9 — the ring is the choice: sides, not a toggle', () => {
     await context.close();
   });
 
-  test('a tap does not launch; a released hold drains and nothing happens', async () => {
+  test('the click does not fire the door — the LOAD does, when it completes', async () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* The hold IS the confirmation — this product refuses dialogs, so the
-       charge is where the second thought lives. A tap and a half-hold must
-       both come to nothing. */
+    /* The press commits, but the ceremony still stands between a press and
+       a launch: nothing opens until the fill has swept the pill. Probed
+       right after the click, the stage must not exist yet; probed after the
+       load's own length, it must. */
     const side = page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']");
     await side.click();
-    await side.hover();
-    await page.mouse.down();
     await page.waitForTimeout(HOLD_MS * 0.3);
-    await page.mouse.up();
-    await page.waitForTimeout(600);
-
     await expect(page.locator('.splash-rocketstage')).toHaveCount(0);
-    await expect(page.locator('.splash')).toHaveCount(1);
-    await expect(page.locator('.flow')).toHaveCount(0);
+    await expect(page.locator('.splash-basekey-key')).toHaveAttribute('data-live', 'off');
+
+    await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
+    await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2000 });
 
     await context.close();
   });
 
-  test('the held pill charges — the outline waking is the confirmation', async () => {
+  test('the click loads the pill left to right, and the load arms it', async () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
@@ -993,14 +990,12 @@ test.describe('V2.9 — the ring is the choice: sides, not a toggle', () => {
       pill.evaluate((el) => parseFloat(getComputedStyle(el).getPropertyValue('--charge') || '0'));
     expect(await chargeOf()).toBe(0);
 
-    await page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']").hover();
-    await page.mouse.down();
+    await page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']").click();
     await page.waitForTimeout(HOLD_MS * 0.45);
     const mid = await chargeOf();
-    expect(mid, 'the hold is not charging the outline').toBeGreaterThan(0.05);
+    expect(mid, 'the click is not loading the fill').toBeGreaterThan(0.05);
 
     await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
-    await page.mouse.up();
     expect(await chargeOf()).toBe(1);
 
     await context.close();
@@ -1162,18 +1157,14 @@ test.describe('V2.9 slice 4c — the rocket', () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* The hold pass split the routes: the launch key flies the rocket
-       under the count; the baseline key rides the count's own plain fade to
-       the same white (Adam: "the background around everything but the
-       countdown number fades to white"). Same stage, same convergence, no
-       ship on this route. */
+    /* BOTH routes fly again (2026-09-02: the load "dissolves to black to
+       initiate the rocket launch sequence" — for each button). The fade
+       mode remains in the stage, unreachable until a route wants it. */
     const from = Date.now();
     await holdKey(page, 'baseline');
     await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2000 });
-    await expect(page.locator('.splash-rocketstage')).toHaveAttribute('data-mode', 'fade');
-    expect(
-      await page.locator('.splash-rocket').evaluate((el) => getComputedStyle(el).display),
-    ).toBe('none');
+    await expect(page.locator('.splash-rocketstage')).toHaveAttribute('data-mode', 'flight');
+    await expect(page.locator('.splash-rocket')).toBeVisible();
 
     await expect(page.locator('.flow')).toHaveCount(1, { timeout: 15_000 });
     expect(Date.now() - from, 'the interview arrived before the count ran').toBeGreaterThanOrEqual(

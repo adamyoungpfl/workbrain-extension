@@ -426,15 +426,25 @@
   padding: 0 26px;
 }
 .splash-wordmark {
-  margin: 18px 0 0;
+  margin: 10px 0 0;
   letter-spacing: -0.02em;
 }
 .splash-tagline {
-  /* 2px, with the reveal pulling its part 16px closer (SplashReveal.css):
-     Adam's second tightening (2026-09-01) — "about half the difference in
-     space" the first one left. The name and its line are ONE lockup. */
-  margin: 2px 0 0;
-  max-width: 30ch;
+  /* Tightened three times at Adam's word (last: 2026-09-02, "take more of
+     the padding") — the name and its line are ONE lockup. */
+  margin: 0;
+  max-width: 34ch;
+  /* The tagline joins the SECTION TYPE (Adam, 2026-09-02): same size,
+     weight and tracking as ABOUT 15 MINUTES and THE FILE IS YOURS FROM —
+     one voice down the whole screen. The first row goes caps; the second
+     keeps its case and its colour treatment. */
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.45;
+}
+.splash-tagline-line:first-child {
+  text-transform: uppercase;
 }
 
 /* THE MIRROR'S TWO POLES, in the route's own hues — fuchsia for the person,
@@ -541,8 +551,11 @@
   display: inline-flex;
   align-items: stretch;
   width: 100%;
-  max-width: 316px;
-  border-radius: var(--r-pill);
+  /* Narrower, and BOTH keys the same box (Adam, 2026-09-02). */
+  max-width: 300px;
+  /* Rounded RECTANGLES now (Adam, 2026-09-02) — the pill cap went with the
+     centred cluster's more architectural read. */
+  border-radius: 14px;
   overflow: hidden;
   --charge: 0;
   box-shadow:
@@ -551,8 +564,13 @@
 }
 .splash-split-main {
   flex: 1;
-  min-height: 62px;
-  padding: 10px 20px;
+  min-height: 84px;
+  /* Square inside the object: the wrapper rounds and clips the pill; a
+     radius inherited from .splash-door here curved the segment's right
+     edge away from the divider and let the dark field through — the
+     "exposed black" slit. */
+  border-radius: 0;
+  padding: 10px 14px;
   border: 0;
   background: transparent;
   display: flex;
@@ -565,10 +583,14 @@
   cursor: pointer;
 }
 .splash-split-label {
-  font-size: 15px;
-  font-weight: 650;
-  letter-spacing: -0.01em;
-  line-height: 1.25;
+  /* The section type, on the button (Adam, 2026-09-02): caps, same size,
+     weight and tracking as the two headings above — the label is the third
+     verse of the same song, and now it sings in the same voice. */
+  text-transform: uppercase;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.3;
 }
 .splash-split-sub {
   font-size: 12px;
@@ -578,11 +600,11 @@
 .splash-split-main--only {
   align-items: center;
   text-align: center;
-  border-radius: var(--r-pill);
+  border-radius: 14px;
 }
 .splash-split-silent {
   flex: none;
-  width: 66px;
+  width: 60px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -602,14 +624,29 @@
   outline: 2px solid var(--ink-inv);
   outline-offset: -3px;
 }
+/* The LOAD (Adam, 2026-09-02): the key's colour sweeping the whole pill
+   left to right on `--charge` — the loading animation kept, as asked, with
+   the words readable inside it because the wash is translucent. */
+.splash-split-fill {
+  position: absolute;
+  inset: 0;
+  background: currentColor;
+  opacity: 0.3;
+  transform: scaleX(var(--charge));
+  transform-origin: left center;
+  pointer-events: none;
+}
 
 /* The word between the pills — the fork said out loud. */
 .splash-or {
   display: block;
-  margin-bottom: 10px;
-  font-size: 13px;
-  font-weight: 600;
-  color: rgba(255, 255, 255, 0.62);
+  margin: 6px 0 18px;
+  /* The section headers' own size (Adam, 2026-09-02) — the fork is a peer
+     of the claims above it, not a footnote between two buttons. */
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: rgba(255, 255, 255, 0.66);
 }
 
 /* THE BASELINE PILL: outlined and quiet, the mock's lower row. Its silent
@@ -621,28 +658,42 @@
   justify-content: center;
 }
 .splash-basekey-key {
-  color: var(--globe-node-1-solid);
-  border: 1px solid rgba(255, 255, 255, 0.28);
+  /* Purple (Adam, 2026-09-02): the outline, the charge and the silent
+     segment all wear the through-line's own far end — the colour the
+     squiggle above arrives carrying. */
+  color: var(--splash-link-end);
+  border: 1px solid var(--splash-link-end);
 }
 .splash-basekey-key .splash-split-main,
 .splash-basekey-key .splash-split-silent {
   color: var(--ink-inv);
 }
+.splash-basekey-key .splash-split-main {
+  /* "A light purple tint" (Adam, 2026-09-02) — the outline's own hue at a
+     whisper, over the dark field. White caps on it stay ~12:1. */
+  background: rgba(179, 107, 255, 0.14);
+}
 .splash-basekey-key .splash-split-main:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(179, 107, 255, 0.22);
 }
 .splash-basekey-key .splash-split-silent {
-  background: rgba(255, 255, 255, 0.08);
-  border-left: 1px solid rgba(255, 255, 255, 0.22);
+  /* Field-black with the purple as INK (Adam, 2026-09-02) — the launch
+     key's own silent style, in this key's colour. */
+  background: transparent;
+  color: var(--splash-link-end);
+  border-left: 1px solid var(--splash-link-end);
 }
 .splash-basekey-key .splash-split-silent:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(179, 107, 255, 0.12);
 }
 
 /* THE LAUNCH PILL: filled in the count's aqua, INK text, the mock's top
    row. Its silent segment mirrors with the same hue a shade deeper. */
 .splash-launch-key {
   color: var(--globe-node-2-solid);
+  /* The same outline treatment as the key above it — one silhouette rule
+     for both, which is what retired the launch pill's "exposed corners". */
+  border: 1px solid var(--globe-node-2-solid);
 }
 .splash-launch-key .splash-split-main {
   background: var(--globe-node-2-solid);
@@ -655,12 +706,15 @@
   opacity: 0.78;
 }
 .splash-launch-key .splash-split-silent {
-  background: var(--globe-node-2-mid);
-  color: var(--splash-field);
-  border-left: 1px solid rgba(0, 0, 0, 0.25);
+  /* Transparent, with the segment's marks in the main's own green-blue
+     (Adam, 2026-09-02) — the mirror inverted: the loud side carries the
+     colour as ground, the quiet side carries it as ink. */
+  background: transparent;
+  color: var(--globe-node-2-solid);
+  border-left: 1px solid var(--globe-node-2-solid);
 }
 .splash-launch-key .splash-split-silent:hover {
-  filter: brightness(1.06);
+  background: rgba(46, 214, 240, 0.1);
 }
 .splash-launch-key .splash-split-silent:focus-visible,
 .splash-launch-key .splash-split-main:focus-visible {
