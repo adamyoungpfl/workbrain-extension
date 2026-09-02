@@ -310,7 +310,7 @@ function HoldKey({
           className="splash-door splash-split-main splash-split-main--only"
           {...holdHandlers(false)}
         >
-          {children}
+          <span className="splash-split-label">{children}</span>
         </button>
       </span>
     );
@@ -326,9 +326,21 @@ function HoldKey({
         type="button"
         className="splash-door splash-split-main splash-holdkey-side"
         data-side="voiced"
+        /* The mock moved the "(narrated)" qualifier out of the visible label
+           and into the caption below it; the accessible name keeps it, so
+           the button still says which temperament it is to anyone who
+           cannot see where the caption sits. Name begins with the words on
+           the button — the voice-control law — and the caption is hidden
+           from AT so nothing is read twice. */
+        aria-label={names.voiced}
         {...holdHandlers(true)}
       >
-        {children}
+        <span className="splash-split-label" aria-hidden="true">
+          {children}
+        </span>
+        <span className="splash-split-sub" aria-hidden="true">
+          {S.splashNarratedShort}
+        </span>
       </button>
       <button
         type="button"
@@ -355,7 +367,7 @@ function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }
         names={{ voiced: S.splashBaseline, silent: S.splashBaselineSilent }}
         onArmed={onEnter}
       >
-        {S.splashBaseline}
+        {S.splashBaselineLabel}
       </HoldKey>
     </div>
   );
@@ -537,7 +549,7 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
         names={{ voiced: S.splashStraight, silent: S.splashStraightSilent }}
         onArmed={armed}
       >
-        {S.splashStraight}
+        {S.splashStraightLabel}
       </HoldKey>
     </div>
   );
@@ -633,12 +645,6 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
            bend twice, because a route into a button is allowed to be having
            more fun than a route between two paragraphs. */
         wiggle = 0,
-        /* 'v' runs bottom-of-one to top-of-the-next, the sections' own way.
-           'h' runs RIM TO RIM between the two circular keys, which since the
-           hold pass sit staggered side by side — fed the vertical geometry,
-           their overlapping rows turned the S-mirror into a loop the size of
-           the screen, which is how this parameter earned its place. */
-        axis: 'v' | 'h' | 'vr' = 'v',
       ) => {
         const from = restRef.current[fromPart];
         const to = restRef.current[toPart];
@@ -646,66 +652,9 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         const link = linkAt(t, toPart);
         const a = partAt(t, fromPart);
         const b = partAt(t, toPart);
-        /* A point on a key's ring by CLOCK HOUR (Adam's own bearings —
-           "the 3 O'Clock mark", "the 5:30 mark", "the 7-8 O'Clock mark"),
-           tucked INSIDE the thick band so the squiggle's tip is swallowed
-           and no seam ever shows. */
-        /* Adam's clock bearings, mapped onto a PILL: 3:00 is the right
-           edge's middle, 5:30 the bottom edge just right of centre, 7:30
-           the left end of the lower pill's bottom. Tips land 6px INSIDE the
-           pill's box — its opaque fill paints over them, so no seam shows
-           (the links svg draws under the parts). */
-        const edge = (
-          key: { cx: number; cy: number; w: number; h: number },
-          hour: number,
-          dx: number,
-          dy: number,
-        ) => {
-          if (hour === 3) return { x: key.cx + key.w / 2 - 6 + dx, y: key.cy + dy };
-          if (hour === 5.5) return { x: key.cx + key.w * 0.2 + dx, y: key.cy + key.h / 2 - 6 + dy };
-          /* 7.5 — the lower-left ARC of the pill's end cap, entered from
-             below-left, so the line's whole journey stays in clear space:
-             never over a button, never under one. */
-          const cap = { x: key.cx - key.w / 2 + key.h / 2, y: key.cy };
-          const r = key.h / 2 - 4;
-          return { x: cap.x - r * 0.7 + dx, y: cap.y + r * 0.7 + dy };
-        };
         let d: string;
-        if (axis === 'h') {
-          /* Baseline's 5:30 out and DOWN, below the lower pill's entry, and
-             back up into its 7:30 — the dip is the room the blue-to-aqua
-             transition breathes in. */
-          const fk = from.key;
-          const tk = to.key;
-          if (!fk || !tk) return;
-          const A = edge(fk, 5.5, a.x, a.y);
-          const B = edge(tk, 7.5, b.x, b.y);
-          /* The route lives in the GAP the layout now reserves: down from
-             5:30 into the space between the pills, one easy bend left, and
-             up into the lower-left arc — never crossing either box. */
-          const midY = (A.y + B.y) / 2;
-          d =
-            `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} C ${(A.x - 10 - wiggle).toFixed(1)} ${(A.y + 22).toFixed(1)}, ` +
-            `${(B.x - 26 + wiggle).toFixed(1)} ${(midY - 6).toFixed(1)}, ${(B.x - 30).toFixed(1)} ${(midY + 10).toFixed(1)} ` +
-            `S ${(B.x - 26).toFixed(1)} ${(B.y + 4).toFixed(1)}, ${B.x.toFixed(1)} ${B.y.toFixed(1)}`;
-        } else if (axis === 'vr') {
-          /* Down from the section, dragged OUT to the right of the pill, and
-             in through its 3 o'clock — the swing is where the fuchsia turns
-             blue without being crammed against the edge. */
-          const tk = to.key;
-          if (!tk) return;
-          const x1 = from.cx + a.x;
-          const y1 = from.bottom + a.y + 6;
-          const B = edge(tk, 3, b.x, b.y);
-          const gap = B.y - y1;
-          /* Out into the right-hand lane the narrower pill leaves free,
-             down it, and in level with the edge's middle — clear of the
-             button the whole way. */
-          d =
-            `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${(x1 - wiggle).toFixed(1)} ${(y1 + gap * 0.3).toFixed(1)}, ` +
-            `${(B.x + 34).toFixed(1)} ${(y1 + gap * 0.45).toFixed(1)}, ${(B.x + 30).toFixed(1)} ${(B.y - gap * 0.18).toFixed(1)} ` +
-            `S ${(B.x + 22).toFixed(1)} ${B.y.toFixed(1)}, ${B.x.toFixed(1)} ${B.y.toFixed(1)}`;
-        } else {
+        {
+
           const x1 = from.cx + a.x;
           const y1 = from.bottom + a.y + 6;
           const x2 = to.cx + b.x;
@@ -740,12 +689,14 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
       };
       drawLink(pathRef.current, 'tagline', 'time');
       drawLink(path2Ref.current, 'time', 'privacy');
-      /* The journey continues INTO the actions (Adam, 2026-09-01): fuchsia
-         to blue down into the baseline heading, blue to the aqua the count
-         wears down into the launch key. The colour keeps handing itself
-         forward, which is what makes five separate things one route. */
-      drawLink(path3Ref.current, 'privacy', 'baseline', 14, 'vr');
-      drawLink(path4Ref.current, 'baseline', 'launch', 12, 'h');
+      /* Both action links ride the CENTRE LINE now (the mock pass, Adam,
+         2026-09-02): the route from the promise wiggles left and right on
+         its way down into the top pill, and a short bow joins the pills
+         through the "or". The colour still hands itself forward — fuchsia
+         to blue, blue to aqua — which is what makes five separate things
+         one route. */
+      drawLink(path3Ref.current, 'privacy', 'baseline', 16);
+      drawLink(path4Ref.current, 'baseline', 'launch', 13);
 
       const c = countAt(t);
       setCount((was) => (was === c ? was : c));
@@ -959,6 +910,10 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         </div>
       )}
       <div className="splashreveal-part" data-part="launch" ref={hold('launch')}>
+        {/* The fork said out loud, the mock's own way: one small word
+            between the two pills, with the connecting squiggle bowing
+            around it. */}
+        <span className="splash-or">{S.splashOr}</span>
         <LaunchDoor onLaunch={onStraight} still={still} />
       </div>
     </div>

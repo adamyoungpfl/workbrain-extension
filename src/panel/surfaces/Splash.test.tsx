@@ -189,7 +189,9 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     // The baseline path first, because it is the one that expires. The corner
     // Skip and the tour door are both gone: "go straight in" is one of these
     // two now, and the tour is still the interview's own first three steps.
-    expect(labels).toEqual([S.splashBaseline, S.splashStraight]);
+    // Collapsed pills (jsdom has no speech engine) wear the PLAIN labels —
+    // no "Narrated" caption where narration is not a thing the device does.
+    expect(labels).toEqual([S.splashBaselineLabel, S.splashStraightLabel]);
   });
 
   it('still offers the shorter road when there is no baseline to take', () => {
@@ -197,7 +199,7 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
     stubMedia(true);
     const { container } = mount(<Splash onDone={() => {}} />);
     const labels = [...container.querySelectorAll('.splash button')].map((b) => b.textContent);
-    expect(labels).toEqual([S.splashStraight]);
+    expect(labels).toEqual([S.splashStraightLabel]);
   });
 
   it('draws no tour door when there is nowhere to take one', () => {

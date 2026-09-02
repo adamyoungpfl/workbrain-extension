@@ -528,71 +528,74 @@
    to. Dressed for the dark field: the toggle's own tokens are lit for the
    panel's light ground, so its ink and its rule are restated here rather than
    left to inherit a colour that would vanish. */
-/* ── V2.9 — THE SPLIT PILL (Adam, 2026-09-02, from a reference image) ──────
-   One button, two segments: the narrated main filled on the key's own DEEP
-   ground (white text at ~15:1 — the reference's bright fill would sink our
-   4.5:1 floor with these hues), and the compact Silent segment beside it
-   with the struck silhouette and its caption. The wrapper wears the key's
-   colour: an inset ring that thickens and a glow that grows with the hold's
-   charge (`--charge`, written per frame by the component), which is the
-   "outline grow in thickness and brightness" law carried over from the
-   circle era without a layout shift. */
+/* ── V2.9 — THE SPLIT PILL, TO THE MOCK (Adam, 2026-09-02, 2nd reference) ──
+   Left segment: the label with its quiet "Narrated" caption beneath,
+   left-aligned as drawn. Right segment: the struck silhouette over
+   "Silent", its ground the REVERSE MIRROR of its main — a shade of the
+   fill on the filled pill, a whisper of tint on the outlined one. One pill
+   filled in the launch's aqua with INK text (dark-on-aqua measures ~11:1;
+   white there would sink the floor); the other outlined and quiet.
+   Limited colour at rest, colour as the pop — his own law, kept. */
 .splash-split {
   position: relative;
   display: inline-flex;
   align-items: stretch;
-  /* Narrower than the column and taller than a bar (Adam, 2026-09-02:
-     "more circular and vertically a little taller… give it more space") —
-     the margins either side are the squiggles' own lanes, so no line ever
-     has to cross a button to reach its mark. */
   width: 100%;
-  max-width: 302px;
+  max-width: 316px;
   border-radius: var(--r-pill);
   overflow: hidden;
   --charge: 0;
   box-shadow:
-    inset 0 0 0 calc(1.5px + 1.5px * var(--charge)) currentColor,
+    inset 0 0 0 calc(1px + 2px * var(--charge)) currentColor,
     0 0 calc(8px + 18px * var(--charge)) calc(-8px + 4px * var(--charge)) currentColor;
 }
 .splash-split-main {
   flex: 1;
   min-height: 62px;
-  padding: 0 18px;
-  line-height: 1.3;
+  padding: 10px 20px;
   border: 0;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 1px;
+  text-align: left;
   font-family: var(--font-sans);
+  cursor: pointer;
+}
+.splash-split-label {
   font-size: 15px;
   font-weight: 650;
   letter-spacing: -0.01em;
-  color: var(--ink-inv);
-  cursor: pointer;
+  line-height: 1.25;
+}
+.splash-split-sub {
+  font-size: 12px;
+  font-weight: 550;
+  opacity: 0.72;
 }
 .splash-split-main--only {
+  align-items: center;
+  text-align: center;
   border-radius: var(--r-pill);
 }
 .splash-split-silent {
   flex: none;
-  width: 64px;
+  width: 66px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   gap: 2px;
   border: 0;
-  /* The seam: a hairline, not a gap — one object, two temperaments. */
-  border-left: 1px solid rgba(255, 255, 255, 0.22);
-  background: rgba(255, 255, 255, 0.08);
-  color: var(--ink-inv);
-  font-family: var(--font-sans);
   cursor: pointer;
-}
-.splash-split-silent:hover {
-  background: rgba(255, 255, 255, 0.15);
+  font-family: var(--font-sans);
 }
 .splash-split-caption {
-  font-size: 10px;
-  font-weight: 650;
-  letter-spacing: 0.04em;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
 }
 .splash-split-main:focus-visible,
 .splash-split-silent:focus-visible {
@@ -600,7 +603,18 @@
   outline-offset: -3px;
 }
 
-/* The baseline pill: the route's blue. */
+/* The word between the pills — the fork said out loud. */
+.splash-or {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 600;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+/* THE BASELINE PILL: outlined and quiet, the mock's lower row. Its silent
+   segment mirrors with a whisper of tint; its charge pops in the route's
+   blue. */
 .splash-basekey {
   width: 100%;
   display: flex;
@@ -608,23 +622,49 @@
 }
 .splash-basekey-key {
   color: var(--globe-node-1-solid);
+  border: 1px solid rgba(255, 255, 255, 0.28);
 }
-.splash-basekey-key .splash-split-main {
-  background: var(--globe-node-1-deep);
+.splash-basekey-key .splash-split-main,
+.splash-basekey-key .splash-split-silent {
+  color: var(--ink-inv);
 }
 .splash-basekey-key .splash-split-main:hover {
-  background: var(--globe-node-1-muted);
+  background: rgba(255, 255, 255, 0.06);
+}
+.splash-basekey-key .splash-split-silent {
+  background: rgba(255, 255, 255, 0.08);
+  border-left: 1px solid rgba(255, 255, 255, 0.22);
+}
+.splash-basekey-key .splash-split-silent:hover {
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* The launch pill: the count's aqua, still wearing its corner cable. */
+/* THE LAUNCH PILL: filled in the count's aqua, INK text, the mock's top
+   row. Its silent segment mirrors with the same hue a shade deeper. */
 .splash-launch-key {
   color: var(--globe-node-2-solid);
 }
 .splash-launch-key .splash-split-main {
-  background: var(--globe-node-2-deep);
+  background: var(--globe-node-2-solid);
+  color: var(--splash-field);
 }
 .splash-launch-key .splash-split-main:hover {
-  background: var(--globe-node-2-muted);
+  filter: brightness(1.06);
+}
+.splash-launch-key .splash-split-main .splash-split-sub {
+  opacity: 0.78;
+}
+.splash-launch-key .splash-split-silent {
+  background: var(--globe-node-2-mid);
+  color: var(--splash-field);
+  border-left: 1px solid rgba(0, 0, 0, 0.25);
+}
+.splash-launch-key .splash-split-silent:hover {
+  filter: brightness(1.06);
+}
+.splash-launch-key .splash-split-silent:focus-visible,
+.splash-launch-key .splash-split-main:focus-visible {
+  outline-color: var(--splash-field);
 }
 
 /* ── V2.9 slice 4b — THE LAUNCH DOOR AND ITS CABLE ─────────────────────────

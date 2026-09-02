@@ -1728,10 +1728,17 @@ export const S = {
      (Narrated)", and a compact Silent segment beside it. The caps-heading
      era's lead/span pair retired with the heading; sentence case, because
      these are buttons again and buttons are things a person would say. */
+  /* The mock pass (Adam, 2026-09-02, second reference): the visible label
+     drops its qualifier — "Narrated" is a caption under it now — and the
+     accessible name keeps the qualifier so the button still says which
+     temperament it is to anyone who cannot see the caption's position. */
+  splashBaselineLabel: 'Set your prompting baseline',
   splashBaseline: 'Set your prompting baseline (narrated)',
-  /** The silent segment's visible caption — shared by both keys; each
-   * segment's full accessible name is its own sentence below. */
+  /** The captions under and beside the labels, and the word between the
+   * two pills. */
+  splashNarratedShort: 'Narrated',
   splashSilentShort: 'Silent',
+  splashOr: 'or',
   /* Adam's own sentence, verbatim (2026-09-01): the quiet half is a secondary
      link under the heading now, and it carries its own voice — not a lesser
      button but a different temperament. Supersedes "Set it silently", whose
@@ -1744,6 +1751,7 @@ export const S = {
      most people will pick. [DRAFT] */
   /* "Just get started" hedged — the word "just" made the shorter road sound
      like the lesser one, which is not the fork this screen is offering. */
+  splashStraightLabel: 'Launch Workbrain',
   splashStraight: 'Launch Workbrain (narrated)',
   /* [DRAFT] The ring pass (Adam, 2026-09-02): both keys carry the voice
      choice in their own outline — a talking silhouette on the right, the

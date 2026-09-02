@@ -114,15 +114,16 @@ const SCRIPT: Record<RevealPart, Key[]> = {
      beside it (the pull is layout, SplashReveal.css; the lean is here). Side
      by side they cost the column less height than two stacked bars did, and
      the two squiggles get a genuine diagonal to travel. */
-  /* Pills since the split pass — the circle era's wide stagger went with
-     the circles; what stays is the alternation itself. */
+  /* CENTRED since the mock pass (Adam, 2026-09-02: "the button array which
+     can be centered") — the sections above keep their alternation; the
+     action cluster stands on the centre line the squiggles ride down. */
   baseline: [
     { at: 4.4, opacity: 0, x: 0, y: 14 },
-    { at: 5.0, opacity: 1, x: -10, y: 0 },
+    { at: 5.0, opacity: 1, x: 0, y: 0 },
   ],
   launch: [
     { at: 4.7, opacity: 0, x: 0, y: 14 },
-    { at: 5.3, opacity: 1, x: 14, y: 0 },
+    { at: 5.3, opacity: 1, x: 0, y: 0 },
   ],
 };
 

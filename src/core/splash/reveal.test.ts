@@ -75,12 +75,10 @@ describe('partAt — the storyboard', () => {
        everything else is arranged around, and an axis that drifts is not one. */
     expect(partAt(REVEAL_SETTLED, 'time').x).toBeLessThan(0);
     expect(partAt(REVEAL_SETTLED, 'privacy').x).toBeGreaterThan(0);
-    /* And the ACTIONS carry the alternation on down the screen (2026-09-01,
-       Adam: "make that and the Launch offset at the bottom") — baseline
-       answers privacy's right lean, launch answers the baseline's left. */
-    expect(partAt(REVEAL_SETTLED, 'baseline').x).toBeLessThan(0);
-    expect(partAt(REVEAL_SETTLED, 'launch').x).toBeGreaterThan(0);
-    for (const part of ['lockup', 'tagline'] as RevealPart[]) {
+    /* The ACTIONS stand on the centre line since the mock pass (Adam,
+       2026-09-02: "the button array which can be centered") — the sections
+       lean; the cluster the squiggles descend into does not. */
+    for (const part of ['lockup', 'tagline', 'baseline', 'launch'] as RevealPart[]) {
       for (let t = 0; t <= 6; t += 0.1) expect(partAt(t, part).x).toBe(0);
     }
   });
