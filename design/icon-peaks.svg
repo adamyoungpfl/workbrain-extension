@@ -1,0 +1,13 @@
+<!-- W PEAKS — the extension's icon (Adam, 2026-09-02: "W Peaks is the
+     winner"). Three erratic peaks in the mark's own colors; the W is the
+     negative space between them — the two valleys draw the letter, the way
+     the FedEx arrow is read. No tile, no background: the toolbar itself is
+     the ground, which is what lets one artwork sit on every Chrome theme.
+     Geometry is EXACTLY the artifact's winning candidate (wb-icon-concepts,
+     round two) — do not redesign it here; regenerate the PNGs with
+     `node scripts/icons.mjs` after any change. -->
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/>
+  <path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/>
+</svg>
