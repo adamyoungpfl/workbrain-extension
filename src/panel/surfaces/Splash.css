@@ -448,15 +448,23 @@
   letter-spacing: 0.06em;
   line-height: 1.45;
 }
-.splash-tagline-line:first-child {
+.splash-tagline-line {
   text-transform: uppercase;
 }
+/* Row two: a step down from row one, per the final grammar. */
+.splash-tagline-line:last-child {
+  font-size: 15px;
+}
 
-/* ONE POP LEFT (Adam, 2026-09-02): "you do" keeps the fuchsia; the rest
-   of the sentence is white, wearing the shimmer below. The sentence still
-   reads identically with the colour gone. */
+/* The poles: fuchsia for the person, the launch key's green-blue for the
+   machine — and the base runs stay muted so the two pops and the white
+   EVERYTHING carry the line. */
 .splash-tagline-you {
   color: var(--splash-link);
+  font-weight: 650;
+}
+.splash-tagline-ai {
+  color: var(--globe-node-2-solid);
   font-weight: 650;
 }
 /* THE SHIMMER: a gleam travelling the white runs — a slightly brighter band

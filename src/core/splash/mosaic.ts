@@ -46,8 +46,11 @@ export const STAGE_H = 700;
  *  enough to make out what they are in theory, like a glyph.") — ~18px
  *  panes, seven hundred of them, each just barely a picture. The flurry is
  *  the point now; recognising any one pane never was. */
-export const COLS = 21;
-export const ROWS = 34;
+/** Pulled back to two-thirds each way (Adam, 2026-09-02: "too busy now to
+ *  the point of imperceptible") — still glyphs, now big enough to be read
+ *  as the things they are. */
+export const COLS = 14;
+export const ROWS = 23;
 export const CELL_COUNT = COLS * ROWS;
 
 /** How far an interior vertex may leave its lattice point, as a fraction of
@@ -149,19 +152,51 @@ export function cutsBy(t: number, over: number): number {
  * moments; and each walks the image set by its own stride, so two cells that
  * do happen to cut together are not showing the same picture.
  */
+/** A cheap stateless hash to [0, 1) — the same trick every shader uses.
+ *  Deterministic on purpose: a pure clock cannot roll dice, and chaos that
+ *  replays identically is chaos a test can hold still. */
+function jitter(n: number): number {
+  const s = Math.sin(n * 127.1 + 311.7) * 43758.5453;
+  return s - Math.floor(s);
+}
+
 export function frameAt(t: number, cell: number, imageCount: number, over: number): number {
   if (imageCount <= 0) return 0;
-  const phase = ((cell * 7919) % 1000) / 1000;
-  const n = Math.floor(cutsBy(Math.max(0, t), over) + phase);
-  /* WALKED ONE AT A TIME FROM A DIFFERENT START, not strided.
+  /* CHAOS THAT BUILDS TO ORDER (Adam, 2026-09-02: "It needs to seem chaotic
+     that builds to order, not organized chaos to start"). The old clock ran
+     one shared accelerating schedule with per-cell phase offsets — organized
+     chaos, formulaic from the first second. Now every cell draws each cut's
+     interval separately: early intervals average the slow hold with ±85%
+     scatter, and the scatter dies as the rate rises, so the wall converges
+     from scattered, unpredictable flips into one urgent synchronized
+     flicker at the swell. The accumulation walks at most a couple hundred
+     short steps and stays a pure function of (t, cell).
 
-     A per-cell stride looked like a cheap way to keep neighbours off the same
-     picture, and it quietly trapped cells in short loops: any stride sharing a
-     factor with the image count cycles through only `count / gcd` images, so a
-     cell with stride 6 over 18 images showed the same three pictures for the
-     whole show. Stepping by one from a per-cell offset means every panel walks
-     the entire set, and the offset does the separating. */
-  return (((n + cell * 5) % imageCount) + imageCount) % imageCount;
+     WALKED ONE AT A TIME FROM A DIFFERENT START, not strided — the stride
+     trap (short image loops when the stride shares a factor with the count)
+     is documented on the old clock and still applies. */
+  const clamped = Math.max(0, t);
+  let acc = jitter(cell * 13.7) * HOLD_START_S;
+  let k = 0;
+  while (acc <= clamped && k < 200) {
+    const p = over <= 0 ? 1 : Math.min(1, acc / over);
+    const ease = p * p * (3 - 2 * p);
+    const base = HOLD_START_S + (HOLD_END_S - HOLD_START_S) * ease;
+    const chaos = 1 - ease;
+    acc += base * (1 + (jitter(cell * 97.3 + k * 7.1) - 0.5) * 1.7 * chaos);
+    k += 1;
+  }
+  return (((k + cell * 5) % imageCount) + imageCount) % imageCount;
+}
+
+/**
+ * THE DAWN (Adam, 2026-09-02: "make it start lighter"). A white wash the
+ * wall opens under, gone by mid-show — so the arc runs light, into full
+ * ink, into the swell's white: the sketch develops like a print coming up.
+ */
+export function dawnAt(t: number, over: number): number {
+  const p = over <= 0 ? 1 : Math.min(1, Math.max(0, t / (over * 0.45)));
+  return 1 - p * p * (3 - 2 * p);
 }
 
 /**

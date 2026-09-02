@@ -68,13 +68,14 @@ const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'baseline',
  * A phrase that is not found is simply not marked — a re-worded tagline
  * degrades to plain text, never to a crash or a stale highlight.
  */
-/* WHITE WITH ONE POP (Adam, 2026-09-02): "make the HOW and ANYTHING WHITE
-   and make everything in the 2nd line white and give it a slight gleam or
-   shimmer". So "you do" keeps the fuchsia — the one coloured thing left in
-   the line — and every other run of the sentence is white wearing the
-   shimmer, "everything" still carrying its underline. */
+/* THE TAGLINE'S FINAL GRAMMAR (Adam, 2026-09-02, second refinement): row
+   one white with the fuchsia "you do"; row two caps a size down, "YOUR AI
+   DOES" in the launch key's own green-blue, and ONLY "EVERYTHING" white —
+   the one word wearing the shimmer and the underline. The unmarked runs sit
+   at the tagline's muted base. */
 const TAGLINE_MARKS: { phrase: string; mark: string }[] = [
   { phrase: 'you do', mark: 'you' },
+  { phrase: 'your AI does', mark: 'ai' },
   { phrase: 'everything', mark: 'ever' },
 ];
 
@@ -90,20 +91,17 @@ function richTagline(line: string): ReactNode[] {
       );
     });
   }
+  const classFor: Record<string, string> = {
+    you: 'splash-tagline-you',
+    ai: 'splash-tagline-ai',
+    ever: 'splash-tagline-shine splash-tagline-ever',
+  };
   return parts.map((part, i) =>
     typeof part === 'string' ? (
-      // eslint-disable-next-line react/no-array-index-key -- static per render
-      <span key={i} className="splash-tagline-shine">
-        {part}
-      </span>
+      part
     ) : (
       // eslint-disable-next-line react/no-array-index-key -- static per render
-      <span
-        key={i}
-        className={
-          part.mark === 'you' ? 'splash-tagline-you' : 'splash-tagline-shine splash-tagline-ever'
-        }
-      >
+      <span key={i} className={classFor[part.mark] ?? ''}>
         {part.text}
       </span>
     ),

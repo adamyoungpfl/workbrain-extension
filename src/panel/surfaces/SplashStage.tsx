@@ -3,9 +3,9 @@ import {
   STAGE_H,
   STAGE_W,
   bleachAt,
+  dawnAt,
   frameAt,
   makeMosaic,
-  stageAt,
 } from '../../core/splash/mosaic';
 import type { Point } from '../../core/splash/mosaic';
 import { SPLASH_BEATS } from '../../core/splash/sequence';
@@ -121,8 +121,10 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
       if (count === 0) return;
 
       const bleach = bleachAt(t, SPLASH_BEATS.swellAt);
-
-      const stage = stageAt(t, SPLASH_BEATS.swellAt);
+      /* The dawn: the wall opens under a white wash that clears by
+         mid-show — "make it start lighter" — so the arc runs light, full
+         ink, white. */
+      const dawn = dawnAt(t, SPLASH_BEATS.swellAt);
 
       for (let i = 0; i < cells.length; i += 1) {
         const cell = cells[i]!;
@@ -147,16 +149,11 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
         g.closePath();
         g.clip();
 
-        /* THE TINT IS GONE (Adam, 2026-09-01, the sketch pass): "this
-           relies only on the changing of images and not on the changing of
-           color to suggest motion or build." The recolour cycle it replaces
-           (the 2026-09-02 PowerPoint treatment) is recorded in git — what
-           survives of it is the OPENING STILLNESS: in the first stage every
-           tile is pinned to the picture it opened on, so the wall reads as
-           a wall before it reads as anything else, and after that the only
-           thing that ever changes is which sketch a panel is holding. */
-        const pinned = stage === 'colour';
-        const picture = glass[frameAt(pinned ? 0 : t, i, count, SPLASH_BEATS.swellAt)];
+        /* THE PIN IS GONE TOO (Adam, 2026-09-02): the opening stillness
+           read as the "organized" half of organized chaos. The cells flip
+           from the first second now — sparsely and unpredictably, the new
+           clock's chaos — and what builds is the order. */
+        const picture = glass[frameAt(t, i, count, SPLASH_BEATS.swellAt)];
 
         if (picture) {
           const scale = Math.max(w / picture.width, h / picture.height);
@@ -168,6 +165,14 @@ export const SplashStage = forwardRef<SplashStageHandle>(function SplashStage(_p
           // panel. Degrade, never break.
           g.fillStyle = 'rgba(255, 255, 255, 0.08)';
           g.fillRect(minX, minY, w, h);
+        }
+
+        /* The dawn's wash, while it lasts. */
+        if (dawn > 0) {
+          g.globalCompositeOperation = 'lighten';
+          g.fillStyle = `rgba(255, 255, 255, ${(dawn * 0.55).toFixed(3)})`;
+          g.fillRect(minX, minY, w, h);
+          g.globalCompositeOperation = 'source-over';
         }
 
         /* THE COLOUR DRAINS INTO THE WHITE rather than being covered by it —
