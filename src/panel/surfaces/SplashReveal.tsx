@@ -602,7 +602,18 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: (voiced: boolean) => void; 
         radio={'radioLaunch'}
         onArmed={armed}
       >
-        {S.splashStraightLabel}
+        {(() => {
+          /* TWO ROWS, mirroring INITIATE PRE-LAUNCH (Adam, 2026-09-02):
+             first word over the rest, derived from the one string. */
+          const words = S.splashStraightLabel.split(' ');
+          return (
+            <>
+              {words[0]}{' '}
+              <br />
+              {words.slice(1).join(' ')}
+            </>
+          );
+        })()}
       </HoldKey>
       <EtaChip seconds={eta} />
     </div>
@@ -790,11 +801,11 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           };
           up.setAttribute(
             'd',
-            seg(orX, part.or.top + b.y - 6, base.key.cx + a.x, base.key.cy + a.y + base.key.h / 2 + 8),
+            seg(orX, part.or.top + b.y - 8, base.key.cx + a.x, base.key.cy + a.y + base.key.h / 2 + 14),
           );
           down.setAttribute(
             'd',
-            seg(orX, part.or.bottom + b.y + 6, part.key.cx + b.x, part.key.cy + b.y - part.key.h / 2 - 8),
+            seg(orX, part.or.bottom + b.y + 8, part.key.cx + b.x, part.key.cy + b.y - part.key.h / 2 - 14),
           );
           if (grad) {
             const yTop = base.key.cy + a.y + base.key.h / 2;

@@ -872,7 +872,13 @@
 /* The word between the pills — the fork said out loud. */
 .splash-or {
   display: block;
-  margin: 2px 0 16px;
+  /* CENTRED BETWEEN THE PILLS (Adam, 2026-09-02: "perfectly centered") -
+     probed, not eyeballed: the negative top margin pulls the word up into
+     the eta chip's slack until the gap from the pre-launch pill's bottom
+     to OR's centre equals the gap from OR's centre to the launch pill's
+     top (49px each on the 720 probe). Re-probe if the chip or the pills
+     change height. */
+  margin: -11px 0 16px;
   /* The section headers' own size (Adam, 2026-09-02) — the fork is a peer
      of the claims above it, not a footnote between two buttons. */
   font-size: 17px;
@@ -903,6 +909,11 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* THE OFFSET PAIR (Adam, 2026-09-02): pre-launch rides a little RIGHT of
+     centre and launch a little LEFT - staggered seats give the squiggles
+     lateral travel to draw through and put some style in the fork. Whole
+     pixels, by translate: layout (and the 44px targets) never move. */
+  transform: translateX(14px);
 }
 .splash-basekey-key {
   /* Purple (Adam, 2026-09-02): the outline, the charge and the silent
@@ -979,6 +990,11 @@
    under, and the door is exactly as pressable with it as without. */
 .splash-launch {
   position: relative;
+  /* The other half of the stagger - and the drop Adam asked for ("the
+     launch workbrain button can move down a little to make space"): the
+     lower squiggle gets the length it needs to show the green arriving. */
+  transform: translateX(-14px);
+  margin-top: 23px;
 }
 .splash-cable {
   position: absolute;
