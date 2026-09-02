@@ -467,37 +467,12 @@
   color: var(--globe-node-2-solid);
   font-weight: 650;
 }
-/* THE SHIMMER: a gleam travelling the white runs — a slightly brighter band
-   sliding through a background-clipped gradient. The FALLBACK COLOUR IS SET
-   FIRST AND NEVER TRANSPARENT (the same law as START TO FINISH): where the
-   clip is unsupported the words are simply white, and under reduced motion
-   the gleam holds still. */
-.splash-tagline-shine {
+/* Row one is WHITE with its fuchsia pop; row two stays on the tagline's
+   own offwhite with its aqua pop and the purple underline. The shimmer
+   that briefly lived here is retired (Adam, 2026-09-02) — the tagline just
+   fades in with its part, like everything else on the spine. */
+.splash-tagline-line:first-child {
   color: var(--ink-inv);
-  background-image: linear-gradient(
-    100deg,
-    rgba(255, 255, 255, 0.82) 38%,
-    rgba(255, 255, 255, 1) 50%,
-    rgba(255, 255, 255, 0.82) 62%
-  );
-  background-size: 220% 100%;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: splash-shine 4.2s ease-in-out infinite;
-}
-@keyframes splash-shine {
-  0% {
-    background-position: 120% 0;
-  }
-  100% {
-    background-position: -120% 0;
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .splash-tagline-shine {
-    animation: none;
-  }
 }
 /* The landing word takes the ANSWER'S mark: an underline that draws itself
    once the line has settled — the same gesture that lands under "Nothing"
@@ -663,25 +638,64 @@
   outline: 2px solid var(--ink-inv);
   outline-offset: -3px;
 }
-/* The LOAD (Adam, 2026-09-02): the key's colour sweeping the whole pill
-   left to right on `--charge` — the loading animation kept, as asked, with
-   the words readable inside it because the wash is translucent. */
+/* THE LOAD, INVERTED AND SCOPED (Adam, 2026-09-02): "only the side of the
+   button that is selected fills and it can fill from bottom to top. Have
+   it load the opposite of the color scheme. Black background with green
+   icon, loads green with black icon." Each segment carries its own fill,
+   rising on `--charge`; only the held side's fill is released, and the
+   held side's CONTENT blends to the field's dark as its ground floods with
+   its own colour — the scheme flipping in place. The buttons clip their
+   fills themselves. */
+.splash-split-main,
+.splash-split-silent {
+  position: relative;
+  overflow: hidden;
+}
+.splash-split-main > *,
+.splash-split-silent > * {
+  position: relative;
+}
 .splash-split-fill {
   position: absolute;
   inset: 0;
-  opacity: 0.55;
-  transform: scaleX(var(--charge));
-  transform-origin: left center;
+  transform: scaleY(0);
+  transform-origin: center bottom;
   pointer-events: none;
 }
-/* "The color of the outline slightly darker, to make sure the load is
-   visible" (Adam, 2026-09-02) — each key loads in a deeper cut of its own
-   outline hue, and the white words hold their contrast inside it. */
+.splash-holdkey[data-loading='voiced'] .splash-split-main .splash-split-fill,
+.splash-holdkey[data-loading='silent'] .splash-split-silent .splash-split-fill {
+  transform: scaleY(var(--charge));
+}
+/* Each key floods in its own hue... */
 .splash-basekey-key .splash-split-fill {
-  background: rgba(126, 66, 200, 1);
+  background: var(--splash-link-end);
 }
 .splash-launch-key .splash-split-fill {
-  background: var(--globe-node-2-mid);
+  background: var(--globe-node-2-solid);
+}
+/* ...and the loading side's words and glyphs cross to the dark as it
+   rises. `color-mix` follows the same `--charge`, so the flip and the
+   flood cannot disagree. Dark-on-purple holds ~5.9:1, dark-on-aqua ~10.9:1. */
+.splash-holdkey[data-loading='voiced'] .splash-split-main {
+  color: color-mix(
+    in srgb,
+    var(--splash-field) calc(var(--charge) * 100%),
+    var(--ink-inv)
+  );
+}
+.splash-basekey-key[data-loading='silent'] .splash-split-silent {
+  color: color-mix(
+    in srgb,
+    var(--splash-field) calc(var(--charge) * 100%),
+    var(--splash-link-end)
+  );
+}
+.splash-launch-key[data-loading='silent'] .splash-split-silent {
+  color: color-mix(
+    in srgb,
+    var(--splash-field) calc(var(--charge) * 100%),
+    var(--globe-node-2-solid)
+  );
 }
 
 /* The word between the pills — the fork said out loud. */

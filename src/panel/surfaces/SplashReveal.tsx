@@ -94,7 +94,10 @@ function richTagline(line: string): ReactNode[] {
   const classFor: Record<string, string> = {
     you: 'splash-tagline-you',
     ai: 'splash-tagline-ai',
-    ever: 'splash-tagline-shine splash-tagline-ever',
+    /* The shimmer retired (Adam, 2026-09-02: "remove the shimmer/gleam…
+       just have the tagline fade in") — EVERYTHING keeps only its purple
+       underline, on the row's own offwhite. */
+    ever: 'splash-tagline-ever',
   };
   return parts.map((part, i) =>
     typeof part === 'string' ? (
@@ -265,6 +268,9 @@ function HoldKey({
      silence, so Silent loads quietly. */
   const start = (voiced: boolean) => {
     if (armedRef.current || holding.current) return;
+    /* Which SIDE is loading — the fill and the colour inversion are scoped
+       to it in the stylesheet. */
+    pillRef.current?.setAttribute('data-loading', voiced ? 'voiced' : 'silent');
     if (still) {
       arm(voiced);
       return;
@@ -299,7 +305,11 @@ function HoldKey({
       const c = dischargeAt(from, now - t0);
       chargeNow.current = c;
       paint(c);
-      if (c > 0) raf.current = requestAnimationFrame(tick);
+      if (c > 0) {
+        raf.current = requestAnimationFrame(tick);
+      } else {
+        pillRef.current?.setAttribute('data-loading', '');
+      }
     };
     raf.current = requestAnimationFrame(tick);
   };
@@ -340,6 +350,7 @@ function HoldKey({
           className="splash-door splash-split-main splash-split-main--only"
           {...holdHandlers(false)}
         >
+          <span className="splash-split-fill" aria-hidden="true" />
           <span className="splash-split-label">{children}</span>
         </button>
       </span>
@@ -365,6 +376,7 @@ function HoldKey({
         aria-label={names.voiced}
         {...holdHandlers(true)}
       >
+        <span className="splash-split-fill" aria-hidden="true" />
         <span className="splash-split-label" aria-hidden="true">
           {children}
         </span>
@@ -380,15 +392,10 @@ function HoldKey({
         title={names.silent}
         {...holdHandlers(false)}
       >
+        <span className="splash-split-fill" aria-hidden="true" />
         <VoiceGlyph off />
         <span className="splash-split-caption">{S.splashSilentShort}</span>
       </button>
-      {/* The load: a wash of the key's own colour sweeping left to right
-          across the WHOLE pill — both segments, one motion — scaled by the
-          same `--charge` the component writes each frame. Above the
-          grounds, below nothing: it is translucent, so the words stay
-          readable inside it the whole way. */}
-      <span className="splash-split-fill" aria-hidden="true" />
     </span>
   );
 }
