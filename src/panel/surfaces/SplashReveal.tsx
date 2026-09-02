@@ -1,9 +1,10 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { BrandMark } from '../components';
-import { NarratorToggle } from '../components/NarratorToggle';
+import { narratorSupported } from '../voice/speech';
+import { loadPrefs, useNarratorPref } from '../voice/prefs';
 import { idleGlowAt, pulseAt } from '../../core/splash/launch';
-import { HOLD_MS, chargeAt, dischargeAt } from '../../core/splash/rocket';
+import { COUNTDOWN_MS, HOLD_MS, chargeAt, dischargeAt } from '../../core/splash/rocket';
 import {
   CLAIM_TRUE,
   COUNT_FROM,
@@ -117,89 +118,177 @@ export interface SplashRevealProps {
 }
 
 /**
- * V2.9 slice 4 hold — THE KEY YOU CHARGE (Adam, 2026-09-01).
+ * V2.9 — THE RING IS THE CHOICE (Adam, 2026-09-02).
  *
- * "The button is one where when you hold it it loads for a couple of
- * seconds. Make the circle outline grow in thickness and color brightness."
+ * "Make each of them a thick outline of color and in the outline, we have a
+ * talking person silhouette icon or symbol on the right and an icon that is
+ * the same with a strike through it to indicate without guidance on the
+ * left… which ever side the[y] click the rest of the outline fills in that
+ * color during the countdown and launch sequence."
  *
- * Holding is the new press, for both actions. The ring sweeps closed as the
- * charge builds — thicker and brighter as it goes, core's own curve — and
- * arming is what a press used to be. Released early, it drains fast: an
- * abort is relief, not a rewind. One component, dressed differently by each
- * key; all per-frame values go straight to style, nothing through React.
+ * So the sound toggle of the hold pass folds INTO the keys: each ring
+ * carries its silent side at nine o'clock and its voiced side at three, the
+ * side somebody HOLDS is both the answer and the way through (4a's law,
+ * back in a circle), and once armed the rest of the outline sweeps closed
+ * in the key's own colour across the countdown. The thick band is also
+ * where the squiggles end — their tips tuck under it, so no seam ever
+ * shows.
  *
  * ── EVERY WAY OF PRESSING IS A WAY OF HOLDING ─────────────────────────────
- * Pointer down/up, and Space or Enter held and released — the keyboard hold
- * is the same charge on the same clock, which is the full-keyboard-path law
- * applied to a control whose meaning is duration. Under reduced motion (or
- * anywhere without a frame loop) a plain click arms immediately: the charge
- * is choreography, and choreography is exactly what that preference turns
- * off — the SAFETY of the hold is not load-bearing, the choice is.
+ * Pointer or Space/Enter on either side, held to the arm on core's clock;
+ * released early it drains fast. Reduced motion clicks arm instantly — the
+ * charge is choreography, the CHOICE is the load-bearing part. Where no
+ * speech engine exists there are no sides to offer: the whole ring is one
+ * quiet hold-target, exactly as the cluster collapsed in 4a.
  */
+function VoiceGlyph({ off = false }: { off?: boolean }) {
+  return (
+    <svg viewBox="0 0 24 24" width="17" height="17" aria-hidden="true" focusable="false">
+      <circle cx="9" cy="8.4" r="3.4" fill="currentColor" />
+      <path
+        d="M3.2 19.6 C3.6 15.4 6 13.4 9 13.4 C12 13.4 14.4 15.4 14.8 19.6 Z"
+        fill="currentColor"
+      />
+      <path
+        d="M16.6 6.8 C18 8 18 11 16.6 12.2"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        fill="none"
+        strokeLinecap="round"
+      />
+      <path
+        d="M18.9 4.9 C21.2 6.9 21.2 12.1 18.9 14.1"
+        stroke="currentColor"
+        strokeWidth="1.7"
+        fill="none"
+        strokeLinecap="round"
+      />
+      {off && (
+        <path
+          d="M3.5 3.5 L20.5 20.5"
+          stroke="currentColor"
+          strokeWidth="2.1"
+          strokeLinecap="round"
+        />
+      )}
+    </svg>
+  );
+}
+
+/** The band's width — thick enough to swallow a squiggle's tip. */
+const RING_W = 10;
+
 function HoldKey({
   className,
   size,
   still,
+  names,
   onArmed,
   children,
 }: {
   className: string;
   size: number;
   still: boolean;
+  names: { voiced: string; silent: string };
   onArmed: () => void;
   children: ReactNode;
 }) {
+  const { setOn } = useNarratorPref();
+  const [sided] = useState(() => narratorSupported());
+  const svgRef = useRef<SVGSVGElement | null>(null);
   const ringRef = useRef<SVGCircleElement | null>(null);
+  const fillRef = useRef<SVGCircleElement | null>(null);
   const raf = useRef(0);
   const holding = useRef(false);
   const armedRef = useRef(false);
   const chargeNow = useRef(0);
+  const sideRef = useRef<boolean | undefined>(undefined);
   const [live, setLive] = useState(false);
 
-  const paint = (charge: number) => {
-    const ring = ringRef.current;
-    if (!ring) return;
+  /* 4a's lesson, still load-bearing: the preference must be READ before the
+     side can write it, and this key is the splash's only reader. */
+  useEffect(() => {
+    void loadPrefs();
+  }, []);
+
+  const sweep = (el: SVGCircleElement | null, p: number, width: number) => {
+    if (!el) return;
     try {
-      const r = ring.r.baseVal.value;
+      const r = el.r.baseVal.value;
       const c = 2 * Math.PI * r;
-      ring.style.strokeDasharray = `${c}`;
-      ring.style.strokeDashoffset = `${c * (1 - charge)}`;
-      ring.style.strokeWidth = `${(2 + 3.5 * charge).toFixed(2)}`;
-      ring.style.opacity = (0.35 + 0.65 * charge).toFixed(3);
+      el.style.strokeDasharray = `${c}`;
+      el.style.strokeDashoffset = `${c * (1 - p)}`;
+      el.style.strokeWidth = `${width.toFixed(2)}`;
     } catch {
       /* Silent, per docs/GUARDRAILS.md — a ring that cannot draw costs the
-         charge animation, never the arming: the clock below runs anyway. */
+         drawing, never the arming: the clocks below run regardless. */
     }
   };
 
-  const arm = () => {
+  const arm = (voiced: boolean) => {
     if (armedRef.current) return;
     armedRef.current = true;
     holding.current = false;
     setLive(true);
-    paint(1);
-    onArmed();
+    if (ringRef.current) ringRef.current.style.opacity = '1';
+    sweep(ringRef.current, 1, RING_W);
+    /* The side IS the answer (4a's law): written at the arm, awaited so the
+       ordering cannot race the stored value, and only where a side existed
+       to choose. */
+    void (async () => {
+      if (sided) {
+        await loadPrefs();
+        setOn(voiced);
+      }
+      onArmed();
+    })();
+    /* "The rest of the outline fills in that color during the countdown":
+       the fill sweeps the band closed across the count's own length, from
+       the side that was held (the svg was rotated to it at the press).
+       Under reduced motion the band is simply FULL, painted synchronously —
+       the zero-scheduled-frames law admits no fill loop, and a full ring
+       carries the same instruction a sweeping one does. */
+    if (still) {
+      sweep(fillRef.current, 1, RING_W);
+      if (fillRef.current) fillRef.current.style.opacity = '1';
+      return;
+    }
+    const t0 = performance.now();
+    const fill = (now: number) => {
+      const p = Math.min(1, (now - t0) / COUNTDOWN_MS);
+      sweep(fillRef.current, p, RING_W);
+      if (fillRef.current) fillRef.current.style.opacity = '1';
+      if (p < 1) raf.current = requestAnimationFrame(fill);
+    };
+    raf.current = requestAnimationFrame(fill);
   };
 
-  const start = () => {
+  const start = (voiced: boolean) => {
     if (armedRef.current || holding.current) return;
+    sideRef.current = voiced;
+    /* The sweep begins where the thumb is: three o'clock for the voiced
+       side, nine for the silent one. Rotating the svg moves the dash's own
+       zero there — the track is a full circle and does not care. */
+    if (svgRef.current) {
+      svgRef.current.style.transform = voiced ? 'rotate(0deg)' : 'rotate(180deg)';
+    }
     if (still) {
-      arm();
+      arm(voiced);
       return;
     }
     holding.current = true;
     cancelAnimationFrame(raf.current);
-    /* A re-press mid-drain resumes from the charge on screen rather than
-       from zero — the eased clock is inverted approximately (linear in
-       time), which errs a shade generous and reads as the key remembering. */
     const t0 = performance.now() - chargeNow.current * HOLD_MS;
     const tick = (now: number) => {
       if (!holding.current) return;
       const c = chargeAt(now - t0);
       chargeNow.current = c.charge;
-      paint(c.charge);
+      sweep(ringRef.current, c.charge, 4 + (RING_W - 4) * c.charge);
+      if (ringRef.current) {
+        ringRef.current.style.opacity = (0.35 + 0.65 * c.charge).toFixed(3);
+      }
       if (c.armed) {
-        arm();
+        arm(voiced);
         return;
       }
       raf.current = requestAnimationFrame(tick);
@@ -217,13 +306,36 @@ function HoldKey({
       if (holding.current || armedRef.current) return;
       const c = dischargeAt(from, now - t0);
       chargeNow.current = c;
-      paint(c);
+      sweep(ringRef.current, c, 4 + (RING_W - 4) * c);
       if (c > 0) raf.current = requestAnimationFrame(tick);
     };
     raf.current = requestAnimationFrame(tick);
   };
 
   useEffect(() => () => cancelAnimationFrame(raf.current), []);
+
+  const holdHandlers = (voiced: boolean) => ({
+    onPointerDown: () => start(voiced),
+    onPointerUp: release,
+    onPointerLeave: release,
+    onPointerCancel: release,
+    onKeyDown: (e: { key: string; repeat: boolean; preventDefault: () => void }) => {
+      if (e.key === ' ' || e.key === 'Enter') {
+        /* preventDefault keeps Space from scrolling AND from firing the
+           native click on keyup — the click path is reduced motion's. */
+        e.preventDefault();
+        if (!e.repeat) start(voiced);
+      }
+    },
+    onKeyUp: (e: { key: string }) => {
+      if (e.key === ' ' || e.key === 'Enter') release();
+    },
+    onClick: () => {
+      if (still) arm(voiced);
+    },
+  });
+
+  const rr = (size - RING_W - 4) / 2;
 
   return (
     <span
@@ -232,68 +344,80 @@ function HoldKey({
       style={{ width: size, height: size }}
     >
       <svg
+        ref={svgRef}
         className="splash-holdkey-ring"
         viewBox={`0 0 ${size} ${size}`}
         aria-hidden="true"
         focusable="false"
       >
-        <circle className="splash-holdkey-track" cx={size / 2} cy={size / 2} r={(size - 10) / 2} />
-        <circle
-          ref={ringRef}
-          className="splash-holdkey-charge"
-          cx={size / 2}
-          cy={size / 2}
-          r={(size - 10) / 2}
-        />
+        <circle className="splash-holdkey-track" cx={size / 2} cy={size / 2} r={rr} />
+        <circle ref={ringRef} className="splash-holdkey-charge" cx={size / 2} cy={size / 2} r={rr} />
+        <circle ref={fillRef} className="splash-holdkey-fill" cx={size / 2} cy={size / 2} r={rr} />
       </svg>
-      <button
-        type="button"
-        className="splash-door splash-holdkey-button"
-        onPointerDown={start}
-        onPointerUp={release}
-        onPointerLeave={release}
-        onPointerCancel={release}
-        onKeyDown={(e) => {
-          if (e.key === ' ' || e.key === 'Enter') {
-            /* preventDefault keeps Space from scrolling AND from firing the
-               native click on keyup — the click path is reduced motion's. */
-            e.preventDefault();
-            if (!e.repeat) start();
-          }
-        }}
-        onKeyUp={(e) => {
-          if (e.key === ' ' || e.key === 'Enter') release();
-        }}
-        onClick={() => {
-          if (still) arm();
-        }}
-      >
-        {children}
-      </button>
+      {sided ? (
+        <>
+          {/* The label is the disc in the middle — scenery now; the SIDES
+              are the controls, and each one's accessible name is the whole
+              action in its own voice, which is what a voice-control user
+              would say. */}
+          <span className="splash-holdkey-disc" aria-hidden="true">
+            {children}
+          </span>
+          <button
+            type="button"
+            className="splash-holdkey-side"
+            data-side="silent"
+            aria-label={names.silent}
+            title={names.silent}
+            {...holdHandlers(false)}
+          >
+            <span className="splash-holdkey-chip">
+              <VoiceGlyph off />
+            </span>
+          </button>
+          <button
+            type="button"
+            className="splash-holdkey-side"
+            data-side="voiced"
+            aria-label={names.voiced}
+            title={names.voiced}
+            {...holdHandlers(true)}
+          >
+            <span className="splash-holdkey-chip">
+              <VoiceGlyph />
+            </span>
+          </button>
+        </>
+      ) : (
+        /* No speech engine, no sides — the whole ring is one quiet door,
+           exactly as 4a's cluster collapsed. */
+        <button
+          type="button"
+          className="splash-door splash-holdkey-button"
+          {...holdHandlers(false)}
+        >
+          {children}
+        </button>
+      )}
     </span>
   );
 }
 
 /**
- * V2.9 slice 4 hold — THE BASELINE KEY AND ITS SOUND TOGGLE.
- *
- * The 4a cluster's two doors are one circular key now; the narrated-or-
- * silent choice the doors carried moved into the toggle above it — Adam:
- * "Add a simple toggle layer that lets you make the button sound on/off
- * before you press down to activate the button." It is the SAME
- * `NarratorToggle` the interview header carries (it loads and writes the
- * one preference, and hides itself where no speech engine exists), so the
- * choice survives the ride exactly as the doors' choice did — and the 4a
- * bug class cannot return, because the control that loads the stored answer
- * is back to being the control that writes it. The silent sentence is
- * recorded in strings.ts rather than deleted, per the `splashBuild`
- * precedent.
+ * The baseline key. The ring pass folded the sound toggle into the sides,
+ * so this is just the dressed HoldKey — the heading lives on the disc, the
+ * choice lives in the band.
  */
 function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }) {
   return (
     <div className="splash-basekey">
-      <NarratorToggle />
-      <HoldKey className="splash-basekey-key" size={160} still={still} onArmed={onEnter}>
+      <HoldKey
+        className="splash-basekey-key"
+        size={156}
+        still={still}
+        names={{ voiced: S.splashBaseline, silent: S.splashBaselineSilent }}
+        onArmed={onEnter}
+      >
         <span className="splash-basekey-label">
           {S.splashBaselineLead}{' '}
           <span className="splash-cluster-span">{S.splashBaselineSpan}</span>
@@ -473,8 +597,14 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
           fill="none"
         />
       </svg>
-      <HoldKey className="splash-launch-key" size={120} still={still} onArmed={armed}>
-        {S.splashStraight}
+      <HoldKey
+        className="splash-launch-key"
+        size={118}
+        still={still}
+        names={{ voiced: S.splashStraight, silent: S.splashStraightSilent }}
+        onArmed={armed}
+      >
+        <span className="splash-launch-label">{S.splashStraight}</span>
       </HoldKey>
     </div>
   );
@@ -574,7 +704,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
            hold pass sit staggered side by side — fed the vertical geometry,
            their overlapping rows turned the S-mirror into a loop the size of
            the screen, which is how this parameter earned its place. */
-        axis: 'v' | 'h' = 'v',
+        axis: 'v' | 'h' | 'vr' = 'v',
       ) => {
         const from = restRef.current[fromPart];
         const to = restRef.current[toPart];
@@ -582,19 +712,49 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         const link = linkAt(t, toPart);
         const a = partAt(t, fromPart);
         const b = partAt(t, toPart);
+        /* A point on a key's ring by CLOCK HOUR (Adam's own bearings —
+           "the 3 O'Clock mark", "the 5:30 mark", "the 7-8 O'Clock mark"),
+           tucked INSIDE the thick band so the squiggle's tip is swallowed
+           and no seam ever shows. */
+        const rim = (
+          key: { cx: number; cy: number; r: number },
+          hour: number,
+          dx: number,
+          dy: number,
+        ) => {
+          const th = (hour / 12) * 2 * Math.PI;
+          const rad = key.r - 8;
+          return { x: key.cx + rad * Math.sin(th) + dx, y: key.cy - rad * Math.cos(th) + dy };
+        };
         let d: string;
         if (axis === 'h') {
+          /* Baseline 5:30 down and out to the LEFT, below both rims, and
+             back up into the launch key's 7:30 — the dip is the room the
+             blue-to-aqua transition breathes in. */
           const fk = from.key;
           const tk = to.key;
           if (!fk || !tk) return;
-          const x1 = fk.cx + a.x + fk.r * 0.9;
-          const y1 = fk.cy + a.y + fk.r * 0.3;
-          const x2 = tk.cx + b.x - tk.r * 0.72;
-          const y2 = tk.cy + b.y - tk.r * 0.55;
-          const mx = (x1 + x2) / 2;
+          const A = rim(fk, 5.5, a.x, a.y);
+          const B = rim(tk, 7.5, b.x, b.y);
+          const dip = Math.max(A.y, B.y) + 34;
           d =
-            `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${(mx + wiggle).toFixed(1)} ${(y1 + 20).toFixed(1)}, ` +
-            `${(mx - wiggle).toFixed(1)} ${(y2 - 20).toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+            `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} C ${(A.x - 12 - wiggle).toFixed(1)} ${(A.y + 30).toFixed(1)}, ` +
+            `${((A.x + B.x) / 2 - 30).toFixed(1)} ${dip.toFixed(1)}, ${((A.x + B.x) / 2 + 4).toFixed(1)} ${(dip - 4).toFixed(1)} ` +
+            `S ${(B.x - 34).toFixed(1)} ${(B.y + 26).toFixed(1)}, ${B.x.toFixed(1)} ${B.y.toFixed(1)}`;
+        } else if (axis === 'vr') {
+          /* Down from the section, dragged OUT to the right of the key, and
+             in through its 3 o'clock — the swing is where the fuchsia turns
+             blue without being crammed against the ring. */
+          const tk = to.key;
+          if (!tk) return;
+          const x1 = from.cx + a.x;
+          const y1 = from.bottom + a.y + 6;
+          const B = rim(tk, 3, b.x, b.y);
+          const gap = B.y - y1;
+          d =
+            `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${(x1 - wiggle).toFixed(1)} ${(y1 + gap * 0.35).toFixed(1)}, ` +
+            `${(B.x + 52).toFixed(1)} ${(B.y - gap * 0.4).toFixed(1)}, ${(B.x + 46).toFixed(1)} ${(B.y - 16).toFixed(1)} ` +
+            `S ${(B.x + 30).toFixed(1)} ${B.y.toFixed(1)}, ${B.x.toFixed(1)} ${B.y.toFixed(1)}`;
         } else {
           const x1 = from.cx + a.x;
           const y1 = from.bottom + a.y + 6;
@@ -634,7 +794,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
          to blue down into the baseline heading, blue to the aqua the count
          wears down into the launch key. The colour keeps handing itself
          forward, which is what makes five separate things one route. */
-      drawLink(path3Ref.current, 'privacy', 'baseline', 14);
+      drawLink(path3Ref.current, 'privacy', 'baseline', 14, 'vr');
       drawLink(path4Ref.current, 'baseline', 'launch', 12, 'h');
 
       const c = countAt(t);

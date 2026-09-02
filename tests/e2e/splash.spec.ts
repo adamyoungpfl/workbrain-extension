@@ -124,11 +124,16 @@ async function launchPanel(
  * up. `hover` carries Playwright's actionability wait, which is what holds
  * this back until the part is pressable at all.
  */
-async function holdKey(page: Page, which: 'baseline' | 'launch') {
+async function holdKey(
+  page: Page,
+  which: 'baseline' | 'launch',
+  side: 'voiced' | 'silent' = 'voiced',
+) {
+  /* The ring pass: the SIDES are the controls — a real browser has a speech
+     engine, so the sided form is what renders. The collapsed single button
+     exists only where speech does not (jsdom's world, the unit suite's). */
   const key = page.locator(
-    which === 'baseline'
-      ? '.splash-basekey-key .splash-holdkey-button'
-      : '.splash-launch-key .splash-holdkey-button',
+    `${which === 'baseline' ? '.splash-basekey-key' : '.splash-launch-key'} .splash-holdkey-side[data-side='${side}']`,
   );
   await key.hover();
   await page.mouse.down();
@@ -587,12 +592,12 @@ test.describe('VB-128 — every exit, at every moment', () => {
        straight in. A control reachable only after the choice it applies to is
        gone was the problem the toggle-first order solved; a choice that IS the
        door cannot have it. */
-    /* The hold pass: the sound toggle is FIRST — the 2026-09-02 order,
-       returned with the toggle itself: narration is chosen before the key it
-       applies to is held. Then the two keys, baseline before launch. The
-       toggle's visible word is short; its accessible name is the sentence. */
+    /* The ring pass: four stops, the silent side of each key before its
+       voiced one (left before right, the reading order), baseline key before
+       launch. Every side's accessible name is the whole action in its own
+       voice. */
     const order: string[] = [];
-    for (let i = 0; i < 3; i++) {
+    for (let i = 0; i < 4; i++) {
       await page.keyboard.press('Tab');
       order.push(
         await page.evaluate(
@@ -603,7 +608,12 @@ test.describe('VB-128 — every exit, at every moment', () => {
         ),
       );
     }
-    expect(order).toEqual([S.narrator, S.splashBaseline, S.splashStraight]);
+    expect(order).toEqual([
+      S.splashBaselineSilent,
+      S.splashBaseline,
+      S.splashStraightSilent,
+      S.splashStraight,
+    ]);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
@@ -885,69 +895,62 @@ test.describe('V2.9 slice 3 — the sections stop', () => {
   });
 });
 
-test.describe('V2.9 slice 4 hold — the sound toggle and the baseline key', () => {
-  /* `.sync`, not `.local`: preferences follow the person to their other
-     machine, which is what `setSync` in core/storage/client.ts means and what
-     `wb:prefs` has always been written to. Read from the page rather than
-     asserted through the UI, because what is being checked is that the toggle
-     SAVED the answer — a toggle that flips on screen and forgets is exactly
-     the bug class 4a documented. */
+test.describe('V2.9 — the ring is the choice: sides, not a toggle', () => {
   const narratorPref = (page: Page) =>
     page.evaluate(async () => {
       const stored = await chrome.storage.sync.get('wb:prefs');
       return (stored['wb:prefs'] as { narrator?: boolean } | undefined)?.narrator ?? null;
     });
 
-  test('the toggle turns the sound ON, and the held key goes in with it', async () => {
+  test('holding the talking side goes in with the voice ON', async () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* Adam (2026-09-01): "a simple toggle layer that lets you make the
-       button sound on/off before you press down to activate the button."
-       4a's two doors became one circular key, and the narrated-or-silent
-       choice moved into this toggle — the interview header's own control,
-       writing the one preference the narrator reads. */
-    await page.locator('.splash-basekey .narrator-toggle').click();
-    expect(await narratorPref(page)).toBe(true);
-
-    await holdKey(page, 'baseline');
+    /* Adam (2026-09-02): the voice choice lives IN the outline — talking
+       silhouette at three o'clock, struck one at nine — and the held side is
+       both the answer and the way through: 4a's law, back in a circle. */
+    await holdKey(page, 'baseline', 'voiced');
     await expect(page.locator('.flow')).toHaveCount(1, { timeout: 15_000 });
     expect(await narratorPref(page)).toBe(true);
 
     await context.close();
   });
 
-  test('and turns it OFF for somebody who had it on', async () => {
-    /* Opened with the narrator ALREADY ON — the only state in which the
-       toggle has anything to write, since `setPref` returns early on an
-       unchanged value. */
+  test('and the struck side turns it OFF for somebody who had it on', async () => {
+    /* Narrator already on — the only state where the silent side has
+       anything to write, since `setPref` returns early on an unchanged
+       value. */
     const { context, page } = await launchPanel({ narrator: true });
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
     expect(await narratorPref(page)).toBe(true);
 
-    await page.locator('.splash-basekey .narrator-toggle').click();
-    await expect(page.locator('.splash-basekey .narrator-toggle')).toHaveAttribute(
-      'aria-pressed',
-      'false',
-    );
+    await holdKey(page, 'baseline', 'silent');
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 15_000 });
     expect(await narratorPref(page)).toBe(false);
 
     await context.close();
   });
 
-  test('the toggle is back on this screen at Adam’s word, at the full target size', async () => {
+  test('both keys carry both sides, at the full target size, and no toggle stands apart', async () => {
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* REVERSES the 4a test that stood here ("no mute toggle above the
-       doors"). 4a's objection — the screen asking twice — applied while the
-       DOORS carried the narrated-or-silent choice; one circular key cannot,
-       so the toggle is the only carrier left and Adam asked for it by name.
-       Recorded here because the old assertion was also a recorded decision. */
-    const toggle = page.locator('.splash-basekey .narrator-toggle');
-    await expect(toggle).toHaveCount(1);
-    const box = (await toggle.boundingBox())!;
-    expect(box.height).toBeGreaterThanOrEqual(44);
+    /* The hold pass's standalone toggle folded into the rings (Adam's ask,
+       by name); each side is a real 44px control however small its chip
+       draws, and its accessible name is the whole action in its own voice. */
+    await expect(page.locator('.splash .narrator-toggle')).toHaveCount(0);
+    for (const [key, name] of [
+      ['.splash-basekey-key', S.splashBaseline],
+      ['.splash-basekey-key', S.splashBaselineSilent],
+      ['.splash-launch-key', S.splashStraight],
+      ['.splash-launch-key', S.splashStraightSilent],
+    ] as const) {
+      const side = page.locator(key).getByRole('button', { name, exact: true });
+      await expect(side).toHaveCount(1);
+      const box = (await side.boundingBox())!;
+      expect(box.width, `${name} is under the target floor`).toBeGreaterThanOrEqual(44);
+      expect(box.height, `${name} is under the target floor`).toBeGreaterThanOrEqual(44);
+    }
 
     await context.close();
   });
@@ -956,13 +959,12 @@ test.describe('V2.9 slice 4 hold — the sound toggle and the baseline key', () 
     const { context, page } = await launchPanel();
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* The hold IS the confirmation — a launch is not a thing to trip over,
-       and this product refuses confirmation dialogs (GUARDRAILS), so the
+    /* The hold IS the confirmation — this product refuses dialogs, so the
        charge is where the second thought lives. A tap and a half-hold must
        both come to nothing. */
-    const key = page.locator('.splash-basekey-key .splash-holdkey-button');
-    await key.click();
-    await key.hover();
+    const side = page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']");
+    await side.click();
+    await side.hover();
     await page.mouse.down();
     await page.waitForTimeout(HOLD_MS * 0.3);
     await page.mouse.up();
@@ -971,6 +973,27 @@ test.describe('V2.9 slice 4 hold — the sound toggle and the baseline key', () 
     await expect(page.locator('.splash-rocketstage')).toHaveCount(0);
     await expect(page.locator('.splash')).toHaveCount(1);
     await expect(page.locator('.flow')).toHaveCount(0);
+
+    await context.close();
+  });
+
+  test('the armed ring fills in the key’s colour across the count', async () => {
+    const { context, page } = await launchPanel();
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
+
+    /* "Which ever side the[y] click the rest of the outline fills in that
+       color during the countdown" — the fill circle's dash walks closed on
+       the count's own clock. Two reads a beat apart prove it is FILLING,
+       not merely on. */
+    await holdKey(page, 'baseline', 'voiced');
+    const fill = page.locator('.splash-basekey-key .splash-holdkey-fill');
+    await expect(fill).toHaveCSS('opacity', '1', { timeout: 3000 });
+    const at = async () =>
+      fill.evaluate((el) => parseFloat(getComputedStyle(el).strokeDashoffset));
+    const first = await at();
+    await page.waitForTimeout(500);
+    const second = await at();
+    expect(second, 'the ring is not filling').toBeLessThan(first);
 
     await context.close();
   });

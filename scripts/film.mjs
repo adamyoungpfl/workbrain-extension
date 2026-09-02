@@ -85,9 +85,8 @@ if (LAUNCH || BASELINE) {
      (the parts are pointer-events:none while they arrive), and the frames
      are anchored at the ARM — the moment the countdown starts. */
   const key = page.locator(
-    BASELINE
-      ? '.splash-basekey-key .splash-holdkey-button'
-      : '.splash-launch-key .splash-holdkey-button',
+    (BASELINE ? '.splash-basekey-key' : '.splash-launch-key') +
+      " .splash-holdkey-side[data-side='voiced']",
   );
   await key.hover({ timeout: 20000 });
   await page.mouse.down();

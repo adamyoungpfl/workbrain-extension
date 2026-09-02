@@ -1738,6 +1738,11 @@ export const S = {
   /* "Just get started" hedged — the word "just" made the shorter road sound
      like the lesser one, which is not the fork this screen is offering. */
   splashStraight: 'Launch Workbrain',
+  /* [DRAFT] The ring pass (Adam, 2026-09-02): both keys carry the voice
+     choice in their own outline — a talking silhouette on the right, the
+     same struck through on the left — so the launch key needs a name for
+     its silent side too. Same shape as the baseline pair. */
+  splashStraightSilent: 'Launch Workbrain in silence',
   /* D1's offer screen, at the end of the goal gate. The one moment a true
      baseline can be taken — after they have said what they want, before the
      file exists to help with it.

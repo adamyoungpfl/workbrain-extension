@@ -38,7 +38,7 @@ async function openBaseline(reduced: boolean): Promise<{ context: BrowserContext
   if (reduced) {
     await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
   } else {
-    await page.locator('.splash-basekey-key .splash-holdkey-button').hover();
+    await page.locator(".splash-basekey-key .splash-holdkey-side[data-side='voiced']").hover();
     await page.mouse.down();
     await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
     await page.mouse.up();

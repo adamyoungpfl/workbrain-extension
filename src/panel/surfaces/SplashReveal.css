@@ -275,18 +275,25 @@
    its own words. */
 .splashreveal-part[data-part='baseline'] {
   width: 100%;
-  margin-top: 6px;
+  /* Down a bit (Adam, 2026-09-02) — the 3 o'clock squiggle needs the room
+     above-right of the ring to make its swing. */
+  margin-top: 18px;
 }
 .splashreveal-part[data-part='launch'] {
   display: flex;
   flex-direction: column;
   align-items: center;
-  width: 100%;
+  /* Hugs its key, NOT full width: this part is pulled up across the
+     baseline ring's row, and a full-width box here intercepted every
+     pointer aimed at the baseline key's right-hand chip — the hover
+     actionability failure that took out half the suite before anything
+     visual ever looked wrong. */
+  width: auto;
   /* Pulled up beside the baseline circle — the two keys sit staggered on a
      diagonal now (their leans are core's, in the reveal table), which costs
      the column less height than two stacked bars did and gives the squiggle
      between them a real journey. */
-  margin-top: -118px;
+  margin-top: -112px;
 }
 
 /* THE LOCKUP IS A LOCKUP (Adam, 2026-09-01: "Reduce the padding between
