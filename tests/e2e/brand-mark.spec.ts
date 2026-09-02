@@ -100,7 +100,11 @@ async function waitForFrames(page: Page, n: number) {
  * instead. The claims themselves did not change: same component, same loop,
  * same reduced-motion bar, same still pose.
  */
-const BIG_MARK = '.splash-lockup .brand-mark';
+/* `.splashreveal`, not the old `.splash-lockup`: V2.9 slice 2 rebuilt the
+   reveal as choreographed parts and the lockup classname went with it. These
+   four tests spent days timing out on the stale selector and reading as
+   machine flake — the 30s timeout looked identical to load. */
+const BIG_MARK = ".splashreveal-part[data-part='lockup'] .brand-mark";
 
 /** Holds the splash open and waits for its lockup — where the big mark lives. */
 async function atTheBigMark(page: Page) {
@@ -218,10 +222,12 @@ test.describe('VB-13 — the big mark turns', () => {
     const { context, page } = await launchPanel({ keepSplash: true });
     await atTheBigMark(page);
     const mark = page.locator(BIG_MARK);
-    // Past the one-time entrance, which is a real fade-and-scale and does
-    // change the box — deliberately, once, on arrival. What must never change
-    // is the box while the thing is *turning*.
-    await page.waitForTimeout(500);
+    // Past the one-time entrance AND the reveal's choreography: since V2.9
+    // slice 2 the lockup part is deliberately translated up the screen as
+    // the sections arrive (settled at 5.3s into the reveal, plus margin for
+    // a loaded machine). What must never change is the box while the thing
+    // is *turning* — the spine's transforms are somebody else's motion.
+    await page.waitForTimeout(6500);
 
     const boxes: string[] = [];
     for (let i = 0; i < 8; i++) {

@@ -211,7 +211,40 @@ test.describe('Home surface (R1-12)', () => {
         { timeout: 15_000 },
       )
       .toMatch(/^proof/);
-    await page.getByRole('button', { name: S.goHome, exact: true }).click();
+    /* VB-112's mark-door became the narrator (2026-09-02) and the bare
+       proof screens carry no jump control, so `S.goHome` stopped existing
+       here — this click sat at a 30s timeout for days reading as machine
+       flake. The way home now is THROUGH the proof: every rung takes Skip
+       ("later" is a real answer that costs nothing —
+       docs/MEASUREMENT-SPINE.md), and walking them out lands on Home when
+       the proof flow completes. Next stands in on any rung without a Skip. */
+    await expect
+      .poll(
+        async () => {
+          if (await page.locator('.home, .flow-done').count()) return 'end';
+          const skip = page.getByRole('button', { name: S.skip, exact: true });
+          if (await skip.count()) {
+            await skip.click({ timeout: 1500 }).catch(() => {});
+          } else {
+            await page
+              .getByRole('button', { name: S.next, exact: true })
+              .click({ timeout: 1500 })
+              .catch(() => {});
+          }
+          return (await page.locator('.home, .flow-done').count()) ? 'end' : 'flow';
+        },
+        { timeout: 25_000, intervals: [400] },
+      )
+      .toBe('end');
+    /* The proof's closing screen offers only FORWARD doors — feedback and
+       the Skills hand-off — which is BS-03a's momentum working as designed.
+       Home-state is reached the way a person reaches it from there: by
+       reopening the panel. The splash is once-per-session, so the reload
+       lands straight on Home. */
+    if (!(await page.locator('.home').count())) {
+      await page.reload();
+      await page.waitForSelector('.home', { timeout: 10_000 });
+    }
 
     // V2.8 VB-132a: the all-current banner is gone (redundant beside the
     // card's own status) — the quiet state is genuinely quiet, and the
