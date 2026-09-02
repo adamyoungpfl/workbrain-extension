@@ -71,4 +71,8 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
+  /* V3.0 pass 1: the universe reads through a dense screen's furniture
+     dimmer than behind the splash's one card - the lift keeps the two
+     EXPERIENCES consistent, which is what the brief asks of the canvas. */
+  --universe-dim: 1.7;
 }

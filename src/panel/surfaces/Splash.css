@@ -103,11 +103,9 @@
 .splash-intro-globe {
   position: absolute;
   inset: 0;
-  display: grid;
-  place-items: center;
-  /* Pencil grey: the coloured mark desaturated to graphite and barely
-     there — the brain model's own background idiom, repurposed. */
-  filter: grayscale(1);
+  /* The graphite treatment moved to scenery/Universe.css with the field
+     itself (V3.0 pass 1); what stays here is the ARRIVAL - the fade-in
+     that belongs to the intro, not to the canvas. */
   opacity: 0;
   /* Faint lives on the WRAPPER: the target is the whole lattice at 15%,
      which the first cut missed by pinning 15% to a class the component
@@ -118,25 +116,6 @@
 @keyframes splash-intro-in {
   to {
     opacity: 1;
-  }
-}
-/* One lattice of the universe: centred on its point, translucent by its
-   presence, and turning at its own pace — a slow 2D turn laid over the
-   shared orbit, so no two read alike. */
-.splash-intro-orb {
-  position: absolute;
-  transform: translate(-50%, -50%);
-  animation-name: splash-orb-turn;
-  animation-timing-function: linear;
-  animation-iteration-count: infinite;
-  will-change: transform;
-}
-@keyframes splash-orb-turn {
-  from {
-    transform: translate(-50%, -50%) rotate(0deg);
-  }
-  to {
-    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 @keyframes splash-intro-rise {

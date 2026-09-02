@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { BrandMark, BuildStamp } from '../components';
+import { Universe } from '../scenery/Universe';
 import { SplashReveal } from './SplashReveal';
 import { SplashRocket } from './SplashRocket';
 import { S } from '../strings';
@@ -60,16 +61,6 @@ export const SPLASH_FADE_MS = 320;
  * of each mark), presence (opacity: nearness), pace (seconds per own slow
  * turn), and a breath of blur on the far ones. Fixed, not rolled: the same
  * universe every open. */
-const UNIVERSE = [
-  { x: 50, y: 44, size: 520, presence: 0.16, pace: 160, reverse: false, blur: 0 },
-  { x: 12, y: 16, size: 230, presence: 0.1, pace: 120, reverse: true, blur: 0.5 },
-  { x: 88, y: 24, size: 170, presence: 0.08, pace: 95, reverse: false, blur: 1 },
-  { x: 18, y: 82, size: 300, presence: 0.11, pace: 140, reverse: false, blur: 0.5 },
-  { x: 86, y: 76, size: 140, presence: 0.07, pace: 80, reverse: true, blur: 1.4 },
-  { x: 62, y: 6, size: 110, presence: 0.05, pace: 70, reverse: true, blur: 1.8 },
-  { x: 38, y: 96, size: 120, presence: 0.06, pace: 105, reverse: false, blur: 1.6 },
-];
-
 const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
 
 /**
@@ -433,23 +424,13 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
                 smallness, faintness and a breath of blur, and each one's
                 own pace is a slow container turn laid over the shared
                 orbit — no two alike, none in a hurry. */}
+            {/* V3.0 pass 1: the field is SHARED SCENERY now
+                (scenery/Universe.tsx) - the same component App grounds
+                every screen with, so the open and the app cannot drift.
+                The wrapper keeps the intro's own arrival (the fade-in)
+                and its test seam. */}
             <div className="splash-intro-globe">
-              {UNIVERSE.map((u) => (
-                <span
-                  key={`${u.x}-${u.y}`}
-                  className="splash-intro-orb"
-                  style={{
-                    left: `${u.x}%`,
-                    top: `${u.y}%`,
-                    opacity: u.presence,
-                    filter: u.blur ? `blur(${u.blur}px)` : undefined,
-                    animationDuration: `${u.pace}s`,
-                    animationDirection: u.reverse ? 'reverse' : 'normal',
-                  }}
-                >
-                  <BrandMark size={u.size} spin="orbit" />
-                </span>
-              ))}
+              <Universe />
             </div>
             <div className="splash-intro-card">
               <BrandMark size={92} spin="orbit" />

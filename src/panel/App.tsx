@@ -8,7 +8,7 @@ import { Flow } from './surfaces/Flow';
 import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
 import { Splash } from './surfaces/Splash';
-import { WallPanels } from './components/WallPanels';
+import { Universe } from './scenery/Universe';
 import { getSession, setSession } from '../core/storage/client';
 import { FeedbackSheet, Button } from './components';
 import { getLocal } from '../core/storage/client';
@@ -542,8 +542,15 @@ export default function App() {
           content — no stacking change to <main>, which must stay unstyled;
           see App.css's header for why). Surfaces sit transparent on it;
           white survives only inside buttons, inputs and cards. */}
+      {/* V3.0 pass 1 (Adam, 2026-09-02): the wall panels retire and the
+          SPLASH'S OWN UNIVERSE grounds every screen - "it draws you back
+          and orients you to the interview canvas as compared to the main
+          browser screen. A steady part of the console type of feel."
+          Same component the intro renders, identical faintness -
+          consistency by construction. WallPanels stays benched, tested,
+          the way SplashStage did. */}
       <div className="app-ground" aria-hidden="true">
-        <WallPanels />
+        <Universe />
       </div>
       <main className="app-main" {...(inertWhileCovered as Record<string, string>)}>
         <h1 className="app-sr">{S.appName}</h1>

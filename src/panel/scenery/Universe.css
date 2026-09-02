@@ -1,0 +1,41 @@
+/* The universe's own dress — see Universe.tsx. The graphite treatment
+   (grayscale on the whole field) lives HERE so both hosts get it; how the
+   field ARRIVES (the splash's fade-in, the app's plain presence) belongs
+   to each host. */
+.universe {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  /* Pencil grey: the coloured mark desaturated to graphite and barely
+     there — the brain model's own background idiom. */
+  filter: grayscale(1);
+}
+/* One lattice: centred on its point, translucent by its presence, and
+   turning at its own pace — a slow 2D turn laid over the shared orbit,
+   so no two read alike. */
+.universe-orb {
+  position: absolute;
+  opacity: calc(var(--presence, 0.1) * var(--universe-dim, 1));
+  transform: translate(-50%, -50%);
+  animation-name: universe-turn;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+@keyframes universe-turn {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The field stays — scenery is not motion — but every turn stills, the
+     container's and the BrandMark's own orbit both (the mark's spin is
+     its own animation; stilled here so the canvas schedules nothing). */
+  .universe-orb,
+  .universe-orb * {
+    animation: none !important;
+  }
+}
