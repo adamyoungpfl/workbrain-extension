@@ -848,7 +848,7 @@
 /* THE TIME CHIP: a little tab hung under each key. The label is quiet, the
    number is the point — specific to the second. */
 .splash-eta {
-  margin: 5px 0 0;
+  margin: 2px 0 0;
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -872,13 +872,15 @@
 /* The word between the pills — the fork said out loud. */
 .splash-or {
   display: block;
-  /* CENTRED BETWEEN THE PILLS (Adam, 2026-09-02: "perfectly centered") -
-     probed, not eyeballed: the negative top margin pulls the word up into
-     the eta chip's slack until the gap from the pre-launch pill's bottom
-     to OR's centre equals the gap from OR's centre to the launch pill's
-     top (49px each on the 720 probe). Re-probe if the chip or the pills
-     change height. */
-  margin: -11px 0 16px;
+  /* CENTRED IN THE CLEAR LANE (Adam, 2026-09-02, two briefs in
+     tension): "perfectly centered between the buttons" and then "the
+     squiggly line clear of the average completion time marker". The eta
+     chip eats 17px of the upper lane, so both cannot hold at once - the
+     call is EQUAL VISIBLE RUNS: 14px of squiggle above OR (starting below
+     the chip) and 14px below, which is what the eye reads as centred.
+     Probed, not eyeballed; the two levers are this margin and
+     .splash-launch's margin-top. Re-probe if the chip or pills change. */
+  margin: 0 0 16px;
   /* The section headers' own size (Adam, 2026-09-02) — the fork is a peer
      of the claims above it, not a footnote between two buttons. */
   font-size: 17px;
@@ -922,6 +924,14 @@
   color: var(--splash-link-end);
   border: 1px solid var(--splash-link-end);
 }
+.splash-basekey-key,
+.splash-launch-key {
+  /* The lift (Adam, 2026-09-02): "a little subtle shadow on the buttons
+     on the bottom left corner as the focus… a little elevated on the
+     page, but subtly". Down-and-left, black on the near-black field - a
+     soft deepening under one corner, not a glow and not a design element. */
+  box-shadow: -6px 8px 16px rgba(0, 0, 0, 0.8);
+}
 .splash-basekey-key .splash-split-main,
 .splash-basekey-key .splash-split-silent {
   color: var(--ink-inv);
@@ -948,6 +958,7 @@
 /* THE LAUNCH PILL: filled in the count's aqua, INK text, the mock's top
    row. Its silent segment mirrors with the same hue a shade deeper. */
 .splash-launch-key {
+  width: 100%;
   color: var(--globe-node-2-solid);
   /* The same outline treatment as the key above it — one silhouette rule
      for both, which is what retired the launch pill's "exposed corners". */
@@ -990,11 +1001,15 @@
    under, and the door is exactly as pressable with it as without. */
 .splash-launch {
   position: relative;
+  /* Same box as the pre-launch pill (Adam, 2026-09-02): full part width,
+     which is exactly what .splash-basekey's key gets - probed equal at
+     302x82 on the 400 panel. */
+  width: 100%;
   /* The other half of the stagger - and the drop Adam asked for ("the
      launch workbrain button can move down a little to make space"): the
      lower squiggle gets the length it needs to show the green arriving. */
   transform: translateX(-14px);
-  margin-top: 23px;
+  margin-top: 20px;
 }
 .splash-cable {
   position: absolute;

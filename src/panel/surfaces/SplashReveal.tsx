@@ -63,6 +63,10 @@ interface Box {
   /** The "OR" between the pills, when the part carries one — the grown
    *  squiggle runs from under it into the key below. */
   or?: { cx: number; top: number; bottom: number };
+  /** The eta chip's lower edge - the upper squiggle's landfall measures
+   *  off it (Adam, 2026-09-02: "clear of the average completion time
+   *  marker"), so clearance holds by construction if the chip changes. */
+  eta?: { bottom: number };
 }
 
 export interface SplashRevealProps {
@@ -678,6 +682,11 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           h: kb.height,
         };
       }
+      const etaEl = el.querySelector('.splash-eta');
+      if (etaEl) {
+        const eb = etaEl.getBoundingClientRect();
+        next[part]!.eta = { bottom: eb.bottom - frame.top };
+      }
       const orEl = el.querySelector('.splash-or');
       if (orEl) {
         const ob = orEl.getBoundingClientRect();
@@ -799,10 +808,10 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
               `${(x2 + 9).toFixed(1)} ${m.toFixed(1)}, ${x2.toFixed(1)} ${yb.toFixed(1)}`
             );
           };
-          up.setAttribute(
-            'd',
-            seg(orX, part.or.top + b.y - 8, base.key.cx + a.x, base.key.cy + a.y + base.key.h / 2 + 14),
-          );
+          const upperFoot = base.eta
+            ? base.eta.bottom + 8
+            : base.key.cy + base.key.h / 2 + 14;
+          up.setAttribute('d', seg(orX, part.or.top + b.y - 8, base.key.cx + a.x, upperFoot + a.y));
           down.setAttribute(
             'd',
             seg(orX, part.or.bottom + b.y + 8, part.key.cx + b.x, part.key.cy + b.y - part.key.h / 2 - 14),
