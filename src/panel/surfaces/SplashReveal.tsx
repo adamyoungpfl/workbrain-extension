@@ -662,9 +662,13 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           dy: number,
         ) => {
           if (hour === 3) return { x: key.cx + key.w / 2 - 6 + dx, y: key.cy + dy };
-          if (hour === 5.5) return { x: key.cx + key.w * 0.18 + dx, y: key.cy + key.h / 2 - 6 + dy };
-          /* 7.5 — into the lower-left run of the pill. */
-          return { x: key.cx - key.w * 0.32 + dx, y: key.cy + key.h / 2 - 6 + dy };
+          if (hour === 5.5) return { x: key.cx + key.w * 0.2 + dx, y: key.cy + key.h / 2 - 6 + dy };
+          /* 7.5 — the lower-left ARC of the pill's end cap, entered from
+             below-left, so the line's whole journey stays in clear space:
+             never over a button, never under one. */
+          const cap = { x: key.cx - key.w / 2 + key.h / 2, y: key.cy };
+          const r = key.h / 2 - 4;
+          return { x: cap.x - r * 0.7 + dx, y: cap.y + r * 0.7 + dy };
         };
         let d: string;
         if (axis === 'h') {
@@ -676,11 +680,14 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           if (!fk || !tk) return;
           const A = edge(fk, 5.5, a.x, a.y);
           const B = edge(tk, 7.5, b.x, b.y);
-          const dip = B.y + 30;
+          /* The route lives in the GAP the layout now reserves: down from
+             5:30 into the space between the pills, one easy bend left, and
+             up into the lower-left arc — never crossing either box. */
+          const midY = (A.y + B.y) / 2;
           d =
-            `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} C ${(A.x - 18 - wiggle).toFixed(1)} ${(A.y + 26).toFixed(1)}, ` +
-            `${(B.x - 52).toFixed(1)} ${dip.toFixed(1)}, ${(B.x - 30).toFixed(1)} ${(dip - 2).toFixed(1)} ` +
-            `S ${(B.x - 4).toFixed(1)} ${(B.y + 18).toFixed(1)}, ${B.x.toFixed(1)} ${B.y.toFixed(1)}`;
+            `M ${A.x.toFixed(1)} ${A.y.toFixed(1)} C ${(A.x - 10 - wiggle).toFixed(1)} ${(A.y + 22).toFixed(1)}, ` +
+            `${(B.x - 26 + wiggle).toFixed(1)} ${(midY - 6).toFixed(1)}, ${(B.x - 30).toFixed(1)} ${(midY + 10).toFixed(1)} ` +
+            `S ${(B.x - 26).toFixed(1)} ${(B.y + 4).toFixed(1)}, ${B.x.toFixed(1)} ${B.y.toFixed(1)}`;
         } else if (axis === 'vr') {
           /* Down from the section, dragged OUT to the right of the pill, and
              in through its 3 o'clock — the swing is where the fuchsia turns
@@ -691,10 +698,13 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           const y1 = from.bottom + a.y + 6;
           const B = edge(tk, 3, b.x, b.y);
           const gap = B.y - y1;
+          /* Out into the right-hand lane the narrower pill leaves free,
+             down it, and in level with the edge's middle — clear of the
+             button the whole way. */
           d =
-            `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${(x1 - wiggle).toFixed(1)} ${(y1 + gap * 0.35).toFixed(1)}, ` +
-            `${(B.x + 42).toFixed(1)} ${(B.y - gap * 0.45).toFixed(1)}, ${(B.x + 36).toFixed(1)} ${(B.y - 14).toFixed(1)} ` +
-            `S ${(B.x + 24).toFixed(1)} ${B.y.toFixed(1)}, ${B.x.toFixed(1)} ${B.y.toFixed(1)}`;
+            `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${(x1 - wiggle).toFixed(1)} ${(y1 + gap * 0.3).toFixed(1)}, ` +
+            `${(B.x + 34).toFixed(1)} ${(y1 + gap * 0.45).toFixed(1)}, ${(B.x + 30).toFixed(1)} ${(B.y - gap * 0.18).toFixed(1)} ` +
+            `S ${(B.x + 22).toFixed(1)} ${B.y.toFixed(1)}, ${B.x.toFixed(1)} ${B.y.toFixed(1)}`;
         } else {
           const x1 = from.cx + a.x;
           const y1 = from.bottom + a.y + 6;

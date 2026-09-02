@@ -287,7 +287,8 @@
      anything, and the circle era's pointer-intercept trap (recorded in the
      slice doc) cannot recur without the overlap that caused it. */
   width: 100%;
-  /* Room for the 5:30 -> 7:30 squiggle to dip between the pills. */
+  /* Room for the 5:30 -> 7:30 squiggle to travel between the pills
+     without touching either. */
   margin-top: 26px;
 }
 

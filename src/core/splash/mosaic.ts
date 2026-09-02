@@ -41,12 +41,13 @@ import { seededRandom } from './field';
 export const STAGE_W = 400;
 export const STAGE_H = 700;
 
-/** Columns and rows of panels. Twenty-eight cells since the sketch pass
- *  (Adam, 2026-09-01: "make the tiles smaller and more irregular in shape")
- *  — small enough to read as a flurry of sketches, still big enough that
- *  each is a picture of something rather than a swatch. */
-export const COLS = 4;
-export const ROWS = 7;
+/** Columns and rows of panels. GLYPH-SCALE since 2026-09-02 (Adam:
+ *  "Instead of 4-5 tiles per row, I am thinking like 20-25. Only large
+ *  enough to make out what they are in theory, like a glyph.") — ~18px
+ *  panes, seven hundred of them, each just barely a picture. The flurry is
+ *  the point now; recognising any one pane never was. */
+export const COLS = 21;
+export const ROWS = 34;
 export const CELL_COUNT = COLS * ROWS;
 
 /** How far an interior vertex may leave its lattice point, as a fraction of

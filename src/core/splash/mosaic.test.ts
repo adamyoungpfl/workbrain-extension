@@ -125,11 +125,15 @@ describe('frameAt — what each panel is holding', () => {
     expect(sameMoment).toBeLessThan(CELL_COUNT);
   });
 
-  it('shows a spread of images at any instant, not one picture fifteen times', () => {
+  it('shows a spread of images at any instant, not one picture everywhere', () => {
+    /* Derived from BOTH counts: with fifteen cells this asked for eight
+       distinct pictures; at glyph scale (hundreds of cells, seventeen
+       pictures) the honest ceiling is the image set itself, and the claim
+       is that most of it is on the wall at once. */
     const shown = new Set(
       Array.from({ length: CELL_COUNT }, (_, c) => frameAt(1.4, c, IMAGES, OVER)),
     );
-    expect(shown.size).toBeGreaterThan(CELL_COUNT / 2);
+    expect(shown.size).toBeGreaterThan(Math.min(CELL_COUNT, IMAGES) / 2);
   });
 
   it('every cell does change over the show', () => {
