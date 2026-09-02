@@ -294,7 +294,10 @@ test.describe('Home surface (R1-12)', () => {
     await expect(prove).toHaveClass(/is-waiting/);
     await expect(prove).toContainText(S.tileWaitsOnContext);
     await expect(prove.locator('button, a')).toHaveCount(0);
-    await expect(page.locator('.home-row', { hasText: S.tileDownload })).toHaveClass(/is-waiting/);
+    /* V3.0 pass 2: the download row never waits any more - it is a
+       disclosure, pressable from day one, with the waiting said inside it
+       on the component lines. */
+    await expect(page.locator('.home-row', { hasText: S.tileDownload })).not.toHaveClass(/is-waiting/);
 
     await context.close();
   });
@@ -676,18 +679,21 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     await expect(rows.nth(5)).toContainText(S.libTitle);
     await expect(rows.nth(6)).toContainText(S.plusTitle);
 
+    /* V3.0 pass 2: the download row is a DISCLOSURE - always pressable,
+       because revealing what exists is useful before anything does. The
+       waiting moved one level down, onto the component lines inside it. */
+    await expect(rows.nth(1)).not.toHaveClass(/is-waiting/);
+    await expect(rows.nth(1).locator('button.home-row-hit')).toHaveAttribute('aria-expanded', 'false');
+
     // A waiting row says what it is waiting for, in the row, as text — and
-    // the three of them wait on different things, said in their own words.
-    await expect(rows.nth(1)).toHaveClass(/is-waiting/);
-    await expect(rows.nth(1)).toContainText(S.tileWaitsOnContext);
+    // the two that wait do so on different things, in their own words.
     await expect(rows.nth(2)).toContainText(S.tileWaitsOnContext);
     await expect(rows.nth(3)).toHaveClass(/is-waiting/);
     await expect(rows.nth(3)).toContainText(S.capRowWaiting);
 
-    // AND IT HOLDS NO CONTROL AT ALL. A disabled button in the tab order is
-    // a promise the screen cannot keep — §1 took the dashed disabled square
-    // away and this is what replaced it, not a quieter version of it.
-    await expect(rows.nth(1).locator('button, a')).toHaveCount(0);
+    // AND A WAITING ROW HOLDS NO CONTROL AT ALL. A disabled button in the
+    // tab order is a promise the screen cannot keep — §1 took the dashed
+    // disabled square away and this is what replaced it.
     await expect(rows.nth(3).locator('button, a')).toHaveCount(0);
     await expect(page.locator('.home-tile')).toHaveCount(0);
 
@@ -698,25 +704,44 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     await context.close();
   });
 
-  test('finishing the Context file makes both waiting rows real (BS-06)', async () => {
+  test('the download disclosure: components, presence, each file, the folder (V3.0 pass 2)', async () => {
     const { context, sw, id } = await launchExtension();
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), nothingLeftToAsk());
 
     const page = await openPanel(context, id);
-    const rows = page.locator('.home-row');
-    for (const index of [0, 1]) {
-      await expect(rows.nth(index)).not.toHaveClass(/is-waiting/);
-      await expect(rows.nth(index).locator('button')).toHaveCount(1);
-    }
-    // …and they stop saying they are waiting.
-    await expect(page.locator('.home-rows')).not.toContainText(S.tileWaitsOnContext);
-
-    // The download really downloads — one press, no sheet.
-    const downloadPromise = page.waitForEvent('download');
+    // Open the row.
     await page.getByRole('button', { name: new RegExp(`^${S.tileDownload}`) }).click();
+    const panel = page.locator('.home-downloads');
+    await expect(panel).toBeVisible();
+
+    // Context is present (the seed answered it) and downloads by itself.
+    const downloadPromise = page.waitForEvent('download');
+    await panel.locator("[data-file='context'] button").click();
     expect((await downloadPromise).suggestedFilename()).toBe('Context.md');
     await expect(page.getByText('Downloaded. Keep it somewhere you will find it.')).toBeVisible();
 
+    // Skills has not started: words, and NO control — the waiting grammar
+    // one level down.
+    await expect(panel.locator("[data-file='skills']")).toContainText(S.downloadNotStarted);
+    await expect(panel.locator("[data-file='skills'] button")).toHaveCount(0);
+
+    // And the folder is ONE file that unzips into a Workbrain directory.
+    const zipPromise = page.waitForEvent('download');
+    await page.getByRole('button', { name: S.downloadFolder, exact: true }).click();
+    expect((await zipPromise).suggestedFilename()).toBe('Workbrain.zip');
+
+    await context.close();
+  });
+
+  test('a fresh download disclosure has nothing to hand over, and says so (V3.0 pass 2)', async () => {
+    const { context, id } = await launchExtension();
+    const page = await openPanel(context, id);
+    await page.getByRole('button', { name: new RegExp(`^${S.tileDownload}`) }).click();
+    const panel = page.locator('.home-downloads');
+    // Both components present as words with no control, and the folder
+    // button does not exist — a zip of nothing is not a download.
+    await expect(panel.locator('.home-download-wait')).toHaveCount(2);
+    await expect(panel.locator('button')).toHaveCount(0);
     await context.close();
   });
 

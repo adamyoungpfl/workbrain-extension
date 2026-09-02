@@ -1,4 +1,6 @@
 import { contextFileDate, generateContextFile } from '../../core/files/generate';
+import { generateSkillsFile } from '../../core/files/skillsFile';
+import { zipBytes, type ZipEntry } from '../../core/files/zip';
 import { parseContextFile } from '../../core/files/parse';
 import { buildImportedAnswers } from '../../core/files/restore';
 import type { Answers } from '../../schema/storage.types';
@@ -26,7 +28,12 @@ const FILE_NAME = 'Context.md';
  * detail a second copy gets wrong once and then nobody can reproduce.
  */
 export function downloadMarkdown(name: string, markdown: string): void {
-  const blob = new Blob([markdown], { type: 'text/markdown;charset=utf-8' });
+  downloadBlob(name, new Blob([markdown], { type: 'text/markdown;charset=utf-8' }));
+}
+
+/** The one anchor-click download, whatever the bytes (V3.0 pass 2 widened
+ * it from markdown when the folder zip arrived). */
+export function downloadBlob(name: string, blob: Blob): void {
   const url = URL.createObjectURL(blob);
   const link = document.createElement('a');
   link.href = url;
@@ -38,6 +45,28 @@ export function downloadMarkdown(name: string, markdown: string): void {
   // engines — the sibling app hits this same issue and defers the revoke a
   // beat; matched here for the same reason.
   setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
+
+/** Download the built Skills.md — the same generator the drawer reads
+ * (V3.0 pass 2: the expanded row hands each component over on its own). */
+export function downloadSkillsFile(answers: Answers): void {
+  downloadMarkdown('Skills.md', generateSkillsFile(answers, contextFileDate()));
+}
+
+/**
+ * THE FOLDER (V3.0 pass 2; Adam: "the full workbrain folder"). One .zip,
+ * built by core's own STORE writer — no dependency — whose entries sit
+ * under 'Workbrain/' so extracting it makes the folder the name promises.
+ * The caller says which files are PRESENT; this only packs and hands over.
+ */
+export function downloadWorkbrainFolder(files: { context?: Answers | undefined; skills?: Answers | undefined }): void {
+  const date = contextFileDate();
+  const entries: ZipEntry[] = [];
+  if (files.context) entries.push({ name: 'Workbrain/Context.md', text: generateContextFile(files.context, date) });
+  if (files.skills) entries.push({ name: 'Workbrain/Skills.md', text: generateSkillsFile(files.skills, date) });
+  if (!entries.length) return;
+  const bytes = zipBytes(entries, new Date());
+  downloadBlob('Workbrain.zip', new Blob([bytes.buffer as ArrayBuffer], { type: 'application/zip' }));
 }
 
 /** Download the built Context.md — the same bytes the drawer previews. */

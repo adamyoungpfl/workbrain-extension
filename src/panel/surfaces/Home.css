@@ -786,3 +786,63 @@ a.home-row-hit:hover .home-row-go {
   background: none;
   color: inherit;
 }
+
+/* ── V3.0 pass 2: the download disclosure ─────────────────────────────────
+   The panel opens INSIDE the row's own card - a quiet sub-list, one line
+   per component, the folder as the closing act. States follow the row
+   grammar one level down: a present file gets its own 44px download
+   control, an absent one gets words and no control. */
+.home-downloads {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 4px 14px 12px 52px;
+}
+.home-download-line {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  min-height: 36px;
+}
+.home-download-name {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 12.5px;
+  color: var(--ink);
+}
+.home-download-wait {
+  font-size: 12px;
+  color: var(--ink-3);
+}
+.home-download-get {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  margin: -4px -10px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  color: var(--primary);
+  cursor: pointer;
+}
+.home-download-get:hover {
+  background: var(--primary-tint);
+}
+.home-download-folder {
+  margin-top: 6px;
+  min-height: var(--target-min);
+  padding: 0 14px;
+  border: 1px solid var(--border-i);
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  font: inherit;
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--ink);
+  cursor: pointer;
+}
+.home-download-folder:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}

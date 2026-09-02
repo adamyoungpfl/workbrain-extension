@@ -37,7 +37,7 @@ import { LockGlyph, fileName, lockLine } from '../components/fileLabels';
 import { contextModules, contextOutline, skillsModules, skillsOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
-import { downloadContextFile } from './FileActions';
+import { downloadContextFile, downloadSkillsFile, downloadWorkbrainFolder } from './FileActions';
 import { UploadSheet } from './UploadSheet';
 import { RedeemSheet } from './RedeemSheet';
 import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
@@ -146,6 +146,8 @@ function HomeRow({
   ready,
   onPress,
   href,
+  expanded,
+  panel,
 }: {
   id: string;
   icon: ReactNode;
@@ -154,6 +156,11 @@ function HomeRow({
   ready: boolean;
   onPress?: (() => void) | undefined;
   href?: string | undefined;
+  /** V3.0 pass 2 — a row that OPENS rather than acts: aria-expanded rides
+   * the button and the panel renders inside the row's own li, so the
+   * disclosure is one list item, not a second list. */
+  expanded?: boolean | undefined;
+  panel?: ReactNode | undefined;
 }) {
   // The NAME is the verb, the SUBTITLE is the description. Both are read, and
   // in that order — but a control announced as "Redeem a skill, paste a code
@@ -206,6 +213,7 @@ function HomeRow({
           onClick={onPress}
           aria-label={label}
           aria-describedby={subId}
+          {...(expanded !== undefined ? { 'aria-expanded': expanded } : {})}
         >
           {body}
         </button>
@@ -215,6 +223,7 @@ function HomeRow({
         // screen cannot keep.
         <span className="home-row-hit">{body}</span>
       )}
+      {expanded && panel}
     </li>
   );
 }
@@ -520,6 +529,9 @@ export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpen
    * `undefined` = the key does not exist, and an absent key gets NO row —
    * the sheet's "whole list" claim has to be literally true. */
   const [storedOpen, setStoredOpen] = useState(false);
+  /** V3.0 pass 2 - the download disclosure. Local, not stored: which rows
+   * are open is a fact about this visit, not about the person. */
+  const [downloadsOpen, setDownloadsOpen] = useState(false);
   const [metaStored, setMetaStored] = useState(false);
   const [voicePref, setVoicePref] = useState<boolean | undefined>(undefined);
   const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
@@ -652,6 +664,10 @@ export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpen
     skills: skillsComplete,
   });
   const skillsStarted = Object.keys(skillsAnswers.answeredAt).length > 0;
+  /* Presence, for the download lines: a file is PRESENT once one answer
+   * has landed - the moment a download would contain something of the
+   * person's (the same line lockupMeta draws). */
+  const contextStarted = Object.keys(answers.answeredAt).length > 0;
   /** BS-04 (§4) — "reachable after two skills without finishing all of
    * Skills", so this is a fold over the RECORDS rather than over the
    * interview's completeness (core/proof/capability.ts). */
@@ -971,19 +987,73 @@ export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpen
             onPress={onOpenBaseline}
           />
         )}
+        {/* V3.0 pass 2 (Adam): the download row OPENS - components, their
+            presence, each downloadable on its own, and the folder. Always
+            pressable now: revealing what exists is useful before anything
+            does, and the waiting state moved onto the component lines
+            (which is where the waiting actually is). */}
         <HomeRow
           id="download"
           icon={DOWNLOAD_ICON}
           label={S.tileDownload}
-          sub={contextComplete ? S.rowDownloadSub : S.tileWaitsOnContext}
-          ready={contextComplete}
-          onPress={
-            contextComplete
-              ? () => {
-                  downloadContextFile(answers);
-                  setHomeToast(S.toastDownloaded);
-                }
-              : undefined
+          sub={S.rowDownloadSub}
+          ready
+          expanded={downloadsOpen}
+          onPress={() => setDownloadsOpen((o) => !o)}
+          panel={
+            <div className="home-downloads">
+              {(
+                [
+                  {
+                    id: 'context',
+                    started: contextStarted,
+                    get: () => downloadContextFile(answers),
+                  },
+                  {
+                    id: 'skills',
+                    started: skillsStarted,
+                    get: () => downloadSkillsFile(skillsAnswers),
+                  },
+                ] as const
+              ).map((f) => (
+                <div key={f.id} className="home-download-line" data-file={f.id}>
+                  <span className="home-download-name">{fileName(f.id)}</span>
+                  {f.started ? (
+                    <button
+                      type="button"
+                      className="home-download-get"
+                      onClick={() => {
+                        f.get();
+                        setHomeToast(S.toastDownloaded);
+                      }}
+                      aria-label={S.downloadOne(fileName(f.id))}
+                    >
+                      {DOWNLOAD_ICON}
+                    </button>
+                  ) : (
+                    /* Not a disabled control - nothing to hand over yet,
+                       so no control (the waiting-row grammar, one level
+                       down). */
+                    <span className="home-download-wait">{S.downloadNotStarted}</span>
+                  )}
+                </div>
+              ))}
+              {(contextStarted || skillsStarted) && (
+                <button
+                  type="button"
+                  className="home-download-folder"
+                  onClick={() => {
+                    downloadWorkbrainFolder({
+                      context: contextStarted ? answers : undefined,
+                      skills: skillsStarted ? skillsAnswers : undefined,
+                    });
+                    setHomeToast(S.toastDownloaded);
+                  }}
+                >
+                  {S.downloadFolder}
+                </button>
+              )}
+            </div>
           }
         />
         <HomeRow

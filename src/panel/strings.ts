@@ -1228,7 +1228,11 @@ export const S = {
    * fileTreeRoot precedent. The import door moved to the chrome's upload
    * control (VB-145).
    */
-  tileDownload: 'Download file',
+  /* V3.0 pass 2 (Adam: "it expands to reveal the components of the file
+     and which are present with the ability to download each file or the
+     full workbrain folder") - the row is a disclosure now, so the verb
+     names the plural it opens onto. */
+  tileDownload: 'Download your files',
   /** The dormant tiles, said aloud: a pointer cannot read grey. */
   tileWaitsOnContext: 'Ready when Context is finished',
   /* BS-06 (§6) — the tiles became ROWS with subtitles. A three-across icon
@@ -1236,7 +1240,11 @@ export const S = {
      three were usually dashed and dead; a dormant item is a row that
      explains itself, not a disabled square. These are the subtitles that
      replace the explaining a dashed edge was doing badly. [DRAFT] */
-  rowDownloadSub: 'The file itself, to keep or to hand over',
+  rowDownloadSub: 'Each file on its own, or the whole Workbrain folder',
+  /** The expanded row's furniture (V3.0 pass 2). */
+  downloadFolder: 'Download the Workbrain folder',
+  downloadNotStarted: 'Not started yet',
+  downloadOne: (name: string) => `Download ${name}`,
   rowProveSub: 'Grab your file and find out right now if context matters!',
   rowRedeemSub: 'Redeem a purchased skill or upload a skill somebody built for you',
   rowLibrarySub: 'Skills that make us all stronger, built and tested by Model Citizen.',

@@ -187,14 +187,12 @@ test.describe('Download and import (R1-10)', () => {
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
-    // V2.9 VB-147: the Move-file sheet is retired — the download is Home's
-    // own tile, one press, no sheet.
+    // V2.9 VB-147 retired the Move-file sheet; V3.0 pass 2 made the row a
+    // DISCLOSURE — open it, then take Context from its own line.
     // --- export -----------------------------------------------------
-    const downloadButton = page.getByRole('button', { name: 'Download file', exact: true });
-    await expect(downloadButton).toBeVisible();
-    await expect(downloadButton).toBeEnabled();
+    await page.getByRole('button', { name: /^Download your files/ }).click();
     const downloadPromise = page.waitForEvent('download');
-    await downloadButton.click();
+    await page.locator(".home-downloads [data-file='context'] button").click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe('Context.md');
     const downloadPath = await download.path();
