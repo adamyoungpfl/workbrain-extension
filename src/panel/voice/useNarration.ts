@@ -1,8 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import type { Narration } from '../../core/voice/narration';
 import { speak, stopSpeaking } from './speech';
-import { takeNarratorDrop } from './prefs';
-import { S } from '../strings';
 
 /**
  * V1.3 VB-18 — reads this screen, and stops the moment it is no longer this
@@ -49,20 +47,30 @@ import { S } from '../strings';
 export function useNarration(narration: Narration | null, on: boolean): void {
   const role = narration?.role;
   const text = narration?.text ?? '';
+  /* THE A/B RULE (Adam, 2026-09-02, V3.0 pass 3): a page that OPENS with
+     the speaker on (A) reads normally; a page that opened with it off (B)
+     has already presented its question in print, so flipping the speaker
+     on mid-page does NOT re-read it — the mark's own filler acknowledges
+     the flip, and the NEXT screen (a fresh mount, a fresh narration) reads
+     normally with no filler. Tracked as "consumed while off": a narration
+     seen with the speaker off is spent for this mount.
+
+     This retires TIM'S RETURN DROP, the prepended apology
+     ("Sorry — I was on mute…") that used to ride the re-read: the filler
+     moved to the mark's press (NarratorMark.tsx), where it plays alone,
+     and the re-read it decorated is gone. */
+  const spent = useRef<string | null>(null);
 
   useEffect(() => {
-    if (!on || !role || !text) return;
-    /* TIM'S RETURN DROP. Prepended to the line he was going to read anyway,
-       rather than spoken as a separate utterance: two utterances would put a
-       synthesiser's own gap between the apology and the question, which is
-       exactly the beat that makes a joke land late. One breath, one sentence,
-       then straight on with the work.
-
-       Claimed here rather than in the toggle, because "the next thing that
-       gets read" is a thing only this hook knows about — and on a screen with
-       nothing to narrate there is nothing to apologise into. */
-    const drop = takeNarratorDrop() ? `${S.timBackDrop} ` : '';
-    speak({ role, text: `${drop}${text}` });
+    if (!role || !text) return;
+    const key = `${role}:${text}`;
+    if (!on) {
+      spent.current = key;
+      return;
+    }
+    if (spent.current === key) return;
+    spent.current = key;
+    speak({ role, text });
     return () => stopSpeaking();
   }, [on, role, text]);
 }

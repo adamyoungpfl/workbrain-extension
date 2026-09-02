@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { BrandMark } from './BrandMark';
-import { narratorSupported, onSpeechActivity } from '../voice/speech';
+import { narratorSupported, onSpeechActivity, speak, stopSpeaking } from '../voice/speech';
 import { useNarratorPref } from '../voice/prefs';
 import { S } from '../strings';
 import './NarratorMark.css';
@@ -58,7 +58,20 @@ export function NarratorMark() {
     <button
       type="button"
       className="narratormark"
-      onClick={() => setOn(!on)}
+      onClick={() => {
+        const next = !on;
+        setOn(next);
+        /* THE A/B RULE (Adam, 2026-09-02): pressing the mark from B
+           (muted) plays the filler ONCE, alone - the acknowledgment - and
+           the flip persists, so the next screen reads normally with no
+           filler. Pressing from A stops the voice mid-word: the mute must
+           be a mute. Unconditional on the press (the old everSpoke guard
+           retired with the drop): only a person's own press reaches here -
+           the splash's pills write the pref without one, and get no
+           filler. */
+        if (next) speak({ role: 'question', text: S.timBackDrop });
+        else stopSpeaking();
+      }}
       aria-label={S.narrator}
       aria-pressed={on}
       data-speaking={speaking ? 'yes' : 'no'}

@@ -1,4 +1,4 @@
-import { Beats, FlowProgress, NarratorToggle, NavButton, NavCluster } from '../components';
+import { Beats, FlowProgress, NarratorMark, NavButton, NavCluster } from '../components';
 import type { Module } from '../../schema/flow.types';
 import type { Answers } from '../../schema/storage.types';
 import { narrationFor } from '../../core/voice/narration';
@@ -104,10 +104,12 @@ export function ModuleIntro({
           {S.errSaveFailed}
         </div>
       )}
-      {/* V1.3 VB-18: the same top section every other flow screen carries —
-          the toggle above the bar, right-justified. See Flow.tsx's
-          `topSection`, which is this pair on the question screens. */}
-      <NarratorToggle />
+      {/* V3.0 pass 3 (the audit): the interview has ONE narrator control
+          now - the mark every question screen carries. This screen was the
+          last holdout on the old toggle, which benches with its test. */}
+      <div className="flow-chrome flow-chrome--bare">
+        <NarratorMark />
+      </div>
       <FlowProgress title={module.title} current={current} total={total} />
       {/* No authored copy for this module: the module's own title (in the bar
           above) and the way forward are still both here. Degrade, never

@@ -1,5 +1,4 @@
 import { useSyncExternalStore } from 'react';
-import { hasSpokenBefore } from './speech';
 import { getSync, setSync } from '../../core/storage/client';
 import type { Prefs } from '../../schema/storage.types';
 
@@ -158,14 +157,9 @@ export function loadPrefs(): Promise<void> {
  * Not persisted. It belongs to one press, and a drop that survived a reload
  * would apologise for a mute nobody remembers setting.
  */
-let pendingDrop = false;
-
-/** True once, for the press that turned the narrator back on. */
-export function takeNarratorDrop(): boolean {
-  const due = pendingDrop;
-  pendingDrop = false;
-  return due;
-}
+/* TIM'S RETURN DROP retired here (V3.0 pass 3, the A/B rule): the filler
+   moved to NarratorMark's own press, where it plays alone - see
+   useNarration.ts for the whole story. */
 
 export async function setNarrator(on: boolean): Promise<void> {
   /* Armed only on the way back ON, only if it was actually off, and only if
@@ -173,7 +167,6 @@ export async function setNarrator(on: boolean): Promise<void> {
      is not somebody returning from anywhere, and the first enable of a session
      is not a return either. He has to have been interrupted to apologise for
      it. */
-  if (on && !currentPrefs().narrator && hasSpokenBefore()) pendingDrop = true;
   await setPref('narrator', on);
 }
 

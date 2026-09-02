@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
-import { Button, Field, FlowProgress } from '../components';
+import { Button, Field, FlowProgress, NarratorMark } from '../components';
+import { useNarration } from '../voice/useNarration';
+import { useNarratorPref } from '../voice/prefs';
 import { ASSIST_SERVICE_URLS } from '../../core/flow/assistServices';
 import { S } from '../strings';
 import './BaselineOffer.css';
@@ -122,11 +124,27 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
   const [landed, setLanded] = useState<string | null>(null);
   const ready = pasted.trim().length > 0;
 
+  /* V3.0 pass 3 (the audit): this screen sat silent on a narrated path -
+     the door's own choice rode into the interview and then skipped the one
+     errand screen between. The narrator reads the card's story in flight
+     order, or the landing's own three lines - and the mark sits in the
+     same corner every interview screen keeps it. */
+  const { on: narratorOn } = useNarratorPref();
+  useNarration(
+    landed === null
+      ? { role: 'question', text: `${S.baselineTitle}. ${S.baselineStep1} — ${S.baselineStep2} — ${S.baselineStep3}.` }
+      : { role: 'question', text: `${S.baselineSaved} ${S.baselineNextTitle} ${S.baselineNextBody}` },
+    narratorOn,
+  );
+
   const serviceLabel = OPENABLE_SERVICES.find((o) => o.key === service)?.label;
 
   if (landed !== null) {
     return (
       <div className="flow baselineoffer" data-position="baseline-landed">
+        <div className="flow-chrome flow-chrome--bare">
+          <NarratorMark />
+        </div>
         <FlowProgress
           title={S.baselineEyebrow}
           current={current}
@@ -167,6 +185,9 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
 
   return (
     <div className="flow baselineoffer" data-position="baseline-offer">
+      <div className="flow-chrome flow-chrome--bare">
+        <NarratorMark />
+      </div>
       <FlowProgress
         title={S.baselineEyebrow}
         current={current}
