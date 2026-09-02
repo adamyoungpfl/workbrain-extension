@@ -26,8 +26,11 @@ describe('the beats', () => {
   });
 
   it('reveal lands inside the confirmed 4–5 second window', () => {
-    expect(SPLASH_BEATS.revealAt).toBeGreaterThanOrEqual(4);
-    expect(SPLASH_BEATS.revealAt).toBeLessThanOrEqual(5);
+    /* RE-PINNED 2026-09-02 (Adam, the cinematic open): the admiration hold
+       and the slow fade supersede decision 3's 4–5s window — the reveal now
+       lands just under six seconds, and this pin moves only when he says. */
+    expect(SPLASH_BEATS.revealAt).toBeGreaterThanOrEqual(5.5);
+    expect(SPLASH_BEATS.revealAt).toBeLessThanOrEqual(6.5);
   });
 
   it('the idle count is six seconds, from the button (VB-131)', () => {

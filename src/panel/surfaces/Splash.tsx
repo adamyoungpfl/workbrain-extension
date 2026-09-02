@@ -55,6 +55,20 @@ import './Splash.css';
 /** The fade out. §06's drawer duration — this is a full surface leaving. */
 export const SPLASH_FADE_MS = 320;
 
+/** The intro's field of lattices — position (percent of the stage, centre
+ * of each mark), presence (opacity: nearness), pace (seconds per own slow
+ * turn), and a breath of blur on the far ones. Fixed, not rolled: the same
+ * universe every open. */
+const UNIVERSE = [
+  { x: 50, y: 44, size: 520, presence: 0.16, pace: 160, reverse: false, blur: 0 },
+  { x: 12, y: 16, size: 230, presence: 0.1, pace: 120, reverse: true, blur: 0.5 },
+  { x: 88, y: 24, size: 170, presence: 0.08, pace: 95, reverse: false, blur: 1 },
+  { x: 18, y: 82, size: 300, presence: 0.11, pace: 140, reverse: false, blur: 0.5 },
+  { x: 86, y: 76, size: 140, presence: 0.07, pace: 80, reverse: true, blur: 1.4 },
+  { x: 62, y: 6, size: 110, presence: 0.05, pace: 70, reverse: true, blur: 1.8 },
+  { x: 38, y: 96, size: 120, presence: 0.06, pace: 105, reverse: false, blur: 1.6 },
+];
+
 const REDUCE_QUERY = '(prefers-reduced-motion: reduce)';
 
 /**
@@ -306,8 +320,32 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
            bench, tested, should the wall be wanted back. */
         <div className="splash-stage" aria-hidden="true">
           <div className="splash-intro">
+            {/* THE UNIVERSE (Adam, 2026-09-02): "a white universe that has
+                maybe infinite of these brain model shapes… all sort of
+                translucent… spinning steadily and constantly at their own
+                paces. It's like the slow quiet way the universe feels from
+                the middle of space." Several lattices at varying scales,
+                depths and paces: nearness is size and presence, distance is
+                smallness, faintness and a breath of blur, and each one's
+                own pace is a slow container turn laid over the shared
+                orbit — no two alike, none in a hurry. */}
             <div className="splash-intro-globe">
-              <BrandMark size={520} spin="orbit" />
+              {UNIVERSE.map((u) => (
+                <span
+                  key={`${u.x}-${u.y}`}
+                  className="splash-intro-orb"
+                  style={{
+                    left: `${u.x}%`,
+                    top: `${u.y}%`,
+                    opacity: u.presence,
+                    filter: u.blur ? `blur(${u.blur}px)` : undefined,
+                    animationDuration: `${u.pace}s`,
+                    animationDirection: u.reverse ? 'reverse' : 'normal',
+                  }}
+                >
+                  <BrandMark size={u.size} spin="orbit" />
+                </span>
+              ))}
             </div>
             <div className="splash-intro-card">
               <BrandMark size={92} spin="orbit" />

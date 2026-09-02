@@ -37,12 +37,17 @@ export interface SplashBeats {
  * by sequence.test.ts, so a later tuning pass cannot quietly drift it.
  * V2.8 VB-131: the idle count came down from ten seconds to six (Adam,
  * 2026-08-27) — the pin in the test moved with it. */
+/* RETIMED 2026-09-02 (Adam, the cinematic open): the title card holds for
+   a couple of counts after "by Model Citizen" — the admiration beat — and
+   the fade to black runs a full second, "elegantly… without the messy
+   blips of other screens". This SUPERSEDES decision 3's 4–5s reveal
+   window, at his word; the pin in sequence.test.ts moved with it. */
 export const SPLASH_BEATS: SplashBeats = {
   accelAt: 1.2,
-  swellAt: 3.8,
-  revealAt: 4.35,
-  taglineAt: 4.95,
-  enterAt: 5.55,
+  swellAt: 4.9,
+  revealAt: 5.9,
+  taglineAt: 6.6,
+  enterAt: 7.2,
   idleMs: 6_000,
 };
 

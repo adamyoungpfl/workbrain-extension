@@ -167,7 +167,11 @@ test.describe('VB-128 — the show opens', () => {
        panel's light, with the title card building over it. The dark
        sequence is what the fade-to-black delivers. */
     await expect(page.locator('.splash-intro')).toHaveCount(1);
-    await expect(page.locator('.splash-intro-globe .brand-mark')).toHaveCount(1);
+    /* SEVERAL, since the universe (Adam, 2026-09-02): a field of
+       translucent lattices at their own paces, not one backdrop mark.
+       "At least a few" rather than an exact count, so tuning the field
+       does not shed a test. */
+    expect(await page.locator('.splash-intro-globe .brand-mark').count()).toBeGreaterThanOrEqual(3);
     await expect(page.locator('.splash-stage canvas')).toHaveCount(0);
     // The dark sequence has not begun: none of the reveal's own DOM yet.
     await expect(page.locator('.splash-wordmark')).toHaveCount(0);

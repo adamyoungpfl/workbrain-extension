@@ -117,7 +117,26 @@
 }
 @keyframes splash-intro-in {
   to {
-    opacity: 0.15;
+    opacity: 1;
+  }
+}
+/* One lattice of the universe: centred on its point, translucent by its
+   presence, and turning at its own pace — a slow 2D turn laid over the
+   shared orbit, so no two read alike. */
+.splash-intro-orb {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  animation-name: splash-orb-turn;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
+}
+@keyframes splash-orb-turn {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
   }
 }
 @keyframes splash-intro-rise {
@@ -554,7 +573,9 @@
    machine — and the base runs stay muted so the two pops and the white
    EVERYTHING carry the line. */
 .splash-tagline-you {
-  color: var(--splash-link);
+  /* The purple the keys wear below (Adam, 2026-09-02) — one purple family
+     from the tagline to the baseline's outline and underline. */
+  color: var(--splash-link-end);
   font-weight: 650;
 }
 .splash-tagline-ai {
