@@ -5,7 +5,7 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
   padding: 0 26px;
   text-align: center;
@@ -13,7 +13,7 @@
      own gaps paid for the longer squiggles below — by the final balance the
      shift itself is nearly nothing, which is what "make room" costs when
      the room comes out of the right pockets. */
-  margin-top: 4px;
+  margin-top: 16px;
 }
 
 /* Each part moves by TRANSFORM only. Transforms do not touch layout, which is
@@ -284,7 +284,7 @@
      above-right of the pill to make its swing. */
   /* The long run the untangled squiggle needs to show its whole
      fuchsia-to-purple transition (Adam, 2026-09-02). */
-  margin-top: 26px;
+  margin-top: 16px;
 }
 .splashreveal-part[data-part='launch'] {
   display: flex;
@@ -295,7 +295,7 @@
   width: 100%;
   /* Longer bows (Adam, 2026-09-02): visible squiggle above AND below the
      or. The simplification's lift is where the height comes back. */
-  margin-top: 30px;
+  margin-top: 26px;
 }
 
 /* THE LOCKUP IS A LOCKUP (Adam, 2026-09-01: "Reduce the padding between

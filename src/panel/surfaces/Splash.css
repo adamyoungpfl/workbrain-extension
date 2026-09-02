@@ -19,7 +19,12 @@
   /* Above everything the panel can raise — Sheet sits at 50. */
   z-index: 60;
   display: flex;
-  align-items: center;
+  /* `safe center`: the full pre-simplification stack can briefly outgrow a
+     short panel, and plain centring clips BOTH ends — the lockup lost its
+     crown for three films running. Safe centring pins the top and lets the
+     transient overflow fall off the bottom, where only the cable's run
+     lives; after the simplification everything fits and centres again. */
+  align-items: safe center;
   justify-content: center;
   padding: 24px;
   background: var(--splash-field);
@@ -447,18 +452,44 @@
   text-transform: uppercase;
 }
 
-/* THE MIRROR'S TWO POLES, in the route's own hues — fuchsia for the person,
-   aqua for the machine. Two different colours from one family: not visually
-   connected, thematically connected, which is Adam's own spec for them. Both
-   sit far above the 4.5:1 floor on the field, and the sentence reads
-   identically with the colour gone. */
+/* ONE POP LEFT (Adam, 2026-09-02): "you do" keeps the fuchsia; the rest
+   of the sentence is white, wearing the shimmer below. The sentence still
+   reads identically with the colour gone. */
 .splash-tagline-you {
   color: var(--splash-link);
   font-weight: 650;
 }
-.splash-tagline-ai {
-  color: var(--globe-node-2-solid);
-  font-weight: 650;
+/* THE SHIMMER: a gleam travelling the white runs — a slightly brighter band
+   sliding through a background-clipped gradient. The FALLBACK COLOUR IS SET
+   FIRST AND NEVER TRANSPARENT (the same law as START TO FINISH): where the
+   clip is unsupported the words are simply white, and under reduced motion
+   the gleam holds still. */
+.splash-tagline-shine {
+  color: var(--ink-inv);
+  background-image: linear-gradient(
+    100deg,
+    rgba(255, 255, 255, 0.82) 38%,
+    rgba(255, 255, 255, 1) 50%,
+    rgba(255, 255, 255, 0.82) 62%
+  );
+  background-size: 220% 100%;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: splash-shine 4.2s ease-in-out infinite;
+}
+@keyframes splash-shine {
+  0% {
+    background-position: 120% 0;
+  }
+  100% {
+    background-position: -120% 0;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-tagline-shine {
+    animation: none;
+  }
 }
 /* The landing word takes the ANSWER'S mark: an underline that draws itself
    once the line has settled — the same gesture that lands under "Nothing"
@@ -564,7 +595,7 @@
 }
 .splash-split-main {
   flex: 1;
-  min-height: 84px;
+  min-height: 74px;
   /* Square inside the object: the wrapper rounds and clips the pill; a
      radius inherited from .splash-door here curved the segment's right
      edge away from the divider and let the dark field through — the
@@ -630,17 +661,25 @@
 .splash-split-fill {
   position: absolute;
   inset: 0;
-  background: currentColor;
-  opacity: 0.3;
+  opacity: 0.55;
   transform: scaleX(var(--charge));
   transform-origin: left center;
   pointer-events: none;
+}
+/* "The color of the outline slightly darker, to make sure the load is
+   visible" (Adam, 2026-09-02) — each key loads in a deeper cut of its own
+   outline hue, and the white words hold their contrast inside it. */
+.splash-basekey-key .splash-split-fill {
+  background: rgba(126, 66, 200, 1);
+}
+.splash-launch-key .splash-split-fill {
+  background: var(--globe-node-2-mid);
 }
 
 /* The word between the pills — the fork said out loud. */
 .splash-or {
   display: block;
-  margin: 6px 0 28px;
+  margin: 4px 0 22px;
   /* The section headers' own size (Adam, 2026-09-02) — the fork is a peer
      of the claims above it, not a footnote between two buttons. */
   font-size: 17px;
@@ -696,14 +735,17 @@
   border: 1px solid var(--globe-node-2-solid);
 }
 .splash-launch-key .splash-split-main {
-  background: var(--globe-node-2-solid);
-  color: var(--splash-field);
+  /* A light aqua TINT (Adam, 2026-09-02: "a little lighter to match the
+     tone of the button above") — the two keys are one system now: tinted
+     ground, white words, colour on the outline and in the load. */
+  background: rgba(46, 214, 240, 0.14);
+  color: var(--ink-inv);
 }
 .splash-launch-key .splash-split-main:hover {
-  filter: brightness(1.06);
+  background: rgba(46, 214, 240, 0.22);
 }
 .splash-launch-key .splash-split-main .splash-split-sub {
-  opacity: 0.78;
+  opacity: 0.72;
 }
 .splash-launch-key .splash-split-silent {
   /* Transparent, with the segment's marks in the main's own green-blue
@@ -716,10 +758,7 @@
 .splash-launch-key .splash-split-silent:hover {
   background: rgba(46, 214, 240, 0.1);
 }
-.splash-launch-key .splash-split-silent:focus-visible,
-.splash-launch-key .splash-split-main:focus-visible {
-  outline-color: var(--splash-field);
-}
+
 
 /* ── V2.9 slice 4b — THE LAUNCH DOOR AND ITS CABLE ─────────────────────────
    Adam: "a simple control panel button in the modern theme and aesthetic of
