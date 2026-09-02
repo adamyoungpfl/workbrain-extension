@@ -400,8 +400,30 @@ function HoldKey({
   );
 }
 
-/** The baseline pill — the dressed HoldKey, nothing more. */
+/** "2 minutes, 4 seconds" as "2m 04s" — specific to the second, which is
+ *  the whole reassurance being bought (Adam, 2026-09-02: "the specificity
+ *  makes it feel tried and not unknown"). */
+function fmtEta(total: number): string {
+  return `${Math.floor(total / 60)}m ${String(total % 60).padStart(2, '0')}s`;
+}
+
+/** A random draw in [lo, hi] seconds, once per open — Adam's ranges. */
+function drawEta(lo: number, hi: number): number {
+  return lo + Math.floor(Math.random() * (hi - lo + 1));
+}
+
+function EtaChip({ seconds }: { seconds: number }) {
+  return (
+    <p className="splash-eta">
+      <span className="splash-eta-label">{S.splashAvgLabel}</span>
+      <span className="splash-eta-value">{fmtEta(seconds)}</span>
+    </p>
+  );
+}
+
+/** The baseline pill and its time chip. */
 function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }) {
+  const [eta] = useState(() => drawEta(124, 192));
   return (
     <div className="splash-basekey">
       <HoldKey
@@ -425,6 +447,7 @@ function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }
           );
         })()}
       </HoldKey>
+      <EtaChip seconds={eta} />
     </div>
   );
 }
@@ -449,6 +472,7 @@ function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }
  * lit — it is scenery, and scenery is not motion.
  */
 function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean }) {
+  const [eta] = useState(() => drawEta(758, 1435));
   const keyRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const cableRef = useRef<SVGPathElement | null>(null);
@@ -616,6 +640,7 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
       >
         {S.splashStraightLabel}
       </HoldKey>
+      <EtaChip seconds={eta} />
     </div>
   );
 }

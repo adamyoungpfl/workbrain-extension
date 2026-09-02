@@ -1745,6 +1745,13 @@ export const S = {
      the held key loads — the words carry the flavour; no audio asset, no
      network, nothing the guardrails would have to meet. Voiced side only:
      somebody holding Silent asked for silence. */
+  /* THE TIME CHIP (Adam, 2026-09-02): "a little box below… that shows the
+     Average Completion Time… It just needs to feel specific but in a range
+     that people are comfortable with." The number is DRAWN AT RANDOM in his
+     ranges each open — flagged loudly in the hand-off, because a random
+     number wearing the word "average" is a claim the product cannot back,
+     on a screen whose other claims are all checkable. */
+  splashAvgLabel: 'Average completion time',
   splashRadioBaseline: 'Tower is clear for systems check.',
   splashRadioLaunch: 'All systems go. Commence launch sequence.',
   /* Adam's own sentence, verbatim (2026-09-01): the quiet half is a secondary

@@ -156,21 +156,20 @@ const readPose = (page: Page, selector: string) =>
   );
 
 test.describe('VB-128 — the show opens', () => {
-  test('dark stage, the wall of panels, and no title card yet', async () => {
+  test('opens LIGHT: the faint lattice turning, and no sequence yet', async () => {
     const { context, page } = await launchPanel();
 
     const splash = page.locator('.splash');
     await expect(splash).toHaveCount(1);
     await expect(splash).toHaveAttribute('data-phase', 'show');
-    /* SUPERSEDED 2026-09-01 (V2.9, Adam). Was "the mark in its glow" — VB-128
-       burned the logo in the field for the whole show. The sequence is now
-       "builds fading to white and then BURST with the logo lockup", and a logo
-       that has been on screen for four seconds cannot burst. The show is a
-       wall of panels; the mark is what the white breaks into. */
-    await expect(page.locator('.splash-stage canvas')).toHaveCount(1);
-    await expect(page.locator('.splash-stage .brand-mark')).toHaveCount(0);
-    await expect(page.locator('.splash-glow')).toHaveCount(0);
-    // The movie has not reached its title card: no name, no button.
+    /* THE MAJESTIC OPEN (Adam, 2026-09-02): the mosaic wall retired for the
+       brain model's own idiom — a huge faint pencil-grey mark on the
+       panel's light, with the title card building over it. The dark
+       sequence is what the fade-to-black delivers. */
+    await expect(page.locator('.splash-intro')).toHaveCount(1);
+    await expect(page.locator('.splash-intro-globe .brand-mark')).toHaveCount(1);
+    await expect(page.locator('.splash-stage canvas')).toHaveCount(0);
+    // The dark sequence has not begun: none of the reveal's own DOM yet.
     await expect(page.locator('.splash-wordmark')).toHaveCount(0);
     await expect(page.locator('.splashreveal-cost')).toHaveCount(0);
 
@@ -186,6 +185,9 @@ test.describe('VB-128 — the show opens', () => {
     expect(layer.position).toBe('fixed');
     expect(Number(layer.z)).toBeGreaterThanOrEqual(50);
     expect(layer.opaque).not.toContain('rgba');
+    // And it is the panel's LIGHT, not the field: the dark arrives later.
+    const [r, g, b] = layer.opaque.match(/\d+/g)!.map(Number);
+    expect(r! + g! + b!, 'the show did not open light').toBeGreaterThan(600);
 
     await context.close();
   });
@@ -345,154 +347,42 @@ test.describe('VB-128 — the show opens', () => {
   });
 });
 
-test.describe('VB-129 — the shard field', () => {
-  test('the stage canvas is really painting: shards on the field, and moving', async () => {
+test.describe('V2.9 — the majestic open', () => {
+  test('the lattice is really turning: the giant mark re-poses frame to frame', async () => {
     const { context, page } = await launchPanel();
-    await page.waitForSelector('.splash-canvas');
+    await page.waitForSelector('.splash-intro-globe .brand-mark');
 
-    // Both samples land INSIDE the show (it swells away at ~3.8s and the
-    // stage unmounts with it — an open-ended poll here once outlived the
-    // canvas under fleet load and read null).
-    const sample = () =>
-      page.evaluate(() => {
-        const canvas = document.querySelector('.splash-canvas') as HTMLCanvasElement | null;
-        if (!canvas) return null;
-        const g = canvas.getContext('2d')!;
-        const data = g.getImageData(0, 0, canvas.width, Math.min(400, canvas.height)).data;
-        let painted = 0;
-        for (let i = 3; i < data.length; i += 16) if (data[i]! > 0) painted++;
-        // The movement signature samples the WHOLE readback, not a corner —
-        // a corner can be legitimately empty two frames running while the
-        // field tumbles elsewhere (a real flake, caught under fleet load).
-        const sig: number[] = [];
-        for (let i = 0; i < data.length; i += 997) sig.push(data[i]!);
-        return { painted, strip: sig.join(',') };
-      });
-
-    /* THE OPENING IS TRULY STILL NOW (the sketch pass, 2026-09-01): every
-       panel is pinned to its first picture and the tint cycle that used to
-       shimmer through the pinned stage is gone — Adam: "this relies only on
-       the changing of images and not on the changing of color". `stageAt`
-       holds the pinned stage until 46% of the run to the swell (~1.75s), so
-       the first sample only proves PAINT, and the liveness check POLLS for
-       the first cut instead of betting on a fixed 280ms gap that the old
-       tint used to win. */
-    await page.waitForTimeout(900);
-
-    const first = await sample();
-    expect(first, 'the stage left before the first look').not.toBeNull();
-    expect(first!.painted, 'the canvas is blank — no sketches were drawn').toBeGreaterThan(40);
-    // A living field once the cuts begin: some pixel changes before the
-    // swell takes the wall (pinned ends ~1.75s; the stage leaves at 4.35s).
-    await expect
-      .poll(async () => (await sample())?.strip ?? first!.strip, { timeout: 2600 })
-      .not.toBe(first!.strip);
+    const pose = () =>
+      page.$$eval('.splash-intro-globe .brand-mark circle', (cs) =>
+        cs.map((c) => `${c.getAttribute('cx')},${c.getAttribute('cy')}`).join(' '),
+      );
+    const first = await pose();
+    await expect.poll(pose, { timeout: 5000 }).not.toBe(first);
 
     await context.close();
   });
 
-  test('under reduced motion the stage never mounts — the law by construction', async () => {
+  test('the title card builds to the byline, then the dark sequence takes over', async () => {
+    const { context, page } = await launchPanel();
+
+    /* Lockup, tagline, byline in order — asserted as the last of them
+       arriving while the show still runs, then the reveal following on the
+       clock as it always has. */
+    await expect(page.getByText(S.chromeCompany, { exact: true })).toBeVisible({
+      timeout: (SPLASH_BEATS.swellAt + 1) * 1000,
+    });
+    await expect(page.locator('.splash')).toHaveAttribute('data-phase', /show|swell/);
+    await page.waitForSelector('.splash-wordmark', { timeout: REVEAL_TIMEOUT });
+    await expect(page.locator('.splash')).toHaveAttribute('data-phase', 'reveal');
+
+    await context.close();
+  });
+
+  test('under reduced motion the intro never mounts — the law by construction', async () => {
     const { context, page } = await launchPanel({ reduce: true });
     await page.waitForSelector('.splash-wordmark', { timeout: 4000 });
-    await expect(page.locator('.splash-canvas')).toHaveCount(0);
+    await expect(page.locator('.splash-intro')).toHaveCount(0);
     expect(await frameCount(page)).toBe(0);
-    await context.close();
-  });
-});
-
-test.describe('VB-128 — the camera still drifts', () => {
-  test('the wall cuts, and cuts faster as it goes', async () => {
-    /* SUPERSEDED 2026-09-01 (V2.9, Adam). This used to prove the SHOW'S MARK
-       re-projected in real 3D rather than spinning flat — a real guarantee
-       about a thing that is no longer on the stage. The mark still proves that
-       for itself in the reveal, one describe below.
-
-       What replaces it is the guarantee the new show actually makes: the
-       panels never move, and their CONTENT changes at a rate that rises. That
-       is the whole of "no single action is important" — the eye is never asked
-       to follow anything — and the whole of the acceleration Adam asked for. */
-    const { context, page } = await launchPanel();
-    await page.waitForSelector('.splash-stage canvas');
-
-    /* ONE ROUND-TRIP PER WINDOW. The sampling loop runs inside the page and
-       returns a count, rather than the harness stepping frames and reading
-       pixels forty-four times.
-
-       That was the actual cost of the first two versions of this test — not
-       the pixels but the round-trips. It passed alone and timed out at thirty
-       seconds under a full parallel suite, twice, because each `evaluate` and
-       each frame-step is a message across the wire and this was doing about
-       ninety of them.
-
-       Six patches rather than single pixels: one fixed pixel can sit on the
-       same flat colour either side of a cut and report the wall dead, which is
-       how the drawn panels broke the original. A patch cannot be fooled that
-       way. */
-    /* The canvas is resolved ONCE, up front. It is removed from the DOM when
-       the reveal lands at 4.35s, and a locator resolved after that point waits
-       thirty seconds for an element that is never coming back — which is
-       exactly how this test timed out even running alone. Everything below has
-       to finish inside the show. */
-    const stage = await page.locator('.splash-stage canvas').elementHandle();
-    const sample = (ms: number) =>
-      stage!.evaluate((el, span) => {
-        const c = el as HTMLCanvasElement;
-        const g = c.getContext('2d')!;
-        const patches = [
-          [60, 90],
-          [280, 200],
-          [140, 350],
-          [320, 470],
-          [80, 560],
-          [240, 650],
-        ];
-        const seen = new Set<string>();
-        const started = performance.now();
-        return new Promise<number>((resolve) => {
-          const tick = () => {
-            const px: string[] = [];
-            for (const [x, y] of patches) {
-              const d = g.getImageData(x as number, y as number, 10, 10).data;
-              let r = 0;
-              let gr = 0;
-              let b = 0;
-              for (let i = 0; i < d.length; i += 4) {
-                r += d[i] as number;
-                gr += d[i + 1] as number;
-                b += d[i + 2] as number;
-              }
-              const n = d.length / 4;
-              px.push(`${Math.round(r / n)},${Math.round(gr / n)},${Math.round(b / n)}`);
-            }
-            seen.add(px.join('|'));
-            if (performance.now() - started < span) requestAnimationFrame(tick);
-            else resolve(seen.size);
-          };
-          requestAnimationFrame(tick);
-        });
-      }, ms);
-
-    /* Sampled PAST THE PINNED OPENING (the sketch pass): the wall now holds
-       its first pictures dead still until ~1.75s — stillness is the design,
-       not a dead canvas — so both windows sit inside the cutting half of the
-       show, and "faster" is early-cutting vs late-cutting. */
-    await page.waitForTimeout(1800);
-    const early = await sample(700);
-    await page.waitForTimeout(250);
-    const late = await sample(700);
-
-    // It is cutting at all...
-    expect(early, 'the wall never changed').toBeGreaterThan(1);
-    // ...and by the end it is cutting more often across the same span of
-    // frames than it was at the start.
-    expect(late, 'the cuts did not speed up').toBeGreaterThanOrEqual(early);
-
-    // And the panels themselves never moved: the canvas is one fixed box.
-    const box = (await page.locator('.splash-stage canvas').boundingBox())!;
-    await waitForFrames(page, 10);
-    const later = (await page.locator('.splash-stage canvas').boundingBox())!;
-    expect(later).toEqual(box);
-
     await context.close();
   });
 });

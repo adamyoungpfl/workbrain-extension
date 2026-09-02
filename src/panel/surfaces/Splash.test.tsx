@@ -44,39 +44,25 @@ afterEach(() => {
 });
 
 describe('Splash — the show, under full motion', () => {
-  it('opens on the WALL — no mark, no glow, and no reveal yet', () => {
-    /* SUPERSEDED 2026-09-01, at Adam's word, and recorded rather than quietly
-       rewritten.
-
-       This used to assert "the mark in its glow": VB-128 burned the logo in
-       the middle of the field for the whole show. Adam's sequence is "the
-       animation builds fading to white and then BURST with the logo lockup" —
-       and a logo that has been on screen for four seconds cannot burst. The
-       show is the wall now; the mark is what the white breaks into.
-
-       WHAT THE OLD ASSERTION PROTECTED SURVIVES, and is still checked below:
-       the show is a show, the title card has not arrived, and every word of
-       the splash still lives in the reveal's DOM rather than on the canvas. */
+  it('opens on the INTRO — the faint lattice and the building card, no reveal yet', () => {
+    /* The majestic open (Adam, 2026-09-02): the mosaic wall retired for a
+       huge faint mark on the panel's light with the title card over it.
+       What survives of the old assertions: the show is a show, and every
+       REAL word still lives in the reveal's DOM. */
     stubMedia(false);
     const { container } = mount(<Splash onDone={() => {}} />);
     expect(container.querySelector('.splash')!.getAttribute('data-phase')).toBe('show');
-    expect(container.querySelector('.splash-stage')).not.toBeNull();
-    expect(container.querySelector('.splash-stage .brand-mark')).toBeNull();
-    expect(container.querySelector('.splash-glow')).toBeNull();
-    // The movie has not reached its title card.
+    expect(container.querySelector('.splash-intro')).not.toBeNull();
+    expect(container.querySelector('.splash-intro-globe .brand-mark')).not.toBeNull();
+    expect(container.querySelector('.splash-stage canvas')).toBeNull();
     expect(container.querySelector('.splash-wordmark')).toBeNull();
-    expect(container.querySelector('.splash-enter')).toBeNull();
+    expect(container.querySelector('.splashreveal')).toBeNull();
   });
 
-  it('says nothing on the canvas — the stage is scenery and marked as such', () => {
-    // What the removed mark assertions were really guarding: no text, no
-    // control and nothing announced lives in the show.
+  it('the intro is scenery and says so — the reveal carries the real words', () => {
     stubMedia(false);
     const { container } = mount(<Splash onDone={() => {}} />);
-    const stage = container.querySelector('.splash-stage')!;
-    expect(stage.getAttribute('aria-hidden')).toBe('true');
-    expect(stage.querySelector('button')).toBeNull();
-    expect(stage.textContent).toBe('');
+    expect(container.querySelector('.splash-stage')!.getAttribute('aria-hidden')).toBe('true');
   });
 
   it('a click anywhere mid-show hands over — the rest of the movie is optional', () => {

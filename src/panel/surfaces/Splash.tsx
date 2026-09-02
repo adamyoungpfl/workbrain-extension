@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { BuildStamp } from '../components';
-import { SplashStage } from './SplashStage';
+import { BrandMark, BuildStamp } from '../components';
 import { SplashReveal } from './SplashReveal';
 import { SplashRocket } from './SplashRocket';
+import { S } from '../strings';
 import { speak } from '../voice/speech';
 import { useNarratorPref } from '../voice/prefs';
-import type { SplashStageHandle } from './SplashStage';
 import { SPLASH_BEATS } from '../../core/splash/sequence';
 import {
   pullStrength,
@@ -110,8 +109,6 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   /* The show's own zero, shared with the reveal so the two cannot drift. */
   const t0Ref = useRef(performance.now());
-  /** VB-129 — the shard canvas, painted by this component's one clock. */
-  const stageRef = useRef<SplashStageHandle | null>(null);
   /** One handover, however many ways it is triggered at once. */
   const handedOver = useRef(false);
 
@@ -264,9 +261,6 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
         root.style.setProperty('--swell', swellOpacity(t).toFixed(3));
         root.style.setProperty('--pull', pullStrength(t).toFixed(3));
       }
-      // The shards fly on the same clock (VB-129); once the reveal has the
-      // screen the stage is unmounted and this is a no-op.
-      stageRef.current?.paint(t);
       /* THE SPLASH NO LONGER HANDS ITSELF OVER (Adam, 2026-08-31).
          VB-131 held it six seconds and then left for Home on its own. That
          made sense when arriving was the only thing this screen could do. It
@@ -302,13 +296,26 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
           glow; VB-129 flies the shard windows in this same box. Decoration
           throughout — the reveal carries every word. */}
       {phase !== 'reveal' && (
-        /* THE MARK IS NOT HERE ANY MORE (Adam, 2026-09-01). VB-128 burned it
-           in the middle of the field for the whole show, which made the reveal
-           a change of layout rather than an arrival — the logo was already on
-           screen, so "burst with the logo lockup" had nothing left to burst
-           with. The show is the wall; the mark is what the white breaks into. */
+        /* THE MAJESTIC OPEN (Adam, 2026-09-02): the mosaic wall retired for
+           the brain model's own idiom — a huge, faint, pencil-grey mark
+           turning on a white field, and over it the lockup, the tagline and
+           the byline arriving in order. Then everything fades to black (the
+           swell, wearing the field's dark now) and the sequence proper
+           begins. Scenery throughout — the reveal carries every word for
+           real. The mosaic (core/splash/mosaic.ts, SplashStage) stays on the
+           bench, tested, should the wall be wanted back. */
         <div className="splash-stage" aria-hidden="true">
-          <SplashStage ref={stageRef} />
+          <div className="splash-intro">
+            <div className="splash-intro-globe">
+              <BrandMark size={520} spin="orbit" />
+            </div>
+            <div className="splash-intro-card">
+              <BrandMark size={92} spin="orbit" />
+              <p className="splash-intro-name">{S.appName}</p>
+              <p className="splash-intro-tagline">{S.splashTagline}</p>
+              <p className="splash-intro-byline">{S.chromeCompany}</p>
+            </div>
+          </div>
         </div>
       )}
 
