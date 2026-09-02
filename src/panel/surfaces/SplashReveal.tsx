@@ -1,10 +1,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { BrandMark } from '../components';
-import { NARRATOR_ICON } from '../components/NarratorToggle';
-import { narratorSupported } from '../voice/speech';
-import { loadPrefs, useNarratorPref } from '../voice/prefs';
+import { NarratorToggle } from '../components/NarratorToggle';
 import { idleGlowAt, pulseAt } from '../../core/splash/launch';
+import { HOLD_MS, chargeAt, dischargeAt } from '../../core/splash/rocket';
 import {
   CLAIM_TRUE,
   COUNT_FROM,
@@ -101,6 +100,10 @@ interface Box {
   cx: number;
   top: number;
   bottom: number;
+  /** The circular key inside an action part, when there is one — measured
+   *  so a link can aim at the circle's rim rather than at the full-width
+   *  row the part actually is. */
+  key?: { cx: number; cy: number; r: number };
 }
 
 export interface SplashRevealProps {
@@ -114,98 +117,188 @@ export interface SplashRevealProps {
 }
 
 /**
- * V2.9 slice 4a — THE BASELINE DOOR IS TWO DOORS THAT READ AS ONE OBJECT.
+ * V2.9 slice 4 hold — THE KEY YOU CHARGE (Adam, 2026-09-01).
  *
- * Adam: "let's make it like a 2 button cluster displaying like a single
- * object… feel loosely like the are choosing the narrated or silent baseline
- * and that the narrated is the heavy lean, but optional. Like choosing which
- * door you enter the rocket from."
+ * "The button is one where when you hold it it loads for a couple of
+ * seconds. Make the circle outline grow in thickness and color brightness."
  *
- * The lean is carried by WEIGHT, not by wording: the narrated half is the
- * filled one with the mark's own gradient on it, the silent half is a quiet
- * strip under the same border. Both go to the same place. Which one is pressed
- * is how the narrator preference gets set, so nobody is asked a second
- * question to answer the one they just answered.
+ * Holding is the new press, for both actions. The ring sweeps closed as the
+ * charge builds — thicker and brighter as it goes, core's own curve — and
+ * arming is what a press used to be. Released early, it drains fast: an
+ * abort is relief, not a rewind. One component, dressed differently by each
+ * key; all per-frame values go straight to style, nothing through React.
  *
- * ── WHERE THERE IS NO SPEECH ENGINE, THERE IS NO CHOICE ───────────────────
- * The cluster collapses to the single door it used to be. `NarratorToggle`
- * already works this way — "not a disabled button, not a note explaining
- * itself" — and offering somebody a narrated door their device cannot open
- * would be worse than the toggle this replaces. The support answer is decided
- * during the first render for the same reason it is there: a control that
- * appears one frame late moves everything under it.
+ * ── EVERY WAY OF PRESSING IS A WAY OF HOLDING ─────────────────────────────
+ * Pointer down/up, and Space or Enter held and released — the keyboard hold
+ * is the same charge on the same clock, which is the full-keyboard-path law
+ * applied to a control whose meaning is duration. Under reduced motion (or
+ * anywhere without a frame loop) a plain click arms immediately: the charge
+ * is choreography, and choreography is exactly what that preference turns
+ * off — the SAFETY of the hold is not load-bearing, the choice is.
  */
-function BaselineCluster({ onEnter }: { onEnter: () => void }) {
-  const { setOn } = useNarratorPref();
-  const [choosable] = useState(() => narratorSupported());
+function HoldKey({
+  className,
+  size,
+  still,
+  onArmed,
+  children,
+}: {
+  className: string;
+  size: number;
+  still: boolean;
+  onArmed: () => void;
+  children: ReactNode;
+}) {
+  const ringRef = useRef<SVGCircleElement | null>(null);
+  const raf = useRef(0);
+  const holding = useRef(false);
+  const armedRef = useRef(false);
+  const chargeNow = useRef(0);
+  const [live, setLive] = useState(false);
 
-  /* THE PREFERENCE HAS TO BE READ BEFORE IT CAN BE WRITTEN, and until this
-     door existed something else always had. `setPref` returns early when the
-     value it is handed matches the one in memory — so with nothing having
-     loaded the stored answer, memory holds the default `false`, and somebody
-     who had the narrator ON and pressed "Set it silently" wrote NOTHING and
-     got the voice anyway. It was the read-aloud toggle that used to load them,
-     and this door replaced it.
-
-     Loaded on mount so the value is warm, AND awaited in the press so the
-     ordering cannot race: the load resolves in a millisecond and the doors are
-     not pressable for five seconds, but "in practice it has resolved" is not
-     the same as "it has resolved". */
-  useEffect(() => {
-    void loadPrefs();
-  }, []);
-
-  const choose = async (on: boolean) => {
-    await loadPrefs();
-    setOn(on);
-    onEnter();
+  const paint = (charge: number) => {
+    const ring = ringRef.current;
+    if (!ring) return;
+    try {
+      const r = ring.r.baseVal.value;
+      const c = 2 * Math.PI * r;
+      ring.style.strokeDasharray = `${c}`;
+      ring.style.strokeDashoffset = `${c * (1 - charge)}`;
+      ring.style.strokeWidth = `${(2 + 3.5 * charge).toFixed(2)}`;
+      ring.style.opacity = (0.35 + 0.65 * charge).toFixed(3);
+    } catch {
+      /* Silent, per docs/GUARDRAILS.md — a ring that cannot draw costs the
+         charge animation, never the arming: the clock below runs anyway. */
+    }
   };
 
-  /* V2.9 slice 4 polish (Adam, 2026-09-01): the cluster is TYPOGRAPHY now,
-     set like the sections above it — a caps heading with one word picked out
-     in the blue the squiggle arrives in, and the silent choice as a quiet
-     line under it in its own voice. What makes it read as an ACTION rather
-     than a third section is the glowing outline around the whole object:
-     one border, one glow, one thing to press (in two places). */
-  if (!choosable) {
-    return (
-      <button type="button" className="splash-cluster splash-cluster-loud" onClick={onEnter}>
-        {S.splashBaselineLead}{' '}
-        <span className="splash-cluster-span">{S.splashBaselineSpan}</span>
-      </button>
-    );
-  }
+  const arm = () => {
+    if (armedRef.current) return;
+    armedRef.current = true;
+    holding.current = false;
+    setLive(true);
+    paint(1);
+    onArmed();
+  };
 
-  /* `role="group"` and not a radiogroup: these are two doors, not two settings
-     with a submit after them. Pressing one is both the answer and the way
-     through, which is what "which door you enter from" means.
+  const start = () => {
+    if (armedRef.current || holding.current) return;
+    if (still) {
+      arm();
+      return;
+    }
+    holding.current = true;
+    cancelAnimationFrame(raf.current);
+    /* A re-press mid-drain resumes from the charge on screen rather than
+       from zero — the eased clock is inverted approximately (linear in
+       time), which errs a shade generous and reads as the key remembering. */
+    const t0 = performance.now() - chargeNow.current * HOLD_MS;
+    const tick = (now: number) => {
+      if (!holding.current) return;
+      const c = chargeAt(now - t0);
+      chargeNow.current = c.charge;
+      paint(c.charge);
+      if (c.armed) {
+        arm();
+        return;
+      }
+      raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+  };
 
-     THE GROUP'S LABEL ECHOES ITS FIRST BUTTON, and that is the cheaper of two
-     costs. Without it, the silent line is announced with nothing to say what
-     is being set. With it, the loud door is read as "Set your prompting
-     baseline group, Set your prompting baseline button" — repetitive, and
-     heard once. The alternative was an `aria-label` on the quiet door carrying
-     the context, which would make its accessible name differ from the words on
-     it: a voice-control user says what they see, and a name that does not
-     match the label is a control they cannot ask for. */
+  const release = () => {
+    if (!holding.current) return;
+    holding.current = false;
+    cancelAnimationFrame(raf.current);
+    const from = chargeNow.current;
+    const t0 = performance.now();
+    const tick = (now: number) => {
+      if (holding.current || armedRef.current) return;
+      const c = dischargeAt(from, now - t0);
+      chargeNow.current = c;
+      paint(c);
+      if (c > 0) raf.current = requestAnimationFrame(tick);
+    };
+    raf.current = requestAnimationFrame(tick);
+  };
+
+  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+
   return (
-    <div className="splash-cluster" role="group" aria-label={S.splashBaseline}>
+    <span
+      className={`splash-holdkey ${className}`}
+      data-live={live ? 'on' : 'off'}
+      style={{ width: size, height: size }}
+    >
+      <svg
+        className="splash-holdkey-ring"
+        viewBox={`0 0 ${size} ${size}`}
+        aria-hidden="true"
+        focusable="false"
+      >
+        <circle className="splash-holdkey-track" cx={size / 2} cy={size / 2} r={(size - 10) / 2} />
+        <circle
+          ref={ringRef}
+          className="splash-holdkey-charge"
+          cx={size / 2}
+          cy={size / 2}
+          r={(size - 10) / 2}
+        />
+      </svg>
       <button
         type="button"
-        className="splash-cluster-loud"
-        onClick={() => void choose(true)}
+        className="splash-door splash-holdkey-button"
+        onPointerDown={start}
+        onPointerUp={release}
+        onPointerLeave={release}
+        onPointerCancel={release}
+        onKeyDown={(e) => {
+          if (e.key === ' ' || e.key === 'Enter') {
+            /* preventDefault keeps Space from scrolling AND from firing the
+               native click on keyup — the click path is reduced motion's. */
+            e.preventDefault();
+            if (!e.repeat) start();
+          }
+        }}
+        onKeyUp={(e) => {
+          if (e.key === ' ' || e.key === 'Enter') release();
+        }}
+        onClick={() => {
+          if (still) arm();
+        }}
       >
-        {S.splashBaselineLead}{' '}
-        <span className="splash-cluster-span">{S.splashBaselineSpan}</span>
-        <span className="splash-cluster-icon">{NARRATOR_ICON}</span>
+        {children}
       </button>
-      <button
-        type="button"
-        className="splash-cluster-quiet"
-        onClick={() => void choose(false)}
-      >
-        {S.splashBaselineSilent}
-      </button>
+    </span>
+  );
+}
+
+/**
+ * V2.9 slice 4 hold — THE BASELINE KEY AND ITS SOUND TOGGLE.
+ *
+ * The 4a cluster's two doors are one circular key now; the narrated-or-
+ * silent choice the doors carried moved into the toggle above it — Adam:
+ * "Add a simple toggle layer that lets you make the button sound on/off
+ * before you press down to activate the button." It is the SAME
+ * `NarratorToggle` the interview header carries (it loads and writes the
+ * one preference, and hides itself where no speech engine exists), so the
+ * choice survives the ride exactly as the doors' choice did — and the 4a
+ * bug class cannot return, because the control that loads the stored answer
+ * is back to being the control that writes it. The silent sentence is
+ * recorded in strings.ts rather than deleted, per the `splashBuild`
+ * precedent.
+ */
+function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }) {
+  return (
+    <div className="splash-basekey">
+      <NarratorToggle />
+      <HoldKey className="splash-basekey-key" size={160} still={still} onArmed={onEnter}>
+        <span className="splash-basekey-label">
+          {S.splashBaselineLead}{' '}
+          <span className="splash-cluster-span">{S.splashBaselineSpan}</span>
+        </span>
+      </HoldKey>
     </div>
   );
 }
@@ -219,12 +312,10 @@ function BaselineCluster({ onEnter }: { onEnter: () => void }) {
  * the launch button is hit, the animation is a pulse coming through the wire,
  * into the button and then the fade out and rocket sequence."
  *
- * ── THE PRESS IS ACCEPTED BEFORE THE LIGHT MOVES ──────────────────────────
- * The button goes to its pressed state on the press, and the pulse runs
- * underneath it. Four hundred milliseconds is short, but a control that waits
- * for its own animation before admitting it was pressed is a control that
- * feels broken — and this one cannot be pressed twice, so the guard is here
- * rather than in a disabled attribute somebody has to reason about.
+ * ── THE HOLD IS ACCEPTED BEFORE THE LIGHT MOVES ───────────────────────────
+ * V2.9 slice 4 hold: the key is a circular HoldKey now — charging it is the
+ * press. Arming fires the pulse, the pulse's arrival starts the countdown
+ * and the flight, exactly the 4b seam with a longer handshake in front.
  *
  * ── NO CLOCK UNDER REDUCED MOTION ─────────────────────────────────────────
  * Not a faster pulse, not a still one: the door hands over immediately, which
@@ -232,7 +323,7 @@ function BaselineCluster({ onEnter }: { onEnter: () => void }) {
  * lit — it is scenery, and scenery is not motion.
  */
 function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean }) {
-  const keyRef = useRef<HTMLButtonElement | null>(null);
+  const keyRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
   const cableRef = useRef<SVGPathElement | null>(null);
   const lightRef = useRef<SVGPathElement | null>(null);
@@ -288,7 +379,6 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
      and skipped the pulse, which is the flake this replaces. One flag, set by
      the loop that does the work. */
   const wired = useRef(false);
-  const [live, setLive] = useState(false);
 
   /* The wire's slow breath, and then the light travelling it. One loop for
      both: they are the same wire and a second clock could only disagree with
@@ -337,9 +427,7 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
     };
   }, [still, onLaunch]);
 
-  const press = () => {
-    if (live) return;
-    setLive(true);
+  const armed = () => {
     if (!wired.current) {
       // Nothing is running to carry the light. Open the door.
       onLaunch();
@@ -349,7 +437,7 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
   };
 
   return (
-    <div className="splash-launch">
+    <div className="splash-launch" ref={keyRef}>
       {/* The cable. Decoration, and says so — it carries no instruction the
           button does not, and the door works with it painted or not. The
           layout effect above rebuilds the geometry to reach the corner; this
@@ -385,19 +473,9 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
           fill="none"
         />
       </svg>
-      <button
-        type="button"
-        ref={keyRef}
-        className="splash-door splash-launch-key"
-        data-live={live ? 'on' : 'off'}
-        /* Which route the press took, for anything asking why the door opened
-           when it did. It is one attribute and it makes a timing test
-           diagnosable instead of mysterious. */
-        data-route={live ? (firing.current ? 'wire' : 'direct') : ''}
-        onClick={press}
-      >
+      <HoldKey className="splash-launch-key" size={120} still={still} onArmed={armed}>
         {S.splashStraight}
-      </button>
+      </HoldKey>
     </div>
   );
 }
@@ -446,6 +524,15 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         top: b.top - frame.top,
         bottom: b.bottom - frame.top,
       };
+      const key = el.querySelector('.splash-holdkey');
+      if (key) {
+        const kb = key.getBoundingClientRect();
+        next[part]!.key = {
+          cx: kb.left - frame.left + kb.width / 2,
+          cy: kb.top - frame.top + kb.height / 2,
+          r: kb.width / 2,
+        };
+      }
     }
     restRef.current = next;
   }, []);
@@ -482,6 +569,12 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
            bend twice, because a route into a button is allowed to be having
            more fun than a route between two paragraphs. */
         wiggle = 0,
+        /* 'v' runs bottom-of-one to top-of-the-next, the sections' own way.
+           'h' runs RIM TO RIM between the two circular keys, which since the
+           hold pass sit staggered side by side — fed the vertical geometry,
+           their overlapping rows turned the S-mirror into a loop the size of
+           the screen, which is how this parameter earned its place. */
+        axis: 'v' | 'h' = 'v',
       ) => {
         const from = restRef.current[fromPart];
         const to = restRef.current[toPart];
@@ -489,19 +582,34 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         const link = linkAt(t, toPart);
         const a = partAt(t, fromPart);
         const b = partAt(t, toPart);
-        const x1 = from.cx + a.x;
-        const y1 = from.bottom + a.y + 6;
-        const x2 = to.cx + b.x;
-        const y2 = to.top + b.y - 6;
-        const mid = (y1 + y2) / 2;
-        const d = wiggle
-          ? /* Two bends: out one way, through the middle, in from the other —
-               the S command mirrors the last control point, which is what
-               keeps the second bend smooth however far apart the ends are. */
-            `M ${x1} ${y1} C ${x1 - wiggle} ${y1 + (y2 - y1) * 0.3}, ` +
-            `${(x1 + x2) / 2 + wiggle} ${mid - (y2 - y1) * 0.12}, ${(x1 + x2) / 2} ${mid} ` +
-            `S ${x2 + wiggle} ${y2 - (y2 - y1) * 0.3}, ${x2} ${y2}`
-          : `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
+        let d: string;
+        if (axis === 'h') {
+          const fk = from.key;
+          const tk = to.key;
+          if (!fk || !tk) return;
+          const x1 = fk.cx + a.x + fk.r * 0.9;
+          const y1 = fk.cy + a.y + fk.r * 0.3;
+          const x2 = tk.cx + b.x - tk.r * 0.72;
+          const y2 = tk.cy + b.y - tk.r * 0.55;
+          const mx = (x1 + x2) / 2;
+          d =
+            `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${(mx + wiggle).toFixed(1)} ${(y1 + 20).toFixed(1)}, ` +
+            `${(mx - wiggle).toFixed(1)} ${(y2 - 20).toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`;
+        } else {
+          const x1 = from.cx + a.x;
+          const y1 = from.bottom + a.y + 6;
+          const x2 = to.cx + b.x;
+          const y2 = to.top + b.y - 6;
+          const mid = (y1 + y2) / 2;
+          d = wiggle
+            ? /* Two bends: out one way, through the middle, in from the other —
+                 the S command mirrors the last control point, which is what
+                 keeps the second bend smooth however far apart the ends are. */
+              `M ${x1} ${y1} C ${x1 - wiggle} ${y1 + (y2 - y1) * 0.3}, ` +
+              `${(x1 + x2) / 2 + wiggle} ${mid - (y2 - y1) * 0.12}, ${(x1 + x2) / 2} ${mid} ` +
+              `S ${x2 + wiggle} ${y2 - (y2 - y1) * 0.3}, ${x2} ${y2}`
+            : `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
+        }
         path.setAttribute('d', d);
         /* THE DRAW-ON IS OPTIONAL, THE PATH IS NOT. `getTotalLength` is SVG
            geometry, and not every environment implements it — jsdom does not,
@@ -527,7 +635,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
          wears down into the launch key. The colour keeps handing itself
          forward, which is what makes five separate things one route. */
       drawLink(path3Ref.current, 'privacy', 'baseline', 14);
-      drawLink(path4Ref.current, 'baseline', 'launch', 12);
+      drawLink(path4Ref.current, 'baseline', 'launch', 12, 'h');
 
       const c = countAt(t);
       setCount((was) => (was === c ? was : c));
@@ -737,7 +845,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           nothing, which is the degradation law doing layout. */}
       {onBaseline && (
         <div className="splashreveal-part" data-part="baseline" ref={hold('baseline')}>
-          <BaselineCluster onEnter={onBaseline} />
+          <BaselineKey onEnter={onBaseline} still={still} />
         </div>
       )}
       <div className="splashreveal-part" data-part="launch" ref={hold('launch')}>

@@ -128,6 +128,45 @@
   opacity: 0;
 }
 
+/* ── THE COUNT (Adam, 2026-09-01) ──────────────────────────────────────────
+   "The button action counts down 3, 2, 1… the number needs to be in color
+   that is bold enough to be against black or white and pop." It rides the
+   dark field on the flight route and a whitening ground on the fade route —
+   the fuchsia holds ~7:1 on the field and ~3:1 (large-text floor) on white
+   at 110px, and the glow is what carries the pop across the crossover. The
+   clock writes the digit, its scale and its opacity; this is only the dress. */
+.splash-count {
+  position: absolute;
+  left: 50%;
+  top: 40%;
+  transform: translate(-50%, -50%);
+  font-family: var(--font-sans);
+  font-size: 110px;
+  font-weight: 800;
+  color: var(--splash-link);
+  opacity: 0;
+  text-shadow: 0 0 30px rgba(255, 79, 163, 0.55);
+  will-change: transform, opacity;
+  pointer-events: none;
+}
+.splash-rocketstage[data-fog='on'] .splash-count {
+  display: none;
+}
+
+/* ── THE FADE ROUTE (the baseline key) ─────────────────────────────────────
+   No flight: the stage keeps no ground of its own, so the reveal stays
+   visible beneath while the white layer rises through the count over it —
+   "the background around everything but the countdown number fades to
+   white", exactly as asked. */
+.splash-rocketstage[data-mode='fade'] {
+  background: transparent;
+}
+.splash-rocketstage[data-mode='fade'] .splash-rocket,
+.splash-rocketstage[data-mode='fade'] .splash-rocket-trail,
+.splash-rocketstage[data-mode='fade'] .splash-rocket-bloom {
+  display: none;
+}
+
 /* ── THE FOG (Adam, 2026-09-01) ────────────────────────────────────────────
    "Smoke then sort of digitally dematerializing like a fog disappearing to
    reveal either the home page or the baseline page." Eight blurred puffs

@@ -289,7 +289,10 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
       <Splash onDone={() => calls.push('done')} onBaseline={() => calls.push('open')} />,
     );
     act(() => {
-      container.querySelector<HTMLButtonElement>('.splash-cluster')!.click();
+      /* The baseline key is the first door in the DOM. Reduced motion is
+         stubbed on, so a plain click arms it — the hold is choreography,
+         and choreography is what that preference turns off. */
+      container.querySelector<HTMLButtonElement>('.splash-door')!.click();
     });
     expect(calls).toEqual(['open', 'done']);
   });

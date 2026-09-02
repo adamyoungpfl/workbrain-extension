@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import { WALL_OPACITY_MAX, gridFor, shadeAt } from '../../core/ambient/wallPanels';
 import type { WallGrid } from '../../core/ambient/wallPanels';
+import { sketchTextures } from '../scenery/painters';
 import './WallPanels.css';
 
 /**
@@ -28,17 +29,13 @@ import './WallPanels.css';
 
 const FRAME_MS = 66;
 
-/** The wall's brand hues, resolved from the stylesheet's own custom
- * properties so tokens.css stays the single source of colour. */
-function glowPalette(el: HTMLElement): string[] {
-  const style = getComputedStyle(el);
-  return ['--primary', '--violet', '--green', '--amber-line'].map((token) => style.getPropertyValue(token).trim() || 'transparent');
-}
+/* `glowPalette` retired with the colour glow (the sketch pass): the wall is
+   black-and-white now, and its pictures carry their own grays. */
 
 function paint(
   context: CanvasRenderingContext2D,
   grid: WallGrid,
-  palette: string[],
+  glass: HTMLCanvasElement[],
   nowMs: number,
   dpr: number,
 ): void {
@@ -53,33 +50,56 @@ function paint(
   // ever sees. Baking the alpha here makes every sampler (axe,
   // screenshots, eyes) see the same faint wall.
   context.globalAlpha = WALL_OPACITY_MAX;
-  for (const panel of grid.panels) {
-    const { lift, glow } = shadeAt(panel, nowMs);
+  for (let i = 0; i < grid.panels.length; i += 1) {
+    const panel = grid.panels[i]!;
+    const { lift } = shadeAt(panel, nowMs);
+    context.save();
     context.beginPath();
     const [a, b, c, d] = panel.corners;
     const va = grid.vertices[a]!;
+    let minX = va.x;
+    let minY = va.y;
+    let maxX = va.x;
+    let maxY = va.y;
     context.moveTo(va.x, va.y);
     for (const index of [b, c, d]) {
       const v = grid.vertices[index]!;
       context.lineTo(v.x, v.y);
+      minX = Math.min(minX, v.x);
+      minY = Math.min(minY, v.y);
+      maxX = Math.max(maxX, v.x);
+      maxY = Math.max(maxY, v.y);
     }
     context.closePath();
-    // The breath: panels rise toward ink and fall toward nothing. All of
-    // this lands through the canvas's low-single-digit opacity, so "black"
-    // here is a whisper on the surface.
-    context.fillStyle = `rgba(0, 0, 0, ${(0.25 + 0.75 * lift).toFixed(3)})`;
-    context.fill();
-    if (glow > 0.01) {
-      // The brief colour glow — something vibrant under the surface.
-      context.globalAlpha = WALL_OPACITY_MAX * glow * 0.8;
-      context.fillStyle = palette[panel.hue] ?? 'transparent';
-      context.fill();
+    context.clip();
+
+    /* THE FAINT SKETCH (Adam, 2026-09-01): "take a faint light version of
+       this background and make it the underlying canvas background for the
+       app… so there is a continuity". Each panel holds one of the splash's
+       own pencil drawings, cover-fit, and the VB-97 breath survives as the
+       panel's whisper-quiet rise and fall — the colour glow went with the
+       colour. Everything still lands through the baked-in cap, so axe and
+       eyes keep seeing the same faint wall. */
+    const picture = glass[i % (glass.length || 1)];
+    if (picture) {
+      context.globalAlpha = WALL_OPACITY_MAX * (1.0 + 0.7 * lift);
+      const w = maxX - minX;
+      const h = maxY - minY;
+      const scale = Math.max(w / picture.width, h / picture.height);
+      context.drawImage(
+        picture,
+        minX + (w - picture.width * scale) / 2,
+        minY + (h - picture.height * scale) / 2,
+        picture.width * scale,
+        picture.height * scale,
+      );
       context.globalAlpha = WALL_OPACITY_MAX;
     }
     // Barely-there edges: the seams read as joins, not lines.
     context.strokeStyle = 'rgba(0, 0, 0, 0.5)';
     context.lineWidth = 0.5;
     context.stroke();
+    context.restore();
   }
   context.restore();
 }
@@ -93,7 +113,7 @@ export function WallPanels() {
     const context = canvas.getContext('2d');
     if (!context) return; // no 2d context is a wall that simply is not there
     const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const palette = glowPalette(canvas);
+    const glass = sketchTextures();
     let grid: WallGrid | null = null;
     let dpr = 1;
     let raf = 0;
@@ -110,14 +130,14 @@ export function WallPanels() {
       // rebuild on resize lays believable new stonework rather than
       // stretching the old.
       grid = gridFor(box.width, box.height, Math.round(box.width * 31 + box.height));
-      paint(context, grid, palette, reduced ? 0 : performance.now() - epoch, dpr);
+      paint(context, grid, glass, reduced ? 0 : performance.now() - epoch, dpr);
     };
 
     const tick = (now: number) => {
       raf = requestAnimationFrame(tick);
       if (now - lastFrame < FRAME_MS) return;
       lastFrame = now;
-      if (grid) paint(context, grid, palette, now - epoch, dpr);
+      if (grid) paint(context, grid, glass, now - epoch, dpr);
     };
 
     const observer = new ResizeObserver(rebuild);

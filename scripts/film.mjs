@@ -80,11 +80,20 @@ await page.waitForSelector('.splashreveal', { timeout: 30000 });
 let t0 = Date.now();
 
 if (LAUNCH || BASELINE) {
-  /* The doors are unpressable until the spine lands them (pointer-events is
-     off while they arrive); Playwright's own actionability wait handles that,
-     so the press happens the first moment it truly could. */
-  await page.click(BASELINE ? '.splash-cluster-loud' : '.splash-launch-key', { timeout: 20000 });
+  /* The keys are HELD now, not clicked (the hold pass): pointer down, wait
+     for the ring to arm, pointer up. `hover` carries the actionability wait
+     (the parts are pointer-events:none while they arrive), and the frames
+     are anchored at the ARM — the moment the countdown starts. */
+  const key = page.locator(
+    BASELINE
+      ? '.splash-basekey-key .splash-holdkey-button'
+      : '.splash-launch-key .splash-holdkey-button',
+  );
+  await key.hover({ timeout: 20000 });
+  await page.mouse.down();
+  await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 8000 });
   t0 = Date.now();
+  await page.mouse.up();
 }
 
 if (ROLODEX_MODE) {

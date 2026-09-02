@@ -528,111 +528,119 @@
    to. Dressed for the dark field: the toggle's own tokens are lit for the
    panel's light ground, so its ink and its rule are restated here rather than
    left to inherit a colour that would vanish. */
-/* ── V2.9 slice 4 polish — THE BASELINE CLUSTER IS TYPOGRAPHY IN A GLOW ────
-   (Adam, 2026-09-01): "make the top section fade in as 'SET YOUR PROMPTING
-   BASELINE' with BASELINE in the blue with [the silent line] underneath it as
-   a secondary link. Give the whole thing a glowing outline so it gives the
-   signal that it is a single element that is an action."
+/* ── V2.9 slice 4 hold — THE CIRCULAR KEYS (Adam, 2026-09-01) ──────────────
+   "Make the Set your Prompting Baseline a circular button… when you hold it
+   it loads for a couple of seconds. Make the circle outline grow in
+   thickness and color brightness." Same pattern for Launch, "looking like a
+   control panel piece appropriate for the aesthetic."
 
-   So the object is set like the SECTIONS — a caps heading with one word in
-   colour, a quiet line under it — and what says "action" rather than "fourth
-   paragraph" is the outline: one glowing border around both, in the blue the
-   squiggle above hands down. This supersedes 4a's filled-gradient halves; the
-   4a reasoning that survives is that the halves are still one object and the
-   quiet one is still a real 44px door, however much it dresses as a link. */
-.splash-cluster {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  padding: 12px 16px 8px;
-  border-radius: 14px;
-  border: 1px solid var(--globe-node-1-solid);
-  background: rgba(62, 119, 232, 0.07);
-  /* The glow: a tight inner breath and a soft outer halo, both in the
-     outline's own blue — one lit object, not a border plus a shadow. */
-  box-shadow:
-    0 0 18px -6px var(--globe-node-1-solid),
-    inset 0 0 14px -10px var(--globe-node-1-solid);
-}
-/* The collapsed form (no speech engine) is the same object as a single
-   button, and a button's text must flow as a line — the column is for the
-   div holding two doors, not for words. */
-button.splash-cluster {
-  display: block;
-  font-family: var(--font-sans);
-  cursor: pointer;
-}
-/* The heading half: the sections' own type, pressable. */
-.splash-cluster-loud {
+   One HoldKey dressed twice: the ring is the charge (per-frame values from
+   core, written straight to style by the component), the button is a
+   transparent circle with the key's own colour on its outline — blue for
+   the baseline, the count's aqua for launch — over the dark field. The 4a/
+   polish cluster this replaces is recorded in git and the slice doc. */
+.splash-holdkey {
   position: relative;
-  min-height: var(--target-min);
-  border: 0;
-  background: none;
+  display: inline-flex;
+  flex: none;
+}
+.splash-holdkey-ring {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  /* The sweep starts at twelve o'clock, like every gauge anybody trusts. */
+  transform: rotate(-90deg);
+}
+.splash-holdkey-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.14);
+  stroke-width: 2;
+}
+.splash-holdkey-charge {
+  fill: none;
+  stroke-linecap: round;
+  stroke-width: 2;
+  opacity: 0.35;
+}
+.splash-holdkey-button {
+  width: 100%;
+  height: 100%;
+  padding: 14px;
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
   font-family: var(--font-sans);
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  line-height: 1.35;
   color: var(--ink-inv);
   cursor: pointer;
+  transition: box-shadow 160ms ease-out;
 }
-/* The picked-out word, in the blue the route arrives in — the same device
-   as "15" and "START TO FINISH" above, which is what makes this the third
-   verse of the same song. */
+.splash-holdkey-button:focus-visible {
+  outline: 2px solid var(--ink-inv);
+  outline-offset: 3px;
+}
+/* Armed, and it stays armed: the ring is full, the glow is up, and the show
+   is already leaving — there is no state to come back from. */
+.splash-holdkey[data-live='on'] .splash-holdkey-button {
+  box-shadow: 0 0 26px -4px currentColor;
+}
+
+/* The baseline key and its sound toggle, one column. */
+.splash-basekey {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.splash-basekey-key .splash-holdkey-charge {
+  stroke: var(--globe-node-1-solid);
+  filter: drop-shadow(0 0 6px var(--globe-node-1-solid));
+}
+.splash-basekey-key .splash-holdkey-button {
+  border-color: var(--globe-node-1-solid);
+  box-shadow: 0 0 18px -8px var(--globe-node-1-solid);
+}
+.splash-basekey-label {
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.45;
+}
 .splash-cluster-span {
   color: var(--globe-node-1-solid);
 }
-.splash-cluster-icon {
-  position: absolute;
-  right: 14px;
-  top: 50%;
-  transform: translateY(-50%);
-  display: flex;
-  /* Dimmed against the fill: it is a note about which door this is, not a
-     second thing to look at. The glyph carries it — same drawing as the
-     interview's own toggle, so the two are recognisably one idea. */
-  opacity: 0.82;
-}
-/* WAVES ONLY. `NARRATOR_ICON` is one drawing holding both states, and which
-   one shows is decided by `aria-pressed` on the toggle it was written for.
-   Outside that button neither rule matches, so the speaker arrives wearing its
-   sound waves AND its mute cross at once — which is what shipped for exactly
-   as long as it took to look at it. Here the icon is a LABEL, not a state:
-   this is the door that talks, and there is no second state for it to be in. */
-.splash-cluster-icon .narrator-mute {
-  display: none;
-}
-/* The quiet half: a secondary link in its own voice, and still a real door —
-   44px of it, full width, because "optional" describes the narration and not
-   the choice. The underline is what says "link"; the size does not drop
-   below legible and the colour does not drop below 4.5:1. */
-.splash-cluster-quiet {
+/* The interview header's own toggle, restated for the dark field — its
+   tokens are lit for the panel's light ground and would vanish here. */
+.splash-basekey .narrator-toggle {
   min-height: var(--target-min);
-  width: 100%;
-  border: 0;
-  background: none;
-  font-family: var(--font-sans);
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0;
-  color: rgba(255, 255, 255, 0.78);
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
-  transition: color 160ms ease-out;
-}
-.splash-cluster-quiet:hover {
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.28);
+  border-radius: var(--r-pill);
+  background: rgba(255, 255, 255, 0.06);
   color: var(--ink-inv);
 }
-.splash-cluster-quiet:focus-visible,
-.splash-cluster-loud:focus-visible {
+.splash-basekey .narrator-toggle:hover {
+  background: rgba(255, 255, 255, 0.14);
+}
+.splash-basekey .narrator-toggle:focus-visible {
   outline: 2px solid var(--ink-inv);
   outline-offset: 2px;
 }
-@media (prefers-reduced-motion: reduce) {
-  .splash-cluster-quiet {
-    transition: none;
-  }
+
+/* The launch key: the same piece in the panel's aqua, still wearing its
+   cable. */
+.splash-launch-key .splash-holdkey-charge {
+  stroke: var(--globe-node-2-solid);
+  filter: drop-shadow(0 0 6px var(--globe-node-2-solid));
+}
+.splash-launch-key .splash-holdkey-button {
+  border-color: var(--globe-node-2-solid);
+  box-shadow: 0 0 16px -7px var(--globe-node-2-solid);
+  font-size: 14px;
+  font-weight: 650;
 }
 
 /* ── V2.9 slice 4b — THE LAUNCH DOOR AND ITS CABLE ─────────────────────────
@@ -682,35 +690,9 @@ button.splash-cluster {
   filter: drop-shadow(0 0 6px var(--globe-node-2-solid));
 }
 
-/* THE KEY WEARS THE WIRE'S OWN LIGHT (Adam, 2026-09-01: "a glowing outline,
-   transparent background in the aqua green"). The control-panel face is
-   gone; what says "key" now is the lit aqua outline — the same colour the
-   count wears and the cable carries — over nothing at all. Sized to its own
-   words rather than the column, because a key that leans right (its part
-   settles +16px, the sections' own alternation) cannot also be full-width. */
-.splash-launch-key {
-  width: auto;
-  min-width: 208px;
-  padding: 0 26px;
-  border-radius: 12px;
-  border: 1px solid var(--globe-node-2-solid);
-  background: transparent;
-  box-shadow:
-    0 0 16px -5px var(--globe-node-2-solid),
-    inset 0 0 12px -8px var(--globe-node-2-solid);
-}
-.splash-launch-key:hover {
-  background: rgba(46, 214, 240, 0.08);
-}
-/* Pressed, and it stays pressed: the key travels down and its glow comes up —
-   the door is on its way. There is no second press to make, so there is no
-   state to come back from. */
-.splash-launch-key[data-live='on'] {
-  transform: translateY(2px);
-  box-shadow:
-    0 0 24px -2px var(--globe-node-2-solid),
-    inset 0 0 12px -6px var(--globe-node-2-solid);
-}
+/* The launch key's bar-era dress (the polish pass) retired here: the key is
+   a circular HoldKey now, dressed by the `.splash-launch-key .splash-holdkey-*`
+   rules above. */
 @media (prefers-reduced-motion: reduce) {
   /* The key does not travel. The state is still carried — the glow stays, and
      the door has already handed over by the time anybody could look. */

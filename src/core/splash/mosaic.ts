@@ -41,16 +41,19 @@ import { seededRandom } from './field';
 export const STAGE_W = 400;
 export const STAGE_H = 700;
 
-/** Columns and rows of panels. Fifteen cells: enough that the screen reads as
- *  many surfaces at once, few enough that each is big enough to be a picture
- *  of something rather than a swatch. */
-export const COLS = 3;
-export const ROWS = 5;
+/** Columns and rows of panels. Twenty-eight cells since the sketch pass
+ *  (Adam, 2026-09-01: "make the tiles smaller and more irregular in shape")
+ *  — small enough to read as a flurry of sketches, still big enough that
+ *  each is a picture of something rather than a swatch. */
+export const COLS = 4;
+export const ROWS = 7;
 export const CELL_COUNT = COLS * ROWS;
 
 /** How far an interior vertex may leave its lattice point, as a fraction of
- *  the cell. Past about a third the quads start turning inside out. */
-const JITTER = 0.26;
+ *  the cell. Raised with the sketch pass for more irregular panes; past
+ *  about a third the quads start turning inside out, so this is close to
+ *  the ceiling on purpose. */
+const JITTER = 0.32;
 
 export interface Point {
   x: number;

@@ -3,6 +3,8 @@ import { BuildStamp } from '../components';
 import { SplashStage } from './SplashStage';
 import { SplashReveal } from './SplashReveal';
 import { SplashRocket } from './SplashRocket';
+import { speak } from '../voice/speech';
+import { useNarratorPref } from '../voice/prefs';
 import type { SplashStageHandle } from './SplashStage';
 import { SPLASH_BEATS } from '../../core/splash/sequence';
 import {
@@ -161,6 +163,10 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
      rocket stage's fog thinning over the place the person chose. */
   const [dissolving, setDissolving] = useState(false);
   const launchThen = useRef<(() => void) | undefined>(undefined);
+  /** Which show the exit stage runs: the launch key flies the rocket under
+   * the count; the baseline key rides plainly to the same white. Decided by
+   * which key armed, before the stage mounts. */
+  const flightRef = useRef(true);
   /** The guard is a ref, not the state: two presses in one tick both read
    * the state's stale `false`, and the second would re-aim the flight. */
   const launched = useRef(false);
@@ -169,12 +175,27 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
     if (handedOver.current || launched.current) return;
     launched.current = true;
     launchThen.current = then;
+    flightRef.current = then === undefined;
     if (reduced) {
       leave.current(then);
       return;
     }
     setLaunching(true);
   };
+
+  /* THE COUNT, OUT LOUD — when the sound toggle says so (Adam, 2026-09-01:
+     "a simple toggle layer that lets you make the button sound on/off before
+     you press down"). The toggle IS the narrator preference, so the choice
+     rides into the interview exactly as the two doors' choice did; here it
+     only decides whether the digits are spoken. Read through a ref so the
+     callback identity survives renders — a new identity would remount the
+     stage's clock mid-air. */
+  const { on: narrated } = useNarratorPref();
+  const narratedRef = useRef(narrated);
+  narratedRef.current = narrated;
+  const speakDigit = useCallback((digit: number) => {
+    if (narratedRef.current) speak({ role: 'question', text: String(digit) });
+  }, []);
   /** The prop, held for the stable callbacks below — their identities must
    * survive re-renders or they would remount the flight's clock mid-air. */
   const onDoneRef = useRef(onDone);
@@ -350,7 +371,14 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
           the fog clears onto it, and only then does the splash unmount. Its
           own fallback timer holds the door, so the hand-off survives
           anything the drawing does. */}
-      {launching && <SplashRocket onWhiteout={arrive} onDone={landFlight} />}
+      {launching && (
+        <SplashRocket
+          flight={flightRef.current}
+          onDigit={speakDigit}
+          onWhiteout={arrive}
+          onDone={landFlight}
+        />
+      )}
     </div>
   );
 }

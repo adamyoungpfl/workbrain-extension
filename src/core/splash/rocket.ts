@@ -28,29 +28,35 @@
  */
 import { easeSmooth } from './sequence';
 
-/** The flight, end to end: press accepted to whiteout full. */
-export const LAUNCH_MS = 1600;
+/** The flight, end to end: countdown start to whiteout full.
+ *
+ *  RETIMED 3000 (Adam, 2026-09-01): the hold-to-launch brief counts "3, 2,
+ *  1" and takes "over the 3 second the entire screen to white" — so the
+ *  flight IS the countdown's length now, the digits playing over it like
+ *  mission control, and the whiteout landing exactly on zero. Still one
+ *  number; the doc's decision #2 moves with it. */
+export const LAUNCH_MS = 3000;
 
 /* The beats, all inside LAUNCH_MS. Read them as a storyboard: the screen
    clears to the dark field while the rocket arrives on it, the engine builds
-   under a rumble, the climb throws it off the top, and the white it leaves
-   behind floods the frame. */
+   under a rumble through "3" and "2", the climb throws it off the top on
+   "1", and the white it leaves behind floods the frame at zero. */
 /** The reveal has faded into the dark field by here. */
-const COVER_MS = 260;
+const COVER_MS = 300;
 /** The rocket starts arriving while the field is still clearing — one event,
  *  not a queue of two. */
-const MATERIALIZE_AT = 140;
-const MATERIALIZE_MS = 360;
+const MATERIALIZE_AT = 160;
+const MATERIALIZE_MS = 480;
 /** The engine lights and the rumble builds from here... */
-const IGNITE_AT = 460;
+const IGNITE_AT = 700;
 /** ...until the hold-down lets go. */
-const LIFTOFF_AT = 900;
+const LIFTOFF_AT = 1900;
 /** Off the top of the frame this long after liftoff. */
-const CLIMB_MS = 560;
+const CLIMB_MS = 800;
 /** The trail starts becoming the whiteout — while the rocket is still
  *  climbing, because the white is something it is LEAVING, not a curtain
  *  waiting for it to finish. */
-const WHITE_AT = 1120;
+const WHITE_AT = 2200;
 
 /**
  * The rumble's reach, in px. A shiver, not a wobble: the rocket is a small
@@ -169,4 +175,79 @@ export function dissolveAt(ms: number): Fog {
   if (into <= 0) return { clear: 0, done: false };
   const p = Math.min(1, into / DISSOLVE_MS);
   return { clear: easeSmooth(p), done: into >= DISSOLVE_MS };
+}
+
+/* ── THE HOLD (Adam, 2026-09-01) ─────────────────────────────────────────
+   "The button is one where when you hold it it loads for a couple of
+   seconds. Make the circle outline grow in thickness and color brightness."
+
+   Holding is the new press, for both actions: a launch is not a thing to
+   trip over, and a ring that has to be charged is a confirmation that costs
+   no dialog. Released early, the charge drains — faster than it filled,
+   because an abort should feel like relief, not like rewinding a tape. */
+
+/** Held this long, the key arms and the countdown begins. */
+export const HOLD_MS = 1600;
+/** A released charge drains to nothing in this long. */
+export const DISCHARGE_MS = 260;
+
+export interface Charge {
+  /** How charged the ring is, 0 dark to 1 armed. */
+  charge: number;
+  /** The hold has completed. What happens next is not press-dependent. */
+  armed: boolean;
+}
+
+/** The charge, `ms` into an unbroken hold. */
+export function chargeAt(ms: number): Charge {
+  if (ms <= 0) return { charge: 0, armed: false };
+  const p = Math.min(1, ms / HOLD_MS);
+  /* Smooth, not linear: the ring gathers confidence rather than filling a
+     tank — and the last tenth visibly slows into the arm, which is the beat
+     that lets somebody release in time if they were only leaning. */
+  return { charge: easeSmooth(p), armed: p >= 1 };
+}
+
+/** The drain, from `from` charge, `ms` after an early release. */
+export function dischargeAt(from: number, ms: number): number {
+  if (ms <= 0) return from;
+  return Math.max(0, from * (1 - ms / DISCHARGE_MS));
+}
+
+/* ── THE COUNTDOWN (Adam, 2026-09-01) ────────────────────────────────────
+   "The button action counts down 3, 2, 1 and the background around
+   everything but the countdown number fades to white."
+
+   One clock for both routes. On the launch route the digits ride over the
+   flight and the FLIGHT makes the white; on the baseline route there is no
+   flight, and `white` here is the plain ride to the same surface. Both land
+   on the identical full-white frame at the same instant, which is what lets
+   the fog take over without knowing which door was held. */
+
+/** The whole count — the flight's own length, on purpose (one number each,
+ *  asserted equal by test rather than aliased, so a future retiming has to
+ *  say which one it means). */
+export const COUNTDOWN_MS = 3000;
+
+export interface Count {
+  /** The digit showing: 3, 2, 1. */
+  digit: number;
+  /** 0→1 through the current digit's second — the panel's pop curve. */
+  digitP: number;
+  /** The plain ride to white, for the route with no flight to make it. */
+  white: number;
+  /** Zero. The whiteout is total; the fog may take over. */
+  done: boolean;
+}
+
+/** The count, `ms` after the key armed. */
+export function countdownAt(ms: number): Count {
+  const t = Math.max(0, Math.min(COUNTDOWN_MS, ms));
+  const second = Math.min(2, Math.floor(t / 1000));
+  return {
+    digit: 3 - second,
+    digitP: Math.min(1, (t - second * 1000) / 1000),
+    white: easeSmooth(t / COUNTDOWN_MS),
+    done: ms >= COUNTDOWN_MS,
+  };
 }

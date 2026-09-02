@@ -1,5 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import { DISSOLVE_HOLD_MS, DISSOLVE_MS, LAUNCH_MS, SHAKE_MAX, dissolveAt, rocketAt } from './rocket';
+import {
+  COUNTDOWN_MS,
+  DISCHARGE_MS,
+  DISSOLVE_HOLD_MS,
+  DISSOLVE_MS,
+  HOLD_MS,
+  LAUNCH_MS,
+  SHAKE_MAX,
+  chargeAt,
+  countdownAt,
+  dischargeAt,
+  dissolveAt,
+  rocketAt,
+} from './rocket';
 
 describe('rocketAt — the flight is one clock', () => {
   it('opens dark and still: nothing has moved at zero', () => {
@@ -60,7 +73,7 @@ describe('rocketAt — the flight is one clock', () => {
     /* The envelope is the physics: nothing until the engine lights, building
        while the hold-down fights the thrust, gone once it has clean air — a
        machine still rattling in flight reads as coming apart. */
-    for (let ms = 0; ms <= 460; ms += 10) expect(rocketAt(ms).shake).toBe(0);
+    for (let ms = 0; ms <= 700; ms += 10) expect(rocketAt(ms).shake).toBe(0);
     let peak = 0;
     for (let ms = 0; ms <= LAUNCH_MS; ms += 1) {
       peak = Math.max(peak, Math.abs(rocketAt(ms).shake));
@@ -68,7 +81,7 @@ describe('rocketAt — the flight is one clock', () => {
     expect(peak).toBeGreaterThan(SHAKE_MAX * 0.5);
     expect(peak).toBeLessThanOrEqual(SHAKE_MAX);
     // Clean air: still by the time the whiteout is flooding the frame.
-    for (let ms = 1300; ms <= LAUNCH_MS; ms += 10) {
+    for (let ms = 2400; ms <= LAUNCH_MS; ms += 10) {
       expect(rocketAt(ms).shake).toBe(0);
     }
   });
@@ -76,7 +89,7 @@ describe('rocketAt — the flight is one clock', () => {
   it('the climb ACCELERATES rather than easing to a stop', () => {
     /* A rocket gathers speed. An ease-out would have it braking as it left,
        which reads as a drawing slid off screen rather than a departure. */
-    const at = (p: number) => rocketAt(900 + 560 * p).climb;
+    const at = (p: number) => rocketAt(1900 + 800 * p).climb;
     const early = at(0.2) - at(0.1);
     const late = at(1.0) - at(0.9);
     expect(late).toBeGreaterThan(early * 3);
@@ -105,11 +118,11 @@ describe('rocketAt — the flight is one clock', () => {
     /* The order IS the brief: "behind it, a trail of white becomes the
        whiteout". Trail before white, both monotone, no step backwards for a
        dropped frame to land on. */
-    expect(rocketAt(900).trail).toBe(0);
-    expect(rocketAt(1000).trail).toBeGreaterThan(0);
-    expect(rocketAt(1000).white).toBe(0);
-    expect(rocketAt(1120).white).toBe(0);
-    expect(rocketAt(1300).white).toBeGreaterThan(0);
+    expect(rocketAt(1900).trail).toBe(0);
+    expect(rocketAt(2000).trail).toBeGreaterThan(0);
+    expect(rocketAt(2000).white).toBe(0);
+    expect(rocketAt(2200).white).toBe(0);
+    expect(rocketAt(2400).white).toBeGreaterThan(0);
     let lastTrail = -1;
     let lastWhite = -1;
     for (let ms = 0; ms <= LAUNCH_MS; ms += 5) {
@@ -142,10 +155,61 @@ describe('rocketAt — the flight is one clock', () => {
     expect(dissolveAt(whole * 5)).toEqual({ clear: 1, done: true });
   });
 
+  it('the hold charges smoothly, arms exactly once, and drains faster than it filled', () => {
+    expect(chargeAt(0)).toEqual({ charge: 0, armed: false });
+    expect(chargeAt(-50)).toEqual({ charge: 0, armed: false });
+    let last = -1;
+    for (let ms = 0; ms <= HOLD_MS; ms += 5) {
+      const now = chargeAt(ms);
+      expect(now.charge).toBeGreaterThanOrEqual(last);
+      expect(now.charge).toBeLessThanOrEqual(1);
+      last = now.charge;
+    }
+    expect(last).toBe(1);
+    expect(chargeAt(HOLD_MS - 1).armed).toBe(false);
+    expect(chargeAt(HOLD_MS).armed).toBe(true);
+    /* An abort should feel like relief: whatever was charged is gone inside
+       the discharge window, never below zero, from any starting point. */
+    expect(DISCHARGE_MS).toBeLessThan(HOLD_MS / 2);
+    for (const from of [0.2, 0.6, 0.999]) {
+      expect(dischargeAt(from, 0)).toBe(from);
+      expect(dischargeAt(from, DISCHARGE_MS)).toBe(0);
+      expect(dischargeAt(from, DISCHARGE_MS * 3)).toBe(0);
+      expect(dischargeAt(from, DISCHARGE_MS / 2)).toBeLessThan(from);
+    }
+  });
+
+  it('counts 3, 2, 1 — a second each — and lands white exactly on zero', () => {
+    /* The count and the flight are the same length ON PURPOSE (the digits
+       ride over the flight; the whiteout lands on zero). Asserted equal
+       rather than aliased, so a future retiming has to say which it means. */
+    expect(COUNTDOWN_MS).toBe(LAUNCH_MS);
+
+    expect(countdownAt(0).digit).toBe(3);
+    expect(countdownAt(999).digit).toBe(3);
+    expect(countdownAt(1000).digit).toBe(2);
+    expect(countdownAt(1999).digit).toBe(2);
+    expect(countdownAt(2000).digit).toBe(1);
+    expect(countdownAt(COUNTDOWN_MS).digit).toBe(1);
+
+    let lastWhite = -1;
+    for (let ms = 0; ms <= COUNTDOWN_MS; ms += 5) {
+      const now = countdownAt(ms);
+      expect(now.white).toBeGreaterThanOrEqual(lastWhite);
+      expect(now.digitP).toBeGreaterThanOrEqual(0);
+      expect(now.digitP).toBeLessThanOrEqual(1);
+      lastWhite = now.white;
+    }
+    expect(lastWhite).toBe(1);
+    expect(countdownAt(COUNTDOWN_MS - 1).done).toBe(false);
+    expect(countdownAt(COUNTDOWN_MS).done).toBe(true);
+    expect(countdownAt(COUNTDOWN_MS * 2)).toMatchObject({ digit: 1, white: 1, done: true });
+  });
+
   it('every value a frame paints is finite and in range, at any time at all', () => {
     /* The panel writes these straight to style. NaN in an opacity is an
        invisible rocket; NaN in a transform is a rocket nowhere. */
-    for (const ms of [-100, 0, 1, 459, 461, 899, 901, 1119, 1121, LAUNCH_MS, 10_000]) {
+    for (const ms of [-100, 0, 1, 699, 701, 1899, 1901, 2199, 2201, LAUNCH_MS, 10_000]) {
       const f = rocketAt(ms);
       for (const v of [f.cover, f.rocket, f.climb, f.flame, f.trail, f.white]) {
         expect(Number.isFinite(v)).toBe(true);

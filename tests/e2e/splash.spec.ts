@@ -17,7 +17,8 @@ import {
   ROLODEX_TURN_MS,
 } from '../../src/core/splash/reveal';
 import { PULSE_MS } from '../../src/core/splash/launch';
-import { LAUNCH_MS } from '../../src/core/splash/rocket';
+import { HOLD_MS, LAUNCH_MS } from '../../src/core/splash/rocket';
+import { partAt } from '../../src/core/splash/reveal';
 
 /**
  * V2.7 VB-128 — the splash is the show (docs/V2.7-SPLASH-WOW.md, Option 1):
@@ -114,6 +115,25 @@ async function launchPanel(
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(url);
   return { context, page, url };
+}
+
+/**
+ * V2.9 slice 4 hold — the keys are HELD, not clicked. Pointer down, wait for
+ * the ring to arm (`data-live` is written by the component at the arm, so
+ * this waits on the product's own state rather than on a timer), pointer
+ * up. `hover` carries Playwright's actionability wait, which is what holds
+ * this back until the part is pressable at all.
+ */
+async function holdKey(page: Page, which: 'baseline' | 'launch') {
+  const key = page.locator(
+    which === 'baseline'
+      ? '.splash-basekey-key .splash-holdkey-button'
+      : '.splash-launch-key .splash-holdkey-button',
+  );
+  await key.hover();
+  await page.mouse.down();
+  await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
+  await page.mouse.up();
 }
 
 /* The answer the elimination is left standing on. Indexed by core's own count
@@ -300,11 +320,12 @@ test.describe('VB-128 — the show opens', () => {
     const { context, page } = await launchPanel();
     await page.locator('.splashreveal').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    const door = page.getByRole('button', { name: S.splashBaseline, exact: true });
-    await expect(door).toBeVisible();
-    await door.click();
+    await expect(
+      page.getByRole('button', { name: S.splashBaseline, exact: true }),
+    ).toBeVisible();
+    await holdKey(page, 'baseline');
 
-    await page.waitForSelector('.flow', { timeout: 10_000 });
+    await page.waitForSelector('.flow', { timeout: 15_000 });
     /* Straight to the BASELINE QUESTION. `goal_want` is what the baseline
        measures, and the offer to run it cannot appear until it has an answer —
        so a door that landed on the interview's top fell past the very thing it
@@ -343,24 +364,24 @@ test.describe('VB-129 — the shard field', () => {
         return { painted, strip: sig.join(',') };
       });
 
-    /* PAST THE TONE STAGE FIRST (2026-09-02). The wall now deliberately opens
-       STILL — one light shade across every panel, so the mosaic reads as a
-       patchwork before it reads as anything else — and only then starts
-       cutting. Two samples taken inside that opening are identical, which is
-       the design working, not the canvas being dead.
-
-       `stageAt` puts the tone stage at 16% of the run to the swell; this
-       clears it with room and still lands well before the stage unmounts. */
+    /* THE OPENING IS TRULY STILL NOW (the sketch pass, 2026-09-01): every
+       panel is pinned to its first picture and the tint cycle that used to
+       shimmer through the pinned stage is gone — Adam: "this relies only on
+       the changing of images and not on the changing of color". `stageAt`
+       holds the pinned stage until 46% of the run to the swell (~1.75s), so
+       the first sample only proves PAINT, and the liveness check POLLS for
+       the first cut instead of betting on a fixed 280ms gap that the old
+       tint used to win. */
     await page.waitForTimeout(900);
 
     const first = await sample();
     expect(first, 'the stage left before the first look').not.toBeNull();
-    expect(first!.painted, 'the canvas is blank — no shards were drawn').toBeGreaterThan(40);
-    // And it is a living field, not a still: the pixels change frame to frame.
-    await page.waitForTimeout(280);
-    const second = await sample();
-    expect(second, 'the stage left before the second look').not.toBeNull();
-    expect(second!.strip).not.toBe(first!.strip);
+    expect(first!.painted, 'the canvas is blank — no sketches were drawn').toBeGreaterThan(40);
+    // A living field once the cuts begin: some pixel changes before the
+    // swell takes the wall (pinned ends ~1.75s; the stage leaves at 4.35s).
+    await expect
+      .poll(async () => (await sample())?.strip ?? first!.strip, { timeout: 2600 })
+      .not.toBe(first!.strip);
 
     await context.close();
   });
@@ -446,12 +467,14 @@ test.describe('VB-128 — the camera still drifts', () => {
         });
       }, ms);
 
-    /* Sampled across MORE THAN ONE HOLD. The first hold is the longest of the
-       show, so a window shorter than it can legitimately catch no cut at all
-       and call the wall dead. */
-    const early = await sample(800);
-    await page.waitForTimeout(700);
-    const late = await sample(800);
+    /* Sampled PAST THE PINNED OPENING (the sketch pass): the wall now holds
+       its first pictures dead still until ~1.75s — stillness is the design,
+       not a dead canvas — so both windows sit inside the cutting half of the
+       show, and "faster" is early-cutting vs late-cutting. */
+    await page.waitForTimeout(1800);
+    const early = await sample(700);
+    await page.waitForTimeout(250);
+    const late = await sample(700);
 
     // It is cutting at all...
     expect(early, 'the wall never changed').toBeGreaterThan(1);
@@ -511,12 +534,15 @@ test.describe('VB-128 — every exit, at every moment', () => {
     await cta.waitFor({ timeout: REVEAL_TIMEOUT });
 
     await cta.focus();
-    await page.keyboard.press('Enter');
-    /* V2.9 slice 4c: Enter now buys the pulse, the flight and the fade —
-       ~2.3s before the splash is gone. The claim here is that the KEY works,
-       not that it is quick; the flight's own timing has its own tests. */
+    /* HELD via the keyboard (the hold pass): Enter down charges the same
+       ring on the same clock, and releasing after the arm is the press. A
+       tap deliberately does nothing under full motion — that is the hold
+       doing its job. */
+    await page.keyboard.down('Enter');
+    await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
+    await page.keyboard.up('Enter');
     await expect(page.locator('.splash')).toHaveCount(0, {
-      timeout: PULSE_MS + LAUNCH_MS + 4000,
+      timeout: PULSE_MS + LAUNCH_MS + 6000,
     });
     await expect(page.locator('.home')).toHaveCount(1);
 
@@ -561,16 +587,23 @@ test.describe('VB-128 — every exit, at every moment', () => {
        straight in. A control reachable only after the choice it applies to is
        gone was the problem the toggle-first order solved; a choice that IS the
        door cannot have it. */
+    /* The hold pass: the sound toggle is FIRST — the 2026-09-02 order,
+       returned with the toggle itself: narration is chosen before the key it
+       applies to is held. Then the two keys, baseline before launch. The
+       toggle's visible word is short; its accessible name is the sentence. */
     const order: string[] = [];
     for (let i = 0; i < 3; i++) {
       await page.keyboard.press('Tab');
-      order.push(await page.evaluate(() => document.activeElement?.textContent ?? ''));
+      order.push(
+        await page.evaluate(
+          () =>
+            document.activeElement?.getAttribute('aria-label') ??
+            document.activeElement?.textContent ??
+            '',
+        ),
+      );
     }
-    expect(order).toEqual([
-      S.splashBaseline,
-      S.splashBaselineSilent,
-      S.splashStraight,
-    ]);
+    expect(order).toEqual([S.narrator, S.splashBaseline, S.splashStraight]);
 
     await page.keyboard.press('Escape');
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 1500 });
@@ -852,88 +885,92 @@ test.describe('V2.9 slice 3 — the sections stop', () => {
   });
 });
 
-test.describe('V2.9 slice 4a — the baseline door is two doors', () => {
+test.describe('V2.9 slice 4 hold — the sound toggle and the baseline key', () => {
   /* `.sync`, not `.local`: preferences follow the person to their other
      machine, which is what `setSync` in core/storage/client.ts means and what
      `wb:prefs` has always been written to. Read from the page rather than
-     asserted through the UI, because what is being checked is that the press
+     asserted through the UI, because what is being checked is that the toggle
      SAVED the answer — a toggle that flips on screen and forgets is exactly
-     the bug this door replaces. */
+     the bug class 4a documented. */
   const narratorPref = (page: Page) =>
     page.evaluate(async () => {
       const stored = await chrome.storage.sync.get('wb:prefs');
       return (stored['wb:prefs'] as { narrator?: boolean } | undefined)?.narrator ?? null;
     });
 
-  test('one object, two doors: the loud one turns narration ON and goes in', async () => {
+  test('the toggle turns the sound ON, and the held key goes in with it', async () => {
     const { context, page } = await launchPanel();
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* Adam: "feel loosely like the are choosing the narrated or silent
-       baseline… Like choosing which door you enter the rocket from." So the
-       press is BOTH the answer and the way through — nobody is asked a second
-       question to confirm the one they just answered. */
-    await expect(page.locator('.splash-cluster button')).toHaveCount(2);
-    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    /* Adam (2026-09-01): "a simple toggle layer that lets you make the
+       button sound on/off before you press down to activate the button."
+       4a's two doors became one circular key, and the narrated-or-silent
+       choice moved into this toggle — the interview header's own control,
+       writing the one preference the narrator reads. */
+    await page.locator('.splash-basekey .narrator-toggle').click();
+    expect(await narratorPref(page)).toBe(true);
 
-    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 8000 });
+    await holdKey(page, 'baseline');
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 15_000 });
     expect(await narratorPref(page)).toBe(true);
 
     await context.close();
   });
 
-  test('and the quiet one turns it OFF and goes to the same place', async () => {
-    /* Opened with the narrator ALREADY ON, which is the only state in which
-       this door has anything to write: `setPref` returns early when the value
-       is unchanged, so pressing "silently" from the default writes nothing and
-       proves nothing. The case that matters is somebody who had the voice on
-       and is choosing to go without it. */
+  test('and turns it OFF for somebody who had it on', async () => {
+    /* Opened with the narrator ALREADY ON — the only state in which the
+       toggle has anything to write, since `setPref` returns early on an
+       unchanged value. */
     const { context, page } = await launchPanel({ narrator: true });
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
     expect(await narratorPref(page)).toBe(true);
 
-    await page.getByRole('button', { name: S.splashBaselineSilent, exact: true }).click();
-
-    // The same destination. The halves differ by the voice and nothing else.
-    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 8000 });
+    await page.locator('.splash-basekey .narrator-toggle').click();
+    await expect(page.locator('.splash-basekey .narrator-toggle')).toHaveAttribute(
+      'aria-pressed',
+      'false',
+    );
     expect(await narratorPref(page)).toBe(false);
 
     await context.close();
   });
 
-  test('the screen does not ask twice — no mute toggle above the doors', async () => {
+  test('the toggle is back on this screen at Adam’s word, at the full target size', async () => {
     const { context, page } = await launchPanel();
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* BR-01's objection, applied again: a screen that asks "with the voice or
-       without" and also carries a mute control is asking the same question
-       twice. The toggle is not lost — it lives in the interview header, where
-       somebody changes their mind rather than where they first decide. */
-    await expect(page.locator('.splash-audio')).toHaveCount(0);
-    await expect(page.locator('.splash .narrator-toggle')).toHaveCount(0);
+    /* REVERSES the 4a test that stood here ("no mute toggle above the
+       doors"). 4a's objection — the screen asking twice — applied while the
+       DOORS carried the narrated-or-silent choice; one circular key cannot,
+       so the toggle is the only carrier left and Adam asked for it by name.
+       Recorded here because the old assertion was also a recorded decision. */
+    const toggle = page.locator('.splash-basekey .narrator-toggle');
+    await expect(toggle).toHaveCount(1);
+    const box = (await toggle.boundingBox())!;
+    expect(box.height).toBeGreaterThanOrEqual(44);
 
     await context.close();
   });
 
-  test('the quiet door is a real door, at the full target size', async () => {
+  test('a tap does not launch; a released hold drains and nothing happens', async () => {
     const { context, page } = await launchPanel();
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* "Optional" describes the narration, not the choice. The quiet half now
-       DRESSES as a secondary link (the polish pass, Adam's own sentence) —
-       but it still clears the same 44px floor as everything else in this
-       product, spans the object's content, and lives inside the glowing
-       outline rather than beside it. */
-    const quiet = page.getByRole('button', { name: S.splashBaselineSilent, exact: true });
-    const box = (await quiet.boundingBox())!;
-    expect(box.height).toBeGreaterThanOrEqual(44);
+    /* The hold IS the confirmation — a launch is not a thing to trip over,
+       and this product refuses confirmation dialogs (GUARDRAILS), so the
+       charge is where the second thought lives. A tap and a half-hold must
+       both come to nothing. */
+    const key = page.locator('.splash-basekey-key .splash-holdkey-button');
+    await key.click();
+    await key.hover();
+    await page.mouse.down();
+    await page.waitForTimeout(HOLD_MS * 0.3);
+    await page.mouse.up();
+    await page.waitForTimeout(600);
 
-    const object = (await page.locator('.splash-cluster').boundingBox())!;
-    // Inside the object, within its padding — not a small target floating in
-    // a big glow.
-    expect(box.width).toBeGreaterThanOrEqual(object.width - 40);
-    expect(box.x).toBeGreaterThanOrEqual(object.x);
-    expect(box.x + box.width).toBeLessThanOrEqual(object.x + object.width + 1);
+    await expect(page.locator('.splash-rocketstage')).toHaveCount(0);
+    await expect(page.locator('.splash')).toHaveCount(1);
+    await expect(page.locator('.flow')).toHaveCount(0);
 
     await context.close();
   });
@@ -953,13 +990,12 @@ test.describe('V2.9 slice 4b — the cable and the pulse', () => {
        acknowledged immediately and the door opens when the light lands. The
        beat between them is `PULSE_MS`, and the reduced-motion test below is
        the control — same press, no beat. */
-    const key = page.getByRole('button', { name: S.splashStraight, exact: true });
-    await expect(key).toHaveAttribute('data-live', 'off');
+    await expect(page.locator('.splash-launch-key')).toHaveAttribute('data-live', 'off');
 
     const from = Date.now();
-    await key.click();
-    // Acknowledged on the press, not when the light arrives.
-    await expect(key).toHaveAttribute('data-live', 'on');
+    await holdKey(page, 'launch');
+    // Acknowledged at the arm, not when the light arrives.
+    await expect(page.locator('.splash-launch-key')).toHaveAttribute('data-live', 'on');
 
     /* THE MARKER IS THE SPLASH LEAVING, NOT HOME ARRIVING. Home is built
        underneath this screen from the first paint — deliberately, and there is
@@ -987,7 +1023,7 @@ test.describe('V2.9 slice 4b — the cable and the pulse', () => {
     const light = page.locator('.splash-cable-light');
     await expect(light).toHaveCSS('opacity', '0');
 
-    await page.getByRole('button', { name: S.splashStraight, exact: true }).click();
+    await holdKey(page, 'launch');
     await page.waitForTimeout(PULSE_MS * 0.35);
 
     const first = await light.evaluate((el) => ({
@@ -1010,10 +1046,10 @@ test.describe('V2.9 slice 4b — the cable and the pulse', () => {
 
     /* There is nothing to come back from: the key stays down and the door is
        on its way. A second press mid-pulse must not start a second one. */
+    await holdKey(page, 'launch');
     const key = page.getByRole('button', { name: S.splashStraight, exact: true });
-    await key.click();
-    await key.click({ force: true }).catch(() => {});
-    await key.click({ force: true }).catch(() => {});
+    await key.click({ force: true, timeout: 1000 }).catch(() => {});
+    await key.click({ force: true, timeout: 1000 }).catch(() => {});
 
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 8000 });
     await expect(page.locator('.home')).toBeVisible();
@@ -1075,8 +1111,9 @@ test.describe('V2.9 slice 4c — the rocket', () => {
        an upper bound on a loaded workstation is the flake the suite already
        warns about, and the product makes no promise about slowness. */
     const from = Date.now();
-    await page.getByRole('button', { name: S.splashStraight, exact: true }).click();
+    await holdKey(page, 'launch');
     await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2500 });
+    await expect(page.locator('.splash-rocketstage')).toHaveAttribute('data-mode', 'flight');
     await expect(page.locator('.splash-rocket')).toHaveCount(1);
 
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 8000 });
@@ -1092,18 +1129,23 @@ test.describe('V2.9 slice 4c — the rocket', () => {
 
   test('both doors launch: the baseline door flies the same rocket, into the interview', async () => {
     const { context, page } = await launchPanel();
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* Decision #1 (docs/V2.9-SLICE-4-LAUNCH.md): "which door you enter the
-       rocket from" reads as both, and leaving the splash is one moment
-       however it is left. No cable on this route — the press goes straight
-       to the pad. */
+    /* The hold pass split the routes: the launch key flies the rocket
+       under the count; the baseline key rides the count's own plain fade to
+       the same white (Adam: "the background around everything but the
+       countdown number fades to white"). Same stage, same convergence, no
+       ship on this route. */
     const from = Date.now();
-    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    await holdKey(page, 'baseline');
     await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2000 });
+    await expect(page.locator('.splash-rocketstage')).toHaveAttribute('data-mode', 'fade');
+    expect(
+      await page.locator('.splash-rocket').evaluate((el) => getComputedStyle(el).display),
+    ).toBe('none');
 
-    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 8000 });
-    expect(Date.now() - from, 'the interview arrived before the flight flew').toBeGreaterThanOrEqual(
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 15_000 });
+    expect(Date.now() - from, 'the interview arrived before the count ran').toBeGreaterThanOrEqual(
       LAUNCH_MS * 0.8,
     );
 
@@ -1112,9 +1154,9 @@ test.describe('V2.9 slice 4c — the rocket', () => {
 
   test('the flight is scenery, and the doors under it are closed', async () => {
     const { context, page } = await launchPanel();
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    await holdKey(page, 'baseline');
     const stage = page.locator('.splash-rocketstage');
     await expect(stage).toHaveCount(1, { timeout: 2000 });
 
@@ -1131,35 +1173,32 @@ test.describe('V2.9 slice 4c — the rocket', () => {
 
   test('one flight, however many doors get pressed — the first press is the answer', async () => {
     const { context, page } = await launchPanel();
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    await holdKey(page, 'baseline');
     await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2000 });
-    // A second answer thrown at the closed doors, mid-flight.
+    // A second answer thrown at the closed keys, mid-ride.
     await page
-      .getByRole('button', { name: S.splashBaselineSilent, exact: true })
+      .getByRole('button', { name: S.splashStraight, exact: true })
       .click({ force: true, timeout: 1000 })
       .catch(() => {});
 
-    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 8000 });
-    const narrator = await page.evaluate(async () => {
-      const stored = await chrome.storage.sync.get('wb:prefs');
-      return (stored['wb:prefs'] as { narrator?: boolean } | undefined)?.narrator ?? null;
-    });
-    expect(narrator, 'the mid-flight press re-chose the narration').toBe(true);
+    /* The first hold chose the interview; the stray press at the other key
+       must not re-aim the ride at Home. */
+    await expect(page.locator('.flow')).toHaveCount(1, { timeout: 15_000 });
 
     await context.close();
   });
 
   test('Escape mid-flight lands at the chosen door, not at Home', async () => {
     const { context, page } = await launchPanel();
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
     /* Escape still means "close this" at every phase — but the person
        already chose a destination, and a shortcut that changed their answer
        would be the screen overruling them. It finishes the transition
        early; it does not reopen the question. */
-    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    await holdKey(page, 'baseline');
     await expect(page.locator('.splash-rocketstage')).toHaveCount(1, { timeout: 2000 });
     await page.keyboard.press('Escape');
 
@@ -1171,14 +1210,14 @@ test.describe('V2.9 slice 4c — the rocket', () => {
 
   test('reduced motion: no rocket from either door — arriving IS the still version', async () => {
     const { context, page } = await launchPanel({ reduce: true });
-    await page.locator('.splash-cluster').waitFor({ timeout: 4000 });
+    await page.locator('.splash-basekey').waitFor({ timeout: 4000 });
 
     /* docs/V2.9-SLICE-4-LAUNCH.md: "Under reduced motion there is no rocket
        and the hand-off is immediate." The 4b reduced test is the straight
        door's control (and its zero-frames probe would catch a rocket loop);
        this is the baseline door's, because BOTH doors launch now and both
        must degrade the same way. */
-    await page.getByRole('button', { name: S.splashBaselineSilent, exact: true }).click();
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
     await expect(page.locator('.flow')).toHaveCount(1, { timeout: 2500 });
     await expect(page.locator('.splash-rocketstage')).toHaveCount(0);
 
@@ -1190,7 +1229,7 @@ test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', ()
   test('the fog never lifts onto a screen nobody chose — zero naked-Home frames', async () => {
     test.setTimeout(60_000);
     const { context, page } = await launchPanel();
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
 
     /* THE SEAM THIS WHOLE FEATURE FIXES. The baseline route used to flash
        Home for as long as the interview took to mount. Now the interview is
@@ -1213,7 +1252,7 @@ test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', ()
       requestAnimationFrame(probe);
     });
 
-    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+    await holdKey(page, 'baseline');
     await page.waitForSelector('.flow', { timeout: 30_000 });
     await expect(page.locator('.splash')).toHaveCount(0, { timeout: 10_000 });
 
@@ -1231,7 +1270,7 @@ test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', ()
     const { context, page } = await launchPanel();
     await page.locator('.splash-launch').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    await page.getByRole('button', { name: S.splashStraight, exact: true }).click();
+    await holdKey(page, 'launch');
     /* The stage flips to its fog dress at the whiteout — that attribute is
        the seam between the flight and the dissolve, and the dissolving
        splash has released its ground (Splash.css) so the fog thins over the
@@ -1252,8 +1291,10 @@ test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', ()
     expect(`${S.splashBaselineLead} ${S.splashBaselineSpan}`).toBe(S.splashBaseline);
 
     const { context, page } = await launchPanel();
-    await page.locator('.splash-cluster').waitFor({ timeout: REVEAL_TIMEOUT });
-    await expect(page.locator('.splash-cluster-span')).toHaveText(S.splashBaselineSpan);
+    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
+    await expect(page.locator('.splash-basekey .splash-cluster-span')).toHaveText(
+      S.splashBaselineSpan,
+    );
     await expect(
       page.getByRole('button', { name: S.splashBaseline, exact: true }),
     ).toBeVisible();
@@ -1292,10 +1333,11 @@ test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', ()
       };
     });
     expect(geo).not.toBeNull();
-    /* Anchor + 16 (the settle lean) + width = the right edge; anchor bottom
-       + height = the bottom edge. A pixel of rounding either way is fine —
-       26 missing pixels is the bug this exists to catch. */
-    expect(geo!.right + 16).toBeGreaterThanOrEqual(geo!.vw - 2);
+    /* Anchor + the settle lean (core's own number) + width = the right
+       edge; anchor bottom + height = the bottom edge. A pixel of rounding
+       either way is fine — dozens of missing pixels is the bug this catches. */
+    const lean = partAt(REVEAL_SETTLED, 'launch').x;
+    expect(geo!.right + lean).toBeGreaterThanOrEqual(geo!.vw - 2);
     expect(geo!.bottom).toBeGreaterThanOrEqual(geo!.vh - 2);
 
     await context.close();

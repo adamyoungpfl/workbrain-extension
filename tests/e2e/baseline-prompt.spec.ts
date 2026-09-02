@@ -33,8 +33,17 @@ async function openBaseline(reduced: boolean): Promise<{ context: BrowserContext
   await page.setViewportSize({ width: 400, height: 760 });
   await page.goto(`chrome-extension://${new URL(sw.url()).host}/panel.html`);
   await page.waitForSelector('.splashreveal');
-  await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
-  await page.waitForSelector('.flow--prompt');
+  /* The hold pass: under full motion the key is HELD until its ring arms; a
+     reduced-motion click arms instantly, same as everywhere. */
+  if (reduced) {
+    await page.getByRole('button', { name: S.splashBaseline, exact: true }).click();
+  } else {
+    await page.locator('.splash-basekey-key .splash-holdkey-button').hover();
+    await page.mouse.down();
+    await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
+    await page.mouse.up();
+  }
+  await page.waitForSelector('.flow--prompt', { timeout: 20_000 });
   return { context, page };
 }
 
@@ -241,6 +250,10 @@ test('the seed example types itself, and taking one leaves a whole command', asy
 });
 
 test('the stack builds, dims one rung per line, and caps', async () => {
+  /* The whole ladder takes ~26s of typewriter time, and the hold pass put
+     ~5.5s of arrival (hold + count + fog) in front of it — over the default
+     30s budget by arithmetic, not by flake. */
+  test.setTimeout(50_000);
   const { context, page } = await openBaseline(false);
   try {
     // It opens on one line: on the first pass there is no history, and showing

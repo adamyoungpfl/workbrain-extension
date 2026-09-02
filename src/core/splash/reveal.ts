@@ -109,13 +109,18 @@ const SCRIPT: Record<RevealPart, Key[]> = {
      other, and they lean opposite ways — the baseline answers the privacy
      section's right lean, the launch answers the baseline's left one, and
      the two squiggles between them have something to bend around. */
+  /* CIRCLES NOW (the hold pass), so the leans grew into a real stagger: the
+     baseline key settles left of centre, the launch key right and pulled up
+     beside it (the pull is layout, SplashReveal.css; the lean is here). Side
+     by side they cost the column less height than two stacked bars did, and
+     the two squiggles get a genuine diagonal to travel. */
   baseline: [
     { at: 4.4, opacity: 0, x: 0, y: 14 },
-    { at: 5.0, opacity: 1, x: -12, y: 0 },
+    { at: 5.0, opacity: 1, x: -78, y: 0 },
   ],
   launch: [
     { at: 4.7, opacity: 0, x: 0, y: 14 },
-    { at: 5.3, opacity: 1, x: 16, y: 0 },
+    { at: 5.3, opacity: 1, x: 92, y: 0 },
   ],
 };
 

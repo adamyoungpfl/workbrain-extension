@@ -4,6 +4,7 @@ import {
   DISSOLVE_MS,
   LAUNCH_MS,
   SHAKE_MAX,
+  countdownAt,
   dissolveAt,
   rocketAt,
 } from '../../core/splash/rocket';
@@ -76,6 +77,16 @@ const NOZZLE_Y = 166;
 const CLEAR_PX = 48;
 
 export interface SplashRocketProps {
+  /** True on the launch route: the rocket flies under the digits and its
+   *  trail makes the white. False on the baseline route: no flight — the
+   *  countdown's own plain ride to white does it (Adam, 2026-09-01: "the
+   *  background around everything but the countdown number fades to
+   *  white"). Both land on the identical full-white frame at zero, which is
+   *  what lets the fog take over without knowing which key was held. */
+  flight: boolean;
+  /** The digit changed — 3, then 2, then 1. The splash gives it to the
+   *  narrator when the sound toggle is on; the drawing here never speaks. */
+  onDigit?: ((digit: number) => void) | undefined;
   /** The whiteout is total. Open the destination NOW, under the fog — what
    *  the clearing reveals must be the place the person chose, not a screen
    *  still loading. This is the seam that fixes the flash of Home the
@@ -85,13 +96,14 @@ export interface SplashRocketProps {
   onDone: () => void;
 }
 
-export function SplashRocket({ onWhiteout, onDone }: SplashRocketProps) {
+export function SplashRocket({ flight, onDigit, onWhiteout, onDone }: SplashRocketProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const shipRef = useRef<SVGSVGElement | null>(null);
   const flameRef = useRef<SVGGElement | null>(null);
   const trailRef = useRef<HTMLDivElement | null>(null);
   const bloomRef = useRef<HTMLDivElement | null>(null);
   const whiteRef = useRef<HTMLDivElement | null>(null);
+  const digitRef = useRef<HTMLDivElement | null>(null);
   const puffRefs = useRef<(HTMLDivElement | null)[]>([]);
   /** One arrival, whichever of the loop or the fallback timer gets there. */
   const landed = useRef(false);
@@ -166,6 +178,28 @@ export function SplashRocket({ onWhiteout, onDone }: SplashRocketProps) {
     const tick = (now: number) => {
       const f = rocketAt(now - t0);
 
+      /* THE COUNT, over both routes (Adam, 2026-09-01: "counts down 3, 2,
+         1"). The digit goes through the DOM only when it changes — and that
+         change is the narrator's cue; the pop and the fade ride digitP
+         straight to style every frame. */
+      const count = countdownAt(now - t0);
+      const digitEl = digitRef.current;
+      if (digitEl && !f.done) {
+        try {
+          const showing = digitEl.textContent;
+          const next = String(count.digit);
+          if (showing !== next) {
+            digitEl.textContent = next;
+            onDigit?.(count.digit);
+          }
+          const landing = Math.min(1, count.digitP * 4);
+          digitEl.style.opacity = Math.min(1, count.digitP * 8).toFixed(3);
+          digitEl.style.transform = `translate(-50%, -50%) scale(${(1.35 - 0.35 * landing).toFixed(3)})`;
+        } catch {
+          /* Silent, per docs/GUARDRAILS.md — the count is scenery. */
+        }
+      }
+
       /* ── PHASE TWO: THE FOG ─────────────────────────────────────────── */
       if (f.done) {
         if (!arrived) {
@@ -206,7 +240,24 @@ export function SplashRocket({ onWhiteout, onDone }: SplashRocketProps) {
         return;
       }
 
-      /* ── PHASE ONE: THE FLIGHT ──────────────────────────────────────── */
+      /* ── PHASE ONE: THE FLIGHT — or, without one, the plain ride ────── */
+      if (!flight) {
+        /* The baseline route: no ship, no dark cover — the stage is
+           transparent over the living reveal (data-mode='fade' strips its
+           ground) and the white layer simply rises through the count.
+           "The background around everything but the countdown number fades
+           to white", exactly. */
+        try {
+          const root = rootRef.current;
+          const white = whiteRef.current;
+          if (root) root.style.opacity = '1';
+          if (white) white.style.opacity = count.white.toFixed(3);
+        } catch {
+          /* Silent, per docs/GUARDRAILS.md. */
+        }
+        raf = requestAnimationFrame(tick);
+        return;
+      }
       try {
         const root = rootRef.current;
         const ship = shipRef.current;
@@ -264,17 +315,27 @@ export function SplashRocket({ onWhiteout, onDone }: SplashRocketProps) {
       cancelAnimationFrame(raf);
       window.clearTimeout(fallback);
     };
-  }, [onWhiteout, onDone]);
+  }, [flight, onDigit, onWhiteout, onDone]);
 
   return (
     /* Scenery, all of it, and it says so. Every word this screen had was
        already spoken by the reveal underneath; the flight carries no
        instruction — "you are in" is the arrival itself, which is why the
        reduced-motion version is simply arriving. */
-    <div className="splash-rocketstage" ref={rootRef} aria-hidden="true">
+    <div
+      className="splash-rocketstage"
+      ref={rootRef}
+      data-mode={flight ? 'flight' : 'fade'}
+      aria-hidden="true"
+    >
       <div className="splash-rocket-trail" ref={trailRef} />
       <div className="splash-rocket-bloom" ref={bloomRef} />
       <div className="splash-rocket-white" ref={whiteRef} />
+      {/* The count. Bold enough to hold against black AND white, because on
+          the flight route it rides the dark field and on the fade route the
+          ground whitens beneath it — that dual duty is exactly why Adam
+          specced the colour that way. Gone the instant the fog takes over. */}
+      <div className="splash-count" ref={digitRef} />
       {/* The fog, waiting its turn: invisible through the flight, and the
           shape the whiteout breaks into once it is total. Above the white so
           the puffs are what linger as the base thins. */}
