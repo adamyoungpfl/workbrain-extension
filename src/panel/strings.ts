@@ -1875,6 +1875,22 @@ export const S = {
      (Adam, 2026-09-01). Somebody who does not want to run this does not want
      the next fifty questions either, and Home is where starting lives. */
   baselineLater: 'Not now',
+  /* ── The baseline door's nav labels (Adam, 2026-09-02). The question's
+     own wording lives with the question, core/flow/overrides.ts. */
+  baselineSubmit: 'Submit',
+  baselineNotNow: 'Not right now',
+  /* ── THE STORYBOARD (Adam, 2026-09-02): "a 3 panel visual representation
+     of the act of pasting into an LLM, copying the final response button
+     and pasting it back into this page… an airlines safety manual kind of
+     vibe." Three cards, three captions, each card a control: copy again /
+     pick-and-open the AI / light the paste target. Panel two's caption
+     carries the fresh-chat warning the old text block used to hold - it is
+     D1's memory guard, moved into the step where it acts. */
+  baselineStep1: 'Paste your prompt in',
+  baselineStep2: 'Into a fresh chat in your AI',
+  baselineStep3: 'Bring its reply back here',
+  baselineStepPick: 'Pick your AI',
+  baselineStepShow: 'Show me where',
   baselineSaved: 'Saved as your starting point.',
   /* [DRAFT] THE FORK, after the answer has landed (Adam, 2026-09-01). Two
      doors, and the primary one names what the interview is FOR in the only

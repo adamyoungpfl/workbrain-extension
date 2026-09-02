@@ -333,3 +333,24 @@
     width: 100%;
   }
 }
+
+/* The foot-of-page promise (Adam, 2026-09-02). Light gray on the dark
+   field - rgba(237,239,243,.58) measures ~5.6:1 on --splash-field, over
+   the 4.5 floor - and pinned to the viewport bottom so the choreography
+   above never budgets for it. aria-hidden: the same two facts are in the
+   accessibility tree on every flow screen already, and a decorative echo
+   of them here would be read out mid-show. */
+.splashreveal-disclaimer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 10px;
+  margin: 0;
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  color: rgba(237, 239, 243, 0.58);
+  pointer-events: none;
+}

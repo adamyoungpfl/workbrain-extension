@@ -1214,6 +1214,15 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
           setBaselineTaken(true);
           onBaselineDone?.();
         }}
+        /* Panel two's pick is a real answer: it lands in `goal_service`, the
+           gate's own key, through the same applyAnswer every answer takes —
+           persisted without advancing anything. The pick is a fact about the
+           person (which AI they use), not a step in the interview. */
+        onService={(key) => {
+          const spos = positionForQuestionId(modules, 'goal_service');
+          if (spos?.kind === 'step') void persist(applyAnswer(answers, spos.step, spos.location, key));
+        }}
+        service={String(answers.values['goal_service'] ?? '') || undefined}
         /* Home is a real ending, not an abandonment: the baseline is already
            written, so the offer must not come round again — same flag the
            other two doors set. */
@@ -1284,6 +1293,7 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
       saveError={saveError}
       onBack={goBack}
       onCommit={(next) => handleCommit(position, next)}
+      baselineDoor={offerBaseline}
       onAddAnotherDecision={(blockId, wantsMore, name) =>
         handleAddAnotherDecision(position, blockId, wantsMore, name)
       }
@@ -1433,6 +1443,12 @@ interface StepViewProps {
   jumpList?: readonly JumpTarget[] | undefined;
   onBack: () => void;
   onCommit: (next: Answers) => void;
+  /** This session came through the splash's baseline door (D1). The bare
+   * prompt screen dresses its nav for the errand: a centred Submit that
+   * waits for text, and "Not right now" going Home (Adam, 2026-09-02) —
+   * while a plain-path session meeting the same question keeps Next/Skip,
+   * because there "not right now" would abandon an interview mid-gate. */
+  baselineDoor?: boolean | undefined;
   /** `name` is V1.4 VB-20's: set only when the block names its new records —
    * see `Flow`'s `handleAddAnotherDecision`. */
   onAddAnotherDecision: (blockId: string, wantsMore: boolean, name?: string) => void;
@@ -1463,6 +1479,7 @@ function StepView({
   onHome,
   onFixSteps,
   onJumpTo,
+  baselineDoor,
   jumpList = [],
 }: StepViewProps) {
   const [draftValues, setDraftValues] = useState<string[]>(() => initialSelection(pos, answers));
@@ -2114,6 +2131,8 @@ function StepView({
      changes is the SURFACE — the chrome row, the progress label and the drawer
      — not the question. */
   const bare = pos.kind === 'step' && promptOnly(pos.step);
+  /* The baseline door's own nav dress — see `baselineDoor` on the props. */
+  const doorPrompt = bare && baselineDoor === true;
   /* Derived, never stored — the suggestion is a function of what is in the box
      right now, so there is no state to get out of step with the text and
      nothing to clear when they accept it (accepting changes `draftText`, which
@@ -2658,6 +2677,7 @@ function StepView({
   return (
     <form
       className={bare ? 'flow flow--prompt' : 'flow'}
+      data-baseline-door={doorPrompt || undefined}
       data-position="step"
       data-step-id={step.id}
       {...stopHere}
@@ -3487,17 +3507,32 @@ function StepView({
           would be a second set of controls saying the same thing. */}
       {!tourSlide && (
         <NavCluster cue={cue}>
-          {canGoBack && (
+          {canGoBack && !doorPrompt && (
             <NavButton type="button" variant="secondary" direction="back" control="back" onClick={onBack}>
               {S.back}
             </NavButton>
           )}
-          <NavButton type="submit" variant="primary" direction="next" control="next">
-            {S.next}
+          {/* THE DOOR'S SUBMIT WAITS (Adam, 2026-09-02: "Next is disabled
+              until text is detected in the input… relabel it 'Submit'").
+              Disabled rather than erroring: on this screen an empty press is
+              not a mistake to correct, it is a button that is not ready. */}
+          <NavButton
+            type="submit"
+            variant="primary"
+            direction="next"
+            control="next"
+            disabled={doorPrompt && draftText.trim() === ''}
+          >
+            {doorPrompt ? S.baselineSubmit : S.next}
           </NavButton>
-          {showSkip && (
-            <NavButton type="button" variant="quiet" control="skip" onClick={handleSkip}>
-              {S.skip}
+          {(showSkip || doorPrompt) && (
+            <NavButton
+              type="button"
+              variant="quiet"
+              control="skip"
+              onClick={doorPrompt && onHome ? onHome : handleSkip}
+            >
+              {doorPrompt ? S.baselineNotNow : S.skip}
             </NavButton>
           )}
         </NavCluster>

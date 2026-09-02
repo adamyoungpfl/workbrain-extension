@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Button, Field, FlowProgress } from '../components';
+import { ASSIST_SERVICE_URLS } from '../../core/flow/assistServices';
 import { S } from '../strings';
 import './BaselineOffer.css';
 
@@ -37,6 +38,23 @@ import './BaselineOffer.css';
  * passing costs nothing — the proof's own baseline still runs later. Anything
  * that made this feel required would be trading the interview for the
  * measurement of it.
+ *
+ * ── THE STORYBOARD (Adam, 2026-09-02) ────────────────────────────────────
+ *
+ * "a 3 panel visual representation of the act of pasting into an LLM,
+ * copying the final response button and pasting it back into this page. I am
+ * thinking like an airlines safety manual kind of vibe to it that stays in
+ * the workbrain aesthetic."
+ *
+ * Three numbered cards replace the old instruction paragraphs, and each card
+ * is also the control for its own step: the first re-copies the prompt (the
+ * old recopy line, moved into the panel it explains), the second opens the
+ * pick-your-AI row — a plain anchor per service, opened by the person's own
+ * click, with the choice saved to `goal_service` through the same answer
+ * path the gate writes (nothing fetched, nothing observed) — and the third
+ * lights the paste box below so there is no doubt where the reply goes.
+ * D1's memory warning survives as panel two's own caption: "a fresh chat"
+ * is the warning, said at the step where it acts.
  */
 export interface BaselineOfferProps {
   /** The person's own goal, verbatim — the task all three stages answer. */
@@ -57,6 +75,15 @@ export interface BaselineOfferProps {
   /** Passed on without running it. The interview carries on as it would have. */
   onSkip: () => void;
   /**
+   * Panel two's pick landed: save which AI they use to the file
+   * (`goal_service`, the same key the goal gate writes). Optional — with no
+   * handler the pick still opens their AI and simply is not remembered.
+   */
+  onService?: ((key: string) => void) | undefined;
+  /** The stored `goal_service` key, when the gate (or an earlier pick)
+   *  already knows it — panel two's sub-line names it instead of asking. */
+  service?: string | undefined;
+  /**
    * Home. Used by three things now: the header's mark, the fork's second door,
    * and "Not now" — which is a real bail-out rather than a skip deeper into
    * the interview (Adam, 2026-09-01). Somebody who does not want to run this
@@ -66,9 +93,18 @@ export interface BaselineOfferProps {
   onHome?: (() => void) | undefined;
 }
 
-export function BaselineOffer({ task, current, total, onRecord, onContinue, onSkip, onHome }: BaselineOfferProps) {
+/** The services panel two offers: the one list (VB-105), minus entries with
+ * no front door to open — 'other' has a title rather than an address, and a
+ * card that opens nothing would break its own instruction. */
+const OPENABLE_SERVICES = S.proofServiceOptions.filter((o) => ASSIST_SERVICE_URLS[o.key]);
+
+export function BaselineOffer({ task, current, total, onRecord, onContinue, onSkip, onService, service, onHome }: BaselineOfferProps) {
   const [pasted, setPasted] = useState('');
   const [copied, setCopied] = useState(false);
+  const [picking, setPicking] = useState(false);
+  const [glowing, setGlowing] = useState(false);
+  const glowTimer = useRef(0);
+  useEffect(() => () => window.clearTimeout(glowTimer.current), []);
   /* THE FORK (Adam, 2026-09-01). Pressing the primary button used to record
      the run and walk straight into question one. That spent the single best
      moment in the product without using it: the person is holding their AI's
@@ -85,6 +121,8 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
      Nothing about it is worth resuming to. */
   const [landed, setLanded] = useState<string | null>(null);
   const ready = pasted.trim().length > 0;
+
+  const serviceLabel = OPENABLE_SERVICES.find((o) => o.key === service)?.label;
 
   if (landed !== null) {
     return (
@@ -128,12 +166,6 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
   }
 
   return (
-    /* LAID OUT LIKE THE QUESTION BEFORE IT (Adam, 2026-09-01): same eyebrow,
-       a body set in the question's own type, the box under it, the action
-       under that. Arriving here should feel like the next step of one path
-       rather than a different kind of screen — which it did not, when this had
-       its own title, its own restated prompt and its own copy button stacked
-       above a small field. */
     <div className="flow baselineoffer" data-position="baseline-offer">
       <FlowProgress
         title={S.baselineEyebrow}
@@ -142,42 +174,105 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
         {...(onHome ? { onHome } : {})}
       />
 
-      {/* THE BODY IS THE QUESTION. There is no title above it any more: on
-          this screen the instruction is the only content, and a heading
-          summarising a two-line instruction was a label on a label. */}
-      <h2 className="flow-q baselineoffer-body">{S.baselineBody}</h2>
+      <h2 className="baselineoffer-title">{S.baselineTitle}</h2>
 
-      {/* D1 — the memory warning. Set apart from the instruction above it
-          because it is a different KIND of thing: that says what to do, this
-          says what would make doing it worthless. It sits above the recopy
-          line so it is read before anybody leaves for their AI, which is the
-          only moment it can still change what they do. */}
-      <p className="baselineoffer-fresh">{S.baselineFresh}</p>
+      {/* The safety card. An ordered list because it IS one — three steps in
+          flight order, each panel a control for its own step. The pictograms
+          are aria-hidden scenery; every panel's whole meaning is in its
+          caption and sub-line. */}
+      <ol className="baselineoffer-story">
+        <li className="baselineoffer-stepli">
+          <button
+            type="button"
+            className="baselineoffer-panel"
+            onClick={() => {
+              navigator.clipboard?.writeText(task).then(
+                () => {
+                  setCopied(true);
+                  window.setTimeout(() => setCopied(false), 1600);
+                },
+                () => {},
+              );
+            }}
+          >
+            <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
+              <rect x="6" y="5" width="26" height="34" rx="3" />
+              <path d="M12 13h14 M12 20h14 M12 27h9" />
+              <path d="M37 22h16 m-5 -5 5 5 -5 5" />
+              <rect x="46" y="36" width="24" height="12" rx="6" />
+              <circle cx="64" cy="42" r="1.6" />
+            </svg>
+            <span className="baselineoffer-cap">{S.baselineStep1}</span>
+            <span className="baselineoffer-sub">{copied ? S.baselineRecopied : S.baselineRecopy}</span>
+          </button>
+        </li>
+        <li className="baselineoffer-stepli">
+          <button
+            type="button"
+            className="baselineoffer-panel"
+            aria-expanded={picking}
+            onClick={() => setPicking((p) => !p)}
+          >
+            <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
+              <rect x="8" y="10" width="46" height="36" rx="4" />
+              <path d="M8 19h46" />
+              <circle cx="14" cy="14.5" r="1.4" />
+              <circle cx="19.5" cy="14.5" r="1.4" />
+              <path d="M31 27v12 M25 33h12" />
+              <path d="M58 10h12 M70 10v12 M70 10 56 24" />
+            </svg>
+            <span className="baselineoffer-cap">{S.baselineStep2}</span>
+            <span className="baselineoffer-sub">{serviceLabel ?? S.baselineStepPick}</span>
+          </button>
+        </li>
+        <li className="baselineoffer-stepli">
+          <button
+            type="button"
+            className="baselineoffer-panel"
+            onClick={() => {
+              setGlowing(true);
+              window.clearTimeout(glowTimer.current);
+              glowTimer.current = window.setTimeout(() => setGlowing(false), 2600);
+              document.getElementById('baseline-paste')?.focus();
+            }}
+          >
+            <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
+              <path d="M10 5h34a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H24l-7 6v-6h-7a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4z" />
+              <path d="M14 12h22 M14 18h14" />
+              <path d="M60 22v12 m-5 -5 5 5 5 -5" />
+              <rect x="14" y="42" width="48" height="11" rx="3" />
+              <path d="M9 40l-3-3 M67 40l3-3" />
+            </svg>
+            <span className="baselineoffer-cap">{S.baselineStep3}</span>
+            <span className="baselineoffer-sub">{S.baselineStepShow}</span>
+          </button>
+        </li>
+      </ol>
 
-      {/* THE PROMPT IS NOT RESTATED. It was on the previous screen in the
-          person's own words, it is on their clipboard, and printing it again
-          here made the screen about the prompt when it is about what to do
-          with it. Adam: "don't restate the prompt they created."
+      {/* Panel two, opened: the one service list, each entry a plain anchor —
+          the person's own click is what leaves the panel, and the pick is
+          remembered through the gate's own answer key. */}
+      {picking && (
+        <div className="baselineoffer-services" role="group" aria-label={S.baselineStepPick}>
+          {OPENABLE_SERVICES.map((o) => (
+            <a
+              key={o.key}
+              className="baselineoffer-service"
+              href={ASSIST_SERVICE_URLS[o.key]}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => {
+                onService?.(o.key);
+                setPicking(false);
+              }}
+            >
+              {o.label}
+            </a>
+          ))}
+        </div>
+      )}
 
-          What survives is the way back to it, as a line rather than a control
-          — for anybody whose clipboard has moved on. */}
-      <button
-        type="button"
-        className="baselineoffer-recopy"
-        onClick={() => {
-          navigator.clipboard?.writeText(task).then(
-            () => {
-              setCopied(true);
-              window.setTimeout(() => setCopied(false), 1600);
-            },
-            () => {},
-          );
-        }}
-      >
-        {copied ? S.baselineRecopied : S.baselineRecopy}
-      </button>
-
-      <div className="flow-answer">
+      <div className={`flow-answer baselineoffer-answerbox${glowing ? ' baselineoffer-target' : ''}`}>
         <div className="flow-field-sr-label">
           <Field
             id="baseline-paste"
@@ -189,10 +284,12 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
         </div>
       </div>
 
-      {/* One centred action with the bail-out under it, which is the shape
-          this screen's decision actually has: one thing to do, and a way out
-          that is not a competing choice. */}
-      <div className="baselineoffer-doors">
+      {/* The doors, FIXED under the box (Adam, 2026-09-02: "Move the
+          Establish my baseline and Not Now box cluster to be fixed below the
+          input box with the proper padding") — the composer's own shape: the
+          work scrolls, the way out doesn't. The save note rides inside the
+          same bar so the promise sits with the buttons that need it. */}
+      <div className="baselineoffer-doors baselineoffer-doors--fixed">
         <Button
           type="button"
           variant="primary"
@@ -208,12 +305,11 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
         <button type="button" className="baselineoffer-later" onClick={onSkip}>
           {S.baselineLater}
         </button>
+        <p className="flow-save">
+          <span>{S.savedNote}</span>
+          <span>{S.privacyNote}</span>
+        </p>
       </div>
-
-      <p className="flow-save">
-        <span>{S.savedNote}</span>
-        <span>{S.privacyNote}</span>
-      </p>
     </div>
   );
 }

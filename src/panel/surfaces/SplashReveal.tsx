@@ -21,7 +21,7 @@ import {
 import type { RevealPart } from '../../core/splash/reveal';
 import { REVEAL_SIMPLE } from '../../core/splash/reveal';
 import { S } from '../strings';
-import { taglineLines } from './Splash';
+import { richTagline, taglineLines } from './Splash';
 import './SplashReveal.css';
 
 /**
@@ -50,67 +50,6 @@ import './SplashReveal.css';
  */
 
 const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'baseline', 'launch'];
-
-/**
- * THE TAGLINE'S MARKS (Adam, 2026-09-01): "some color iconography that
- * focuses attention on the words 'you do' and 'AI does' different from the
- * other letters and not visually connected but thematically connected. I
- * also want to animate the underline [on] everything."
- *
- * So the mirror gets its two poles picked out — "you do" in the route's
- * fuchsia, "AI does" in its aqua — two different hues from one palette,
- * which is exactly "not visually connected but thematically connected". And
- * "everything", the sentence's landing word, takes the answer's own mark: an
- * underline that draws itself once the line has settled, the same gesture
- * that later lands under "Nothing".
- *
- * PRESENTATION ONLY. The string lives whole in strings.ts (the copy law);
- * this walks it looking for the three phrases and wraps what it finds.
- * A phrase that is not found is simply not marked — a re-worded tagline
- * degrades to plain text, never to a crash or a stale highlight.
- */
-/* THE TAGLINE'S FINAL GRAMMAR (Adam, 2026-09-02, second refinement): row
-   one white with the fuchsia "you do"; row two caps a size down, "YOUR AI
-   DOES" in the launch key's own green-blue, and ONLY "EVERYTHING" white —
-   the one word wearing the shimmer and the underline. The unmarked runs sit
-   at the tagline's muted base. */
-const TAGLINE_MARKS: { phrase: string; mark: string }[] = [
-  { phrase: 'you do', mark: 'you' },
-  { phrase: 'your AI does', mark: 'ai' },
-  { phrase: 'everything', mark: 'ever' },
-];
-
-function richTagline(line: string): ReactNode[] {
-  let parts: (string | { text: string; mark: string })[] = [line];
-  for (const { phrase, mark } of TAGLINE_MARKS) {
-    parts = parts.flatMap((part) => {
-      if (typeof part !== 'string') return [part];
-      const at = part.indexOf(phrase);
-      if (at === -1) return [part];
-      return [part.slice(0, at), { text: phrase, mark }, part.slice(at + phrase.length)].filter(
-        (piece) => piece !== '',
-      );
-    });
-  }
-  const classFor: Record<string, string> = {
-    you: 'splash-tagline-you',
-    ai: 'splash-tagline-ai',
-    /* The shimmer retired (Adam, 2026-09-02: "remove the shimmer/gleam…
-       just have the tagline fade in") — EVERYTHING keeps only its purple
-       underline, on the row's own offwhite. */
-    ever: 'splash-tagline-ever',
-  };
-  return parts.map((part, i) =>
-    typeof part === 'string' ? (
-      part
-    ) : (
-      // eslint-disable-next-line react/no-array-index-key -- static per render
-      <span key={i} className={classFor[part.mark] ?? ''}>
-        {part.text}
-      </span>
-    ),
-  );
-}
 
 interface Box {
   cx: number;
@@ -1058,6 +997,16 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         <span className="splash-or">{S.splashOr}</span>
         <LaunchDoor onLaunch={onStraight} still={still} />
       </div>
+      {/* THE PROMISE, at the foot of the loading page (Adam, 2026-09-02:
+          "Add the light gray 'Saved on this device Nothing leaves'
+          disclaimer down on the bottom of the loading page"). The same two
+          spans every flow screen carries (flow-save), pinned to the panel's
+          bottom edge for the whole dark sequence — quiet furniture, not a
+          part, so it neither rises nor simplifies with the choreography. */}
+      <p className="splashreveal-disclaimer" aria-hidden="true">
+        <span>{S.savedNote}</span>
+        <span>{S.privacyNote}</span>
+      </p>
     </div>
   );
 }

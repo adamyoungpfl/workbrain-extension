@@ -105,7 +105,9 @@ test('there is no stem, and the question sits on the box', async () => {
     const box = await label.boundingBox();
     expect(box?.width ?? 0).toBeLessThan(3);
     // The field still answers to it.
-    await expect(page.locator('textarea.field')).toHaveAccessibleName(/would you tell your AI/);
+    // The question reworked 2026-09-02 (Adam's baseline brief) - the name
+    // follows the wording, as it must.
+    await expect(page.locator('textarea.field')).toHaveAccessibleName(/To set your baseline/);
 
     // And the space it held is closed rather than left as a hole.
     const gap = await page.evaluate(() => {
@@ -385,7 +387,7 @@ test('an answer that is already an order is left completely alone', async () => 
 async function toBaselineOffer(page: Page): Promise<void> {
   await page.waitForSelector('.prompt-tw');
   await page.locator('.prompt-tw').first().click();
-  await page.getByRole('button', { name: /Next/ }).click();
+  await page.getByRole('button', { name: /Submit/ }).click();
   await page.waitForSelector('.baselineoffer');
 }
 
@@ -480,7 +482,7 @@ test('the offer screen is laid out like the question before it', async () => {
     }));
 
     await page.locator('.prompt-tw').first().click();
-    await page.getByRole('button', { name: /Next/ }).click();
+    await page.getByRole('button', { name: /Submit/ }).click();
     await page.waitForSelector('.baselineoffer');
 
     await expect(page.locator('.flowprogress')).toContainText(S.baselineEyebrow);

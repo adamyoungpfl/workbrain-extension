@@ -49,7 +49,8 @@ test.describe('the baseline door', () => {
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'goal_want');
 
     await page.locator('.flow .field').first().fill('Draft my Monday update the way I would.');
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    // Submit, not Next (Adam, 2026-09-02): the door's own nav dress.
+    await page.getByRole('button', { name: S.baselineSubmit, exact: true }).click();
 
     // The offer, with NO DRAWER — the file does not exist yet, so there is
     // nothing for it to show.

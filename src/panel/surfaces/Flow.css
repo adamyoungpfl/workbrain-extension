@@ -2390,3 +2390,22 @@
 .flow-chrome .narratormark {
   margin: -9px 0;
 }
+
+/* THE BASELINE DOOR'S NAV (Adam, 2026-09-02: "Center the Next button and
+   relabel it 'Submit' and move the skip button down below as it's own
+   link"). Column, centred: the primary fills the row the way the offer's
+   doors do two screens later, and "Not right now" sits under it as a link
+   rather than beside it as a rival. Scoped to the door's own dress - a
+   plain-path session on the same question keeps the ordinary row. */
+.flow--prompt[data-baseline-door] .flow-foot {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+.flow--prompt[data-baseline-door] .flow-foot .navbtn[data-nav='next'] .btn {
+  width: 100%;
+  justify-content: center;
+}
+.flow--prompt[data-baseline-door] .flow-foot .navbtn[data-nav='skip'] {
+  align-self: center;
+}

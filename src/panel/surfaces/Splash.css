@@ -173,13 +173,45 @@
   animation-delay: 1.35s;
 }
 .splash-intro-tagline {
+  /* TWO LINES, the loading page's own grammar (Adam, 2026-09-02: "the way
+     it is on the loading page. Same color treatment but the white letters
+     are black on top and the gray are a darker gray"). Same caps, same
+     weights, same marks - re-inked for the white canvas: row one's white
+     becomes --ink, row two's offwhite becomes --ink-2, and the two pops
+     step down to their white-canvas family members (--splash-you-ink /
+     --splash-ai-ink; the dark-stage originals measure 3.24:1 and 1.75:1
+     here, under the floor). The underline keeps the family purple - it is
+     emphasis on a line that is fully legible without it. */
   margin: 12px 0 0;
-  max-width: 30ch;
-  font-size: 15px;
-  line-height: 1.55;
-  color: var(--pop-ink);
+  max-width: 34ch;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  line-height: 1.45;
+  color: var(--ink);
   opacity: 0;
   animation-delay: 1.95s;
+}
+.splash-intro-tagline .splash-tagline-line {
+  display: block;
+  text-transform: uppercase;
+}
+.splash-intro-tagline .splash-tagline-line:last-child {
+  font-size: 15px;
+  color: var(--ink-2);
+}
+/* Outranks the reveal's own `.splash-tagline-line:first-child { --ink-inv }`
+   below - same class names, later file position, so without this row one
+   painted WHITE ON WHITE (the first probe caught a tagline with only its
+   purple mark visible). */
+.splash-intro-tagline .splash-tagline-line:first-child {
+  color: var(--ink);
+}
+.splash-intro-tagline .splash-tagline-you {
+  color: var(--splash-you-ink);
+}
+.splash-intro-tagline .splash-tagline-ai {
+  color: var(--splash-ai-ink);
 }
 .splash-intro-byline {
   margin: 14px 0 0;

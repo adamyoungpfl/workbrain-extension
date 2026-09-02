@@ -756,7 +756,19 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
        them" into the prompt and the suite caught it: every authored prompt
        ends in a question mark, and a question with a command bolted on is two
        things pretending to be one. [DRAFT] */
-    prompt: () => 'If you knew it would be done right, right now — what would you tell your AI to do?',
+    /* REWORKED AGAIN 2026-09-02 (Adam, the baseline-question brief - his
+       copy verbatim in both fields): "Narrator: Ok! To set your baseline,
+       you just need to write one prompt. Think of an action that you would
+       normally do. Start with a verb like plan or edit or summarize
+       maybe?" The narrator's lead IS the question now, shown and spoken as
+       one sentence set - the no-drift rule. The wish-frame question this
+       replaces ('If you knew it would be done right…') did its job of
+       asking for an instance; the new frame keeps that (an ACTION, a verb)
+       and adds what the old one could not: it says why the screen exists.
+       The hedge repair (imperative.ts) and the seed stack stay - they read
+       the answer, not the question. */
+    prompt: () =>
+      'Ok! To set your baseline, you just need to write one prompt. Think of an action that you would normally do. Start with a verb like plan or edit or summarize maybe?',
     /* RETUNED 2026-08-31, because the STEM now does the first half of this
        job. The field's visible label is "Tell your AI to…", and a sentence
        ending in "to" can only be finished with a bare verb — so "write it as
@@ -777,10 +789,13 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
        keeps meeting is not vagueness, it is asking for something no AI can
        reach. The beat itself is timing, not punctuation: components/
        DeclarationLine.tsx holds the sweep between lines. */
+    /* His "Prompt:" block, same brief - two lines with "(Double space)" as
+       the beat between them (DeclarationLine holds the sweep). The third
+       line retired: "Start with a verb like plan or edit or summarize" in
+       the question now does its job. */
     hint:
-      'One thing…in your own words.\n' +
-      'You will run this exact prompt next.\n' +
-      'Ask for something you would otherwise do yourself — a draft, a summary, a plan.',
+      'One prompt…in your own words.\n' +
+      '\u201cYou will run this EXACT prompt in your own AI service next…\u201d',
     placeholder: 'e.g. Draft my Monday status update the way I would',
     ideas: [
       'Draft a status update for my manager that sounds like me.',

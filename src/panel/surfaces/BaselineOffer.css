@@ -8,13 +8,9 @@
 }
 
 /* ── THE GOAL SCREEN'S COMPOSITION, ON THIS SCREEN ────────────────────────
-   Header, a body set as the question, the box, the action, the note. The
-   numbers are the ones `.flow--prompt` uses, because the point is that the two
-   screens read as one path rather than as two designs. */
-/* `.flow-q` carries `flex-grow: 1` — that is how the interview's question zone
-   claims its share — and inside this column it meant the HEADING absorbed all
-   the slack, opening 260px between the instruction and the box. Here the
-   heading is content and the box is what grows. */
+   Header, the storyboard, the box, the fixed doors, the note. The numbers are
+   the ones `.flow--prompt` uses, because the point is that the two screens
+   read as one path rather than as two designs. */
 .baselineoffer .baselineoffer-body {
   flex: 0 0 auto;
   margin: 14px 0 2px;
@@ -47,23 +43,131 @@
   padding: 15px 17px;
 }
 
-/* The way back to the prompt. A line, not a control — the copying itself now
-   happens on the press that left the previous screen, and this only exists for
-   a clipboard that has moved on. */
-.baselineoffer-recopy {
-  align-self: flex-start;
-  min-height: 44px;
+/* ── THE STORYBOARD (Adam, 2026-09-02) ────────────────────────────────────
+   The airline safety card: three numbered panels in flight order, drawn in
+   the house's own stroke — thin ink lines on white cards, no fills, and the
+   number badge doing the manual's job of saying these happen IN ORDER. Each
+   panel is a ≥44px control for its own step. */
+.baselineoffer-story {
+  display: flex;
+  gap: 8px;
+  /* Room for the badges' overhang - they ride 7px above their cards. */
+  margin: 10px 0 0;
   padding: 0;
-  border: 0;
-  background: none;
-  color: var(--ink-2);
-  font-size: 13px;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  cursor: pointer;
+  list-style: none;
+  counter-reset: baseline-step;
 }
-.baselineoffer-recopy:hover {
+.baselineoffer-stepli {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+  counter-increment: baseline-step;
+}
+/* The badge. On the list item rather than the button so a focus ring wraps
+   the card cleanly under it. */
+.baselineoffer-stepli::before {
+  content: counter(baseline-step);
+  position: absolute;
+  top: -7px;
+  left: -4px;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--ink);
+  color: var(--ink-inv);
+  font-size: 11px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.baselineoffer-panel {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: var(--target-min);
+  padding: 12px 6px 10px;
+  border: 1.5px solid var(--border-i);
+  border-radius: 12px;
+  background: var(--canvas);
+  font: inherit;
+  cursor: pointer;
+  text-align: center;
+}
+.baselineoffer-panel:hover {
+  border-color: var(--ink-3);
+}
+.baselineoffer-art {
+  width: 62px;
+  height: 46px;
+  fill: none;
+  stroke: var(--pop-ink);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.baselineoffer-cap {
+  font-size: 11.5px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--ink);
+}
+.baselineoffer-sub {
+  font-size: 11px;
+  line-height: 1.3;
   color: var(--primary);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* Panel two, open: the one service list as a row of doors. Anchors, not
+   buttons — the person's own click is what leaves the panel. */
+.baselineoffer-services {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 2px;
+}
+.baselineoffer-service {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--target-min);
+  padding: 0 14px;
+  border: 1px solid var(--border-i);
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  font-size: var(--type-support);
+  font-weight: 600;
+  color: var(--ink);
+  text-decoration: none;
+}
+.baselineoffer-service:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+/* Panel three's answer: the paste target, lit. A ring, not a message — the
+   point is WHERE, and a pulsing outline says it without words. Reduced
+   motion keeps the ring and drops the pulse: the instruction survives. */
+.baselineoffer-target textarea.field {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+  animation: baseline-target-pulse 1.3s ease-in-out 2;
+}
+@keyframes baseline-target-pulse {
+  50% {
+    outline-color: var(--violet);
+    box-shadow: 0 0 0 6px var(--primary-tint);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .baselineoffer-target textarea.field {
+    animation: none;
+    box-shadow: 0 0 0 6px var(--primary-tint);
+  }
 }
 
 /* One centred action with the bail-out under it — the real shape of this
@@ -77,6 +181,29 @@
 }
 .baselineoffer .baselineoffer-doors .btn {
   width: 100%;
+}
+/* THE DOORS, PINNED (Adam, 2026-09-02: "fixed below the input box with the
+   proper padding"). The composer's own shape: the work scrolls, the way out
+   doesn't. The save note lives inside the bar, so the bare shell's static
+   note rule does not apply to it here. */
+.baselineoffer .baselineoffer-doors--fixed {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 1;
+  padding: 12px 20px 6px;
+  background: var(--ground);
+  border-top: 1px solid var(--divider);
+}
+.baselineoffer .baselineoffer-doors--fixed .flow-save {
+  margin: 0;
+  padding-top: 2px;
+}
+/* And the form clears the bar it pinned: the box's own bottom edge stops
+   above the doors instead of running underneath them. */
+.baselineoffer[data-position='baseline-offer'] {
+  padding-bottom: 148px;
 }
 .baselineoffer-title {
   margin: 0;
@@ -96,26 +223,6 @@
    here it is one element in a stack. */
 .baselineoffer-task {
   margin: 6px 0 2px;
-}
-
-/* Quiet, and beside the question rather than on it: this is a convenience, not
-   the action. The action is below, and it is the box. */
-.baselineoffer-copy {
-  align-self: flex-start;
-  min-height: var(--target-min);
-  padding: 0 12px;
-  border: 1px solid var(--border-i);
-  border-radius: var(--r-pill);
-  background: var(--canvas);
-  font: inherit;
-  font-size: var(--type-support);
-  font-weight: 600;
-  color: var(--ink-2);
-  cursor: pointer;
-}
-.baselineoffer-copy:hover {
-  border-color: var(--ink-3);
-  color: var(--ink);
 }
 
 .baselineoffer-doors {
@@ -182,19 +289,7 @@
   margin-top: auto;
 }
 
-/* The memory warning (D1). Amber rather than red: this is a condition to meet,
-   not an error somebody has made — nothing has gone wrong yet, and dressing it
-   as a failure at the top of a screen asking for work would be the product
-   scolding somebody for something they have not done.
-
-   A left rule rather than a filled card, because a filled block here would
-   compete with the instruction it qualifies. */
-.baselineoffer-fresh {
-  flex: 0 0 auto;
-  margin: 4px 0 2px;
-  padding: 2px 0 2px 12px;
-  border-left: 2px solid var(--amber);
-  color: var(--ink-2);
-  font-size: 13px;
-  line-height: 1.45;
-}
+/* `.baselineoffer-recopy` and `.baselineoffer-fresh` retired 2026-09-02 with
+   the storyboard: the recopy line lives in panel one's sub-line, and D1's
+   memory warning lives in panel two's caption ("a fresh chat"), said at the
+   step where it acts. */

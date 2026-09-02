@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { BrandMark, BuildStamp } from '../components';
 import { SplashReveal } from './SplashReveal';
 import { SplashRocket } from './SplashRocket';
@@ -81,6 +81,67 @@ export function taglineLines(text: string): string[] {
   const hinge = text.split(/(?<=anything)\s+(?=is\b)/);
   if (hinge.length > 1) return hinge;
   return text.split(/(?<=[.?!])\s+/);
+}
+
+/**
+ * THE TAGLINE'S MARKS (Adam, 2026-09-01): "some color iconography that
+ * focuses attention on the words 'you do' and 'AI does' different from the
+ * other letters and not visually connected but thematically connected. I
+ * also want to animate the underline [on] everything."
+ *
+ * So the mirror gets its two poles picked out — "you do" in the route's
+ * fuchsia, "AI does" in its aqua — two different hues from one palette,
+ * which is exactly "not visually connected but thematically connected". And
+ * "everything", the sentence's landing word, takes the answer's own mark: an
+ * underline that draws itself once the line has settled, the same gesture
+ * that later lands under "Nothing".
+ *
+ * PRESENTATION ONLY. The string lives whole in strings.ts (the copy law);
+ * this walks it looking for the three phrases and wraps what it finds.
+ * A phrase that is not found is simply not marked — a re-worded tagline
+ * degrades to plain text, never to a crash or a stale highlight.
+ */
+/* THE TAGLINE'S FINAL GRAMMAR (Adam, 2026-09-02, second refinement): row
+   one white with the fuchsia "you do"; row two caps a size down, "YOUR AI
+   DOES" in the launch key's own green-blue, and ONLY "EVERYTHING" white —
+   the one word wearing the shimmer and the underline. The unmarked runs sit
+   at the tagline's muted base. */
+const TAGLINE_MARKS: { phrase: string; mark: string }[] = [
+  { phrase: 'you do', mark: 'you' },
+  { phrase: 'your AI does', mark: 'ai' },
+  { phrase: 'everything', mark: 'ever' },
+];
+
+export function richTagline(line: string): ReactNode[] {
+  let parts: (string | { text: string; mark: string })[] = [line];
+  for (const { phrase, mark } of TAGLINE_MARKS) {
+    parts = parts.flatMap((part) => {
+      if (typeof part !== 'string') return [part];
+      const at = part.indexOf(phrase);
+      if (at === -1) return [part];
+      return [part.slice(0, at), { text: phrase, mark }, part.slice(at + phrase.length)].filter(
+        (piece) => piece !== '',
+      );
+    });
+  }
+  const classFor: Record<string, string> = {
+    you: 'splash-tagline-you',
+    ai: 'splash-tagline-ai',
+    /* The shimmer retired (Adam, 2026-09-02: "remove the shimmer/gleam…
+       just have the tagline fade in") — EVERYTHING keeps only its purple
+       underline, on the row's own offwhite. */
+    ever: 'splash-tagline-ever',
+  };
+  return parts.map((part, i) =>
+    typeof part === 'string' ? (
+      part
+    ) : (
+      // eslint-disable-next-line react/no-array-index-key -- static per render
+      <span key={i} className={classFor[part.mark] ?? ''}>
+        {part.text}
+      </span>
+    ),
+  );
 }
 
 export interface SplashProps {
@@ -385,7 +446,13 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
             <div className="splash-intro-card">
               <BrandMark size={92} spin="orbit" />
               <p className="splash-intro-name">{S.appName}</p>
-              <p className="splash-intro-tagline">{S.splashTagline}</p>
+              <p className="splash-intro-tagline">
+                {taglineLines(S.splashTagline).map((l) => (
+                  <span key={l} className="splash-tagline-line">
+                    {richTagline(l)}
+                  </span>
+                ))}
+              </p>
               <p className="splash-intro-byline">{S.chromeCompany}</p>
             </div>
           </div>

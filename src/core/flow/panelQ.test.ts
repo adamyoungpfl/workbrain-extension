@@ -21,6 +21,13 @@ import type { FlowContext } from '../../schema/flow.types';
  * wording to fit a screen would be the screen deciding the document.
  */
 const CAP = 120;
+/* EXEMPT, each with its reason - not a place to park a question that grew.
+   goal_want: Adam's own panel copy, verbatim (2026-09-02 baseline brief),
+   on the ONE screen that is a bare prompt box rather than an interview step
+   ('promptOnly') - it owns the whole panel with no drawer, so the cap this
+   test enforces (a heading sharing a screen with the dock) does not
+   describe it. Probed at 400px: six lines, seated. */
+const EXEMPT = new Set(['goal_want']);
 const CTX: FlowContext = { answers: {}, repeatables: {} };
 
 describe('every question fits the panel', () => {
@@ -29,7 +36,7 @@ describe('every question fits the panel', () => {
   it(`shows no question longer than ${CAP} characters`, () => {
     const over: string[] = [];
     for (const [id, step] of lookups.stepsById) {
-      if (step.kind === 'intro') continue;
+      if (step.kind === 'intro' || EXEMPT.has(id)) continue;
       const shown = resolvePhrase(step.panelQ ?? step.q, CTX);
       if (shown.length > CAP) over.push(`${id} (${shown.length}): ${shown.slice(0, 70)}…`);
     }
