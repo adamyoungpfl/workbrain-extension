@@ -878,7 +878,21 @@
   font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.06em;
+  /* THE WORD WEARS THE HAND-OFF (Adam, 2026-09-02): capital OR, painted
+     with its own slice of the purple-to-green transition the two squiggles
+     carry - its centre is the gradient's midpoint, so the top half leans
+     purple and the bottom half leans green. Both mixes sit near the two
+     endpoints' own contrast (6.09:1 and higher on the field), and the
+     fallback color below is for any engine without clipped text. */
   color: rgba(255, 255, 255, 0.66);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--splash-link-end) 72%, var(--globe-node-2-solid)),
+    color-mix(in srgb, var(--splash-link-end) 28%, var(--globe-node-2-solid))
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 /* THE BASELINE PILL: outlined and quiet, the mock's lower row. Its silent

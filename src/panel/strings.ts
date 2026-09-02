@@ -1732,13 +1732,17 @@ export const S = {
      drops its qualifier — "Narrated" is a caption under it now — and the
      accessible name keeps the qualifier so the button still says which
      temperament it is to anyone who cannot see the caption's position. */
-  splashBaselineLabel: 'Set your prompting baseline',
-  splashBaseline: 'Set your prompting baseline (narrated)',
+  /* RENAMED (Adam, 2026-09-02): "INITIATE PRE-LAUNCH" - the pill's CSS
+     carries the caps, the string stays sentence case like its shelf-mates. */
+  splashBaselineLabel: 'Initiate pre-launch',
+  splashBaseline: 'Initiate pre-launch (narrated)',
   /** The captions under and beside the labels, and the word between the
    * two pills. */
   splashNarratedShort: 'Narrated',
   splashSilentShort: 'Silent',
-  splashOr: 'or',
+  /* CAPITAL (Adam, 2026-09-02): "more surface space to visually detect
+     the color in the text" - the word carries the gradient's midpoint. */
+  splashOr: 'OR',
   /* THE RADIO (Adam, 2026-09-02): "a little sound clip... like the old NASA
      radio transmissions during launch... a little fun audible queue that
      something is starting". Spoken through the narrator's own engine while
@@ -1756,8 +1760,10 @@ export const S = {
      Adam's originals — "Tower is clear for systems check." and "All systems
      go. Commence launch sequence." — overran the hold and were cut mid-word
      by the counted "3", which read as a glitch rather than as radio. If the
-     full lines are wanted, HOLD_MS is the one number to raise. */
-  splashRadioBaseline: 'Tower is clear. Systems check.',
+     full lines are wanted, HOLD_MS is the one number to raise. Trimmed
+     again 2026-09-02 (the sync brief): "Systems check." was still under
+     the arm at 1.6s and the count stepped on it. */
+  splashRadioBaseline: 'Tower is clear.',
   splashRadioLaunch: 'All systems go.',
   /** The backoff acknowledged — a released hold stands down, out loud. */
   splashRadioStandby: 'Standing by.',
@@ -1891,6 +1897,12 @@ export const S = {
   baselineStep3: 'Bring its reply back here',
   baselineStepPick: 'Pick your AI',
   baselineStepShow: 'Show me where',
+  /* THE PENDING ROW on Home (Adam, 2026-09-02): "a way to go back and grab
+     it before the final proof… aware that it is still pending before their
+     workbrain experience is complete." Stated as an open door, never as
+     guilt (docs/GUARDRAILS.md bans nudges framed that way). */
+  rowBaselineLabel: 'Pre-launch baseline',
+  rowBaselineSub: 'Still open. Take your starting point before the final proof.',
   baselineSaved: 'Saved as your starting point.',
   /* [DRAFT] THE FORK, after the answer has landed (Adam, 2026-09-01). Two
      doors, and the primary one names what the interview is FOR in the only

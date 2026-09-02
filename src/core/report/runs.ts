@@ -66,6 +66,14 @@ export function comparison(
   return out;
 }
 
+/** Whether ANY baseline run exists (Adam, 2026-09-02): Home's pending row
+ * shows until one does. Any task's baseline counts - the row's job is "you
+ * have not taken a starting point yet", not bookkeeping per task - and the
+ * proof's own baseline run closes it the same as the door's. */
+export function hasBaseline(report: ReportState | undefined): boolean {
+  return (report?.runs ?? []).some((run) => run.stage === 'baseline');
+}
+
 /** The task a comparison should be built around — the most recently run one. */
 export function latestTask(report: ReportState | undefined): string | null {
   const runs = report?.runs ?? [];

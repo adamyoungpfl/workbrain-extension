@@ -249,10 +249,18 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
   /** The guard is a ref, not the state: two presses in one tick both read
    * the state's stale `false`, and the second would re-aim the flight. */
   const launched = useRef(false);
-  const launch = useRef((_then?: () => void) => {});
-  launch.current = (then?: () => void) => {
+  /* THE CHOSEN SIDE, read at the press (Adam, 2026-09-02, the sync
+     brief). The digits and the liftoff used to gate on the STORED narrator
+     pref, which the arm writes through async storage - and the count's "3"
+     could beat the round trip, so the first digit sometimes went unspoken.
+     The side someone held IS the sound decision; it rides the callback and
+     the stored pref merely follows it into the interview. */
+  const chosenVoiced = useRef(false);
+  const launch = useRef((_then?: () => void, _voiced?: boolean) => {});
+  launch.current = (then?: () => void, voiced?: boolean) => {
     if (handedOver.current || launched.current) return;
     launched.current = true;
+    chosenVoiced.current = voiced === true;
     launchThen.current = then;
     /* BOTH routes fly since 2026-09-02 ("Once it loads the whole screen
        dissolves to black to initiate the rocket launch sequence" — for
@@ -278,7 +286,7 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
   narratedRef.current = narrated;
   const liftoffTimer = useRef(0);
   const speakDigit = useCallback((digit: number) => {
-    if (!narratedRef.current) return;
+    if (!chosenVoiced.current) return;
     speak({ role: 'question', text: String(digit) });
     /* LIFTOFF (Adam, 2026-09-02, the audio-cue pass): one word in the
        breath after the "1" clears and before the whiteout hands the voice
@@ -287,7 +295,7 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
     if (digit === 1) {
       window.clearTimeout(liftoffTimer.current);
       liftoffTimer.current = window.setTimeout(() => {
-        if (!handedOver.current && narratedRef.current) cue('liftoff');
+        if (!handedOver.current && chosenVoiced.current) cue('liftoff');
       }, 450);
     }
   }, []);
@@ -511,8 +519,8 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
           <SplashReveal
             still={reduced}
             elapsed={() => (performance.now() - t0Ref.current) / 1000 - SPLASH_BEATS.revealAt}
-            {...(onBaseline ? { onBaseline: () => launch.current(onBaseline) } : {})}
-            onStraight={() => launch.current()}
+            {...(onBaseline ? { onBaseline: (voiced: boolean) => launch.current(onBaseline, voiced) } : {})}
+            onStraight={(voiced: boolean) => launch.current(undefined, voiced)}
           />
         </div>
       )}

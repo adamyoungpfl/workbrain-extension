@@ -616,9 +616,16 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
      * the number quietly, because the next six pixels should have to justify
      * themselves the same way: if Home ever needs to be shorter, the lever is
      * the length of these sentences, not the layout under them.
+     *
+     * AND A THIRD TIME, 1.65 → 1.75, on the pending-baseline row (Adam,
+     * 2026-09-02): a seventh row, ~56px, on exactly the fresh Home this test
+     * measures — and a TEMPORARY one: it leaves the moment any baseline run
+     * exists, taking its height with it. Cutting §6's furniture to fit a row
+     * that removes itself would be the same arithmetic-driving-design the
+     * first move refused.
      */
     const height = await page.$eval('.home', (home) => Math.round(home.getBoundingClientRect().height));
-    expect(height, `Home is ${height}px tall`).toBeLessThan(760 * 1.65);
+    expect(height, `Home is ${height}px tall`).toBeLessThan(760 * 1.75);
 
     await context.close();
   });
@@ -656,32 +663,37 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
      */
     const rows = page.locator('.home-row');
     // BS-04 (§4) added the third: proof two, waiting on two recipes.
-    await expect(rows).toHaveCount(6);
-    await expect(rows.nth(0)).toContainText(S.tileDownload);
-    await expect(rows.nth(1)).toContainText(S.proofCta);
-    await expect(rows.nth(2)).toContainText(S.capCta);
-    await expect(rows.nth(3)).toContainText(S.tileRedeem);
-    await expect(rows.nth(4)).toContainText(S.libTitle);
-    await expect(rows.nth(5)).toContainText(S.plusTitle);
+    // 2026-09-02 (Adam): the PENDING BASELINE row leads the list on a fresh
+    // Home - no baseline run exists yet - and it is live from day one.
+    await expect(rows).toHaveCount(7);
+    await expect(rows.nth(0)).toContainText(S.rowBaselineLabel);
+    await expect(rows.nth(0)).not.toHaveClass(/is-waiting/);
+    await expect(rows.nth(0).locator('button')).toHaveCount(1);
+    await expect(rows.nth(1)).toContainText(S.tileDownload);
+    await expect(rows.nth(2)).toContainText(S.proofCta);
+    await expect(rows.nth(3)).toContainText(S.capCta);
+    await expect(rows.nth(4)).toContainText(S.tileRedeem);
+    await expect(rows.nth(5)).toContainText(S.libTitle);
+    await expect(rows.nth(6)).toContainText(S.plusTitle);
 
     // A waiting row says what it is waiting for, in the row, as text — and
     // the three of them wait on different things, said in their own words.
-    await expect(rows.nth(0)).toHaveClass(/is-waiting/);
-    await expect(rows.nth(0)).toContainText(S.tileWaitsOnContext);
+    await expect(rows.nth(1)).toHaveClass(/is-waiting/);
     await expect(rows.nth(1)).toContainText(S.tileWaitsOnContext);
-    await expect(rows.nth(2)).toHaveClass(/is-waiting/);
-    await expect(rows.nth(2)).toContainText(S.capRowWaiting);
+    await expect(rows.nth(2)).toContainText(S.tileWaitsOnContext);
+    await expect(rows.nth(3)).toHaveClass(/is-waiting/);
+    await expect(rows.nth(3)).toContainText(S.capRowWaiting);
 
     // AND IT HOLDS NO CONTROL AT ALL. A disabled button in the tab order is
     // a promise the screen cannot keep — §1 took the dashed disabled square
     // away and this is what replaced it, not a quieter version of it.
-    await expect(rows.nth(0).locator('button, a')).toHaveCount(0);
-    await expect(rows.nth(2).locator('button, a')).toHaveCount(0);
+    await expect(rows.nth(1).locator('button, a')).toHaveCount(0);
+    await expect(rows.nth(3).locator('button, a')).toHaveCount(0);
     await expect(page.locator('.home-tile')).toHaveCount(0);
 
-    // The fourth never waits: a redeem code works on day one.
-    await expect(rows.nth(3)).not.toHaveClass(/is-waiting/);
-    await expect(rows.nth(3).locator('button')).toHaveCount(1);
+    // The redeem row never waits: a redeem code works on day one.
+    await expect(rows.nth(4)).not.toHaveClass(/is-waiting/);
+    await expect(rows.nth(4).locator('button')).toHaveCount(1);
 
     await context.close();
   });

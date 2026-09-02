@@ -329,6 +329,14 @@ export default function App() {
       return (
         <Home
           onStart={() => openContext()}
+          /* The pending row takes the SPLASH DOOR'S OWN ROUTE (Adam,
+             2026-09-02) - same flag, same landing on the goal question, so
+             the errand from Home is indistinguishable from the errand from
+             the door. */
+          onOpenBaseline={() => {
+            setWantBaseline(true);
+            openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
+          }}
           onOpenTarget={(target) => openContext(target)}
           onOpenFile={(id) => {
             // V2.2: Actions is the derived file — its own read-only surface,

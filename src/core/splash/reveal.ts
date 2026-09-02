@@ -159,6 +159,19 @@ export function partStartsAt(part: RevealPart): number {
  *  the simplification below begins), so the whole pitch is in the frame. */
 export const REVEAL_SETTLED = 5.3;
 
+/**
+ * THE FINAL ACTION of the arrival (Adam, 2026-09-02): once the parts have
+ * settled, a short squiggle GROWS from the OR outward to each pill - up to
+ * the baseline, down to the launch - carrying one purple-to-green gradient
+ * whose midpoint sits at OR's own vertical centre. The clock starts just
+ * after REVEAL_SETTLED so the growth is unmistakably the last thing that
+ * happens; the still frame (REVEAL_REST) paints it fully drawn.
+ */
+export function orPairAt(t: number): { drawn: number } {
+  const p = Math.min(1, Math.max(0, (t - 5.45) / 0.7));
+  return { drawn: easeSmooth(p) };
+}
+
 /** When the SIMPLIFICATION has finished (Adam, 2026-09-02): the sections
  *  and every squiggle faded, the keys risen, and what remains is the
  *  lockup, the tagline and the two actions. Nothing moves after this. */

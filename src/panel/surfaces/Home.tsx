@@ -43,7 +43,7 @@ import { RedeemSheet } from './RedeemSheet';
 import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
 import { Comparison } from './Comparison';
-import { latestTask } from '../../core/report/runs';
+import { hasBaseline, latestTask } from '../../core/report/runs';
 import './Home.css';
 
 export interface HomeProps {
@@ -51,6 +51,11 @@ export interface HomeProps {
    * actually leaves off, see core/flow/runner.ts's `findPosition`) the
    * Context interview with no deep-link override. */
   onStart: () => void;
+  /** THE PENDING ROW's door (Adam, 2026-09-02): the same route the splash's
+   * baseline door takes - goal question, then the run-it errand - offered
+   * again from Home while no baseline run exists, so the starting point can
+   * still be taken before the final proof closes the window on meaning it. */
+  onOpenBaseline?: (() => void) | undefined;
   /**
    * Deep-links straight at the question a recommendation is about. App.tsx
    * turns the target into a real `Position` (core/recommend/targets.ts),
@@ -277,6 +282,16 @@ const UPLOAD_ICON = (
   </svg>
 );
 
+/** The pending row's glyph - a rocket standing on its pad, in the same
+ * 17px currentColor stroke as every neighbour. */
+const ROCKET_ICON = (
+  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
+    <path d="M9 2.2c2 1.6 3 3.8 3 6.3l-.1 3.1H6.1L6 8.5c0-2.5 1-4.7 3-6.3Z" strokeLinejoin="round" />
+    <path d="M6 9.5 3.9 12v2.4l2.2-.8M12 9.5l2.1 2.5v2.4l-2.2-.8" strokeLinejoin="round" />
+    <path d="M7.6 14.6h2.8M9 14.8v1.6" />
+  </svg>
+);
+
 const PROVE_ICON = (
   <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
     <path d="M2.8 9.6 6.6 13.4 15.2 4.8" />
@@ -476,7 +491,7 @@ function LockedCard(props: { file: FileSlotId; reason: string }) {
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCapability, onOpenMultiples }: HomeProps) {
+export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpenProof, onOpenCapability, onOpenMultiples }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   /** V2.2 — the second file's answers, for the shelf: whether Skills.md is
    * finished (which unlocks the DERIVED Actions.md), and what its row says.
@@ -941,6 +956,21 @@ export function Home({ onStart, onOpenTarget, onOpenFile, onOpenProof, onOpenCap
           EXPLAINS ITSELF rather than a disabled square, which is the same
           §1 rule that took dashed away from "locked". */}
       <ul className="home-rows">
+        {/* THE PENDING ROW (Adam, 2026-09-02): "PRE-LAUNCH BASELINE… a way
+            to go back and grab it before the final proof". First in the
+            list while it stands, gone the moment any baseline run exists -
+            including the proof's own, which takes the same measurement at
+            its own door. An open door, not a nag (docs/GUARDRAILS.md). */}
+        {onOpenBaseline && !hasBaseline(report) && (
+          <HomeRow
+            id="baseline"
+            icon={ROCKET_ICON}
+            label={S.rowBaselineLabel}
+            sub={S.rowBaselineSub}
+            ready
+            onPress={onOpenBaseline}
+          />
+        )}
         <HomeRow
           id="download"
           icon={DOWNLOAD_ICON}

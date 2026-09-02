@@ -351,6 +351,16 @@
   gap: 14px;
   font-size: 10.5px;
   letter-spacing: 0.02em;
-  color: rgba(237, 239, 243, 0.58);
+  /* Fainter at Adam's word (2026-09-02) - 0.45 is the floor's edge:
+     ~4.6:1 on the field, and one step darker would cross it. */
+  color: rgba(237, 239, 243, 0.45);
   pointer-events: none;
+}
+
+/* The grown pair (Adam, 2026-09-02) - one gradient, two squiggles, the
+   hand-off crossing at OR. Stroke width matches the retired routes. */
+.splashreveal-orlink {
+  stroke: url(#wb-or-grad);
+  stroke-width: 2;
+  stroke-linecap: round;
 }

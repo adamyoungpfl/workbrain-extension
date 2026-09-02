@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { appendRun, comparison, latestTask, missingTally, runsForTask } from './runs';
+import { appendRun, comparison, latestTask, missingTally, runsForTask, hasBaseline } from './runs';
 import type { ProofRun, ReportState } from '../../schema/storage.types';
 
 function run(over: Partial<ProofRun>): ProofRun {
@@ -114,5 +114,16 @@ describe('missingTally', () => {
   it('is empty when nothing was ever missing, and when there is no report', () => {
     expect(missingTally({ scores: [], runs: [run({})] })).toEqual([]);
     expect(missingTally(undefined)).toEqual([]);
+  });
+});
+
+describe('hasBaseline (the pending row, 2026-09-02)', () => {
+  it('is false with no report, no runs, or only later stages', () => {
+    expect(hasBaseline(undefined)).toBe(false);
+    expect(hasBaseline({ scores: [], runs: [] })).toBe(false);
+    expect(hasBaseline({ scores: [], runs: [run({ stage: 'context' })] })).toBe(false);
+  });
+  it('is true once any baseline exists, whatever the task', () => {
+    expect(hasBaseline({ scores: [], runs: [run({ stage: 'baseline', task: 'anything' })] })).toBe(true);
   });
 });

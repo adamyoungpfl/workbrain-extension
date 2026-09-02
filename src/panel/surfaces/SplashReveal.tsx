@@ -15,6 +15,7 @@ import {
   claimWordAt,
   countAt,
   linkAt,
+  orPairAt,
   partAt,
   rolodexAt,
 } from '../../core/splash/reveal';
@@ -59,9 +60,9 @@ interface Box {
    *  link can aim at the pill rather than at the full-width row the part
    *  actually is. */
   key?: { cx: number; cy: number; w: number; h: number };
-  /** The "or" between the pills, when the part carries one — the lower
+  /** The "OR" between the pills, when the part carries one — the grown
    *  squiggle runs from under it into the key below. */
-  or?: { cx: number; bottom: number };
+  or?: { cx: number; top: number; bottom: number };
 }
 
 export interface SplashRevealProps {
@@ -70,8 +71,8 @@ export interface SplashRevealProps {
   elapsed: () => number;
   /** No clock at all: paint the settled frame and schedule nothing. */
   still: boolean;
-  onBaseline?: (() => void) | undefined;
-  onStraight: () => void;
+  onBaseline?: ((voiced: boolean) => void) | undefined;
+  onStraight: (voiced: boolean) => void;
 }
 
 /**
@@ -144,7 +145,7 @@ function HoldKey({
   names: { voiced: string; silent: string };
   /** The transmission spoken while the voiced side loads. */
   radio?: 'radioBaseline' | 'radioLaunch' | undefined;
-  onArmed: () => void;
+  onArmed: (voiced: boolean) => void;
   children: ReactNode;
 }) {
   const { setOn } = useNarratorPref();
@@ -192,7 +193,11 @@ function HoldKey({
         await loadPrefs();
         setOn(voiced);
       }
-      onArmed();
+      /* THE CHOICE RIDES THE CALLBACK (Adam, 2026-09-02, the sync brief):
+         the pref write above is storage-async and React-late, and the
+         count's "3" can beat it - so the side someone actually held travels
+         with the arm, and the digits gate on IT, not on the round trip. */
+      onArmed(voiced);
     })();
   };
 
@@ -376,7 +381,7 @@ function EtaChip({ seconds }: { seconds: number }) {
 }
 
 /** The baseline pill and its time chip. */
-function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }) {
+function BaselineKey({ onEnter, still }: { onEnter: (voiced: boolean) => void; still: boolean }) {
   const [eta] = useState(() => drawEta(124, 192));
   return (
     <div className="splash-basekey">
@@ -388,15 +393,16 @@ function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }
         onArmed={onEnter}
       >
         {(() => {
-          /* The break Adam chose (2026-09-02): "SET YOUR" then "PROMPTING
-             BASELINE". Derived from the one string rather than typed twice —
-             a rewording reflows instead of splitting a stale pair. */
+          /* The break, re-derived for the rename (Adam, 2026-09-02:
+             "INITIATE PRE-LAUNCH"): first word up top, the rest below -
+             still from the one string, so a rewording reflows instead of
+             splitting a stale pair. */
           const words = S.splashBaselineLabel.split(' ');
           return (
             <>
-              {words.slice(0, 2).join(' ')}{' '}
+              {words[0]}{' '}
               <br />
-              {words.slice(2).join(' ')}
+              {words.slice(1).join(' ')}
             </>
           );
         })()}
@@ -425,7 +431,7 @@ function BaselineKey({ onEnter, still }: { onEnter: () => void; still: boolean }
  * is what this screen already does everywhere else. The cable stays, drawn and
  * lit — it is scenery, and scenery is not motion.
  */
-function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean }) {
+function LaunchDoor({ onLaunch, still }: { onLaunch: (voiced: boolean) => void; still: boolean }) {
   const [eta] = useState(() => drawEta(758, 1435));
   const keyRef = useRef<HTMLDivElement | null>(null);
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -521,7 +527,7 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
           path.style.strokeDashoffset = `${length * (1 - pulse.travelled)}`;
           if (pulse.arrived) {
             firing.current = false;
-            onLaunch();
+            onLaunch(firedVoiced.current);
             return;
           }
         }
@@ -539,10 +545,14 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: () => void; still: boolean 
     };
   }, [still, onLaunch]);
 
-  const armed = () => {
+  /* The side that armed, held across the pulse's flight - the light lands
+     a beat after the choice, and the choice must land with it. */
+  const firedVoiced = useRef(false);
+  const armed = (voiced: boolean) => {
+    firedVoiced.current = voiced;
     if (!wired.current) {
       // Nothing is running to carry the light. Open the door.
-      onLaunch();
+      onLaunch(voiced);
       return;
     }
     firing.current = true;
@@ -604,9 +614,12 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
   const partRefs = useRef<Partial<Record<RevealPart, HTMLDivElement | null>>>({});
   const pathRef = useRef<SVGPathElement | null>(null);
   const path2Ref = useRef<SVGPathElement | null>(null);
-  const path3Ref = useRef<SVGPathElement | null>(null);
-  const path4Ref = useRef<SVGPathElement | null>(null);
-  const path5Ref = useRef<SVGPathElement | null>(null);
+  /* The button-region squiggles retired (Adam, 2026-09-02: "Get rid of
+     the little squigglies in the loading sequence above and around the
+     buttons") - what stands in the region now is the grown pair below. */
+  const orUpRef = useRef<SVGPathElement | null>(null);
+  const orDownRef = useRef<SVGPathElement | null>(null);
+  const orGradRef = useRef<SVGLinearGradientElement | null>(null);
   const slotRef = useRef<HTMLSpanElement | null>(null);
   const rolodexRef = useRef<HTMLParagraphElement | null>(null);
   const restRef = useRef<Partial<Record<RevealPart, Box>>>({});
@@ -659,6 +672,7 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         const ob = orEl.getBoundingClientRect();
         next[part]!.or = {
           cx: ob.left - frame.left + ob.width / 2,
+          top: ob.top - frame.top,
           bottom: ob.bottom - frame.top,
         };
       }
@@ -748,33 +762,55 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
          through the "or". The colour still hands itself forward — fuchsia
          to blue, blue to aqua — which is what makes five separate things
          one route. */
-      drawLink(path3Ref.current, 'privacy', 'baseline', 16);
-      drawLink(path4Ref.current, 'baseline', 'launch', 13);
-      /* The lower bow (Adam, 2026-09-02): OR to the launch pill — measured
-         off the word itself, so however the type around it moves, the line
-         still leaves from under the "or" and lands on the pill. */
+      /* THE FINAL ACTION (Adam, 2026-09-02): the region's old squiggles are
+         gone; in their place, once everything has settled, a short squiggle
+         GROWS from OR outward to each pill. Both start at the word, so the
+         growth radiates from the fork itself - and both ride one shared
+         userSpaceOnUse gradient held symmetric around OR's own centre, so
+         the purple-to-green hand-off crosses exactly at the word
+         (`orPairAt`, core). Padding 6-8px at every landfall. */
       {
+        const base = restRef.current['baseline'];
         const part = restRef.current['launch'];
-        const p5 = path5Ref.current;
-        if (p5 && part?.or && part.key) {
+        const up = orUpRef.current;
+        const down = orDownRef.current;
+        const grad = orGradRef.current;
+        if (up && down && base?.key && part?.or && part.key) {
+          const a = partAt(t, 'baseline');
           const b = partAt(t, 'launch');
-          const link = linkAt(t, 'launch');
-          const x1 = part.or.cx + b.x;
-          const y1 = part.or.bottom + b.y + 4;
-          const x2 = part.key.cx + b.x;
-          const y2 = part.key.cy + b.y - part.key.h / 2 + 6;
-          const mid = (y1 + y2) / 2;
-          p5.setAttribute(
+          const pair = orPairAt(t);
+          const orX = part.or.cx + b.x;
+          const orCy = (part.or.top + part.or.bottom) / 2 + b.y;
+          const seg = (x1: number, ya: number, x2: number, yb: number) => {
+            const m = (ya + yb) / 2;
+            return (
+              `M ${x1.toFixed(1)} ${ya.toFixed(1)} C ${(x1 - 9).toFixed(1)} ${m.toFixed(1)}, ` +
+              `${(x2 + 9).toFixed(1)} ${m.toFixed(1)}, ${x2.toFixed(1)} ${yb.toFixed(1)}`
+            );
+          };
+          up.setAttribute(
             'd',
-            `M ${x1.toFixed(1)} ${y1.toFixed(1)} C ${(x1 - 10).toFixed(1)} ${mid.toFixed(1)}, ` +
-              `${(x2 + 10).toFixed(1)} ${mid.toFixed(1)}, ${x2.toFixed(1)} ${y2.toFixed(1)}`,
+            seg(orX, part.or.top + b.y - 6, base.key.cx + a.x, base.key.cy + a.y + base.key.h / 2 + 8),
           );
-          if (typeof p5.getTotalLength === 'function') {
-            const len = p5.getTotalLength();
-            p5.style.strokeDasharray = `${len}`;
-            p5.style.strokeDashoffset = `${len * (1 - link.drawn)}`;
+          down.setAttribute(
+            'd',
+            seg(orX, part.or.bottom + b.y + 6, part.key.cx + b.x, part.key.cy + b.y - part.key.h / 2 - 8),
+          );
+          if (grad) {
+            const yTop = base.key.cy + a.y + base.key.h / 2;
+            const yBot = part.key.cy + b.y - part.key.h / 2;
+            const reach = Math.max(orCy - yTop, yBot - orCy, 1);
+            grad.setAttribute('y1', (orCy - reach).toFixed(1));
+            grad.setAttribute('y2', (orCy + reach).toFixed(1));
           }
-          p5.style.opacity = link.idle ? '0' : link.fade.toFixed(3);
+          for (const path of [up, down]) {
+            if (typeof path.getTotalLength === 'function') {
+              const len = path.getTotalLength();
+              path.style.strokeDasharray = `${len}`;
+              path.style.strokeDashoffset = `${len * (1 - pair.drawn)}`;
+            }
+            path.style.opacity = pair.drawn > 0.01 ? '1' : '0';
+          }
         }
       }
 
@@ -887,9 +923,22 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
               below it start in. The change of colour IS the hand-off. */}
           <path ref={pathRef} className="splashreveal-path" data-link="time" fill="none" />
           <path ref={path2Ref} className="splashreveal-path" data-link="privacy" fill="none" />
-          <path ref={path3Ref} className="splashreveal-path" data-link="baseline" fill="none" />
-          <path ref={path4Ref} className="splashreveal-path" data-link="launch" fill="none" />
-          <path ref={path5Ref} className="splashreveal-path" data-link="launch" fill="none" />
+          {/* The grown pair's shared gradient - vertical, re-anchored every
+              frame so its midpoint IS the word OR's centre. */}
+          <linearGradient
+            ref={orGradRef}
+            id="wb-or-grad"
+            gradientUnits="userSpaceOnUse"
+            x1="0"
+            y1="0"
+            x2="0"
+            y2="1"
+          >
+            <stop offset="0" style={{ stopColor: 'var(--splash-link-end)' }} />
+            <stop offset="1" style={{ stopColor: 'var(--globe-node-2-solid)' }} />
+          </linearGradient>
+          <path ref={orUpRef} className="splashreveal-orlink" fill="none" />
+          <path ref={orDownRef} className="splashreveal-orlink" fill="none" />
         </svg>
       )}
 
