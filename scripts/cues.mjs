@@ -33,6 +33,7 @@ const LINES = {
   digit3: '3',
   digit2: '2',
   digit1: '1',
+  muteBack: 'Sorry — I was on mute. Where was I?',
 };
 
 for (const [name, text] of Object.entries(LINES)) {

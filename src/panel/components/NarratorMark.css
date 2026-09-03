@@ -83,6 +83,36 @@
   animation: narratormark-peak-spike 420ms ease-out 100ms;
 }
 
+/* ON: the equalizer HOPS, always — a gentle ambient bob, not only while
+   speech runs (Adam, 2026-09-03: "the equalizer is hopping when it is on…
+   still when muted"). The state is legible at a glance from motion alone
+   for those who get motion, and from the slash for everyone. The word
+   bounce above rides on top while something is actually being said. */
+@keyframes narratormark-idle-hop {
+  50% {
+    transform: scaleY(1.12);
+  }
+}
+.narratormark[aria-pressed='true'] .narratormark-peaks .peaksmark-peak:nth-of-type(1) {
+  animation: narratormark-idle-hop 2.1s ease-in-out infinite;
+}
+.narratormark[aria-pressed='true'] .narratormark-peaks .peaksmark-peak:nth-of-type(2) {
+  animation: narratormark-idle-hop 2.1s ease-in-out 0.35s infinite;
+}
+.narratormark[aria-pressed='true'] .narratormark-peaks .peaksmark-peak:nth-of-type(3) {
+  animation: narratormark-idle-hop 2.1s ease-in-out 0.7s infinite;
+}
+/* Speaking outranks idling: the word bounce replaces the bob per word. */
+.narratormark[aria-pressed='true'][data-speaking='yes'] .narratormark-peaks .peaksmark-peak:nth-of-type(1) {
+  animation: narratormark-peak-rise 420ms ease-out;
+}
+.narratormark[aria-pressed='true'][data-speaking='yes'] .narratormark-peaks .peaksmark-peak:nth-of-type(2) {
+  animation: narratormark-peak-dip 420ms ease-out 50ms;
+}
+.narratormark[aria-pressed='true'][data-speaking='yes'] .narratormark-peaks .peaksmark-peak:nth-of-type(3) {
+  animation: narratormark-peak-spike 420ms ease-out 100ms;
+}
+
 /* MUTED: the peaks flatten and grey — the voice is down, drawn as down.
    State never rides this alone: the slash badge (below) is the discrete
    drawing the muted claim stands on, colour and motion stripped or not. */
@@ -98,7 +128,7 @@
   /* No dance. The flatten stays (a still state, not motion), and
      "it is speaking" survives via the badge's absence and the ARIA state —
      the floor holds without a single moving part. */
-  .narratormark[data-speaking='yes'] .narratormark-peaks .peaksmark-peak {
+  .narratormark .narratormark-peaks .peaksmark-peak {
     animation: none;
   }
 }

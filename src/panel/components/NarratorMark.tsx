@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import { PeaksSvg } from './PeaksMark';
-import { narratorSupported, onSpeechActivity, speak, stopSpeaking } from '../voice/speech';
+import { narratorSupported, onSpeechActivity, stopSpeaking } from '../voice/speech';
+import { playClip } from '../voice/clips';
+import { requestReplay } from '../voice/cover';
 import { useNarratorPref } from '../voice/prefs';
 import { S } from '../strings';
 import './NarratorMark.css';
@@ -69,8 +71,12 @@ export function NarratorMark() {
            retired with the drop): only a person's own press reaches here -
            the splash's pills write the pref without one, and get no
            filler. */
-        if (next) speak({ role: 'question', text: S.timBackDrop });
-        else stopSpeaking();
+        if (next) {
+          /* The clip acknowledges; the replay answers it - the current
+             question reads once the filler finishes (cover.ts). A clip
+             that cannot play skips straight to the read. */
+          void playClip('muteBack').then(() => requestReplay());
+        } else stopSpeaking();
       }}
       aria-label={S.narrator}
       aria-pressed={on}

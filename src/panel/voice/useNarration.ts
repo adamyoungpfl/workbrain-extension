@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Narration } from '../../core/voice/narration';
 import { speak, stopSpeaking } from './speech';
-import { useVoiceCover } from './cover';
+import { useReplayTick, useVoiceCover } from './cover';
 
 /**
  * V1.3 VB-18 — reads this screen, and stops the moment it is no longer this
@@ -66,10 +66,17 @@ export function useNarration(narration: Narration | null, on: boolean): void {
      screen is not being presented at all - and uncovering re-runs the
      effect so the arrival screen reads once, after the hand-off. */
   const covered = useVoiceCover();
+  /* A replay bump un-spends the current narration - see cover.ts. */
+  const replay = useReplayTick();
+  const replayed = useRef(replay);
 
   useEffect(() => {
     if (covered || !role || !text) return;
     const key = `${role}:${text}`;
+    if (replay !== replayed.current) {
+      replayed.current = replay;
+      if (spent.current === key) spent.current = null;
+    }
     if (!on) {
       spent.current = key;
       return;
@@ -84,5 +91,5 @@ export function useNarration(narration: Narration | null, on: boolean): void {
        cleanup just cancelled the utterance correctly speaks again. */
     speak({ role, text });
     return () => stopSpeaking();
-  }, [covered, on, role, text]);
+  }, [covered, on, replay, role, text]);
 }

@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import App from './App';
 import { installDevReset } from './devReset';
 import { installAudioTrace, installVoiceAudition } from './voice/audition';
+import { primeVoices } from './voice/speech';
 
 /**
  * V1.2 VB-09 — the dev-only reset chord, installed once, before the first
@@ -22,6 +23,7 @@ if (import.meta.env.DEV) {
   // reason — see voice/audition.ts.
   installVoiceAudition();
   installAudioTrace();
+
 }
 
 const root = document.getElementById('root');
@@ -31,4 +33,12 @@ if (root) {
       <App />
     </StrictMode>,
   );
+
+/* V3.0 pass 3e — warm the speech engine's voice list while nothing is
+   waiting (see primeVoices). Idle callback where available; a timeout
+   fallback keeps the same "after first paint" promise elsewhere. */
+const idle = (globalThis as unknown as { requestIdleCallback?: (fn: () => void) => void }).requestIdleCallback;
+if (idle) idle(() => primeVoices());
+else setTimeout(() => primeVoices(), 800);
+
 }

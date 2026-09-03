@@ -94,3 +94,17 @@ describe('useNarration — the voice cover (the splash\u2019s inert, for sound)'
     coverVoice(false);
   });
 });
+
+describe('useNarration — the replay ("Where was I?" answers itself)', () => {
+  it('a requested replay un-spends the current question and reads it once', async () => {
+    const { requestReplay } = await import('./cover');
+    const { act } = await import('react');
+    const m = mount(<Narrated text="What do you do?" on={false} />);
+    m.rerender(<Narrated text="What do you do?" on={true} />);
+    expect(speak).not.toHaveBeenCalled(); // the A/B rule holds without a replay
+    act(() => requestReplay());
+    expect(speak).toHaveBeenCalledTimes(1);
+    expect(speak).toHaveBeenCalledWith({ role: 'question', text: 'What do you do?' });
+    m.unmount();
+  });
+});

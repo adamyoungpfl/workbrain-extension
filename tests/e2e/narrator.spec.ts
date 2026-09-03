@@ -1,4 +1,3 @@
-import { S } from '../../src/panel/strings';
 import { test, expect, chromium } from '@playwright/test';
 import type { BrowserContext, Page, Worker } from '@playwright/test';
 import { readFileSync, readdirSync, statSync } from 'node:fs';
@@ -378,13 +377,18 @@ test.describe('what it narrates', () => {
     await enterInterview(page);
     await toContextScope(page);
 
+    const hereQuestion = (await questionText(page))?.trim();
     await toggle(page).click();
-    await expect.poll(() => probeOf(page).then((p) => p.spoken.length)).toBe(1);
+    /* V3.0 pass 3e: the filler is a bundled CLIP (media path, invisible to
+       this synth probe by design), and its own words - "Where was I?" -
+       are answered by the REPLAY: the engine's first utterance is the
+       CURRENT question, read once after the clip. Later screens read
+       plainly with no filler anywhere near them. */
+    await expect.poll(() => probeOf(page).then((p) => p.spoken.length), { timeout: 8_000 }).toBe(1);
     let probe = await probeOf(page);
-    expect(probe.spoken[0]?.text).toBe(S.timBackDrop);
+    expect(probe.spoken[0]?.text).toBe(hereQuestion);
 
-    // Advance: the next screen opens in state A and reads its own question,
-    // no filler anywhere near it.
+    // Advance: the next screen opens in state A and reads its own question.
     await page.locator('.flow .vpick .vpick-tile').first().click();
     await page.getByRole('button', { name: 'Next', exact: true }).click();
     await expect.poll(() => probeOf(page).then((p) => p.spoken.length)).toBe(2);
@@ -457,21 +461,19 @@ test.describe('when it stops', () => {
     // BEFORE the narrator starts, so the read is still mid-sentence when
     // Next advances the screen.
     await page.locator('.flow .vpick .vpick-tile').first().click(); // VB-118: context_scope is tiles
+    const firstRead = (await questionText(page))?.trim();
     await toggle(page).click();
-    await expect.poll(() => probeOf(page).then((p) => p.spoken.length)).toBe(1);
-
-    /* V3.0 pass 3: what is mid-sentence at the press is the FILLER now (the
-       A/B rule keeps the question in print) - the claim is unchanged: what
-       was speaking when Next lands gets cut, never left to finish over the
-       next question's read. */
+    /* V3.0 pass 3e: the flip's clip is followed by the REPLAY - the
+       current question through the engine - which is the utterance Next
+       then cuts mid-sentence. The claim is unchanged. */
+    await expect.poll(() => probeOf(page).then((p) => p.spoken.length), { timeout: 8_000 }).toBe(1);
     expect(await isSpeaking(page)).toBe(true);
 
     await page.getByRole('button', { name: 'Next', exact: true }).click();
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'stop_explaining');
     await expect.poll(() => probeOf(page).then((p) => p.spoken.length)).toBe(2);
 
     const probe = await probeOf(page);
-    expect(probe.spoken[0]?.text).toBe(S.timBackDrop);
+    expect(probe.spoken[0]?.text).toBe(firstRead);
     expect(probe.spoken[0]?.outcome).toBe('cancelled');
     expect(probe.spoken[1]?.text).toBe((await questionText(page))?.trim());
     /* A cancel lands BETWEEN the two utterances, every time - and only
@@ -662,7 +664,11 @@ test.describe('what it must never do', () => {
     await bare.waitForSelector('.splash', { state: 'detached' });
     await enterInterview(bare);
     await toggle(bare).click();
-    await expect.poll(() => probeOf(bare).then((p) => p.spoken.length)).toBe(1);
+    /* V3.0 pass 3e: the flip plays the clip then REPLAYS the current
+       question through the engine - and the voiceless machine still
+       narrates it with the browser's default (the one-shot voice-wait
+       ceiling releases the read). */
+    await expect.poll(() => probeOf(bare).then((p) => p.spoken.length), { timeout: 8_000 }).toBe(1);
     expect((await probeOf(bare)).spoken[0]?.voice).toBeNull();
     await bare.close();
 

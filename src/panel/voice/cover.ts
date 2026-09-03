@@ -46,3 +46,26 @@ export function useVoiceCover(): boolean {
     () => covered,
   );
 }
+
+/* THE REPLAY (V3.0 pass 3e). The unmute filler's own words are "Where was
+   I?" - and this is the answer: after the clip, the mark requests a replay
+   and the CURRENT question reads once through the engine. The A/B rule's
+   point survives untouched (no filler-plus-reread stack; later screens
+   read plainly) - the replay is the flip answering its own question. */
+let replayTick = 0;
+const replayListeners = new Set<() => void>();
+
+export function requestReplay(): void {
+  replayTick += 1;
+  for (const listener of replayListeners) listener();
+}
+
+export function useReplayTick(): number {
+  return useSyncExternalStore(
+    (listener) => {
+      replayListeners.add(listener);
+      return () => replayListeners.delete(listener);
+    },
+    () => replayTick,
+  );
+}

@@ -104,6 +104,23 @@ function toInstalled(voice: SpeechSynthesisVoice): InstalledVoice {
   };
 }
 
+/**
+ * V3.0 pass 3e — prime the voice list at panel idle, once. The narration
+ * race Adam's Chrome kept losing: a first speak before getVoices() has
+ * populated fell to the 1.2s ceiling and went out voiceless, where the
+ * browser default can be a network voice that never starts in an
+ * extension panel. Priming costs the one-time engine spin-up (~570ms of
+ * browser-side work, measured - see narratorSupported) at a moment nobody
+ * is waiting on anything, instead of during the first sentence someone
+ * wants to hear. Gated by the 0ms narratorSupported check and called from
+ * main.tsx behind requestIdleCallback.
+ */
+export function primeVoices(): void {
+  if (!narratorSupported()) return;
+  watchVoices();
+  installedVoices();
+}
+
 /** Every voice installed on this machine, as plain data core/ can decide over. */
 export function installedVoices(): InstalledVoice[] {
   const apis = speechApis();

@@ -45,6 +45,9 @@ export const SPLASH_CUES = {
   digit3: '3',
   digit2: '2',
   digit1: '1',
+  /** The mark's unmute acknowledgment (V3.0 pass 3e): a fixed line like
+   * any other, so the press always answers through the media path. */
+  muteBack: S.timBackDrop,
 } as const;
 
 export type SplashCue = keyof typeof SPLASH_CUES;
