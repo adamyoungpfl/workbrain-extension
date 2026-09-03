@@ -100,6 +100,11 @@ export default function App() {
   const [surface, setSurface] = useState<Surface>('home');
   const [flowKind, setFlowKind] = useState<FlowKind>('context');
   /**
+   * V3.0 pass 7 — whether the interview was opened from Home's next-move
+   * queue: the Word-style sweep is armed for exactly that visit, and only
+   * that visit. Cleared when the flow closes either way.
+   */
+  /**
    * D1 — whether this session came in through the splash's baseline door.
    *
    * EPHEMERAL, like `seenIntros` and `paidRuns` in Flow: a stored flag would be
@@ -109,6 +114,7 @@ export default function App() {
    * an offer at a moment, not a setting.
    */
   const [wantBaseline, setWantBaseline] = useState(false);
+  const [sweepOn, setSweepOn] = useState(false);
   /** BS-02 — the feedback sheet the proof's own second offer opens. */
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   /** V2.2 — which file the 'file' surface is showing. In-memory like every
@@ -333,6 +339,10 @@ export default function App() {
              2026-09-02) - same flag, same landing on the goal question, so
              the errand from Home is indistinguishable from the errand from
              the door. */
+          onOpenNext={(questionId) => {
+            setSweepOn(true);
+            openContextAt(positionForQuestionId(contextModules, questionId) ?? undefined);
+          }}
           onOpenBaseline={() => {
             setWantBaseline(true);
             openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
@@ -499,10 +509,17 @@ export default function App() {
            offer to run the goal with nothing loaded stands at the end of the
            gate rather than being skipped past. */
         offerBaseline={wantBaseline}
+        sweep={sweepOn}
         onBaselineDone={() => setWantBaseline(false)}
         // BS-03a/P3 — finishing hands into the proof, not back to Home.
-        onDone={() => void finishContext()}
-        onHome={goHome}
+        onDone={() => {
+          setSweepOn(false);
+          void finishContext();
+        }}
+        onHome={() => {
+          setSweepOn(false);
+          goHome();
+        }}
       />
     );
   }

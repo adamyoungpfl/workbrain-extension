@@ -55,6 +55,7 @@ import { ModuleIntro } from './ModuleIntro';
 import { downloadMarkdown } from './FileActions';
 import { RunCard } from './RunCard';
 import { BaselineOffer } from './BaselineOffer';
+import { maintenanceQueue, nextAfter } from '../../core/freshness/queue';
 import { FileDrawer } from './FileDrawer';
 import { AssistBar } from './AssistBar';
 import { ASSIST_LINE_RETURN } from '../../core/flow/assistCopy';
@@ -150,6 +151,16 @@ export interface FlowProps {
    * everybody else meets the interview exactly as it was.
    */
   offerBaseline?: boolean | undefined;
+  /** V3.0 pass 7 - the Word-style sweep (Adam: "Like when Word searches
+   * for grammar and cover the whole doc starting from wherever you are.
+   * Once we start on a stale or incomplete record we go to the next open
+   * or stale after"). Armed only when the interview was opened from
+   * Home's next-move queue: a commit walks to the next open-or-stale item
+   * AFTER the one just answered, in file order, wrapping - recomputed
+   * fresh from the committed answers each time, so an item handled along
+   * the way never comes round again. Exhausted, the runner's natural
+   * order resumes. */
+  sweep?: boolean | undefined;
   /** Called once the offer has been taken or passed on, so it stands once per
    * arrival rather than every time the gate re-renders. */
   onBaselineDone?: (() => void) | undefined;
@@ -633,7 +644,7 @@ function scoreSubStep(key: string): Step {
  * everything specific to the question on screen lives in `StepView`, mounted
  * fresh per position via `key` — see its own comment for why.
  */
-export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialPosition, outline, answersKey = ANSWERS_KEY.context, fileId, fileCopy, offerBaseline, onBaselineDone }: FlowProps) {
+export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialPosition, outline, answersKey = ANSWERS_KEY.context, fileId, fileCopy, offerBaseline, sweep, onBaselineDone }: FlowProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   const [declinedBlocks, setDeclinedBlocks] = useState<ReadonlySet<string>>(new Set());
   // V1.1 VB-05: module ids whose transition screen has been continued past
@@ -846,7 +857,19 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
   function handleCommit(from: Position, next: Answers) {
     void persist(next);
     setHistory((h) => [...h, from]);
-    setViewing(null);
+    /* THE SWEEP (V3.0 pass 7) - see the prop's own doc. Recomputed from
+       the answers just committed, so anything handled along the way has
+       already left the queue; the next stop is the next item AFTER this
+       question in file order, wrapping. With nothing left (or on any
+       screen that is not a step), the runner's natural order resumes -
+       which is what clearing `viewing` has always meant. */
+    if (sweep && outline && from.kind === 'step') {
+      const stop = nextAfter(maintenanceQueue(modules, outline, next, new Date()), from.step.id);
+      const pos = stop ? positionForQuestionId(modules, stop.questionId) : undefined;
+      setViewing(pos ?? null);
+    } else {
+      setViewing(null);
+    }
     /**
      * BS-05d (§5) — THE RUN'S PAYOFF, at the moment it is earned.
      *

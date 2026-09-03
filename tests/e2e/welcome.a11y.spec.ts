@@ -1,4 +1,5 @@
 import { test, expect, chromium } from '@playwright/test';
+import { S } from '../../src/panel/strings';
 import type { BrowserContext, Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import path from 'node:path';
@@ -32,7 +33,10 @@ async function openWelcome(): Promise<{ context: BrowserContext; page: Page }> {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
-  await page.waitForSelector('.home-welcome');
+  /* V3.0 pass 7: the fresh state is the next-move card - the banner this
+     suite was named for is retired, and every claim here restages onto
+     the section that replaced it. */
+  await page.waitForSelector('.home-next-card');
   // V2.1 VB-73: the splash is a doorway and stays until dismissed — and it is
   // in the accessibility tree now, with the panel `inert` underneath it. Both
   // scans and the Tab-order walk below are about the WELCOME screen, which
@@ -62,7 +66,7 @@ test.describe('welcome screen — accessibility', () => {
 
   test('axe finds nothing at all — best practice included — inside the welcome lockup itself', async () => {
     const { context, page } = await openWelcome();
-    const results = await new AxeBuilder({ page }).include('.home-welcome').analyze();
+    const results = await new AxeBuilder({ page }).include('.home-next').analyze();
     expect(results.violations).toEqual([]);
     await context.close();
   });
@@ -145,9 +149,9 @@ test.describe('welcome screen — accessibility', () => {
     // Home state, beside a mark that is likewise only a picture.
     await expect(page.locator('.home-chrome-name')).toContainText('Workbrain');
     await expect(page.locator('.home-chrome svg.brand-mark')).toHaveCount(1);
-    // And the section it heads is named by the headline, not by the picture.
-    await expect(page.locator('.home-welcome')).toHaveAttribute('aria-labelledby', 'home-welcome-headline');
-    await expect(page.locator('#home-welcome-headline')).toHaveText('Teach AI who you are, once.');
+    // And the section it heads is named by its own label, not the picture.
+    await expect(page.locator('.home-next')).toHaveAttribute('aria-labelledby', 'home-next-label');
+    await expect(page.locator('#home-next-label')).toHaveText(S.homeNextLabel);
     await context.close();
   });
 });

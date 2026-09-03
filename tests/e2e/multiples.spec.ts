@@ -374,9 +374,10 @@ test.describe('VB-38 — the list of roles, people and projects', () => {
     answers.repeatables['entities'] = [answers.repeatables['entities']![0]!];
     const page = await openPanel(context, sw, id, answers);
 
-    // NOT on Home, in any form. The recommendation region is the stack it
-    // used to sit in.
-    await expect(page.locator('.home-recs')).not.toContainText('Most people name');
+    // NOT on Home, in any form. (V3.0 pass 7: the recommendation region
+    // only mounts when the next-move queue is empty, so the page-wide
+    // check is the one that carries the claim now - a locator that may
+    // not exist cannot hold a not-assertion.)
     await expect(page.locator('.home')).not.toContainText('Most people name');
 
     await openMultiples(page);

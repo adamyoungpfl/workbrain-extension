@@ -846,3 +846,96 @@ a.home-row-hit:hover .home-row-go {
   border-color: var(--primary);
   color: var(--primary);
 }
+
+/* ── V3.0 pass 7: YOUR NEXT MOVE ──────────────────────────────────────────
+   The featured card: the section's eyebrow, the question itself as the
+   headline, the one way in - and the rest of the queue behind "See all",
+   each row a 44px press. The fresh state adds the old welcome banner's
+   promise and time lines around the same card. */
+.home-next-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 20px 18px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--canvas);
+  text-align: center;
+}
+.home-next-card .btn {
+  width: 100%;
+}
+.home-next-section {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.home-next-q {
+  margin: 0;
+  max-width: 34ch;
+  font-size: 16.5px;
+  font-weight: 650;
+  line-height: 1.35;
+  color: var(--ink);
+  text-wrap: balance;
+}
+.home-next-age-line {
+  margin: 0;
+  font-size: 12.5px;
+  color: var(--ink-2);
+}
+.home-next-more {
+  min-height: var(--target-min);
+  padding: 0 10px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: var(--type-support);
+  color: var(--primary);
+  cursor: pointer;
+}
+.home-next-more:hover {
+  text-decoration: underline;
+}
+.home-next-list {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+}
+.home-next-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--target-min);
+  padding: 6px 8px;
+  border: 0;
+  border-top: 1px solid var(--divider);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.home-next-row:hover {
+  background: var(--sunken);
+}
+.home-next-row-q {
+  font-size: 13px;
+  color: var(--ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.home-next-row-meta {
+  flex: none;
+  font-size: 11.5px;
+  color: var(--ink-3);
+}

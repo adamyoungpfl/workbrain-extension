@@ -1184,7 +1184,22 @@ export const S = {
   /** [DRAFT] V2.8 VB-132c — relabelled from 'Keep it working' (Adam):
    * the tiles row is the what-now shelf, and the label says so. Printed
    * uppercase by the section-label style. */
-  homeKeepLabel: 'Your next move',
+  /* RENAMED (Adam, 2026-09-02, the console round's Home restructure):
+     the rows list is the toolbox now, and the queue above took the old
+     name for the thing it actually describes. */
+  homeKeepLabel: 'Your workbrain',
+  /* ── THE NEXT-MOVE QUEUE (V3.0 pass 7). One featured item - the next
+     question to answer, or the oldest answer worth a fresh look - with
+     the rest behind "See all". No guilt framing anywhere: these are open
+     doors, not overdue notices (docs/GUARDRAILS.md). */
+  homeNextLabel: 'Your next move',
+  homeNextGo: 'Answer it now',
+  homeNextRefresh: 'Confirm or update it',
+  homeNextStale: (days: number) => `You answered this ${days} days ago. Worth a fresh look.`,
+  homeNextAll: (n: number) => `See all ${n}`,
+  homeNextFewer: 'Show fewer',
+  homeNextOpen: 'Open',
+  homeNextAge: (days: number) => `${days}d`,
   /**
    * [DRAFT] V2.8 VB-134 — Workbrain+, the one marketing piece on Home.
    * Replaces VB-125c's priced-nothing offer menu (`ctaTitle`/`ctaBody`/

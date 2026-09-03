@@ -311,8 +311,13 @@ test.describe('Home surface (R1-12)', () => {
     expect(before['wb:answers']).toBeUndefined();
 
     const page = await openPanel(context, id);
-    const welcome = page.locator('.home-welcome');
+    /* V3.0 pass 7 (Adam): the welcome banner is YOUR NEXT MOVE now - the
+       fresh state's featured card previews the first real question and
+       keeps the promise, the time line and the way in. */
+    const welcome = page.locator('.home-next');
     await expect(welcome).toBeVisible();
+    await expect(welcome.locator('.home-section-label')).toHaveText(S.homeNextLabel);
+    await expect(welcome.locator('.home-next-q')).not.toBeEmpty();
     // BS-06 (§6), Adam's D3: the mark left this card with the lockups. The
     // chrome bar says "this is Workbrain" once, for every Home state.
     await expect(welcome.locator('svg.brand-mark')).toHaveCount(0);
@@ -354,8 +359,10 @@ test.describe('Home surface (R1-12)', () => {
     await expect(meter).toHaveAttribute('aria-valuenow', '0');
     await expect(meter).toHaveAttribute('aria-valuetext', `0% ${S.meterLabel}, ${S.stepCurrent(S.steps[0])}`);
 
-    // --- the approved copy, verbatim ---
-    await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toBeVisible();
+    // --- the approved copy that SURVIVES the banner's retirement: the
+    // promise line, the time line and the CTA. The headline retired with
+    // the banner (V3.0 pass 7). ---
+    await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toHaveCount(0);
     await expect(
       page.getByText('Answer some questions. Get a file. Hand it to whatever AI you already use.'),
     ).toBeVisible();
@@ -408,7 +415,8 @@ test.describe('Home surface (R1-12)', () => {
     await expect(mark.locator('circle')).toHaveCount(12);
     await expect(mark).toHaveCSS('animation-name', 'none');
     await expect(mark).toHaveCSS('opacity', '1');
-    await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toBeVisible();
+    // V3.0 pass 7: the featured card stands where the banner did.
+    await expect(page.locator('.home-next-q')).toBeVisible();
 
     await context.close();
   });
@@ -430,8 +438,11 @@ test.describe('Home surface (R1-12)', () => {
     );
 
     const page = await openPanel(context, id);
+    /* V3.0 pass 7: what an answer dissolves now is the fresh DRESSING of
+       the featured card (the promise + time lines), not the section - the
+       queue keeps leading Home for as long as anything is open or stale. */
     await expect(page.locator('.home-welcome')).toHaveCount(0);
-    await expect(page.getByText('Teach AI who you are, once.')).toHaveCount(0);
+    await expect(page.locator('.home-next .home-welcome-sub')).toHaveCount(0);
     // BS-06 (§6), Adam's D3 — THE LOCKUP IS GONE TOO. It said "this is
     // Workbrain" a second time inside 180px of the chrome bar that already
     // said it, and the chrome bar wins because it survives every state.
@@ -588,10 +599,13 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
       [...home.children].map((child) => child.className.split(' ')[0]),
     );
     expect(order[0]).toBe('home-chrome');
-    expect(order[1]).toBe('home-recs');
-    // BS-06's own sheet door made the meter a wrapped row rather than a
-    // direct child of `.home`; the claim is still "the hero is above it".
-    expect(order.indexOf('home-recs')).toBeLessThan(order.indexOf('home-meter'));
+    /* V3.0 pass 7: the hero lives inside the YOUR NEXT MOVE section now -
+       the recommendation region is its guest whenever the queue is empty
+       (a due ROLE is record-level work, which the queue deliberately
+       leaves to the recommendations). The claim is unchanged: the hero is
+       the first thing under the chrome, above the meter. */
+    expect(order[1]).toBe('home-next');
+    expect(order.indexOf('home-next')).toBeLessThan(order.indexOf('home-meter'));
 
     // And it is the only filled primary anywhere on the screen. The welcome
     // card has one too, but the two states never coexist — this is the
@@ -700,6 +714,34 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     // The redeem row never waits: a redeem code works on day one.
     await expect(rows.nth(4)).not.toHaveClass(/is-waiting/);
     await expect(rows.nth(4).locator('button')).toHaveCount(1);
+
+    await context.close();
+  });
+
+  test('the sweep: confirming one stale answer walks to the next stale, not out (V3.0 pass 7)', async () => {
+    const { context, sw, id } = await launchExtension();
+    /* A FINISHED file with exactly two stale answers. This is the case only
+       the sweep can produce: the runner's natural order sees nothing
+       unanswered and would exit - the sweep walks the maintenance queue
+       instead, oldest featured first, next-in-file-order after a commit. */
+    const seeded = nothingLeftToAsk();
+    const OLD = new Date(Date.now() - 900 * 86_400_000).toISOString();
+    const OLDER = new Date(Date.now() - 950 * 86_400_000).toISOString();
+    if (seeded.answeredAt['goal_want']) seeded.answeredAt['goal_want'] = OLDER;
+    if (seeded.answeredAt['never_words']) seeded.answeredAt['never_words'] = OLD;
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), seeded);
+
+    const page = await openPanel(context, id);
+    // The queue leads Home: a stale featured card with the refresh verb.
+    const card = page.locator('.home-next-card');
+    await expect(card).toHaveAttribute('data-kind', 'stale');
+    await page.getByRole('button', { name: S.homeNextRefresh, exact: true }).click();
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'goal_want');
+
+    // Commit it (the stored answer pre-fills the box) - and land on the
+    // NEXT stale item, where without the sweep the interview would end.
+    await page.getByRole('button', { name: /Next|Submit/ }).click();
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'never_words', { timeout: 10_000 });
 
     await context.close();
   });

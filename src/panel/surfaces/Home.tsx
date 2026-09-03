@@ -44,6 +44,7 @@ import type { Answers, Dismissals, ReportState } from '../../schema/storage.type
 import { S } from '../strings';
 import { Comparison } from './Comparison';
 import { hasBaseline, latestTask } from '../../core/report/runs';
+import { featuredMove, maintenanceQueue } from '../../core/freshness/queue';
 import './Home.css';
 
 export interface HomeProps {
@@ -51,6 +52,10 @@ export interface HomeProps {
    * actually leaves off, see core/flow/runner.ts's `findPosition`) the
    * Context interview with no deep-link override. */
   onStart: () => void;
+  /** V3.0 pass 7 - the next-move queue's door: opens the interview AT the
+   * pressed question with the Word-style sweep armed, so finishing one
+   * item walks to the next open-or-stale after it. */
+  onOpenNext?: ((questionId: string) => void) | undefined;
   /** THE PENDING ROW's door (Adam, 2026-09-02): the same route the splash's
    * baseline door takes - goal question, then the run-it errand - offered
    * again from Home while no baseline run exists, so the starting point can
@@ -500,7 +505,7 @@ function LockedCard(props: { file: FileSlotId; reason: string }) {
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpenProof, onOpenCapability, onOpenMultiples }: HomeProps) {
+export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpenFile, onOpenProof, onOpenCapability, onOpenMultiples }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   /** V2.2 — the second file's answers, for the shelf: whether Skills.md is
    * finished (which unlocks the DERIVED Actions.md), and what its row says.
@@ -532,6 +537,9 @@ export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpen
   /** V3.0 pass 2 - the download disclosure. Local, not stored: which rows
    * are open is a fact about this visit, not about the person. */
   const [downloadsOpen, setDownloadsOpen] = useState(false);
+  /** V3.0 pass 7 - whether the queue's "See all" is open. A fact about
+   * this visit, never stored. */
+  const [queueOpen, setQueueOpen] = useState(false);
   const [metaStored, setMetaStored] = useState(false);
   const [voicePref, setVoicePref] = useState<boolean | undefined>(undefined);
   const [dismissals, setDismissals] = useState<Dismissals>(NO_DISMISSALS);
@@ -636,6 +644,12 @@ export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpen
     contextOutline,
     sectionHealthMap(contextOutline, contextModules, answers, null, new Date()),
   );
+  /* V3.0 pass 7 - THE QUEUE (core/freshness/queue.ts): every open question
+     and every answer past its section's half-life, in file order, plus the
+     one to feature. Derived at render like every other fold on this
+     screen; nothing stored. */
+  const queue = maintenanceQueue(contextModules, contextOutline, answers, new Date());
+  const featured = featuredMove(queue);
   // V2.9 VB-146: the interface shows the beta's slots — Actions is hidden
   // (core/files/slots.ts's BETA_HIDDEN_SLOTS carries the story).
   /**
@@ -734,10 +748,73 @@ export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpen
           the two never coexist (`hasStarted` is false exactly when the
           welcome shows), so the order costs a first-time person nothing and
           spares the code a second condition that could drift. */}
-      {hasStarted && (
-        <section
+      {/* V3.0 pass 7 (Adam): YOUR NEXT MOVE leads every state of Home now.
+          With work in the queue it features the next question (or the
+          oldest stale answer) with the rest behind "See all"; with the
+          queue empty it hosts the recommendations hero, which covers what
+          the queue deliberately does not (records, section aggregates).
+          The welcome banner this replaces folded its promise and its time
+          line into the fresh state's own card. */}
+      <section className="home-next" aria-labelledby="home-next-label">
+        <h2 className="home-section-label" id="home-next-label">
+          {S.homeNextLabel}
+        </h2>
+        {featured ? (
+          <div className="home-next-card" data-kind={featured.kind}>
+            <p className="home-next-section">{featured.section}</p>
+            <p className="home-next-q">{featured.question}</p>
+            {featured.kind === 'stale' && (
+              <p className="home-next-age-line">{S.homeNextStale(featured.ageDays ?? 0)}</p>
+            )}
+            {nextMove.kind === 'start' && <p className="home-welcome-sub">{S.welcomeSub}</p>}
+            <Button
+              type="button"
+              variant="primary"
+              /* With no queue door wired (older hosts), the way in is the
+                 plain resume - the same journey, minus the sweep. */
+              onClick={() => (onOpenNext ? onOpenNext(featured.questionId) : onStart())}
+            >
+              {nextMove.kind === 'start'
+                ? S.emptyNoFileAction
+                : featured.kind === 'open'
+                  ? S.homeNextGo
+                  : S.homeNextRefresh}
+            </Button>
+            {nextMove.kind === 'start' && <p className="home-welcome-time">{S.welcomeTime}</p>}
+            {queue.length > 1 && (
+              <button
+                type="button"
+                className="home-next-more"
+                aria-expanded={queueOpen}
+                onClick={() => setQueueOpen((o) => !o)}
+              >
+                {queueOpen ? S.homeNextFewer : S.homeNextAll(queue.length)}
+              </button>
+            )}
+            {queueOpen && (
+              <ul className="home-next-list">
+                {queue.map((item) => (
+                  <li key={item.questionId}>
+                    <button
+                      type="button"
+                      className="home-next-row"
+                      onClick={() => (onOpenNext ? onOpenNext(item.questionId) : onStart())}
+                    >
+                      <span className="home-next-row-q">{item.question}</span>
+                      <span className="home-next-row-meta">
+                        {item.kind === 'open' ? S.homeNextOpen : S.homeNextAge(item.ageDays ?? 0)}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        ) : null}
+        {hasStarted && !featured && (
+        <div
           className={top ? 'home-recs' : 'home-recs is-quiet'}
-          ref={recsRef}
+          ref={recsRef as React.RefObject<HTMLDivElement>}
           tabIndex={-1}
           aria-label={S.recsLabel}
           aria-live="polite"
@@ -787,8 +864,9 @@ export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpen
                just moved to would drop a keyboard user at the top of the
                document. `is-quiet` collapses its box (Home.css). */
           null}
-        </section>
-      )}
+        </div>
+        )}
+      </section>
 
       {/* V1.1 VB-01 — the welcome state. Still just the `start` branch of the
           same derived next move, not a surface and not a stored "have I
@@ -810,24 +888,10 @@ export function Home({ onStart, onOpenBaseline, onOpenTarget, onOpenFile, onOpen
           left in core: it is tested, it is honest, and §6 removed the place
           it was printed rather than the fact it is true. */}
 
-      {nextMove.kind === 'start' && (
-        <section className="home-welcome" aria-labelledby="home-welcome-headline">
-          {/* V2.6 VB-125 took the wordmark and byline off this card; BS-06
-              takes the mark, for the reason that was already written here —
-              the chrome bar says it once, for every Home state. What is
-              left is what a first-time person actually needs: the promise,
-              the time it costs, and the way in. The approved copy is
-              untouched. */}
-          <h2 id="home-welcome-headline" className="home-welcome-headline">
-            {S.welcomeHeadline}
-          </h2>
-          <p className="home-welcome-sub">{S.welcomeSub}</p>
-          <Button type="button" variant="primary" onClick={onStart}>
-            {S.emptyNoFileAction}
-          </Button>
-          <p className="home-welcome-time">{S.welcomeTime}</p>
-        </section>
-      )}
+      {/* The welcome banner retired here (V3.0 pass 7, Adam: "change that
+          default banner 'Teach AI who' and replace it with YOUR NEXT
+          MOVE") - its promise line, its time line and its way in all live
+          in the fresh state's featured card above. */}
 
       {/* V2.6 VB-125 — the signature: the utilization meter, on Adam's
           decided semantics (docs/V2.6-REFINEMENT.md decision 2). Shown at 0%

@@ -144,8 +144,10 @@ test.describe('VB-09 · dev-only reset', () => {
     // --- back to the welcome screen on its own: no reopen, no navigation
     // by the test, and demonstrably a different document than the one that
     // was mid-flow a moment ago ---
-    await expect(page.locator('.home-welcome')).toBeVisible({ timeout: 10_000 });
-    await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toBeVisible();
+    /* V3.0 pass 7: the fresh state is the next-move card wearing the
+       welcome's promise line - the banner it used to assert is retired. */
+    await expect(page.locator('.home-next-card')).toBeVisible({ timeout: 10_000 });
+    await expect(page.locator('.home-next .home-welcome-sub')).toBeVisible();
     await expect(page.locator('.flow')).toHaveCount(0);
 
     // --- and both storage areas are genuinely empty, not just local ---
