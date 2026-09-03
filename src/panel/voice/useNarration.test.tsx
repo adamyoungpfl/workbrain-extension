@@ -1,10 +1,12 @@
+import { StrictMode } from 'react';
 import { describe, expect, it, vi, beforeEach } from 'vitest';
 import { mount } from '../components/testUtils';
 import { useNarration } from './useNarration';
 
+const calls: string[] = [];
 vi.mock('./speech', () => ({
-  speak: vi.fn(),
-  stopSpeaking: vi.fn(),
+  speak: vi.fn(() => calls.push('speak')),
+  stopSpeaking: vi.fn(() => calls.push('stop')),
 }));
 import { speak } from './speech';
 
@@ -24,6 +26,7 @@ function Narrated({ text, on }: { text: string; on: boolean }) {
 
 beforeEach(() => {
   vi.mocked(speak).mockClear();
+  calls.length = 0;
 });
 
 describe('useNarration — the A/B rule', () => {
@@ -56,6 +59,23 @@ describe('useNarration — the A/B rule', () => {
     const m = mount(<Narrated text="Question one?" on={true} />);
     m.rerender(<Narrated text="Question two?" on={true} />);
     expect(speak).toHaveBeenCalledTimes(2);
+    m.unmount();
+  });
+});
+
+describe('useNarration — StrictMode survival (found in dogfood, 2026-09-02)', () => {
+  it('a dev build\u2019s double-mounted effect still ends SPEAKING, not cancelled', () => {
+    /* StrictMode mounts every effect twice: speak, cleanup-cancel, run
+       again. The first A/B guard marked the narration spent on the speak
+       path, so the second run skipped and every dev screen went silent -
+       while production (single-invoke) stayed green through every gate. */
+    const m = mount(
+      <StrictMode>
+        <Narrated text="What do you do?" on={true} />
+      </StrictMode>,
+    );
+    expect(calls.length).toBeGreaterThan(0);
+    expect(calls[calls.length - 1]).toBe('speak');
     m.unmount();
   });
 });

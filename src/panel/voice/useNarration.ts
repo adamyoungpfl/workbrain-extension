@@ -69,7 +69,13 @@ export function useNarration(narration: Narration | null, on: boolean): void {
       return;
     }
     if (spent.current === key) return;
-    spent.current = key;
+    /* NOT marked spent here, and the omission is load-bearing: dev builds
+       run under StrictMode, which mounts every effect twice - speak,
+       cleanup-cancel, run again. Marking on the speak path made the second
+       run skip and every dev screen went silent (Adam's own dogfood found
+       it; the production gates never could). Spent means PRESENTED WHILE
+       MUTED - the only reading the A/B rule needs - and a re-run whose
+       cleanup just cancelled the utterance correctly speaks again. */
     speak({ role, text });
     return () => stopSpeaking();
   }, [on, role, text]);
