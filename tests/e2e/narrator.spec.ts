@@ -474,9 +474,14 @@ test.describe('when it stops', () => {
     expect(probe.spoken[0]?.text).toBe(S.timBackDrop);
     expect(probe.spoken[0]?.outcome).toBe('cancelled');
     expect(probe.spoken[1]?.text).toBe((await questionText(page))?.trim());
-    // A cancel lands between the two utterances, every time.
-    expect(probe.calls.filter((c) => c === 'speak').length).toBe(2);
-    expect(probe.calls.indexOf('cancel')).toBeLessThan(probe.calls.indexOf('speak'));
+    /* A cancel lands BETWEEN the two utterances, every time - and only
+       there (V3.0 pass 3c round two): a quiet engine is no longer
+       cancelled before its first utterance, because that no-op storm is
+       what wedged the Mac speech daemon. */
+    const speaks = probe.calls.flatMap((c, i) => (c === 'speak' ? [i] : []));
+    expect(speaks.length).toBe(2);
+    const between = probe.calls.slice(speaks[0]! + 1, speaks[1]!);
+    expect(between).toContain('cancel');
 
     await context.close();
   });

@@ -1,6 +1,7 @@
 import { useEffect, useRef } from 'react';
 import type { Narration } from '../../core/voice/narration';
 import { speak, stopSpeaking } from './speech';
+import { useVoiceCover } from './cover';
 
 /**
  * V1.3 VB-18 — reads this screen, and stops the moment it is no longer this
@@ -60,9 +61,14 @@ export function useNarration(narration: Narration | null, on: boolean): void {
      moved to the mark's press (NarratorMark.tsx), where it plays alone,
      and the re-read it decorated is gone. */
   const spent = useRef<string | null>(null);
+  /* The splash's inert, for the voice (cover.ts): while the panel is
+     covered this hook neither speaks nor marks anything spent - the
+     screen is not being presented at all - and uncovering re-runs the
+     effect so the arrival screen reads once, after the hand-off. */
+  const covered = useVoiceCover();
 
   useEffect(() => {
-    if (!role || !text) return;
+    if (covered || !role || !text) return;
     const key = `${role}:${text}`;
     if (!on) {
       spent.current = key;
@@ -78,5 +84,5 @@ export function useNarration(narration: Narration | null, on: boolean): void {
        cleanup just cancelled the utterance correctly speaks again. */
     speak({ role, text });
     return () => stopSpeaking();
-  }, [on, role, text]);
+  }, [covered, on, role, text]);
 }

@@ -163,7 +163,12 @@ export function isSpeaking(): boolean {
 let engineTouched = false;
 
 export function stopSpeaking(): void {
-  if (engineTouched) speechApis()?.synth.cancel();
+  /* Conditional like speak()'s own cancel (V3.0 pass 3c round two): every
+     screen unmount runs this through narration cleanup, and cancelling a
+     quiet engine thousands of times per session is the storm that wedged
+     the Mac speech daemon. Silence that already exists costs nothing. */
+  const apis = engineTouched ? speechApis() : null;
+  if (apis && (apis.synth.speaking || apis.synth.pending)) apis.synth.cancel();
   // `cancel()` does not always fire `onend`, and a ring left pulsing after
   // silence is worse than one that never moved.
   announce(false);
@@ -256,11 +261,55 @@ export function speak(narration: Narration): void {
     spokenWords += 1;
     announce(true);
   };
-  utterance.onend = () => announce(false);
-  utterance.onerror = () => announce(false);
+  utterance.onend = () => {
+    announce(false);
+    if (currentUtterance === utterance) currentUtterance = null;
+  };
+  utterance.onerror = () => {
+    announce(false);
+    if (currentUtterance === utterance) currentUtterance = null;
+  };
 
-  apis.synth.cancel();
+  /* CONDITIONAL, both of them (V3.0 pass 3c, round two): the app used to
+     fire cancel() before EVERY utterance and resume() after - a no-op
+     storm hundreds deep across one splash run, and no-op cancel/resume
+     churn is the documented recipe for wedging macOS's speech daemon into
+     the accepts-but-never-starts state Adam's machine kept landing in
+     (utterances queued silently; a later cancel would briefly flush one -
+     his "start of liftoff" on the wrong screen). Cancel only interrupts
+     something actually being said; resume only lifts an actual pause. */
+  if (apis.synth.speaking || apis.synth.pending) apis.synth.cancel();
   announce(false);
   everSpoke = true;
+  /* THREE REAL-CHROME DEFENSES (V3.0, found chasing a silent dogfood
+     build with a headed probe against the live engine):
+
+     1. RETAIN the utterance. Chrome garbage-collects unreferenced
+        utterances mid-speech - the module holds the current one until its
+        own end/error and the next speak replaces it.
+     2. RESUME after speak. A long-lived Chrome can wedge its synth in a
+        paused state that survives extension reloads; resume() is a no-op
+        when not paused and the cure when it is.
+     3. The probe also showed getVoices() EMPTY on a session's first call
+        (0, then 180 a beat later) - so a first utterance that wanted a
+        named voice re-applies it the moment the list arrives, while the
+        utterance is still pending. */
+  currentUtterance = utterance;
+  if (spoken.voiceName && !utterance.voice) {
+    const applyLateVoice = () => {
+      apis.synth.removeEventListener?.('voiceschanged', applyLateVoice);
+      if (currentUtterance !== utterance || apis.synth.speaking) return;
+      const match = apis.synth.getVoices().find((v) => v.name === spoken.voiceName);
+      if (match) utterance.voice = match;
+    };
+    apis.synth.addEventListener?.('voiceschanged', applyLateVoice);
+  }
   apis.synth.speak(utterance);
+  /* Optional-called: the unit fakes model only what each claim needs, and
+     a synth without resume() is also a synth that cannot wedge. */
+  if (apis.synth.paused) apis.synth.resume?.();
 }
+
+/** The utterance being spoken, held against Chrome's utterance GC - see
+ * the retention note in speak(). */
+let currentUtterance: SpeechSynthesisUtterance | null = null;

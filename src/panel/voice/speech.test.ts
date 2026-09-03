@@ -127,7 +127,14 @@ describe('speak', () => {
     speak({ role: 'question', text: 'First question.' });
     speak({ role: 'question', text: 'Second question.' });
 
-    expect(synth.calls).toEqual(['cancel', 'speak', 'cancel', 'speak']);
+    expect(synth.calls).toEqual([
+      /* V3.0 pass 3c round two: no cancel before a FIRST utterance on a
+         quiet engine - the no-op storm is what wedged the Mac daemon. The
+         second speak interrupts real speech, and cancels. */
+      'speak',
+      'cancel',
+      'speak',
+    ]);
     expect(synth.spoken.map((s) => s.text)).toEqual(['First question.', 'Second question.']);
   });
 
@@ -167,10 +174,15 @@ describe('stopSpeaking', () => {
 
     stopSpeaking();
     expect(isSpeaking()).toBe(false);
-    expect(synth.cancels).toBe(2); // one before the utterance, one to stop it
+    /* V3.0 pass 3c round two: cancel is CONDITIONAL now - it only fires
+       when something is being said or queued, because no-op cancel storms
+       are what wedged the Mac speech daemon. The count reflects the new
+       claim: none before a first utterance on a quiet engine, one to stop
+       it, none for stopping silence. */
+    expect(synth.cancels).toBe(1);
 
     stopSpeaking();
-    expect(synth.cancels).toBe(3);
+    expect(synth.cancels).toBe(1);
   });
 });
 

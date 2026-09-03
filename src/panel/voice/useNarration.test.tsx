@@ -79,3 +79,18 @@ describe('useNarration — StrictMode survival (found in dogfood, 2026-09-02)', 
     m.unmount();
   });
 });
+
+describe('useNarration — the voice cover (the splash\u2019s inert, for sound)', () => {
+  it('a covered mount stays silent, marks nothing, and reads once on uncover', async () => {
+    const { coverVoice } = await import('./cover');
+    coverVoice(true);
+    const m = mount(<Narrated text="Under the splash?" on={true} />);
+    expect(speak).not.toHaveBeenCalled();
+    // The hand-off: the splash ends, the arrival screen reads once.
+    const { act } = await import('react');
+    act(() => coverVoice(false));
+    expect(speak).toHaveBeenCalledTimes(1);
+    m.unmount();
+    coverVoice(false);
+  });
+});

@@ -9,6 +9,7 @@ import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
 import { Splash } from './surfaces/Splash';
 import { Universe } from './scenery/Universe';
+import { coverVoice } from './voice/cover';
 import { getSession, setSession } from '../core/storage/client';
 import { FeedbackSheet, Button } from './components';
 import { getLocal } from '../core/storage/client';
@@ -551,6 +552,12 @@ export default function App() {
   // attribute but its TypeScript types predate the property. `''` sets it,
   // `undefined` removes it — the two states HTML actually has.
   const inertWhileCovered = splash === 'showing' ? { inert: '' } : {};
+  /* V3.0 pass 3c - the voice's own inert (voice/cover.ts): the covered
+     panel must not narrate what nobody can see. Same condition, same
+     single writer, same 'asking' exemption as the attribute above. */
+  useEffect(() => {
+    coverVoice(splash === 'showing');
+  }, [splash]);
   return (
     <>
       {/* V2.4 VB-111 — the ONE canvas. The wall (VB-97) hoists from the flow
