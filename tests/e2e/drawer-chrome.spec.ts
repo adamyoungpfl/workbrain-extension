@@ -154,7 +154,7 @@ test.describe('BS-05b — the cluster', () => {
   });
 });
 test.describe('BS-05f — Jump to…', () => {
-  test('opens on every question, in file order, before a word is typed', async () => {
+  test('opens on the sections, collapsed, and a header opens its own (V3.0 pass 5)', async () => {
     const { context, sw, id } = await launchExtension();
     // The deterministic fixture: it opens ON a question, where the chrome
     // row lives. The default one lands on a module transition, which has no
@@ -162,17 +162,31 @@ test.describe('BS-05f — Jump to…', () => {
     const page = await openMidInterview(context, sw, id, answersAllExcept(contextModules, TEXT_QUESTION, NEXT_QUESTION));
 
     await page.getByRole('button', { name: S.jumpOpen, exact: true }).click();
-    const rows = page.locator('.jump-row');
-    await expect(rows).not.toHaveCount(0);
 
-    /**
-     * Opening it with an empty box is a legitimate use: a person who does not
-     * know the word to search for is exactly who needs this, and a search
-     * that shows nothing until you guess right is a search for people who
-     * already know the answer.
-     */
-    const first = await rows.count();
-    await expect(page.locator('.jump-count')).toHaveText(S.jumpCount(first));
+    /* SUPERSEDED (Adam, 2026-09-02): "That many questions is too many to be
+       helpful if you don't already know what you are looking for." The empty
+       box shows the MAP - every section, collapsed, with honest counts - and
+       no question rows until a section opens or a query lands. */
+    const heads = page.locator('button.jump-group-head');
+    await expect(heads).not.toHaveCount(0);
+    await expect(page.locator('.jump-row')).toHaveCount(0);
+    await expect(heads.first()).toHaveAttribute('aria-expanded', 'false');
+
+    // A header's press opens its own section and no other.
+    await heads.first().click();
+    await expect(heads.first()).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator('.jump-row')).not.toHaveCount(0);
+    const groupCount = await heads.count();
+    if (groupCount > 1) {
+      await expect(heads.nth(1)).toHaveAttribute('aria-expanded', 'false');
+    }
+
+    // The count line still counts every question, not just the visible ones.
+    const total = await page.locator('.jump-group-meta').allTextContents();
+    expect(total.length).toBe(groupCount);
+
+    // And the save point stands above the search, dressed as a destination.
+    await expect(page.locator('.jump-home .jump-home-sub')).toHaveText(S.jumpHomeSub);
 
     await context.close();
   });
@@ -182,8 +196,12 @@ test.describe('BS-05f — Jump to…', () => {
     const page = await openMidInterview(context, sw, id, answersAllExcept(contextModules, TEXT_QUESTION, NEXT_QUESTION));
     await page.getByRole('button', { name: S.jumpOpen, exact: true }).click();
 
+    /* V3.0 pass 5: with no query the sections are collapsed, so the full
+       file-order list is read by opening every section first. */
+    for (const head of await page.locator('button.jump-group-head').all()) await head.click();
     const before = await page.locator('.jump-row-q').allTextContents();
     await page.locator('#jump-query').fill('role');
+    // A query FORCES matching sections open - a filter must show its matches.
     const narrowed = await page.locator('.jump-row-q').allTextContents();
     expect(narrowed.length).toBeGreaterThan(0);
     expect(narrowed.length).toBeLessThan(before.length);

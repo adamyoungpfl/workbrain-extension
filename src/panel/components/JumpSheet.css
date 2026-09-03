@@ -142,21 +142,92 @@
    must not be something a person can type themselves out of reach of. Set as a
    row rather than a link so it reads as the same kind of thing as the
    destinations under it. */
+/* THE SAVE POINT (V3.0 pass 5). A card with the panel's own tint and a
+   real border - the one control on the sheet that is a destination rather
+   than a question, dressed like one. */
 .jump-home {
   display: flex;
   align-items: center;
+  gap: 12px;
   width: 100%;
-  min-height: 44px;
-  margin-bottom: 10px;
-  padding: 0 12px;
-  border: 1px solid var(--border-i);
-  border-radius: 10px;
-  background: none;
-  color: var(--ink);
-  font-size: 14px;
-  font-weight: 600;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 1.5px solid var(--primary);
+  border-radius: var(--r-md);
+  background: var(--primary-tint);
+  font: inherit;
+  text-align: left;
   cursor: pointer;
 }
 .jump-home:hover {
+  background: var(--canvas);
+}
+.jump-home-glyph {
+  display: grid;
+  place-items: center;
+  color: var(--primary);
+}
+.jump-home-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.jump-home-label {
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--primary);
+}
+.jump-home-sub {
+  font-size: 12px;
+  color: var(--ink-2);
+}
+
+/* ── V3.0 pass 5: the sections ────────────────────────────────────────────
+   Collapsed by default with honest counts; a typed query turns every
+   matching section into an open label. The header is the full-width 44px
+   press, chevron-free: aria-expanded and the rows appearing ARE the state. */
+.jump-groups {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.jump-group-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--target-min);
+  margin: 0;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: var(--r-md);
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.jump-group-head:hover {
   background: var(--sunken);
+}
+.jump-group-head.is-label {
+  cursor: default;
+  min-height: 32px;
+  padding-bottom: 2px;
+}
+.jump-group-name {
+  font-size: var(--type-support);
+  font-weight: 650;
+  color: var(--ink);
+}
+.jump-group-head[aria-expanded='true'] .jump-group-name {
+  color: var(--primary);
+}
+.jump-group-meta {
+  font-size: 12px;
+  color: var(--ink-3);
+  white-space: nowrap;
+}
+.jump-group .jump-list {
+  padding-left: 10px;
 }

@@ -21,14 +21,16 @@ import './JumpSheet.css';
  * be the panel reading somebody's content in order to rank it, and
  * `strings.ts` promises "the panel never reads or scores it".
  *
- * ── OPENING IT WITH AN EMPTY BOX IS A LEGITIMATE USE ──────────────────────
+ * ── OPENING IT WITH AN EMPTY BOX SHOWS THE MAP, NOT THE TERRITORY ────────
  *
- * Every question, in file order, before a single character is typed. A person
- * who does not know the word to search for is exactly the person who needs
- * this, and a search that shows nothing until you guess correctly is a search
- * for people who already know the answer. The order never changes with the
- * query or with what has been answered, so where a question lives is
- * learnable.
+ * SUPERSEDED in part, V3.0 pass 5 (Adam, 2026-09-02: "That many questions
+ * is too many to be helpful if you don't already know what you are looking
+ * for"). The empty box now shows the SECTIONS — collapsed, each with its
+ * counts — and a section opens on its header's press. What survives of the
+ * original doctrine is the part that mattered: the order never changes with
+ * the query or with progress, so where a section lives is learnable, and
+ * typing anything expands every matching section (a filter that hid its own
+ * matches would be broken).
  *
  * ── A SHEET, NOT A MODAL ──────────────────────────────────────────────────
  *
@@ -65,12 +67,42 @@ export interface JumpSheetProps {
 export function JumpSheet({ open, onClose, targets, onJump, onHome }: JumpSheetProps) {
   const [query, setQuery] = useState('');
   const matches = useMemo(() => jumpMatches(query, targets), [query, targets]);
+  /* The sections, in file order, from the matches themselves - grouping
+     downstream of the filter so the two can never disagree. */
+  const groups = useMemo(() => {
+    const order: string[] = [];
+    const by = new Map<string, JumpTarget[]>();
+    for (const t of matches) {
+      if (!by.has(t.section)) {
+        by.set(t.section, []);
+        order.push(t.section);
+      }
+      by.get(t.section)!.push(t);
+    }
+    return order.map((section) => ({ section, targets: by.get(section)! }));
+  }, [matches]);
+  const [openSections, setOpenSections] = useState<ReadonlySet<string>>(new Set());
+  const filtering = query.trim() !== '';
 
   return (
     <Sheet open={open} onClose={onClose} title={S.jumpTitle} className="jump" full>
       {onHome && (
+        /* THE SAVE POINT (Adam, 2026-09-02: "give that home button a bit
+           more pop and polish so it feels like an easy 'save point'") - a
+           card, not a line: the glyph, the verb, and the promise that
+           leaving loses nothing, which is what a save point IS. */
         <button type="button" className="jump-home" onClick={onHome}>
-          {S.goHome}
+          <span className="jump-home-glyph" aria-hidden="true">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinejoin="round">
+              <path d="M3.2 9.4 10 3.4l6.8 6" />
+              <path d="M5 8.4v7.2h10V8.4" />
+              <path d="M8.4 15.6v-4h3.2v4" />
+            </svg>
+          </span>
+          <span className="jump-home-text">
+            <span className="jump-home-label">{S.goHome}</span>
+            <span className="jump-home-sub">{S.jumpHomeSub}</span>
+          </span>
         </button>
       )}
 
@@ -92,22 +124,58 @@ export function JumpSheet({ open, onClose, targets, onJump, onHome }: JumpSheetP
       {matches.length === 0 ? (
         <p className="jump-empty">{S.jumpNothing}</p>
       ) : (
-        <ul className="jump-list">
-          {matches.map((target) => (
-            <li key={target.questionId}>
-              <button type="button" className="jump-row" onClick={() => onJump(target.questionId)}>
-                <span className="jump-row-text">
-                  <span className="jump-row-q">{target.question}</span>
-                  <span className="jump-row-section">{target.section}</span>
-                </span>
-                {/* A word, not a tick: the state has to survive a screen with
-                    no colour, and "Answered" is the file tree's own claim
-                    said in one word. */}
-                {target.answered && <span className="jump-row-done">{S.jumpAnswered}</span>}
-              </button>
-            </li>
-          ))}
-        </ul>
+        <div className="jump-groups">
+          {groups.map((group) => {
+            const expanded = filtering || openSections.has(group.section);
+            const answered = group.targets.filter((t) => t.answered).length;
+            return (
+              <section key={group.section} className="jump-group">
+                {filtering ? (
+                  /* While a query narrows the list, sections are LABELS -
+                     forced open, nothing to toggle, and no control that
+                     pretends otherwise. */
+                  <p className="jump-group-head is-label">
+                    <span className="jump-group-name">{group.section}</span>
+                    <span className="jump-group-meta">{S.jumpSectionMeta(group.targets.length, answered)}</span>
+                  </p>
+                ) : (
+                  <button
+                    type="button"
+                    className="jump-group-head"
+                    aria-expanded={expanded}
+                    onClick={() =>
+                      setOpenSections((was) => {
+                        const next = new Set(was);
+                        if (next.has(group.section)) next.delete(group.section);
+                        else next.add(group.section);
+                        return next;
+                      })
+                    }
+                  >
+                    <span className="jump-group-name">{group.section}</span>
+                    <span className="jump-group-meta">{S.jumpSectionMeta(group.targets.length, answered)}</span>
+                  </button>
+                )}
+                {expanded && (
+                  <ul className="jump-list">
+                    {group.targets.map((target) => (
+                      <li key={target.questionId}>
+                        <button type="button" className="jump-row" onClick={() => onJump(target.questionId)}>
+                          <span className="jump-row-text">
+                            <span className="jump-row-q">{target.question}</span>
+                          </span>
+                          {/* A word, not a tick: the state has to survive a
+                              screen with no colour. */}
+                          {target.answered && <span className="jump-row-done">{S.jumpAnswered}</span>}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </section>
+            );
+          })}
+        </div>
       )}
     </Sheet>
   );

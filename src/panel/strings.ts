@@ -810,6 +810,14 @@ export const S = {
   jumpCount: (n: number) => (n === 1 ? '1 question' : `${n} questions`),
   /** Beside a question already answered — so "where did I say that" is
    * answerable at a glance, which is half of what a search is opened for. */
+  /* V3.0 pass 5 (Adam: collapsing sections; the home button as "an easy
+     'save point'"). The sub-line under Go home is the save-point promise,
+     said plainly; the section meta is a count, not a claim. */
+  jumpHomeSub: 'Your answers are saved. Pick up right here next time.',
+  jumpSectionMeta: (total: number, answered: number) =>
+    answered > 0
+      ? `${total} ${total === 1 ? 'question' : 'questions'} · ${answered} answered`
+      : `${total} ${total === 1 ? 'question' : 'questions'}`,
   jumpAnswered: 'Answered',
 
   /* BS-05c (§5) — the written-line slip. [DRAFT]
