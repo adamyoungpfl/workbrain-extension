@@ -82,54 +82,9 @@
   font-weight: 700;
   pointer-events: none;
 }
-/* THE CLUSTER IS FIXED (Adam, 2026-09-03): three EQUAL boxes on a grid
-   that never reflows - the active one lights, the others dim a step, and
-   all the work happens in the stage below. Equal by grid + a shared
-   height, not by hoping captions match. */
-.baselineoffer-story.is-cluster {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-}
-.baselineoffer-panel {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  width: 100%;
-  height: 118px;
-  padding: 10px 6px;
-  border: 1.5px solid var(--border-i);
-  border-radius: 12px;
-  background: var(--canvas);
-  font: inherit;
-  cursor: pointer;
-  text-align: center;
-  opacity: 0.72;
-  transition: opacity 140ms ease, border-color 140ms ease;
-}
-.baselineoffer-panel:hover {
-  border-color: var(--ink-3);
-  opacity: 1;
-}
-/* The active step: full ink, the primary's edge - never colour alone,
-   aria-expanded and the stage's own content carry the state. */
-.baselineoffer-panel[data-active] {
-  border-color: var(--primary);
-  border-width: 2px;
-  opacity: 1;
-}
-/* The stage: one panel under the cluster, holding the active step's work. */
-.baselineoffer-stage {
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  padding: 14px;
-  border: 1px solid var(--divider);
-  border-radius: 12px;
-  background: var(--canvas);
-}
+/* The cluster-and-stage dress retired same-day (V3.0 pass 3i): the step
+   stack (components/StepStack.css) is the grammar now, and this file only
+   dresses the details this screen puts inside it. */
 .baselineoffer-recopy {
   align-self: flex-start;
   min-height: var(--target-min);
@@ -318,3 +273,53 @@
    the storyboard: the recopy line lives in panel one's sub-line, and D1's
    memory warning lives in panel two's caption ("a fresh chat"), said at the
    step where it acts. */
+
+/* ── V3.0 pass 3j: the polish dress ──────────────────────────────────────
+   Notes read like a hand on the shoulder; the mocks are drawn browser
+   panels with one highlight ring - the control the step is about. */
+.baselineoffer-note {
+  margin: 0;
+  font-size: var(--type-support);
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.baselineoffer-recopy.is-inline {
+  align-self: auto;
+  display: inline;
+  min-height: 0;
+  padding: 0;
+}
+.baselineoffer-mock {
+  width: 100%;
+  max-width: 300px;
+  height: auto;
+  fill: none;
+  stroke: var(--pop-ink);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.baselineoffer-mock-ring {
+  stroke: var(--primary);
+  stroke-width: 2.4;
+}
+.baselineoffer-open {
+  align-self: flex-start;
+}
+/* The save note, fixed at the page's own bottom (back where furniture
+   lives) - and the form clears it. */
+.baselineoffer[data-position='baseline-offer'] .baselineoffer-save {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  margin: 0;
+  padding: 8px 20px 10px;
+  background: var(--ground);
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+}
+.baselineoffer[data-position='baseline-offer'] {
+  padding-bottom: 52px;
+}

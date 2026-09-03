@@ -394,7 +394,7 @@ async function toBaselineOffer(page: Page): Promise<void> {
 /** V3.0 pass 3h: the paste box and the doors live in step 3's stage - the
  * cluster's third box opens it. */
 async function toStep3(page: Page): Promise<void> {
-  await page.locator('.baselineoffer-panel').nth(2).click();
+  await page.locator('.stepstack-row').nth(2).click();
   await page.waitForSelector('#baseline-paste');
 }
 
@@ -511,7 +511,7 @@ test('the offer screen is laid out like the question before it', async () => {
        a card rather than the whole panel - the surviving claims are that
        it exists at a real working height, the screen still does not
        scroll, and the doors sit DIRECTLY under it in order. */
-    await page.locator('.baselineoffer-panel').nth(2).click();
+    await page.locator('.stepstack-row').nth(2).click();
     await page.waitForSelector('#baseline-paste');
     const { boxH, overflow } = await page.evaluate(() => ({
       boxH: Math.round(document.querySelector('textarea.field')!.getBoundingClientRect().height),

@@ -2184,6 +2184,10 @@
 .flowshell--bare {
   min-height: 100dvh;
   background: var(--ground);
+  /* V3.0 pass 3j: the offer's step 3 (guidance + mock + box + doors) can
+     honestly outgrow a short panel - the fixed shell scrolls its content
+     rather than clipping a button off the world. Free when things fit. */
+  overflow-y: auto;
 }
 /* The save note is `position: fixed` inside a normal shell so it rides above
    the dock. There is no dock here, so it sits where it falls — at the end of

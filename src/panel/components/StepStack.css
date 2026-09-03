@@ -1,0 +1,99 @@
+/* The step stack's three dresses — see StepStack.tsx for the grammar. */
+.stepstack {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.stepstack-item {
+  border: 1.5px solid var(--border-i);
+  border-radius: 12px;
+  background: var(--canvas);
+  overflow: hidden;
+  transition: border-color 140ms ease, background-color 140ms ease;
+}
+/* ACTIVE: the working edge, full ink, the detail space open below. */
+.stepstack-item[data-state='active'] {
+  border-color: var(--primary);
+  border-width: 2px;
+}
+/* DONE: the faded wash of the working tint — already done, not current. */
+.stepstack-item[data-state='done'] {
+  background: color-mix(in srgb, var(--primary-tint) 55%, var(--canvas));
+  border-color: color-mix(in srgb, var(--primary) 35%, var(--border-i));
+}
+.stepstack-item[data-state='dormant'] .stepstack-row {
+  opacity: 0.78;
+}
+
+/* The row is the whole press — 44px floor and then some. */
+.stepstack-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 56px;
+  padding: 10px 14px;
+  border: 0;
+  background: none;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The check-off element: hollow until visited, then the mark. */
+.stepstack-check {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1.5px solid var(--border-i);
+  border-radius: 50%;
+  color: var(--canvas);
+  background: var(--canvas);
+  transition: background-color 140ms ease, border-color 140ms ease;
+}
+.stepstack-item[data-state='done'] .stepstack-check,
+.stepstack-item[data-state='active'] .stepstack-check {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* The lockup: pictogram and caption side by side. Active pulls it to the
+   top-left corner of the transformed box (the row already sits there —
+   the art just steps down so the detail owns the room). */
+.stepstack-lockup {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.stepstack-lockup .baselineoffer-art,
+.stepstack-lockup svg {
+  flex: none;
+  width: 44px;
+  height: 33px;
+}
+.stepstack-cap {
+  font-size: 13px;
+  font-weight: 650;
+  line-height: 1.3;
+  color: var(--ink);
+}
+
+/* The expanded space. */
+.stepstack-detail {
+  padding: 0 14px 14px 48px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .stepstack-item,
+  .stepstack-check {
+    transition: none;
+  }
+}

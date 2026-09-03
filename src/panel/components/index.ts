@@ -130,3 +130,7 @@ export type { DeclarationLineProps } from './DeclarationLine';
 export { NarratorMark, useSpeechPulse } from './NarratorMark';
 // V3.0 pass 4 - the shipped icon's peaks, as a drawable face any host animates.
 export { PeaksSvg } from './PeaksMark';
+// V3.0 pass 3i - the step stack: the reusable multi-step question grammar
+// (check-off rows, one active detail space). See StepStack.tsx.
+export { StepStack } from './StepStack';
+export type { StepStackStep } from './StepStack';

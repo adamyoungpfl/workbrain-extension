@@ -80,3 +80,20 @@ export function playClip(name: string): Promise<boolean> {
     }
   });
 }
+
+/**
+ * A UI tick, not a voice: its own throwaway element, no announce, no
+ * stopping of anything - a chime must never interrupt a narration
+ * (V3.0 pass 3i, the step stack's check-off). Quiet by file AND by
+ * volume; failures are silent per the degradation law.
+ */
+export function playTick(): void {
+  try {
+    const el = new Audio('cues/tick.m4a');
+    el.volume = 0.4;
+    trace('tick');
+    void el.play().catch(() => {});
+  } catch {
+    /* Silent, per docs/GUARDRAILS.md. */
+  }
+}

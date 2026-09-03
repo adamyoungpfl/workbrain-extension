@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button, Field, FlowProgress, NarratorMark } from '../components';
+import { Button, Field, FlowProgress, NarratorMark, StepStack } from '../components';
 import { useNarration } from '../voice/useNarration';
 import { baselineOfferAskLine, baselineOfferLandedLine } from '../voice/narrationLines';
 import { useNarratorPref } from '../voice/prefs';
@@ -108,7 +108,12 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
      happens in ONE STAGE beneath them - press a box, its stage opens, and
      everything else waits. Step 3's stage CONTAINS the paste box and the
      doors, so the thing to do is always the only thing lit. */
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const [step, setStep] = useState('copy');
+  const [visited, setVisited] = useState<ReadonlySet<string>>(new Set(['copy']));
+  /* The chip SELECTS (and persists via onService); the Open button is what
+     leaves the panel. Seeded from the stored pick when the gate knows it. */
+  const [svc, setSvc] = useState<string | undefined>(service);
+  const svcLabel = OPENABLE_SERVICES.find((o) => o.key === svc)?.label;
   /* THE FORK (Adam, 2026-09-01). Pressing the primary button used to record
      the run and walk straight into question one. That spent the single best
      moment in the product without using it: the person is holding their AI's
@@ -200,112 +205,180 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
 
       <h2 className="baselineoffer-title">{S.baselineTitle}</h2>
 
-      {/* THE FIXED CLUSTER (Adam, 2026-09-03): three equal boxes that never
-          move or resize - the flight order at a glance - and ONE stage
-          beneath them where the active step's work happens. The pictograms
-          are aria-hidden scenery; each box's whole meaning is its caption,
-          and aria-expanded carries which stage is open. */}
-      <ol className="baselineoffer-story is-cluster">
-        {(
-          [
-            { n: 1 as const, cap: S.baselineStep1, art: ART_PASTE },
-            { n: 2 as const, cap: S.baselineStep2, art: ART_OPEN },
-            { n: 3 as const, cap: S.baselineStep3, art: ART_RETURN },
-          ]
-        ).map(({ n, cap, art }) => (
-          <li key={n} className="baselineoffer-stepli">
-            <button
-              type="button"
-              className="baselineoffer-panel"
-              data-active={step === n || undefined}
-              aria-expanded={step === n}
-              onClick={() => setStep(n)}
-            >
-              {art}
-              <span className="baselineoffer-cap">{cap}</span>
-            </button>
-          </li>
-        ))}
-      </ol>
-
-      <div className="baselineoffer-stage" data-step={step}>
-        {step === 1 && (
-          <button
-            type="button"
-            className="baselineoffer-recopy"
-            onClick={() => {
-              navigator.clipboard?.writeText(task).then(
-                () => {
-                  setCopied(true);
-                  window.setTimeout(() => setCopied(false), 1600);
-                },
-                () => {},
-              );
-            }}
-          >
-            {copied ? S.baselineRecopied : S.baselineRecopy}
-          </button>
-        )}
-        {step === 2 && (
-          <div className="baselineoffer-services" role="group" aria-label={S.baselineStepPick}>
-            {OPENABLE_SERVICES.map((o) => (
-              <a
-                key={o.key}
-                className="baselineoffer-service"
-                data-picked={o.key === service || undefined}
-                href={ASSIST_SERVICE_URLS[o.key]}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => onService?.(o.key)}
-              >
-                {o.label}
-              </a>
-            ))}
-          </div>
-        )}
-        {step === 3 && (
-          <>
-            <div className="flow-answer baselineoffer-answerbox baselineoffer-target">
-              <div className="flow-field-sr-label">
-                <Field
-                  id="baseline-paste"
-                  label={S.baselineBody}
-                  value={pasted}
-                  onChange={setPasted}
-                  as="textarea"
-                />
-              </div>
-            </div>
-            {/* The doors ride DIRECTLY under the box (Adam, 2026-09-03:
-                "fixed below the input box, not fixed to the bottom of the
-                page") - the way out lives with the work it closes. */}
-            <div className="baselineoffer-doors">
-              <Button
-                type="button"
-                variant="primary"
-                disabled={!ready}
-                onClick={() => {
-                  const answer = pasted.trim();
-                  onRecord(answer);
-                  setLanded(answer);
-                }}
-              >
-                {S.baselineGo}
-              </Button>
-              <button type="button" className="baselineoffer-later" onClick={onSkip}>
-                {S.baselineLater}
-              </button>
-              <p className="flow-save">
-                <span>{S.savedNote}</span>
-                <span>{S.privacyNote}</span>
-              </p>
-            </div>
-          </>
-        )}
-      </div>
+      {/* THE STEP STACK (Adam, 2026-09-03: vertical, check-offs, the chime
+          on first opening, the active box transforming into a corner
+          lockup over its detail space, done steps keeping the faded tint).
+          The stack is the reusable grammar (components/StepStack.tsx);
+          this screen only supplies the three details. */}
+      <StepStack
+        active={step}
+        visited={visited}
+        onActivate={(id) => {
+          setVisited((was) => new Set(was).add(id));
+          setStep(id);
+        }}
+        steps={[
+          {
+            id: 'copy',
+            caption: S.baselineStep1,
+            art: ART_PASTE,
+            detail: (
+              <>
+                {/* The reassurance first: the press that left the previous
+                    screen already copied the prompt. The inline word is the
+                    recopy - belt for a clipboard that moved on. */}
+                <p className="baselineoffer-note">{copied ? S.baselineRecopied : S.baselineCopiedAlready}</p>
+                <p className="baselineoffer-note">
+                  {S.baselineRecopyBefore}{' '}
+                  <button
+                    type="button"
+                    className="baselineoffer-recopy is-inline"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(task).then(
+                        () => {
+                          setCopied(true);
+                          window.setTimeout(() => setCopied(false), 1600);
+                        },
+                        () => {},
+                      );
+                    }}
+                  >
+                    {S.baselineRecopyLinkWord}
+                  </button>{' '}
+                  {S.baselineRecopyAfter}
+                </p>
+              </>
+            ),
+          },
+          {
+            id: 'open',
+            caption: S.baselineStep2,
+            art: ART_OPEN,
+            detail: (
+              <>
+                <div className="baselineoffer-services" role="group" aria-label={S.baselineStepPick}>
+                  {OPENABLE_SERVICES.map((o) => (
+                    <button
+                      key={o.key}
+                      type="button"
+                      className="baselineoffer-service"
+                      data-picked={o.key === svc || undefined}
+                      aria-pressed={o.key === svc}
+                      onClick={() => {
+                        setSvc(o.key);
+                        onService?.(o.key);
+                      }}
+                    >
+                      {o.label}
+                    </button>
+                  ))}
+                </div>
+                {svc && svcLabel && (
+                  <>
+                    <p className="baselineoffer-note">{S.baselinePasteHow(svcLabel)}</p>
+                    {MOCK_COMPOSER}
+                    <a
+                      className="baselineoffer-open btn btn-primary"
+                      href={ASSIST_SERVICE_URLS[svc]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {S.baselineOpenIn(svcLabel)}
+                    </a>
+                  </>
+                )}
+              </>
+            ),
+          },
+          {
+            id: 'return',
+            caption: S.baselineStep3,
+            art: ART_RETURN,
+            detail: (
+              <>
+                <p className="baselineoffer-note">
+                  {svc && svcLabel ? S.baselineCopyHow(svcLabel) : S.baselinePickFirst}
+                </p>
+                {svc && MOCK_COPY}
+                <div className="flow-answer baselineoffer-answerbox baselineoffer-target">
+                  <div className="flow-field-sr-label">
+                    <Field
+                      id="baseline-paste"
+                      label={S.baselineBody}
+                      value={pasted}
+                      onChange={setPasted}
+                      as="textarea"
+                    />
+                  </div>
+                </div>
+                {/* The doors ride DIRECTLY under the box (Adam, 2026-09-03) -
+                    the way out lives with the work it closes. */}
+                <div className="baselineoffer-doors">
+                  <Button
+                    type="button"
+                    variant="primary"
+                    disabled={!ready}
+                    onClick={() => {
+                      const answer = pasted.trim();
+                      onRecord(answer);
+                      setLanded(answer);
+                    }}
+                  >
+                    {S.baselineGo}
+                  </Button>
+                  <button type="button" className="baselineoffer-later" onClick={onSkip}>
+                    {S.baselineLater}
+                  </button>
+                </div>
+              </>
+            ),
+          },
+        ]}
+      />
+      {/* Back at the page's own bottom (Adam, 2026-09-03) - furniture, not
+          part of any step's work. */}
+      <p className="flow-save baselineoffer-save">
+        <span>{S.savedNote}</span>
+        <span>{S.privacyNote}</span>
+      </p>
     </div>
   );
 }
+
+/* The "screenshots": drawn browser mocks in the product's own stroke idiom
+   (Adam: "a screenshot or similar approach that looks good") - and drawn
+   rather than captured deliberately, so no service's real interface is
+   claimed pixel-for-pixel. The instruction text carries the specifics that
+   are TRUE for all six: paste into the message box; the copy icon lives
+   under the reply. The highlight ring marks the one control each mock is
+   about. */
+const MOCK_COMPOSER = (
+  <svg className="baselineoffer-mock" viewBox="0 0 200 92" aria-hidden="true" focusable="false">
+    <rect x="4" y="4" width="192" height="84" rx="6" />
+    <path d="M4 20h192" />
+    <circle cx="13" cy="12" r="2" />
+    <circle cx="22" cy="12" r="2" />
+    <path d="M20 36h108 M20 46h84" opacity="0.45" />
+    <rect x="16" y="62" width="152" height="18" rx="9" />
+    <path d="M24 71h64" opacity="0.6" />
+    <path d="M176 66l8 5 -8 5z" />
+    <circle cx="92" cy="71" r="15" className="baselineoffer-mock-ring" />
+  </svg>
+);
+const MOCK_COPY = (
+  <svg className="baselineoffer-mock" viewBox="0 0 200 92" aria-hidden="true" focusable="false">
+    <rect x="4" y="4" width="192" height="84" rx="6" />
+    <path d="M4 20h192" />
+    <circle cx="13" cy="12" r="2" />
+    <circle cx="22" cy="12" r="2" />
+    <rect x="16" y="28" width="168" height="34" rx="6" opacity="0.7" />
+    <path d="M26 38h120 M26 46h96 M26 54h60" opacity="0.45" />
+    <rect x="20" y="68" width="9" height="11" rx="1.5" />
+    <rect x="23" y="65" width="9" height="11" rx="1.5" />
+    <path d="M42 70h8 M42 75h8 M58 70l3 6 3-6" opacity="0.6" />
+    <circle cx="26" cy="71" r="13" className="baselineoffer-mock-ring" />
+  </svg>
+);
 
 /* The cluster's pictograms - the same stroke drawings the buttons carried
    when they were self-contained cards, lifted to constants so the cluster

@@ -1923,11 +1923,28 @@ export const S = {
      pick-and-open the AI / light the paste target. Panel two's caption
      carries the fresh-chat warning the old text block used to hold - it is
      D1's memory guard, moved into the step where it acts. */
-  baselineStep1: 'Paste your prompt in',
-  baselineStep2: 'Into a fresh chat in your AI',
-  baselineStep3: 'Bring its reply back here',
+  /* RECAPTIONED (Adam, 2026-09-03, the polish pass): three verbs a person
+     would say, and the details go service-specific once a chip is picked. */
+  baselineStep1: 'Copy your prompt',
+  baselineStep2: 'Paste and prompt',
+  baselineStep3: 'Copy and paste',
   baselineStepPick: 'Pick your AI',
-  baselineStepShow: 'Show me where',
+  /** Step 1's reassurance: the press that left the last screen already
+   * copied it - this step exists so nobody has to trust that. */
+  baselineCopiedAlready: 'Your prompt is already on your clipboard.',
+  baselineRecopyBefore: 'Click',
+  baselineRecopyLinkWord: 'here',
+  baselineRecopyAfter: 'to copy it again, just to be sure.',
+  /* Step 2, once a chip is picked. TRUE for all six services - open, fresh
+     chat, click the box, paste - so no service is described wrongly. */
+  baselinePasteHow: (label: string) =>
+    `In ${label}, start a fresh chat. Click its message box, paste your prompt, and send it.`,
+  baselineOpenIn: (label: string) => `Open ${label} in a new tab`,
+  /* Step 3, same discipline: the copy control sits under the reply in
+     every service this list opens. */
+  baselineCopyHow: (label: string) =>
+    `When ${label} finishes, look under its reply for the copy icon — two small pages. Click it, come back, and paste below.`,
+  baselinePickFirst: 'Pick your AI in step 2 first — then this shows you exactly where to click.',
   /* THE PENDING ROW on Home (Adam, 2026-09-02): "a way to go back and grab
      it before the final proof… aware that it is still pending before their
      workbrain experience is complete." Stated as an open door, never as
