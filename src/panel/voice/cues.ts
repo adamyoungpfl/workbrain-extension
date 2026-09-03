@@ -1,5 +1,7 @@
 import { S } from '../strings';
 import { speak } from './speech';
+import { playClip } from './clips';
+import { trace } from './trace';
 
 /* ─────────────────────────────────────────────────────────────────────────
    THE SPLASH'S AUDIO CUES, BY NAME — and the recording manifest.
@@ -38,13 +40,24 @@ export const SPLASH_CUES = {
   standby: S.splashRadioStandby,
   /** After the counted "1", in the breath before the whiteout. */
   liftoff: S.splashRadioLiftoff,
+  /** The count itself (V3.0 pass 3d): the digits are fixed lines like any
+   * other cue, so they ride the same files. */
+  digit3: '3',
+  digit2: '2',
+  digit1: '1',
 } as const;
 
 export type SplashCue = keyof typeof SPLASH_CUES;
 
-/** Play a named cue. Today: the narrator reads it (a new cue replaces a
- * playing one, which the choreography relies on). Later: the bundled
- * ElevenLabs clip, same name, same one call site per moment. */
+/** Play a named cue: the BUNDLED FILE first (public/cues/<name>.m4a -
+ * the media path, deterministic, no speech daemon in the loop; V3.0 pass
+ * 3d, and the ElevenLabs swap is now file-for-file), and the narrator
+ * engine only as the fallback when a clip cannot play. A new cue replaces
+ * a playing one either way - the choreography relies on it. */
 export function cue(name: SplashCue): void {
-  speak({ role: 'question', text: SPLASH_CUES[name] });
+  void playClip(name).then((played) => {
+    if (played) return;
+    trace('cue:fallback-tts', name);
+    speak({ role: 'question', text: SPLASH_CUES[name] });
+  });
 }

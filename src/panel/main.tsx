@@ -2,7 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App';
 import { installDevReset } from './devReset';
-import { installVoiceAudition } from './voice/audition';
+import { installAudioTrace, installVoiceAudition } from './voice/audition';
 
 /**
  * V1.2 VB-09 — the dev-only reset chord, installed once, before the first
@@ -21,6 +21,7 @@ if (import.meta.env.DEV) {
   // ear. Stripped from `npm run build` by the same branch, for the same
   // reason — see voice/audition.ts.
   installVoiceAudition();
+  installAudioTrace();
 }
 
 const root = document.getElementById('root');

@@ -640,7 +640,7 @@ test.describe('what it must never do', () => {
     // The dev-only voice audition is stripped by the same `import.meta.env.DEV`
     // branch that strips the reset chord — a console tool for choosing a voice
     // is not shipped UI (docs/GUARDRAILS.md rules out a settings page).
-    for (const devOnly of ['wbVoices', '[workbrain] voice audition']) {
+    for (const devOnly of ['wbVoices', 'wbAudio', '[workbrain] voice audition']) {
       const found = chunks.filter((c) => c.source.includes(devOnly)).map((c) => c.file);
       expect(found, `"${devOnly}" leaked into the production bundle: ${found.join(', ')}`).toEqual([]);
     }

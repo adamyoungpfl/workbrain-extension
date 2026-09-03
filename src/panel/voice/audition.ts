@@ -150,6 +150,34 @@ let running = false;
  * never calls it, but a test that installs this twice should not have to
  * reload to get a clean one.
  */
+/**
+ * V3.0 pass 3d — `wbAudio`, the flight recorder's console handle. Same
+ * gate, same reasoning, same bundle-scan proof as wbVoices: a diagnosis
+ * tool for the person at the keyboard, never shipped UI.
+ *
+ *   wbAudio.trace()  — the last 100 audio events, in order
+ *   wbAudio.test()   — one clip then one utterance, end to end
+ */
+export function installAudioTrace(): () => void {
+  const scope = globalThis as unknown as Record<string, unknown>;
+  void (async () => {
+    const { readTrace } = await import('./trace');
+    const { cue } = await import('./cues');
+    const { speak } = await import('./speech');
+    scope['wbAudio'] = {
+      trace: () => readTrace(),
+      test: () => {
+        cue('radioLaunch');
+        window.setTimeout(() => speak({ role: 'question', text: 'And this is the narration engine.' }), 1600);
+        return 'playing: clip, then engine - run wbAudio.trace() after';
+      },
+    };
+  })();
+  return () => {
+    delete scope['wbAudio'];
+  };
+}
+
 export function installVoiceAudition(): () => void {
   const scope = globalThis as unknown as Record<string, unknown>;
 

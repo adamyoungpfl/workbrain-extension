@@ -1,0 +1,14 @@
+{
+  "voice": "Samantha",
+  "placeholder": true,
+  "lines": {
+    "intro": "Workbrain. How you do anything is how your AI does everything.",
+    "radioBaseline": "Tower is clear.",
+    "radioLaunch": "All systems go.",
+    "standby": "Standing by.",
+    "liftoff": "Liftoff.",
+    "digit3": "3",
+    "digit2": "2",
+    "digit1": "1"
+  }
+}

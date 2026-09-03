@@ -278,7 +278,10 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
   const liftoffTimer = useRef(0);
   const speakDigit = useCallback((digit: number) => {
     if (!chosenVoiced.current) return;
-    speak({ role: 'question', text: String(digit) });
+    /* V3.0 pass 3d: the digits are bundled clips like every fixed cue -
+       one audio system for the whole splash. */
+    if (digit >= 1 && digit <= 3) cue(`digit${digit}` as 'digit1' | 'digit2' | 'digit3');
+    else speak({ role: 'question', text: String(digit) });
     /* LIFTOFF (Adam, 2026-09-02, the audio-cue pass): one word in the
        breath after the "1" clears and before the whiteout hands the voice
        to the destination's own narrator. Guarded at fire time — an Escape

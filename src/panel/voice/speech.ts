@@ -1,4 +1,7 @@
 import { utteranceFor, type InstalledVoice } from '../../core/voice/roles';
+import { announce, bumpWord, resetWords } from './activity';
+import { stopClip } from './clips';
+import { trace } from './trace';
 import type { Narration } from '../../core/voice/narration';
 
 /**
@@ -167,6 +170,7 @@ export function stopSpeaking(): void {
      screen unmount runs this through narration cleanup, and cancelling a
      quiet engine thousands of times per session is the storm that wedged
      the Mac speech daemon. Silence that already exists costs nothing. */
+  stopClip();
   const apis = engineTouched ? speechApis() : null;
   if (apis && (apis.synth.speaking || apis.synth.pending)) apis.synth.cancel();
   // `cancel()` does not always fire `onend`, and a ring left pulsing after
@@ -188,9 +192,8 @@ export function stopSpeaking(): void {
  * called from a hook, and the thing that needs to know is a component that may
  * not be mounted. Subscribers that come and go cost nothing.
  */
-type SpeechListener = (state: { speaking: boolean; word: number }) => void;
-const listeners = new Set<SpeechListener>();
-let spokenWords = 0;
+/* The listener set and word count live in activity.ts now (V3.0 pass 3d)
+   - one bus, two producers: this engine and the clip player. */
 
 /**
  * Whether TIM has said anything yet this session.
@@ -207,17 +210,9 @@ export function hasSpokenBefore(): boolean {
   return everSpoke;
 }
 
-/** Subscribe to speech activity. Returns its own unsubscribe. */
-export function onSpeechActivity(fn: SpeechListener): () => void {
-  listeners.add(fn);
-  return () => {
-    listeners.delete(fn);
-  };
-}
-
-function announce(speaking: boolean): void {
-  for (const fn of listeners) fn({ speaking, word: spokenWords });
-}
+/* The subscribe surface, re-exported from the bus so every importer keeps
+   its address (V3.0 pass 3d). */
+export { onSpeechActivity } from './activity';
 
 /**
  * Say this, now, instead of whatever was being said.
@@ -235,17 +230,57 @@ export function speak(narration: Narration): void {
   // free — see `watchVoices` on why that cost belongs here and nowhere
   // earlier.
   watchVoices();
+
+  /* NEVER UTTER VOICELESSLY (V3.0 pass 3d). The list is empty on a
+     session's first call (probed: 0, then 180 a beat later), and an
+     utterance with no explicit voice falls to the browser default - which
+     in real Chrome can be a NETWORK voice that never starts inside an
+     extension panel: queued, silent, the exact wedge signature from
+     Adam's machine. So a speak that arrives before the voices do WAITS
+     for them - one pending narration, newest wins, voiceschanged or a
+     1.2s ceiling releasing it - and every utterance then pins a real
+     LOCAL voice below. */
+  if (installedVoices().length === 0 && !voiceWaitSpent) {
+    trace('tts:waiting-voices', narration.text.slice(0, 40));
+    pendingSpeak = narration;
+    if (!voiceWaitArmed) {
+      voiceWaitArmed = true;
+      const release = () => {
+        if (!voiceWaitArmed) return;
+        voiceWaitArmed = false;
+        /* One wait per session, however it ends: a machine with NO voices
+           at all must still speak (the engine's own default), and without
+           this the ceiling re-entered the wait forever - the no-voices
+           degradation test caught it. */
+        voiceWaitSpent = true;
+        apis.synth.removeEventListener?.('voiceschanged', release);
+        const held = pendingSpeak;
+        pendingSpeak = null;
+        if (held) speak(held);
+      };
+      apis.synth.addEventListener?.('voiceschanged', release);
+      window.setTimeout(release, 1_200);
+    }
+    return;
+  }
+  pendingSpeak = null;
   const spoken = utteranceFor(narration.role, narration.text, installedVoices());
   const utterance = new apis.Utterance(spoken.text);
   utterance.lang = spoken.lang;
   utterance.rate = spoken.rate;
   utterance.pitch = spoken.pitch;
-  if (spoken.voiceName) {
-    const match = apis.synth.getVoices().find((v) => v.name === spoken.voiceName);
-    // Only ever a real voice object from this engine: assigning anything else
-    // to `utterance.voice` throws, and a narrator that throws is a narrator
-    // that is silent for the rest of the session.
-    if (match) utterance.voice = match;
+  {
+    const live = apis.synth.getVoices();
+    const byName = spoken.voiceName ? live.find((v) => v.name === spoken.voiceName) : undefined;
+    /* The role table's pick when it is installed; otherwise the first
+       LOCAL English voice - never the browser default, which may be a
+       network voice that silently refuses to start in an extension panel
+       (see the wait above). Only ever a real voice object from this
+       engine: assigning anything else throws, and a narrator that throws
+       is silent for the rest of the session. */
+    const local = byName ?? live.find((v) => v.localService && v.lang.startsWith('en'));
+    if (local) utterance.voice = local;
+    trace('tts:speak', `${(local?.name ?? 'default').slice(0, 30)} "${narration.text.slice(0, 40)}"`);
   }
 
   /* The activity signal. Wired on the utterance rather than polled, so the
@@ -254,18 +289,21 @@ export function speak(narration: Narration): void {
      end: a narrator that fails silently must not leave a ring pulsing at
      something that stopped speaking. */
   utterance.onstart = () => {
-    spokenWords = 0;
+    trace('tts:start', spoken.voiceName ?? 'default-voice');
+    resetWords();
     announce(true);
   };
   utterance.onboundary = () => {
-    spokenWords += 1;
+    bumpWord();
     announce(true);
   };
   utterance.onend = () => {
+    trace('tts:end');
     announce(false);
     if (currentUtterance === utterance) currentUtterance = null;
   };
-  utterance.onerror = () => {
+  utterance.onerror = (e) => {
+    trace('tts:error', (e as SpeechSynthesisErrorEvent).error ?? '');
     announce(false);
     if (currentUtterance === utterance) currentUtterance = null;
   };
@@ -290,20 +328,10 @@ export function speak(narration: Narration): void {
      2. RESUME after speak. A long-lived Chrome can wedge its synth in a
         paused state that survives extension reloads; resume() is a no-op
         when not paused and the cure when it is.
-     3. The probe also showed getVoices() EMPTY on a session's first call
-        (0, then 180 a beat later) - so a first utterance that wanted a
-        named voice re-applies it the moment the list arrives, while the
-        utterance is still pending. */
+     3. (The probe's third finding - getVoices() empty on first call -
+        graduated into the voice-wait at the top of this function: no
+        utterance goes out voiceless at all now.) */
   currentUtterance = utterance;
-  if (spoken.voiceName && !utterance.voice) {
-    const applyLateVoice = () => {
-      apis.synth.removeEventListener?.('voiceschanged', applyLateVoice);
-      if (currentUtterance !== utterance || apis.synth.speaking) return;
-      const match = apis.synth.getVoices().find((v) => v.name === spoken.voiceName);
-      if (match) utterance.voice = match;
-    };
-    apis.synth.addEventListener?.('voiceschanged', applyLateVoice);
-  }
   apis.synth.speak(utterance);
   /* Optional-called: the unit fakes model only what each claim needs, and
      a synth without resume() is also a synth that cannot wedge. */
@@ -313,3 +341,7 @@ export function speak(narration: Narration): void {
 /** The utterance being spoken, held against Chrome's utterance GC - see
  * the retention note in speak(). */
 let currentUtterance: SpeechSynthesisUtterance | null = null;
+/** One narration held while the voice list loads - newest wins. */
+let pendingSpeak: Narration | null = null;
+let voiceWaitArmed = false;
+let voiceWaitSpent = false;
