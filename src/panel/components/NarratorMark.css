@@ -48,46 +48,57 @@
   place-items: center;
 }
 
-/* One breath per spoken word, restarted from the component by keying on the
-   word count — driven by the engine's own account of where the voice is
-   rather than by a loop guessing at it. */
-@keyframes narratormark-word {
-  0% {
-    opacity: 0.5;
-    transform: scale(1);
-  }
-  60% {
-    opacity: 0.14;
-    transform: scale(1.2);
-  }
-  100% {
-    opacity: 0;
-    transform: scale(1.28);
+/* ── THE PEAKS DANCE (V3.0 pass 4) ────────────────────────────────────────
+   One bounce cycle per spoken word, restarted from the component by keying
+   the wrapper on the word count — driven by the engine's own account of
+   where the voice is rather than by a loop guessing at it (the rings this
+   replaces rode the same key). The three peaks move on staggered delays
+   with different shapes — rise, dip, rise-higher — so a run of words reads
+   as an equalizer breathing, not a strobe. */
+@keyframes narratormark-peak-rise {
+  35% {
+    transform: scaleY(1.35);
   }
 }
-.narratormark[data-speaking='yes'] .narratormark-ring {
-  animation: narratormark-word 620ms ease-out;
+@keyframes narratormark-peak-dip {
+  35% {
+    transform: scaleY(0.68);
+  }
 }
-/* A second ring half a beat behind, so a run of words reads as speech rather
-   than as a strobe. */
-.narratormark-ring.is-trail {
-  inset: 0;
-  border-width: 1px;
+@keyframes narratormark-peak-spike {
+  40% {
+    transform: scaleY(1.55);
+  }
 }
-.narratormark[data-speaking='yes'] .narratormark-ring.is-trail {
-  animation: narratormark-word 900ms ease-out;
+.narratormark-peaks {
+  display: block;
+}
+.narratormark[data-speaking='yes'] .narratormark-peaks .peaksmark-peak:nth-of-type(1) {
+  animation: narratormark-peak-rise 420ms ease-out;
+}
+.narratormark[data-speaking='yes'] .narratormark-peaks .peaksmark-peak:nth-of-type(2) {
+  animation: narratormark-peak-dip 420ms ease-out 50ms;
+}
+.narratormark[data-speaking='yes'] .narratormark-peaks .peaksmark-peak:nth-of-type(3) {
+  animation: narratormark-peak-spike 420ms ease-out 100ms;
+}
+
+/* MUTED: the peaks flatten and grey — the voice is down, drawn as down.
+   State never rides this alone: the slash badge (below) is the discrete
+   drawing the muted claim stands on, colour and motion stripped or not. */
+.narratormark[aria-pressed='false'] .narratormark-peaks {
+  filter: grayscale(1);
+  opacity: 0.55;
+}
+.narratormark[aria-pressed='false'] .peaksmark-peak {
+  transform: scaleY(0.34);
 }
 
 @media (prefers-reduced-motion: reduce) {
-  /* No breath. A steady lit ring instead — "it is speaking" survives the
-     stillness, which is the floor. */
-  .narratormark[data-speaking='yes'] .narratormark-ring {
+  /* No dance. The flatten stays (a still state, not motion), and
+     "it is speaking" survives via the badge's absence and the ARIA state —
+     the floor holds without a single moving part. */
+  .narratormark[data-speaking='yes'] .narratormark-peaks .peaksmark-peak {
     animation: none;
-    opacity: 0.45;
-    transform: none;
-  }
-  .narratormark[data-speaking='yes'] .narratormark-ring.is-trail {
-    animation: none;
-    opacity: 0;
   }
 }

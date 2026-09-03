@@ -128,3 +128,5 @@ export type { DeclarationLineProps } from './DeclarationLine';
 // V2.9. The mark, as the narrator's control: it breathes on the words while
 // the questions are read. See NarratorMark.tsx.
 export { NarratorMark, useSpeechPulse } from './NarratorMark';
+// V3.0 pass 4 - the shipped icon's peaks, as a drawable face any host animates.
+export { PeaksSvg } from './PeaksMark';

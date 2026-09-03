@@ -140,8 +140,33 @@
   opacity: 0;
   animation: splash-intro-rise 0.7s ease-out forwards;
 }
-.splash-intro-card > .brand-mark {
+.splash-intro-card > .splash-intro-peaks {
   animation-delay: 1.1s;
+}
+/* The peaks RISE (V3.0 pass 4): each from its own base, staggered left to
+   right with a touch of overshoot - the mark assembling itself as the card
+   arrives. `backwards` holds each at zero scale until its turn. */
+.splash-intro-peaks .peaksmark-peak {
+  animation: splash-peak-rise 0.7s cubic-bezier(0.2, 0.9, 0.3, 1.15) backwards;
+}
+.splash-intro-peaks .peaksmark-peak:nth-of-type(1) {
+  animation-delay: 1.15s;
+}
+.splash-intro-peaks .peaksmark-peak:nth-of-type(2) {
+  animation-delay: 1.32s;
+}
+.splash-intro-peaks .peaksmark-peak:nth-of-type(3) {
+  animation-delay: 1.49s;
+}
+@keyframes splash-peak-rise {
+  from {
+    transform: scaleY(0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .splash-intro-peaks .peaksmark-peak {
+    animation: none;
+  }
 }
 .splash-intro-name {
   margin: 12px 0 0;

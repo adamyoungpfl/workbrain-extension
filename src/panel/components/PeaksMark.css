@@ -1,0 +1,11 @@
+/* The face itself — see PeaksMark.tsx. Every peak scales from its OWN
+   base (fill-box origin at the bottom), which is what lets any host raise
+   or bounce a single peak without the others moving. Hosts own every
+   animation; this file only sets the transform ground rules. */
+.peaksmark-face {
+  display: block;
+}
+.peaksmark-peak {
+  transform-box: fill-box;
+  transform-origin: 50% 100%;
+}

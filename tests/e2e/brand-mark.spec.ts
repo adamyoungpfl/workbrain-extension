@@ -3,7 +3,6 @@ import type { BrowserContext, Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { ORBIT_STILL } from '../../src/core/geometry/markOrbit';
-import { MARK_STATIC_ANGLE, markFrame } from '../../src/core/geometry/markSpin';
 import type { MarkFrame } from '../../src/core/geometry/markSpin';
 
 /**
@@ -46,7 +45,9 @@ const ORBIT_STILL_POSE = poseOf(ORBIT_STILL);
  * apart here before, and why the first build of the reversal asserted the
  * wrong one.
  */
-const SPIN_STILL_POSE = poseOf(markFrame(MARK_STATIC_ANGLE));
+/* SPIN_STILL_POSE retired with the narrator mark's lattice face (V3.0
+   pass 4) - the corner draws the peaks now, and their stillness is
+   asserted as animation-name none rather than a pose. */
 
 /**
  * Counts every animation frame the page ever asks for, from before the first
@@ -269,13 +270,20 @@ test.describe('VB-13 — reduced motion stops the loop, not just the movement', 
        narrator's control. The CLAIM here is unchanged and is the one worth
        keeping — an interview screen under reduced motion schedules no frames
        at all — so it now waits for the mark where the mark actually is. */
-    await page.waitForSelector('.narratormark .brand-mark');
+    /* V3.0 pass 4: the mark's face is the shipped icon's PEAKS now
+       (PeaksMark.tsx), not the lattice. The claim this test carries is
+       unchanged - an interview screen under reduced motion schedules no
+       frames - and the stillness assertion moves onto the peaks: no dance
+       animation may be running. */
+    await page.waitForSelector('.narratormark .peaksmark-face');
 
     await page.waitForTimeout(800);
     expect(await frameCount(page)).toBe(0);
-    // Still the graph, and still resting at the same still pose the big one
-    // does — the claim is unchanged, only which corner it is drawn in.
-    expect(await readPose(page, '.narratormark .brand-mark')).toEqual(SPIN_STILL_POSE);
+    const peakAnim = await page.$eval(
+      '.narratormark .peaksmark-peak',
+      (el) => getComputedStyle(el).animationName,
+    );
+    expect(peakAnim).toBe('none');
 
     await context.close();
   });

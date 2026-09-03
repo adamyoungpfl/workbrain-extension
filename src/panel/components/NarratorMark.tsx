@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BrandMark } from './BrandMark';
+import { PeaksSvg } from './PeaksMark';
 import { narratorSupported, onSpeechActivity, speak, stopSpeaking } from '../voice/speech';
 import { useNarratorPref } from '../voice/prefs';
 import { S } from '../strings';
@@ -76,12 +76,17 @@ export function NarratorMark() {
       aria-pressed={on}
       data-speaking={speaking ? 'yes' : 'no'}
     >
-      {/* Keyed on the word count so the breath RESTARTS on each spoken word.
-          Without the key React keeps the element and the animation runs once,
-          at the start of a sentence, and never again. */}
-      <span key={`r${word}`} className="narratormark-ring" aria-hidden="true" />
-      <span key={`t${word}`} className="narratormark-ring is-trail" aria-hidden="true" />
-      <BrandMark size={30} variant="graph" spin="none" entrance={false} />
+      {/* THE PEAKS ARE THE VISUALIZER (V3.0 pass 4): the shipped icon's
+          three peaks, dancing on the voice. Web Speech exposes no
+          amplitude, so the motion rides what it does expose - word
+          boundaries: the wrapper is KEYED on the word count, so each
+          spoken word remounts it and replays one staggered bounce cycle
+          (NarratorMark.css). Between words the peaks settle; muted, they
+          flatten and grey. The rings this replaces pulsed on the same
+          key, for the same reason. */}
+      <span key={`p${word}`} className="narratormark-peaks" aria-hidden="true">
+        <PeaksSvg size={30} />
+      </span>
       {!on && (
         <span className="narratormark-mute" aria-hidden="true">
           <svg width="9" height="9" viewBox="0 0 12 12">

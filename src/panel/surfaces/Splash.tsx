@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { BrandMark, BuildStamp } from '../components';
+import { BuildStamp, PeaksSvg } from '../components';
 import { Universe } from '../scenery/Universe';
 import { SplashReveal } from './SplashReveal';
 import { SplashRocket } from './SplashRocket';
@@ -433,7 +433,12 @@ export function Splash({ onDone, onBaseline }: SplashProps) {
               <Universe />
             </div>
             <div className="splash-intro-card">
-              <BrandMark size={92} spin="orbit" />
+              {/* V3.0 pass 4 (Adam: "a new animated version of the logo for
+                  the splash page") - the shipped icon's own peaks, raised
+                  one by one as the card builds (Splash.css). */}
+              <span className="splash-intro-peaks">
+                <PeaksSvg size={92} />
+              </span>
               <p className="splash-intro-name">{S.appName}</p>
               <p className="splash-intro-tagline">
                 {taglineLines(S.splashTagline).map((l) => (
