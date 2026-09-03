@@ -27,6 +27,10 @@ function Narrated({ text, on }: { text: string; on: boolean }) {
 beforeEach(() => {
   vi.mocked(speak).mockClear();
   calls.length = 0;
+  /* These suites pin the ROUTING semantics (A/B, cover, replay), which
+     live at the engine layer - the same seam the e2e narrator suite uses
+     (V3.0 pass 3f). The clip-first default has its own describe below. */
+  (globalThis as { __wbTtsOnly?: boolean }).__wbTtsOnly = true;
 });
 
 describe('useNarration — the A/B rule', () => {
@@ -106,5 +110,25 @@ describe('useNarration — the replay ("Where was I?" answers itself)', () => {
     expect(speak).toHaveBeenCalledTimes(1);
     expect(speak).toHaveBeenCalledWith({ role: 'question', text: 'What do you do?' });
     m.unmount();
+  });
+});
+
+describe('useNarration — clip first by default (V3.0 pass 3f)', () => {
+  it('plays the hash-named clip and only falls back to the engine when it cannot', async () => {
+    delete (globalThis as { __wbTtsOnly?: boolean }).__wbTtsOnly;
+    const clips = await import('./clips');
+    const { clipKey } = await import('../../core/voice/clipKey');
+    const spy = vi.spyOn(clips, 'playClip').mockResolvedValue(true);
+    const m = mount(<Narrated text="What do you do?" on={true} />);
+    expect(spy).toHaveBeenCalledWith(`n-${clipKey('What do you do?')}`);
+    await Promise.resolve();
+    expect(speak).not.toHaveBeenCalled(); // the clip carried it
+    m.unmount();
+
+    spy.mockResolvedValue(false);
+    const m2 = mount(<Narrated text="Something interpolated?" on={true} />);
+    await vi.waitFor(() => expect(speak).toHaveBeenCalledTimes(1));
+    m2.unmount();
+    spy.mockRestore();
   });
 });

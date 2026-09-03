@@ -1,6 +1,8 @@
 import { useEffect, useRef } from 'react';
 import type { Narration } from '../../core/voice/narration';
 import { speak, stopSpeaking } from './speech';
+import { playClip } from './clips';
+import { clipKey } from '../../core/voice/clipKey';
 import { useReplayTick, useVoiceCover } from './cover';
 
 /**
@@ -89,7 +91,29 @@ export function useNarration(narration: Narration | null, on: boolean): void {
        it; the production gates never could). Spent means PRESENTED WHILE
        MUTED - the only reading the A/B rule needs - and a re-run whose
        cleanup just cancelled the utterance correctly speaks again. */
-    speak({ role, text });
-    return () => stopSpeaking();
+    /* CLIP FIRST (V3.0 pass 3f, the cure for Adam's engine): every static
+       narration line ships as a bundled file named by the hash of its
+       exact text - the media path, which his machine never failed - and
+       the engine remains only for lines the render could not know
+       (interpolated records) or a missing file. The harness seam: a page
+       whose init script set __wbTtsOnly skips clips so the narrator suite
+       keeps its engine-level claims honest - a WINDOW global, because an
+       init script runs before documentElement exists and a thrown
+       setAttribute dies silently (measured: the attribute never landed). `alive` guards the fallback -
+       a screen left before its clip resolved must not speak over its
+       successor. */
+    const ttsOnly = (globalThis as { __wbTtsOnly?: boolean }).__wbTtsOnly === true;
+    let alive = true;
+    if (ttsOnly) {
+      speak({ role, text });
+    } else {
+      void playClip(`n-${clipKey(text)}`).then((played) => {
+        if (alive && !played) speak({ role, text });
+      });
+    }
+    return () => {
+      alive = false;
+      stopSpeaking();
+    };
   }, [covered, on, replay, role, text]);
 }

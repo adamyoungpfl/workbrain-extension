@@ -70,6 +70,11 @@ interface SpeechProbe {
  * several screens.
  */
 function installSpeechProbe(page: Page, voices = FAKE_VOICES) {
+  /* V3.0 pass 3f: narration ships as clips by default; this suite's
+     claims live at the ENGINE layer, so probed pages opt out of clips
+     through the product's own harness seam. One dedicated test below
+     pins the clip-first default without this stamp. */
+  void page.addInitScript(() => { (window as unknown as { __wbTtsOnly?: boolean }).__wbTtsOnly = true; });
   return page.addInitScript((installed) => {
     const probe = { spoken: [], calls: [], captureTouched: [] } as unknown as SpeechProbe;
     (window as unknown as { __speech: SpeechProbe }).__speech = probe;
@@ -646,6 +651,64 @@ test.describe('what it must never do', () => {
       const found = chunks.filter((c) => c.source.includes(devOnly)).map((c) => c.file);
       expect(found, `"${devOnly}" leaked into the production bundle: ${found.join(', ')}`).toEqual([]);
     }
+  });
+
+  test('the voiced door auto-reads its landing after the fog (V3.0 pass 3e)', async () => {
+    /* Adam's morning report, as a test: press the baseline door's VOICED
+       side, fly, land - the baseline question must read aloud by itself
+       once the cover lifts. The arm writes the pref, the cover holds the
+       voice under the splash, the uncover replays the mount - any stuck
+       state between those three dies here. */
+    test.setTimeout(60_000);
+    const { context, id } = await launchExtension();
+    const page = await context.newPage();
+    await installSpeechProbe(page);
+    await page.setViewportSize({ width: 400, height: 700 });
+    await page.goto(`chrome-extension://${id}/panel.html`);
+    await page.waitForSelector('.splashreveal', { timeout: 20_000 });
+
+    // The proven walk-in (baseline-prompt.spec's own): hold the voiced side
+    // by its accessible name until the ring arms.
+    await page.getByRole('button', { name: 'Initiate pre-launch (narrated)', exact: true }).hover();
+    await page.mouse.down();
+    await page.waitForSelector(".splash-holdkey[data-live='on']", { timeout: 15_000 });
+    await page.mouse.up();
+
+    /* This harness seeds a passed goal gate, so the voiced door lands on
+       the OFFER - the claim is the same: the landing reads itself, no
+       press, no toggle, just the arrival after the fog. */
+    await page.waitForSelector('.baselineoffer', { timeout: 20_000 });
+    await page.waitForSelector('.splash', { state: 'detached', timeout: 20_000 });
+    await expect.poll(() => probeOf(page).then((p) => p.spoken.length), { timeout: 10_000 }).toBeGreaterThan(0);
+    const probe = await probeOf(page);
+    expect(probe.spoken[probe.spoken.length - 1]?.text).toContain('Run it once');
+
+    await context.close();
+  });
+
+  test('by default a static question rides its CLIP, and the engine stays quiet (V3.0 pass 3f)', async () => {
+    const { context, id } = await launchExtension();
+    const page = await context.newPage();
+    /* The probe watches the engine - but NO tts-only stamp here: this is
+       the shipped default, where the bundled narration clip carries the
+       read and the synth hears nothing. */
+    await installSpeechProbe(page);
+    await page.addInitScript(() => { delete (window as unknown as { __wbTtsOnly?: boolean }).__wbTtsOnly; });
+    await page.setViewportSize({ width: 400, height: 700 });
+    await page.goto(`chrome-extension://${id}/panel.html`);
+    await page.waitForSelector('.home');
+    await page.keyboard.press('Escape');
+    await page.waitForSelector('.splash', { state: 'detached' });
+    await enterInterview(page);
+    await toggle(page).click();
+
+    // The mark dances on the clip's tick - audible activity, no utterance.
+    await expect.poll(() =>
+      page.locator('.narratormark').getAttribute('data-speaking'),
+    ).toBe('yes');
+    expect((await probeOf(page)).spoken.length).toBe(0);
+
+    await context.close();
   });
 
   test('works with no voices installed at all, and with no engine at all', async () => {

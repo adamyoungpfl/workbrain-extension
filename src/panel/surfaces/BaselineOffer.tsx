@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Button, Field, FlowProgress, NarratorMark } from '../components';
 import { useNarration } from '../voice/useNarration';
+import { baselineOfferAskLine, baselineOfferLandedLine } from '../voice/narrationLines';
 import { useNarratorPref } from '../voice/prefs';
 import { ASSIST_SERVICE_URLS } from '../../core/flow/assistServices';
 import { S } from '../strings';
@@ -131,9 +132,12 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
      same corner every interview screen keeps it. */
   const { on: narratorOn } = useNarratorPref();
   useNarration(
+    /* Composed in narrationLines.ts (V3.0 pass 3g) so the clip render and
+       this screen speak from one string - the ElevenLabs pass found these
+       two lines clipless because they lived inline here. */
     landed === null
-      ? { role: 'question', text: `${S.baselineTitle}. ${S.baselineStep1} — ${S.baselineStep2} — ${S.baselineStep3}.` }
-      : { role: 'question', text: `${S.baselineSaved} ${S.baselineNextTitle} ${S.baselineNextBody}` },
+      ? { role: 'question', text: baselineOfferAskLine() }
+      : { role: 'question', text: baselineOfferLandedLine() },
     narratorOn,
   );
 
