@@ -1,11 +1,29 @@
 /* V2.4 VB-102 — the browse canvas: Brain on top, List below, one column on
    the one app ground (VB-111 — no surface paint of its own). */
 .browse {
-  display: flex;
-  flex-direction: column;
-  min-height: 100dvh;
+  /* V3.0 pass 6 (Adam: "apply the lower panel treatment to the file main
+     page that has the brain model and the list so that the color and
+     visual presentation is the same in each"). The drawer's own field,
+     edge to edge - the second sanctioned dark surface joins the first's
+     palette instead of inventing one. The VB-111 header above is
+     superseded for this surface: it no longer sits transparent on the app
+     ground; it IS the lower panel, opened full-page. */
   padding: 12px 16px 24px;
-  box-sizing: border-box;
+  min-height: 100dvh;
+  background: var(--globe-field);
+  color: var(--globe-label);
+  /* The drawer's OWN token block (Flow.css declares the same eight on
+     .flowshell): the widened re-ink family reads --dock-*, and a host
+     that forgets these leaves every var() invalid - the first probe
+     caught the section dividers painting white because exactly that. */
+  --dock-stage: var(--globe-field);
+  --dock-ink: var(--globe-label);
+  --dock-ink-quiet: var(--globe-detail-key);
+  --dock-line: var(--globe-edge-far);
+  --dock-here: var(--globe-focus);
+  --dock-done: var(--globe-ring);
+  --dock-due: var(--amber-line);
+  --dock-accent: var(--globe-focus);
 }
 .browse-head {
   display: flex;
@@ -46,4 +64,25 @@
   outline: 2px solid var(--primary);
   outline-offset: -2px;
   border-radius: var(--r-md, 10px);
+}
+
+/* The head and actions, re-inked for the field with the drawer's own
+   pairings (its contrast table at FileDrawer.css:541 carries the
+   reasoning; nothing new is invented here). */
+.browse-title {
+  color: var(--globe-label);
+}
+.browse .btn-quiet {
+  color: var(--globe-detail-key);
+}
+.browse .btn-quiet:hover {
+  color: var(--globe-label);
+}
+.browse .btn-secondary {
+  background: transparent;
+  border-color: var(--globe-edge-far);
+  color: var(--globe-label);
+}
+.browse .btn-secondary:hover {
+  border-color: var(--globe-detail-key);
 }

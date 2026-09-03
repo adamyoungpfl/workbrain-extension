@@ -568,21 +568,21 @@
    `--row-accent-tint` was a pale fill behind the live orb's ring; on one
    surface it becomes the surface, which turns the middle band of that ring into
    a gap and keeps the three-ring shape VB-46 asked for. */
-.filedrawer .filetree-row {
+:is(.filedrawer, .browse) .filetree-row {
   --row-accent: var(--dock-ink-quiet);
   --row-accent-tint: var(--dock-stage);
 }
-.filedrawer .filetree-row[data-health='here'] {
+:is(.filedrawer, .browse) .filetree-row[data-health='here'] {
   --row-accent: var(--dock-here);
 }
-.filedrawer .filetree-row[data-health='done'] {
+:is(.filedrawer, .browse) .filetree-row[data-health='done'] {
   --row-accent: var(--dock-done);
 }
-.filedrawer .filetree-row[data-health='due'] {
+:is(.filedrawer, .browse) .filetree-row[data-health='due'] {
   --row-accent: var(--dock-due);
 }
-.filedrawer .filetree-row[data-health='not-yet'],
-.filedrawer .filetree-row[data-life='dim'] {
+:is(.filedrawer, .browse) .filetree-row[data-health='not-yet'],
+:is(.filedrawer, .browse) .filetree-row[data-life='dim'] {
   --row-accent: var(--dock-ink-quiet);
 }
 
@@ -590,9 +590,18 @@
    is its opposite number, and it is the one thing in the drawer deliberately
    under 3:1 — see core/drawer/chrome.ts's `DOCK_LINE_TOKEN` for the exemption
    and why it is the only one. */
-.filedrawer .filetree > .filetree-list > .filetree-item,
-.filedrawer .sectionhealth-summary {
+:is(.filedrawer, .browse) .filetree > .filetree-list > .filetree-item,
+:is(.filedrawer, .browse) .sectionhealth-summary {
   border-color: var(--dock-line);
+}
+
+/* Two stragglers that joined the tree after this family was written, and
+   the drawer never renders either - Browse does, and axe caught both
+   still wearing the light theme's quiet ink on the field (V3.0 pass 6:
+   the age stamp at 3.73:1, the records toggle at 2.83:1). */
+:is(.filedrawer, .browse) .filetree-age,
+:is(.filedrawer, .browse) .filetree-records-toggle {
+  color: var(--dock-ink-quiet);
 }
 
 /* The words. The loud one and the quiet one, which is the same two-level
@@ -600,15 +609,15 @@
    The file preview below is not in this list: it is declared in this very file
    and renders nowhere but the drawer, so it takes the dark inks at source
    rather than being written light and corrected two hundred lines later. */
-.filedrawer .filetree-label {
+:is(.filedrawer, .browse) .filetree-label {
   color: var(--dock-ink);
 }
-.filedrawer .filetree-num,
-.filedrawer .filetree-detail,
-.filedrawer .filetree-count,
-.filedrawer .filetree-row[data-life='dim'] .filetree-label,
-.filedrawer .filetree-row[data-life='dim'] .filetree-percent,
-.filedrawer .filetree-row.is-record .filetree-label {
+:is(.filedrawer, .browse) .filetree-num,
+:is(.filedrawer, .browse) .filetree-detail,
+:is(.filedrawer, .browse) .filetree-count,
+:is(.filedrawer, .browse) .filetree-row[data-life='dim'] .filetree-label,
+:is(.filedrawer, .browse) .filetree-row[data-life='dim'] .filetree-percent,
+:is(.filedrawer, .browse) .filetree-row.is-record .filetree-label {
   color: var(--dock-ink-quiet);
 }
 
@@ -620,12 +629,12 @@
 
    The offset is 3px, matching Flow.css's cluster exactly, so the two read as
    one behaviour rather than two that both happen to underline. */
-.filedrawer .filetree-nav:hover .filetree-label {
+:is(.filedrawer, .browse) .filetree-nav:hover .filetree-label {
   text-decoration: underline;
   text-underline-offset: 3px;
   text-decoration-thickness: 1.5px;
 }
-.filedrawer .filetree-nav:hover {
+:is(.filedrawer, .browse) .filetree-nav:hover {
   background: none;
 }
 
@@ -639,10 +648,10 @@
 /* The disclosure's ink on the dock's field: the quiet role, exactly as the
    far-edge chevron wore it, and it is real paint — the hover ring around the
    orb is drawn in `currentColor` (FileTree.css). */
-.filedrawer .filetree-orbtoggle {
+:is(.filedrawer, .browse) .filetree-orbtoggle {
   color: var(--dock-ink-quiet);
 }
-.filedrawer .filetree-orbtoggle:hover {
+:is(.filedrawer, .browse) .filetree-orbtoggle:hover {
   color: var(--dock-ink);
 }
 
@@ -655,8 +664,8 @@
    Still `outline-offset: 2px` rather than the inset the chrome bands use:
    these sit inside a scrolling box with room around them, so the ring can be
    drawn outside the control where it belongs. */
-.filedrawer .filetree-nav:focus-visible,
-.filedrawer .filetree-orbtoggle:focus-visible {
+:is(.filedrawer, .browse) .filetree-nav:focus-visible,
+:is(.filedrawer, .browse) .filetree-orbtoggle:focus-visible {
   outline-color: var(--dock-accent);
 }
 
@@ -671,11 +680,11 @@
    measured about 2.7:1 on the near-white pane. On the field they are between
    4.24 and 6.74:1 (chrome.test.ts) — the colours doing the job they were
    chosen for, in the place they were chosen for. */
-.filedrawer .filetree-glyph[data-life='dim'] {
+:is(.filedrawer, .browse) .filetree-glyph[data-life='dim'] {
   border-color: var(--dock-edge);
   color: var(--dock-ink-quiet);
 }
-.filedrawer .filetree-row.is-record .filetree-glyph::before {
+:is(.filedrawer, .browse) .filetree-row.is-record .filetree-glyph::before {
   background: var(--dock-edge);
 }
 
@@ -689,14 +698,14 @@
 
    The row keeps its 12px indent and its 8px inset, so nothing moves — only the
    ground under it is replaced by the edge beside it. */
-.filedrawer .filetree-row.is-child {
+:is(.filedrawer, .browse) .filetree-row.is-child {
   background: none;
   box-shadow: inset 2px 0 0 var(--dock-line);
   border-radius: 0;
 }
 /* The card's own two hover corrections go with the card: inside it, hover is
    the same underline it is anywhere else in this list. */
-.filedrawer .filetree-row.is-child .filetree-nav:hover {
+:is(.filedrawer, .browse) .filetree-row.is-child .filetree-nav:hover {
   background: none;
 }
 
@@ -723,7 +732,7 @@
    an invisible strip rather than a bar laid across the drawer. That is what
    "one colour, top edge to bottom edge" means for a box that has to be painted
    and must not be seen. */
-.filedrawer .sectionhealth-summary {
+:is(.filedrawer, .browse) .sectionhealth-summary {
   background: var(--dock-stage, var(--canvas));
 }
 
