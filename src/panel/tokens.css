@@ -62,6 +62,17 @@
   --splash-focus: #A8C7FF;
   --splash-link: #FF4FA3;
   --splash-peak-blue: #3E7BFA;
+  --splash-homage-chatgpt: #10A37F;
+  --splash-homage-claude: #CC785C;
+  --splash-homage-gemini: #4285F4;
+  --splash-homage-copilot: #0078D4;
+  --splash-homage-grok: #1F2328;
+  --splash-homage-perplexity: #20808D;
+  --splash-homage-chatgpt-ink: #0E7A60;
+  --splash-homage-claude-ink: #A04E33;
+  --splash-homage-gemini-ink: #2B62C4;
+  --splash-homage-copilot-ink: #005A9E;
+  --splash-homage-perplexity-ink: #186672;
   --splash-you-ink: #8B45F5;
   --splash-ai-ink: #0E7A8C;
   --splash-link-end: #B36BFF;

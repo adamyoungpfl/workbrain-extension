@@ -21,13 +21,10 @@ import type { FlowContext } from '../../schema/flow.types';
  * wording to fit a screen would be the screen deciding the document.
  */
 const CAP = 120;
-/* EXEMPT, each with its reason - not a place to park a question that grew.
-   goal_want: Adam's own panel copy, verbatim (2026-09-02 baseline brief),
-   on the ONE screen that is a bare prompt box rather than an interview step
-   ('promptOnly') - it owns the whole panel with no drawer, so the cap this
-   test enforces (a heading sharing a screen with the dock) does not
-   describe it. Probed at 400px: six lines, seated. */
-const EXEMPT = new Set(['goal_want']);
+/* No exemptions today. goal_want held one while its question carried the
+   narrator's whole coaching (2026-09-02); the 2026-09-03 rework moved the
+   coaching to the voice track and the question back under the cap. */
+const EXEMPT = new Set<string>();
 const CTX: FlowContext = { answers: {}, repeatables: {} };
 
 describe('every question fits the panel', () => {

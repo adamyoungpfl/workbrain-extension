@@ -767,8 +767,13 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
        and adds what the old one could not: it says why the screen exists.
        The hedge repair (imperative.ts) and the seed stack stay - they read
        the answer, not the question. */
-    prompt: () =>
-      'Ok! To set your baseline, you just need to write one prompt. Think of an action that you would normally do. Start with a verb like plan or edit or summarize maybe?',
+    /* REWORKED A THIRD TIME (Adam, 2026-09-03): the SCREEN carries the
+       short worksheet line and the NARRATOR carries the coaching - his
+       spoken script lives in panel/voice/narrationLines.ts, read by the
+       prompt screen in place of this text. That deliberately supersedes
+       the no-drift rule FOR THIS SCREEN, at his word: the voice is the
+       guide, the screen is the worksheet. */
+    prompt: () => 'One prompt…in your own words',
     /* RETUNED 2026-08-31, because the STEM now does the first half of this
        job. The field's visible label is "Tell your AI to…", and a sentence
        ending in "to" can only be finished with a bare verb — so "write it as
@@ -793,9 +798,7 @@ export const GOAL_GATE_NODES: SrcFlowNode[] = [
        the beat between them (DeclarationLine holds the sweep). The third
        line retired: "Start with a verb like plan or edit or summarize" in
        the question now does its job. */
-    hint:
-      'One prompt…in your own words.\n' +
-      '\u201cYou will run this EXACT prompt in your own AI service next…\u201d',
+    hint: 'You will run this prompt next in your own service…',
     placeholder: 'e.g. Draft my Monday status update the way I would',
     ideas: [
       'Draft a status update for my manager that sounds like me.',

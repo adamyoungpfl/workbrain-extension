@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { Button, Field, FlowProgress, NarratorMark, StepStack } from '../components';
 import { useNarration } from '../voice/useNarration';
-import { baselineOfferAskLine, baselineOfferLandedLine } from '../voice/narrationLines';
+import { baselineOfferLandedLine, offerStepNarration } from '../voice/narrationLines';
 import { useNarratorPref } from '../voice/prefs';
 import { ASSIST_SERVICE_URLS } from '../../core/flow/assistServices';
 import { S } from '../strings';
 import './BaselineOffer.css';
+import '../components/alertPulse.css';
 
 /* THE BAR CARRIES THE PREVIOUS SCREEN'S NUMBERS, deliberately.
 
@@ -101,6 +102,30 @@ export interface BaselineOfferProps {
  * card that opens nothing would break its own instruction. */
 const OPENABLE_SERVICES = S.proofServiceOptions.filter((o) => ASSIST_SERVICE_URLS[o.key]);
 
+/** The homage hues (tokens.css, V3.0 pass 3k): each service's theme-color
+ * VIBE, painting the mocks and the picked chip's wash. Scenery - state
+ * never rides them. */
+const HOMAGE: Record<string, string> = {
+  chatgpt: 'var(--splash-homage-chatgpt)',
+  claude: 'var(--splash-homage-claude)',
+  gemini: 'var(--splash-homage-gemini)',
+  copilot: 'var(--splash-homage-copilot)',
+  grok: 'var(--splash-homage-grok)',
+  perplexity: 'var(--splash-homage-perplexity)',
+};
+/** The text-grade siblings (V3.0 pass 3l): the picker sets each NAME in
+ * its provider's color - nominative, wordmark-style, no logos and no
+ * bundled lookalike type - so the words are held to the 4.5:1 text floor
+ * the scenery hues never owed. */
+const HOMAGE_INK: Record<string, string> = {
+  chatgpt: 'var(--splash-homage-chatgpt-ink)',
+  claude: 'var(--splash-homage-claude-ink)',
+  gemini: 'var(--splash-homage-gemini-ink)',
+  copilot: 'var(--splash-homage-copilot-ink)',
+  grok: 'var(--splash-homage-grok)',
+  perplexity: 'var(--splash-homage-perplexity-ink)',
+};
+
 export function BaselineOffer({ task, current, total, onRecord, onContinue, onSkip, onService, service, onHome }: BaselineOfferProps) {
   const [pasted, setPasted] = useState('');
   const [copied, setCopied] = useState(false);
@@ -113,6 +138,10 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
   /* The chip SELECTS (and persists via onService); the Open button is what
      leaves the panel. Seeded from the stored pick when the gate knows it. */
   const [svc, setSvc] = useState<string | undefined>(service);
+  /* The step-3 highlight holds until the box is TOUCHED (Adam: "add a
+     highlight to the input box until it is clicked") - then the glow's
+     job is done. */
+  const [inputTouched, setInputTouched] = useState(false);
   const svcLabel = OPENABLE_SERVICES.find((o) => o.key === svc)?.label;
   /* THE FORK (Adam, 2026-09-01). Pressing the primary button used to record
      the run and walk straight into question one. That spent the single best
@@ -138,11 +167,11 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
      same corner every interview screen keeps it. */
   const { on: narratorOn } = useNarratorPref();
   useNarration(
-    /* Composed in narrationLines.ts (V3.0 pass 3g) so the clip render and
-       this screen speak from one string - the ElevenLabs pass found these
-       two lines clipless because they lived inline here. */
+    /* THE GUIDE SPEAKS PER STEP (Adam, 2026-09-03, his lines verbatim in
+       narrationLines.ts): opening a step reads its coaching - the text
+       change re-arms the per-question spend, so each step reads once. */
     landed === null
-      ? { role: 'question', text: baselineOfferAskLine() }
+      ? { role: 'question', text: offerStepNarration(step) }
       : { role: 'question', text: baselineOfferLandedLine() },
     narratorOn,
   );
@@ -164,7 +193,7 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
         <p className="baselineoffer-saved" role="status">
           {S.baselineSaved}
         </p>
-        <h2 className="baselineoffer-title">{S.baselineNextTitle}</h2>
+        <h2 className="flow-q baselineoffer-heading">{S.baselineNextTitle}</h2>
         <p className="baselineoffer-body">{S.baselineNextBody}</p>
 
         {/* Their AI's answer, given back to them — the thing the primary door
@@ -203,7 +232,10 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
         {...(onHome ? { onHome } : {})}
       />
 
-      <h2 className="baselineoffer-title">{S.baselineTitle}</h2>
+      {/* The interview's own question type (Adam, 2026-09-03: "the same
+          size and format and fonts as the interview prompts") - flow-q,
+          with its grow pinned below as the offer always pins it. */}
+      <h2 className="flow-q baselineoffer-heading">{S.baselineTitle}</h2>
 
       {/* THE STEP STACK (Adam, 2026-09-03: vertical, check-offs, the chime
           on first opening, the active box transforming into a corner
@@ -223,31 +255,29 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
             caption: S.baselineStep1,
             art: ART_PASTE,
             detail: (
-              <>
-                {/* The reassurance first: the press that left the previous
-                    screen already copied the prompt. The inline word is the
-                    recopy - belt for a clipboard that moved on. */}
-                <p className="baselineoffer-note">{copied ? S.baselineRecopied : S.baselineCopiedAlready}</p>
-                <p className="baselineoffer-note">
-                  {S.baselineRecopyBefore}{' '}
-                  <button
-                    type="button"
-                    className="baselineoffer-recopy is-inline"
-                    onClick={() => {
-                      navigator.clipboard?.writeText(task).then(
-                        () => {
-                          setCopied(true);
-                          window.setTimeout(() => setCopied(false), 1600);
-                        },
-                        () => {},
-                      );
-                    }}
-                  >
-                    {S.baselineRecopyLinkWord}
-                  </button>{' '}
-                  {S.baselineRecopyAfter}
-                </p>
-              </>
+              /* Side by side like its siblings (V3.0 pass 3m): the
+                 reassurance on the left, a real button on the right - the
+                 press that left the previous screen already copied it, and
+                 the button is the belt for a clipboard that moved on. */
+              <div className="baselineoffer-copyrow">
+                <p className="baselineoffer-note">{S.baselineCopiedAlready}</p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(task).then(
+                      () => {
+                        setCopied(true);
+                        window.setTimeout(() => setCopied(false), 1600);
+                      },
+                      () => {},
+                    );
+                  }}
+                >
+                  {copied ? S.baselineRecopied : S.baselineCopyAgain}
+                </Button>
+              </div>
             ),
           },
           {
@@ -255,39 +285,55 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
             caption: S.baselineStep2,
             art: ART_OPEN,
             detail: (
-              <>
-                <div className="baselineoffer-services" role="group" aria-label={S.baselineStepPick}>
+              /* SIDE BY SIDE (Adam, 2026-09-03): the chips stack on the
+                 left; the right holds the visual with DEFAULT instructions
+                 and no way out until a chip is picked - then the words go
+                 service-named, the mock takes that service's homage hue,
+                 and "Go to X now" appears. */
+              <div className="baselineoffer-pasteprompt">
+                <div className="baselineoffer-marks" role="group" aria-label={S.baselineStepPick}>
                   {OPENABLE_SERVICES.map((o) => (
                     <button
                       key={o.key}
                       type="button"
-                      className="baselineoffer-service"
+                      className="baselineoffer-mark"
                       data-picked={o.key === svc || undefined}
                       aria-pressed={o.key === svc}
+                      style={{ '--homage': HOMAGE[o.key], '--homage-ink': HOMAGE_INK[o.key] } as React.CSSProperties}
                       onClick={() => {
                         setSvc(o.key);
                         onService?.(o.key);
                       }}
                     >
-                      {o.label}
+                      <span className="baselineoffer-mark-name">{o.label}</span>
+                      {o.key === svc && (
+                        <svg className="baselineoffer-mark-tick" width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                          <path d="M2 6.4 4.8 9 10 3.4" />
+                        </svg>
+                      )}
                     </button>
                   ))}
                 </div>
-                {svc && svcLabel && (
-                  <>
-                    <p className="baselineoffer-note">{S.baselinePasteHow(svcLabel)}</p>
-                    {MOCK_COMPOSER}
+                <div
+                  className="baselineoffer-pastepanel"
+                  style={svc ? ({ '--homage': HOMAGE[svc] } as React.CSSProperties) : undefined}
+                >
+                  <p className="baselineoffer-note">
+                    {svc && svcLabel ? S.baselinePasteHow(svcLabel) : S.baselinePasteDefault}
+                  </p>
+                  {MOCK_COMPOSER}
+                  {svc && svcLabel && (
                     <a
                       className="baselineoffer-open btn btn-primary"
                       href={ASSIST_SERVICE_URLS[svc]}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      {S.baselineOpenIn(svcLabel)}
+                      {S.baselineGoTo(svcLabel)}
                     </a>
-                  </>
-                )}
-              </>
+                  )}
+                </div>
+              </div>
             ),
           },
           {
@@ -299,8 +345,16 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
                 <p className="baselineoffer-note">
                   {svc && svcLabel ? S.baselineCopyHow(svcLabel) : S.baselinePickFirst}
                 </p>
-                {svc && MOCK_COPY}
-                <div className="flow-answer baselineoffer-answerbox baselineoffer-target">
+                {svc && (
+                  <div style={{ ['--homage' as string]: HOMAGE[svc] }}>{MOCK_COPY}</div>
+                )}
+                {/* The paste target wears the STANDARD alert pulse until
+                    touched (alertPulse.css, pass 3q) — the input variant,
+                    because the alert IS an input box. */}
+                <div
+                  className="flow-answer baselineoffer-answerbox"
+                  onFocusCapture={() => setInputTouched(true)}
+                >
                   <div className="flow-field-sr-label">
                     <Field
                       id="baseline-paste"
@@ -308,33 +362,55 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
                       value={pasted}
                       onChange={setPasted}
                       as="textarea"
+                      {...(inputTouched ? {} : { className: 'wb-alert wb-alert--input' })}
                     />
                   </div>
-                </div>
-                {/* The doors ride DIRECTLY under the box (Adam, 2026-09-03) -
-                    the way out lives with the work it closes. */}
-                <div className="baselineoffer-doors">
-                  <Button
-                    type="button"
-                    variant="primary"
-                    disabled={!ready}
-                    onClick={() => {
-                      const answer = pasted.trim();
-                      onRecord(answer);
-                      setLanded(answer);
-                    }}
-                  >
-                    {S.baselineGo}
-                  </Button>
-                  <button type="button" className="baselineoffer-later" onClick={onSkip}>
-                    {S.baselineLater}
-                  </button>
                 </div>
               </>
             ),
           },
         ]}
       />
+      {/* OUTSIDE the container (Adam, 2026-09-03): the doors stand visible
+          on every step, and the bar simply waits for step 3's box to
+          hold text - the gate is the emptiness, not the geography.
+
+          THE FINISH BAR (pass 3p; Adam: "a button that looks like a status
+          bar that is currently at 'In Progress' at load before anything is
+          done, it is half done. After step 1, more done, after 2 more done
+          and after step 3 it change to 'Finish'"). Step 1 is already
+          checked at load, so the mapping starts there: half at load, a
+          share per check-off, and the paste itself is the last stretch -
+          the bar completes at the exact moment it becomes pressable. The
+          label rides the same state: a status while the errand is open,
+          the verb once the last step is. The fill layer is aria-hidden
+          scenery - assistive technology hears one label, and the checked
+          steps already carry the same progress. */}
+      <div className="baselineoffer-doors">
+        <button
+          type="button"
+          className="baselineoffer-finishbar"
+          style={{ ['--done' as string]: ready ? 1 : 0.5 + 0.15 * (visited.size - 1) }}
+          disabled={!ready}
+          onClick={() => {
+            const answer = pasted.trim();
+            onRecord(answer);
+            setLanded(answer);
+          }}
+        >
+          <span className="baselineoffer-finishbar-label">
+            {visited.size === 3 ? S.baselineBarFinish : S.baselineBarBusy}
+          </span>
+          <span className="baselineoffer-finishbar-fill" aria-hidden="true">
+            <span className="baselineoffer-finishbar-label">
+              {visited.size === 3 ? S.baselineBarFinish : S.baselineBarBusy}
+            </span>
+          </span>
+        </button>
+        <button type="button" className="baselineoffer-later" onClick={onSkip}>
+          {S.baselineLater}
+        </button>
+      </div>
       {/* Back at the page's own bottom (Adam, 2026-09-03) - furniture, not
           part of any step's work. */}
       <p className="flow-save baselineoffer-save">

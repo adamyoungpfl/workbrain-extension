@@ -1900,9 +1900,14 @@ export const S = {
   seedTake: (seed: string) => `Use this example: ${seed}`,
   baselineCopy: 'Copy the question',
   baselineCopied: 'Copied',
-  /* Names the RESULT, not the housekeeping. "I ran it — paste what came back"
-     described the mechanic; this says what the press is for. */
-  baselineGo: 'Establish my baseline',
+  /* THE FINISH BAR (Adam, 2026-09-03): the door is a status bar now —
+     "In progress" and half full at load, filling as steps check off,
+     turning to "Finish" once the last step opens. The status label is not
+     a verb, and that is the point: a bar that says "In progress" is
+     telling you it is not ready to be pressed; the verb arrives with the
+     pressable state. */
+  baselineBarBusy: 'In progress',
+  baselineBarFinish: 'Finish',
   /* The copy that used to be this screen's most prominent control now happens
      on the press that LEAVES the previous screen. This is the way back for
      anybody whose clipboard has moved on since — a line, not a feature. */
@@ -1914,7 +1919,8 @@ export const S = {
   baselineLater: 'Not now',
   /* ── The baseline door's nav labels (Adam, 2026-09-02). The question's
      own wording lives with the question, core/flow/overrides.ts. */
-  baselineSubmit: 'Submit',
+  /* 'Submit' -> 'Continue', chevron dropped (Adam, 2026-09-03). */
+  baselineSubmit: 'Continue',
   baselineNotNow: 'Not right now',
   /* ── THE STORYBOARD (Adam, 2026-09-02): "a 3 panel visual representation
      of the act of pasting into an LLM, copying the final response button
@@ -1932,9 +1938,9 @@ export const S = {
   /** Step 1's reassurance: the press that left the last screen already
    * copied it - this step exists so nobody has to trust that. */
   baselineCopiedAlready: 'Your prompt is already on your clipboard.',
-  baselineRecopyBefore: 'Click',
-  baselineRecopyLinkWord: 'here',
-  baselineRecopyAfter: 'to copy it again, just to be sure.',
+  /** The side-by-side copy control (V3.0 pass 3m) - short, a real
+   * button, beside the reassurance rather than buried in a sentence. */
+  baselineCopyAgain: 'Copy again',
   /* Step 2, once a chip is picked. TRUE for all six services - open, fresh
      chat, click the box, paste - so no service is described wrongly. */
   baselinePasteHow: (label: string) =>
@@ -1944,6 +1950,9 @@ export const S = {
      every service this list opens. */
   baselineCopyHow: (label: string) =>
     `When ${label} finishes, look under its reply for the copy icon — two small pages. Click it, come back, and paste below.`,
+  /** Step 2's right panel before any pick - true for every service. */
+  baselinePasteDefault: 'Start a fresh chat. Click the message box, paste your prompt, and send it.',
+  baselineGoTo: (label: string) => `Go to ${label} now`,
   baselinePickFirst: 'Pick your AI in step 2 first — then this shows you exactly where to click.',
   /* THE PENDING ROW on Home (Adam, 2026-09-02): "a way to go back and grab
      it before the final proof… aware that it is still pending before their

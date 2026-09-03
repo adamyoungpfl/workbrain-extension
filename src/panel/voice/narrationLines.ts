@@ -7,8 +7,20 @@ import { S } from '../strings';
  * BaselineOffer composed these inline, so they had no clips and fell to
  * the engine — silence on the machine the clips exist for.
  */
-export function baselineOfferAskLine(): string {
-  return `${S.baselineTitle}. ${S.baselineStep1} — ${S.baselineStep2} — ${S.baselineStep3}.`;
+/* THE GUIDE'S SCRIPT (Adam, 2026-09-03, verbatim lines): the narrator
+   speaks coaching the screen does not print - his explicit direction,
+   superseding the no-drift rule for the baseline errand. Each line is a
+   clip (the emitter carries them) with the engine as fallback. */
+export function baselineAskNarration(): string {
+  return 'Let\u2019s set your prompting baseline! You are going to just write a prompt. But I want you to start that prompt with a verb. Something like \u201cplan\u201d or \u201cedit\u201d or maybe \u201csummarize\u201d? What is something you want your AI to \u201cdo\u201d for you?';
+}
+
+export function offerStepNarration(step: string): string {
+  if (step === 'open')
+    return 'Select a provider from the list and go to that service by clicking the \u201cGo to\u201d button. Paste your prompt into the service and send that prompt off!';
+  if (step === 'return')
+    return 'Last step. Copy that response, the whole thing, from your service, and paste it in the highlighted input box.';
+  return 'Excellent! Now, your prompt is already copied to your clipboard, but you can click the \u201cCopy again\u201d button to be sure.';
 }
 
 export function baselineOfferLandedLine(): string {
@@ -17,5 +29,11 @@ export function baselineOfferLandedLine(): string {
 
 /** Every composed line, for the emitter. */
 export function composedNarrations(): string[] {
-  return [baselineOfferAskLine(), baselineOfferLandedLine()];
+  return [
+    baselineAskNarration(),
+    offerStepNarration('copy'),
+    offerStepNarration('open'),
+    offerStepNarration('return'),
+    baselineOfferLandedLine(),
+  ];
 }

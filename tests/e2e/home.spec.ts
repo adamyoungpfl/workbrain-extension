@@ -740,7 +740,7 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
 
     // Commit it (the stored answer pre-fills the box) - and land on the
     // NEXT stale item, where without the sweep the interview would end.
-    await page.getByRole('button', { name: /Next|Submit/ }).click();
+    await page.getByRole('button', { name: /Next|Continue/ }).click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'never_words', { timeout: 10_000 });
 
     await context.close();

@@ -176,6 +176,32 @@ The source file's types are close to `src/schema/flow.types.ts` but not identica
 `QuestionOption.key/label`, `interpret: {via}`, `skipIf`). Write an explicit adapter with a test,
 rather than reshaping the source by hand.
 
+## Component ideation leads with modern SaaS norms
+
+Adam, 2026-09-03, a standing design principle: "ideation for components
+should lead with design patterns that resemble modern SaaS and ecommerce
+norms." When sketching a new control, start from what a person already
+uses daily — integration pickers, checklist accordions, inline wordmark
+selectors, quiet borderless lists — not from bespoke chrome. Rounded
+chip clusters and heavy card grids read as dated; slim, familiar,
+low-chrome patterns read as good hands. (First applied: the baseline
+errand's service picker went from pill chips to wordmark links.)
+
+And its sibling (Adam, 2026-09-03): "Visual balance should be default
+placement for all elements if it is up for debate about where to start
+on a design layout." When placement or measure is genuinely undecided,
+choose the option that balances against the elements already on screen —
+a note under an input spans the input's width, siblings share edges,
+slack lands where it evens the composition. Debate ends at balance;
+only a stated reason moves something off it.
+
+**The alert pulse is one component.** `src/panel/components/alertPulse.css`
+is THE standard highlight across the interview canvas (Adam, 2026-09-03:
+"same style for all of them… the standard way to apply highlight").
+`wb-alert` on the element calling attention to itself; add
+`wb-alert--input` when that element is an input (the field itself wears
+the colour). Never invent a new attention style — wear the class.
+
 ## Copy lives in one file
 
 Every user-facing string in the panel goes in `src/panel/strings.ts`. Never inline one in a

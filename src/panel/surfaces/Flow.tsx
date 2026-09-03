@@ -56,6 +56,7 @@ import { downloadMarkdown } from './FileActions';
 import { RunCard } from './RunCard';
 import { BaselineOffer } from './BaselineOffer';
 import { maintenanceQueue, nextAfter } from '../../core/freshness/queue';
+import { baselineAskNarration } from '../voice/narrationLines';
 import { FileDrawer } from './FileDrawer';
 import { AssistBar } from './AssistBar';
 import { ASSIST_LINE_RETURN } from '../../core/flow/assistCopy';
@@ -1745,7 +1746,15 @@ function StepView({
   const { on: narratorOn } = useNarratorPref();
   const onReflectSubScreen = pos.kind === 'reflect' && reflectMode !== 'view';
   useNarration(
-    onReflectSubScreen ? null : narrationFor(pos, answers, NARRATION_COPY),
+    /* The baseline prompt screen speaks THE GUIDE'S SCRIPT rather than its
+       own worksheet line (Adam, 2026-09-03, verbatim in
+       narrationLines.ts) - his explicit supersession of no-drift for this
+       one screen: the voice coaches, the screen is the worksheet. */
+    onReflectSubScreen
+      ? null
+      : pos.kind === 'step' && promptOnly(pos.step)
+        ? { role: 'question', text: baselineAskNarration() }
+        : narrationFor(pos, answers, NARRATION_COPY),
     narratorOn,
   );
 
@@ -3542,7 +3551,7 @@ function StepView({
           <NavButton
             type="submit"
             variant="primary"
-            direction="next"
+            {...(doorPrompt ? {} : { direction: 'next' as const })}
             control="next"
             disabled={doorPrompt && draftText.trim() === ''}
           >

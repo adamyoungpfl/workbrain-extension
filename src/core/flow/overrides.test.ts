@@ -609,7 +609,12 @@ describe('reading level (npm run audit cannot see this file)', () => {
   });
 
   it('asks real questions — every authored prompt ends in a question mark', () => {
-    for (const id of ['entity_type', 'entity_name', 'entity_relevance', 'entity_aliases', 'audience_needs', 'goal_service', 'goal_want']) {
+    /* goal_want left this list 2026-09-03 (Adam): its screen line is a
+       WORKSHEET LABEL now ("One prompt…in your own words") while the
+       narrator carries the actual question - his own script, read in
+       place of the prompt (panel/voice/narrationLines.ts). The rule
+       still binds everything that is a question. */
+    for (const id of ['entity_type', 'entity_name', 'entity_relevance', 'entity_aliases', 'audience_needs', 'goal_service']) {
       expect(ask(step(id).q).endsWith('?'), id).toBe(true);
     }
   });

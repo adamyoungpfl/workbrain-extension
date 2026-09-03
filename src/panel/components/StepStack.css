@@ -91,6 +91,8 @@
   flex-direction: column;
   gap: 10px;
 }
+/* The beckon wears the STANDARD alert pulse — `wb-alert`, defined once in
+   components/alertPulse.css (pass 3q). Nothing bespoke left here. */
 @media (prefers-reduced-motion: reduce) {
   .stepstack-item,
   .stepstack-check {

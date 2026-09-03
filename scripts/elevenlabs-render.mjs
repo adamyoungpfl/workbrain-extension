@@ -43,9 +43,14 @@ const narrationLines = JSON.parse(readFileSync(join(CUES, 'narration-manifest.js
 
 /** The baseline flow's narration, found by its own opening words. */
 const flowNarrations = Object.entries(narrationLines).filter(([, text]) =>
-  ['Ok! To set your baseline', 'Run it once with nothing loaded', 'Saved as your starting point'].some(
-    (lead) => text.startsWith(lead),
-  ),
+  [
+    'Let\u2019s set your prompting baseline',
+    'Excellent! Now, your prompt',
+    'Select a provider from the list',
+    'Last step. Copy that response',
+    'One prompt\u2026in your own words',
+    'Saved as your starting point',
+  ].some((lead) => text.startsWith(lead)),
 );
 
 const jobs = [

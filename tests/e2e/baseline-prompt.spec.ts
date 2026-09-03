@@ -107,7 +107,7 @@ test('there is no stem, and the question sits on the box', async () => {
     // The field still answers to it.
     // The question reworked 2026-09-02 (Adam's baseline brief) - the name
     // follows the wording, as it must.
-    await expect(page.locator('textarea.field')).toHaveAccessibleName(/To set your baseline/);
+    await expect(page.locator('textarea.field')).toHaveAccessibleName(/One prompt/);
 
     // And the space it held is closed rather than left as a hole.
     const gap = await page.evaluate(() => {
@@ -387,7 +387,7 @@ test('an answer that is already an order is left completely alone', async () => 
 async function toBaselineOffer(page: Page): Promise<void> {
   await page.waitForSelector('.prompt-tw');
   await page.locator('.prompt-tw').first().click();
-  await page.getByRole('button', { name: /Submit/ }).click();
+  await page.getByRole('button', { name: /Continue/ }).click();
   await page.waitForSelector('.baselineoffer');
 }
 
@@ -402,13 +402,45 @@ const ANSWER =
   'Here are a few ways to explain your role. The Quick Dinner Party Pitch: ' +
   '"Companies generate massive amounts of raw operational data every second."';
 
+test('the finish bar: half at load, a share per check-off, Finish at the last step, full on the paste', async () => {
+  const { context, page } = await openBaseline(true);
+  try {
+    await toBaselineOffer(page);
+    const bar = page.locator('.baselineoffer-finishbar');
+    const done = () => bar.evaluate((el) => Number((el as HTMLElement).style.getPropertyValue('--done')));
+
+    // At load: step 1 is already checked, and the bar calls that half.
+    expect(await done()).toBeCloseTo(0.5);
+    await expect(bar).toContainText(S.baselineBarBusy);
+    await expect(bar).toBeDisabled();
+
+    // Each check-off buys a share.
+    await page.locator('.stepstack-row').nth(1).click();
+    expect(await done()).toBeCloseTo(0.65);
+    await page.locator('.stepstack-row').nth(2).click();
+    expect(await done()).toBeCloseTo(0.8);
+
+    // The last step open: the status becomes the verb - but the gate is
+    // still the empty box, so the verb is not yet pressable.
+    await expect(bar).toContainText(S.baselineBarFinish);
+    await expect(bar).toBeDisabled();
+
+    // The paste is the last stretch: full at the moment it is pressable.
+    await page.locator('#baseline-paste').fill('answer text');
+    expect(await done()).toBe(1);
+    await expect(bar).toBeEnabled();
+  } finally {
+    await context.close();
+  }
+});
+
 test('the answer lands on a fork, and is saved before either door is taken', async () => {
   const { context, page } = await openBaseline(true);
   try {
     await toBaselineOffer(page);
     await toStep3(page);
     await page.locator('#baseline-paste').fill(ANSWER);
-    await page.getByRole('button', { name: S.baselineGo }).click();
+    await page.locator('.baselineoffer-finishbar').click();
 
     // It does NOT leave the screen.
     await expect(page.locator("[data-position='baseline-landed']")).toBeVisible();
@@ -438,7 +470,7 @@ test('going home keeps the baseline, and does not re-offer it', async () => {
     await toBaselineOffer(page);
     await toStep3(page);
     await page.locator('#baseline-paste').fill(ANSWER);
-    await page.getByRole('button', { name: S.baselineGo }).click();
+    await page.locator('.baselineoffer-finishbar').click();
     await page.getByRole('button', { name: S.baselineHome }).click();
 
     await expect(page.locator('.baselineoffer')).toHaveCount(0);
@@ -491,7 +523,7 @@ test('the offer screen is laid out like the question before it', async () => {
     }));
 
     await page.locator('.prompt-tw').first().click();
-    await page.getByRole('button', { name: /Submit/ }).click();
+    await page.getByRole('button', { name: /Continue/ }).click();
     await page.waitForSelector('.baselineoffer');
 
     await expect(page.locator('.flowprogress')).toContainText(S.baselineEyebrow);
@@ -522,7 +554,12 @@ test('the offer screen is laid out like the question before it', async () => {
 
     // One centred action with the bail-out under it, in that order.
     const doors = await page.locator('.baselineoffer-doors button').allTextContents();
-    expect(doors).toEqual([S.baselineGo, S.baselineLater]);
+    // The bar's textContent carries its label twice (the clipped fill layer
+    // repeats it so the letters recolour at the fill's edge) - so the order
+    // claim reads per door rather than as an exact list.
+    expect(doors).toHaveLength(2);
+    expect(doors[0]).toContain(S.baselineBarBusy);
+    expect(doors[1]).toBe(S.baselineLater);
   } finally {
     await context.close();
   }

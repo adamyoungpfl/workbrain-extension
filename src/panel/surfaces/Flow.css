@@ -2342,6 +2342,14 @@
 .flow--prompt .flow-order-note {
   margin-top: 16px;
   line-height: 1.25;
+  /* V3.0 pass 3o (Adam: "make the text under the input span the length of
+     the input box above it so that it looks visually balanced. Visual
+     balance should be default placement"). `.flow-q` balances its lines,
+     which is right for a heading floating over whitespace and wrong here:
+     balanced lines stop short of the box's right edge, and under a
+     full-width input the ragged early wrap reads as misalignment, not
+     typography. Let the line run the box's own measure. */
+  text-wrap: initial;
 }
 
 /* THE NOTE RIDES THE BOTTOM. The box no longer grows, so nothing in the column

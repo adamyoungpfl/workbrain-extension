@@ -11,6 +11,10 @@
    Header, the storyboard, the box, the fixed doors, the note. The numbers are
    the ones `.flow--prompt` uses, because the point is that the two screens
    read as one path rather than as two designs. */
+.baselineoffer .flow-q {
+  flex: 0 0 auto;
+  margin: 14px 0 2px;
+}
 .baselineoffer .baselineoffer-body {
   flex: 0 0 auto;
   margin: 14px 0 2px;
@@ -146,25 +150,17 @@
   color: var(--primary);
 }
 
-/* Panel three's answer: the paste target, lit. A ring, not a message — the
-   point is WHERE, and a pulsing outline says it without words. Reduced
-   motion keeps the ring and drops the pulse: the instruction survives. */
-.baselineoffer-target textarea.field {
-  outline: 2px solid var(--primary);
-  outline-offset: 2px;
-  animation: baseline-target-pulse 1.3s ease-in-out 2;
-}
-@keyframes baseline-target-pulse {
-  50% {
-    outline-color: var(--violet);
-    box-shadow: 0 0 0 6px var(--primary-tint);
-  }
-}
-@media (prefers-reduced-motion: reduce) {
-  .baselineoffer-target textarea.field {
-    animation: none;
-    box-shadow: 0 0 0 6px var(--primary-tint);
-  }
+/* Panel three's answer wears the STANDARD alert pulse until touched —
+   `wb-alert wb-alert--input` on the field itself (components/alertPulse.css,
+   pass 3q). What this file keeps is the AIR: `.flow-answer` scrolls its zone
+   (overflow: auto), and a wrapper hugging the textarea at its own bounds
+   clips every pixel of ring outside it to four corner wedges (pass 3o).
+   This screen scrolls at the shell (pass 3j), not in VB-137's answer band,
+   so the band's `overflow-y: auto` buys nothing here and costs the ring.
+   Three classes, because `.flowshell .flow-answer` sets it at two and ties
+   lose on order. */
+.baselineoffer .flow-answer.baselineoffer-answerbox {
+  overflow: visible;
 }
 
 /* One centred action with the bail-out under it — the real shape of this
@@ -322,4 +318,173 @@
 }
 .baselineoffer[data-position='baseline-offer'] {
   padding-bottom: 52px;
+}
+
+/* ── V3.0 pass 3k: Paste-and-prompt goes side by side ────────────────────
+   Chips stacked left; the visual panel right, wearing the picked
+   service's homage hue through one CSS variable - the mock's strokes,
+   the ring, the picked chip's wash all drink from it. Default (no pick):
+   the house's own pop-ink, and no way out yet. */
+.baselineoffer-pasteprompt {
+  display: grid;
+  grid-template-columns: minmax(96px, 116px) 1fr;
+  gap: 12px;
+  align-items: start;
+}
+.baselineoffer-services.is-stacked {
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  gap: 6px;
+}
+.baselineoffer-services.is-stacked .baselineoffer-service {
+  width: 100%;
+  justify-content: center;
+}
+.baselineoffer-service[data-picked] {
+  border-color: var(--primary);
+  color: var(--ink);
+  background: color-mix(in srgb, var(--homage, var(--primary)) 14%, var(--canvas));
+}
+.baselineoffer-pastepanel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+/* The homage: mock strokes and the highlight ring take the hue when one
+   is set; the ring leans darker for weight. Scenery only - aria-hidden. */
+.baselineoffer-mock {
+  stroke: var(--homage, var(--pop-ink));
+}
+.baselineoffer-mock-ring {
+  stroke: color-mix(in srgb, var(--homage, var(--primary)) 80%, var(--ink));
+}
+.baselineoffer-open {
+  align-self: stretch;
+  text-align: center;
+  text-decoration: none;
+}
+
+/* ── V3.0 pass 3l: the picker as WORDMARKS ───────────────────────────────
+   The rounded chips retired (Adam: "too chunky and a bit dated") for the
+   modern SaaS integration-picker: a clean stacked list of provider names,
+   each set in the text-grade sibling of its own hue - familiar without a
+   logo or a lookalike face. Selection is the tick, the underline, and
+   aria-pressed - the color was always just the homage. 44px hit areas
+   under a slim look. */
+.baselineoffer-marks {
+  display: flex;
+  flex-direction: column;
+}
+.baselineoffer-mark {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  min-height: 44px;
+  padding: 0 6px;
+  border: 0;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+  color: var(--homage-ink, var(--ink));
+  border-radius: var(--r-md);
+}
+.baselineoffer-mark:hover {
+  background: color-mix(in srgb, var(--homage, var(--primary)) 8%, transparent);
+}
+.baselineoffer-mark-name {
+  font-size: 14px;
+  font-weight: 560;
+  letter-spacing: -0.005em;
+}
+.baselineoffer-mark[data-picked] .baselineoffer-mark-name {
+  font-weight: 700;
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 4px;
+  text-decoration-color: var(--homage, currentColor);
+}
+.baselineoffer-mark-tick {
+  flex: none;
+}
+
+/* ── V3.0 pass 3m ────────────────────────────────────────────────────────
+   Step 1's row: reassurance and its button side by side. Step 3's mock
+   matches the input's width. The doors sit under the whole stack. */
+.baselineoffer-copyrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+.baselineoffer-copyrow .baselineoffer-note {
+  flex: 1;
+}
+.stepstack-detail .baselineoffer-mock {
+  width: 100%;
+  max-width: none;
+}
+.baselineoffer .baselineoffer-doors {
+  margin-top: 12px;
+}
+
+/* ── THE FINISH BAR (pass 3p) ──────────────────────────────────────────────
+   A button drawn as a status bar: the tinted track is the whole button, the
+   primary fill sweeps across it as steps check off, and the label sits on
+   both — dark ink on the track, inverse ink where the fill has reached. The
+   two-layer label is the standard trick: the fill layer repeats the text and
+   a clip-path crops layer and text together, so the letters change colour at
+   exactly the fill's edge. The duplicate is aria-hidden; assistive
+   technology hears one name, and the name IS the state ("In progress" /
+   "Finish"), so nothing here rides colour alone. */
+.baselineoffer-finishbar {
+  position: relative;
+  width: 100%;
+  min-height: 46px;
+  padding: 12px 18px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--primary-tint);
+  overflow: hidden;
+  font: inherit;
+  cursor: pointer;
+}
+.baselineoffer-finishbar:disabled {
+  cursor: default;
+}
+.baselineoffer-finishbar:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.baselineoffer-finishbar-label {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 680;
+  letter-spacing: 0.01em;
+  /* The darker primary, because the track is tinted, not white. */
+  color: var(--primary-hover);
+}
+.baselineoffer-finishbar-fill {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-items: center;
+  padding: 12px 18px;
+  background: var(--primary);
+  clip-path: inset(0 calc((1 - var(--done, 0.5)) * 100%) 0 0);
+  transition: clip-path 420ms var(--ease);
+}
+.baselineoffer-finishbar-fill .baselineoffer-finishbar-label {
+  color: var(--ink-inv);
+}
+@media (prefers-reduced-motion: reduce) {
+  .baselineoffer-finishbar-fill {
+    transition: none;
+  }
 }

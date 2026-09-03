@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 import { playTick } from '../voice/clips';
 import { useNarratorPref } from '../voice/prefs';
 import './StepStack.css';
+import './alertPulse.css';
 
 /**
  * THE STEP STACK (V3.0 pass 3i; Adam: "I want to refine this format of
@@ -49,6 +50,14 @@ export interface StepStackProps {
 
 export function StepStack({ steps, active, visited, onActivate }: StepStackProps) {
   const { on: soundOn } = useNarratorPref();
+  /* THE BECKON (Adam, 2026-09-03: "a pulsing glow to the outline of the
+     next step until it is clicked so the user knows where to go next
+     intuitively"): the first UNVISITED step after the active one pulses
+     its edge — wearing the standard alert pulse (alertPulse.css, pass 3q:
+     "same style for all of them"), which carries its own reduced-motion
+     stillness. */
+  const activeIndex = steps.findIndex((step) => step.id === active);
+  const beckonId = steps.find((step, i) => i > activeIndex && !visited.has(step.id))?.id;
   return (
     <ol className="stepstack">
       {steps.map((step) => {
@@ -57,7 +66,7 @@ export function StepStack({ steps, active, visited, onActivate }: StepStackProps
         return (
           <li
             key={step.id}
-            className="stepstack-item"
+            className={`stepstack-item${step.id === beckonId ? ' wb-alert' : ''}`}
             data-state={isActive ? 'active' : isDone ? 'done' : 'dormant'}
           >
             <button
