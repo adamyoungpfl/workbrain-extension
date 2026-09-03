@@ -391,6 +391,13 @@ async function toBaselineOffer(page: Page): Promise<void> {
   await page.waitForSelector('.baselineoffer');
 }
 
+/** V3.0 pass 3h: the paste box and the doors live in step 3's stage - the
+ * cluster's third box opens it. */
+async function toStep3(page: Page): Promise<void> {
+  await page.locator('.baselineoffer-panel').nth(2).click();
+  await page.waitForSelector('#baseline-paste');
+}
+
 const ANSWER =
   'Here are a few ways to explain your role. The Quick Dinner Party Pitch: ' +
   '"Companies generate massive amounts of raw operational data every second."';
@@ -399,6 +406,7 @@ test('the answer lands on a fork, and is saved before either door is taken', asy
   const { context, page } = await openBaseline(true);
   try {
     await toBaselineOffer(page);
+    await toStep3(page);
     await page.locator('#baseline-paste').fill(ANSWER);
     await page.getByRole('button', { name: S.baselineGo }).click();
 
@@ -428,6 +436,7 @@ test('going home keeps the baseline, and does not re-offer it', async () => {
   const { context, page } = await openBaseline(true);
   try {
     await toBaselineOffer(page);
+    await toStep3(page);
     await page.locator('#baseline-paste').fill(ANSWER);
     await page.getByRole('button', { name: S.baselineGo }).click();
     await page.getByRole('button', { name: S.baselineHome }).click();
@@ -450,15 +459,15 @@ test('the offer screen fills the panel too — no dock hole, no scroll', async (
   const { context, page } = await openBaseline(true);
   try {
     await toBaselineOffer(page);
-    // The same defect the goal screen had, on the very next screen of the same
-    // path: no drawer, but `.flowshell`'s dock reservation held the hole open.
-    const { overflow, saveBottom, viewport } = await page.evaluate(() => ({
-      overflow: document.documentElement.scrollHeight - document.documentElement.clientHeight,
-      saveBottom: Math.round(document.querySelector('.flow-save')!.getBoundingClientRect().bottom),
-      viewport: window.innerHeight,
-    }));
-    expect(overflow).toBe(0);
-    expect(viewport - saveBottom).toBeLessThanOrEqual(12);
+    /* V3.0 pass 3h restage: the guided cluster replaced the full-panel
+       composer, and the save note rides step 3's stage rather than the
+       viewport edge. The claim that SURVIVES is the dock-hole one: no
+       vertical overflow at any step of the errand. */
+    const overflowAt = () =>
+      page.evaluate(() => document.documentElement.scrollHeight - document.documentElement.clientHeight);
+    expect(await overflowAt()).toBe(0);
+    await toStep3(page);
+    expect(await overflowAt()).toBe(0);
   } finally {
     await context.close();
   }
@@ -498,16 +507,17 @@ test('the offer screen is laid out like the question before it', async () => {
     // screen before in their own words.
     await expect(page.locator('.baselineoffer-task')).toHaveCount(0);
 
-    // The box takes the room, the way the previous screen's does, and the note
-    // sits on the bottom edge with nothing to scroll.
-    const { boxH, saveBottom, viewport, overflow } = await page.evaluate(() => ({
+    /* V3.0 pass 3h restage: the box lives in step 3's stage now, sized as
+       a card rather than the whole panel - the surviving claims are that
+       it exists at a real working height, the screen still does not
+       scroll, and the doors sit DIRECTLY under it in order. */
+    await page.locator('.baselineoffer-panel').nth(2).click();
+    await page.waitForSelector('#baseline-paste');
+    const { boxH, overflow } = await page.evaluate(() => ({
       boxH: Math.round(document.querySelector('textarea.field')!.getBoundingClientRect().height),
-      saveBottom: Math.round(document.querySelector('.flow-save')!.getBoundingClientRect().bottom),
-      viewport: window.innerHeight,
       overflow: document.documentElement.scrollHeight - document.documentElement.clientHeight,
     }));
-    expect(boxH).toBeGreaterThan(240);
-    expect(viewport - saveBottom).toBeLessThanOrEqual(12);
+    expect(boxH).toBeGreaterThanOrEqual(140);
     expect(overflow).toBe(0);
 
     // One centred action with the bail-out under it, in that order.
@@ -522,6 +532,7 @@ test('"Not now" leaves for Home instead of walking deeper into the interview', a
   const { context, page } = await openBaseline(true);
   try {
     await toBaselineOffer(page);
+    await toStep3(page);
     await page.getByRole('button', { name: S.baselineLater }).click();
     await page.waitForTimeout(400);
     // It used to mark the baseline passed and advance to question one, which

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useState } from 'react';
 import { Button, Field, FlowProgress, NarratorMark } from '../components';
 import { useNarration } from '../voice/useNarration';
 import { baselineOfferAskLine, baselineOfferLandedLine } from '../voice/narrationLines';
@@ -104,10 +104,11 @@ const OPENABLE_SERVICES = S.proofServiceOptions.filter((o) => ASSIST_SERVICE_URL
 export function BaselineOffer({ task, current, total, onRecord, onContinue, onSkip, onService, service, onHome }: BaselineOfferProps) {
   const [pasted, setPasted] = useState('');
   const [copied, setCopied] = useState(false);
-  const [picking, setPicking] = useState(false);
-  const [glowing, setGlowing] = useState(false);
-  const glowTimer = useRef(0);
-  useEffect(() => () => window.clearTimeout(glowTimer.current), []);
+  /* V3.0 pass 3h (Adam): the three boxes are a FIXED CLUSTER and the work
+     happens in ONE STAGE beneath them - press a box, its stage opens, and
+     everything else waits. Step 3's stage CONTAINS the paste box and the
+     doors, so the thing to do is always the only thing lit. */
+  const [step, setStep] = useState<1 | 2 | 3>(1);
   /* THE FORK (Adam, 2026-09-01). Pressing the primary button used to record
      the run and walk straight into question one. That spent the single best
      moment in the product without using it: the person is holding their AI's
@@ -140,8 +141,6 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
       : { role: 'question', text: baselineOfferLandedLine() },
     narratorOn,
   );
-
-  const serviceLabel = OPENABLE_SERVICES.find((o) => o.key === service)?.label;
 
   if (landed !== null) {
     return (
@@ -201,15 +200,39 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
 
       <h2 className="baselineoffer-title">{S.baselineTitle}</h2>
 
-      {/* The safety card. An ordered list because it IS one — three steps in
-          flight order, each panel a control for its own step. The pictograms
-          are aria-hidden scenery; every panel's whole meaning is in its
-          caption and sub-line. */}
-      <ol className="baselineoffer-story">
-        <li className="baselineoffer-stepli">
+      {/* THE FIXED CLUSTER (Adam, 2026-09-03): three equal boxes that never
+          move or resize - the flight order at a glance - and ONE stage
+          beneath them where the active step's work happens. The pictograms
+          are aria-hidden scenery; each box's whole meaning is its caption,
+          and aria-expanded carries which stage is open. */}
+      <ol className="baselineoffer-story is-cluster">
+        {(
+          [
+            { n: 1 as const, cap: S.baselineStep1, art: ART_PASTE },
+            { n: 2 as const, cap: S.baselineStep2, art: ART_OPEN },
+            { n: 3 as const, cap: S.baselineStep3, art: ART_RETURN },
+          ]
+        ).map(({ n, cap, art }) => (
+          <li key={n} className="baselineoffer-stepli">
+            <button
+              type="button"
+              className="baselineoffer-panel"
+              data-active={step === n || undefined}
+              aria-expanded={step === n}
+              onClick={() => setStep(n)}
+            >
+              {art}
+              <span className="baselineoffer-cap">{cap}</span>
+            </button>
+          </li>
+        ))}
+      </ol>
+
+      <div className="baselineoffer-stage" data-step={step}>
+        {step === 1 && (
           <button
             type="button"
-            className="baselineoffer-panel"
+            className="baselineoffer-recopy"
             onClick={() => {
               navigator.clipboard?.writeText(task).then(
                 () => {
@@ -220,121 +243,98 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
               );
             }}
           >
-            <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
-              <rect x="6" y="5" width="26" height="34" rx="3" />
-              <path d="M12 13h14 M12 20h14 M12 27h9" />
-              <path d="M37 22h16 m-5 -5 5 5 -5 5" />
-              <rect x="46" y="36" width="24" height="12" rx="6" />
-              <circle cx="64" cy="42" r="1.6" />
-            </svg>
-            <span className="baselineoffer-cap">{S.baselineStep1}</span>
-            <span className="baselineoffer-sub">{copied ? S.baselineRecopied : S.baselineRecopy}</span>
+            {copied ? S.baselineRecopied : S.baselineRecopy}
           </button>
-        </li>
-        <li className="baselineoffer-stepli">
-          <button
-            type="button"
-            className="baselineoffer-panel"
-            aria-expanded={picking}
-            onClick={() => setPicking((p) => !p)}
-          >
-            <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
-              <rect x="8" y="10" width="46" height="36" rx="4" />
-              <path d="M8 19h46" />
-              <circle cx="14" cy="14.5" r="1.4" />
-              <circle cx="19.5" cy="14.5" r="1.4" />
-              <path d="M31 27v12 M25 33h12" />
-              <path d="M58 10h12 M70 10v12 M70 10 56 24" />
-            </svg>
-            <span className="baselineoffer-cap">{S.baselineStep2}</span>
-            <span className="baselineoffer-sub">{serviceLabel ?? S.baselineStepPick}</span>
-          </button>
-        </li>
-        <li className="baselineoffer-stepli">
-          <button
-            type="button"
-            className="baselineoffer-panel"
-            onClick={() => {
-              setGlowing(true);
-              window.clearTimeout(glowTimer.current);
-              glowTimer.current = window.setTimeout(() => setGlowing(false), 2600);
-              document.getElementById('baseline-paste')?.focus();
-            }}
-          >
-            <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
-              <path d="M10 5h34a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H24l-7 6v-6h-7a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4z" />
-              <path d="M14 12h22 M14 18h14" />
-              <path d="M60 22v12 m-5 -5 5 5 5 -5" />
-              <rect x="14" y="42" width="48" height="11" rx="3" />
-              <path d="M9 40l-3-3 M67 40l3-3" />
-            </svg>
-            <span className="baselineoffer-cap">{S.baselineStep3}</span>
-            <span className="baselineoffer-sub">{S.baselineStepShow}</span>
-          </button>
-        </li>
-      </ol>
-
-      {/* Panel two, opened: the one service list, each entry a plain anchor —
-          the person's own click is what leaves the panel, and the pick is
-          remembered through the gate's own answer key. */}
-      {picking && (
-        <div className="baselineoffer-services" role="group" aria-label={S.baselineStepPick}>
-          {OPENABLE_SERVICES.map((o) => (
-            <a
-              key={o.key}
-              className="baselineoffer-service"
-              href={ASSIST_SERVICE_URLS[o.key]}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => {
-                onService?.(o.key);
-                setPicking(false);
-              }}
-            >
-              {o.label}
-            </a>
-          ))}
-        </div>
-      )}
-
-      <div className={`flow-answer baselineoffer-answerbox${glowing ? ' baselineoffer-target' : ''}`}>
-        <div className="flow-field-sr-label">
-          <Field
-            id="baseline-paste"
-            label={S.baselineBody}
-            value={pasted}
-            onChange={setPasted}
-            as="textarea"
-          />
-        </div>
-      </div>
-
-      {/* The doors, FIXED under the box (Adam, 2026-09-02: "Move the
-          Establish my baseline and Not Now box cluster to be fixed below the
-          input box with the proper padding") — the composer's own shape: the
-          work scrolls, the way out doesn't. The save note rides inside the
-          same bar so the promise sits with the buttons that need it. */}
-      <div className="baselineoffer-doors baselineoffer-doors--fixed">
-        <Button
-          type="button"
-          variant="primary"
-          disabled={!ready}
-          onClick={() => {
-            const answer = pasted.trim();
-            onRecord(answer);
-            setLanded(answer);
-          }}
-        >
-          {S.baselineGo}
-        </Button>
-        <button type="button" className="baselineoffer-later" onClick={onSkip}>
-          {S.baselineLater}
-        </button>
-        <p className="flow-save">
-          <span>{S.savedNote}</span>
-          <span>{S.privacyNote}</span>
-        </p>
+        )}
+        {step === 2 && (
+          <div className="baselineoffer-services" role="group" aria-label={S.baselineStepPick}>
+            {OPENABLE_SERVICES.map((o) => (
+              <a
+                key={o.key}
+                className="baselineoffer-service"
+                data-picked={o.key === service || undefined}
+                href={ASSIST_SERVICE_URLS[o.key]}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={() => onService?.(o.key)}
+              >
+                {o.label}
+              </a>
+            ))}
+          </div>
+        )}
+        {step === 3 && (
+          <>
+            <div className="flow-answer baselineoffer-answerbox baselineoffer-target">
+              <div className="flow-field-sr-label">
+                <Field
+                  id="baseline-paste"
+                  label={S.baselineBody}
+                  value={pasted}
+                  onChange={setPasted}
+                  as="textarea"
+                />
+              </div>
+            </div>
+            {/* The doors ride DIRECTLY under the box (Adam, 2026-09-03:
+                "fixed below the input box, not fixed to the bottom of the
+                page") - the way out lives with the work it closes. */}
+            <div className="baselineoffer-doors">
+              <Button
+                type="button"
+                variant="primary"
+                disabled={!ready}
+                onClick={() => {
+                  const answer = pasted.trim();
+                  onRecord(answer);
+                  setLanded(answer);
+                }}
+              >
+                {S.baselineGo}
+              </Button>
+              <button type="button" className="baselineoffer-later" onClick={onSkip}>
+                {S.baselineLater}
+              </button>
+              <p className="flow-save">
+                <span>{S.savedNote}</span>
+                <span>{S.privacyNote}</span>
+              </p>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
 }
+
+/* The cluster's pictograms - the same stroke drawings the buttons carried
+   when they were self-contained cards, lifted to constants so the cluster
+   markup stays readable. */
+const ART_PASTE = (
+  <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
+    <rect x="6" y="5" width="26" height="34" rx="3" />
+    <path d="M12 13h14 M12 20h14 M12 27h9" />
+    <path d="M37 22h16 m-5 -5 5 5 -5 5" />
+    <rect x="46" y="36" width="24" height="12" rx="6" />
+    <circle cx="64" cy="42" r="1.6" />
+  </svg>
+);
+const ART_OPEN = (
+  <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
+    <rect x="8" y="10" width="46" height="36" rx="4" />
+    <path d="M8 19h46" />
+    <circle cx="14" cy="14.5" r="1.4" />
+    <circle cx="19.5" cy="14.5" r="1.4" />
+    <path d="M31 27v12 M25 33h12" />
+    <path d="M58 10h12 M70 10v12 M70 10 56 24" />
+  </svg>
+);
+const ART_RETURN = (
+  <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
+    <path d="M10 5h34a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H24l-7 6v-6h-7a4 4 0 0 1-4-4V9a4 4 0 0 1 4-4z" />
+    <path d="M14 12h22 M14 18h14" />
+    <path d="M60 22v12 m-5 -5 5 5 5 -5" />
+    <rect x="14" y="42" width="48" height="11" rx="3" />
+    <path d="M9 40l-3-3 M67 40l3-3" />
+  </svg>
+);

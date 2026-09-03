@@ -76,6 +76,8 @@ test.describe('the baseline door', () => {
        proof's own baseline still runs later. Home is where starting lives, so
        nothing is out of reach — it is one press further away, and that press
        is the person's. */
+    /* V3.0 pass 3h: the doors live in step 3's stage - open it first. */
+    await page.locator('.baselineoffer-panel').nth(2).click();
     await page.getByRole('button', { name: S.baselineLater, exact: true }).click();
     await expect(page.locator('.baselineoffer')).toHaveCount(0);
     await expect(page.locator('.flow')).toHaveCount(0);
