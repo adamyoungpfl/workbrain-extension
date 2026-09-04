@@ -30,56 +30,10 @@
   gap: 8px;
 }
 
-/* ── THE CONNECTOR ─────────────────────────────────────────────────────────
-   Drawn over the whole frame and ignoring pointers: it is a route between two
-   sections, not a control, and it must never be in the way of the doors. */
-.splashreveal-links {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  overflow: visible;
-}
-/* THE SECOND PATH IS THE HAND-OFF. The first leads into the minutes and wears
-   that section's cyan; this one leads into the claim and wears the colour the
-   claim's own words begin in. Core draws them identically — what makes the
-   journey read as a journey rather than as two lines is that the colour
-   changes where the subject does. Its halo is the gradient's far end, so the
-   purple those words arrive at is already in the air before they land. */
-.splashreveal-path[data-link='privacy'] {
-  stroke: var(--splash-link);
-  filter: drop-shadow(0 0 3px var(--splash-link))
-    drop-shadow(0 0 9px var(--splash-link-end));
-}
-
-/* THE ROUTE RUNS ON INTO THE ACTIONS (Adam, 2026-09-01) — two squiggles, each
-   a gradient stroke that arrives in the colour above it and leaves in the
-   colour of the thing it lands on: fuchsia into the heading's blue, blue into
-   the key's aqua. The gradients live in the svg's own defs; the glow carries
-   both endpoint colours the way the privacy link already does. */
-.splashreveal-path[data-link='baseline'] {
-  stroke: url(#wb-link-baseline);
-  filter: drop-shadow(0 0 3px var(--splash-link))
-    drop-shadow(0 0 9px var(--splash-link-end));
-}
-.splashreveal-path[data-link='launch'] {
-  stroke: url(#wb-link-launch);
-  filter: drop-shadow(0 0 3px var(--splash-link-end))
-    drop-shadow(0 0 9px var(--globe-node-2-solid));
-}
-
-.splashreveal-path {
-  stroke: var(--globe-node-2-mid);
-  stroke-width: 1.5;
-  stroke-linecap: round;
-  /* The glow. Two shadows rather than one: a tight bright core and a wide
-     soft halo is what reads as light, where a single large blur reads as a
-     smudge. */
-  filter: drop-shadow(0 0 3px var(--globe-node-2-mid))
-    drop-shadow(0 0 9px var(--globe-node-1-mid));
-  opacity: 0;
-}
+/* THE CONNECTORS ARE GONE (Adam, 2026-09-03, the simplification): the
+   squiggle routes and the grown OR pair left with the choreography they
+   traced — four fades down one centre line need no route drawn between
+   them. Git has the rules if a route is ever wanted back. */
 
 /* ── THE MINUTES ───────────────────────────────────────────────────────────
    `tabular-nums` is not a nicety here. Without it the digits change width as
@@ -278,33 +232,64 @@
    the Launch offset at the bottom as the two action buttons"). Full width so
    the cluster inside can be; the launch part centres a key that is sized to
    its own words. */
+/* ── THE STAGE (Adam, 2026-09-03, from his screenshot) ─────────────────────
+   One grid cell below the lockup: the acts and the doors all occupy it, so
+   each element loads, animates and fades out IN THE SAME SPOT — the spot
+   the doors finally keep. The doors' wrapper is the tallest occupant and
+   sizes the cell; the acts centre within it. The margin puts the region
+   where his screenshot has it: clear air under the tagline. */
+.splashreveal-stage {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  width: 100%;
+  margin-top: 56px;
+}
+.splashreveal-stage > * {
+  grid-area: 1 / 1;
+}
+.splashreveal-doors {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+}
+@media (prefers-reduced-motion: reduce) {
+  /* The composed still paints every part PRESENT (SplashReveal.tsx), and a
+     shared cell would overprint them — the stage unfolds back into the
+     column so the whole pitch is legible at once. At the column's OLD
+     rhythm: the roomier stage margins are motion-money, and spending them
+     here pushed the launch cluster into the disclaimer on a 760px panel. */
+  .splashreveal-stage {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    margin-top: 12px;
+  }
+}
+
 .splashreveal-part[data-part='baseline'] {
   width: 100%;
-  /* Down a bit (Adam, 2026-09-02) — the 3 o'clock squiggle needs the room
-     above-right of the pill to make its swing. */
-  /* The long run the untangled squiggle needs to show its whole
-     fuchsia-to-purple transition (Adam, 2026-09-02). */
-  margin-top: 16px;
+  margin-top: 8px;
 }
 .splashreveal-part[data-part='launch'] {
   display: flex;
   flex-direction: column;
   align-items: center;
   /* Full width, centred: the pills stack on the centre line with the
-     "or" between them, and the joining squiggle bows around it. */
+     "or" between them. */
   width: 100%;
-  /* Longer bows (Adam, 2026-09-02): visible squiggle above AND below the
-     or. The simplification's lift is where the height comes back. */
-  margin-top: 18px;
+  margin-top: 6px;
 }
 
-/* THE LOCKUP IS A LOCKUP (Adam, 2026-09-01: "Reduce the padding between
-   'Workbrain' and the tagline below it. It needs to read like a lockup.").
-   The frame's 20px gap plus the tagline's own margin had the name and its
-   line standing apart like two exhibits; pulled to ~12px they read as one
-   object with two lines, which is what a lockup is. */
+/* MORE AIR under the lockup (Adam, 2026-09-03: "more padding between the
+   logo lockup and the tagline") — this walks back part of 2026-09-01's
+   "reduce the padding" at his word: with the tagline now caps, one size
+   and full white, it holds its own as a second element and the pair reads
+   better with ~14px between them than fused at ~-7. */
 .splashreveal-part[data-part='tagline'] {
-  margin-top: -19px;
+  margin-top: 2px;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -363,4 +348,17 @@
   stroke: url(#wb-or-grad);
   stroke-width: 2;
   stroke-linecap: round;
+}
+
+/* THE STILL'S DISCLAIMER STANDS DOWN FROM ITS PIN (2026-09-03). With every
+   part present the composed column runs to the panel's foot, and a fixed
+   line prints OVER the launch cluster's chip. In flow it is the same fine
+   print, after everything, quiet. AT THE FILE'S END on purpose: the pin
+   itself is declared above at equal specificity, and ties go to the later
+   rule — this must be the later rule. */
+@media (prefers-reduced-motion: reduce) {
+  .splashreveal-disclaimer {
+    position: static;
+    margin-top: 14px;
+  }
 }

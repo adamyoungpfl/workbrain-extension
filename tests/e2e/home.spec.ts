@@ -640,9 +640,15 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
      * exists, taking its height with it. Cutting §6's furniture to fit a row
      * that removes itself would be the same arithmetic-driving-design the
      * first move refused.
+     *
+     * AND A FOURTH, 1.75 → 1.8, on the next-move air (Adam, 2026-09-03:
+     * "fix the placement of the 'Your Next Move' label so that it is not
+     * overlapping with the container below"). The shared label's -10px
+     * tuck was the overlap; the section owns a real 6px gap now — 16px of
+     * air somebody asked for by name, in every state including this one.
      */
     const height = await page.$eval('.home', (home) => Math.round(home.getBoundingClientRect().height));
-    expect(height, `Home is ${height}px tall`).toBeLessThan(760 * 1.75);
+    expect(height, `Home is ${height}px tall`).toBeLessThan(760 * 1.8);
 
     await context.close();
   });

@@ -852,19 +852,46 @@ a.home-row-hit:hover .home-row-go {
    headline, the one way in - and the rest of the queue behind "See all",
    each row a 44px press. The fresh state adds the old welcome banner's
    promise and time lines around the same card. */
+/* ── COMPACT (Adam, 2026-09-03) ────────────────────────────────────────────
+   The section is a slim dashboard block now: its own column with a real
+   gap, so the shared label's -10px tuck (built for borderless content)
+   stops pulling the bordered card up INTO the label — that was the overlap.
+   The header row carries the label AND the door to the rest, the pattern
+   every SaaS dashboard card wears: title left, "See all N" right. */
+.home-next {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.home-next .home-section-label {
+  margin: 0;
+}
+.home-next-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+/* The 44px target overhangs the slim header row instead of inflating it —
+   the row reads as one line of furniture, the press area stays honest. */
+.home-next-head .home-next-more {
+  margin: -12px 0;
+}
+
+/* The card: one move, one verb, left-set — a row of work, not a hero. It
+   complements the meter below rather than towering over it. */
 .home-next-card {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  padding: 20px 18px;
+  align-items: stretch;
+  gap: 8px;
+  padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--canvas);
-  text-align: center;
+  text-align: left;
 }
 .home-next-card .btn {
-  width: 100%;
+  align-self: flex-start;
 }
 .home-next-section {
   margin: 0;
@@ -876,12 +903,13 @@ a.home-row-hit:hover .home-row-go {
 }
 .home-next-q {
   margin: 0;
-  max-width: 34ch;
-  font-size: 16.5px;
+  /* Full measure, natural wrap (the balance principle, 2026-09-03): a
+     left-set line in a card spans the card; balanced lines under a compact
+     header read as misalignment. A size down from the hero it was. */
+  font-size: 15px;
   font-weight: 650;
   line-height: 1.35;
   color: var(--ink);
-  text-wrap: balance;
 }
 .home-next-age-line {
   margin: 0;

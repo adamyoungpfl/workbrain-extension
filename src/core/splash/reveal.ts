@@ -44,108 +44,63 @@ interface Key extends Placed {
 /**
  * THE TABLE. Seconds from the moment the white breaks.
  *
- * Read it as a storyboard: the lockup arrives alone in the middle, rises as
- * the tagline joins it, and both rise again as each section materialises
- * beneath them — Adam's "they both keep moving up as the next section
- * materializes". The time section then moves "up and slightly to the left",
- * which is the shift the connector has to follow.
+ * SEQUENTIAL (Adam, 2026-09-03, refining his own simplification of the
+ * same day: "have the (A) About 15 Minutes section fade in and then out,
+ * then (B) have the THE FILE IS YOURS section fade it and then out, then
+ * (C) have the action buttons with the OR fade in. Each fades in, goes
+ * through its animation to completion then fades out until the buttons
+ * and then they stick until click.")
  *
- * ── THE DOORS LAND AT 4.4s, AND THAT IS A JUDGEMENT ───────────────────────
- * Adam's sequence, taken strictly in order, puts the buttons after the second
- * section has finished cycling two messages — twelve to fifteen seconds before
- * anything is pressable, against 5.5 today. Any click still skips the show,
- * but the DEFAULT would be a long hold on somebody who came to do a thing.
+ * So the reveal is now three ACTS under a standing lockup: the logo and
+ * tagline hold the top; the minutes play their whole argument (the count
+ * streams down, the rolodex takes its three turns) and leave; the promise
+ * plays its whole argument (the elimination lands and underlines) and
+ * leaves; the doors arrive with the OR and stand until pressed. One act
+ * on stage at a time — the fades never overlap.
  *
- * So the doors arrive while the sections carry on living underneath them. The
- * cinema plays; nobody is trapped in it. It is one number if that is the wrong
- * call, which is the reason it is a number and not a chain of `.then()`s.
+ * THIS SUPERSEDES THE DOORS-EARLY JUDGEMENT, at Adam's word. From slice 1
+ * the doors landed while the sections argued beneath them, so nobody
+ * waited on the cinema; "they stick until click" puts them after the acts
+ * by explicit direction. Any click anywhere still skips the whole show —
+ * the cinema is longer, and still optional.
  */
 const SCRIPT: Record<RevealPart, Key[]> = {
-  // Fades in centred, then climbs twice — once for the tagline, once for the
-  // sections. It never moves sideways: it is the thing everything else is
-  // arranged around.
+  // The logo — the shipped icon's own face — fades in first, and stands.
   lockup: [
     { at: 0.0, opacity: 0, x: 0, y: 0 },
     { at: 0.7, opacity: 1, x: 0, y: 0 },
-    /* HELD IN THE MIDDLE until the tagline starts. Adam: "the logo lockup
-       fades into the black in the middle of the frame. THEN it starts to move
-       AS the tagline fades into place below it." The first table had it rising
-       the instant its own fade ended, which makes the movement a continuation
-       of the arrival rather than a response to the line joining it — and the
-       spec's own "then" is doing real work there. Caught by the test that
-       asserted it was still centred while alone. */
-    { at: 0.9, opacity: 1, x: 0, y: 0 },
-    { at: 1.6, opacity: 1, x: 0, y: -46 },
-    { at: 2.5, opacity: 1, x: 0, y: -104 },
   ],
-  // Arrives under the lockup while the lockup is already rising, so the two
-  // read as one object gaining a second line rather than as two arrivals.
+  // Arrives under it while the lockup is still solidifying, so the two read
+  // as one object gaining a second line rather than as two arrivals.
   tagline: [
-    { at: 0.9, opacity: 0, x: 0, y: 0 },
-    { at: 1.6, opacity: 1, x: 0, y: 0 },
-    { at: 2.5, opacity: 1, x: 0, y: -58 },
+    { at: 0.4, opacity: 0, x: 0, y: 0 },
+    { at: 1.1, opacity: 1, x: 0, y: 0 },
   ],
-  // "About 15 minutes" — materialises, moves up and slightly LEFT, and —
-  // the SIMPLIFICATION (Adam, 2026-09-02) — having made its claim, leaves:
-  // after the whole pitch has landed, the argument folds away until only
-  // the lockup, the tagline and the two keys remain.
+  /* ACT A — the minutes. In by 2.2; the count runs 2.2→3.1, the rolodex
+     turns 2.4→6.06 (three turns, core's own arithmetic below); out once
+     the argument is complete. */
   time: [
-    { at: 1.9, opacity: 0, x: 0, y: 26 },
-    { at: 2.6, opacity: 1, x: 0, y: 0 },
-    { at: 3.5, opacity: 1, x: 0, y: 0 },
-    { at: 4.2, opacity: 1, x: -16, y: -34 },
-    { at: 8.7, opacity: 1, x: -16, y: -34 },
-    { at: 9.3, opacity: 0, x: -16, y: -44 },
+    { at: 1.5, opacity: 0, x: 0, y: 18 },
+    { at: 2.2, opacity: 1, x: 0, y: 0 },
+    { at: 6.3, opacity: 1, x: 0, y: 0 },
+    { at: 6.9, opacity: 0, x: 0, y: 0 },
   ],
-  /* The second section, and it settles slightly RIGHT of centre (Adam,
-     2026-09-01: "the same treatment as the About 15 minutes but offset just
-     slightly to the right"). The time section moved left at 4.2s; this one
-     answers it, and the two offsets are what give the connector between them
-     something to bend around — a path down a straight line is a rule, and a
-     path that leans is a route. Fourteen against the other's sixteen: enough
-     to read as deliberate, not enough to look like a mistake. */
+  /* ACT B — the promise. In after A has fully left; the elimination runs
+     8.0→11.65 (CLAIM_LANDS); a beat to be believed, then out. */
   privacy: [
-    { at: 3.8, opacity: 0, x: 0, y: 22 },
-    { at: 4.5, opacity: 1, x: 14, y: 0 },
-    /* The simplification: rise into the space the time section left, then
-       leave the same way it did. */
-    { at: 9.0, opacity: 1, x: 14, y: 0 },
-    { at: 9.6, opacity: 1, x: 14, y: -80 },
-    { at: 9.9, opacity: 1, x: 14, y: -80 },
-    { at: 10.5, opacity: 0, x: 14, y: -92 },
+    { at: 7.1, opacity: 0, x: 0, y: 18 },
+    { at: 7.8, opacity: 1, x: 0, y: 0 },
+    { at: 12.4, opacity: 1, x: 0, y: 0 },
+    { at: 13.0, opacity: 0, x: 0, y: 0 },
   ],
-  /* THE TWO ACTIONS ARRIVE THE WAY THE SECTIONS DID (Adam, 2026-09-01: "In
-     the same pattern as the sections above… Let's make that and the Launch
-     offset at the bottom as the two action buttons"). One lands, then the
-     other, and they lean opposite ways — the baseline answers the privacy
-     section's right lean, the launch answers the baseline's left one, and
-     the two squiggles between them have something to bend around. */
-  /* CIRCLES NOW (the hold pass), so the leans grew into a real stagger: the
-     baseline key settles left of centre, the launch key right and pulled up
-     beside it (the pull is layout, SplashReveal.css; the lean is here). Side
-     by side they cost the column less height than two stacked bars did, and
-     the two squiggles get a genuine diagonal to travel. */
-  /* CENTRED since the mock pass (Adam, 2026-09-02: "the button array which
-     can be centered") — the sections above keep their alternation; the
-     action cluster stands on the centre line the squiggles ride down. */
+  /* ACT C — the doors, with the OR between them, a beat apart. They stick. */
   baseline: [
-    { at: 4.4, opacity: 0, x: 0, y: 14 },
-    { at: 5.0, opacity: 1, x: 0, y: 0 },
-    /* The simplification's two lifts: into the time section's space, then
-       into the privacy section's. The keys never fade — they are what the
-       whole show narrows down to. */
-    { at: 9.0, opacity: 1, x: 0, y: 0 },
-    { at: 9.6, opacity: 1, x: 0, y: -80 },
-    { at: 10.2, opacity: 1, x: 0, y: -80 },
-    { at: 10.8, opacity: 1, x: 0, y: -184 },
+    { at: 13.2, opacity: 0, x: 0, y: 12 },
+    { at: 13.8, opacity: 1, x: 0, y: 0 },
   ],
   launch: [
-    { at: 4.7, opacity: 0, x: 0, y: 14 },
-    { at: 5.3, opacity: 1, x: 0, y: 0 },
-    { at: 9.0, opacity: 1, x: 0, y: 0 },
-    { at: 9.6, opacity: 1, x: 0, y: -80 },
-    { at: 10.2, opacity: 1, x: 0, y: -80 },
-    { at: 10.8, opacity: 1, x: 0, y: -184 },
+    { at: 13.4, opacity: 0, x: 0, y: 12 },
+    { at: 14.0, opacity: 1, x: 0, y: 0 },
   ],
 };
 
@@ -154,28 +109,10 @@ export function partStartsAt(part: RevealPart): number {
   return SCRIPT[part][0]!.at;
 }
 
-/** When every part has ARRIVED and stands in the full composition. The
- *  still version paints `REVEAL_REST` (everything landed and argued, before
- *  the simplification below begins), so the whole pitch is in the frame. */
-export const REVEAL_SETTLED = 5.3;
-
-/**
- * THE FINAL ACTION of the arrival (Adam, 2026-09-02): once the parts have
- * settled, a short squiggle GROWS from the OR outward to each pill - up to
- * the baseline, down to the launch - carrying one purple-to-green gradient
- * whose midpoint sits at OR's own vertical centre. The clock starts just
- * after REVEAL_SETTLED so the growth is unmistakably the last thing that
- * happens; the still frame (REVEAL_REST) paints it fully drawn.
- */
-export function orPairAt(t: number): { drawn: number } {
-  const p = Math.min(1, Math.max(0, (t - 5.45) / 0.7));
-  return { drawn: easeSmooth(p) };
-}
-
-/** When the SIMPLIFICATION has finished (Adam, 2026-09-02): the sections
- *  and every squiggle faded, the keys risen, and what remains is the
- *  lockup, the tagline and the two actions. Nothing moves after this. */
-export const REVEAL_SIMPLE = 11.4;
+/** When the LAST arrival has landed — the launch door, closing act C. The
+ *  end state is the lockup, the tagline and the two doors; the acts have
+ *  played and left. Nothing moves after this. */
+export const REVEAL_SETTLED = 14.0;
 
 /**
  * Where a part is, `t` seconds into the reveal.
@@ -214,7 +151,8 @@ export function partAt(t: number, part: RevealPart): Placed {
 /** Adam: "it streams down from 30 minutes quickly to 15." */
 export const COUNT_FROM = 30;
 export const COUNT_TO = 15;
-const COUNT_STARTS = 2.6;
+/* Just after its section lands — retimed with the 2026-09-03 table. */
+const COUNT_STARTS = 2.2;
 const COUNT_MS = 900;
 
 /**
@@ -234,7 +172,7 @@ export function countAt(t: number): number {
 /* ── THE ROLODEX ─────────────────────────────────────────────────────────── */
 
 /** Adam: "have the entire question seem to rotate like a rolodex". */
-export const ROLODEX_STARTS = 3.0;
+export const ROLODEX_STARTS = 2.4;
 /**
  * EXPORTED BECAUSE THE STYLESHEET NEEDS THE SAME NUMBER. The turn is drawn by
  * a CSS keyframe and counted here, and a duration written in both places is
@@ -242,7 +180,9 @@ export const ROLODEX_STARTS = 3.0;
  * stylesheet as a custom property; nothing hard-codes 620 anywhere else.
  */
 export const ROLODEX_TURN_MS = 620;
-const ROLODEX_REST_MS = 900;
+/** Exported since the sequential grammar: act A's exit is timed off the
+ *  last turn's END, and the test proving it needs the same arithmetic. */
+export const ROLODEX_REST_MS = 900;
 /**
  * THREE TURNS, THEN STILL — a deliberate departure from "shows the same thing
  * on a loop".
@@ -321,8 +261,8 @@ export const CLAIM_WORDS = 2;
 /** The last one is the true one, and the only one that never gets struck. */
 export const CLAIM_TRUE = CLAIM_WORDS - 1;
 
-/** Just after the section has landed, the way the rolodex follows its own. */
-const CLAIM_STARTS = 4.6;
+/** Just after act B has landed, the way the rolodex follows act A's. */
+const CLAIM_STARTS = 8.0;
 /* EVERY NUMBER BELOW IS ADAM'S, SET AT THE BENCH (2026-09-01) rather than
    argued for here: he scrubbed the device at real size and landed on these.
    The first pass had them at 310 / 400 / 240 / 240 and the whole run at 4.8s;
@@ -483,49 +423,13 @@ export const REVEAL_REST = Math.max(
   ROLODEX_STARTS +
     ((ROLODEX_TURNS - 1) * (ROLODEX_TURN_MS + ROLODEX_REST_MS) + ROLODEX_TURN_MS) / 1000,
   CLAIM_LANDS,
+  /* And the last ARRIVAL: under the sequential grammar (2026-09-03) the
+     doors land after both acts have played, so the parts themselves are
+     the final movers. */
+  REVEAL_SETTLED,
 );
 
-/* ── THE CONNECTOR ───────────────────────────────────────────────────────── */
-
-export interface Link {
-  /** How much of the path is drawn, 0 to 1. */
-  drawn: number;
-  /** Where the glowing head is along it, 0 to 1. */
-  head: number;
-  /** The simplification's exit: 1 fully there, 0 faded away. */
-  fade: number;
-  /** Nothing to draw at all. */
-  idle: boolean;
-}
-
-/* When each route fades in the simplification — the squiggle into a
-   section leaves just before the section does, and the action bows leave
-   last of all ("Finally, the remaining squiggly lines all fade away"). */
-const LINK_FADES: Partial<Record<RevealPart, [number, number]>> = {
-  time: [8.6, 9.1],
-  privacy: [9.7, 10.1],
-  baseline: [10.3, 10.7],
-  launch: [10.9, 11.3],
-};
-
-/**
- * The glowing path between two sections.
- *
- * It draws itself just ahead of the section it points at, so the eye is led
- * INTO something arriving rather than shown a line to something already
- * there — which is the whole reason a connector is better than a gap.
- *
- * The path's geometry is not here: it depends on where the two parts actually
- * are, and `partAt` already says. Slice 2 computes the curve from those two
- * points, which is what makes it follow the time section when it moves left.
- */
-export function linkAt(t: number, toPart: RevealPart): Link {
-  const arrives = partStartsAt(toPart);
-  const from = arrives - 0.45;
-  const span = 0.7;
-  if (t <= from) return { drawn: 0, head: 0, fade: 1, idle: true };
-  const p = Math.min(1, (t - from) / span);
-  const gone = LINK_FADES[toPart];
-  const fade = gone ? 1 - easeSmooth((t - gone[0]) / (gone[1] - gone[0])) : 1;
-  return { drawn: easeSmooth(p), head: p, fade, idle: false };
-}
+/* THE CONNECTORS ARE GONE (Adam, 2026-09-03, the simplification): the
+   squiggle routes between sections — and the grown OR pair — left with the
+   choreography they existed to trace. `linkAt` and `orPairAt` lived here;
+   git has them if a route is ever wanted back. */

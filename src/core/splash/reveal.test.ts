@@ -8,15 +8,16 @@ import {
   COUNT_TO,
   REVEAL_REST,
   REVEAL_SETTLED,
+  ROLODEX_REST_MS,
+  ROLODEX_STARTS,
   ROLODEX_TURNS,
+  ROLODEX_TURN_MS,
   claimWordAt,
   countAt,
-  linkAt,
   partAt,
   partStartsAt,
   rolodexAt,
 } from './reveal';
-import { REVEAL_SIMPLE } from './reveal';
 import type { RevealPart } from './reveal';
 
 const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'baseline', 'launch'];
@@ -33,109 +34,102 @@ describe('partAt — the storyboard', () => {
     for (const part of PARTS) expect(partAt(0, part).opacity).toBe(0);
   });
 
-  it('opens on the lockup alone, in the middle', () => {
-    const at = 0.75;
-    expect(partAt(at, 'lockup')).toMatchObject({ opacity: 1, x: 0, y: 0 });
-    expect(partAt(at, 'tagline').opacity).toBe(0);
+  it('opens on the lockup leading, the tagline joining while it solidifies', () => {
+    /* The simplification (Adam, 2026-09-03): "keep the fade in the Work
+       Brain logo… with the tagline below it" — one object gaining a second
+       line, so the fades overlap with the lockup ahead. */
+    const at = 0.6;
+    const lockup = partAt(at, 'lockup');
+    const tagline = partAt(at, 'tagline');
+    expect(lockup.opacity).toBeGreaterThan(tagline.opacity);
+    expect(tagline.opacity).toBeGreaterThan(0);
     expect(partAt(at, 'time').opacity).toBe(0);
   });
 
-  it('has the lockup RISING while the tagline is still arriving', () => {
-    // The two read as one object gaining a line, not as two arrivals — which
-    // only works if they overlap.
-    const at = 1.3;
-    const tagline = partAt(at, 'tagline');
-    expect(tagline.opacity).toBeGreaterThan(0);
-    expect(tagline.opacity).toBeLessThan(1);
-    expect(partAt(at, 'lockup').y).toBeLessThan(0);
-  });
-
-  it('moves the lockup and tagline up again as the time section lands', () => {
-    const before = partAt(2.0, 'lockup').y;
-    const after = partAt(2.5, 'lockup').y;
-    expect(after).toBeLessThan(before);
-    expect(partAt(2.5, 'tagline').y).toBeLessThan(0);
-  });
-
-  it('moves the time section up AND slightly left, which the link must follow', () => {
-    const settled = partAt(2.8, 'time');
-    const moved = partAt(REVEAL_SETTLED, 'time');
-    expect(moved.y).toBeLessThan(settled.y);
-    expect(moved.x).toBeLessThan(0);
-  });
-
-  it('leans the two sections OPPOSITE ways, and moves nothing else sideways', () => {
-    /* SUPERSEDED 2026-09-01 (slice 3b, Adam: "the same treatment as the About
-       15 minutes but offset just slightly to the right"). This used to say
-       nothing moved sideways except the time section. The second section now
-       answers the first's lean, and the two offsets are what the connector
-       between them bends around — a path down a straight line is a rule, and
-       a path that leans is a route.
-
-       The lockup and the tagline still never move sideways: they are the axis
-       everything else is arranged around, and an axis that drifts is not one. */
-    expect(partAt(REVEAL_SETTLED, 'time').x).toBeLessThan(0);
-    expect(partAt(REVEAL_SETTLED, 'privacy').x).toBeGreaterThan(0);
-    /* The ACTIONS stand on the centre line since the mock pass (Adam,
-       2026-09-02: "the button array which can be centered") — the sections
-       lean; the cluster the squiggles descend into does not. */
-    for (const part of ['lockup', 'tagline', 'baseline', 'launch'] as RevealPart[]) {
-      for (let t = 0; t <= 6; t += 0.1) expect(partAt(t, part).x).toBe(0);
+  it('never moves ANYTHING sideways — four fades down one centre line', () => {
+    /* The leans left with the connectors they existed to bend (Adam,
+       2026-09-03: "then fade in the 15 minute section centered, then the
+       nothing leaves section centered"). */
+    for (const part of PARTS) {
+      for (let t = 0; t <= 8; t += 0.1) expect(partAt(t, part).x).toBe(0);
     }
   });
 
+  it('fades every part in AT its resting place — a short settle rise, nothing more', () => {
+    for (const part of PARTS) {
+      const keys = [0, 1, 2, 3, 4, 5, 6, 8, 20];
+      for (const t of keys) {
+        const p = partAt(t, part);
+        // Never above its rest, never overshooting below the arrival nudge.
+        expect(p.y).toBeGreaterThanOrEqual(0);
+        expect(p.y).toBeLessThanOrEqual(18);
+      }
+      expect(partAt(REVEAL_SETTLED, part).y).toBe(0);
+    }
+  });
+
+  it('plays one act at a time — the section fades never overlap', () => {
+    /* Adam (2026-09-03): "Each fades in, goes through its animation to
+       completion then fades out until the buttons." A and B are never
+       both on stage. */
+    for (let t = 0; t <= 20; t += 0.02) {
+      const a = partAt(t, 'time').opacity;
+      const b = partAt(t, 'privacy').opacity;
+      expect(Math.min(a, b)).toBeLessThanOrEqual(0.01);
+    }
+  });
+
+  it('lets each act COMPLETE before it leaves', () => {
+    // Act A holds until the rolodex's last turn has ended…
+    const rolodexEnds =
+      ROLODEX_STARTS + ((ROLODEX_TURNS - 1) * (ROLODEX_TURN_MS + ROLODEX_REST_MS) + ROLODEX_TURN_MS) / 1000;
+    expect(partAt(rolodexEnds, 'time').opacity).toBe(1);
+    // …and act B holds until the elimination has landed and been believed.
+    expect(partAt(CLAIM_LANDS, 'privacy').opacity).toBe(1);
+    expect(partAt(CLAIM_LANDS + 0.5, 'privacy').opacity).toBe(1);
+  });
+
+  it('never takes away the lockup, the tagline or the doors', () => {
+    /* The acts leave; these four stand. The doors "stick until click". */
+    for (const part of ['lockup', 'tagline', 'baseline', 'launch'] as RevealPart[]) {
+      let previous = 0;
+      for (let t = 0; t <= 20; t += 0.02) {
+        const o = partAt(t, part).opacity;
+        expect(o).toBeGreaterThanOrEqual(previous - 1e-9);
+        previous = o;
+      }
+      expect(partAt(600, part).opacity).toBe(1);
+    }
+    // And the acts really are gone at the end.
+    expect(partAt(600, 'time').opacity).toBe(0);
+    expect(partAt(600, 'privacy').opacity).toBe(0);
+  });
+
   describe('it comes to rest, and stays', () => {
-    it('has every part fully present and still by REVEAL_SETTLED', () => {
-      // A reveal still moving while somebody is deciding competes with its own
-      // buttons.
-      for (const part of PARTS) {
+    it('ends on the lockup, the tagline and the two doors', () => {
+      for (const part of ['lockup', 'tagline', 'baseline', 'launch'] as RevealPart[]) {
         expect(partAt(REVEAL_SETTLED, part).opacity).toBe(1);
       }
+      expect(partAt(REVEAL_SETTLED, 'time').opacity).toBe(0);
+      expect(partAt(REVEAL_SETTLED, 'privacy').opacity).toBe(0);
     });
 
-    it('is byte-identical at the SIMPLE rest and long after — nothing drifts', () => {
-      /* Since the simplification (Adam, 2026-09-02) the composition keeps
-         moving after the settle: the sections leave and the keys rise. The
-         no-drift law moved to the FINAL rest. */
+    it('is byte-identical at the settle and long after — nothing drifts', () => {
       for (const part of PARTS) {
-        expect(partAt(REVEAL_SIMPLE + 30, part)).toEqual(partAt(REVEAL_SIMPLE, part));
+        expect(partAt(REVEAL_SETTLED + 30, part)).toEqual(partAt(REVEAL_SETTLED, part));
       }
     });
 
-    it('simplifies to the lockup, the tagline and the two keys', () => {
-      /* "At the end of the sequence, we have the logo lockup, the tagline
-         and the 2 action buttons." The sections are gone, the keys have
-         risen into their space, and the axis never moved. */
-      expect(partAt(REVEAL_SIMPLE, 'time').opacity).toBe(0);
-      expect(partAt(REVEAL_SIMPLE, 'privacy').opacity).toBe(0);
-      for (const part of ['lockup', 'tagline', 'baseline', 'launch'] as RevealPart[]) {
-        expect(partAt(REVEAL_SIMPLE, part).opacity).toBe(1);
+    it('rests every part AT its own place, ready for the composed still', () => {
+      /* The still version is COMPOSED now, not sampled: the panel paints
+         every part present at rest, because no clock instant holds the
+         whole pitch once the acts fade out (SplashReveal.tsx). What core
+         owes it is that every part's resting offset is zero. */
+      for (const part of PARTS) {
+        const p = partAt(REVEAL_SETTLED, part);
+        expect(p.x).toBe(0);
+        expect(p.y).toBe(0);
       }
-      expect(partAt(REVEAL_SIMPLE, 'baseline').y).toBeLessThan(-150);
-      expect(partAt(REVEAL_SIMPLE, 'launch').y).toBeLessThan(-150);
-      expect(partAt(REVEAL_SIMPLE, 'lockup')).toEqual(partAt(REVEAL_SETTLED, 'lockup'));
-      expect(partAt(REVEAL_SIMPLE, 'tagline')).toEqual(partAt(REVEAL_SETTLED, 'tagline'));
-    });
-
-    it('fades every route by the SIMPLE rest, sections first, bows last', () => {
-      for (const part of ['time', 'privacy', 'baseline', 'launch'] as RevealPart[]) {
-        expect(linkAt(REVEAL_SIMPLE, part).fade).toBe(0);
-      }
-      // The order: the section routes are gone while the action bows remain.
-      expect(linkAt(10.2, 'time').fade).toBe(0);
-      expect(linkAt(10.2, 'privacy').fade).toBe(0);
-      expect(linkAt(10.2, 'launch').fade).toBe(1);
-      // And the still frame (REVEAL_REST) has every route intact.
-      for (const part of ['time', 'privacy', 'baseline', 'launch'] as RevealPart[]) {
-        expect(linkAt(REVEAL_REST, part).fade).toBe(1);
-      }
-    });
-
-    it('is what the still version renders', () => {
-      // Reduced motion hands this the settled time and paints the result, so
-      // the still frame is free rather than a second layout.
-      const still = PARTS.map((p) => partAt(REVEAL_SETTLED, p));
-      expect(still.every((s) => s.opacity === 1)).toBe(true);
     });
   });
 
@@ -149,16 +143,15 @@ describe('partAt — the storyboard', () => {
     }
   });
 
-  it('puts the actions up while the sections are still living underneath', () => {
-    /* The judgement recorded in the module: Adam's order, taken strictly, puts
-       the buttons after the second section finishes cycling — twelve to
-       fifteen seconds before anything is pressable. The cinema plays; nobody
-       is trapped in it. */
-    expect(partStartsAt('baseline')).toBeLessThan(6);
-    expect(partStartsAt('launch')).toBeLessThan(6);
+  it('puts the doors LAST, after both acts have played — and they stick', () => {
+    /* SUPERSEDED 2026-09-03 (Adam: "then (C) have the action buttons with
+       the OR fade in… then they stick until click"). This test used to
+       protect the doors-early judgement; the sequential brief retires it
+       by explicit direction, and any click anywhere still skips the show. */
+    expect(partStartsAt('baseline')).toBeGreaterThan(partStartsAt('privacy'));
     expect(partAt(REVEAL_SETTLED, 'baseline').opacity).toBe(1);
     expect(partAt(REVEAL_SETTLED, 'launch').opacity).toBe(1);
-    // One, then the other — the sections' own pattern, carried down.
+    // One, then the other — the acts' own pattern, carried down.
     expect(partStartsAt('baseline')).toBeLessThan(partStartsAt('launch'));
   });
 });
@@ -388,18 +381,16 @@ describe('claimWordAt — the true claim is arrived at, not asserted', () => {
 });
 
 describe('REVEAL_REST — the moment the screen stops moving', () => {
-  it('is after the parts have settled: the sections live on a while', () => {
-    // Distinct claims. The PARTS stop moving at REVEAL_SETTLED, which is what
-    // the still frame renders; the sections inside them keep going.
-    expect(REVEAL_REST).toBeGreaterThan(REVEAL_SETTLED);
+  it('covers the last arrival: the doors are the final movers now', () => {
+    /* Under the sequential grammar the devices finish DURING their acts,
+       and the last thing to move is the launch door landing. */
+    expect(REVEAL_REST).toBeGreaterThanOrEqual(REVEAL_SETTLED);
   });
 
-  it('nothing turns, fades or moves after the SIMPLE rest — ever', () => {
-    /* REVEAL_REST is the full composition's rest — the still frame's moment,
-       every device done arguing. The simplification then moves the furniture
-       one last time (Adam, 2026-09-02), so the nothing-after law lives at
-       REVEAL_SIMPLE now. */
-    const after = REVEAL_SIMPLE + 0.01;
+  it('nothing turns, fades or moves after REVEAL_REST — ever', () => {
+    /* The exit phase retired (Adam, 2026-09-03), so the nothing-after law
+       lives back at the composition's own rest. */
+    const after = REVEAL_REST + 0.01;
     // Swept, not sampled: one instant proves one instant. The rolodex rests
     // between turns, so a single check after the end cannot tell a device
     // that has stopped from one that is merely between beats.
@@ -432,45 +423,9 @@ describe('REVEAL_REST — the moment the screen stops moving', () => {
       });
     };
     for (let t = 0; t < 30; t += 0.01) if (moving(t)) lastMotion = t;
-    /* The DEVICES all rest by REVEAL_REST (that is what the still frame
-       banks on); the simplification's travel ends by REVEAL_SIMPLE. */
-    const deviceMoving = (t: number): boolean => {
-      if (rolodexAt(t).turning) return true;
-      const w = claimWordAt(t);
-      if (!w.resting) return true;
-      const next = claimWordAt(t + 0.01);
-      return w.rotate !== next.rotate || w.strike !== next.strike;
-    };
-    let lastDevice = 0;
-    for (let t = 0; t < 30; t += 0.01) if (deviceMoving(t)) lastDevice = t;
-    expect(lastDevice).toBeLessThanOrEqual(REVEAL_REST + 0.02);
-    expect(lastMotion).toBeLessThanOrEqual(REVEAL_SIMPLE + 0.02);
+    expect(lastMotion).toBeLessThanOrEqual(REVEAL_REST + 0.02);
   });
 });
 
-describe('linkAt — the path leads INTO what is arriving', () => {
-  it('is idle before there is anything to point at', () => {
-    expect(linkAt(0, 'time').idle).toBe(true);
-  });
-
-  it('starts drawing BEFORE its destination lands', () => {
-    // The eye is led into something arriving, rather than shown a line to
-    // something already there — the whole reason a connector beats a gap.
-    const arrives = partStartsAt('time');
-    expect(linkAt(arrives - 0.2, 'time').idle).toBe(false);
-  });
-
-  it('finishes drawn, and stays drawn', () => {
-    expect(linkAt(10, 'time')).toMatchObject({ drawn: 1, head: 1, idle: false });
-  });
-
-  it('never reports more than a whole path', () => {
-    for (let t = 0; t <= 8; t += 0.02) {
-      for (const part of ['time', 'privacy'] as RevealPart[]) {
-        const l = linkAt(t, part);
-        expect(l.drawn).toBeLessThanOrEqual(1);
-        expect(l.head).toBeLessThanOrEqual(1);
-      }
-    }
-  });
-});
+/* `linkAt`'s describe left with the connectors themselves (Adam,
+   2026-09-03, the simplification) — there is no path to lead anywhere. */

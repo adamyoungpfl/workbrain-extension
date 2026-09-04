@@ -287,6 +287,11 @@ test('the stack builds, dims one rung per line, and caps', async () => {
 });
 
 test('every line in the stack is its own 44px target, and none overlap', async () => {
+  /* Sixty seconds, not thirty: the full-motion walk holds the splash's
+     baseline door, and since the sequential grammar (2026-09-03) the doors
+     are the LAST arrival (~20s in) — then the typewriter still has to deal
+     MAX_LINES lines before there is a stack to measure. */
+  test.setTimeout(60_000);
   const { context, page } = await openBaseline(false);
   try {
     await expect(page.locator('.prompt-tw-line')).toHaveCount(MAX_LINES, { timeout: 30_000 });

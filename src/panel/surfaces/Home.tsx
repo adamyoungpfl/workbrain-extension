@@ -755,10 +755,34 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
           the queue deliberately does not (records, section aggregates).
           The welcome banner this replaces folded its promise and its time
           line into the fresh state's own card. */}
+      {/* COMPACT, AND A COMPLEMENT (Adam, 2026-09-03: "make that Your Next
+          Move section more compact. We can show the next move and a way to
+          see other pending actions. It should compliment the status bar,
+          not supersede it"). The card is a slim left-set row now — one
+          move, one verb — and the way to the rest sits in the section's
+          own header line, the dashboard grammar (label left, "See all N"
+          right) a person already knows. */}
       <section className="home-next" aria-labelledby="home-next-label">
-        <h2 className="home-section-label" id="home-next-label">
-          {S.homeNextLabel}
-        </h2>
+        <div className="home-next-head">
+          <h2 className="home-section-label" id="home-next-label">
+            {S.homeNextLabel}
+          </h2>
+          {/* ONLY ONCE STARTED. On a fresh install "See all 34" is every
+              unanswered question dressed as a to-do list, and — found by the
+              welcome a11y suite — a header door Tab stops on BEFORE the one
+              CTA a new person needs. Day zero has one move; the door to the
+              rest earns its place with the first answer. */}
+          {featured && hasStarted && queue.length > 1 && (
+            <button
+              type="button"
+              className="home-next-more"
+              aria-expanded={queueOpen}
+              onClick={() => setQueueOpen((o) => !o)}
+            >
+              {queueOpen ? S.homeNextFewer : S.homeNextAll(queue.length)}
+            </button>
+          )}
+        </div>
         {featured ? (
           <div className="home-next-card" data-kind={featured.kind}>
             <p className="home-next-section">{featured.section}</p>
@@ -781,16 +805,6 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
                   : S.homeNextRefresh}
             </Button>
             {nextMove.kind === 'start' && <p className="home-welcome-time">{S.welcomeTime}</p>}
-            {queue.length > 1 && (
-              <button
-                type="button"
-                className="home-next-more"
-                aria-expanded={queueOpen}
-                onClick={() => setQueueOpen((o) => !o)}
-              >
-                {queueOpen ? S.homeNextFewer : S.homeNextAll(queue.length)}
-              </button>
-            )}
             {queueOpen && (
               <ul className="home-next-list">
                 {queue.map((item) => (

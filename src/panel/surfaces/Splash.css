@@ -588,21 +588,20 @@
      the padding") — the name and its line are ONE lockup. */
   margin: 0;
   max-width: 34ch;
-  /* The tagline joins the SECTION TYPE (Adam, 2026-09-02): same size,
-     weight and tracking as ABOUT 15 MINUTES and THE FILE IS YOURS FROM —
-     one voice down the whole screen. The first row goes caps; the second
-     keeps its case and its colour treatment. */
+  /* ONE SIZE, ONE CASE, ONE WHITE (Adam, 2026-09-03: "all caps all the
+     first row font size and all the white or gray letters to all be
+     white") — both rows at the section type's 17px, both caps, and the
+     base runs in full white rather than a muted step. The two colour pops
+     and the purple underline stay: they are the line's thematic marks,
+     not its grey. */
   font-size: 17px;
   font-weight: 700;
   letter-spacing: 0.06em;
   line-height: 1.45;
+  color: var(--ink-inv);
 }
 .splash-tagline-line {
   text-transform: uppercase;
-}
-/* Row two: a step down from row one, per the final grammar. */
-.splash-tagline-line:last-child {
-  font-size: 15px;
 }
 
 /* The poles: fuchsia for the person, the launch key's green-blue for the
@@ -618,13 +617,8 @@
   color: var(--globe-node-2-solid);
   font-weight: 650;
 }
-/* Row one is WHITE with its fuchsia pop; row two stays on the tagline's
-   own offwhite with its aqua pop and the purple underline. The shimmer
-   that briefly lived here is retired (Adam, 2026-09-02) — the tagline just
-   fades in with its part, like everything else on the spine. */
-.splash-tagline-line:first-child {
-  color: var(--ink-inv);
-}
+/* The first-child white special-case retired (Adam, 2026-09-03): the WHOLE
+   tagline is white now — the rule moved up onto .splash-tagline itself. */
 /* The landing word takes the ANSWER'S mark: an underline that draws itself
    once the line has settled — the same gesture that lands under "Nothing"
    three sections down, made once here so the rhyme is set up before the

@@ -2,7 +2,6 @@ import { test, expect, chromium } from '@playwright/test';
 import type { BrowserContext, Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ORBIT_STILL } from '../../src/core/geometry/markOrbit';
 import { SPLASH_BEATS } from '../../src/core/splash/sequence';
 import { S } from '../../src/panel/strings';
 import {
@@ -18,7 +17,7 @@ import {
 } from '../../src/core/splash/reveal';
 import { PULSE_MS } from '../../src/core/splash/launch';
 import { HOLD_MS, LAUNCH_MS } from '../../src/core/splash/rocket';
-import { REVEAL_SIMPLE, partAt } from '../../src/core/splash/reveal';
+
 
 /**
  * V2.7 VB-128 — the splash is the show (docs/V2.7-SPLASH-WOW.md, Option 1):
@@ -48,8 +47,8 @@ import { REVEAL_SIMPLE, partAt } from '../../src/core/splash/reveal';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DIST = process.env.WB_E2E_DIST ?? path.resolve(HERE, '../../dist');
 
-/** The pose the reveal's mark must hold when nothing is allowed to move. */
-const STILL_POSE = ORBIT_STILL.nodes.map((n) => `${n.cx},${n.cy},${n.r}`);
+/* STILL_POSE retired with the reveal's icosahedron (2026-09-03) — the
+   lockup is the static W Peaks; only the INTRO still orbits marks. */
 
 /* V2.9 slice 2: the reveal is a SEQUENCE now, not a frame. The doors are the
    last part to land — `REVEAL_SETTLED` seconds after the white breaks — so a
@@ -148,12 +147,6 @@ async function holdKey(
 const TRUE_ANSWER = S.splashLeaveAnswers[CLAIM_TRUE]!;
 const TRUE_PHRASE = `${TRUE_ANSWER.amount} ${TRUE_ANSWER.verb}`;
 
-const readPose = (page: Page, selector: string) =>
-  page.$$eval(`${selector} circle`, (circles) =>
-    circles.map(
-      (c) => `${c.getAttribute('cx')},${c.getAttribute('cy')},${c.getAttribute('r')}`,
-    ),
-  );
 
 test.describe('VB-128 — the show opens', () => {
   test('opens LIGHT: the faint lattice turning, and no sequence yet', async () => {
@@ -232,7 +225,7 @@ test.describe('VB-128 — the show opens', () => {
     await expect(page.locator('.splashreveal-own')).toBeVisible();
 
     // Centred, and stacked in the movie order: mark, promise, cost, what.
-    const mark = (await page.locator('.splashreveal .brand-mark').boundingBox())!;
+    const mark = (await page.locator('.splashreveal .peaksmark-face').boundingBox())!;
     const tagline = (await page.locator('.splash-tagline').boundingBox())!;
     const cost = (await page.locator('.splashreveal-cost').boundingBox())!;
     const what = (await page.locator('.splashreveal-own').boundingBox())!;
@@ -244,8 +237,14 @@ test.describe('VB-128 — the show opens', () => {
     expect(Math.abs(mark.x + mark.width / 2 - 200)).toBeLessThan(1.5);
     expect(Math.abs(tagline.x + tagline.width / 2 - 200)).toBeLessThan(1.5);
     expect(tagline.y).toBeGreaterThan(mark.y + mark.height);
+    /* THE STAGE (2026-09-03): the acts share ONE cell below the lockup —
+       each plays in the same spot — so the old top-to-bottom stacking of
+       cost-then-promise is retired. Both sit in the stage, under the
+       tagline, centred on the same region. */
     expect(cost.y).toBeGreaterThan(tagline.y);
-    expect(what.y).toBeGreaterThan(cost.y);
+    expect(what.y).toBeGreaterThan(tagline.y);
+    const overlap = Math.min(cost.y + cost.height, what.y + what.height) - Math.max(cost.y, what.y);
+    expect(overlap, 'the acts do not share the stage cell').toBeGreaterThan(-40);
 
     await context.close();
   });
@@ -312,8 +311,11 @@ test.describe('VB-128 — the show opens', () => {
       ),
     ).not.toMatch(/\bthree\b/i);
 
-    // The way past, said out loud rather than merely available.
-    await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible();
+    // The way past, said out loud rather than merely available. The doors
+    // are the LAST arrival under the sequential grammar - given their clock.
+    await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible({
+      timeout: REVEAL_TIMEOUT,
+    });
 
     await context.close();
   });
@@ -333,7 +335,7 @@ test.describe('VB-128 — the show opens', () => {
 
     await expect(
       page.getByRole('button', { name: S.splashBaseline, exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: REVEAL_TIMEOUT });
     await holdKey(page, 'baseline');
 
     await page.waitForSelector('.flow', { timeout: 15_000 });
@@ -519,9 +521,14 @@ test.describe('VB-128 — every exit, at every moment', () => {
   });
 
   test('the show does NOT end on its own — it waits for a choice', async () => {
-    test.setTimeout(40_000);
+    test.setTimeout(60_000);
     const { context, page } = await launchPanel();
-    await page.waitForSelector('.splashreveal-cost', { timeout: REVEAL_TIMEOUT });
+    /* Wait for the DOORS, not the first section: under the sequential
+       grammar (2026-09-03) they are the last arrival, and the role query
+       only resolves once their part sheds aria-hidden. */
+    await page
+      .getByRole('button', { name: S.splashStraight, exact: true })
+      .waitFor({ timeout: REVEAL_TIMEOUT });
 
     /* THE SPLASH NO LONGER HANDS ITSELF OVER (2026-08-31). It waits, because
        it is asking a question with two answers and a screen that answers its
@@ -829,7 +836,11 @@ test.describe('V2.9 — the ring is the choice: sides, not a toggle', () => {
 
   test('both keys carry both sides, at the full target size, and no toggle stands apart', async () => {
     const { context, page } = await launchPanel();
-    await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
+    /* The part's shell exists (invisibly) from mount; the ROLES only exist
+       once act C lands and sheds aria-hidden. Wait for the doors themselves. */
+    await page
+      .getByRole('button', { name: S.splashStraight, exact: true })
+      .waitFor({ timeout: REVEAL_TIMEOUT });
 
     /* The hold pass's standalone toggle folded into the rings (Adam's ask,
        by name); each side is a real 44px control however small its chip
@@ -1223,7 +1234,7 @@ test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', ()
 
     await expect(
       page.locator('.splash-basekey-key').getByRole('button', { name: S.splashBaseline, exact: true }),
-    ).toBeVisible();
+    ).toBeVisible({ timeout: REVEAL_TIMEOUT });
     await expect(
       page.locator('.splash-basekey-key .splash-split-caption'),
     ).toHaveText(S.splashSilentShort);
@@ -1262,30 +1273,45 @@ test.describe('V2.9 slice 4 polish — the fog, and the route to the corner', ()
       };
     });
     expect(geo).not.toBeNull();
-    /* The wire is measured for the FINAL rest — after the simplification
-       lifts the keys — because the corner is where the person lingers.
-       Anchor + the final offsets + size must land on the viewport's corner. */
-    const rest = partAt(REVEAL_SIMPLE, 'launch');
-    expect(geo!.right + rest.x).toBeGreaterThanOrEqual(geo!.vw - 2);
-    expect(geo!.bottom + rest.y).toBeGreaterThanOrEqual(geo!.vh - 2);
+    /* The wire is measured at the resting place, which since the 2026-09-03
+       simplification is also the final place — no settle lean to add. AND
+       THE RUN MAY HONESTLY DECLINE now: without the exit phase's 184px
+       lift, the key rests near the panel's bottom edge, and the layout
+       effect's own floor ("below ~24px there is genuinely nothing to draw
+       through") leaves the short fallback wire instead. Where the effect
+       DID build the run, it must reach the corner; where it declined, the
+       decline must be justified by the geometry — the key really is
+       within a hop of the edge. */
+    if (geo!.right > 200) {
+      expect(geo!.right).toBeGreaterThanOrEqual(geo!.vw - 2);
+      expect(geo!.bottom).toBeGreaterThanOrEqual(geo!.vh - 2);
+    } else {
+      expect(geo!.vh - geo!.bottom).toBeLessThan(64);
+    }
 
     await context.close();
   });
 });
 
-test.describe('V2.9 — the simplification', () => {
-  test('the pitch folds away until only the lockup, tagline and keys remain', async () => {
+test.describe('V3.0 — the sequential reveal (2026-09-03)', () => {
+  test('three acts under a standing lockup, and the doors stick', async () => {
     test.setTimeout(60_000);
     const { context, page } = await launchPanel();
+
+    /* Adam: "(A) About 15 Minutes… fade in and then out, then (B) THE FILE
+       IS YOURS… fade it and then out, then (C) the action buttons with the
+       OR fade in… they stick until click." Sampled at the end state: the
+       acts have played and left, the lockup and doors stand. */
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.waitForTimeout((REVEAL_SETTLED + 1.0) * 1000);
 
-    /* Adam (2026-09-02): sections and squiggles leave in order, the keys
-       rise, and the end state is the lockup, the tagline and the two
-       actions. Sampled after core's own final rest, with margin. */
-    const risenBy = (REVEAL_SIMPLE + 1.2) * 1000;
-    const before = (await page.locator('.splash-basekey').boundingBox())!;
-    await page.waitForTimeout(risenBy);
-
+    for (const part of ['lockup', 'tagline', 'baseline', 'launch']) {
+      await expect(page.locator(`.splashreveal-part[data-part='${part}']`)).toHaveAttribute(
+        'aria-hidden',
+        'false',
+      );
+    }
+    // The acts are off stage - gone from assistive tech with their opacity.
     await expect(page.locator(".splashreveal-part[data-part='time']")).toHaveAttribute(
       'aria-hidden',
       'true',
@@ -1295,17 +1321,18 @@ test.describe('V2.9 — the simplification', () => {
       'true',
     );
     await expect(page.locator('.splash-wordmark')).toBeVisible();
-    await expect(page.locator('.splash-tagline')).toBeVisible();
+    await expect(page.locator('.splashreveal .peaksmark-face')).toBeVisible();
     await expect(page.getByRole('button', { name: S.splashBaseline, exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible();
 
+    // And nothing is still travelling: the keys hold their place.
+    const before = (await page.locator('.splash-basekey').boundingBox())!;
+    await page.waitForTimeout(1000);
     const after = (await page.locator('.splash-basekey').boundingBox())!;
-    expect(before.y - after.y, 'the keys never rose into the freed space').toBeGreaterThan(120);
+    expect(Math.abs(before.y - after.y)).toBeLessThan(1.5);
 
-    // And every route has faded with the sections it joined.
-    for (const path of await page.locator('.splashreveal-path').all()) {
-      expect(Number(await path.evaluate((el) => getComputedStyle(el).opacity))).toBeLessThan(0.05);
-    }
+    // No routes exist to draw - the connectors left with the choreography.
+    await expect(page.locator('.splashreveal-path')).toHaveCount(0);
 
     await context.close();
   });
@@ -1324,12 +1351,12 @@ test.describe('VB-128 — reduced motion', () => {
     );
     await expect(page.locator('.splashreveal-cost')).toBeVisible();
 
-    // The mark holds the camera path's own still viewpoint.
-    const before = await readPose(page, '.splashreveal .brand-mark');
-    expect(before).toEqual(STILL_POSE);
+    /* The lockup is the W Peaks now (2026-09-03) — a static drawing with no
+       pose to hold. What reduced motion must still prove is that no frame
+       loop runs under it. */
+    await expect(page.locator('.splashreveal .peaksmark-face')).toBeVisible();
     await page.waitForTimeout(1200);
     expect(await frameCount(page), 'a frame loop is running under reduced motion').toBe(0);
-    expect(await readPose(page, '.splashreveal .brand-mark')).toEqual(before);
 
     await context.close();
   });

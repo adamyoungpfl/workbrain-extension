@@ -1,6 +1,6 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
-import { BrandMark } from '../components';
+import { PeaksSvg } from '../components';
 import { narratorSupported, stopSpeaking } from '../voice/speech';
 import { cue } from '../voice/cues';
 import { loadPrefs, useNarratorPref } from '../voice/prefs';
@@ -14,13 +14,10 @@ import {
   ROLODEX_TURN_MS,
   claimWordAt,
   countAt,
-  linkAt,
-  orPairAt,
   partAt,
   rolodexAt,
 } from '../../core/splash/reveal';
 import type { RevealPart } from '../../core/splash/reveal';
-import { REVEAL_SIMPLE } from '../../core/splash/reveal';
 import { S } from '../strings';
 import { richTagline, taglineLines } from './Splash';
 import './SplashReveal.css';
@@ -51,23 +48,6 @@ import './SplashReveal.css';
  */
 
 const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'baseline', 'launch'];
-
-interface Box {
-  cx: number;
-  top: number;
-  bottom: number;
-  /** The key inside an action part, when there is one — measured so a
-   *  link can aim at the pill rather than at the full-width row the part
-   *  actually is. */
-  key?: { cx: number; cy: number; w: number; h: number };
-  /** The "OR" between the pills, when the part carries one — the grown
-   *  squiggle runs from under it into the key below. */
-  or?: { cx: number; top: number; bottom: number };
-  /** The eta chip's lower edge - the upper squiggle's landfall measures
-   *  off it (Adam, 2026-09-02: "clear of the average completion time
-   *  marker"), so clearance holds by construction if the chip changes. */
-  eta?: { bottom: number };
-}
 
 export interface SplashRevealProps {
   /** Seconds since the reveal began. Under reduced motion the caller passes
@@ -465,14 +445,11 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: (voiced: boolean) => void; 
     const light = lightRef.current;
     if (!key || !svg || !cable || !light) return;
     const box = key.getBoundingClientRect();
-    /* The FINAL rest, not the arrival: the simplification lifts the keys
-       184px after everything else has gone, and the corner is where the
-       person lingers — so the wire is measured for where the key ENDS UP.
-       Early on it overshoots below the frame, which the tail-fade makes
-       purposeful. */
-    const settle = partAt(REVEAL_SIMPLE, 'launch');
-    const startX = box.left + box.width / 2 + settle.x;
-    const startY = box.bottom + settle.y;
+    /* Measured at the resting place, which since the 2026-09-03
+       simplification is also the final place — the parts fade in where
+       they stand and never travel after. */
+    const startX = box.left + box.width / 2;
+    const startY = box.bottom;
     const w = window.innerWidth - startX;
     const h = window.innerHeight - startY;
     /* 24, was 40: on a short panel the corner run is a short hop, and a
@@ -627,17 +604,12 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: (voiced: boolean) => void; 
 export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashRevealProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const partRefs = useRef<Partial<Record<RevealPart, HTMLDivElement | null>>>({});
-  const pathRef = useRef<SVGPathElement | null>(null);
-  const path2Ref = useRef<SVGPathElement | null>(null);
-  /* The button-region squiggles retired (Adam, 2026-09-02: "Get rid of
-     the little squigglies in the loading sequence above and around the
-     buttons") - what stands in the region now is the grown pair below. */
-  const orUpRef = useRef<SVGPathElement | null>(null);
-  const orDownRef = useRef<SVGPathElement | null>(null);
-  const orGradRef = useRef<SVGLinearGradientElement | null>(null);
+  /* Every squiggle is gone (Adam, 2026-09-03, the simplification) — the
+     section connectors, the grown OR pair, and the resting-box measurement
+     that existed to route them. The launch door's cable survives: it is
+     the door's own dress, not a route between parts. */
   const slotRef = useRef<HTMLSpanElement | null>(null);
   const rolodexRef = useRef<HTMLParagraphElement | null>(null);
-  const restRef = useRef<Partial<Record<RevealPart, Box>>>({});
 
   /* Only what changes a handful of times lives in React. */
   const [count, setCount] = useState(still ? countAt(REVEAL_SETTLED) : COUNT_FROM);
@@ -649,10 +621,6 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
      a second, and go straight to style below. */
   const [claim, setClaim] = useState(still ? CLAIM_TRUE : 0);
 
-  /* THE RESTING BOXES, measured once after layout and never again. Measuring
-     per frame would be a forced reflow sixty times a second to learn something
-     that does not change — the parts MOVE by transform, which does not alter
-     layout at all. */
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return;
@@ -661,43 +629,6 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
        style prop for the same reason every other number here does: this is a
        fact the paint needs, not state. */
     root.style.setProperty('--rolodex-turn', `${ROLODEX_TURN_MS}ms`);
-    const frame = root.getBoundingClientRect();
-    const next: Partial<Record<RevealPart, Box>> = {};
-    for (const part of PARTS) {
-      const el = partRefs.current[part];
-      if (!el) continue;
-      const b = el.getBoundingClientRect();
-      next[part] = {
-        cx: b.left - frame.left + b.width / 2,
-        top: b.top - frame.top,
-        bottom: b.bottom - frame.top,
-      };
-      const key = el.querySelector('.splash-holdkey');
-      if (key) {
-        const kb = key.getBoundingClientRect();
-        next[part]!.key = {
-          cx: kb.left - frame.left + kb.width / 2,
-          cy: kb.top - frame.top + kb.height / 2,
-          w: kb.width,
-          h: kb.height,
-        };
-      }
-      const etaEl = el.querySelector('.splash-eta');
-      if (etaEl) {
-        const eb = etaEl.getBoundingClientRect();
-        next[part]!.eta = { bottom: eb.bottom - frame.top };
-      }
-      const orEl = el.querySelector('.splash-or');
-      if (orEl) {
-        const ob = orEl.getBoundingClientRect();
-        next[part]!.or = {
-          cx: ob.left - frame.left + ob.width / 2,
-          top: ob.top - frame.top,
-          bottom: ob.bottom - frame.top,
-        };
-      }
-    }
-    restRef.current = next;
   }, []);
 
   useEffect(() => {
@@ -712,126 +643,6 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         // tab stop and still takes a click.
         el.style.pointerEvents = at.opacity > 0.98 ? 'auto' : 'none';
         el.setAttribute('aria-hidden', at.opacity < 0.05 ? 'true' : 'false');
-      }
-
-      /* THE TWO CONNECTORS, each from the bottom of one section to the top of
-         the next, both offset by wherever the spine has those parts right now.
-         A gentle S rather than a straight line: a curve reads as a route and a
-         straight line reads as a rule — and with one section leaning left and
-         the next leaning right, the S is what the lean is FOR.
-
-         Written once and run twice rather than copied: the second link is the
-         same geometry between a different pair, and two copies of this would
-         be two places to fix the day the curve changes. */
-      const drawLink = (
-        path: SVGPathElement | null,
-        fromPart: RevealPart,
-        toPart: RevealPart,
-        /* How SQUIGGLY (Adam, 2026-09-01: "a squiggly line"). Zero keeps the
-           original gentle S the sections wear; the links into the actions
-           bend twice, because a route into a button is allowed to be having
-           more fun than a route between two paragraphs. */
-        wiggle = 0,
-      ) => {
-        const from = restRef.current[fromPart];
-        const to = restRef.current[toPart];
-        if (!path || !from || !to) return;
-        const link = linkAt(t, toPart);
-        const a = partAt(t, fromPart);
-        const b = partAt(t, toPart);
-        let d: string;
-        {
-
-          const x1 = from.cx + a.x;
-          const y1 = from.bottom + a.y + 6;
-          const x2 = to.cx + b.x;
-          const y2 = to.top + b.y - 6;
-          const mid = (y1 + y2) / 2;
-          d = wiggle
-            ? /* Two bends: out one way, through the middle, in from the other —
-                 the S command mirrors the last control point, which is what
-                 keeps the second bend smooth however far apart the ends are. */
-              `M ${x1} ${y1} C ${x1 - wiggle} ${y1 + (y2 - y1) * 0.3}, ` +
-              `${(x1 + x2) / 2 + wiggle} ${mid - (y2 - y1) * 0.12}, ${(x1 + x2) / 2} ${mid} ` +
-              `S ${x2 + wiggle} ${y2 - (y2 - y1) * 0.3}, ${x2} ${y2}`
-            : `M ${x1} ${y1} C ${x1} ${mid}, ${x2} ${mid}, ${x2} ${y2}`;
-        }
-        path.setAttribute('d', d);
-        /* THE DRAW-ON IS OPTIONAL, THE PATH IS NOT. `getTotalLength` is SVG
-           geometry, and not every environment implements it — jsdom does not,
-           and an unguarded call took the WHOLE reveal down with it there: the
-           lockup, the sections and the doors all vanished because a decorative
-           line could not measure itself.
-
-           That is the degradation law with a real example attached. Where the
-           measurement exists the path draws itself on; where it does not, it
-           simply appears. Nothing else on the screen is allowed to depend on
-           a connector. */
-        if (typeof path.getTotalLength === 'function') {
-          const len = path.getTotalLength();
-          path.style.strokeDasharray = `${len}`;
-          path.style.strokeDashoffset = `${len * (1 - link.drawn)}`;
-        }
-        path.style.opacity = link.idle ? '0' : link.fade.toFixed(3);
-      };
-      drawLink(pathRef.current, 'tagline', 'time');
-      drawLink(path2Ref.current, 'time', 'privacy');
-      /* Both action links ride the CENTRE LINE now (the mock pass, Adam,
-         2026-09-02): the route from the promise wiggles left and right on
-         its way down into the top pill, and a short bow joins the pills
-         through the "or". The colour still hands itself forward — fuchsia
-         to blue, blue to aqua — which is what makes five separate things
-         one route. */
-      /* THE FINAL ACTION (Adam, 2026-09-02): the region's old squiggles are
-         gone; in their place, once everything has settled, a short squiggle
-         GROWS from OR outward to each pill. Both start at the word, so the
-         growth radiates from the fork itself - and both ride one shared
-         userSpaceOnUse gradient held symmetric around OR's own centre, so
-         the purple-to-green hand-off crosses exactly at the word
-         (`orPairAt`, core). Padding 6-8px at every landfall. */
-      {
-        const base = restRef.current['baseline'];
-        const part = restRef.current['launch'];
-        const up = orUpRef.current;
-        const down = orDownRef.current;
-        const grad = orGradRef.current;
-        if (up && down && base?.key && part?.or && part.key) {
-          const a = partAt(t, 'baseline');
-          const b = partAt(t, 'launch');
-          const pair = orPairAt(t);
-          const orX = part.or.cx + b.x;
-          const orCy = (part.or.top + part.or.bottom) / 2 + b.y;
-          const seg = (x1: number, ya: number, x2: number, yb: number) => {
-            const m = (ya + yb) / 2;
-            return (
-              `M ${x1.toFixed(1)} ${ya.toFixed(1)} C ${(x1 - 9).toFixed(1)} ${m.toFixed(1)}, ` +
-              `${(x2 + 9).toFixed(1)} ${m.toFixed(1)}, ${x2.toFixed(1)} ${yb.toFixed(1)}`
-            );
-          };
-          const upperFoot = base.eta
-            ? base.eta.bottom + 8
-            : base.key.cy + base.key.h / 2 + 14;
-          up.setAttribute('d', seg(orX, part.or.top + b.y - 8, base.key.cx + a.x, upperFoot + a.y));
-          down.setAttribute(
-            'd',
-            seg(orX, part.or.bottom + b.y + 8, part.key.cx + b.x, part.key.cy + b.y - part.key.h / 2 - 14),
-          );
-          if (grad) {
-            const yTop = base.key.cy + a.y + base.key.h / 2;
-            const yBot = part.key.cy + b.y - part.key.h / 2;
-            const reach = Math.max(orCy - yTop, yBot - orCy, 1);
-            grad.setAttribute('y1', (orCy - reach).toFixed(1));
-            grad.setAttribute('y2', (orCy + reach).toFixed(1));
-          }
-          for (const path of [up, down]) {
-            if (typeof path.getTotalLength === 'function') {
-              const len = path.getTotalLength();
-              path.style.strokeDasharray = `${len}`;
-              path.style.strokeDashoffset = `${len * (1 - pair.drawn)}`;
-            }
-            path.style.opacity = pair.drawn > 0.01 ? '1' : '0';
-          }
-        }
       }
 
       const c = countAt(t);
@@ -882,16 +693,31 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
     };
 
     if (still) {
-      /* Not one frame scheduled. The settled frame IS the still version —
-         core's table gives it for free rather than needing a second layout.
+      /* Not one frame scheduled. The DEVICES paint their ended state from
+         REVEAL_REST (count landed on 15, elimination resting underlined) —
+         the still version has to be the END of the argument, not a
+         photograph taken during it.
 
-         PAINTED AT `REVEAL_REST`, NOT `REVEAL_SETTLED`. The parts are identical
-         at both (they stop at the earlier one and never move again), but the
-         SECTIONS are not: at REVEAL_SETTLED the elimination is still on its
-         first wrong answer, so a still frame drawn there would say "Everything
-         leaves your browser" and leave it there. The still version has to be
-         the END of the argument, not a photograph taken during it. */
+         AND THE PARTS ARE COMPOSED, NOT SAMPLED. Under the sequential
+         grammar (Adam, 2026-09-03) the acts fade out after playing, so no
+         single instant on the clock holds the whole pitch — at rest the
+         sections are gone. The still version keeps the INSTRUCTION
+         (docs/GUARDRAILS.md), and the instruction is the pitch: every part
+         present at its resting place, the way the pre-sequential still
+         always looked. */
       safePaint(REVEAL_REST);
+      try {
+        for (const part of PARTS) {
+          const el = partRefs.current[part];
+          if (!el) continue;
+          el.style.opacity = '1';
+          el.style.transform = 'translate3d(0, 0, 0)';
+          el.style.pointerEvents = 'auto';
+          el.setAttribute('aria-hidden', 'false');
+        }
+      } catch {
+        /* Silent, per docs/GUARDRAILS.md. */
+      }
       return;
     }
     let raf = 0;
@@ -909,61 +735,12 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
 
   return (
     <div className="splashreveal" ref={rootRef}>
-      {/* Decoration, and says so: the route between two sections carries no
-          information a reader does not already have from the sections.
-
-          AND SO IT IS NOT IN THE STILL VERSION. Its whole job is to lead the
-          eye INTO something arriving — it draws itself just ahead of the
-          section it points at. Where nothing arrives because everything is
-          already there, it points at nothing, and what is left on a settled
-          screen is a small bright squiggle between two paragraphs. Nothing is
-          lost by dropping it: the guardrail is that the still version keeps
-          the INSTRUCTION, and this line never carried one. */}
-      {!still && (
-        <svg className="splashreveal-links" aria-hidden="true" focusable="false">
-          <defs>
-            {/* The hand-offs, as gradients this time: the route into the
-                baseline arrives in the privacy section's fuchsia and leaves
-                in the heading's blue; the route into the launch key arrives
-                in that blue and leaves in the aqua the count wears. Stops
-                carry tokens through `style` because presentation attributes
-                do not resolve `var()`. */}
-            <linearGradient id="wb-link-baseline" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" style={{ stopColor: 'var(--splash-link)' }} />
-              <stop offset="1" style={{ stopColor: 'var(--splash-link-end)' }} />
-            </linearGradient>
-            <linearGradient id="wb-link-launch" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0" style={{ stopColor: 'var(--splash-link-end)' }} />
-              <stop offset="1" style={{ stopColor: 'var(--globe-node-2-solid)' }} />
-            </linearGradient>
-          </defs>
-          {/* Each names what it leads to, and the second one is a different
-              colour for it: the first path belongs to the section above and is
-              drawn in its cyan, the second hands over to the fuchsia the words
-              below it start in. The change of colour IS the hand-off. */}
-          <path ref={pathRef} className="splashreveal-path" data-link="time" fill="none" />
-          <path ref={path2Ref} className="splashreveal-path" data-link="privacy" fill="none" />
-          {/* The grown pair's shared gradient - vertical, re-anchored every
-              frame so its midpoint IS the word OR's centre. */}
-          <linearGradient
-            ref={orGradRef}
-            id="wb-or-grad"
-            gradientUnits="userSpaceOnUse"
-            x1="0"
-            y1="0"
-            x2="0"
-            y2="1"
-          >
-            <stop offset="0" style={{ stopColor: 'var(--splash-link-end)' }} />
-            <stop offset="1" style={{ stopColor: 'var(--globe-node-2-solid)' }} />
-          </linearGradient>
-          <path ref={orUpRef} className="splashreveal-orlink" fill="none" />
-          <path ref={orDownRef} className="splashreveal-orlink" fill="none" />
-        </svg>
-      )}
-
+      {/* THE LOGO IS THE SHIPPED ICON'S OWN FACE (Adam, 2026-09-03: "the
+          fade in the Work Brain logo (the new favicon version)") — the W
+          Peaks, the same mark the toolbar and the store card wear, so the
+          thing that fades in first is the thing the person installed. */}
       <div className="splashreveal-part" data-part="lockup" ref={hold('lockup')}>
-        <BrandMark size={104} spin="orbit" />
+        <PeaksSvg size={104} />
         <p className="splash-wordmark">{S.appName}</p>
       </div>
 
@@ -978,6 +755,15 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         </p>
       </div>
 
+      {/* THE STAGE (Adam, 2026-09-03, from his screenshot: "Have each
+          element, load (fade in), animate and fade out in the same spot as
+          the screenshot"). The acts and the doors share ONE grid cell below
+          the lockup — the doors' own region, the tallest occupant, sizes
+          it, and each act plays centred in that same spot rather than at
+          its own rung of a column. Under reduced motion the cell unfolds
+          back into a stacked column, because the composed still needs every
+          part legible AT ONCE and a shared cell would overprint them. */}
+      <div className="splashreveal-stage">
       <div className="splashreveal-part" data-part="time" ref={hold('time')}>
         <p className="splashreveal-cost">
           {S.splashCostLead}{' '}
@@ -1049,11 +835,12 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         </p>
       </div>
 
-      {/* THE ACTIONS ARE TWO PARTS NOW, in the sections' own pattern (Adam,
-          2026-09-01): each arrives on its own beat and settles with its own
-          lean. Without a baseline to offer there is no baseline part at all —
-          the links that would point at it simply find no box and draw
-          nothing, which is the degradation law doing layout. */}
+      {/* THE ACTIONS ARE TWO PARTS in one stage occupant: they arrive a
+          beat apart but stand together, and their wrapper is what sizes
+          the shared cell the acts play in. Without a baseline to offer
+          there is no baseline part at all — the degradation law doing
+          layout. */}
+      <div className="splashreveal-doors">
       {onBaseline && (
         <div className="splashreveal-part" data-part="baseline" ref={hold('baseline')}>
           <BaselineKey onEnter={onBaseline} still={still} />
@@ -1065,6 +852,8 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
             around it. */}
         <span className="splash-or">{S.splashOr}</span>
         <LaunchDoor onLaunch={onStraight} still={still} />
+      </div>
+      </div>
       </div>
       {/* THE PROMISE, at the foot of the loading page (Adam, 2026-09-02:
           "Add the light gray 'Saved on this device Nothing leaves'

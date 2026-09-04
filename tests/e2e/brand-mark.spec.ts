@@ -2,8 +2,7 @@ import { test, expect, chromium } from '@playwright/test';
 import type { BrowserContext, Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { ORBIT_STILL } from '../../src/core/geometry/markOrbit';
-import type { MarkFrame } from '../../src/core/geometry/markSpin';
+
 
 /**
  * V1.2 VB-13 accept criteria: "rotates on the welcome screen; a reduced-motion
@@ -24,7 +23,7 @@ import type { MarkFrame } from '../../src/core/geometry/markSpin';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const DIST = process.env.WB_E2E_DIST ?? path.resolve(HERE, '../../dist');
 
-const poseOf = (frame: MarkFrame) => frame.nodes.map((n) => `${n.cx},${n.cy},${n.r}`);
+/* poseOf retired with VB-13's subject (2026-09-03). */
 
 /**
  * The big mark orbits rather than spins, and an orbit's still equivalent is
@@ -32,7 +31,7 @@ const poseOf = (frame: MarkFrame) => frame.nodes.map((n) => `${n.cx},${n.cy},${n
  * solid, same claim, different resting pose, and the component has said so
  * since V1.7 VB-34 (`BrandMark.tsx`: `spin === 'orbit' ? ORBIT_STILL : STILL`).
  */
-const ORBIT_STILL_POSE = poseOf(ORBIT_STILL);
+/* ORBIT_STILL_POSE retired with VB-13's subject (2026-09-03). */
 
 /**
  * And the STATUS mark's, which is a different pose for a reason the component
@@ -105,13 +104,8 @@ async function waitForFrames(page: Page, n: number) {
    reveal as choreographed parts and the lockup classname went with it. These
    four tests spent days timing out on the stale selector and reading as
    machine flake — the 30s timeout looked identical to load. */
-const BIG_MARK = ".splashreveal-part[data-part='lockup'] .brand-mark";
-
-/** Holds the splash open and waits for its lockup — where the big mark lives. */
-async function atTheBigMark(page: Page) {
-  await page.waitForSelector('.splash[data-phase="reveal"]');
-  await page.waitForSelector(BIG_MARK);
-}
+/* BIG_MARK and its wait retired with VB-13's subject (2026-09-03): the
+   reveal lockup is the static W Peaks now. */
 
 async function launchPanel(
   options: { reduce?: boolean; keepSplash?: boolean } = {},
@@ -175,93 +169,24 @@ async function intoTheFlow(page: Page) {
  * alone, so a changing radius is the evidence that this is real 3D
  * re-projection with depth, which is the whole point of the port.
  */
-const readPose = (page: Page, selector: string) =>
-  page.$$eval(`${selector} circle`, (circles) =>
-    circles.map(
-      (c) => `${c.getAttribute('cx')},${c.getAttribute('cy')},${c.getAttribute('r')}`,
-    ),
-  );
-
-const readRadii = (page: Page, selector: string) =>
-  page.$$eval(`${selector} circle`, (circles) => circles.map((c) => Number(c.getAttribute('r'))));
+/* readPose/readRadii retired with VB-13's subject (2026-09-03). */
 
 
-test.describe('VB-13 — the big mark turns', () => {
-  test('rotates, in real 3D, and stays a whole icosahedron while it does', async () => {
-    const { context, page } = await launchPanel({ keepSplash: true });
-    const mark = BIG_MARK;
-    await atTheBigMark(page);
-
-    const poses: string[] = [];
-    const radii: string[] = [];
-    for (let i = 0; i < 10; i++) {
-      poses.push((await readPose(page, mark)).join(' '));
-      radii.push((await readRadii(page, mark)).join(' '));
-      // Ten frames apart, not 150ms apart. At a nine-second revolution that is
-      // 6° of turn — unmistakable, and it stays 6° however busy the machine is.
-      await waitForFrames(page, 10);
-      // The shape must never degrade mid-turn.
-      expect(await page.locator(`${mark} circle`).count()).toBe(12);
-      expect(await page.locator(`${mark} line`).count()).toBe(30);
-    }
-
-    expect(new Set(poses).size, 'the mark never moved').toBeGreaterThan(5);
-    expect(
-      new Set(radii).size,
-      'positions moved but radii did not — that is a flat spin, not a sphere',
-    ).toBeGreaterThan(5);
-
-    // And it is not a CSS transform doing it. A `rotate()` here would turn the
-    // drawing like a card and lose the depth entirely.
-    const transform = await page.$eval(mark, (el) => getComputedStyle(el).transform);
-    expect(['none', 'matrix(1, 0, 0, 1, 0, 0)']).toContain(transform);
-
-    await context.close();
-  });
-
-  test('turning never changes the mark’s own layout box', async () => {
-    const { context, page } = await launchPanel({ keepSplash: true });
-    await atTheBigMark(page);
-    const mark = page.locator(BIG_MARK);
-    // Past the one-time entrance AND the reveal's choreography: since V2.9
-    // slice 2 the lockup part is deliberately translated up the screen as
-    // the sections arrive (settled at 5.3s into the reveal, plus margin for
-    // a loaded machine). What must never change is the box while the thing
-    // is *turning* — the spine's transforms are somebody else's motion.
-    await page.waitForTimeout(6500);
-
-    const boxes: string[] = [];
-    for (let i = 0; i < 8; i++) {
-      const box = (await mark.boundingBox())!;
-      boxes.push(`${box.x},${box.y},${box.width},${box.height}`);
-      await waitForFrames(page, 6);
-    }
-    expect(new Set(boxes).size, 'the mark resized or moved as it turned').toBe(1);
-
-    await context.close();
-  });
-});
+/* ── VB-13 RETIRED WITH ITS SUBJECT (2026-09-03) ──────────────────────────
+   "The big mark turns" was about the reveal lockup's orbiting icosahedron.
+   Pass 3r replaced that lockup with the STATIC W Peaks — the shipped
+   icon's own face (Adam: "the Work Brain logo (the new favicon version)").
+   A drawing that does not move has no rotation to prove, no layout box to
+   hold through a turn, and no frame loop to stop: the reduced-motion
+   claims about the SPLASH survive in splash.spec.ts (frameCount(page)
+   === 0 with the composed still, and the full-motion control), where the
+   intro's orbiting marks still live. Git has these tests with the mark
+   they measured. */
 
 test.describe('VB-13 — reduced motion stops the loop, not just the movement', () => {
-  test('not one animation frame is ever requested, and the still mark is the one we shipped', async () => {
-    const { context, page } = await launchPanel({ reduce: true, keepSplash: true });
-    const mark = BIG_MARK;
-    await atTheBigMark(page);
-
-    // The bar: zero. Not "few", not "it settles" — the loop must be absent.
-    expect(await frameCount(page)).toBe(0);
-    const before = await readPose(page, mark);
-
-    await page.waitForTimeout(1200);
-    expect(await frameCount(page), 'a frame loop is running under reduced motion').toBe(0);
-    expect(await readPose(page, mark)).toEqual(before);
-
-    // And what is on screen is exactly the pose the orbit rests at, node for
-    // node — the still equivalent, not an arbitrary frame it happened to stop on.
-    expect(before).toEqual(ORBIT_STILL_POSE);
-
-    await context.close();
-  });
+  /* The splash-mark stillness test retired with its subject (see the
+     tombstone above) — splash.spec.ts carries the no-frames claim for the
+     whole reveal, peaks included. */
 
   test('the interview screen schedules nothing either', async () => {
     const { context, page } = await launchPanel({ reduce: true });
@@ -289,12 +214,11 @@ test.describe('VB-13 — reduced motion stops the loop, not just the movement', 
   });
 
   test('without the preference, the loop really is running — so the test above means something', async () => {
-    // A zero that would be zero either way proves nothing. This is the control.
+    // A zero that would be zero either way proves nothing. This is the
+    // control — re-aimed at the reveal itself (its paint loop) now that the
+    // lockup's own orbit is gone with the icosahedron.
     const { context, page } = await launchPanel({ keepSplash: true });
-    await atTheBigMark(page);
-    // Waits for the frames rather than for a stopwatch: on a loaded machine
-    // this takes longer, but "did it schedule thirty frames" is the question,
-    // and it is never "did it schedule thirty frames in 600ms".
+    await page.waitForSelector('.splash[data-phase="reveal"]');
     await waitForFrames(page, 30);
     expect(await frameCount(page)).toBeGreaterThan(10);
     await context.close();
