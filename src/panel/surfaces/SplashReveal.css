@@ -9,11 +9,8 @@
   width: 100%;
   padding: 0 26px;
   text-align: center;
-  /* The whole area rode UP the screen (Adam, 2026-09-02) and the column's
-     own gaps paid for the longer squiggles below — by the final balance the
-     shift itself is nearly nothing, which is what "make room" costs when
-     the room comes out of the right pockets. */
-  margin-top: 16px;
+  /* Up a bit more at Adam's word (2026-09-04, from his framing shot). */
+  margin-top: 8px;
 }
 
 /* Each part moves by TRANSFORM only. Transforms do not touch layout, which is
@@ -73,37 +70,12 @@
    The dip to 0.25 rather than to 0 is part of what he chose — the line stays
    faintly there through the turn, so it reads as one object moving rather
    than as text disappearing and text returning. */
-@keyframes splashreveal-rolodex {
-  0% {
-    transform: perspective(340px) rotateX(0deg);
-    opacity: 1;
-  }
-  50% {
-    transform: perspective(340px) rotateX(-88deg);
-    opacity: 0.25;
-  }
-  100% {
-    transform: perspective(340px) rotateX(0deg);
-    opacity: 1;
-  }
-}
+/* The rolodex's turn retired with the devices (2026-09-04) — the line
+   below is just the section's quiet second line now. */
 .splashreveal-rolodex {
   margin: 6px 0 0;
   font-size: 14px;
   color: rgba(255, 255, 255, 0.72);
-}
-/* THE TURN HAPPENS WHEN CORE SAYS IT DOES, and at no other moment: the
-   declaration only exists while the panel has marked the line as turning, so
-   there is no mount, no remount and no re-render that can play it early.
-
-   THE LENGTH COMES FROM CORE TOO. `--rolodex-turn` is written by the panel
-   from `ROLODEX_TURN_MS`, which is also what counts the turns — a duration
-   typed in both places is one that a re-timing changes in only one of them. No
-   fallback on purpose: with the property missing the declaration is invalid
-   and the line simply sits still, which is the degradation law's answer and
-   not a second copy of the number. */
-.splashreveal-rolodex[data-turning='on'] {
-  animation: splashreveal-rolodex var(--rolodex-turn) ease-in-out;
 }
 
 /* ── THE SECOND SECTION ────────────────────────────────────────────────────
@@ -168,62 +140,20 @@
   color: rgba(255, 255, 255, 0.72);
 }
 
-/* EVERY PHRASE OCCUPIES THE SAME GRID CELL, so the slot is as wide as the
-   widest of them and the tail after it never moves as they swap. The
-   alternative — measuring the widest in JavaScript and pinning a width — is
-   the same answer computed less reliably, and recomputed wrongly the first
-   time a font loads late. */
-.splashreveal-slot {
-  display: inline-grid;
-  vertical-align: baseline;
-  will-change: transform, opacity;
-}
-.splashreveal-phrase {
-  grid-area: 1 / 1;
-  position: relative;
-  white-space: nowrap;
-  /* FLUSH RIGHT, so the tail follows the phrase rather than the slot. Centred
-     in a cell sized to the longest answer, "Nothing leaves" left a hole in
-     front of "your browser." wide enough to read as a missing word. Aligned to
-     the end, the sentence is always tight and the slack falls on the left —
-     where it changes only while the phrase is edge-on and invisible. */
-  text-align: right;
-  /* Hidden, not absent: it still sizes the cell. */
-  visibility: hidden;
-}
-.splashreveal-phrase[data-on='on'] {
-  visibility: visible;
-}
-/* The line through a wrong answer, drawn left to right by the spine. It is
-   not `text-decoration: line-through`, which arrives all at once and cannot
-   be drawn — and the drawing IS the correction. */
-.splashreveal-phrase[data-on='on']::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 52%;
-  height: 1.5px;
-  width: calc(var(--strike, 0) * 100%);
-  background: var(--ink-inv);
-  border-radius: 1px;
-}
-
-/* AND THE SAME MARK, MOVED, UNDER THE TRUE ONE. Three answers get a line
-   through them and the fourth gets a line under it — drawn the same way, at
-   the same speed, in a warm colour rather than white, because it is the one
-   line on this screen that is not a rejection. Under the AMOUNT alone: the
-   word that changed is the word the sentence turns on. */
+/* THE SLOT AND ITS PHRASES RETIRED WITH THE ELIMINATION (2026-09-04):
+   one honest line now, with the answer's mark drawn in already. The
+   underline under the AMOUNT is the one line on this screen that is not
+   a rejection - the same gesture the tagline's EVERYTHING wears. */
 .splashreveal-amount {
   position: relative;
 }
-.splashreveal-phrase[data-on='on'] .splashreveal-amount::after {
+.splashreveal-amount::after {
   content: '';
   position: absolute;
   left: 0;
   bottom: -3px;
   height: 2px;
-  width: calc(var(--underline, 0) * 100%);
-  /* The path's own colour, a third time: drawn under the answer it led to. */
+  width: 100%;
   background: var(--splash-link);
   border-radius: 1px;
 }
@@ -243,7 +173,8 @@
   align-items: center;
   justify-items: center;
   width: 100%;
-  margin-top: 56px;
+  /* 28, was 56: the whole frame moved up a bit (Adam, 2026-09-04). */
+  margin-top: 28px;
 }
 .splashreveal-stage > * {
   grid-area: 1 / 1;
@@ -278,9 +209,10 @@
   flex-direction: column;
   align-items: center;
   /* Full width, centred: the pills stack on the centre line with the
-     "or" between them. */
+     "or" between them. 12 = OR's own margin-bottom, so the word sits
+     equidistant (Adam, 2026-09-04). */
   width: 100%;
-  margin-top: 6px;
+  margin-top: 12px;
 }
 
 /* MORE AIR under the lockup (Adam, 2026-09-03: "more padding between the

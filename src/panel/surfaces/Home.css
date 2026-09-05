@@ -877,21 +877,42 @@ a.home-row-hit:hover .home-row-go {
   margin: -12px 0;
 }
 
-/* The card: one move, one verb, left-set — a row of work, not a hero. It
-   complements the meter below rather than towering over it. */
+/* THE CARD IS THE BUTTON (Adam, 2026-09-04): section + prompt ARE the
+   label — what you are about to answer is what you press. Full section
+   width, left-set, the task-row grammar. */
 .home-next-card {
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 8px;
+  gap: 6px;
+  width: 100%;
+  min-height: var(--target-min);
   padding: 14px 16px;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--canvas);
   text-align: left;
+  font: inherit;
+  cursor: pointer;
+  transition: border-color 140ms ease, background-color 140ms ease;
 }
-.home-next-card .btn {
-  align-self: flex-start;
+.home-next-card:hover {
+  border-color: var(--border-i);
+  background: color-mix(in srgb, var(--primary-tint) 40%, var(--canvas));
+}
+.home-next-card:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.home-next-card > span {
+  display: block;
+}
+/* Day zero's verb caption — the fresh person's action, inside the button. */
+.home-next-go {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 680;
+  color: var(--primary);
 }
 .home-next-section {
   margin: 0;

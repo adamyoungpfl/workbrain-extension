@@ -1,7 +1,7 @@
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { act } from 'react';
 import { Splash, SPLASH_FADE_MS, taglineLines } from './Splash';
-import { CLAIM_TRUE } from '../../core/splash/reveal';
+
 import { S } from '../strings';
 import { mount } from '../components/testUtils';
 
@@ -152,7 +152,7 @@ describe('Splash — reduced motion is the composed reveal, immediately', () => 
       S.splashCostUnit,
     );
     expect(container.querySelector('.splashreveal-leave')!.textContent).toContain(
-      S.splashLeaveAnswers[CLAIM_TRUE]!.amount,
+      S.splashLeaveAnswers[S.splashLeaveAnswers.length - 1]!.amount,
     );
     expect(container.querySelector('.splashreveal-own')!.textContent).toContain(
       S.splashOwnSpan,

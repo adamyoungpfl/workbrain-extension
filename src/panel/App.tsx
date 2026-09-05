@@ -13,6 +13,7 @@ import { coverVoice } from './voice/cover';
 import { getSession, setSession } from '../core/storage/client';
 import { FeedbackSheet, Button } from './components';
 import { getLocal } from '../core/storage/client';
+import { hasBaseline } from '../core/report/runs';
 import { positionForQuestionId } from '../core/flow/outline';
 import { contextModules, contextOutline, skillsModules, skillsOutline, buildProofModules, buildCapabilityModules } from '../core/flow/flow';
 import { SKILLS_FILE_COPY } from '../core/files/skillsFile';
@@ -115,6 +116,9 @@ export default function App() {
    * an offer at a moment, not a setting.
    */
   const [wantBaseline, setWantBaseline] = useState(false);
+  /** Whether a baseline run already exists — read at mount; the splash's
+   * pre-launch door only renders while this is false. */
+  const [baselineTaken, setBaselineTaken] = useState(false);
   const [sweepOn, setSweepOn] = useState(false);
   /** BS-02 — the feedback sheet the proof's own second offer opens. */
   const [feedbackOpen, setFeedbackOpen] = useState(false);
@@ -157,6 +161,15 @@ export default function App() {
       }
       setSplash('showing');
       void setSession('wb:splash', true);
+    });
+    /* THE PRE-LAUNCH DOOR IS EARNED ONCE (Adam, 2026-09-04: "If the user
+       has completed the baseline previous, hide the Initiate Pre-Launch
+       button and the OR and just center the Launch Workbrain button").
+       Derived from the stored runs, not a seen-it flag — the discipline
+       every other state follows. Read in the same effect that decides the
+       splash, so the door's presence is settled before the show starts. */
+    void getLocal('wb:report').then((report) => {
+      if (!cancelled) setBaselineTaken(hasBaseline(report));
     });
     return () => {
       cancelled = true;
@@ -606,20 +619,26 @@ export default function App() {
              whole fix for the flash of Home the baseline route used to show:
              the interview now mounts under the whiteout, and what the fog
              clears onto is the screen the person chose. */
-          onBaseline={() => {
-            setWantBaseline(true);
-            /* STRAIGHT TO THE GOAL QUESTION, not to the top of the interview.
-               `goal_want` IS the baseline question — "the one thing you want it
-               to do better today" — and the offer to run it cannot appear until
-               it has an answer, so landing on orientation slide one meant
-               falling past the offer entirely and never seeing it.
-               Adam, 2026-08-31: the door should go to the baseline question,
-               and THEN on to orientation.
-               Answering it hands back to `findPosition`, which resumes at the
-               first unanswered step — orientation's opening — so the shorter
-               road and this one converge one screen later. */
-            openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
-          }}
+          {...(baselineTaken
+            ? {} /* The door is earned once — with a baseline run stored, the
+                    splash shows the launch key alone, centred (Adam,
+                    2026-09-04). */
+            : {
+                onBaseline: () => {
+                  setWantBaseline(true);
+                  /* STRAIGHT TO THE GOAL QUESTION, not to the top of the interview.
+                     `goal_want` IS the baseline question — "the one thing you want it
+                     to do better today" — and the offer to run it cannot appear until
+                     it has an answer, so landing on orientation slide one meant
+                     falling past the offer entirely and never seeing it.
+                     Adam, 2026-08-31: the door should go to the baseline question,
+                     and THEN on to orientation.
+                     Answering it hands back to `findPosition`, which resumes at the
+                     first unanswered step — orientation's opening — so the shorter
+                     road and this one converge one screen later. */
+                  openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
+                },
+              })}
         />
       )}
     </>

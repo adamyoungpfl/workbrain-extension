@@ -4,17 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { SPLASH_BEATS } from '../../src/core/splash/sequence';
 import { S } from '../../src/panel/strings';
-import {
-  CLAIM_LANDS,
-  CLAIM_TRUE,
-  CLAIM_WORDS,
-  COUNT_TO,
-  REVEAL_REST,
-  REVEAL_SETTLED,
-  ROLODEX_STARTS,
-  ROLODEX_TURNS,
-  ROLODEX_TURN_MS,
-} from '../../src/core/splash/reveal';
+import { COUNT_TO, REVEAL_SETTLED } from '../../src/core/splash/reveal';
 import { PULSE_MS } from '../../src/core/splash/launch';
 import { HOLD_MS, LAUNCH_MS } from '../../src/core/splash/rocket';
 
@@ -144,7 +134,9 @@ async function holdKey(
    rather than by a hard 3, and the count is asserted below — if the copy grew a
    fifth answer while core still said four, every check here would quietly be
    made against the wrong sentence. */
-const TRUE_ANSWER = S.splashLeaveAnswers[CLAIM_TRUE]!;
+/* The one answer left: the elimination retired (2026-09-04), and the
+   promise is printed already made. */
+const TRUE_ANSWER = S.splashLeaveAnswers[S.splashLeaveAnswers.length - 1]!;
 const TRUE_PHRASE = `${TRUE_ANSWER.amount} ${TRUE_ANSWER.verb}`;
 
 
@@ -297,11 +289,10 @@ test.describe('VB-128 — the show opens', () => {
        minutes stream down from thirty and the privacy claims alternate in one
        slot, so neither is a fixed string to read back. Both still land. */
     await expect(page.locator('.splashreveal-cost')).toContainText(S.splashCostUnit);
-    /* V2.9 slice 3b: the second claim is arrived at rather than printed, so
-       what lands is the bold line plus whichever answer the elimination is
-       currently standing on — never an empty slot. */
+    /* One honest line since 2026-09-04: the promise is printed already
+       made - no slot, no phrases. */
     await expect(page.locator('.splashreveal-own')).toContainText(S.splashOwnSpan);
-    await expect(page.locator(".splashreveal-phrase[data-on='on']")).not.toBeEmpty();
+    await expect(page.locator('.splashreveal-leave')).toContainText(S.splashLeaveTail);
 
     // And the product does not promise a file it hides: Actions is out for
     // the beta (V2.9 VB-146), so no count of files is claimed here at all.
@@ -579,220 +570,29 @@ test.describe('VB-34 — once per session', () => {
   });
 });
 
-test.describe('V2.9 slice 3 — the sections stop', () => {
-  test('the claims come to rest instead of swapping under the decision', async () => {
-    test.setTimeout(40_000);
+/* ── 'THE SECTIONS STOP' RETIRED WITH THE DEVICES (2026-09-04) ────────────
+   Adam: "just have the 15 minute and Nothing leaves sections to be a
+   single beat that fades in and out, using the final version." The
+   elimination, the streaming counter and the rolodex turns are gone from
+   the runtime, and the six tests that proved them went to git with the
+   shows they ran. What replaces them is smaller and stronger: the
+   sections ARE their final versions, from the first painted frame. */
+test.describe('V3.0 — the sections are their final versions (2026-09-04)', () => {
+  test('the minutes and the promise arrive already settled, one honest line each', async () => {
     const { context, page } = await launchPanel();
-    await page.locator('.splashreveal').waitFor({ timeout: REVEAL_TIMEOUT });
+    await page.locator('.splashreveal-cost').waitFor({ timeout: REVEAL_TIMEOUT });
 
-    /* Slice 2 cycled two claims for as long as the panel was open, and the
-       doors land at five seconds — so ten seconds in, a sentence was still
-       changing underneath somebody's decision. `REVEAL_REST` is when core says
-       the last thing has landed. After it the screen is a picture, and the
-       phrase left standing is the TRUE one.
-
-       This is the assertion the whole device exists for: the elimination must
-       end on "Nothing leaves", never on a struck-out wrong answer. */
-    await page.waitForTimeout((REVEAL_REST + 0.5) * 1000);
-    const showing = page.locator(".splashreveal-phrase[data-on='on']");
-    await expect(showing).toHaveText(TRUE_PHRASE);
-
-    await page.waitForTimeout(4000);
-    await expect(showing).toHaveText(TRUE_PHRASE);
-    // And not still tipping, fading or being struck.
-    const moving = await page.locator('.splashreveal-slot').evaluate((el) => {
-      const style = getComputedStyle(el);
-      return {
-        strike: style.getPropertyValue('--strike').trim(),
-        underline: style.getPropertyValue('--underline').trim(),
-        opacity: style.opacity,
-        transform: el.getAttribute('style') ?? '',
-      };
-    });
-    expect(moving.strike).toBe('0.000');
-    /* And the true answer wears the one mark on this screen that is not a
-       rejection: a line UNDER its first word, fully drawn. */
-    expect(moving.underline).toBe('1.000');
-    expect(Number(moving.opacity)).toBeCloseTo(1, 2);
-    /* Matched rather than compared: Chrome re-serialises the style attribute
-       it is handed, so the "0.0" written by the paint loop reads back as "0".
-       What is being asserted is face-on, not a string. */
-    expect(moving.transform).toMatch(/rotateX\(0(\.0+)?deg\)/);
-
-    await context.close();
-  });
-
-  test('the copy and the choreography agree on how many answers there are', async () => {
-    /* Pure arithmetic, and it needs no browser — but it belongs beside the
-       tests that rely on it. core counts the phrases and the panel holds them;
-       a fifth answer added to one and not the other is a slot that either
-       stops early or points past the end. */
-    expect(S.splashLeaveAnswers).toHaveLength(CLAIM_WORDS);
-    expect(TRUE_ANSWER).toBe(S.splashLeaveAnswers[S.splashLeaveAnswers.length - 1]);
-  });
-
-  test('the false answers are never said out loud', async () => {
-    const { context, page } = await launchPanel();
-    await page.locator('.splashreveal').waitFor({ timeout: REVEAL_TIMEOUT });
-
-    /* THE ONE PLACE THIS PRODUCT CANNOT AFFORD TO BE MISREAD. The slot spends
-       four seconds showing "Everything leaves your browser" and two more
-       wrong answers after it — decoration of a claim, made of real words. A
-       screen reader arriving mid-animation must never be handed one of them,
-       so the whole animated line is aria-hidden and the claim is stated once,
-       plainly, in the visually-hidden paragraph beside it. */
-    await expect(page.locator('.splashreveal-leave')).toHaveAttribute('aria-hidden', 'true');
-    const spoken = page.locator('.splashreveal-part[data-part="privacy"] .app-sr');
-    await expect(spoken).toHaveText(`${TRUE_PHRASE} ${S.splashLeaveTail}`);
+    // No counter mid-stream, ever: the number is 15 from the first frame.
+    await expect(page.locator('.splashreveal-count')).toHaveText(String(COUNT_TO));
+    // No slot, no phrases, no aria-hidden trick - the promise is one real
+    // line that says the true thing and nothing else, to everyone.
+    await expect(page.locator('.splashreveal-slot')).toHaveCount(0);
+    const leave = page.locator('.splashreveal-leave');
+    await expect(leave).toHaveText(`${TRUE_PHRASE} ${S.splashLeaveTail}`);
+    expect(await leave.getAttribute('aria-hidden')).toBeNull();
 
     // And what it says is the promise the rest of the product makes.
     expect(`${TRUE_PHRASE} ${S.splashLeaveTail}`).toContain(S.privacyNote);
-
-    await context.close();
-  });
-
-  test('the tail never moves as the answers swap', async () => {
-    test.setTimeout(40_000);
-    const { context, page } = await launchPanel();
-    await page.locator('.splashreveal').waitFor({ timeout: REVEAL_TIMEOUT });
-    const t0 = Date.now();
-
-    /* Every phrase lives in the same grid cell, so the slot is as wide as the
-       widest of them. If it were sized to whichever phrase is showing, the
-       words after it would jump left and right four times while somebody read
-       them — the counter's jog, in a line of prose. */
-    /* MEASURED AS LAYOUT, NOT AS PAINT. The slot is mid-flip for most of this
-       window, and a bounding box is the TRANSFORMED box — it narrows as the
-       phrase tips away, which the first version of this test read as the slot
-       resizing. `offsetWidth` is the layout box, which is what the words after
-       it actually sit against. */
-    const widths = new Set<number>();
-    const phrases = new Set<string>();
-    /* SAMPLED ACROSS THE WHOLE DEVICE, from core's own clock. A fixed six-second
-       window was right when an answer lasted 1.5s and wrong the moment Adam
-       retimed them to 2.5 — it ran out before the second answer arrived and
-       the test passed having watched nothing swap. `CLAIM_LANDS` moves with
-       the timing, so this cannot go stale the same way twice. */
-    const until = t0 + (CLAIM_LANDS + 0.5) * 1000;
-    while (Date.now() < until) {
-      const seen = await page.locator('.splashreveal-slot').evaluate((el) => ({
-        width: (el as HTMLElement).offsetWidth,
-        phrase: el.querySelector("[data-on='on']")?.textContent ?? '',
-      }));
-      widths.add(seen.width);
-      phrases.add(seen.phrase);
-      await page.waitForTimeout(120);
-    }
-    // The window has to have covered a swap, or there was nothing to hold still.
-    expect(phrases.size).toBeGreaterThan(1);
-    expect([...widths]).toHaveLength(1);
-
-    await context.close();
-  });
-
-  test('the counter streams without the line jogging sideways', async () => {
-    const { context, page } = await launchPanel();
-    const count = page.locator('.splashreveal-count');
-    await count.waitFor({ timeout: REVEAL_TIMEOUT });
-
-    /* Thirty numbers land in this slot in under a second. Without tabular
-       figures each one is a different width, and because the line is centred
-       every digit change shoves the words either side of it — which on a
-       counter is the only thing anybody sees. The box is the proof: same
-       left edge, same width, whatever number is in it. */
-    /* Sampled against a DEADLINE rather than a fixed number of polls: the
-       count begins at 2.6s and lasts under a second, and a loop of sixty
-       round trips ran out before it started on a fast machine — which is a
-       test that passes for the wrong reason waiting to happen. */
-    /* MEASURED INSIDE ITS OWN LINE, not against the viewport. The section
-       itself moves up and left while the count is still running, and a
-       viewport measurement reads that choreography as a jog — the first
-       version of this test failed on the last number for exactly that reason
-       and was right about the pixels and wrong about the cause. What a jog
-       IS, is the digits changing width under the words either side of them,
-       so the number's offset within its own paragraph is the thing to hold. */
-    const seen = new Map<string, string>();
-    const until = Date.now() + 5000;
-    while (Date.now() < until) {
-      const sample = await count.evaluate((el) => {
-        const line = el.parentElement;
-        if (!line) return null;
-        const box = el.getBoundingClientRect();
-        const within = line.getBoundingClientRect();
-        return {
-          text: el.textContent ?? '',
-          at: `${(box.left - within.left).toFixed(1)}x${box.width.toFixed(1)}`,
-        };
-      });
-      if (sample) seen.set(sample.text, sample.at);
-      await page.waitForTimeout(25);
-    }
-
-    expect(seen.size, 'the counter really ran').toBeGreaterThan(2);
-    expect(new Set(seen.values()).size, `the box moved: ${[...seen].join(', ')}`).toBe(1);
-
-    await context.close();
-  });
-
-  test('the turn plays three times, when core says, and never at mount', async () => {
-    test.setTimeout(40_000);
-    /* THE TEST THAT WOULD HAVE CAUGHT IT. The first version of this asserted
-       that the animation's DURATION had crossed from core into the stylesheet
-       — which was true while the turn itself was broken. The line was keyed on
-       `rolodexAt().turn`, which reads 0 both before the first turn and during
-       it, so what actually played was the element mounting at reveal zero,
-       with the section still invisible, and only two of the three turns ever
-       reached the screen.
-
-       A duration is not a turn. This counts turns. */
-    const { context, page } = await launchPanel({
-      init: () => {
-        const w = window as unknown as { __turns: { at: number; ms: string }[] };
-        w.__turns = [];
-        const from = performance.now();
-        new MutationObserver((records) => {
-          for (const record of records) {
-            const el = record.target as HTMLElement;
-            if (el.matches?.('.splashreveal-rolodex') && el.dataset.turning === 'on') {
-              /* The length is read HERE, while the turn is live. The animation
-                 only exists while the line is marked as turning, so a reading
-                 taken after the show is a reading of nothing. */
-              w.__turns.push({
-                at: (performance.now() - from) / 1000,
-                ms: getComputedStyle(el).animationDuration,
-              });
-            }
-          }
-          /* Observed on `document`, not `document.documentElement`: an init
-             script runs before the document has started parsing, and the
-             element is not there yet to be handed to `observe`. */
-        }).observe(document, {
-          subtree: true,
-          attributes: true,
-          attributeFilter: ['data-turning'],
-        });
-      },
-    });
-
-    const line = page.locator('.splashreveal-rolodex');
-    await line.waitFor({ timeout: REVEAL_TIMEOUT });
-    // The turn is 620ms and the rests between are 900ms; three of them are
-    // done by ROLODEX_STARTS + 4.6s. Wait past the last with room to spare.
-    await page.waitForTimeout((ROLODEX_STARTS + 6) * 1000);
-
-    const turns = await page.evaluate(
-      () => (window as unknown as { __turns: { at: number; ms: string }[] }).__turns,
-    );
-    expect(turns).toHaveLength(ROLODEX_TURNS);
-
-    /* And the first one is not the mount. The observer's clock starts at
-       document load, the reveal starts SPLASH_BEATS.revealAt after it, and
-       core holds the first turn ROLODEX_STARTS beyond that — so a turn played
-       at mount would land at roughly zero and this would catch it. */
-    expect(turns[0]!.at).toBeGreaterThan(SPLASH_BEATS.revealAt + ROLODEX_STARTS - 0.6);
-
-    // Timed from one number: every turn runs for the length core counts it in.
-    for (const turn of turns) expect(turn.ms).toBe(`${ROLODEX_TURN_MS / 1000}s`);
 
     await context.close();
   });
@@ -1383,14 +1183,10 @@ test.describe('VB-128 — reduced motion', () => {
        than assumed. */
     await expect(page.locator('.splashreveal-own')).toBeVisible();
     await expect(page.getByText(S.splashOwnSpan, { exact: true })).toBeVisible();
-    await expect(page.locator(".splashreveal-phrase[data-on='on']")).toHaveText(
-      TRUE_PHRASE,
+    /* One honest line since 2026-09-04 - no slot, no phrases to hide. */
+    await expect(page.locator('.splashreveal-leave')).toHaveText(
+      `${TRUE_PHRASE} ${S.splashLeaveTail}`,
     );
-    for (const wrong of S.splashLeaveAnswers.slice(0, CLAIM_TRUE)) {
-      await expect(
-        page.locator(`.splashreveal-phrase:has-text("${wrong.amount}")`).first(),
-      ).toBeHidden();
-    }
     await expect(page.getByRole('button', { name: S.splashStraight, exact: true })).toBeVisible();
     await expect(page.locator('.splash-drain')).toHaveCount(0);
 

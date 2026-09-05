@@ -275,7 +275,7 @@ test.describe('Home surface (R1-12)', () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
-    await expect(page.getByRole('button', { name: 'Start with a few questions', exact: true })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Start with a few questions/ })).toBeVisible();
     await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
     // V2.9 VB-145: the import door moved to the top of the UI — an upload
     // control on the chrome bar, opening a sheet that says the one thing
@@ -741,7 +741,9 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     // The queue leads Home: a stale featured card with the refresh verb.
     const card = page.locator('.home-next-card');
     await expect(card).toHaveAttribute('data-kind', 'stale');
-    await page.getByRole('button', { name: S.homeNextRefresh, exact: true }).click();
+    /* The card IS the button now (2026-09-04) - section + prompt are the
+       label, the verbs retired with the inner button. */
+    await page.locator('.home-next-card').click();
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'goal_want');
 
     // Commit it (the stored answer pre-fills the box) - and land on the

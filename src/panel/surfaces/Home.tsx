@@ -783,28 +783,43 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
             </button>
           )}
         </div>
+        {/* THE CARD IS THE BUTTON (Adam, 2026-09-04: "The button should be
+            those two pieces of information (section and prompt) so the user
+            knows what they are about to answer next. Make the button span
+            the whole section"). The section eyebrow is the header, the
+            question is the prompt, and pressing either is pressing the one
+            thing this card offers. The verbs the old inner button carried
+            retire with it — what you are about to answer IS the label. Day
+            zero keeps its verb as the button's own caption: a fresh person
+            still needs an action to read, and the a11y suite holds the tab
+            stop by that name. */}
         {featured ? (
-          <div className="home-next-card" data-kind={featured.kind}>
-            <p className="home-next-section">{featured.section}</p>
-            <p className="home-next-q">{featured.question}</p>
+          <button
+            type="button"
+            className="home-next-card"
+            data-kind={featured.kind}
+            /* With no queue door wired (older hosts), the way in is the
+               plain resume - the same journey, minus the sweep. */
+            onClick={() => (onOpenNext ? onOpenNext(featured.questionId) : onStart())}
+          >
+            <span className="home-next-section">{featured.section}</span>
+            <span className="home-next-q">{featured.question}</span>
             {featured.kind === 'stale' && (
-              <p className="home-next-age-line">{S.homeNextStale(featured.ageDays ?? 0)}</p>
+              <span className="home-next-age-line">{S.homeNextStale(featured.ageDays ?? 0)}</span>
             )}
-            {nextMove.kind === 'start' && <p className="home-welcome-sub">{S.welcomeSub}</p>}
-            <Button
-              type="button"
-              variant="primary"
-              /* With no queue door wired (older hosts), the way in is the
-                 plain resume - the same journey, minus the sweep. */
-              onClick={() => (onOpenNext ? onOpenNext(featured.questionId) : onStart())}
-            >
-              {nextMove.kind === 'start'
-                ? S.emptyNoFileAction
-                : featured.kind === 'open'
-                  ? S.homeNextGo
-                  : S.homeNextRefresh}
-            </Button>
-            {nextMove.kind === 'start' && <p className="home-welcome-time">{S.welcomeTime}</p>}
+            {nextMove.kind === 'start' && (
+              <span className="home-next-go">{S.emptyNoFileAction}</span>
+            )}
+          </button>
+        ) : null}
+        {featured && nextMove.kind === 'start' && (
+          <>
+            <p className="home-welcome-sub">{S.welcomeSub}</p>
+            <p className="home-welcome-time">{S.welcomeTime}</p>
+          </>
+        )}
+        {featured ? (
+          <div className="home-next-restwrap">
             {queueOpen && (
               <ul className="home-next-list">
                 {queue.map((item) => (

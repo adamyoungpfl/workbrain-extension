@@ -846,7 +846,10 @@
 /* THE TIME CHIP: a little tab hung under each key. The label is quiet, the
    number is the point — specific to the second. */
 .splash-eta {
-  margin: 2px 0 0;
+  /* 8, was 2 (Adam, 2026-09-04): "a little padding below the buttons and
+     the ACT line so the ACT line doesn't look like it is hidden in the
+     shadow of the button." */
+  margin: 8px 0 0;
   display: flex;
   align-items: baseline;
   justify-content: center;
@@ -878,7 +881,10 @@
      the chip) and 14px below, which is what the eye reads as centred.
      Probed, not eyeballed; the two levers are this margin and
      .splash-launch's margin-top. Re-probe if the chip or pills change. */
-  margin: 0 0 16px;
+  /* EQUIDISTANT (Adam, 2026-09-04): the same 12px from the upper chip's
+     line to OR as from OR to the lower pill - the other 12 is the launch
+     part's margin-top in SplashReveal.css; move both together. */
+  margin: 0 0 12px;
   /* The section headers' own size (Adam, 2026-09-02) — the fork is a peer
      of the claims above it, not a footnote between two buttons. */
   font-size: 17px;
@@ -1003,11 +1009,12 @@
      which is exactly what .splash-basekey's key gets - probed equal at
      302x82 on the 400 panel. */
   width: 100%;
-  /* The other half of the stagger - and the drop Adam asked for ("the
-     launch workbrain button can move down a little to make space"): the
-     lower squiggle gets the length it needs to show the green arriving. */
-  transform: translateX(-14px);
-  margin-top: 20px;
+  /* The squiggle-era stagger retired (2026-09-04): the -14px lean and the
+     20px drop existed to give the diagonal squiggle its run, and the
+     squiggles are long gone. On the centre line the cluster sits straight —
+     and when the launch key stands ALONE (baseline earned), "center the
+     Launch Workbrain button in that space" is Adam's explicit ask. The
+     vertical rhythm is the part's own 12px, making OR equidistant. */
 }
 .splash-cable {
   position: absolute;

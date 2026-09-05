@@ -116,7 +116,10 @@ test.describe('welcome screen — accessibility', () => {
     await expect(page.getByRole('button', { name: 'Feedback', exact: true })).toBeFocused();
 
     await page.keyboard.press('Tab');
-    const cta = page.getByRole('button', { name: 'Start with a few questions', exact: true });
+    /* The card is one big button since 2026-09-04 - its accessible name is
+       the section, the prompt AND the verb caption, so the verb is matched
+       as a substring rather than as the whole name. */
+    const cta = page.getByRole('button', { name: /Start with a few questions/ });
     // The first stop in the page itself: the one thing there is to do.
     await expect(cta).toBeFocused();
     // Read the *focused* element's own computed style — pressing Tab is what

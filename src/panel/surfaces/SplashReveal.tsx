@@ -6,17 +6,7 @@ import { cue } from '../voice/cues';
 import { loadPrefs, useNarratorPref } from '../voice/prefs';
 import { idleGlowAt, pulseAt } from '../../core/splash/launch';
 import { HOLD_MS, chargeAt, dischargeAt } from '../../core/splash/rocket';
-import {
-  CLAIM_TRUE,
-  COUNT_FROM,
-  REVEAL_REST,
-  REVEAL_SETTLED,
-  ROLODEX_TURN_MS,
-  claimWordAt,
-  countAt,
-  partAt,
-  rolodexAt,
-} from '../../core/splash/reveal';
+import { COUNT_TO, REVEAL_REST, partAt } from '../../core/splash/reveal';
 import type { RevealPart } from '../../core/splash/reveal';
 import { S } from '../strings';
 import { richTagline, taglineLines } from './Splash';
@@ -604,32 +594,10 @@ function LaunchDoor({ onLaunch, still }: { onLaunch: (voiced: boolean) => void; 
 export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashRevealProps) {
   const rootRef = useRef<HTMLDivElement | null>(null);
   const partRefs = useRef<Partial<Record<RevealPart, HTMLDivElement | null>>>({});
-  /* Every squiggle is gone (Adam, 2026-09-03, the simplification) — the
-     section connectors, the grown OR pair, and the resting-box measurement
-     that existed to route them. The launch door's cable survives: it is
-     the door's own dress, not a route between parts. */
-  const slotRef = useRef<HTMLSpanElement | null>(null);
-  const rolodexRef = useRef<HTMLParagraphElement | null>(null);
-
-  /* Only what changes a handful of times lives in React. */
-  const [count, setCount] = useState(still ? countAt(REVEAL_SETTLED) : COUNT_FROM);
-  /* Which phrase is in the slot. It starts on the TRUE one in the still
-     version, so the false phrases are never on screen for even the one frame
-     between mount and the first paint — this is the claim the whole product
-     rests on, and "briefly wrong" is not a state it may be in. Four values
-     over five seconds otherwise — React's business. Where it is tipped to and how far it is struck are sixty values
-     a second, and go straight to style below. */
-  const [claim, setClaim] = useState(still ? CLAIM_TRUE : 0);
-
-  useLayoutEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    /* The turn's length, handed to the stylesheet from the same constant that
-       counts the turns. It goes through the DOM rather than through a React
-       style prop for the same reason every other number here does: this is a
-       fact the paint needs, not state. */
-    root.style.setProperty('--rolodex-turn', `${ROLODEX_TURN_MS}ms`);
-  }, []);
+  /* THE DEVICES' REACT FOOTPRINT RETIRED WITH THE DEVICES (Adam,
+     2026-09-04, "using the final version"): no counter state, no claim
+     slot, no rolodex mark. Every squiggle left earlier (2026-09-03); the
+     launch door's cable survives as the door's own dress. */
 
   useEffect(() => {
     const paint = (t: number) => {
@@ -645,38 +613,6 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         el.setAttribute('aria-hidden', at.opacity < 0.05 ? 'true' : 'false');
       }
 
-      const c = countAt(t);
-      setCount((was) => (was === c ? was : c));
-      /* THE TURN IS AN ATTRIBUTE, NOT A REACT KEY.
-         It was `key={turn}`, which remounts the element and replays its CSS
-         animation — and that was wrong twice over. `rolodexAt` reports turn 0
-         both BEFORE the first turn and DURING it, so the key never changed
-         when the first turn was due: what actually played was the mount, at
-         reveal zero, with the section still invisible. Two of the three turns
-         reached the screen, and the one that did not was the first.
-
-         Keyed to `turning` instead, the animation is applied exactly while
-         core says a turn is happening and removed when it is not. It cannot
-         play at a moment core did not ask for, because there is no moment
-         outside `turning` when the declaration exists. */
-      const r = rolodexAt(t);
-      const rolodex = rolodexRef.current;
-      const turning = r.turning ? 'on' : 'off';
-      if (rolodex && rolodex.dataset.turning !== turning) rolodex.dataset.turning = turning;
-
-      /* The elimination. Which phrase is showing goes through React four
-         times; how far it is tipped and how far it is struck are written
-         straight to the slot, sixty times a second. Both come from the one
-         call, so they cannot disagree about which phrase is being struck. */
-      const w = claimWordAt(t);
-      setClaim((was) => (was === w.index ? was : w.index));
-      const slot = slotRef.current;
-      if (slot) {
-        slot.style.transform = `perspective(340px) rotateX(${w.rotate.toFixed(1)}deg)`;
-        slot.style.opacity = w.opacity.toFixed(3);
-        slot.style.setProperty('--strike', w.strike.toFixed(3));
-        slot.style.setProperty('--underline', w.underline.toFixed(3));
-      }
     };
 
     const safePaint = (t: number) => {
@@ -765,73 +701,32 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
           part legible AT ONCE and a shared cell would overprint them. */}
       <div className="splashreveal-stage">
       <div className="splashreveal-part" data-part="time" ref={hold('time')}>
+        {/* THE FINAL VERSION, read once (Adam, 2026-09-04): no counter
+            streaming down, no rolodex turning — the settled claim, solid
+            for two seconds, gone. */}
         <p className="splashreveal-cost">
-          {S.splashCostLead}{' '}
-          {/* `tabular-nums` in the stylesheet: without it the line jogs
-              sideways every time a digit changes width, which on a counter
-              running thirty numbers is the only thing anybody sees. */}
-          <span className="splashreveal-count">{count}</span> {S.splashCostUnit}
+          {S.splashCostLead} <span className="splashreveal-count">{COUNT_TO}</span>{' '}
+          {S.splashCostUnit}
         </p>
-        {/* The rolodex. The paint loop marks it while core says it is turning;
-            the stylesheet hangs the animation off that mark. */}
-        <p className="splashreveal-rolodex" data-turning="off" ref={rolodexRef}>
-          {S.splashCostSub}
-        </p>
+        <p className="splashreveal-rolodex">{S.splashCostSub}</p>
       </div>
 
-      {/* THE SECOND SECTION, built like the first: a bold line with two words
-          picked out, and under it a quiet line with a device that runs and
-          then stops.
-
-          IT IS ONE SENTENCE THE PERSON WATCHES BE ARRIVED AT. Three wrong
-          answers go up and are struck out, and the true one is what is left
-          standing — which is a different kind of promise from the same words
-          printed on a screen.
-
-          AND THE FALSE ONES ARE NEVER SAID OUT LOUD. Everything in the slot is
-          decoration of a claim, so the slot is hidden from assistive tech and
-          the claim itself is stated once, plainly, in `.app-sr` beside it. A
-          screen reader that arrived mid-animation would otherwise read
-          "Everything leaves your browser" — the exact opposite of the
-          promise, in the one place the product cannot afford to be misread. */}
+      {/* THE SECOND SECTION — THE FINAL VERSION (Adam, 2026-09-04). The
+          elimination that struck two wrong answers before this one retired
+          with the other devices: the promise arrives already made, Nothing
+          already underlined, read once and gone. One honest line now, so
+          the aria-hidden slot and its sr twin retired with the trick they
+          existed to hide. */}
       <div className="splashreveal-part" data-part="privacy" ref={hold('privacy')}>
         <p className="splashreveal-own">
           {S.splashOwnLead}{' '}
-          {/* THE FLAG IS GONE (Adam, 2026-09-01). It was a chequered flag on
-              the word "finish", and before that a mark floating above the
-              line. What replaced it is the colour: the path into this section
-              is fuchsia, these words start in that same fuchsia and travel to
-              a purple, and the line under the answer below is fuchsia again.
-              A drawn icon said "finish line" once, in one place; the through-
-              line says it three times down the screen without a second idea
-              on the field. */}
           <span className="splashreveal-span">{S.splashOwnSpan}</span>
         </p>
-
-        <p className="splashreveal-leave" aria-hidden="true">
-          {/* EVERY PHRASE IS IN THE DOM, ALL THE TIME, one on top of another in
-              a single grid cell — so the slot is as wide as the widest of them
-              and the tail never moves as they swap. Measuring the widest and
-              pinning it in JavaScript would be the same answer, computed less
-              reliably and re-computed on every font change. */}
-          <span className="splashreveal-slot" ref={slotRef}>
-            {S.splashLeaveAnswers.map((answer, i) => (
-              <span
-                key={answer.amount}
-                className="splashreveal-phrase"
-                data-on={i === claim ? 'on' : 'off'}
-              >
-                {/* The amount is its own span because the last one is
-                    underlined and the verb after it is not. */}
-                <span className="splashreveal-amount">{answer.amount}</span> {answer.verb}
-              </span>
-            ))}
+        <p className="splashreveal-leave">
+          <span className="splashreveal-amount">
+            {S.splashLeaveAnswers[S.splashLeaveAnswers.length - 1]?.amount}
           </span>{' '}
-          {S.splashLeaveTail}
-        </p>
-        <p className="app-sr">
-          {S.splashLeaveAnswers[CLAIM_TRUE]?.amount} {S.splashLeaveAnswers[CLAIM_TRUE]?.verb}{' '}
-          {S.splashLeaveTail}
+          {S.splashLeaveAnswers[S.splashLeaveAnswers.length - 1]?.verb} {S.splashLeaveTail}
         </p>
       </div>
 
@@ -847,10 +742,11 @@ export function SplashReveal({ elapsed, still, onBaseline, onStraight }: SplashR
         </div>
       )}
       <div className="splashreveal-part" data-part="launch" ref={hold('launch')}>
-        {/* The fork said out loud, the mock's own way: one small word
-            between the two pills, with the connecting squiggle bowing
-            around it. */}
-        <span className="splash-or">{S.splashOr}</span>
+        {/* The fork said out loud - and only where there IS a fork (Adam,
+            2026-09-04: with the baseline already taken the pre-launch door
+            hides, the OR goes with it, and the launch key stands centred
+            alone in the stage). */}
+        {onBaseline && <span className="splash-or">{S.splashOr}</span>}
         <LaunchDoor onLaunch={onStraight} still={still} />
       </div>
       </div>

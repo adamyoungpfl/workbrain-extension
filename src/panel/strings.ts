@@ -1193,8 +1193,9 @@ export const S = {
      the rest behind "See all". No guilt framing anywhere: these are open
      doors, not overdue notices (docs/GUARDRAILS.md). */
   homeNextLabel: 'Your next move',
-  homeNextGo: 'Answer it now',
-  homeNextRefresh: 'Confirm or update it',
+  /* homeNextGo / homeNextRefresh retired (Adam, 2026-09-04): the card IS
+     the button and its label is the section + the prompt - "the user knows
+     what they are about to answer next" replaces the verbs. */
   homeNextStale: (days: number) => `You answered this ${days} days ago. Worth a fresh look.`,
   homeNextAll: (n: number) => `See all ${n}`,
   homeNextFewer: 'Show fewer',

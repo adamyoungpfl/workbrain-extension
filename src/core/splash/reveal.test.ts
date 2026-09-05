@@ -1,30 +1,18 @@
 import { describe, expect, it } from 'vitest';
-import {
-  CLAIM_ANGLE,
-  CLAIM_LANDS,
-  CLAIM_TRUE,
-  CLAIM_WORDS,
-  COUNT_FROM,
-  COUNT_TO,
-  REVEAL_REST,
-  REVEAL_SETTLED,
-  ROLODEX_REST_MS,
-  ROLODEX_STARTS,
-  ROLODEX_TURNS,
-  ROLODEX_TURN_MS,
-  claimWordAt,
-  countAt,
-  partAt,
-  partStartsAt,
-  rolodexAt,
-} from './reveal';
+import { COUNT_TO, REVEAL_REST, REVEAL_SETTLED, partAt, partStartsAt } from './reveal';
 import type { RevealPart } from './reveal';
+
+/* THE DEVICE SUITES RETIRED WITH THE DEVICES (Adam, 2026-09-04: "just have
+   the 15 minute and Nothing leaves sections to be a single beat that fades
+   in and out, using the final version"). countAt's stream, rolodexAt's
+   three turns and claimWordAt's elimination — and every test that proved
+   them — are in git with the shows they ran. What remains under test is
+   the one thing left moving: the parts. */
 
 const PARTS: RevealPart[] = ['lockup', 'tagline', 'time', 'privacy', 'baseline', 'launch'];
 
 describe('partAt — the storyboard', () => {
   it('arrives in the order Adam described', () => {
-    // lockup, then tagline under it, then the time section, then privacy.
     const order = [...PARTS].sort((a, b) => partStartsAt(a) - partStartsAt(b));
     expect(order.slice(0, 3)).toEqual(['lockup', 'tagline', 'time']);
     expect(partStartsAt('privacy')).toBeGreaterThan(partStartsAt('time'));
@@ -35,9 +23,6 @@ describe('partAt — the storyboard', () => {
   });
 
   it('opens on the lockup leading, the tagline joining while it solidifies', () => {
-    /* The simplification (Adam, 2026-09-03): "keep the fade in the Work
-       Brain logo… with the tagline below it" — one object gaining a second
-       line, so the fades overlap with the lockup ahead. */
     const at = 0.6;
     const lockup = partAt(at, 'lockup');
     const tagline = partAt(at, 'tagline');
@@ -46,54 +31,41 @@ describe('partAt — the storyboard', () => {
     expect(partAt(at, 'time').opacity).toBe(0);
   });
 
-  it('never moves ANYTHING sideways — four fades down one centre line', () => {
-    /* The leans left with the connectors they existed to bend (Adam,
-       2026-09-03: "then fade in the 15 minute section centered, then the
-       nothing leaves section centered"). */
+  it('never moves ANYTHING sideways — every part rides one centre line', () => {
     for (const part of PARTS) {
-      for (let t = 0; t <= 8; t += 0.1) expect(partAt(t, part).x).toBe(0);
-    }
-  });
-
-  it('fades every part in AT its resting place — a short settle rise, nothing more', () => {
-    for (const part of PARTS) {
-      const keys = [0, 1, 2, 3, 4, 5, 6, 8, 20];
-      for (const t of keys) {
-        const p = partAt(t, part);
-        // Never above its rest, never overshooting below the arrival nudge.
-        expect(p.y).toBeGreaterThanOrEqual(0);
-        expect(p.y).toBeLessThanOrEqual(18);
-      }
-      expect(partAt(REVEAL_SETTLED, part).y).toBe(0);
+      for (let t = 0; t <= 10; t += 0.1) expect(partAt(t, part).x).toBe(0);
     }
   });
 
   it('plays one act at a time — the section fades never overlap', () => {
-    /* Adam (2026-09-03): "Each fades in, goes through its animation to
-       completion then fades out until the buttons." A and B are never
-       both on stage. */
-    for (let t = 0; t <= 20; t += 0.02) {
+    for (let t = 0; t <= 12; t += 0.02) {
       const a = partAt(t, 'time').opacity;
       const b = partAt(t, 'privacy').opacity;
       expect(Math.min(a, b)).toBeLessThanOrEqual(0.01);
     }
   });
 
-  it('lets each act COMPLETE before it leaves', () => {
-    // Act A holds until the rolodex's last turn has ended…
-    const rolodexEnds =
-      ROLODEX_STARTS + ((ROLODEX_TURNS - 1) * (ROLODEX_TURN_MS + ROLODEX_REST_MS) + ROLODEX_TURN_MS) / 1000;
-    expect(partAt(rolodexEnds, 'time').opacity).toBe(1);
-    // …and act B holds until the elimination has landed and been believed.
-    expect(partAt(CLAIM_LANDS, 'privacy').opacity).toBe(1);
-    expect(partAt(CLAIM_LANDS + 0.5, 'privacy').opacity).toBe(1);
+  it('holds each act SOLID for about two seconds — enough to read it once', () => {
+    /* Adam (2026-09-04): "fade in and then solid for 2 seconds or so".
+       Measured as the span each act spends at full presence. */
+    for (const part of ['time', 'privacy'] as RevealPart[]) {
+      let firstSolid = -1;
+      let lastSolid = -1;
+      for (let t = 0; t <= 12; t += 0.01) {
+        if (partAt(t, part).opacity >= 0.999) {
+          if (firstSolid < 0) firstSolid = t;
+          lastSolid = t;
+        }
+      }
+      expect(lastSolid - firstSolid).toBeGreaterThanOrEqual(1.8);
+      expect(lastSolid - firstSolid).toBeLessThanOrEqual(2.6);
+    }
   });
 
   it('never takes away the lockup, the tagline or the doors', () => {
-    /* The acts leave; these four stand. The doors "stick until click". */
     for (const part of ['lockup', 'tagline', 'baseline', 'launch'] as RevealPart[]) {
       let previous = 0;
-      for (let t = 0; t <= 20; t += 0.02) {
+      for (let t = 0; t <= 12; t += 0.02) {
         const o = partAt(t, part).opacity;
         expect(o).toBeGreaterThanOrEqual(previous - 1e-9);
         previous = o;
@@ -105,8 +77,25 @@ describe('partAt — the storyboard', () => {
     expect(partAt(600, 'privacy').opacity).toBe(0);
   });
 
+  it('puts the doors LAST, after both acts have played — and they stick', () => {
+    expect(partStartsAt('baseline')).toBeGreaterThan(partStartsAt('privacy'));
+    expect(partAt(REVEAL_SETTLED, 'baseline').opacity).toBe(1);
+    expect(partAt(REVEAL_SETTLED, 'launch').opacity).toBe(1);
+    expect(partStartsAt('baseline')).toBeLessThan(partStartsAt('launch'));
+  });
+
+  it('never overshoots opacity, at any instant', () => {
+    for (const part of PARTS) {
+      for (let t = -1; t <= 12; t += 0.02) {
+        const o = partAt(t, part).opacity;
+        expect(o).toBeGreaterThanOrEqual(0);
+        expect(o).toBeLessThanOrEqual(1);
+      }
+    }
+  });
+
   describe('it comes to rest, and stays', () => {
-    it('ends on the lockup, the tagline and the two doors', () => {
+    it('ends on the lockup, the tagline and the doors', () => {
       for (const part of ['lockup', 'tagline', 'baseline', 'launch'] as RevealPart[]) {
         expect(partAt(REVEAL_SETTLED, part).opacity).toBe(1);
       }
@@ -121,311 +110,21 @@ describe('partAt — the storyboard', () => {
     });
 
     it('rests every part AT its own place, ready for the composed still', () => {
-      /* The still version is COMPOSED now, not sampled: the panel paints
-         every part present at rest, because no clock instant holds the
-         whole pitch once the acts fade out (SplashReveal.tsx). What core
-         owes it is that every part's resting offset is zero. */
       for (const part of PARTS) {
         const p = partAt(REVEAL_SETTLED, part);
         expect(p.x).toBe(0);
         expect(p.y).toBe(0);
       }
     });
-  });
 
-  it('never overshoots opacity, at any instant', () => {
-    for (const part of PARTS) {
-      for (let t = -1; t <= 8; t += 0.02) {
-        const o = partAt(t, part).opacity;
-        expect(o).toBeGreaterThanOrEqual(0);
-        expect(o).toBeLessThanOrEqual(1);
-      }
-    }
-  });
-
-  it('puts the doors LAST, after both acts have played — and they stick', () => {
-    /* SUPERSEDED 2026-09-03 (Adam: "then (C) have the action buttons with
-       the OR fade in… then they stick until click"). This test used to
-       protect the doors-early judgement; the sequential brief retires it
-       by explicit direction, and any click anywhere still skips the show. */
-    expect(partStartsAt('baseline')).toBeGreaterThan(partStartsAt('privacy'));
-    expect(partAt(REVEAL_SETTLED, 'baseline').opacity).toBe(1);
-    expect(partAt(REVEAL_SETTLED, 'launch').opacity).toBe(1);
-    // One, then the other — the acts' own pattern, carried down.
-    expect(partStartsAt('baseline')).toBeLessThan(partStartsAt('launch'));
+    it('REVEAL_REST is the settle now — the parts are the only movers left', () => {
+      expect(REVEAL_REST).toBe(REVEAL_SETTLED);
+    });
   });
 });
 
-describe('countAt — 30 streams down to 15', () => {
-  it('holds at 30 until the section has arrived', () => {
-    // Something the person watches happen, not something already over by the
-    // time they look at it.
-    expect(countAt(0)).toBe(COUNT_FROM);
-    expect(countAt(partStartsAt('time'))).toBe(COUNT_FROM);
-  });
-
-  it('lands exactly on 15 and stops dead', () => {
-    // A counter that decelerates forever reads as broken.
-    expect(countAt(4)).toBe(COUNT_TO);
-    expect(countAt(30)).toBe(COUNT_TO);
-  });
-
-  it('only ever counts down, and never past either end', () => {
-    let previous = COUNT_FROM + 1;
-    for (let t = 0; t <= 6; t += 0.02) {
-      const n = countAt(t);
-      expect(n).toBeLessThanOrEqual(previous);
-      expect(n).toBeGreaterThanOrEqual(COUNT_TO);
-      expect(n).toBeLessThanOrEqual(COUNT_FROM);
-      previous = n;
-    }
-  });
-
-  it('passes through the middle rather than jumping', () => {
-    const seen = new Set<number>();
-    for (let t = 2.5; t <= 4; t += 0.01) seen.add(countAt(t));
-    expect(seen.size).toBeGreaterThan(6);
+describe('the one surviving fact', () => {
+  it('the copy still claims about fifteen minutes', () => {
+    expect(COUNT_TO).toBe(15);
   });
 });
-
-describe('rolodexAt — it turns, then rests', () => {
-  it('is still until the section is there to turn', () => {
-    expect(rolodexAt(0).turning).toBe(false);
-  });
-
-  it('turns, and its progress runs 0 to 1 within a turn', () => {
-    let sawTurning = false;
-    for (let t = 3; t < 5; t += 0.02) {
-      const r = rolodexAt(t);
-      if (r.turning) {
-        sawTurning = true;
-        expect(r.progress).toBeGreaterThanOrEqual(0);
-        expect(r.progress).toBeLessThanOrEqual(1);
-      }
-    }
-    expect(sawTurning).toBe(true);
-  });
-
-  it('STOPS after three turns rather than looping forever', () => {
-    /* A deliberate departure from "shows the same thing on a loop": a
-       permanent animation on a screen asking somebody to choose keeps pulling
-       the eye back to a line that has already said everything it has to say. */
-    expect(rolodexAt(60).turning).toBe(false);
-    expect(rolodexAt(60).turn).toBe(ROLODEX_TURNS - 1);
-  });
-
-  it('gets through exactly three turns, not two and not four', () => {
-    const turns = new Set<number>();
-    for (let t = 3; t < 12; t += 0.01) {
-      const r = rolodexAt(t);
-      if (r.turning) turns.add(r.turn);
-    }
-    expect(turns.size).toBe(ROLODEX_TURNS);
-  });
-});
-
-describe('claimWordAt — the true claim is arrived at, not asserted', () => {
-  it('shows nothing before the section is there to hold it', () => {
-    expect(claimWordAt(0).opacity).toBe(0);
-    expect(claimWordAt(0).strike).toBe(0);
-  });
-
-  it('gets through every phrase, in order, and never goes back', () => {
-    const seen = new Set<number>();
-    let last = 0;
-    for (let t = 4.6; t < 20; t += 0.01) {
-      const { index } = claimWordAt(t);
-      expect(index).toBeGreaterThanOrEqual(last);
-      last = index;
-      seen.add(index);
-    }
-    expect(seen.size).toBe(CLAIM_WORDS);
-    expect(last).toBe(CLAIM_TRUE);
-  });
-
-  it('strikes every wrong answer through, fully', () => {
-    const struck = new Set<number>();
-    for (let t = 4.6; t < 20; t += 0.005) {
-      const w = claimWordAt(t);
-      if (w.strike === 1) struck.add(w.index);
-    }
-    // Every wrong one, and only the wrong ones — derived from the count, so
-    // the 2026-09-01 cut from four answers to two moved this with it.
-    const wrong = Array.from({ length: CLAIM_TRUE }, (_, i) => i);
-    expect([...struck].sort()).toEqual(wrong);
-  });
-
-  it('NEVER strikes the true one — it is what is left standing', () => {
-    for (let t = 4.6; t < 60; t += 0.005) {
-      const w = claimWordAt(t);
-      if (w.index === CLAIM_TRUE) expect(w.strike).toBe(0);
-    }
-  });
-
-  it('comes to rest face-on, underlined, and stays there', () => {
-    // Continuously across the first seconds past the landing, not only at a
-    // few far-apart points: a device that twitched once a second after it
-    // settled would pass a sample at 60s and be wrong on screen.
-    for (let t = CLAIM_LANDS; t < CLAIM_LANDS + 6; t += 0.01) {
-      expect(claimWordAt(t).resting).toBe(true);
-      expect(claimWordAt(t).rotate).toBe(0);
-    }
-    for (const t of [CLAIM_LANDS, CLAIM_LANDS + 1, 60, 600]) {
-      expect(claimWordAt(t)).toEqual({
-        index: CLAIM_TRUE,
-        rotate: 0,
-        opacity: 1,
-        strike: 0,
-        underline: 1,
-        resting: true,
-      });
-    }
-  });
-
-  it('UNDERLINES the true one and strikes nothing else — the same mark, moved', () => {
-    /* Adam: "make the last strike be an underline for the word Nothing".
-       Three answers get a line through them and the fourth gets a line under
-       it. What must never happen is both on one phrase, or an underline on an
-       answer that is about to be thrown away. */
-    let sawDrawing = false;
-    for (let t = 4.6; t < 20; t += 0.005) {
-      const w = claimWordAt(t);
-      if (w.underline > 0) {
-        expect(w.index).toBe(CLAIM_TRUE);
-        expect(w.strike).toBe(0);
-        if (w.underline < 1) sawDrawing = true;
-      }
-      if (w.strike > 0) expect(w.index).not.toBe(CLAIM_TRUE);
-    }
-    // Drawn, not switched on: the line arrives across the word.
-    expect(sawDrawing).toBe(true);
-  });
-
-  it('waits a beat before underlining — the answer is what is LEFT', () => {
-    /* Underlining the word the instant it lands reads as one movement. The
-       point of the device is that three others had to go first. */
-    const landed = CLAIM_LANDS - 0.5;
-    expect(claimWordAt(landed).index).toBe(CLAIM_TRUE);
-    expect(claimWordAt(landed).rotate).toBe(0);
-    let firstMark = 0;
-    for (let t = 4.6; t < 20; t += 0.005) {
-      if (claimWordAt(t).underline > 0) {
-        firstMark = t;
-        break;
-      }
-    }
-    let faceOn = 0;
-    for (let t = 4.6; t < 20; t += 0.005) {
-      const w = claimWordAt(t);
-      if (w.index === CLAIM_TRUE && w.rotate === 0) {
-        faceOn = t;
-        break;
-      }
-    }
-    expect(firstMark - faceOn).toBeGreaterThan(0.2);
-  });
-
-  it('is invisible whenever it is edge-on, and solid whenever it is face-on', () => {
-    /* Opacity is a function of the rotation rather than a second curve beside
-       it. A card that is half-lit while face-on, or solid while edge-on, reads
-       as a bug rather than as a card. */
-    for (let t = 4.6; t < 12; t += 0.005) {
-      const w = claimWordAt(t);
-      if (Math.abs(w.rotate) < 0.01) expect(w.opacity).toBeCloseTo(1, 5);
-      if (Math.abs(w.rotate) > CLAIM_ANGLE - 0.01) expect(w.opacity).toBeCloseTo(0, 5);
-    }
-  });
-
-  it('hands over at the edge — no phrase is ever readable while another leaves', () => {
-    /* The swap is the one frame that could give the trick away: two phrases
-       are never on screen together, so the outgoing one must be gone before
-       the incoming one is anything. Both are the same element, so what this
-       actually asserts is that the index only changes while nothing is
-       visible. */
-    let previous = claimWordAt(4.6);
-    for (let t = 4.6; t < 12; t += 0.002) {
-      const w = claimWordAt(t);
-      if (w.index !== previous.index) {
-        expect(previous.opacity).toBeLessThan(0.02);
-        expect(w.opacity).toBeLessThan(0.02);
-      }
-      previous = w;
-    }
-  });
-
-  it('never reports a strike outside 0 to 1, or a tip past the angle', () => {
-    for (let t = 0; t < 20; t += 0.005) {
-      const w = claimWordAt(t);
-      expect(w.strike).toBeGreaterThanOrEqual(0);
-      expect(w.strike).toBeLessThanOrEqual(1);
-      expect(w.opacity).toBeGreaterThanOrEqual(0);
-      expect(w.opacity).toBeLessThanOrEqual(1);
-      expect(Math.abs(w.rotate)).toBeLessThanOrEqual(CLAIM_ANGLE);
-    }
-  });
-
-  it('carries its correction away with it — a struck phrase leaves struck', () => {
-    // Adam: "the crossed out word flips over to the back as the new word
-    // flips in." The line does not clear before the exit; that would read as
-    // the answer being un-rejected.
-    let sawLeavingStruck = false;
-    for (let t = 4.6; t < 12; t += 0.005) {
-      const w = claimWordAt(t);
-      if (w.index !== CLAIM_TRUE && w.rotate < -1) {
-        expect(w.strike).toBe(1);
-        sawLeavingStruck = true;
-      }
-    }
-    expect(sawLeavingStruck).toBe(true);
-  });
-});
-
-describe('REVEAL_REST — the moment the screen stops moving', () => {
-  it('covers the last arrival: the doors are the final movers now', () => {
-    /* Under the sequential grammar the devices finish DURING their acts,
-       and the last thing to move is the launch door landing. */
-    expect(REVEAL_REST).toBeGreaterThanOrEqual(REVEAL_SETTLED);
-  });
-
-  it('nothing turns, fades or moves after REVEAL_REST — ever', () => {
-    /* The exit phase retired (Adam, 2026-09-03), so the nothing-after law
-       lives back at the composition's own rest. */
-    const after = REVEAL_REST + 0.01;
-    // Swept, not sampled: one instant proves one instant. The rolodex rests
-    // between turns, so a single check after the end cannot tell a device
-    // that has stopped from one that is merely between beats.
-    for (let t = after; t < after + 12; t += 0.01) expect(rolodexAt(t).turning).toBe(false);
-    for (const t of [after, after + 5, after + 300]) {
-      expect(claimWordAt(t)).toEqual(claimWordAt(after));
-      for (const part of PARTS) expect(partAt(t, part)).toEqual(partAt(after, part));
-    }
-  });
-
-  it('is late enough to cover the last turn AND the last claim', () => {
-    /* Whichever device ends last sets it, so re-timing either keeps it true
-       rather than leaving a constant behind that used to be right.
-
-       Motion means EVERY kind on this screen, not just fades: a turning card,
-       a tipping phrase, a line being drawn, and any part still travelling.
-       Scanning opacity alone would have missed the rotation entirely and
-       called a moving screen still. */
-    let lastMotion = 0;
-    const moving = (t: number): boolean => {
-      if (rolodexAt(t).turning) return true;
-      const w = claimWordAt(t);
-      if (!w.resting) return true;
-      const next = claimWordAt(t + 0.01);
-      if (w.rotate !== next.rotate || w.strike !== next.strike) return true;
-      return PARTS.some((p) => {
-        const a = partAt(t, p);
-        const b = partAt(t + 0.01, p);
-        return a.x !== b.x || a.y !== b.y || a.opacity !== b.opacity;
-      });
-    };
-    for (let t = 0; t < 30; t += 0.01) if (moving(t)) lastMotion = t;
-    expect(lastMotion).toBeLessThanOrEqual(REVEAL_REST + 0.02);
-  });
-});
-
-/* `linkAt`'s describe left with the connectors themselves (Adam,
-   2026-09-03, the simplification) — there is no path to lead anywhere. */
