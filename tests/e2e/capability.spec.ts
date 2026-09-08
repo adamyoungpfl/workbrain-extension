@@ -84,18 +84,18 @@ const seed = (sw: Worker, skills: Answers) =>
   sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers:skills': a }), skills);
 
 async function intoTheRun(page: Page) {
-  /* Pass 4c: Skill Training is the hub's REVIEW door. */
-  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
-  await page.waitForSelector('.skillshub');
-  await page.getByRole('button', { name: new RegExp(S.capCta) }).click();
+  /* Pass 4g: the prover lives on the Proving Grounds' skill lane. */
+  await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
+  await page.waitForSelector('.ctxhub');
+  await page.getByRole('button', { name: new RegExp(S.pgSkillName) }).click();
   await page.waitForSelector('.capoffer');
 }
 
-/** The hub's Review door, where the earned gate lives since pass 4c. */
+/** The Grounds' skill lane, where the earned gate lives since pass 4g. */
 async function reviewDoor(page: Page) {
-  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
-  await page.waitForSelector('.skillshub');
-  return page.locator('.skillshub-door').filter({ hasText: S.capCta });
+  await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
+  await page.waitForSelector('.ctxhub');
+  return page.locator('.ctxhub-pg-skill');
 }
 
 test.describe('BS-04 — proof two, the capability proof', () => {
@@ -125,7 +125,7 @@ test.describe('BS-04 — proof two, the capability proof', () => {
     page = await openHome(context, id);
     door = await reviewDoor(page);
     await expect(door).not.toHaveClass(/is-waiting/);
-    await expect(door).toContainText(S.capRowSub);
+    await expect(door).toContainText(S.pgSkillLine);
     expect(await door.evaluate((el) => el.tagName)).toBe('BUTTON')
 
     await context.close();

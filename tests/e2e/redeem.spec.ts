@@ -51,11 +51,11 @@ async function launchHome(): Promise<{ context: BrowserContext; page: Page; sw: 
 }
 
 async function openSheet(page: Page): Promise<void> {
-  /* Pass 4c: the Activator is the skills hub's CREATE door now - one hop
-     through the destination the three skills rows became. */
+  /* Pass 4g: redeeming lives under the Certified bulk - Create launches
+     the skill-building interview now. */
   await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
   await page.waitForSelector('.skillshub');
-  await page.getByRole('button', { name: new RegExp(S.hubCreateName) }).click();
+  await page.getByRole('button', { name: S.certRedeem, exact: true }).click();
   await page.waitForSelector('.redeem');
 }
 

@@ -436,6 +436,19 @@ export default function App() {
             setWantBaseline(true);
             openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
           }}
+          /* 4f: the grid's Edit doors and the Grounds' own loop - the same
+             routes Home's cards and the finish-offer already take. */
+          onEdit={(id) => {
+            setFileId(id);
+            setSurface('file');
+          }}
+          /* 4h: Start now / Finish it now — the interview resumed at its own
+             next question, the same plain resume Home's doors take. */
+          onResume={() => openContextAt()}
+          onSkillsHub={() => setSurface('skillshub')}
+          onProve={openProof}
+          onProveSkill={openCapability}
+          onOpenTarget={(target) => openContext(target)}
         />
       );
     }
@@ -443,7 +456,13 @@ export default function App() {
       /* Pass 4c - the skills hub: Create (activator sheet, hub-hosted),
          Review (Skill Training - the same capability route the old row
          took), Redeem (the certified library on the site). */
-      return <SkillsHub onBack={goHome} onReview={openCapability} />;
+      return (
+        <SkillsHub
+          onBack={goHome}
+          onCreate={() => openSkillsAt()}
+          onGrounds={() => setSurface('contexthub')}
+        />
+      );
     }
     if (surface === 'multiples') {
       return (

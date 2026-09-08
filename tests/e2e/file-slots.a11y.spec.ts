@@ -197,8 +197,8 @@ test('a locked slot’s name and its unlock line both clear 4.5:1 (VB-36)', asyn
      fresh list has no waiting rows left) - the claim is unchanged, and it
      is measured where the dormant words actually stand now: axe skips a
      non-control's text, GUARDRAILS does not. */
-  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
-  await page.waitForSelector('.skillshub');
+  await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
+  await page.waitForSelector('.ctxhub');
   await expect(page.locator('.skillshub-door.is-waiting')).not.toHaveCount(0);
   for (const part of ['.skillshub-name', '.skillshub-line']) {
     const dormant = await inkAndGround(page, `.skillshub-door.is-waiting ${part}`);

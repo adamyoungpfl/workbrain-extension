@@ -191,9 +191,9 @@ test.describe('Download and import (R1-10)', () => {
     // --- export -----------------------------------------------------
     await page.getByRole('button', { name: /Context Development/ }).click();
     await page.waitForSelector('.ctxhub');
-    await page.getByRole('button', { name: /Download Center/ }).click();
+    /* 4f: the Center stands open - straight to the grid's Download. */
     const downloadPromise = page.waitForEvent('download');
-    await page.locator(".home-downloads [data-file='context'] button").click();
+    await page.locator(".ctxhub-file[data-file='context']").getByRole('button', { name: 'Download', exact: true }).click();
     const download = await downloadPromise;
     expect(download.suggestedFilename()).toBe('Context.md');
     const downloadPath = await download.path();

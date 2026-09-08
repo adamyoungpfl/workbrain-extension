@@ -1,21 +1,215 @@
-/* Context Development wears the aqua-green family the way Skill
-   Development wears the red — the shared hub grammar recoloured through
-   one variable, and the lifted Download Center given its indent. */
-.ctxhub .skillshub-door {
-  border-color: color-mix(in srgb, var(--home-context) 55%, var(--divider));
-}
-.ctxhub .skillshub-door:hover {
-  border-color: var(--home-context);
-}
+/* Context Development v2 — the aqua-green family on standing items, an
+   open grid, and Proving Grounds as the page's working bulk. */
 .ctxhub .skillshub-kicker {
   color: var(--home-context);
 }
-.ctxhub .skillshub-door.is-waiting {
-  border-color: var(--divider);
+/* …except the Grounds' skill lane, which is a SKILLS element visiting -
+   its kicker keeps the red family its door wears (pass 4h). */
+.ctxhub .ctxhub-pg-skill .skillshub-kicker {
+  color: var(--home-skills);
 }
-.ctxhub .skillshub-door.is-waiting .skillshub-kicker {
+.ctxhub .ctxhub-pg-skill.is-waiting .skillshub-kicker {
   color: var(--ink-3);
 }
-.ctxhub-downloads {
-  margin: 8px 0 4px 14px;
+
+.ctxhub-item-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+/* The status chip: words first, the tone beside them. Since pass 4h a chip
+   only ever says DONE - a thing not done wears the button that does it. */
+.ctxhub-status {
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+}
+.ctxhub-status[data-done='on'] {
+  color: var(--green);
+  background: var(--green-tint);
+}
+
+/* ── The Download Center's grid: name · format+size · actions. ── */
+.ctxhub-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ctxhub-file {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  min-height: var(--target-min);
+  padding: 6px 10px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--ink-inv) 40%, transparent);
+}
+.ctxhub-file-name {
+  font-family: var(--font-mono);
+  font-size: 12.5px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.ctxhub-file-meta {
+  font-size: 11.5px;
+  color: var(--ink-2);
+}
+.ctxhub-file-actions {
+  display: inline-flex;
+  gap: 4px;
+}
+.ctxhub-file-act {
+  min-height: 32px;
+  padding: 4px 10px;
+  border: 1px solid color-mix(in srgb, var(--home-context) 45%, var(--divider));
+  border-radius: var(--r-pill);
+  background: none;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--home-context);
+  cursor: pointer;
+}
+.ctxhub-file-act:hover {
+  background: color-mix(in srgb, var(--home-context) 10%, transparent);
+}
+.ctxhub-file-act:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+/* The locked Skills row wears the same dark chip Home's locked card does —
+   solid ink so the contrast walk has a real ground to measure. */
+.ctxhub-file-lock {
+  justify-self: end;
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: var(--r-pill);
+  background-color: var(--ink);
+  color: var(--ink-inv);
+}
+
+/* ── Proving Grounds: the bulk. ── */
+.ctxhub-pg {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px;
+  border: 1.5px solid color-mix(in srgb, var(--home-context) 70%, var(--divider));
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--home-context) 5%, transparent);
+}
+.ctxhub-pg-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--home-context);
+}
+.ctxhub-pg-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+.ctxhub-pg-side {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 12px;
+  border: 1px solid var(--divider);
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--ink-inv) 55%, transparent);
+}
+.ctxhub-pg-side[data-ready='on'] {
+  border-color: color-mix(in srgb, var(--home-context) 55%, var(--divider));
+}
+.ctxhub-pg-name {
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.ctxhub-pg-side .ctxhub-status {
+  align-self: flex-start;
+}
+.ctxhub-pg-line {
+  margin: 0;
+  font-size: 11.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+  overflow-wrap: anywhere;
+}
+.ctxhub-pg-needs {
+  margin: 0;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.ctxhub-pg-analysis {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  border-top: 1px solid var(--divider);
+  padding-top: 10px;
+}
+.ctxhub-pg-verdict {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.ctxhub-pg-leadline {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--ink-2);
+}
+.ctxhub-pg-missing {
+  margin: 0;
+  padding-left: 18px;
+  font-size: 12px;
+  color: var(--ink-2);
+}
+.ctxhub-pg-refine {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.ctxhub-pg-refine-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  width: 100%;
+  min-height: var(--target-min);
+  padding: 8px 12px;
+  border: 1px solid color-mix(in srgb, var(--home-context) 45%, var(--divider));
+  border-radius: var(--r-md);
+  background: color-mix(in srgb, var(--home-context) 6%, transparent);
+  font: inherit;
+  font-size: 12.5px;
+  text-align: left;
+  color: var(--ink);
+  cursor: pointer;
+}
+.ctxhub-pg-refine-row:hover {
+  background: color-mix(in srgb, var(--home-context) 12%, transparent);
+}
+.ctxhub-pg-refine-row:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.ctxhub-pg-refine-go {
+  flex: none;
+  font-weight: 700;
+  color: var(--home-context);
 }

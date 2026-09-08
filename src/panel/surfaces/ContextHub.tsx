@@ -3,45 +3,71 @@ import { Button, Sheet, Toast } from '../components';
 import { Comparison } from './Comparison';
 import { getLocal } from '../../core/storage/client';
 import { hasBaseline, latestTask } from '../../core/report/runs';
-import { downloadContextFile, downloadSkillsFile, downloadWorkbrainFolder } from './FileActions';
+import { downloadContextFile, downloadWorkbrainFolder } from './FileActions';
+import { generateContextFile } from '../../core/files/generate';
+import { generateSkillsFile } from '../../core/files/skillsFile';
+import { recommend, topRecommendations } from '../../core/recommend/engine';
+import { recommendationCopy } from '../components';
+import { NO_DISMISSALS } from '../../core/recommend/dismissals';
+import { contextModules, contextOutline } from '../../core/flow/flow';
+import { fileAsked } from '../../core/files/slots';
+import { capabilityReady } from '../../core/proof/capability';
 import { fileName } from '../components/fileLabels';
-import type { Answers, ReportState } from '../../schema/storage.types';
+import type { RecommendationTarget } from '../../core/recommend/types';
+import type { Answers, ProofRun, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
 import './SkillsHub.css';
 import './ContextHub.css';
 
 /**
- * CONTEXT DEVELOPMENT (V3.0 pass 4d; Adam, 2026-09-08: "Within it, like
- * Skills, we will have 'Pre-Launch Baseline', 'Download Center' (Context,
- * Skills, others, etc.) and 'Proving Grounds'").
+ * CONTEXT DEVELOPMENT v2 (V3.0 pass 4f; Adam, 2026-09-08), matured by 4h.
+ * Three moves up from the door-list it opened as:
  *
- * The second operational area, in the skills hub's own grammar: BEGIN
- * takes the starting point (the pre-launch errand - the door stands until
- * a baseline run exists, then rests as a quiet fact); CARRY opens the
- * Download Center in place (the same disclosure Home's download row held,
- * lifted here whole); PROVE leads out to the public Proving Grounds page.
- * And when runs exist to compare, REVIEW opens the before-and-after sheet
- * that used to be Home's own conditional row.
+ *  - the DOWNLOAD CENTER stands OPEN - a grid of name, format, size, and
+ *    each row's LIVE action (size measured off the same generator the
+ *    download writes, so the number can never disagree with the file).
+ *    Since 4h the standalone Pre-Launch Baseline item is gone and every
+ *    not-done thing carries the button that changes it;
+ *  - PROVING GROUNDS is the page's working BULK: the baseline and the
+ *    context file as two sides, "Prove It" running the in-app loop when
+ *    both stand ready, and - once runs exist - the verdict, what the AI
+ *    said the file did not cover, and the refine list that leads straight
+ *    back to the questions worth another pass. This SUPERSEDES 4c's
+ *    external-link door at Adam's word ("The proving grounds page will
+ *    facilitate the proving process") - and heals the re-entry gap that
+ *    pass flagged: a finished file has its way back to the proof again.
  *
- * The hub loads its own stores - context answers, skills answers, the
- * report - the way the skills hub does: these doors read them, and App
- * has no reason to carry what it never looks at.
+ * The hub loads its own stores; every number on this page is derived at
+ * render from things the person authored or performed-and-judged, and
+ * nothing new is stored (GUARDRAILS' run-history rows, unchanged).
  */
 const EMPTY: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
-const PROVING_URL = 'https://www.model-citizen.org/work-brain/proving-grounds';
 
 export interface ContextHubProps {
   onBack: () => void;
-  /** The pre-launch errand — App's own baseline route (goal question, then
-   *  the run-it screen). */
+  /** Pass 4g: the Grounds prove SKILLS too - the run-and-tick capability
+   *  loop, reached from here (Skill Training's road ends at this lane). */
+  onProveSkill: () => void;
+  /** The pre-launch errand — the goal question, then the run-it screen. */
   onBaseline: (() => void) | undefined;
+  /** Opens a file for editing — the same doors Home's cards hold. */
+  onEdit: (id: 'context' | 'skills') => void;
+  /** Pass 4h: "Start now" / "Finish it now" — the interview, resumed. */
+  onResume: () => void;
+  /** Pass 4h: the unlocked Skills row's one action — Skill Development. */
+  onSkillsHub: () => void;
+  /** Runs the in-app proof loop — the head-to-head this page exists for. */
+  onProve: () => void;
+  /** A refine row's jump straight to its question. */
+  onOpenTarget: (target: RecommendationTarget) => void;
 }
 
-export function ContextHub({ onBack, onBaseline }: ContextHubProps) {
+const KB = (bytes: number) => (bytes / 1024).toFixed(1);
+
+export function ContextHub({ onBack, onProveSkill, onBaseline, onEdit, onResume, onSkillsHub, onProve, onOpenTarget }: ContextHubProps) {
   const [answers, setAnswers] = useState<Answers>(EMPTY);
   const [skills, setSkills] = useState<Answers>(EMPTY);
   const [report, setReport] = useState<ReportState | undefined>(undefined);
-  const [downloadsOpen, setDownloadsOpen] = useState(false);
   const [compareOpen, setCompareOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
@@ -62,9 +88,28 @@ export function ContextHub({ onBack, onBaseline }: ContextHubProps) {
   }, []);
 
   const baselineTaken = hasBaseline(report);
-  const compareTask = latestTask(report);
+  const contextReady = fileAsked(contextOutline, contextModules, answers, new Date());
   const contextStarted = Object.keys(answers.answeredAt).length > 0;
   const skillsStarted = Object.keys(skills.answeredAt).length > 0;
+  const skillProveReady = capabilityReady(skills);
+
+  const runs: ProofRun[] = report?.runs ?? [];
+  const baselineRun = runs.find((run) => run.stage === 'baseline');
+  const contextRun = [...runs].reverse().find((run) => run.stage === 'context');
+  const compareTask = latestTask(report);
+
+  /* The refine list: the engine Home's recommendations already run, capped
+     to the three strongest — each row a door straight to its question. */
+  const refine = contextRun
+    ? topRecommendations(recommend({ answers, now: new Date(), dismissals: NO_DISMISSALS }), 3)
+    : [];
+
+  const contextBytes = contextStarted
+    ? new TextEncoder().encode(generateContextFile(answers, new Date().toISOString())).length
+    : 0;
+  const skillsBytes = skillsStarted
+    ? new TextEncoder().encode(generateSkillsFile(skills, new Date().toISOString())).length
+    : 0;
 
   return (
     <div className="skillshub ctxhub">
@@ -76,103 +121,208 @@ export function ContextHub({ onBack, onBaseline }: ContextHubProps) {
         <p className="skillshub-sub">{S.ctxSub}</p>
       </header>
 
-      <ul className="skillshub-doors">
-        <li>
-          {onBaseline && !baselineTaken ? (
-            <button type="button" className="skillshub-door" onClick={onBaseline}>
-              <span className="skillshub-kicker">{S.ctxBaselineKicker}</span>
-              <span className="skillshub-name">{S.ctxBaselineName}</span>
-              <span className="skillshub-line">{S.ctxBaselineLine}</span>
-            </button>
-          ) : (
-            /* Taken (or no route wired): a quiet fact, bare per the tint
-               law - the door was an offer at a moment, and the moment
-               passed the right way. */
-            <div className="skillshub-door is-waiting">
-              <span className="skillshub-kicker">{S.ctxBaselineKicker}</span>
-              <span className="skillshub-name">{S.ctxBaselineName}</span>
-              <span className="skillshub-line">{S.ctxBaselineTaken}</span>
-            </div>
-          )}
-        </li>
-        <li>
-          <button
-            type="button"
-            className="skillshub-door"
-            aria-expanded={downloadsOpen}
-            onClick={() => setDownloadsOpen((o) => !o)}
-          >
-            <span className="skillshub-kicker">{S.ctxDownloadKicker}</span>
-            <span className="skillshub-name">{S.ctxDownloadName}</span>
-            <span className="skillshub-line">{S.ctxDownloadLine}</span>
-          </button>
-          {downloadsOpen && (
-            /* Home's download disclosure, lifted whole (pass 2's grammar:
-               present components as words, absent ones as waiting lines,
-               the folder as one file that unzips into a directory). */
-            <div className="home-downloads ctxhub-downloads">
-              {(
-                [
-                  { id: 'context', started: contextStarted, get: () => downloadContextFile(answers) },
-                  { id: 'skills', started: skillsStarted, get: () => downloadSkillsFile(skills) },
-                ] as const
-              ).map((f) => (
-                <div key={f.id} className="home-download-line" data-file={f.id}>
-                  <span className="home-download-name">{fileName(f.id)}</span>
-                  {f.started ? (
-                    <button
-                      type="button"
-                      className="home-download-get"
-                      onClick={() => {
-                        f.get();
-                        setToast(S.toastDownloaded);
-                      }}
-                      aria-label={S.downloadOne(fileName(f.id))}
-                    >
-                      <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-                        <path d="M8 2v8m0 0 3-3m-3 3L5 7M3 13h10" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" />
-                      </svg>
-                    </button>
-                  ) : (
-                    <span className="home-download-wait">{S.downloadNotStarted}</span>
-                  )}
-                </div>
-              ))}
-              {(contextStarted || skillsStarted) && (
+      {/* The standalone Pre-Launch Baseline item is GONE (pass 4h: "remove
+          the Pre-Launch Baseline section completely") - its status and its
+          action live on the Grounds' baseline side now, the one place the
+          errand matters. */}
+
+      {/* ── The Download Center, standing open in the Grounds' own dress
+             (pass 4h): every row carries its live action - Start / Finish
+             while the file is unfinished, Download / Edit once it stands,
+             and Skills either locked or a door to Skill Development. ── */}
+      <section className="ctxhub-pg ctxhub-dc">
+        <div className="ctxhub-item-head">
+          <span className="ctxhub-pg-title">{S.ctxDownloadName}</span>
+        </div>
+        <div className="ctxhub-grid">
+          <div className="ctxhub-file" data-file="context">
+            <span className="ctxhub-file-name">{fileName('context')}</span>
+            <span className="ctxhub-file-meta">
+              {S.ctxGridFormat}
+              {contextStarted ? ` · ${S.ctxSize(KB(contextBytes))}` : ''}
+            </span>
+            <span className="ctxhub-file-actions">
+              {contextStarted && (
                 <button
                   type="button"
-                  className="home-download-folder"
+                  className="ctxhub-file-act"
                   onClick={() => {
-                    downloadWorkbrainFolder({
-                      context: contextStarted ? answers : undefined,
-                      skills: skillsStarted ? skills : undefined,
-                    });
+                    downloadContextFile(answers);
                     setToast(S.toastDownloaded);
                   }}
                 >
-                  {S.downloadFolder}
+                  {S.ctxGridDownload}
                 </button>
               )}
-            </div>
-          )}
-        </li>
-        <li>
-          <a className="skillshub-door" href={PROVING_URL} target="_blank" rel="noreferrer">
-            <span className="skillshub-kicker">{S.ctxProveKicker}</span>
-            <span className="skillshub-name">{S.ctxProveName}</span>
-            <span className="skillshub-line">{S.ctxProveLine}</span>
-          </a>
-        </li>
-        {compareTask && (
-          <li>
-            <button type="button" className="skillshub-door" onClick={() => setCompareOpen(true)}>
-              <span className="skillshub-kicker">{S.ctxCompareKicker}</span>
-              <span className="skillshub-name">{S.compareOpen}</span>
-              <span className="skillshub-line">{S.compareSub}</span>
+              {contextReady ? (
+                <button type="button" className="ctxhub-file-act" onClick={() => onEdit('context')}>
+                  {S.ctxGridEdit}
+                </button>
+              ) : (
+                <button type="button" className="ctxhub-file-act" onClick={onResume}>
+                  {contextStarted ? S.ctxFinishNow : S.ctxStartNow}
+                </button>
+              )}
+            </span>
+          </div>
+          <div className="ctxhub-file" data-file="skills">
+            <span className="ctxhub-file-name">{fileName('skills')}</span>
+            <span className="ctxhub-file-meta">
+              {S.ctxGridFormat}
+              {skillsStarted ? ` · ${S.ctxSize(KB(skillsBytes))}` : ''}
+            </span>
+            {/* The same door condition Home's shelf reads — the interview
+                being over is what unlocks Skills, fileAsked not fileFinished
+                (the long story lives in Home.tsx's O3 note). */}
+            {contextReady ? (
+              <button type="button" className="ctxhub-file-act" onClick={onSkillsHub}>
+                {S.rowSkillsHub}
+              </button>
+            ) : (
+              <span className="ctxhub-file-lock">{S.badgeLocked}</span>
+            )}
+          </div>
+          {(contextStarted || skillsStarted) && (
+            <button
+              type="button"
+              className="home-download-folder"
+              onClick={() => {
+                downloadWorkbrainFolder({
+                  context: contextStarted ? answers : undefined,
+                  skills: skillsStarted ? skills : undefined,
+                });
+                setToast(S.toastDownloaded);
+              }}
+            >
+              {S.downloadFolder}
             </button>
-          </li>
+          )}
+        </div>
+      </section>
+
+      {/* ── PROVING GROUNDS — the page's working bulk. ── */}
+      <section className="ctxhub-pg">
+        <div className="ctxhub-item-head">
+          <span className="ctxhub-pg-title">{S.ctxProveName}</span>
+        </div>
+        <p className="skillshub-line">{S.pgLead}</p>
+
+        {/* Pass 4h: a side that is not done carries the BUTTON that does it,
+            where the "Not yet" chip used to stand — the status becomes the
+            action. */}
+        <div className="ctxhub-pg-sides">
+          <div className="ctxhub-pg-side" data-ready={baselineTaken ? 'on' : 'off'}>
+            <span className="ctxhub-pg-name">{S.pgBaselineName}</span>
+            {baselineTaken ? (
+              <span className="ctxhub-status" data-done="on">
+                {S.ctxDone}
+              </span>
+            ) : (
+              onBaseline && (
+                <button type="button" className="ctxhub-file-act" onClick={onBaseline}>
+                  {S.ctxCompleteNow}
+                </button>
+              )
+            )}
+            <p className="ctxhub-pg-line">
+              {baselineRun ? baselineRun.answer.slice(0, 140) : S.pgBaselineLine}
+            </p>
+          </div>
+          <div className="ctxhub-pg-side" data-ready={contextReady ? 'on' : 'off'}>
+            <span className="ctxhub-pg-name">{S.pgContextName}</span>
+            {contextReady ? (
+              <span className="ctxhub-status" data-done="on">
+                {S.ctxDone}
+              </span>
+            ) : (
+              <button type="button" className="ctxhub-file-act" onClick={onResume}>
+                {contextStarted ? S.ctxFinishNow : S.ctxStartNow}
+              </button>
+            )}
+            <p className="ctxhub-pg-line">
+              {contextReady ? fileName('context') : S.pgContextLine}
+            </p>
+          </div>
+        </div>
+
+        <Button
+          type="button"
+          variant="primary"
+          disabled={!(baselineTaken && contextReady)}
+          onClick={onProve}
+        >
+          {S.pgProve}
+        </Button>
+        {!(baselineTaken && contextReady) && <p className="ctxhub-pg-needs">{S.pgNeedsBoth}</p>}
+
+        {/* THE SKILL LANE (pass 4g): Skill Training's road ends here - pick
+            a skill and prove it works, desired output against produced.
+            The run-and-tick loop is the prover; the earned gate (two
+            runnable skills) keeps the same waiting grammar it always had. */}
+        {skillProveReady ? (
+          <button type="button" className="skillshub-door ctxhub-pg-skill" onClick={onProveSkill}>
+            <span className="skillshub-kicker">{S.hubReviewKicker}</span>
+            <span className="skillshub-name">{S.pgSkillName}</span>
+            <span className="skillshub-line">{S.pgSkillLine}</span>
+          </button>
+        ) : (
+          <div className="skillshub-door is-waiting ctxhub-pg-skill">
+            <span className="skillshub-kicker">{S.hubReviewKicker}</span>
+            <span className="skillshub-name">{S.pgSkillName}</span>
+            <span className="skillshub-line">{S.capRowWaiting}</span>
+          </div>
         )}
-      </ul>
+
+        {/* The analysis, once a with-file run stands beside the baseline:
+            their own verdict, what the AI admitted it lacked, and the
+            refine doors back into the interview. */}
+        {contextRun && (
+          <div className="ctxhub-pg-analysis">
+            {contextRun.score && (
+              <p className="ctxhub-pg-verdict">
+                {S.pgVerdict(contextRun.score.value, contextRun.score.of)}
+              </p>
+            )}
+            {(contextRun.missing?.length ?? 0) > 0 && (
+              <>
+                <p className="ctxhub-pg-leadline">{S.pgMissingLead}</p>
+                <ul className="ctxhub-pg-missing">
+                  {contextRun.missing!.map((line) => (
+                    <li key={line}>{line}</li>
+                  ))}
+                </ul>
+              </>
+            )}
+            {refine.length > 0 && (
+              <>
+                <p className="ctxhub-pg-leadline">{S.pgRefineLead}</p>
+                <ul className="ctxhub-pg-refine">
+                  {refine.map((rec) => {
+                    const copy = recommendationCopy(rec);
+                    return (
+                      <li key={rec.id}>
+                        <button
+                          type="button"
+                          className="ctxhub-pg-refine-row"
+                          onClick={() => onOpenTarget(rec.target)}
+                        >
+                          <span>{copy.headline}</span>
+                          <span className="ctxhub-pg-refine-go">{copy.action}</span>
+                        </button>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </>
+            )}
+            {compareTask && (
+              <button type="button" className="home-foot-link" onClick={() => setCompareOpen(true)}>
+                {S.pgSeeDiff}
+              </button>
+            )}
+          </div>
+        )}
+      </section>
 
       <Sheet open={compareOpen} onClose={() => setCompareOpen(false)} title={S.compareTitle} full>
         <Comparison report={report} />

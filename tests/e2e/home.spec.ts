@@ -290,15 +290,16 @@ test.describe('Home surface (R1-12)', () => {
     await expect(page.getByRole('button', { name: 'Just pick a file', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Close', exact: true }).click();
 
-    /* Pass 4d: Proving Grounds is a door inside Context Development now -
-       the public site's head-to-head page, live from day one. */
+    /* Pass 4f: Proving Grounds is the hub's own working section now - it
+       facilitates the proof in-app (superseding 4c's external link, and
+       healing the re-entry gap that pass flagged). Fresh: both sides Not
+       yet, Prove It waiting. */
     await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
     await page.waitForSelector('.ctxhub');
-    const prove = page.locator('.skillshub-door', { hasText: S.ctxProveName });
-    await expect(prove).toHaveAttribute(
-      'href',
-      'https://www.model-citizen.org/work-brain/proving-grounds',
-    );
+    /* 4h: the Download Center wears the Grounds' dress too, so the bulk is
+       named by its title rather than the shared class. */
+    await expect(page.locator('.ctxhub-pg-title').filter({ hasText: S.ctxProveName })).toBeVisible();
+    await expect(page.getByRole('button', { name: S.pgProve, exact: true })).toBeDisabled();
     await page.getByRole('button', { name: S.hubBack, exact: true }).click();
     await page.waitForSelector('.home-rows');
     /* V3.0 pass 2: the download row never waits any more - it is a
@@ -709,11 +710,10 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
       await expect(rows.nth(i).locator('button')).toHaveCount(1);
     }
 
-    /* The waiting-row grammar itself now lives in the hub (Skill
-       Training's earned gate) - asserted where it lives: */
-    await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
-    await page.waitForSelector('.skillshub');
-    const waiting = page.locator('.skillshub-door.is-waiting');
+    /* The waiting grammar lives on the Grounds' skill lane now (4g). */
+    await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
+    await page.waitForSelector('.ctxhub');
+    const waiting = page.locator('.ctxhub-pg-skill.is-waiting');
     await expect(waiting).toContainText(S.capRowWaiting);
     await expect(waiting.locator('button, a')).toHaveCount(0);
 
@@ -764,25 +764,25 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     // Open the row.
     await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
     await page.waitForSelector('.ctxhub');
-    await page.getByRole('button', { name: new RegExp(S.ctxDownloadName) }).click();
-    const panel = page.locator('.home-downloads');
+    /* 4f: the Center stands OPEN - a grid, no disclosure click. */
+    const panel = page.locator('.ctxhub-grid');
     await expect(panel).toBeVisible();
 
     // Context is present (the seed answered it) and downloads by itself.
     const downloadPromise = page.waitForEvent('download');
-    await panel.locator("[data-file='context'] button").click();
+    await panel.locator("[data-file='context']").getByRole('button', { name: S.ctxGridDownload }).click();
     expect((await downloadPromise).suggestedFilename()).toBe('Context.md');
     await expect(page.getByText('Downloaded. Keep it somewhere you will find it.')).toBeVisible();
-
-    // Skills has not started: words, and NO control — the waiting grammar
-    // one level down.
-    await expect(panel.locator("[data-file='skills']")).toContainText(S.downloadNotStarted);
-    await expect(panel.locator("[data-file='skills'] button")).toHaveCount(0);
 
     // And the folder is ONE file that unzips into a Workbrain directory.
     const zipPromise = page.waitForEvent('download');
     await page.getByRole('button', { name: S.downloadFolder, exact: true }).click();
     expect((await zipPromise).suggestedFilename()).toBe('Workbrain.zip');
+
+    /* 4h: a finished interview unlocks Skills, and the row's one action is
+       the door to Skill Development (its Back goes Home, so this walks last). */
+    await panel.locator("[data-file='skills']").getByRole('button', { name: S.rowSkillsHub }).click();
+    await page.waitForSelector('.skillshub');
 
     await context.close();
   });
@@ -792,12 +792,15 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     const page = await openPanel(context, id);
     await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
     await page.waitForSelector('.ctxhub');
-    await page.getByRole('button', { name: new RegExp(S.ctxDownloadName) }).click();
-    const panel = page.locator('.home-downloads');
-    // Both components present as words with no control, and the folder
-    // button does not exist — a zip of nothing is not a download.
-    await expect(panel.locator('.home-download-wait')).toHaveCount(2);
-    await expect(panel.locator('button')).toHaveCount(0);
+    /* 4f: the Center stands OPEN - a grid, no disclosure click. */
+    const panel = page.locator('.ctxhub-grid');
+    /* 4h: nothing is done, so each row carries what changes that - Context
+       a "Start now" button, Skills the locked chip and no control. The
+       folder button still does not exist: a zip of nothing is no download. */
+    await expect(panel.locator("[data-file='context']").getByRole('button', { name: S.ctxStartNow })).toBeVisible();
+    await expect(panel.locator('.ctxhub-file-lock')).toContainText(S.badgeLocked);
+    await expect(panel.locator("[data-file='skills'] button")).toHaveCount(0);
+    await expect(panel.getByRole('button', { name: S.downloadFolder, exact: true })).toHaveCount(0);
     await context.close();
   });
 
@@ -809,7 +812,7 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
        destination, one hop deeper, still a real link. */
     await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
     await page.waitForSelector('.skillshub');
-    const link = page.getByRole('link', { name: new RegExp(S.libTitle) });
+    const link = page.getByRole('link', { name: S.certBrowse, exact: true });
     await expect(link).toHaveAttribute('href', 'https://www.model-citizen.org/work-brain/skills-library');
     await expect(link).toHaveAttribute('target', '_blank');
     // The spanning banner is gone with the tiles it was spanning past.

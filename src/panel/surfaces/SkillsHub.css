@@ -35,6 +35,10 @@
   flex-direction: column;
   gap: 10px;
 }
+/* Pass 4h: the doors wear the Proving Grounds' own dress in this page's
+   family - the 1.5px 70% edge and the 5% wash that Adam called out as the
+   look ("the same background and element color work as the Proving
+   Grounds… will extend to the elements in the skills development area"). */
 .skillshub-door {
   display: flex;
   flex-direction: column;
@@ -42,9 +46,9 @@
   width: 100%;
   min-height: var(--target-min);
   padding: 13px 15px;
-  border: 1px solid color-mix(in srgb, var(--home-skills) 55%, var(--divider));
+  border: 1.5px solid color-mix(in srgb, var(--home-skills) 70%, var(--divider));
   border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--ink-inv) 45%, transparent);
+  background: color-mix(in srgb, var(--home-skills) 5%, transparent);
   font: inherit;
   color: inherit;
   text-align: left;
@@ -54,7 +58,7 @@
 }
 .skillshub-door:hover {
   border-color: var(--home-skills);
-  background: color-mix(in srgb, var(--ink-inv) 70%, transparent);
+  background: color-mix(in srgb, var(--home-skills) 10%, transparent);
 }
 .skillshub-door:focus-visible {
   outline: 2px solid var(--primary);
@@ -84,4 +88,50 @@
   font-size: 12.5px;
   line-height: 1.45;
   color: var(--ink-2);
+}
+
+/* ── The Certified bulk (pass 4g): the page's biggest thing - the library
+   as the primary destination, the redeem door quiet beside it. ── */
+.skillshub-cert {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 16px;
+  border: 1.5px solid color-mix(in srgb, var(--home-skills) 70%, var(--divider));
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--home-skills) 5%, transparent);
+}
+.skillshub-cert-name {
+  margin: 0;
+  font-size: 17px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  color: var(--home-skills);
+}
+.skillshub-cert-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 4px;
+}
+.skillshub-cert-browse {
+  text-decoration: none;
+}
+.skillshub-cert-redeem {
+  min-height: var(--target-min);
+  padding: 0 12px;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--home-skills);
+  cursor: pointer;
+}
+.skillshub-cert-redeem:hover {
+  text-decoration: underline;
+}
+.skillshub-cert-redeem:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
 }

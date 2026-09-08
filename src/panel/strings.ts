@@ -1254,9 +1254,6 @@ export const S = {
   ctxTitle: 'Context Development',
   ctxSub: 'Take your starting point, carry your files out, and prove the difference they make.',
   ctxBaselineKicker: 'Begin',
-  ctxBaselineName: 'Pre-Launch Baseline',
-  ctxBaselineLine: 'Grab your starting point before the final proof.',
-  ctxBaselineTaken: 'Your starting point is saved.',
   ctxDownloadKicker: 'Carry',
   ctxDownloadName: 'Download Center',
   ctxDownloadLine: 'Context, Skills, or the whole Workbrain folder.',
@@ -1264,18 +1261,49 @@ export const S = {
   ctxProveName: 'Proving Grounds',
   ctxProveLine: 'Show your context file outperforms your baseline. Head to head, in the service you choose.',
   ctxCompareKicker: 'Review',
+  /* Pass 4f: the hub grew up - a status on the baseline, a standing
+     download grid, and Proving Grounds as the page's working bulk. */
+  ctxDone: 'Completed',
+  ctxCompleteNow: 'Complete it now',
+  ctxGridFormat: 'Markdown · .md',
+  ctxGridEdit: 'Edit',
+  ctxGridDownload: 'Download',
+  ctxGridEmpty: 'Nothing to hand over yet.',
+  ctxSize: (kb: string) => `${kb} KB`,
+  pgLead: 'Run the same ask twice - once bare, once with your file - and see what the file changes.',
+  pgBaselineName: 'Your baseline',
+  pgBaselineLine: 'The answer your AI gave with nothing loaded.',
+  pgContextName: 'Your context file',
+  pgContextLine: 'Finish the interview and this side is ready.',
+  pgProve: 'Prove It',
+  pgNeedsBoth: 'Take your baseline and finish your file to run the proof.',
+  pgVerdict: (value: number, of: number) => `You judged the with-file answer right on ${value} of ${of}.`,
+  pgMissingLead: 'What your AI said the file did not cover:',
+  pgRefineLead: 'Refine your file - the questions most worth another pass:',
+  pgSeeDiff: 'See the two answers side by side',
+  /* Pass 4g: Skill Development matures the same way - Create launches the
+     skill-building experience, Training is the road to the Grounds, and
+     Certified Skills is the page's bulk. */
+  hubCreateLine2: 'Start a new skill - name it, shape it, and give your AI the steps.',
+  hubTrainLine: 'Pick a skill and prove it works, on the Proving Grounds.',
+  /* Pass 4h: every not-done thing carries its own action - the chips that
+     said "Not yet" become the buttons that change it. */
+  ctxStartNow: 'Start now',
+  ctxFinishNow: 'Finish it now',
+  certLead: 'Skills built and tested by Model Citizen - browse the library, bring one back, and activate it here.',
+  certBrowse: 'Browse the Certified library',
+  certRedeem: 'Redeem a code',
+  pgSkillName: 'Prove a skill',
+  pgSkillLine: 'Run a skill against what you wanted it to produce.',
   hubBack: 'Back',
   hubTitle: 'Your skills',
   hubSub: 'Create a new skill, review the ones you have, or redeem one built and tested for you.',
   hubCreateKicker: 'Create',
   hubCreateName: 'Skill Activator',
-  hubCreateLine: 'Turn something you already do into a skill your AI can run.',
   hubReviewKicker: 'Review',
   hubReviewName: 'Skill Training',
-  hubReviewLine: 'Try and refine your skills.',
   hubRedeemKicker: 'Redeem',
   hubRedeemName: 'Workbrain Certified Skills',
-  hubRedeemLine: 'Skills that make us all stronger, built and tested by Model Citizen.',
   /* PROVING GROUNDS (same brief): the proof door points at the public
      site's head-to-head page - "prove that your new and evolving context
      file outperforms your baseline". The page ships with the next site
@@ -1313,7 +1341,6 @@ export const S = {
   rowDownloadSub: 'Each file on its own, or the whole Workbrain folder',
   /** The expanded row's furniture (V3.0 pass 2). */
   downloadFolder: 'Download the Workbrain folder',
-  downloadNotStarted: 'Not started yet',
   downloadOne: (name: string) => `Download ${name}`,
   rowProveSub: 'Grab your file and find out right now if context matters!',
   rowRedeemSub: 'Redeem a purchased skill or upload a skill somebody built for you',

@@ -3,41 +3,41 @@ import { Button } from '../components';
 import { RedeemSheet } from './RedeemSheet';
 import { Toast } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
-import { capabilityReady } from '../../core/proof/capability';
 import type { Answers } from '../../schema/storage.types';
 import { S } from '../strings';
 import './SkillsHub.css';
 
 /**
- * THE SKILLS HUB (V3.0 pass 4c; Adam, 2026-09-08: "combine the Skills
- * Activator, Skill Training and Workbrain Certified skills and make that
- * a new home page destination where you can Create (Skill Activator),
- * Review (Skill Training) and Redeem (Workbrain Certified Skills) as 3
- * options to create, edit or upgrade your skills").
+ * SKILL DEVELOPMENT v2 (V3.0 pass 4g; Adam, 2026-09-08):
  *
- * Three doors that were three Home rows, gathered into one destination:
- * CREATE opens the activator sheet (the same RedeemSheet, hosted here
- * with the same storage handlers Home used), REVIEW walks into Skill
- * Training (the capability flow — still earned by the second skill, and
- * the waiting card says so in the same words the row did), REDEEM leads
- * out to the Certified Skills library on the site.
+ *  - CREATE launches the create-new-skill experience — the Skills
+ *    interview itself, resumed wherever the person's skills really stand
+ *    (the same route the file card's edit takes);
+ *  - SKILL TRAINING is the road to the PROVING GROUNDS: pick a skill
+ *    there and prove it works, with the same analysis grammar the context
+ *    file gets (desired output against produced output — the run-and-tick
+ *    capability loop is the prover, reached from the Grounds);
+ *  - WORKBRAIN CERTIFIED SKILLS is the page's BULK: the library on the
+ *    site as the big destination, with "Redeem a code" beside it (the
+ *    activator sheet moved under the library it redeems from).
  *
- * The hub loads the skills store itself: it is the surface these three
- * doors all read, and carrying it through App would thread a prop through
- * a component that never looks at it.
+ * The waiting-grammar that used to gate this page's Review door moved to
+ * the Grounds with the prover itself.
  */
 const EMPTY: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {} };
 const LIBRARY_URL = 'https://www.model-citizen.org/work-brain/skills-library';
 
 export interface SkillsHubProps {
   onBack: () => void;
-  /** Walks into Skill Training — App's own capability route. */
-  onReview: () => void;
+  /** The create-new-skill experience — the Skills interview's own door. */
+  onCreate: () => void;
+  /** The road to the Proving Grounds, where a skill gets proven. */
+  onGrounds: () => void;
 }
 
-export function SkillsHub({ onBack, onReview }: SkillsHubProps) {
+export function SkillsHub({ onBack, onCreate, onGrounds }: SkillsHubProps) {
   const [skills, setSkills] = useState<Answers>(EMPTY);
-  const [createOpen, setCreateOpen] = useState(false);
+  const [redeemOpen, setRedeemOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
 
   useEffect(() => {
@@ -49,8 +49,6 @@ export function SkillsHub({ onBack, onReview }: SkillsHubProps) {
       cancelled = true;
     };
   }, []);
-
-  const reviewReady = capabilityReady(skills);
 
   return (
     <div className="skillshub">
@@ -64,42 +62,40 @@ export function SkillsHub({ onBack, onReview }: SkillsHubProps) {
 
       <ul className="skillshub-doors">
         <li>
-          <button type="button" className="skillshub-door" onClick={() => setCreateOpen(true)}>
+          <button type="button" className="skillshub-door" onClick={onCreate}>
             <span className="skillshub-kicker">{S.hubCreateKicker}</span>
             <span className="skillshub-name">{S.hubCreateName}</span>
-            <span className="skillshub-line">{S.hubCreateLine}</span>
+            <span className="skillshub-line">{S.hubCreateLine2}</span>
           </button>
         </li>
         <li>
-          {reviewReady ? (
-            <button type="button" className="skillshub-door" onClick={onReview}>
-              <span className="skillshub-kicker">{S.hubReviewKicker}</span>
-              <span className="skillshub-name">{S.hubReviewName}</span>
-              <span className="skillshub-line">{S.hubReviewLine}</span>
-            </button>
-          ) : (
-            /* The same earned gate the Home row had, in the same words —
-               bare against the field per the tint law: no tint IS the
-               not-yet signal. */
-            <div className="skillshub-door is-waiting">
-              <span className="skillshub-kicker">{S.hubReviewKicker}</span>
-              <span className="skillshub-name">{S.hubReviewName}</span>
-              <span className="skillshub-line">{S.capRowWaiting}</span>
-            </div>
-          )}
-        </li>
-        <li>
-          <a className="skillshub-door" href={LIBRARY_URL} target="_blank" rel="noreferrer">
-            <span className="skillshub-kicker">{S.hubRedeemKicker}</span>
-            <span className="skillshub-name">{S.hubRedeemName}</span>
-            <span className="skillshub-line">{S.hubRedeemLine}</span>
-          </a>
+          <button type="button" className="skillshub-door" onClick={onGrounds}>
+            <span className="skillshub-kicker">{S.hubReviewKicker}</span>
+            <span className="skillshub-name">{S.hubReviewName}</span>
+            <span className="skillshub-line">{S.hubTrainLine}</span>
+          </button>
         </li>
       </ul>
 
+      {/* ── The page's bulk: the Certified library (Adam: "the biggest
+             part of this page"), with the redeem door beside it. ── */}
+      <section className="skillshub-cert">
+        <span className="skillshub-kicker">{S.hubRedeemKicker}</span>
+        <h3 className="skillshub-cert-name">{S.hubRedeemName}</h3>
+        <p className="skillshub-line">{S.certLead}</p>
+        <div className="skillshub-cert-actions">
+          <a className="btn btn-primary skillshub-cert-browse" href={LIBRARY_URL} target="_blank" rel="noreferrer">
+            {S.certBrowse}
+          </a>
+          <button type="button" className="skillshub-cert-redeem" onClick={() => setRedeemOpen(true)}>
+            {S.certRedeem}
+          </button>
+        </div>
+      </section>
+
       <RedeemSheet
-        open={createOpen}
-        onClose={() => setCreateOpen(false)}
+        open={redeemOpen}
+        onClose={() => setRedeemOpen(false)}
         skills={skills}
         onSkills={async (next) => {
           setSkills(next);

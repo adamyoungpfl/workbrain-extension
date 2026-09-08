@@ -738,6 +738,28 @@
 .home-row:last-child {
   border-bottom: 1px solid var(--row-edge);
 }
+/* EQUAL, LARGER (pass 4f: "Make the 3 'Your Workbrain' items equal
+   height and a bit larger allowing the icon to be a bit bigger and more
+   prominent") - one fixed height for all three areas, the chip stepped
+   up to carry the family. */
+.home-rows .home-row-hit {
+  height: 96px;
+  align-items: center;
+}
+.home-rows .home-row-chip {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  border-radius: 13px;
+}
+.home-rows .home-row-chip svg {
+  width: 24px;
+  height: 24px;
+}
+.home-rows .home-row-label {
+  font-size: 15.5px;
+}
+
 /* Three areas, three edges (pass 4d - the per-row menagerie pruned with
    the rows that carried it). */
 .home-row[data-tone='context'] {
