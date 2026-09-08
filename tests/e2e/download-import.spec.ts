@@ -187,10 +187,11 @@ test.describe('Download and import (R1-10)', () => {
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
-    // V2.9 VB-147 retired the Move-file sheet; V3.0 pass 2 made the row a
-    // DISCLOSURE — open it, then take Context from its own line.
+    // Pass 4d: the Download Center lives inside Context Development.
     // --- export -----------------------------------------------------
-    await page.getByRole('button', { name: /^Download your files/ }).click();
+    await page.getByRole('button', { name: /Context Development/ }).click();
+    await page.waitForSelector('.ctxhub');
+    await page.getByRole('button', { name: /Download Center/ }).click();
     const downloadPromise = page.waitForEvent('download');
     await page.locator(".home-downloads [data-file='context'] button").click();
     const download = await downloadPromise;
@@ -207,6 +208,9 @@ test.describe('Download and import (R1-10)', () => {
     // retired sheet's button did ("Download it again"): a tile in a row of
     // three says what it is, and the toast says the download happened.
     await expect(page.getByText('Downloaded. Keep it somewhere you will find it.')).toBeVisible();
+    // Back to Home - the import door lives on its chrome bar (4d).
+    await page.getByRole('button', { name: 'Back', exact: true }).click();
+    await page.waitForSelector('.home-rows');
 
     // --- clear storage ------------------------------------------------
     await sw.evaluate(() => chrome.storage.local.remove('wb:answers'));

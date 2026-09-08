@@ -288,20 +288,21 @@ test.describe('Home surface (R1-12)', () => {
     await expect(page.getByRole('button', { name: 'Just pick a file', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Close', exact: true }).click();
 
-    /* Pass 4c: the proof door is PROVING GROUNDS - the public site's
-       head-to-head page, live from day one (the gate lives on the page,
-       not on the row). The waiting-row grammar moved with Skill Training
-       into the hub, where the a11y suite still covers it. */
-    const prove = page.locator('.home-row', { hasText: S.proveTitle });
-    await expect(prove).not.toHaveClass(/is-waiting/);
-    await expect(prove.locator('a')).toHaveAttribute(
+    /* Pass 4d: Proving Grounds is a door inside Context Development now -
+       the public site's head-to-head page, live from day one. */
+    await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
+    await page.waitForSelector('.ctxhub');
+    const prove = page.locator('.skillshub-door', { hasText: S.ctxProveName });
+    await expect(prove).toHaveAttribute(
       'href',
       'https://www.model-citizen.org/work-brain/proving-grounds',
     );
+    await page.getByRole('button', { name: S.hubBack, exact: true }).click();
+    await page.waitForSelector('.home-rows');
     /* V3.0 pass 2: the download row never waits any more - it is a
        disclosure, pressable from day one, with the waiting said inside it
        on the component lines. */
-    await expect(page.locator('.home-row', { hasText: S.tileDownload })).not.toHaveClass(/is-waiting/);
+    /* The download disclosure lives in Context Development's Center (4d). */
 
     await context.close();
   });
@@ -692,24 +693,17 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
      * themselves instead of disabled squares."
      */
     const rows = page.locator('.home-row');
-    /* Pass 4c: SEVEN became FIVE. Skill Training, the Activator and the
-       Certified library folded into one hub door (Create/Review/Redeem),
-       and the proof row became the Proving Grounds link. The order is the
-       journey's own: baseline, files, prove, skills, plus. */
-    await expect(rows).toHaveCount(5);
-    await expect(rows.nth(0)).toContainText(S.rowBaselineLabel);
-    await expect(rows.nth(0)).not.toHaveClass(/is-waiting/);
-    await expect(rows.nth(0).locator('button')).toHaveCount(1);
-    await expect(rows.nth(1)).toContainText(S.tileDownload);
-    await expect(rows.nth(2)).toContainText(S.proveTitle);
-    await expect(rows.nth(3)).toContainText(S.rowSkillsHub);
-    await expect(rows.nth(4)).toContainText(S.plusTitle);
-
-    /* V3.0 pass 2: the download row is a DISCLOSURE - always pressable,
-       because revealing what exists is useful before anything does. The
-       waiting moved one level down, onto the component lines inside it. */
-    await expect(rows.nth(1)).not.toHaveClass(/is-waiting/);
-    await expect(rows.nth(1).locator('button.home-row-hit')).toHaveAttribute('aria-expanded', 'false');
+    /* Pass 4d: FIVE became THREE OPERATIONAL AREAS - Context Development
+       (baseline, Download Center, Proving Grounds, the comparison), Skill
+       Development (Create/Review/Redeem), and Workbrain+. */
+    await expect(rows).toHaveCount(3);
+    await expect(rows.nth(0)).toContainText(S.rowContextHub);
+    await expect(rows.nth(1)).toContainText(S.rowSkillsHub);
+    await expect(rows.nth(2)).toContainText(S.plusTitle);
+    for (const i of [0, 1]) {
+      await expect(rows.nth(i)).not.toHaveClass(/is-waiting/);
+      await expect(rows.nth(i).locator('button')).toHaveCount(1);
+    }
 
     /* The waiting-row grammar itself now lives in the hub (Skill
        Training's earned gate) - asserted where it lives: */
@@ -764,7 +758,9 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
 
     const page = await openPanel(context, id);
     // Open the row.
-    await page.getByRole('button', { name: new RegExp(`^${S.tileDownload}`) }).click();
+    await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
+    await page.waitForSelector('.ctxhub');
+    await page.getByRole('button', { name: new RegExp(S.ctxDownloadName) }).click();
     const panel = page.locator('.home-downloads');
     await expect(panel).toBeVisible();
 
@@ -790,7 +786,9 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
   test('a fresh download disclosure has nothing to hand over, and says so (V3.0 pass 2)', async () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: new RegExp(`^${S.tileDownload}`) }).click();
+    await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
+    await page.waitForSelector('.ctxhub');
+    await page.getByRole('button', { name: new RegExp(S.ctxDownloadName) }).click();
     const panel = page.locator('.home-downloads');
     // Both components present as words with no control, and the folder
     // button does not exist — a zip of nothing is not a download.

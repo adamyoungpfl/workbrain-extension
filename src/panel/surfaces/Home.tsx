@@ -36,12 +36,11 @@ import { LockGlyph, fileName, lockLine } from '../components/fileLabels';
 import { contextModules, contextOutline, skillsModules, skillsOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
-import { downloadContextFile, downloadSkillsFile, downloadWorkbrainFolder } from './FileActions';
+/* The download handlers moved to Context Development with the Center (4d). */
 import { UploadSheet } from './UploadSheet';
 import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
-import { Comparison } from './Comparison';
-import { hasBaseline, latestTask } from '../../core/report/runs';
+/* hasBaseline/latestTask read in Context Development now (4d). */
 import { featuredMove, maintenanceQueue } from '../../core/freshness/queue';
 import './Home.css';
 
@@ -54,11 +53,10 @@ export interface HomeProps {
    * pressed question with the Word-style sweep armed, so finishing one
    * item walks to the next open-or-stale after it. */
   onOpenNext?: ((questionId: string) => void) | undefined;
-  /** THE PENDING ROW's door (Adam, 2026-09-02): the same route the splash's
-   * baseline door takes - goal question, then the run-it errand - offered
-   * again from Home while no baseline run exists, so the starting point can
-   * still be taken before the final proof closes the window on meaning it. */
-  onOpenBaseline?: (() => void) | undefined;
+  /** Pass 4d: Context Development - baseline, Download Center, Proving
+   * Grounds and the comparison, one area. (The old onOpenBaseline prop
+   * rides App -> ContextHub directly now.) */
+  onOpenContextHub: () => void;
   /**
    * Deep-links straight at the question a recommendation is about. App.tsx
    * turns the target into a real `Position` (core/recommend/targets.ts),
@@ -298,19 +296,9 @@ const UPLOAD_ICON = (
 
 /** The pending row's glyph - a rocket standing on its pad, in the same
  * 17px currentColor stroke as every neighbour. */
-const ROCKET_ICON = (
-  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M9 2.2c2 1.6 3 3.8 3 6.3l-.1 3.1H6.1L6 8.5c0-2.5 1-4.7 3-6.3Z" strokeLinejoin="round" />
-    <path d="M6 9.5 3.9 12v2.4l2.2-.8M12 9.5l2.1 2.5v2.4l-2.2-.8" strokeLinejoin="round" />
-    <path d="M7.6 14.6h2.8M9 14.8v1.6" />
-  </svg>
-);
+/* ROCKET_ICON retired - its row lives in Context Development (4d). */
 
-const PROVE_ICON = (
-  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M2.8 9.6 6.6 13.4 15.2 4.8" />
-  </svg>
-);
+/* PROVE_ICON retired - its row lives in Context Development (4d). */
 
 /** BS-04 (§4) — proof two's row glyph: a play mark, because the row runs
  * something. Same 17px stroke house style as its neighbours. */
@@ -494,7 +482,7 @@ function LockedCard(props: { file: FileSlotId; reason: string }) {
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpenFile, onOpenSkillsHub, onOpenMultiples }: HomeProps) {
+export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOpenFile, onOpenSkillsHub, onOpenMultiples }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   /** V2.2 — the second file's answers, for the shelf: whether Skills.md is
    * finished (which unlocks the DERIVED Actions.md), and what its row says.
@@ -515,8 +503,8 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
   /** Spine step 3 — the comparison sheet. `report` is already loaded above for
    *  the meter's Share segment, so this reads it rather than fetching it twice
    *  and risking two answers to one question. */
-  const [compareOpen, setCompareOpen] = useState(false);
-  const compareTask = latestTask(report);
+  /* compareOpen moved into Context Development with its door (4d). */
+  /* compareTask reads in the hub now. */
   const [redeemToast, setRedeemToast] = useState<string | null>(null);
   /** V2.6 VB-127 — the What's-stored sheet, and the two keys it lists that
    * nothing else on Home reads: the version stamp and the narrator choice.
@@ -525,7 +513,7 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
   const [storedOpen, setStoredOpen] = useState(false);
   /** V3.0 pass 2 - the download disclosure. Local, not stored: which rows
    * are open is a fact about this visit, not about the person. */
-  const [downloadsOpen, setDownloadsOpen] = useState(false);
+  /* downloadsOpen moved into Context Development with the Center (4d). */
   /** V3.0 pass 7 - whether the queue's "See all" is open. A fact about
    * this visit, never stored. */
   const [queueOpen, setQueueOpen] = useState(false);
@@ -670,7 +658,7 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
   /* Presence, for the download lines: a file is PRESENT once one answer
    * has landed - the moment a download would contain something of the
    * person's (the same line lockupMeta draws). */
-  const contextStarted = Object.keys(answers.answeredAt).length > 0;
+  /* contextStarted reads in Context Development's Center now (4d). */
   /** BS-04 (§4) — "reachable after two skills without finishing all of
    * Skills", so this is a fold over the RECORDS rather than over the
    * interview's completeness (core/proof/capability.ts). */
@@ -1055,105 +1043,21 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
           EXPLAINS ITSELF rather than a disabled square, which is the same
           §1 rule that took dashed away from "locked". */}
       <ul className="home-rows">
-        {/* THE PENDING ROW (Adam, 2026-09-02): "PRE-LAUNCH BASELINE… a way
-            to go back and grab it before the final proof". First in the
-            list while it stands, gone the moment any baseline run exists -
-            including the proof's own, which takes the same measurement at
-            its own door. An open door, not a nag (docs/GUARDRAILS.md). */}
-        {onOpenBaseline && !hasBaseline(report) && (
-          <HomeRow
-            id="baseline"
-            icon={ROCKET_ICON}
-            label={S.rowBaselineLabel}
-            sub={S.rowBaselineSub}
-            ready
-            onPress={onOpenBaseline}
-          />
-        )}
-        {/* V3.0 pass 2 (Adam): the download row OPENS - components, their
-            presence, each downloadable on its own, and the folder. Always
-            pressable now: revealing what exists is useful before anything
-            does, and the waiting state moved onto the component lines
-            (which is where the waiting actually is). */}
+        {/* THREE OPERATIONAL AREAS (pass 4d; Adam, 2026-09-08: "This would
+            give us 3 areas (Context Development, Skills Development and
+            Workbrain+). Let's make the 3 tile present like 3 operational
+            areas they can explore to further improve or edit their work.")
+            The pending-baseline row, the download disclosure, the Proving
+            Grounds link and the compare row all live inside Context
+            Development now; the skills doors inside Skill Development. */}
         <HomeRow
-          id="download"
+          id="context"
           icon={DOWNLOAD_ICON}
-          label={S.tileDownload}
-          sub={S.rowDownloadSub}
+          label={S.rowContextHub}
+          sub={S.rowContextHubSub}
           ready
-          expanded={downloadsOpen}
-          onPress={() => setDownloadsOpen((o) => !o)}
-          panel={
-            <div className="home-downloads">
-              {(
-                [
-                  {
-                    id: 'context',
-                    started: contextStarted,
-                    get: () => downloadContextFile(answers),
-                  },
-                  {
-                    id: 'skills',
-                    started: skillsStarted,
-                    get: () => downloadSkillsFile(skillsAnswers),
-                  },
-                ] as const
-              ).map((f) => (
-                <div key={f.id} className="home-download-line" data-file={f.id}>
-                  <span className="home-download-name">{fileName(f.id)}</span>
-                  {f.started ? (
-                    <button
-                      type="button"
-                      className="home-download-get"
-                      onClick={() => {
-                        f.get();
-                        setHomeToast(S.toastDownloaded);
-                      }}
-                      aria-label={S.downloadOne(fileName(f.id))}
-                    >
-                      {DOWNLOAD_ICON}
-                    </button>
-                  ) : (
-                    /* Not a disabled control - nothing to hand over yet,
-                       so no control (the waiting-row grammar, one level
-                       down). */
-                    <span className="home-download-wait">{S.downloadNotStarted}</span>
-                  )}
-                </div>
-              ))}
-              {(contextStarted || skillsStarted) && (
-                <button
-                  type="button"
-                  className="home-download-folder"
-                  onClick={() => {
-                    downloadWorkbrainFolder({
-                      context: contextStarted ? answers : undefined,
-                      skills: skillsStarted ? skillsAnswers : undefined,
-                    });
-                    setHomeToast(S.toastDownloaded);
-                  }}
-                >
-                  {S.downloadFolder}
-                </button>
-              )}
-            </div>
-          }
+          onPress={onOpenContextHub}
         />
-        {/* PROVING GROUNDS (pass 4c; Adam, 2026-09-08): the door points at
-            the public site's head-to-head page - test your file against
-            your baseline in the service of your choice. The in-app proof
-            flow still runs from the interview's own finish. */}
-        <HomeRow
-          id="prove"
-          icon={PROVE_ICON}
-          label={S.proveTitle}
-          sub={S.rowProveGroundsSub}
-          ready
-          href="https://www.model-citizen.org/work-brain/proving-grounds"
-        />
-        {/* THE SKILLS HUB DOOR (pass 4c): Skill Activator, Skill Training
-            and Certified Skills were three rows; they are three doors in
-            one destination now - Create, Review, Redeem. */}
         <HomeRow
           id="skills"
           icon={RUN_ICON}
@@ -1162,16 +1066,6 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
           ready
           onPress={onOpenSkillsHub}
         />
-        {compareTask && (
-          <HomeRow
-            id="compare"
-            icon={PROVE_ICON}
-            label={S.compareOpen}
-            sub={S.compareSub}
-            ready
-            onPress={() => setCompareOpen(true)}
-          />
-        )}
         {/* Workbrain+ keeps its door and loses its pitch. The price and the
             four goods belong on the page this links to; on Home they cost
             ~230px and made the panel read as a storefront on the screen a
@@ -1215,9 +1109,7 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
       {/* Spine step 3 — a sheet rather than a surface, because it is a thing
           you look at and close rather than a place you work. GUARDRAILS allows
           exactly one overlay and this is one: short, self-contained, escapable. */}
-      <Sheet open={compareOpen} onClose={() => setCompareOpen(false)} title={S.compareTitle} full>
-        <Comparison report={report} />
-      </Sheet>
+{/* The Comparison sheet moved into Context Development (4d). */}
       {redeemToast && <Toast message={redeemToast} onDismiss={() => setRedeemToast(null)} />}
 
       {/* V2.6 VB-127 — the storage, listed in plain words. Rows exist only

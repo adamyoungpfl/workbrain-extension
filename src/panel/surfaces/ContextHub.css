@@ -1,0 +1,21 @@
+/* Context Development wears the aqua-green family the way Skill
+   Development wears the red — the shared hub grammar recoloured through
+   one variable, and the lifted Download Center given its indent. */
+.ctxhub .skillshub-door {
+  border-color: color-mix(in srgb, var(--home-context) 55%, var(--divider));
+}
+.ctxhub .skillshub-door:hover {
+  border-color: var(--home-context);
+}
+.ctxhub .skillshub-kicker {
+  color: var(--home-context);
+}
+.ctxhub .skillshub-door.is-waiting {
+  border-color: var(--divider);
+}
+.ctxhub .skillshub-door.is-waiting .skillshub-kicker {
+  color: var(--ink-3);
+}
+.ctxhub-downloads {
+  margin: 8px 0 4px 14px;
+}

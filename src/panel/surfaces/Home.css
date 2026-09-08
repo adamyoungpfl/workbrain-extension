@@ -169,12 +169,13 @@
    the identity accents the chips already wear, mixed toward the divider so
    the line stays an edge, not a stroke. */
 .home-card[data-file='context'] {
-  border-color: color-mix(in srgb, var(--home-context) 45%, var(--divider));
+  /* The same aqua-green as Context Development (Adam, 2026-09-08). */
+  border-color: color-mix(in srgb, var(--home-context) 60%, var(--divider));
 }
 .home-card[data-file='skills'] {
-  /* Darker at Adam's word (2026-09-08) - the locked cornerstone should
-     read as a THING with a lock, not a faded card. */
-  border-color: color-mix(in srgb, var(--home-skills) 85%, var(--ink));
+  /* The skills family is the RED now (tokens.json, 2026-09-08) - unlocked,
+     this edge is the same red as the Skill Development area. */
+  border-color: color-mix(in srgb, var(--home-skills) 70%, var(--divider));
 }
 /* THE ACTIVE ONE ALSO GLOWS — an outline in the file's own accent, drawn as a
    second shadow so it composes with the raise rather than replacing it. The
@@ -226,8 +227,10 @@
   color: var(--violet);
 }
 .home-card.is-locked .home-card-chip {
-  background: var(--surface);
-  color: var(--ink-3);
+  /* The darker lock (Adam, 2026-09-08): the chip matches the LOCKED pill's
+     dark family, white glyph on it - a feature waiting, not a control off. */
+  background: color-mix(in srgb, var(--primary) 24%, var(--ink));
+  color: var(--ink-inv);
 }
 
 /* The identity stack: filename FIRST in the DOM (the accessible name the
@@ -361,13 +364,25 @@
    are the non-colour signals now; the edge goes back to solid so the card
    reads as a thing that is not ready rather than a thing that is broken. */
 .home-card.is-locked {
-  border-color: var(--divider);
-  /* BARE (Adam, 2026-09-08 second pass: "the non-clickable elements…
-     stand against the app background"): no ground at all - the missing
-     tint is now itself the not-clickable signal, alongside the padlock,
-     the words and the Locked pill. */
-  background: transparent;
+  /* SUPERSEDED the bare-locked rule for THIS tile the same day (Adam:
+     "the background a bit of a gray/blue tint while locked… it pop as a
+     desirable tile to get opened") - the locked cornerstone is the one
+     dormant thing meant to be WANTED, so it wears a cool grey-blue wash
+     and a bolder edge instead of standing bare. Waiting rows elsewhere
+     keep the bare grammar. */
+  border: 1.5px solid color-mix(in srgb, var(--primary) 38%, var(--ink-3));
+  background: color-mix(
+    in srgb,
+    color-mix(in srgb, var(--primary) 26%, var(--sunken)) 72%,
+    transparent
+  );
   cursor: not-allowed;
+}
+/* Over the wash, the light support greys dropped under the floor (the
+   a11y walk measured 3.55:1) - the desirable tile earns the darker ink. */
+.home-card.is-locked .home-card-file,
+.home-card.is-locked .home-card-reason {
+  color: var(--ink-2);
 }
 .home-card.is-locked:hover {
   transform: none;
@@ -711,30 +726,21 @@
 .home-row:last-child {
   border-bottom: 1px solid var(--row-edge);
 }
-.home-row[data-tone='baseline'] {
-  --row-edge: color-mix(in srgb, var(--primary) 50%, var(--divider));
+/* Three areas, three edges (pass 4d - the per-row menagerie pruned with
+   the rows that carried it). */
+.home-row[data-tone='context'] {
+  --row-edge: color-mix(in srgb, var(--home-context) 55%, var(--divider));
 }
-.home-row[data-tone='download'] {
-  --row-edge: color-mix(in srgb, var(--home-context) 50%, var(--divider));
-}
-.home-row[data-tone='prove'] {
-  --row-edge: color-mix(in srgb, var(--violet) 50%, var(--divider));
-}
-.home-row[data-tone='run'] {
-  --row-edge: color-mix(in srgb, var(--home-skills) 50%, var(--divider));
-}
-.home-row[data-tone='compare'] {
-  --row-edge: color-mix(in srgb, var(--green) 50%, var(--divider));
-}
-.home-row[data-tone='redeem'] {
-  --row-edge: color-mix(in srgb, var(--violet) 45%, var(--divider));
-}
-.home-row[data-tone='library'] {
-  --row-edge: color-mix(in srgb, var(--home-context) 45%, var(--divider));
+.home-row[data-tone='skills'] {
+  --row-edge: color-mix(in srgb, var(--home-skills) 55%, var(--divider));
 }
 .home-row[data-tone='plus'] {
-  --row-edge: color-mix(in srgb, var(--primary) 45%, var(--divider));
+  --row-edge: color-mix(in srgb, var(--violet) 55%, var(--divider));
 }
+
+/* The three areas' text-and-hover families ride the ROW TONES engine
+   below (one system, retooled for pass 4d) - the map now speaks
+   context / skills / plus in their own families. */
 
 /* The hit box IS the row: read and pressed in one motion, and the 44px
    floor is the row's own height.
@@ -839,25 +845,21 @@ a.home-row-hit:hover .home-row-go {
    Text tones are the -700 end of each family so they clear 4.5:1 on their own
    tint; the chip grounds are the -50 end, which is why the tint can be this
    light and still read. */
-.home-row[data-tone='redeem'] {
-  --row-tint: var(--tone-red-tint);
-  --row-ink: var(--tone-red-ink);
+/* Pass 4d: the map speaks the three OPERATIONAL AREAS in their own
+   families - Context Development aqua-green, Skill Development red,
+   Workbrain+ violet ("the red tint treatment on the text and hover
+   tinting", one grammar for all three). */
+.home-row[data-tone='context'] {
+  --row-tint: color-mix(in srgb, var(--home-context) 9%, transparent);
+  --row-ink: var(--home-context);
 }
-.home-row[data-tone='library'] {
-  --row-tint: var(--tone-purple-tint);
-  --row-ink: var(--tone-purple-ink);
+.home-row[data-tone='skills'] {
+  --row-tint: color-mix(in srgb, var(--home-skills) 9%, transparent);
+  --row-ink: var(--home-skills);
 }
 .home-row[data-tone='plus'] {
-  --row-tint: var(--tone-green-tint);
-  --row-ink: var(--tone-green-ink);
-}
-.home-row[data-tone='run'] {
-  --row-tint: var(--tone-orange-tint);
-  --row-ink: var(--tone-orange-ink);
-}
-.home-row[data-tone='prove'] {
-  --row-tint: var(--tone-blue-tint);
-  --row-ink: var(--tone-blue-ink);
+  --row-tint: color-mix(in srgb, var(--violet) 9%, transparent);
+  --row-ink: var(--violet);
 }
 
 /* The chip carries the tone at rest — enough to distinguish, not enough to

@@ -1242,8 +1242,26 @@ export const S = {
   /* THE SKILLS HUB (pass 4c; Adam, 2026-09-08): three rows became one
      destination with three doors - Create wraps the Activator, Review
      wraps Skill Training, Redeem leads to Certified Skills. */
-  rowSkillsHub: 'Grow your skills',
+  /* Pass 4d (Adam, 2026-09-08): the three rows became three OPERATIONAL
+     AREAS - Context Development, Skill Development, Workbrain+ - each in
+     its own family (aqua-green / red / violet). */
+  rowSkillsHub: 'Skill Development',
   rowSkillsHubSub: 'Create, review and redeem the skills your AI runs on.',
+  rowContextHub: 'Context Development',
+  rowContextHubSub: 'Your baseline, your files, and the grounds to prove them.',
+  ctxTitle: 'Context Development',
+  ctxSub: 'Take your starting point, carry your files out, and prove the difference they make.',
+  ctxBaselineKicker: 'Begin',
+  ctxBaselineName: 'Pre-Launch Baseline',
+  ctxBaselineLine: 'Grab your starting point before the final proof.',
+  ctxBaselineTaken: 'Your starting point is saved.',
+  ctxDownloadKicker: 'Carry',
+  ctxDownloadName: 'Download Center',
+  ctxDownloadLine: 'Context, Skills, or the whole Workbrain folder.',
+  ctxProveKicker: 'Prove',
+  ctxProveName: 'Proving Grounds',
+  ctxProveLine: 'Show your context file outperforms your baseline. Head to head, in the service you choose.',
+  ctxCompareKicker: 'Review',
   hubBack: 'Back',
   hubTitle: 'Your skills',
   hubSub: 'Create a new skill, review the ones you have, or redeem one built and tested for you.',

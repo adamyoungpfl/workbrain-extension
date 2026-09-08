@@ -8,6 +8,7 @@ import { Flow } from './surfaces/Flow';
 import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
 import { SkillsHub } from './surfaces/SkillsHub';
+import { ContextHub } from './surfaces/ContextHub';
 import { Splash } from './surfaces/Splash';
 import { Universe } from './scenery/Universe';
 import { APP_UNIVERSE } from '../core/splash/universe';
@@ -69,7 +70,7 @@ const proofModules = buildProofModules({
  * on Home and re-derives the shelf, the file and the interview's position from
  * `wb:answers`.
  */
-type Surface = 'home' | 'file' | 'flow' | 'multiples' | 'actions' | 'skillshub';
+type Surface = 'home' | 'file' | 'flow' | 'multiples' | 'actions' | 'skillshub' | 'contexthub';
 /** BS-04 (§4) adds `capability` — proof two. It runs on the SKILLS store,
  * which is what makes the offer cheap: the recipes it hands over are that
  * store's own records. */
@@ -359,10 +360,7 @@ export default function App() {
             setSweepOn(true);
             openContextAt(positionForQuestionId(contextModules, questionId) ?? undefined);
           }}
-          onOpenBaseline={() => {
-            setWantBaseline(true);
-            openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
-          }}
+          onOpenContextHub={() => setSurface('contexthub')}
           onOpenTarget={(target) => openContext(target)}
           onOpenFile={(id) => {
             // V2.2: Actions is the derived file — its own read-only surface,
@@ -427,6 +425,20 @@ export default function App() {
       );
     }
 
+    if (surface === 'contexthub') {
+      /* Pass 4d - Context Development: the pre-launch baseline (the same
+         goal-question route Home's pending row carried), the Download
+         Center, Proving Grounds and the comparison, one area. */
+      return (
+        <ContextHub
+          onBack={goHome}
+          onBaseline={() => {
+            setWantBaseline(true);
+            openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
+          }}
+        />
+      );
+    }
     if (surface === 'skillshub') {
       /* Pass 4c - the skills hub: Create (activator sheet, hub-hosted),
          Review (Skill Training - the same capability route the old row
