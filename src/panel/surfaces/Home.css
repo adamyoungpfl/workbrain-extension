@@ -131,11 +131,14 @@
   text-align: left;
   font: inherit;
   color: inherit;
-  /* LIGHTLY TINTED = CLICKABLE (Adam, 2026-09-08: "The actual clickable
-     cards should be just lightly tinted to indicate they are clickable").
-     The interactive tint at a translucency that lets the universe read
-     through; --primary is the token that MEANS "asking you to act". */
-  background: color-mix(in srgb, var(--primary-tint) 45%, transparent);
+  /* LIGHTLY TINTED = CLICKABLE (Adam, 2026-09-08) - and a WINDOW, not a
+     frost (his same-day follow-up: "I want all of the labels and tiles to
+     lay over a single background"). The first cut tinted with
+     --primary-tint, which is near-WHITE - at any real alpha it fogged the
+     field back out. The tint is now the primary HUE itself at a breath of
+     alpha: clickability reads as a blue shift, and the universe reads
+     straight through every tile. */
+  background: color-mix(in srgb, var(--ink-inv) 45%, transparent);
   border: 1px solid var(--divider);
   border-radius: var(--r-lg);
   cursor: pointer;
@@ -178,7 +181,7 @@
   transform: translateY(-1px);
   box-shadow: var(--e-2);
   border-color: var(--border-i);
-  background: color-mix(in srgb, var(--primary-tint) 80%, transparent);
+  background: color-mix(in srgb, var(--ink-inv) 70%, transparent);
 }
 .home-card:focus-visible {
   outline: 2px solid var(--primary);
@@ -673,7 +676,7 @@
    (Adam's clickable/non-clickable rule, 2026-09-08). */
 button.home-row-hit,
 a.home-row-hit {
-  background: color-mix(in srgb, var(--primary-tint) 35%, transparent);
+  background: color-mix(in srgb, var(--ink-inv) 40%, transparent);
 }
 button.home-row-hit:hover,
 a.home-row-hit:hover {
@@ -858,7 +861,7 @@ a.home-row-hit:hover .home-row-go {
   padding: 0 14px;
   border: 1px solid var(--border-i);
   border-radius: var(--r-pill);
-  background: color-mix(in srgb, var(--primary-tint) 45%, transparent);
+  background: color-mix(in srgb, var(--ink-inv) 45%, transparent);
   font: inherit;
   font-size: var(--type-support);
   font-weight: 600;
@@ -1022,7 +1025,7 @@ a.home-row-hit:hover .home-row-go {
   padding: 6px 8px;
   border: 0;
   border-top: 1px solid var(--divider);
-  background: color-mix(in srgb, var(--primary-tint) 35%, transparent);
+  background: color-mix(in srgb, var(--ink-inv) 40%, transparent);
   font: inherit;
   text-align: left;
   cursor: pointer;

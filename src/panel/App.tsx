@@ -9,6 +9,7 @@ import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
 import { Splash } from './surfaces/Splash';
 import { Universe } from './scenery/Universe';
+import { APP_UNIVERSE } from '../core/splash/universe';
 import { coverVoice } from './voice/cover';
 import { getSession, setSession } from '../core/storage/client';
 import { FeedbackSheet, Button } from './components';
@@ -587,7 +588,10 @@ export default function App() {
           consistency by construction. WallPanels stays benched, tested,
           the way SplashStage did. */}
       <div className="app-ground" aria-hidden="true">
-        <Universe />
+        {/* The app's own sky (2026-09-08): composed for the page, so the
+            lattices cross the label bands and the tiles' windows have a
+            field to show. */}
+        <Universe orbs={APP_UNIVERSE} />
       </div>
       <main className="app-main" {...(inertWhileCovered as Record<string, string>)}>
         <h1 className="app-sr">{S.appName}</h1>

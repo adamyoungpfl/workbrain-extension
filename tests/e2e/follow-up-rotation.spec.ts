@@ -360,11 +360,11 @@ test.describe('VB-42 — the rotating follow-up', () => {
         ground = painted(node);
         node = node.parentElement;
       }
-      // V2.4 VB-111: the document now PAINTS its ground — body carries
-      // --ground, the one app-wide canvas — so the walk up the chain always
-      // finds a real color. Asserted rather than assumed, because "on the
-      // ground actually painted" is the whole claim being measured.
-      const groundedDocument = painted(document.body) !== null;
+      /* VB-111's "body paints --ground" was SUPERSEDED 2026-09-08: body is
+         transparent now so the universe reads through every surface, and
+         html is the element that guarantees the real canvas colour. The
+         walk's guarantee is unchanged - it just lives one element up. */
+      const groundedDocument = painted(document.documentElement) !== null;
       const root = getComputedStyle(document.documentElement);
       return {
         ink: getComputedStyle(chip).color,

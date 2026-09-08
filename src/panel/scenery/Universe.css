@@ -6,9 +6,13 @@
   position: absolute;
   inset: 0;
   overflow: hidden;
-  /* Pencil grey: the coloured mark desaturated to graphite and barely
-     there — the brain model's own background idiom. */
-  filter: grayscale(1);
+  /* Pencil grey by default: the coloured mark desaturated to graphite —
+     the brain model's own background idiom, and the splash keeps it whole.
+     HOST-TUNABLE since 2026-09-08: on the app's pale ground, full
+     grayscale suppresses the field into invisibility (grey-on-pale-grey),
+     so the app hands back a muted trace of the lattice's own colour
+     through --universe-grey. */
+  filter: grayscale(var(--universe-grey, 1));
 }
 /* One lattice: centred on its point, translucent by its presence, and
    turning at its own pace — a slow 2D turn laid over the shared orbit,

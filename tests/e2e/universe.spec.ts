@@ -1,7 +1,7 @@
 import { test, expect, chromium, type BrowserContext, type Page } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { UNIVERSE } from '../../src/core/splash/universe';
+import { APP_UNIVERSE, UNIVERSE } from '../../src/core/splash/universe';
 
 /**
  * V3.0 pass 1 — the universe as the app's canvas. This file SUCCEEDS
@@ -40,13 +40,15 @@ async function launchHome(reducedMotion: 'reduce' | 'no-preference'): Promise<{ 
 }
 
 test.describe('V3.0 — the universe grounds the app', () => {
-  test('seven faint lattices behind Home, aria-hidden, unclickable', async () => {
+  test('the app sky behind Home: lattices, aria-hidden, unclickable', async () => {
     const { context, page } = await launchHome('no-preference');
     try {
       const ground = page.locator('.app-ground .universe');
       await expect(ground).toHaveCount(1);
       await expect(page.locator('.app-ground')).toHaveAttribute('aria-hidden', 'true');
-      await expect(page.locator('.app-ground .universe-orb')).toHaveCount(UNIVERSE.length);
+      /* The app's own denser sky since 2026-09-08 — the splash keeps the
+         seven-lattice table it was composed with. */
+      await expect(page.locator('.app-ground .universe-orb')).toHaveCount(APP_UNIVERSE.length);
 
       const probe = await page.evaluate(() => {
         const orbs = [...document.querySelectorAll('.app-ground .universe-orb')];
@@ -59,10 +61,16 @@ test.describe('V3.0 — the universe grounds the app', () => {
       });
       expect(probe.pointer).toBe('none');
       expect(Number(probe.z)).toBeLessThan(0);
-      // Faint, and boosted only by the host's stated exposure — never loud.
+      /* PRESENT, not faint (Adam, 2026-09-08: "the background around that
+         label should be the animated app, not a solid background") — the
+         old < 0.3 ceiling described the 1.7-dim era, when the probe found
+         a 543px lattice at 27% reading as a solid ground. The field now
+         has to be SEEN through the tint law's translucent cards, so the
+         ceiling moves to scenery's true upper bound: visible, never
+         opaque, never competing with ink. */
       for (const o of probe.opacities) {
-        expect(o).toBeGreaterThan(0.02);
-        expect(o).toBeLessThan(0.3);
+        expect(o).toBeGreaterThan(0.1);
+        expect(o).toBeLessThan(0.78);
       }
     } finally {
       await context.close();
@@ -92,7 +100,9 @@ test.describe('V3.0 — the universe grounds the app', () => {
     try {
       // The field STAYS — scenery is not motion, and hiding it would make
       // reduced motion a different product rather than a stiller one.
-      await expect(page.locator('.app-ground .universe-orb')).toHaveCount(UNIVERSE.length);
+      /* The app's own denser sky since 2026-09-08 — the splash keeps the
+         seven-lattice table it was composed with. */
+      await expect(page.locator('.app-ground .universe-orb')).toHaveCount(APP_UNIVERSE.length);
       const still = await page.evaluate(() => {
         const orb = document.querySelector('.app-ground .universe-orb')!;
         const inner = orb.querySelector('svg, [class]');

@@ -1,5 +1,6 @@
 import { BrandMark } from '../components';
 import { UNIVERSE } from '../../core/splash/universe';
+import type { UniverseOrb } from '../../core/splash/universe';
 import './Universe.css';
 
 /**
@@ -25,10 +26,14 @@ import './Universe.css';
  */
 export { UNIVERSE } from '../../core/splash/universe';
 
-export function Universe() {
+/** One component, two SKIES now (2026-09-08): the splash keeps the
+ *  seven-lattice table it was composed with; the app passes its own
+ *  denser APP_UNIVERSE so the field crosses the page's tiles instead of
+ *  skirting them. The default keeps every existing host unchanged. */
+export function Universe({ orbs = UNIVERSE }: { orbs?: readonly UniverseOrb[] }) {
   return (
     <div className="universe" aria-hidden="true">
-      {UNIVERSE.map((u) => (
+      {orbs.map((u) => (
         <span
           key={`${u.x}-${u.y}`}
           className="universe-orb"

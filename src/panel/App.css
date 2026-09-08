@@ -35,14 +35,20 @@
   border: 0;
 }
 
-/* V2.4 VB-111 — the one canvas. The body paints --ground (so anything that
-   asks "what ground is this text really on" — including the contrast
-   measurements in the e2e suites — finds a real color, never transparent),
-   and the backdrop div holds the wall at negative z-index: above the body's
-   own paint, below every surface. Fixed, full-viewport, inert. */
-html,
-body {
+/* V2.4 VB-111 said "the body paints --ground". SUPERSEDED 2026-09-08, and
+   the split below is the whole story of a day: an element's own background
+   paints ABOVE its negative-z children, so body's --ground fill sat OVER
+   the fixed universe and every dial we turned — the field only ever showed
+   in the browser's default 8px body margins, which is exactly the "better
+   where I can see it" strip Adam described. html keeps --ground painting
+   the canvas (contrast still measures against a real colour and the page
+   never shows the void); body goes transparent so its negative-z ground
+   layer — the universe and its aura — finally reads through every surface. */
+html {
   background: var(--ground);
+}
+body {
+  background: transparent;
 }
 /* AND THE DOCUMENT DOES NOT OVERFLOW BY THE BOTTOM MARGIN NOBODY ASKED FOR.
 
@@ -71,8 +77,71 @@ body {
   inset: 0;
   z-index: -1;
   pointer-events: none;
-  /* V3.0 pass 1: the universe reads through a dense screen's furniture
-     dimmer than behind the splash's one card - the lift keeps the two
-     EXPERIENCES consistent, which is what the brief asks of the canvas. */
-  --universe-dim: 1.7;
+  /* V3.0 pass 1 set 1.7 so the field read dimmer under a dense screen.
+     RAISED to 3.1 (Adam, 2026-09-08: "the background around that label
+     should be the animated app, not a solid background") - the probe
+     showed no solid layer anywhere: every wrapper was already
+     transparent, and a 543px lattice sat dead-centre of Home at 27%
+     grayscale opacity, invisible under the pale ground. The field has to
+     be PRESENT to be seen through the tints; this puts the orbs at
+     ~0.3-0.5, scenery that reads. */
+  --universe-dim: 1.9;
+  /* And a muted trace of the lattice's colour (the splash stays pure
+     graphite): grey-on-pale-grey was the other half of the invisibility. */
+  --universe-grey: 0.6;
+}
+/* THE AURA (2026-09-08; Adam: "I want all of the labels and tiles to lay
+   over a single background, not have the vibrant background barely
+   visible"). The verdict of three probes: the lattices are hairline RIMS —
+   at any opacity their total ink is a few thin strokes per tile, and no
+   dial makes hairlines read as a field. So the app's sky gains what the
+   page actually needed: two large, slow colour washes in the brand family
+   drifting UNDER the lattice texture. Blurred radial gradients, tokens
+   only, pointer-inert, and stilled (not removed - scenery is not motion)
+   under reduced motion. The splash keeps its bare graphite field. */
+.app-ground::before,
+.app-ground::after {
+  content: '';
+  position: absolute;
+  width: 640px;
+  height: 640px;
+  border-radius: 50%;
+  filter: blur(70px);
+  pointer-events: none;
+}
+.app-ground::before {
+  left: -190px;
+  top: 40px;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--violet) 14%, transparent),
+    transparent 72%
+  );
+  animation: app-aura-a 46s ease-in-out infinite alternate;
+}
+.app-ground::after {
+  right: -210px;
+  top: 360px;
+  background: radial-gradient(
+    closest-side,
+    color-mix(in srgb, var(--globe-node-2-solid) 12%, transparent),
+    transparent 72%
+  );
+  animation: app-aura-b 58s ease-in-out infinite alternate;
+}
+@keyframes app-aura-a {
+  to {
+    transform: translate(130px, 170px);
+  }
+}
+@keyframes app-aura-b {
+  to {
+    transform: translate(-150px, -190px);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-ground::before,
+  .app-ground::after {
+    animation: none;
+  }
 }
