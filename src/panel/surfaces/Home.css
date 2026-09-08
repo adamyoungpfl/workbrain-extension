@@ -165,6 +165,15 @@
 .home-card {
   box-shadow: var(--e-1);
 }
+/* A slight coloured edge in each tile's own palette (Adam, 2026-09-08) —
+   the identity accents the chips already wear, mixed toward the divider so
+   the line stays an edge, not a stroke. */
+.home-card[data-file='context'] {
+  border-color: color-mix(in srgb, var(--home-context) 45%, var(--divider));
+}
+.home-card[data-file='skills'] {
+  border-color: color-mix(in srgb, var(--home-skills) 45%, var(--divider));
+}
 /* THE ACTIVE ONE ALSO GLOWS — an outline in the file's own accent, drawn as a
    second shadow so it composes with the raise rather than replacing it. The
    ring is `inset` so it reads as the card's own edge lighting up rather than
@@ -629,7 +638,9 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  border: 1px solid var(--divider);
+  /* The border stood down 2026-09-08: the rows own their edges now
+     (segmented, each in its tile's own accent - see below). */
+  border: 0;
   border-radius: var(--r-lg);
   /* TRANSPARENT at Adam's word (2026-09-08: "the animated background
      [should] be visible across the page… those need to be transparent
@@ -641,8 +652,44 @@
   overflow: hidden;
 }
 
-.home-row + .home-row {
-  border-top: 1px solid var(--divider);
+/* SEGMENTED EDGES (Adam, 2026-09-08: on a shared line "the color for
+   Download your files should be on the top bar and on the lower bar the
+   color for Will It Really… So the last tile is the only one that is
+   outlined all the way around"). Each row owns its TOP and sides in its
+   own accent - so every shared line wears the lower row's colour - and
+   only the last row also owns a bottom: fully outlined, as he called it.
+   The container's own border stands down; its radius still clips. */
+.home-row {
+  --row-edge: var(--divider);
+  border: 1px solid var(--row-edge);
+  border-bottom: 0;
+}
+.home-row:last-child {
+  border-bottom: 1px solid var(--row-edge);
+}
+.home-row[data-tone='baseline'] {
+  --row-edge: color-mix(in srgb, var(--primary) 50%, var(--divider));
+}
+.home-row[data-tone='download'] {
+  --row-edge: color-mix(in srgb, var(--home-context) 50%, var(--divider));
+}
+.home-row[data-tone='prove'] {
+  --row-edge: color-mix(in srgb, var(--violet) 50%, var(--divider));
+}
+.home-row[data-tone='run'] {
+  --row-edge: color-mix(in srgb, var(--home-skills) 50%, var(--divider));
+}
+.home-row[data-tone='compare'] {
+  --row-edge: color-mix(in srgb, var(--green) 50%, var(--divider));
+}
+.home-row[data-tone='redeem'] {
+  --row-edge: color-mix(in srgb, var(--violet) 45%, var(--divider));
+}
+.home-row[data-tone='library'] {
+  --row-edge: color-mix(in srgb, var(--home-context) 45%, var(--divider));
+}
+.home-row[data-tone='plus'] {
+  --row-edge: color-mix(in srgb, var(--primary) 45%, var(--divider));
 }
 
 /* The hit box IS the row: read and pressed in one motion, and the 44px
@@ -925,7 +972,9 @@ a.home-row-hit:hover .home-row-go {
   width: 100%;
   min-height: var(--target-min);
   padding: 14px 16px;
-  border: 1px solid color-mix(in srgb, var(--primary) 52%, var(--ink));
+  /* The tile's own palette on its edge (Adam, 2026-09-08): the hero's
+     accent is the show's aqua. */
+  border: 1px solid color-mix(in srgb, var(--globe-node-2-solid) 45%, var(--ink));
   border-radius: 14px;
   background: color-mix(in srgb, var(--primary) 22%, var(--ink));
   text-align: left;

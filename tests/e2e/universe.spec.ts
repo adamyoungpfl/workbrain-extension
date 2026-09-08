@@ -68,9 +68,12 @@ test.describe('V3.0 — the universe grounds the app', () => {
          has to be SEEN through the tint law's translucent cards, so the
          ceiling moves to scenery's true upper bound: visible, never
          opaque, never competing with ink. */
+      /* Faded to "a more subtle part of the background" once the wall came
+         down (Adam, 2026-09-08) - the floor drops with the dial, the claim
+         stays: present, never opaque, never competing with ink. */
       for (const o of probe.opacities) {
-        expect(o).toBeGreaterThan(0.1);
-        expect(o).toBeLessThan(0.78);
+        expect(o).toBeGreaterThan(0.05);
+        expect(o).toBeLessThan(0.6);
       }
     } finally {
       await context.close();

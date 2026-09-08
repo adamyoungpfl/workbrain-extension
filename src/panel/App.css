@@ -85,10 +85,10 @@ body {
      grayscale opacity, invisible under the pale ground. The field has to
      be PRESENT to be seen through the tints; this puts the orbs at
      ~0.3-0.5, scenery that reads. */
-  --universe-dim: 1.9;
+  --universe-dim: 1.35;
   /* And a muted trace of the lattice's colour (the splash stays pure
      graphite): grey-on-pale-grey was the other half of the invisibility. */
-  --universe-grey: 0.6;
+  --universe-grey: 0.72;
 }
 /* THE AURA (2026-09-08; Adam: "I want all of the labels and tiles to lay
    over a single background, not have the vibrant background barely
@@ -114,7 +114,7 @@ body {
   top: 40px;
   background: radial-gradient(
     closest-side,
-    color-mix(in srgb, var(--violet) 14%, transparent),
+    color-mix(in srgb, var(--violet) 9%, transparent),
     transparent 72%
   );
   animation: app-aura-a 46s ease-in-out infinite alternate;
@@ -124,7 +124,7 @@ body {
   top: 360px;
   background: radial-gradient(
     closest-side,
-    color-mix(in srgb, var(--globe-node-2-solid) 12%, transparent),
+    color-mix(in srgb, var(--globe-node-2-solid) 8%, transparent),
     transparent 72%
   );
   animation: app-aura-b 58s ease-in-out infinite alternate;
