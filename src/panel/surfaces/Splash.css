@@ -36,6 +36,17 @@
   --pull: 0.16;
   --drain: 0;
 }
+/* THE REVEAL OWNS THE WHOLE HEIGHT (Adam, 2026-09-08, with his circled
+   shot: "move the logo/lockup up, vertically on the page and have the
+   animation sequence fade in and fade out in the vertical middle"). The
+   centred-block layout above is what parked the composition mid-low: the
+   column was centred as ONE lump. Stretched, the lockup pins to the top
+   and the stage takes the leftover height — SplashReveal.css centres the
+   acts and the doors inside it, which is the vertical middle his circle
+   marks. Scoped to the reveal phase; the intro's card keeps its centring. */
+.splash[data-phase='reveal'] {
+  align-items: stretch;
+}
 
 /* ── the show stage ─────────────────────────────────────────────────────── */
 .splash-stage {
@@ -520,7 +531,13 @@
 .splash-hold {
   display: flex;
   justify-content: center;
-  align-items: center;
+  /* Stretch, not center (2026-09-08): this wrapper sits between the
+     stretched splash and the reveal column, and centring here re-created
+     the centred-lump layout one level down — the earned state's lone door
+     proved it, sitting mid-low while the fresh state only LOOKED pinned
+     because its taller column nearly fills the panel. The reveal fills the
+     wrapper; its own stage centres the acts in the leftover height. */
+  align-items: stretch;
   width: 100%;
 }
 

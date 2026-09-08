@@ -9,8 +9,12 @@
   width: 100%;
   padding: 0 26px;
   text-align: center;
-  /* Up a bit more at Adam's word (2026-09-04, from his framing shot). */
-  margin-top: 8px;
+  /* The lockup pins to the TOP now (Adam, 2026-09-08) — the splash
+     stretches this column to the full height and the stage below claims
+     the slack, so no top margin is doing the framing any more. */
+  margin-top: 0;
+  min-height: 0;
+  flex: 1;
 }
 
 /* Each part moves by TRANSFORM only. Transforms do not touch layout, which is
@@ -25,6 +29,12 @@
   flex-direction: column;
   align-items: center;
   gap: 8px;
+  /* PART OF THE SEQUENCE, not a header (Adam, 2026-09-08 second pass:
+     "Increase the padding above the logo lockup and decrease the padding
+     between the logo lockup and the revolving section below"). The lockup
+     steps down toward the acts; the stage's bottom bias grows by the same
+     6vh so the revolving area itself does not move. */
+  margin-top: 6vh;
 }
 
 /* THE CONNECTORS ARE GONE (Adam, 2026-09-03, the simplification): the
@@ -171,10 +181,23 @@
 .splashreveal-stage {
   display: grid;
   align-items: center;
+  /* The stage takes the column's whole leftover height and centres its one
+     cell at the PAGE's middle (Adam, 2026-09-08, his circle at ~40-45% of
+     the panel): the leftover space runs from the tagline to the panel's
+     foot, so plain centring within it landed the door at 66% — the bottom
+     padding hands back the space below the optical middle, and `safe`
+     clamps the tall fresh cluster against the tagline instead of letting
+     it climb into it. Probed: the lone door's middle at ~390/760. */
+  align-content: safe center;
   justify-items: center;
   width: 100%;
-  /* 28, was 56: the whole frame moved up a bit (Adam, 2026-09-04). */
-  margin-top: 28px;
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-top: 0;
+  /* 38vh, was 32: grown by the lockup's new 6vh step-down (second pass),
+     so the acts' centre holds at the page's optical middle while the gap
+     between the tagline and the revolving area tightens. */
+  padding-bottom: 38vh;
 }
 .splashreveal-stage > * {
   grid-area: 1 / 1;
@@ -197,6 +220,13 @@
     align-items: center;
     gap: 12px;
     margin-top: 12px;
+    /* The optical-middle bias is motion money: the composed still needs
+       every row of the pitch on screen, not pushed under the fold. */
+    padding-bottom: 0;
+  }
+  /* The lockup's step-down is motion money too — same fold, same reason. */
+  .splashreveal-part[data-part='lockup'] {
+    margin-top: 0;
   }
 }
 
