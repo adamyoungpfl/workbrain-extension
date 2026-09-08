@@ -7,6 +7,7 @@ import { generateSkillsFile } from '../core/files/skillsFile';
 import { Flow } from './surfaces/Flow';
 import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
+import { SkillsHub } from './surfaces/SkillsHub';
 import { Splash } from './surfaces/Splash';
 import { Universe } from './scenery/Universe';
 import { APP_UNIVERSE } from '../core/splash/universe';
@@ -68,7 +69,7 @@ const proofModules = buildProofModules({
  * on Home and re-derives the shelf, the file and the interview's position from
  * `wb:answers`.
  */
-type Surface = 'home' | 'file' | 'flow' | 'multiples' | 'actions';
+type Surface = 'home' | 'file' | 'flow' | 'multiples' | 'actions' | 'skillshub';
 /** BS-04 (§4) adds `capability` — proof two. It runs on the SKILLS store,
  * which is what makes the offer cheap: the recipes it hands over are that
  * store's own records. */
@@ -373,8 +374,7 @@ export default function App() {
             setFileId(id);
             setSurface('file');
           }}
-          onOpenProof={openProof}
-          onOpenCapability={openCapability}
+          onOpenSkillsHub={() => setSurface('skillshub')}
           onOpenMultiples={() => setSurface('multiples')}
         />
       );
@@ -427,6 +427,12 @@ export default function App() {
       );
     }
 
+    if (surface === 'skillshub') {
+      /* Pass 4c - the skills hub: Create (activator sheet, hub-hosted),
+         Review (Skill Training - the same capability route the old row
+         took), Redeem (the certified library on the site). */
+      return <SkillsHub onBack={goHome} onReview={openCapability} />;
+    }
     if (surface === 'multiples') {
       return (
         <Multiples

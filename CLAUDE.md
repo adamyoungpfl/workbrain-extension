@@ -223,7 +223,10 @@ The interface is mostly words and the words are specified, not improvised.
 - Errors say what to do next, never what went wrong. Never apologise, never blame.
 - Target reading grade 7. If a sentence runs past 20 words, split it.
 
-The four steps are **Name · Repeat · Act · Share** in the interface. "Gate" is an internal word.
+The four steps are **Baseline · Context · Skill · Prove** in the interface
+(pass 4c, 2026-09-08 — the journey spine, superseding Name · Repeat · Act ·
+Share at Adam's word: the old four "doesn't capture the momentum or spirit
+of the goal"). "Gate" is still an internal word.
 
 ## Definition of done
 

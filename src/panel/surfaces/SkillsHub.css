@@ -1,0 +1,87 @@
+/* The skills hub — three doors in the tint law's own grammar: clickable
+   wears the light interactive tint over the field, waiting stands bare,
+   and every door carries the skills family on its edge. */
+.skillshub {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 10px 14px 20px;
+  min-height: 100dvh;
+}
+.skillshub-head {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+}
+.skillshub-title {
+  margin: 6px 0 0;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+}
+.skillshub-sub {
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}
+.skillshub-doors {
+  list-style: none;
+  margin: 4px 0 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.skillshub-door {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+  min-height: var(--target-min);
+  padding: 13px 15px;
+  border: 1px solid color-mix(in srgb, var(--home-skills) 55%, var(--divider));
+  border-radius: var(--r-lg);
+  background: color-mix(in srgb, var(--ink-inv) 45%, transparent);
+  font: inherit;
+  color: inherit;
+  text-align: left;
+  text-decoration: none;
+  cursor: pointer;
+  transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease);
+}
+.skillshub-door:hover {
+  border-color: var(--home-skills);
+  background: color-mix(in srgb, var(--ink-inv) 70%, transparent);
+}
+.skillshub-door:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.skillshub-door.is-waiting {
+  background: transparent;
+  border-color: var(--divider);
+  cursor: default;
+}
+.skillshub-kicker {
+  font-size: 10.5px;
+  font-weight: 750;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--home-skills);
+}
+.skillshub-door.is-waiting .skillshub-kicker {
+  color: var(--ink-3);
+}
+.skillshub-name {
+  font-size: 15px;
+  font-weight: 650;
+  color: var(--ink);
+}
+.skillshub-line {
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: var(--ink-2);
+}

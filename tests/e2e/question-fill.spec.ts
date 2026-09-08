@@ -7,7 +7,6 @@ import { FLOW_NAV_GAP } from '../../src/core/flow/dock';
 import { drawerBounds } from '../../src/core/drawer/height';
 import { CLUSTER_MAX_INTERNAL_GAP, inspectCluster, questionAreaHeight } from '../../src/core/flow/composition';
 import type { MeasuredRow } from '../../src/core/flow/composition';
-import { S } from '../../src/panel/strings';
 import type { AnswerValue, Module, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
 
@@ -619,20 +618,28 @@ test.describe('VB-17 — one composed cluster, and the slack in one place', () =
     // tiles are dormant until then), so the seed answers EVERY question —
     // a step id no module holds means the builder never stops early. What
     // this test is about is unchanged: the one flow with no drawer under it.
+    /* Pass 4c: the proof opens at the interview's own finish now. */
+    const seeded = answersUpTo(contextModules, null);
+    delete seeded.values['reference_example_primary'];
+    delete seeded.answeredAt['reference_example_primary'];
+    delete seeded.reflectedAt['reference_example_primary'];
     await sw.evaluate(async (value) => {
       await chrome.storage.local.set({ 'wb:answers': value });
-    }, answersUpTo(contextModules, null));
+    }, seeded);
     const page = await context.newPage();
     await page.setViewportSize(PANEL);
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
-    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
-    // is its keyboard exit, and nothing else about this walk-in changed.
     await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
-    // The proof loop, which writes no file and so docks nothing.
-    await page.getByRole('button', { name: S.proofCta }).click();
+    await page.getByRole('button', { name: /^Context\.md/ }).click();
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
     await page.waitForSelector('.flow');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.locator('.flow[data-step-id="reference_example_primary"]').waitFor();
+    await page.locator('.flow textarea').fill('A last answer, written to finish the file.');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.locator('.flow[data-step-id="proof_baseline"]').waitFor({ timeout: 15_000 });
 
     // The proof loop has no dock to fill down to, so it keeps V1.2's layout:
     // no shell, no min-height, an ordinary footer at the end of the content.

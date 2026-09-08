@@ -84,39 +84,49 @@ const seed = (sw: Worker, skills: Answers) =>
   sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers:skills': a }), skills);
 
 async function intoTheRun(page: Page) {
-  await page.getByRole('button', { name: S.capCta, exact: true }).click();
+  /* Pass 4c: Skill Training is the hub's REVIEW door. */
+  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+  await page.waitForSelector('.skillshub');
+  await page.getByRole('button', { name: new RegExp(S.capCta) }).click();
   await page.waitForSelector('.capoffer');
+}
+
+/** The hub's Review door, where the earned gate lives since pass 4c. */
+async function reviewDoor(page: Page) {
+  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+  await page.waitForSelector('.skillshub');
+  return page.locator('.skillshub-door').filter({ hasText: S.capCta });
 }
 
 test.describe('BS-04 — proof two, the capability proof', () => {
   test('the door waits for two runnable recipes, and says so in words', async () => {
     const { context, sw, id } = await launch();
 
-    // Nothing at all.
+    // Nothing at all - the hub's Review door stands bare and uncontrolled.
     let page = await openHome(context, id);
-    let row = page.locator('.home-row').filter({ hasText: S.capCta });
-    await expect(row).toHaveClass(/is-waiting/);
-    await expect(row).toContainText(S.capRowWaiting);
-    // A waiting row is not a disabled control — it is not a control at all.
-    await expect(row.locator('button')).toHaveCount(0);
+    let door = await reviewDoor(page);
+    await expect(door).toHaveClass(/is-waiting/);
+    await expect(door).toContainText(S.capRowWaiting);
+    // A waiting door is not a disabled control — it is not a control at all.
+    expect(await door.evaluate((el) => el.tagName)).toBe('DIV');
     await page.close();
 
     // One recipe is still not two. The gate counts RUNNABLE skills, so a
     // second one with no steps would not open it either.
     await seed(sw, ONE_SKILL);
     page = await openHome(context, id);
-    row = page.locator('.home-row').filter({ hasText: S.capCta });
-    await expect(row).toHaveClass(/is-waiting/);
+    door = await reviewDoor(page);
+    await expect(door).toHaveClass(/is-waiting/);
     await page.close();
 
     // Two, and the door is real — with the Skills interview nowhere near
     // finished (§4: "without finishing all of Skills").
     await seed(sw, TWO_SKILLS);
     page = await openHome(context, id);
-    row = page.locator('.home-row').filter({ hasText: S.capCta });
-    await expect(row).not.toHaveClass(/is-waiting/);
-    await expect(row).toContainText(S.capRowSub);
-    await expect(page.getByRole('button', { name: S.capCta, exact: true })).toBeVisible();
+    door = await reviewDoor(page);
+    await expect(door).not.toHaveClass(/is-waiting/);
+    await expect(door).toContainText(S.capRowSub);
+    expect(await door.evaluate((el) => el.tagName)).toBe('BUTTON')
 
     await context.close();
   });
@@ -271,7 +281,8 @@ test.describe('BS-04 — proof two, the capability proof', () => {
     // What must never happen is a blank offer with a copy button on it.
     await seed(sw, ONE_SKILL);
     const page = await openHome(context, id);
-    await expect(page.locator('.home-row').filter({ hasText: S.capCta })).toHaveClass(/is-waiting/);
+    const door = await reviewDoor(page);
+    await expect(door).toHaveClass(/is-waiting/);
     await expect(page.locator('.capoffer')).toHaveCount(0);
     await context.close();
   });

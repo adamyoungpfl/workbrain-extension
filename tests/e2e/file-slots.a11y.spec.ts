@@ -1,4 +1,5 @@
 import { test, expect, chromium } from '@playwright/test';
+import { S } from '../../src/panel/strings';
 import AxeBuilder from '@axe-core/playwright';
 import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
@@ -109,7 +110,13 @@ async function inkAndGround(page: Page, selector: string): Promise<{ ink: Rgb; g
       grounds.push(getComputedStyle(node).backgroundColor);
       node = node.parentElement;
     }
-    grounds.push(getComputedStyle(document.body).backgroundColor, 'rgb(255, 255, 255)');
+    /* body is transparent since the wall came down (2026-09-08); html is
+       where the real canvas colour lives now. */
+    grounds.push(
+      getComputedStyle(document.body).backgroundColor,
+      getComputedStyle(document.documentElement).backgroundColor,
+      'rgb(255, 255, 255)',
+    );
     return { ink, grounds };
   });
 
@@ -186,16 +193,17 @@ test('a locked slot’s name and its unlock line both clear 4.5:1 (VB-36)', asyn
   // V2.9 VB-146 — Actions' locked row used to make the same claims with its
   // own line. The row is hidden for the beta; the claim comes back with it.
 
-  // BS-06 replaced VB-147's dormant tiles with waiting ROWS, and the reason
-  // the check survives the swap is unchanged: a row that is not yet a door is
-  // not a control, so axe skips its words, and dormant is "not yet" — never
-  // "unreadable". Both halves of the row are checked, because the subtitle is
-  // the half that says when it unlocks.
-  await expect(page.locator('.home-row.is-waiting')).not.toHaveCount(0);
-  for (const part of ['.home-row-label', '.home-row-sub']) {
-    const dormant = await inkAndGround(page, `.home-row.is-waiting ${part}`);
+  /* The waiting grammar lives in the SKILLS HUB since pass 4c (Home's
+     fresh list has no waiting rows left) - the claim is unchanged, and it
+     is measured where the dormant words actually stand now: axe skips a
+     non-control's text, GUARDRAILS does not. */
+  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+  await page.waitForSelector('.skillshub');
+  await expect(page.locator('.skillshub-door.is-waiting')).not.toHaveCount(0);
+  for (const part of ['.skillshub-name', '.skillshub-line']) {
+    const dormant = await inkAndGround(page, `.skillshub-door.is-waiting ${part}`);
     const ratio = contrastRatio(dormant.ink, dormant.ground);
-    expect(ratio, `a waiting row's ${part} reads at ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
+    expect(ratio, `the waiting door's ${part} reads at ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
   }
 
   await context.close();

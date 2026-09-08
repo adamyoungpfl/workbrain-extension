@@ -3,56 +3,42 @@ import type { Answers, ReportState } from '../../schema/storage.types';
 import { sectionHealthMap } from '../freshness/sectionHealth';
 
 /**
- * V2.6 VB-125 — the utilization meter's one formula.
+ * V2.6 VB-125 built this meter on Name · Repeat · Act · Share. REBUILT for
+ * pass 4c (Adam, 2026-09-08): "Name, Act, Repeat and Share doesn't feel
+ * like it captures the momentum or spirit of the goal of the app any
+ * longer" — the goal being "the right visible momentum to get the context
+ * file and at least a single skill file built and ready to prove it out."
  *
- * Adam's semantics, decided 2026-08-26 (docs/V2.6-REFINEMENT.md, decision 2):
- * "Utilization is a generalized percent based on completion of context and
- * skills. The gaps for Act and Share fill out the remaining percentages to be
- * fully utilized, necessitating services or outside work on the file to have
- * it measure 100%."
+ * So the four segments are now the app's own journey, in the order Home's
+ * doors already stand: BASELINE → CONTEXT → SKILL → PROVE.
  *
- * Four segments, a quarter each — the four steps the interface already names
- * (Name · Repeat · Act · Share):
+ *   BASELINE  the starting point taken: a baseline run exists (performed
+ *             and judged - the pre-launch errand).
+ *   CONTEXT   how much of the Context interview is really answered -
+ *             answered over askable (`sectionHealthMap`; a skip is not an
+ *             answer, slots.ts's settled precedent).
+ *   SKILL     momentum to a skill file that could RUN: the Skills
+ *             interview's own fraction and the acting-decision fraction
+ *             (autonomy chosen, data home known - the same inputs
+ *             Actions.md derives from), half each.
+ *   PROVE     the head-to-head taken: a with-file run exists beside the
+ *             baseline (stage 'context' in the report's runs).
  *
- *   NAME    how much of the Context interview is really answered — answered
- *           questions over askable questions, the same tally the section
- *           rows print (`sectionHealthMap`; a skip is not an answer, per
- *           slots.ts's settled precedent).
- *   REPEAT  the same fold over the Skills interview.
- *   ACT     of the skills the person has NAMED, how many carry a real acting
- *           decision — an autonomy answer given, and a data home that is not
- *           "not_sure". These are exactly the inputs Actions.md derives from
- *           (core/files/deriveActions.ts); "not sure" prints there as a
- *           finding, and here as the gap it is. No skills named, no credit.
- *   SHARE   evidence the file has left the nest, read off state that already
- *           exists for its own reasons: the proof loop's self-reported
- *           scores (`wb:report` — a number the person TYPED), and minted
- *           record ids on the skills store (`recordIds` — written when a
- *           pack is saved or added, VB-124's identity stamps). Half each.
- *
- * ── THE AUTHORSHIP GUARD, APPLIED ─────────────────────────────────────────
- *
- * Every input above is either content the person authored or a stamp the
- * product already stores for a functional reason. Nothing here observes
- * usage, counts opens, or stores anything of its own — the whole result is
- * derived at render and thrown away ("nothing derived is stored"). This is
- * also why 100% genuinely requires outside work: the meter cannot and will
- * not watch the person use their file, so the Share segment fills only from
- * things they did and typed.
- *
- * And it is not the "composite score" GUARDRAILS bans: like `sectionPercent`
- * before it (V1.6 VB-33's reading of the same rule), every segment is one
- * real ratio of two real counts, and the total is those four quarters — the
- * banned thing is an invented index over unlike dimensions dressed as
- * precision, not arithmetic the person could redo themselves.
+ * ── THE AUTHORSHIP GUARD, UNCHANGED ───────────────────────────────────────
+ * Every input is content the person authored or a run they performed AND
+ * judged (GUARDRAILS' run-history rows). Nothing observes usage, nothing
+ * new is stored; the whole result is derived at render and thrown away.
+ * And it is still not the banned "composite score": each segment is one
+ * real ratio (or one real fact) the person could check themselves, and the
+ * total is four plain quarters.
  */
 
 export interface UtilizationSegments {
   /** 0–100 each, rounded for display. */
-  name: number;
-  repeat: number;
-  act: number;
-  share: number;
+  baseline: number;
+  context: number;
+  skill: number;
+  prove: number;
 }
 
 export interface Utilization {
@@ -114,30 +100,34 @@ function actFraction(skills: Answers): number {
   return ready.length / named.length;
 }
 
-/** Proof scores typed, and record ids minted — half the segment each. */
-function shareFraction(skills: Answers, report: ReportState | undefined): number {
-  const proved = (report?.scores?.length ?? 0) > 0;
-  const sharedIds = skills.recordIds?.['skills'] ?? [];
-  const minted = sharedIds.some((id) => typeof id === 'string' && id !== '');
-  return (proved ? 0.5 : 0) + (minted ? 0.5 : 0);
+/** The starting point taken - a baseline run performed and judged. */
+function baselineFraction(report: ReportState | undefined): number {
+  return (report?.runs ?? []).some((run) => run.stage === 'baseline') ? 1 : 0;
+}
+
+/** The head-to-head taken - a with-file run standing beside the baseline. */
+function proveFraction(report: ReportState | undefined): number {
+  return (report?.runs ?? []).some((run) => run.stage === 'context') ? 1 : 0;
 }
 
 export function computeUtilization(input: UtilizationInput): Utilization {
   const exact = [
+    baselineFraction(input.report),
     interviewFraction(input.contextOutline, input.contextModules, input.context, input.now),
-    interviewFraction(input.skillsOutline, input.skillsModules, input.skills, input.now),
-    actFraction(input.skills),
-    shareFraction(input.skills, input.report),
+    (interviewFraction(input.skillsOutline, input.skillsModules, input.skills, input.now) +
+      actFraction(input.skills)) /
+      2,
+    proveFraction(input.report),
   ] as const;
 
   const firstOpen = exact.findIndex((f) => f < 1);
   return {
     percent: Math.round((exact.reduce((sum, f) => sum + f, 0) / 4) * 100),
     segments: {
-      name: Math.round(exact[0] * 100),
-      repeat: Math.round(exact[1] * 100),
-      act: Math.round(exact[2] * 100),
-      share: Math.round(exact[3] * 100),
+      baseline: Math.round(exact[0] * 100),
+      context: Math.round(exact[1] * 100),
+      skill: Math.round(exact[2] * 100),
+      prove: Math.round(exact[3] * 100),
     },
     currentStep: (firstOpen === -1 ? 4 : firstOpen + 1) as 1 | 2 | 3 | 4,
   };

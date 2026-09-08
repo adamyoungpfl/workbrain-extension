@@ -51,7 +51,11 @@ async function launchHome(): Promise<{ context: BrowserContext; page: Page; sw: 
 }
 
 async function openSheet(page: Page): Promise<void> {
-  await page.getByRole('button', { name: S.tileRedeem, exact: true }).click();
+  /* Pass 4c: the Activator is the skills hub's CREATE door now - one hop
+     through the destination the three skills rows became. */
+  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+  await page.waitForSelector('.skillshub');
+  await page.getByRole('button', { name: new RegExp(S.hubCreateName) }).click();
   await page.waitForSelector('.redeem');
 }
 

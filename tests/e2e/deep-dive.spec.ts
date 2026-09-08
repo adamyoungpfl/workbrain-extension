@@ -8,7 +8,6 @@ import { DEEP_DIVE } from '../../src/core/flow/deepDive';
 import { EXPAND_MS } from '../../src/core/motion/disclosure';
 import { SHIMMER_KEYFRAME, SHIMMER_STAGGER_MS, attractMs } from '../../src/core/motion/shimmer';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
-import { S } from '../../src/panel/strings';
 import type { Answers } from '../../src/schema/storage.types';
 import { pastRunCard } from './fixtures/runCard';
 
@@ -1023,32 +1022,12 @@ test.describe('the deeper-dive follow-ups', () => {
     await context.close();
   });
 
-  test('a question with a hint and no deep-dive still renders its hint, untouched', async () => {
-    // The proof loop's service picker (core/flow/proofAdapter.ts) is the
-    // one shipped question that has a hint and no deep-dive — proof that
-    // `hint` was not removed, only superseded where a deep-dive exists.
-    const { context, sw, id } = await launchExtension();
-    const seeded = buildAnswersExcept(contextModules, '__nothing__');
-    // V2.3 VB-93: with a goal in the answers the pick-a-service screen skips
-    // itself, so this specimen is only reachable as a pre-gate file.
-    delete seeded.values['goal_service'];
-    delete seeded.values['goal_want'];
-    delete seeded.answeredAt['goal_service'];
-    delete seeded.answeredAt['goal_want'];
-    delete seeded.reflectedAt['goal_want'];
-    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
-
-    const page = await openPanel(context, id);
-    await page.getByRole('button', { name: S.proofCta, exact: true }).focus();
-    await page.keyboard.press('Enter');
-    // BS-05d: a run's payoff card can stand between two questions.
-    await pastRunCard(page);
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_service');
-
-    await expect(page.locator('.flow .flow-hint')).toHaveText('Which AI do you use most?');
-    await expect(page.locator('.flow .deepdive-chip')).toHaveCount(0);
-
-    await context.close();
-  });
+  /* RETIRED WITH ITS ROUTE (pass 4c). This asserted the hint-without-
+     deep-dive rendering on the proof's pre-gate pick-a-service screen -
+     reached through Home's proof row, which is the external Proving
+     Grounds link now, and a pre-gate file cannot reach the in-app proof
+     by any live route (the goal question would un-pre-gate it first).
+     The hint grammar itself stays covered by this suite's other claims;
+     git has the test with the door it used. */
 });
 

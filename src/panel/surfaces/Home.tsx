@@ -25,7 +25,6 @@ import { currentSectionTitle } from '../../core/home/currentSection';
    still writes the real file from the same generator, one layer down. */
 import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { recMinutes } from '../../core/recommend/estimate';
-import { capabilityReady } from '../../core/proof/capability';
 import { multipleRecordCount } from '../../core/flow/multiples';
 import { fileAsked, fileFinished, shownFileSlots } from '../../core/files/slots';
 import type { FileSlot, FileSlotId } from '../../core/files/slots';
@@ -39,7 +38,6 @@ import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dis
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
 import { downloadContextFile, downloadSkillsFile, downloadWorkbrainFolder } from './FileActions';
 import { UploadSheet } from './UploadSheet';
-import { RedeemSheet } from './RedeemSheet';
 import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
 import { Comparison } from './Comparison';
@@ -85,10 +83,12 @@ export interface HomeProps {
    * (a generated view, not an interview) once Skills is finished.
    */
   onOpenFile: (id: FileSlotId) => void;
-  onOpenProof: () => void;
-  /** BS-04 (§4) — proof two. Its own door, because it proves a different
-   * thing: the file changing an answer versus the recipe getting done. */
-  onOpenCapability: () => void;
+  /** Pass 4c: the skills hub - Create/Review/Redeem in one destination. */
+  onOpenSkillsHub: () => void;
+  /* onOpenProof and onOpenCapability left this surface with pass 4c: the
+     proof door points at the public Proving Grounds page, and Skill
+     Training is the hub's Review door (App routes it there). The in-app
+     flows themselves are untouched. */
   /**
    * V1.7 VB-38: opens the list of roles, people and projects — the things the
    * file holds several of. Shown only when there is at least one of them, so
@@ -321,12 +321,7 @@ const RUN_ICON = (
   </svg>
 );
 
-const LIBRARY_ICON = (
-  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M3.5 4.2A2 2 0 0 1 5.5 2.5H9v13H5.5a2 2 0 0 0-2 1.2V4.2Z" />
-    <path d="M14.5 4.2a2 2 0 0 0-2-1.7H9v13h3.5a2 2 0 0 1 2 1.2V4.2Z" />
-  </svg>
-);
+/* LIBRARY_ICON retired with its row (pass 4c - the hub gathered the doors). */
 
 /* V2.8 VB-133: TIM_ICON left with its tile; the Redeemer's key stands
  * there now — a code that opens a skill. */
@@ -337,13 +332,7 @@ const PLUS_ICON = (
   </svg>
 );
 
-const REDEEM_ICON = (
-  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <circle cx="5.8" cy="6.4" r="3.1" />
-    <path d="M8.2 8.8 15.2 15.8" />
-    <path d="M12.4 13l1.9-1.9M14.4 15l1.9-1.9" />
-  </svg>
-);
+/* REDEEM_ICON retired with its row (pass 4c - the hub gathered the doors). */
 
 /** A card's status: the tone paints the dot and the words, and the WORDS are
  * the state — the tones reuse the semantic palette (green=current,
@@ -505,7 +494,7 @@ function LockedCard(props: { file: FileSlotId; reason: string }) {
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpenFile, onOpenProof, onOpenCapability, onOpenMultiples }: HomeProps) {
+export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpenFile, onOpenSkillsHub, onOpenMultiples }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   /** V2.2 — the second file's answers, for the shelf: whether Skills.md is
    * finished (which unlocks the DERIVED Actions.md), and what its row says.
@@ -522,7 +511,7 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [homeToast, setHomeToast] = useState<string | null>(null);
   /** V2.8 VB-133 — the Skill Redeemer's sheet, and its landed-toast. */
-  const [redeemOpen, setRedeemOpen] = useState(false);
+  /* redeemOpen left with the sheet - the hub hosts it now (pass 4c). */
   /** Spine step 3 — the comparison sheet. `report` is already loaded above for
    *  the meter's Share segment, so this reads it rather than fetching it twice
    *  and risking two answers to one question. */
@@ -685,7 +674,7 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
   /** BS-04 (§4) — "reachable after two skills without finishing all of
    * Skills", so this is a fold over the RECORDS rather than over the
    * interview's completeness (core/proof/capability.ts). */
-  const capabilityOpen = capabilityReady(skillsAnswers);
+  /* capabilityOpen moved to the hub with its door (pass 4c). */
 
   // V2.6 VB-125 — the meter's number and the lockup's meta line, derived on
   // every render like everything else here. The meta reuses the download
@@ -950,10 +939,10 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
         })()}
         current={utilization.currentStep}
         segments={[
-          { label: S.steps[0], percent: utilization.segments.name },
-          { label: S.steps[1], percent: utilization.segments.repeat },
-          { label: S.steps[2], percent: utilization.segments.act },
-          { label: S.steps[3], percent: utilization.segments.share },
+          { label: S.steps[0], percent: utilization.segments.baseline },
+          { label: S.steps[1], percent: utilization.segments.context },
+          { label: S.steps[2], percent: utilization.segments.skill },
+          { label: S.steps[3], percent: utilization.segments.prove },
         ]}
       />
       </div>
@@ -995,7 +984,7 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
                   ? { tone: 'quiet', label: S.sectionsOf(contextHealth.done, contextOutline.length) }
                   : { tone: 'quiet', label: S.notBuiltYet }
           }
-          barPercent={utilization.segments.name}
+          barPercent={utilization.segments.context}
           desc={S.cardContextDesc}
           // R-08 — "once the context file is active". Active is `hasStarted`:
           // one real answer in it. Not "finished", because a file somebody is
@@ -1014,7 +1003,7 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
                   ? { tone: 'quiet', label: S.sectionsOf(skillsHealth.done, skillsOutline.length) }
                   : { tone: 'quiet', label: S.skillsReady }
             }
-            barPercent={utilization.segments.repeat}
+            barPercent={utilization.segments.skill}
             desc={S.cardSkillsDesc}
             onOpen={() => onOpenFile('skills')}
           />
@@ -1150,32 +1139,29 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
             </div>
           }
         />
+        {/* PROVING GROUNDS (pass 4c; Adam, 2026-09-08): the door points at
+            the public site's head-to-head page - test your file against
+            your baseline in the service of your choice. The in-app proof
+            flow still runs from the interview's own finish. */}
         <HomeRow
           id="prove"
           icon={PROVE_ICON}
-          label={S.proofCta}
-          sub={contextComplete ? S.rowProveSub : S.tileWaitsOnContext}
-          ready={contextComplete}
-          onPress={contextComplete ? onOpenProof : undefined}
+          label={S.proveTitle}
+          sub={S.rowProveGroundsSub}
+          ready
+          href="https://www.model-citizen.org/work-brain/proving-grounds"
         />
-        {/* BS-04 (§4) — proof two, "the screen that sells the product".
-            Waiting, in the row grammar §6 built for exactly this, until two
-            recipes exist: the screen literally cannot run without steps, so
-            the gate and "does it work" are the same sentence
-            (core/proof/capability.ts). */}
+        {/* THE SKILLS HUB DOOR (pass 4c): Skill Activator, Skill Training
+            and Certified Skills were three rows; they are three doors in
+            one destination now - Create, Review, Redeem. */}
         <HomeRow
-          id="run"
+          id="skills"
           icon={RUN_ICON}
-          label={S.capCta}
-          sub={capabilityOpen ? S.capRowSub : S.capRowWaiting}
-          ready={capabilityOpen}
-          onPress={capabilityOpen ? onOpenCapability : undefined}
+          label={S.rowSkillsHub}
+          sub={S.rowSkillsHubSub}
+          ready
+          onPress={onOpenSkillsHub}
         />
-        {/* SPINE STEP 3 (docs/MEASUREMENT-SPINE.md) — the door onto the
-            comparison. It appears only once there is something to compare,
-            because a row that opens an empty screen is a row that teaches
-            somebody the product is not ready. `latestTask` is null until a
-            run exists, which is the same condition the surface itself uses. */}
         {compareTask && (
           <HomeRow
             id="compare"
@@ -1186,22 +1172,6 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
             onPress={() => setCompareOpen(true)}
           />
         )}
-        <HomeRow
-          id="redeem"
-          icon={REDEEM_ICON}
-          label={S.tileRedeem}
-          sub={S.rowRedeemSub}
-          ready
-          onPress={() => setRedeemOpen(true)}
-        />
-        <HomeRow
-          id="library"
-          icon={LIBRARY_ICON}
-          label={S.libTitle}
-          sub={S.rowLibrarySub}
-          ready
-          href="https://www.model-citizen.org/work-brain/skills-library"
-        />
         {/* Workbrain+ keeps its door and loses its pitch. The price and the
             four goods belong on the page this links to; on Home they cost
             ~230px and made the panel read as a storefront on the screen a
@@ -1241,17 +1211,7 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
       {/* V2.8 VB-133 — the Skill Redeemer: the code from a bought or
           commissioned skill lands the pack through VB-124's path; the
           toast speaks the share row's own words. */}
-      <RedeemSheet
-        open={redeemOpen}
-        onClose={() => setRedeemOpen(false)}
-        skills={skillsAnswers}
-        onSkills={async (next) => {
-          setSkillsAnswers(next);
-          const result = await setLocal('wb:answers:skills', next);
-          return result.ok;
-        }}
-        onRedeemed={(added, skipped) => setRedeemToast(S.skillsShareAdded(added, skipped))}
-      />
+{/* RedeemSheet moved into the SkillsHub with its door (pass 4c). */}
       {/* Spine step 3 — a sheet rather than a surface, because it is a thing
           you look at and close rather than a place you work. GUARDRAILS allows
           exactly one overlay and this is one: short, self-contained, escapable. */}

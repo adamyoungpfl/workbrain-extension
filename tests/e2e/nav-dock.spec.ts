@@ -408,13 +408,23 @@ test.describe('VB-11 — the nav is docked to the drawer', () => {
     // V2.9 VB-144: Home offers the proof loop once the interview is OVER —
     // the tile is dormant before that — so the seed answers every question.
     // A module id no module holds means the builder never stops early.
+    /* Pass 4c: the proof opens at the interview's own finish now. */
+    const seeded = answersUpToModule(contextModules, '__every_module__');
+    delete seeded.values['reference_example_primary'];
+    delete seeded.answeredAt['reference_example_primary'];
+    delete seeded.reflectedAt['reference_example_primary'];
     await sw.evaluate(async (value) => {
       await chrome.storage.local.set({ 'wb:answers': value });
-    }, answersUpToModule(contextModules, '__every_module__'));
+    }, seeded);
     const page = await openPanel(context, id);
-    // The proof loop writes no file, so there is nothing to dock to.
-    await page.getByRole('button', { name: S.proofCta }).click();
+    await page.getByRole('button', { name: /^Context\.md/ }).click();
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
     await page.waitForSelector('.flow');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.locator('.flow[data-step-id="reference_example_primary"]').waitFor();
+    await page.locator('.flow textarea').fill('A last answer, written to finish the file.');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.locator('.flow[data-step-id="proof_baseline"]').waitFor({ timeout: 15_000 });
     await expect(page.locator('.flowshell')).toHaveCount(0);
     await expect(page.locator('.filedrawer')).toHaveCount(0);
     expect(await page.locator('.flow-foot').evaluate((el) => getComputedStyle(el).position)).toBe('static');

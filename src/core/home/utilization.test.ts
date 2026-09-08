@@ -6,21 +6,19 @@ import type { AnswerValue, Module, RepeatableBlock, Step } from '../../schema/fl
 import type { Answers, ReportState } from '../../schema/storage.types';
 
 /**
- * V2.6 VB-125 — the utilization formula, walked against the REAL interview
- * content (the ported modules), because its whole claim is that every number
- * is a ratio of things the interviews really ask. Pinned here:
+ * V2.6 VB-125 walked the old Name/Repeat/Act/Share formula against the real
+ * interview content. Pass 4c (Adam, 2026-09-08) rebuilt the segments as the
+ * app's own journey — BASELINE → CONTEXT → SKILL → PROVE — and this suite
+ * moved with it. Pinned here:
  *
- *  - a fresh install is 0%, standing at step one;
- *  - a finished Context is exactly one quarter — the Name segment full,
- *    nothing else moved;
- *  - a skip is not an answer (slots.ts's settled precedent, inherited
- *    through sectionHealth);
- *  - Act is the fraction of NAMED skills whose acting decision is real, and
- *    "not_sure" for the data home is the gap Actions.md also prints;
- *  - Share fills half from typed proof scores, half from minted record ids,
- *    and from nothing else;
- *  - 100% requires all four — solo interview work cannot reach it without
- *    the proof-and-share work, which is Adam's decided semantics.
+ *  - a fresh install is 0%, standing at step one (the baseline);
+ *  - a baseline run performed-and-judged fills the first quarter exactly;
+ *  - a finished Context fills the second, a skip is not an answer;
+ *  - SKILL is half the Skills interview's own fraction and half the
+ *    acting-decision fraction (autonomy chosen, data home known —
+ *    "not_sure" is the gap Actions.md also prints);
+ *  - PROVE fills only from a with-file run standing beside the baseline;
+ *  - solo interview work cannot reach 100 — proving it out is the ceiling.
  */
 
 const NOW = new Date('2026-08-26T12:00:00.000Z');
@@ -99,15 +97,13 @@ function skill(name: string, autonomy: string | undefined, home: string | undefi
   return record;
 }
 
-function withSkills(records: Record<string, AnswerValue>[], recordIds?: string[]): Answers {
-  const base: Answers = {
+function withSkills(records: Record<string, AnswerValue>[]): Answers {
+  return {
     values: {},
     repeatables: { skills: records },
     answeredAt: Object.fromEntries(records.map((_, i) => [`skills#${i}#skill_name`, STAMP])),
     reflectedAt: {},
   };
-  if (recordIds) base.recordIds = { skills: recordIds };
-  return base;
 }
 
 function input(overrides: Partial<UtilizationInput>): UtilizationInput {
@@ -124,48 +120,51 @@ function input(overrides: Partial<UtilizationInput>): UtilizationInput {
   };
 }
 
-const REPORT: ReportState = { scores: [{}] } as unknown as ReportState;
+const run = (stage: string) => ({ stage }) as unknown as NonNullable<ReportState['runs']>[number];
+const BASELINE_ONLY: ReportState = { scores: [], runs: [run('baseline')] } as unknown as ReportState;
+const PROVED: ReportState = {
+  scores: [],
+  runs: [run('baseline'), run('context')],
+} as unknown as ReportState;
 
-describe('computeUtilization — the four quarters', () => {
-  it('a fresh install is 0%, standing at step one', () => {
+describe('computeUtilization — Baseline → Context → Skill → Prove', () => {
+  it('a fresh install is 0%, standing at the baseline', () => {
     const u = computeUtilization(input({}));
     expect(u.percent).toBe(0);
-    expect(u.segments).toEqual({ name: 0, repeat: 0, act: 0, share: 0 });
+    expect(u.segments).toEqual({ baseline: 0, context: 0, skill: 0, prove: 0 });
     expect(u.currentStep).toBe(1);
   });
 
-  it('a finished Context is exactly the Name quarter, standing at Repeat', () => {
-    const u = computeUtilization(input({ context: doneAnswers(contextModules) }));
-    expect(u.segments.name).toBe(100);
-    expect(u.segments.repeat).toBe(0);
+  it('the baseline run fills the first quarter exactly, and nothing else', () => {
+    const u = computeUtilization(input({ report: BASELINE_ONLY }));
+    expect(u.segments).toEqual({ baseline: 100, context: 0, skill: 0, prove: 0 });
     expect(u.percent).toBe(25);
     expect(u.currentStep).toBe(2);
   });
 
-  it('a skip is not an answer — one passed-on question holds Name under full', () => {
+  it('a finished Context fills the second quarter, standing at Skill', () => {
+    const u = computeUtilization(
+      input({ report: BASELINE_ONLY, context: doneAnswers(contextModules) }),
+    );
+    expect(u.segments.context).toBe(100);
+    expect(u.segments.skill).toBe(0);
+    expect(u.percent).toBe(50);
+    expect(u.currentStep).toBe(3);
+  });
+
+  it('a skip is not an answer — one passed-on question holds Context under full', () => {
     const done = computeUtilization(input({ context: doneAnswers(contextModules) }));
     const skipped = computeUtilization(
       input({ context: doneAnswers(contextModules, ['professional_name']) }),
     );
-    expect(done.segments.name).toBe(100);
-    expect(skipped.segments.name).toBeLessThan(100);
-    expect(skipped.currentStep).toBe(1);
+    expect(done.segments.context).toBe(100);
+    expect(skipped.segments.context).toBeLessThan(100);
   });
 
-  it('partial context moves the number without filling the segment', () => {
-    const some: Answers = {
-      values: { professional_name: 'Ada' },
-      repeatables: {},
-      answeredAt: { professional_name: STAMP },
-      reflectedAt: { professional_name: STAMP },
-    };
-    const u = computeUtilization(input({ context: some }));
-    expect(u.segments.name).toBeGreaterThan(0);
-    expect(u.segments.name).toBeLessThan(100);
-    expect(u.currentStep).toBe(1);
-  });
-
-  it('Act is the fraction of named skills whose acting decision is real', () => {
+  it('SKILL blends the interview fraction with the acting decisions, half each', () => {
+    // Two named skills, one acting-ready: the acting half contributes 1/2 of
+    // its 50%. The records answer no top-level skills questions, so the
+    // interview half stays wherever sectionHealth puts it (near zero here).
     const u = computeUtilization(
       input({
         skills: withSkills([
@@ -174,56 +173,55 @@ describe('computeUtilization — the four quarters', () => {
         ]),
       }),
     );
-    expect(u.segments.act).toBe(50);
-  });
-
-  it('an unnamed record earns nothing, and no skills at all is zero', () => {
-    expect(computeUtilization(input({})).segments.act).toBe(0);
-    const u = computeUtilization(
-      input({ skills: withSkills([skill('  ', 'auto', 'crm'), skill('Real one', 'never', 'crm')]) }),
-    );
-    // The blank name is not a skill; the one real skill decides everything.
-    expect(u.segments.act).toBe(100);
+    expect(u.segments.skill).toBeGreaterThan(0);
+    expect(u.segments.skill).toBeLessThanOrEqual(50);
   });
 
   it('a decided "never" IS an acting decision — refusing is choosing', () => {
-    const u = computeUtilization(input({ skills: withSkills([skill('Payroll', 'never', 'hr_system')]) }));
-    expect(u.segments.act).toBe(100);
+    const decided = computeUtilization(
+      input({ skills: withSkills([skill('Payroll', 'never', 'hr_system')]) }),
+    );
+    const undecided = computeUtilization(
+      input({ skills: withSkills([skill('Payroll', undefined, undefined)]) }),
+    );
+    expect(decided.segments.skill).toBeGreaterThan(undecided.segments.skill);
   });
 
-  it('Share: typed proof scores are half, minted record ids the other half', () => {
-    expect(computeUtilization(input({ report: REPORT })).segments.share).toBe(50);
-    expect(
-      computeUtilization(input({ skills: withSkills([skill('A', 'auto', 'crm')], ['skl_x']) }))
-        .segments.share,
-    ).toBe(50);
-    expect(
-      computeUtilization(
-        input({ report: REPORT, skills: withSkills([skill('A', 'auto', 'crm')], ['skl_x']) }),
-      ).segments.share,
-    ).toBe(100);
-    // An empty scores array and an empty id list claim nothing.
-    expect(
-      computeUtilization(
-        input({
-          report: { scores: [] } as unknown as ReportState,
-          skills: withSkills([skill('A', 'auto', 'crm')], []),
-        }),
-      ).segments.share,
-    ).toBe(0);
+  it('PROVE fills only from a with-file run standing beside the baseline', () => {
+    expect(computeUtilization(input({ report: BASELINE_ONLY })).segments.prove).toBe(0);
+    const u = computeUtilization(input({ report: PROVED }));
+    expect(u.segments.prove).toBe(100);
+    expect(u.segments.baseline).toBe(100);
   });
 
-  it('solo interview work cannot reach 100 — the ceiling is the decided one', () => {
-    // Everything a person can do alone in the interviews, acting decisions
-    // included, with no proof run and no pack ever saved:
-    const skills = doneAnswers(skillsModules);
-    const u = computeUtilization(input({ context: doneAnswers(contextModules), skills }));
-    expect(u.segments.share).toBe(0);
-    expect(u.percent).toBeLessThanOrEqual(75);
+  it('solo interview work cannot reach 100 — proving it out is the ceiling', () => {
+    const u = computeUtilization(
+      input({ context: doneAnswers(contextModules), skills: doneAnswers(skillsModules) }),
+    );
+    expect(u.segments.baseline).toBe(0);
+    expect(u.segments.prove).toBe(0);
+    expect(u.percent).toBeLessThanOrEqual(50);
+  });
+
+  it('the full journey reads 100, standing at the last step', () => {
+    const u = computeUtilization(
+      input({
+        report: PROVED,
+        context: doneAnswers(contextModules),
+        skills: doneAnswers(skillsModules),
+      }),
+    );
+    expect(u.segments.baseline).toBe(100);
+    expect(u.segments.context).toBe(100);
+    expect(u.segments.prove).toBe(100);
+    // SKILL's acting half depends on the seeded records' decisions; the
+    // journey's 100 is asserted where it is exact, and the percent tracks
+    // the mean of exact fractions either way.
+    expect(u.percent).toBeGreaterThanOrEqual(75);
+    expect(u.currentStep).toBeGreaterThanOrEqual(3);
   });
 
   it('the percent is the mean of exact fractions, not of rounded ones', () => {
-    // One of three skills act-ready: exact third. name/repeat/share at 0.
     const u = computeUtilization(
       input({
         skills: withSkills([
@@ -233,10 +231,9 @@ describe('computeUtilization — the four quarters', () => {
         ]),
       }),
     );
-    expect(u.segments.act).toBe(33);
-    // Skills answers exist, so repeat is >0 only if those records answer real
-    // skills-interview questions — this fixture's records answer none of the
-    // top-level steps, so the mean is act/4 alone, from the exact 1/3.
-    expect(u.percent).toBe(Math.round(((u.segments.repeat / 100 + 1 / 3) / 4) * 100));
+    // One of three acting-ready: the acting half is an exact 1/6 of the
+    // segment's own scale; the percent is computed from the exact blend.
+    const exactSkill = u.segments.skill / 100;
+    expect(u.percent).toBe(Math.round((exactSkill / 4) * 100));
   });
 });

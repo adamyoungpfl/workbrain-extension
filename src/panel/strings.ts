@@ -41,7 +41,10 @@ export const S = {
 
   // ---------------------------------------------------------------- the four steps
   // Internally gates 1–4. The word "gate" never appears in the interface.
-  steps: ['Name', 'Repeat', 'Act', 'Share'] as const,
+  /* Pass 4c (Adam, 2026-09-08): the four steps are the app's own journey
+     now, in the order Home's doors stand - the old Name/Repeat/Act/Share
+     "doesn't feel like it captures the momentum or spirit of the goal". */
+  steps: ['Baseline', 'Context', 'Skill', 'Prove'] as const,
   utilization: (pct: number) => `${pct}% set up`,
   stepOf: (n: number, total: number) => `Step ${n} of ${total}`,
   /**
@@ -56,8 +59,8 @@ export const S = {
    * `stepNamed` is the standing step, said with its name ("Step 2 ·
    * Repeat") the way the template's "Gate 2" never may.
    */
-  meterName: 'How much of your work brain is set up',
-  meterLabel: 'Optimized',
+  meterName: 'How close your work brain is to the Proving Grounds',
+  meterLabel: 'Proof ready',
 
   /* BS-06 (§6) added "What moves this?" and a sheet of eight lines behind
      it, explaining what fills each quarter. REMOVED with the door (Adam,
@@ -1236,6 +1239,29 @@ export const S = {
    * every pack refusal already speaks.
    */
   tileRedeem: 'Skill Activator',
+  /* THE SKILLS HUB (pass 4c; Adam, 2026-09-08): three rows became one
+     destination with three doors - Create wraps the Activator, Review
+     wraps Skill Training, Redeem leads to Certified Skills. */
+  rowSkillsHub: 'Grow your skills',
+  rowSkillsHubSub: 'Create, review and redeem the skills your AI runs on.',
+  hubBack: 'Back',
+  hubTitle: 'Your skills',
+  hubSub: 'Create a new skill, review the ones you have, or redeem one built and tested for you.',
+  hubCreateKicker: 'Create',
+  hubCreateName: 'Skill Activator',
+  hubCreateLine: 'Turn something you already do into a skill your AI can run.',
+  hubReviewKicker: 'Review',
+  hubReviewName: 'Skill Training',
+  hubReviewLine: 'Try and refine your skills.',
+  hubRedeemKicker: 'Redeem',
+  hubRedeemName: 'Workbrain Certified Skills',
+  hubRedeemLine: 'Skills that make us all stronger, built and tested by Model Citizen.',
+  /* PROVING GROUNDS (same brief): the proof door points at the public
+     site's head-to-head page - "prove that your new and evolving context
+     file outperforms your baseline". The page ships with the next site
+     update; the door names the destination now. */
+  proveTitle: 'Proving Grounds',
+  rowProveGroundsSub: 'Prove your evolving context file beats your baseline. Head to head, in the service you choose.',
   redeemTitle: 'Redeem a skill code',
   redeemLabel: 'Your code',
   redeemHint: 'It came with your custom skill. The same file is in your email.',

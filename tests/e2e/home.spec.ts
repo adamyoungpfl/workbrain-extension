@@ -288,13 +288,16 @@ test.describe('Home surface (R1-12)', () => {
     await expect(page.getByRole('button', { name: 'Just pick a file', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Close', exact: true }).click();
 
-    // BS-06 (§6): the dormant tiles are ROWS now, and a waiting row holds no
-    // control at all — a disabled button in the tab order is a promise the
-    // screen cannot keep. The wait is said in words, in the row.
-    const prove = page.locator('.home-row', { hasText: S.proofCta });
-    await expect(prove).toHaveClass(/is-waiting/);
-    await expect(prove).toContainText(S.tileWaitsOnContext);
-    await expect(prove.locator('button, a')).toHaveCount(0);
+    /* Pass 4c: the proof door is PROVING GROUNDS - the public site's
+       head-to-head page, live from day one (the gate lives on the page,
+       not on the row). The waiting-row grammar moved with Skill Training
+       into the hub, where the a11y suite still covers it. */
+    const prove = page.locator('.home-row', { hasText: S.proveTitle });
+    await expect(prove).not.toHaveClass(/is-waiting/);
+    await expect(prove.locator('a')).toHaveAttribute(
+      'href',
+      'https://www.model-citizen.org/work-brain/proving-grounds',
+    );
     /* V3.0 pass 2: the download row never waits any more - it is a
        disclosure, pressable from day one, with the waiting said inside it
        on the component lines. */
@@ -689,19 +692,18 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
      * themselves instead of disabled squares."
      */
     const rows = page.locator('.home-row');
-    // BS-04 (§4) added the third: proof two, waiting on two recipes.
-    // 2026-09-02 (Adam): the PENDING BASELINE row leads the list on a fresh
-    // Home - no baseline run exists yet - and it is live from day one.
-    await expect(rows).toHaveCount(7);
+    /* Pass 4c: SEVEN became FIVE. Skill Training, the Activator and the
+       Certified library folded into one hub door (Create/Review/Redeem),
+       and the proof row became the Proving Grounds link. The order is the
+       journey's own: baseline, files, prove, skills, plus. */
+    await expect(rows).toHaveCount(5);
     await expect(rows.nth(0)).toContainText(S.rowBaselineLabel);
     await expect(rows.nth(0)).not.toHaveClass(/is-waiting/);
     await expect(rows.nth(0).locator('button')).toHaveCount(1);
     await expect(rows.nth(1)).toContainText(S.tileDownload);
-    await expect(rows.nth(2)).toContainText(S.proofCta);
-    await expect(rows.nth(3)).toContainText(S.capCta);
-    await expect(rows.nth(4)).toContainText(S.tileRedeem);
-    await expect(rows.nth(5)).toContainText(S.libTitle);
-    await expect(rows.nth(6)).toContainText(S.plusTitle);
+    await expect(rows.nth(2)).toContainText(S.proveTitle);
+    await expect(rows.nth(3)).toContainText(S.rowSkillsHub);
+    await expect(rows.nth(4)).toContainText(S.plusTitle);
 
     /* V3.0 pass 2: the download row is a DISCLOSURE - always pressable,
        because revealing what exists is useful before anything does. The
@@ -709,21 +711,19 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     await expect(rows.nth(1)).not.toHaveClass(/is-waiting/);
     await expect(rows.nth(1).locator('button.home-row-hit')).toHaveAttribute('aria-expanded', 'false');
 
-    // A waiting row says what it is waiting for, in the row, as text — and
-    // the two that wait do so on different things, in their own words.
-    await expect(rows.nth(2)).toContainText(S.tileWaitsOnContext);
-    await expect(rows.nth(3)).toHaveClass(/is-waiting/);
-    await expect(rows.nth(3)).toContainText(S.capRowWaiting);
+    /* The waiting-row grammar itself now lives in the hub (Skill
+       Training's earned gate) - asserted where it lives: */
+    await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+    await page.waitForSelector('.skillshub');
+    const waiting = page.locator('.skillshub-door.is-waiting');
+    await expect(waiting).toContainText(S.capRowWaiting);
+    await expect(waiting.locator('button, a')).toHaveCount(0);
 
-    // AND A WAITING ROW HOLDS NO CONTROL AT ALL. A disabled button in the
-    // tab order is a promise the screen cannot keep — §1 took the dashed
-    // disabled square away and this is what replaced it.
-    await expect(rows.nth(3).locator('button, a')).toHaveCount(0);
+    /* The no-control-while-waiting claim rode with the waiting door into
+       the hub and is asserted there above; the redeem-on-day-one claim is
+       the hub's Create door, live unconditionally by construction. What
+       stays here: no tile grammar anywhere on Home. */
     await expect(page.locator('.home-tile')).toHaveCount(0);
-
-    // The redeem row never waits: a redeem code works on day one.
-    await expect(rows.nth(4)).not.toHaveClass(/is-waiting/);
-    await expect(rows.nth(4).locator('button')).toHaveCount(1);
 
     await context.close();
   });
@@ -803,6 +803,10 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
+    /* Pass 4c: the door moved into the skills hub as REDEEM - same
+       destination, one hop deeper, still a real link. */
+    await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+    await page.waitForSelector('.skillshub');
     const link = page.getByRole('link', { name: new RegExp(S.libTitle) });
     await expect(link).toHaveAttribute('href', 'https://www.model-citizen.org/work-brain/skills-library');
     await expect(link).toHaveAttribute('target', '_blank');

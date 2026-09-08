@@ -286,7 +286,8 @@ test.describe('Recommendations (V1.5 VB-28)', () => {
     // BR-01 (Adam, 2026-08-28): "set up" became "Optimized", and "Step 2 ·
     // Repeat" became the pair — "Current: X. Next Up: Y." The claim is
     // unchanged: the meter speaks its own number and never a grade.
-    expect(valuetext).toMatch(/^\d+% Optimized, Current: .+$/);
+    /* Pass 4c: "Optimized" became "Proof ready" with the journey spine. */
+    expect(valuetext).toMatch(/^\d+% Proof ready, Current: .+$/);
     expect(valuetext.toLowerCase()).not.toContain('score');
 
     await context.close();

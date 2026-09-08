@@ -59,7 +59,10 @@ async function intoTheOffer(context: BrowserContext, sw: Worker, id: string): Pr
   await page.waitForSelector('.home');
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
-  await page.getByRole('button', { name: S.capCta, exact: true }).click();
+  /* Pass 4c: Skill Training is the hub's Review door. */
+  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+  await page.waitForSelector('.skillshub');
+  await page.getByRole('button', { name: new RegExp(S.capCta) }).click();
   await page.waitForSelector('.capoffer');
   return page;
 }

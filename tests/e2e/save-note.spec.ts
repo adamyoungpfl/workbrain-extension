@@ -530,20 +530,30 @@ test.describe('VB-44 — the save note sits at the foot of its area', () => {
     // tiles are dormant until then), so the seed answers EVERY question —
     // a step id no module holds means the builder never stops early. What
     // this test is about is unchanged: the one flow with no drawer under it.
+    /* Pass 4c: the Home proof row is the external Proving Grounds link, so
+       the loop is reached the way a person reaches it - by FINISHING. One
+       answer held open; the walk answers it and the finish opens the proof. */
+    const seeded = answersUpTo(contextModules, null);
+    delete seeded.values['reference_example_primary'];
+    delete seeded.answeredAt['reference_example_primary'];
+    delete seeded.reflectedAt['reference_example_primary'];
     await sw.evaluate(async (value) => {
       await chrome.storage.local.set({ 'wb:answers': value });
-    }, answersUpTo(contextModules, null));
+    }, seeded);
     const page = await context.newPage();
     await page.setViewportSize(PANEL);
     await page.goto(`chrome-extension://${id}/panel.html`);
     await page.waitForSelector('.home');
-    // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
-    // is its keyboard exit, and nothing else about this walk-in changed.
     await page.keyboard.press('Escape');
     await page.waitForSelector('.splash', { state: 'detached' });
-    // The proof loop, which writes no file and so docks nothing.
-    await page.getByRole('button', { name: S.proofCta }).click();
+    await page.getByRole('button', { name: /^Context\.md/ }).click();
+    await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
     await page.waitForSelector('.flow');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.locator('.flow[data-step-id="reference_example_primary"]').waitFor();
+    await page.locator('.flow textarea').fill('A last answer, written to finish the file.');
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await page.locator('.flow[data-step-id="proof_baseline"]').waitFor({ timeout: 15_000 });
 
     await expect(page.locator('.flowshell')).toHaveCount(0);
     const pad = await page.locator('.flow').evaluate((el) => getComputedStyle(el).paddingBottom);

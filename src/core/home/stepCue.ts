@@ -39,10 +39,10 @@ export interface StepCue {
 
 export function stepCue(utilization: Pick<Utilization, 'currentStep' | 'segments'>): StepCue {
   const filled = [
-    utilization.segments.name,
-    utilization.segments.repeat,
-    utilization.segments.act,
-    utilization.segments.share,
+    utilization.segments.baseline,
+    utilization.segments.context,
+    utilization.segments.skill,
+    utilization.segments.prove,
   ];
 
   // The next step with room in it, strictly AFTER the current one. Strictly,

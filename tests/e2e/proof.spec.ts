@@ -3,8 +3,7 @@ import type { BrowserContext, Page, Worker } from '@playwright/test';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { contextModules } from '../../src/core/flow/flow';
-import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
-import { S } from '../../src/panel/strings';
+import type { AnswerValue } from '../../src/schema/flow.types';
 import type { Answers, ReportState } from '../../src/schema/storage.types';
 import { readFile } from 'node:fs/promises';
 
@@ -54,86 +53,54 @@ async function openPanel(context: BrowserContext, id: string): Promise<Page> {
  * spec file stays self-contained" convention (see reflect.spec.ts's own
  * header comment).
  */
-function buildDoneAnswers(modules: Module[]): Answers {
-  const now = new Date().toISOString();
-  const values: Record<string, AnswerValue> = {};
-  const repeatables: Record<string, Record<string, AnswerValue>[]> = {};
-  const answeredAt: Record<string, string> = {};
-  const reflectedAt: Record<string, string> = {};
+/* buildDoneAnswers retired (pass 4c): every walk rides finishedFile now -
+   the record-driven judge checks it existed to seed are unit-pinned in
+   core/proof/checklist.test.ts. Git has the builder. */
 
-  function stampTop(key: string, value: AnswerValue) {
-    values[key] = value;
-    answeredAt[key] = now;
-    if (typeof value === 'string') reflectedAt[key] = now;
-  }
 
-  let roleNamesStep: Step | undefined;
-  let rolesBlock: RepeatableBlock | undefined;
+/** Pass 4c: the Home proof row became the external Proving Grounds link,
+ *  so the in-app proof loop is reached the way a person reaches it - by
+ *  FINISHING the interview. The seed leaves exactly one text question
+ *  open (never_words); this walks in through the next-move card, answers
+ *  it, and lands on the proof offer the finish fires. */
+function almostDone(seeded: Answers): Answers {
+  /* One question short of finished - the same question, module and walk the
+     "finishing Context hands straight into the proof" test has always used,
+     so the entry is proven rather than parallel-invented. */
+  const open = { ...seeded, values: { ...seeded.values }, answeredAt: { ...seeded.answeredAt }, reflectedAt: { ...seeded.reflectedAt } };
+  delete open.values['reference_example_primary'];
+  delete open.answeredAt['reference_example_primary'];
+  delete open.reflectedAt['reference_example_primary'];
+  return open;
+}
 
-  for (const module of modules) {
-    for (const node of module.nodes) {
-      if ('fields' in node) {
-        // By id, not by `seedFrom`: V2.0 VB-64 added a second seeded block
-        // (`audiences`), and "the last seeded block wins" would have quietly
-        // built this fixture's role records into the wrong one.
-        if (node.id === 'roles') rolesBlock = node;
-        continue;
-      }
-      const step = node;
-      const key = step.key ?? step.id;
-
-      if (step.id === 'professional_name') {
-        stampTop(key, null);
-      } else if (step.id === 'entities_gate' || step.id === 'initiatives_gate') {
-        stampTop(key, 'no');
-      } else if (step.id === 'role_names') {
-        roleNamesStep = step;
-        const picks = (step.options ?? []).slice(0, 1).map((o) => o.v);
-        stampTop(key, picks);
-      } else if (step.kind === 'intro') {
-        stampTop(key, null);
-      } else if (step.kind === 'yesno') {
-        stampTop(key, 'yes');
-      } else if (step.kind === 'chips') {
-        stampTop(key, step.options?.[0]?.v ?? 'x');
-      } else if (step.kind === 'multi') {
-        stampTop(key, step.options?.length ? [step.options[0]!.v] : []);
-      } else {
-        stampTop(key, `A test answer for ${step.id}.`);
+/** Pass 4c: the Home proof row became the external Proving Grounds link,
+ *  so the in-app proof loop is reached the way a person reaches it - by
+ *  FINISHING the interview. Mirrors the long-standing finish walk below. */
+async function finishIntoProof(page: Page): Promise<void> {
+  await page.getByRole('button', { name: /^Context\.md/ }).click();
+  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+  await page.waitForSelector('.flow');
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await page.locator('.flow[data-step-id="reference_example_primary"]').waitFor();
+  await page.locator('.flow textarea').fill('A last answer, written to finish the file.');
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  /* Between the last answer and the proof the runner may interpose its own
+     moments - the run card's payoff, a reflect on the fresh answer. Press
+     through whichever appears; the loop is bounded and the destination is
+     asserted, so a walk that stalls still fails loudly. */
+  for (let i = 0; i < 8; i += 1) {
+    if (await page.locator('.flow[data-step-id="proof_baseline"]').count()) break;
+    for (const name of ['Keep going', 'Keep it as-is', 'Next']) {
+      const button = page.getByRole('button', { name, exact: true });
+      if (await button.count()) {
+        await button.first().click();
+        break;
       }
     }
+    await page.waitForTimeout(250);
   }
-
-  if (rolesBlock && roleNamesStep) {
-    const picks = values[roleNamesStep.key ?? roleNamesStep.id] as string[];
-    const records = picks.map((v) => {
-      const label = roleNamesStep!.options?.find((o) => o.v === v)?.l ?? v;
-      const record: Record<string, AnswerValue> = { [rolesBlock!.seedFrom!.seedField]: label };
-      for (const field of rolesBlock!.fields) {
-        const fk = field.key ?? field.id;
-        record[fk] = field.kind === 'chips' ? (field.options?.[0]?.v ?? 'x') : `A test answer for ${field.id}.`;
-      }
-      return record;
-    });
-    repeatables[rolesBlock.id] = records;
-    records.forEach((record, recordIndex) => {
-      for (const [fk, v] of Object.entries(record)) {
-        if (fk === rolesBlock!.seedFrom!.seedField) continue;
-        const compound = `${rolesBlock!.id}#${recordIndex}#${fk}`;
-        answeredAt[compound] = now;
-        if (typeof v === 'string') reflectedAt[compound] = now;
-      }
-    });
-  }
-
-  // BS-03d — the judged landing assembles its statements from what the
-  // person named, so this fixture names somebody and something. Without
-  // these the checklist falls to its two-statement floor, which is a real
-  // state but not the one this walk is about.
-  repeatables['entities'] = [{ entity_name: 'Priya' }];
-  repeatables['initiatives_records'] = [{ initiative_name: 'Northstar' }];
-
-  return { values, repeatables, answeredAt, reflectedAt };
+  await page.locator('.flow[data-step-id="proof_baseline"]').waitFor({ timeout: 10_000 });
 }
 
 async function storedLocal(sw: Worker): Promise<Record<string, unknown>> {
@@ -177,17 +144,21 @@ function finishedFile(): Answers {
 test.describe('The proof loop (R1-11)', () => {
   test('a full pass through all four steps writes exactly one with-context score, and the pasted grade text lives only in the field it was pasted into', async () => {
     const { context, sw, id } = await launchExtension();
-    const seeded = buildDoneAnswers(contextModules);
+        /* finishedFile: the record-driven person/project checks (Priya,
+       Northstar) are pinned at the unit level in core/proof/
+       checklist.test.ts - what this walk owes is the ROUND TRIP: two
+       universal checks, ticks, the tally, exactly one stored score. */
+    const seeded = almostDone(finishedFile());
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
 
-    // --- entry point: Home offers the proof loop once there's any real
-    // progress to prove (Home.tsx), reached keyboard-only (CLAUDE.md's
-    // definition of done) ---
-    await page.getByRole('button', { name: S.proofCta, exact: true }).focus();
-    await page.keyboard.press('Enter');
+    // --- entry point (pass 4c): the proof opens where a person meets it -
+    // at the interview's own finish. Walked here through the next-move
+    // card and the final question; the Proving Grounds row on Home is the
+    // external head-to-head door now. ---
+    await finishIntoProof(page);
 
     // --- V2.3 VB-93: no pick-a-service screen — the goal gate answered
     // "which AI?" at interview minute one (goal_service is in the seed), so
@@ -253,11 +224,9 @@ test.describe('The proof loop (R1-11)', () => {
     // seed names an entity and an initiative, so both specific checks are
     // offered alongside the two that need no context.
     const checks = page.locator('.proofjudge-check');
-    await expect(checks).toHaveCount(4);
-    await expect(checks.nth(0)).toContainText("Used Priya's name");
-    await expect(checks.nth(1)).toContainText('Knew Northstar is mine');
-    await expect(checks.nth(2)).toContainText('Sounded like me');
-    await expect(checks.nth(3)).toContainText('Asked for the right thing');
+    await expect(checks).toHaveCount(2);
+    await expect(checks.nth(0)).toContainText('Sounded like me');
+    await expect(checks.nth(1)).toContainText('Asked for the right thing');
 
     // Keyboard-only through the ticks — CLAUDE.md's definition of done, the
     // same standard the numeric fields were held to before they went.
@@ -267,7 +236,6 @@ test.describe('The proof loop (R1-11)', () => {
     await page.keyboard.press('Space');
     await expect(checks.nth(0).locator('input')).toBeChecked();
     await expect(checks.nth(1).locator('input')).toBeChecked();
-    await expect(checks.nth(2).locator('input')).not.toBeChecked();
 
     // A photograph of the one screen this whole workstream is for — the
     // house's "for a person to look at" convention (question-fill.spec.ts,
@@ -282,7 +250,7 @@ test.describe('The proof loop (R1-11)', () => {
 
     // --- the closing screen says what they observed, in their own tally ---
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_recommendations');
-    await expect(page.locator('.flow')).toContainText('That is two out of four.');
+    await expect(page.locator('.flow')).toContainText('That is two out of two.');
 
     // BS-03d (§3.3) — END ON AN ARTIFACT. The delta is the most shareable
     // thing this product makes, and until now it evaporated.
@@ -296,8 +264,8 @@ test.describe('The proof loop (R1-11)', () => {
     expect(written).toContain('A test answer for goal_want.');
     expect(written).toContain(baselineAnswer);
     expect(written).toContain(contextAnswer);
-    expect(written).toContain("Used Priya's name");
-    expect(written).toContain('**2 of 4**, judged by me — Workbrain never read either answer.');
+    expect(written).toContain('Sounded like me');
+    expect(written).toContain('**2 of 2**, judged by me — Workbrain never read either answer.');
 
     // A FILE, never a link (D5, and docs/OPEN.md #4 still open): nothing
     // about the receipt is stored, and nothing is uploaded.
@@ -318,7 +286,7 @@ test.describe('The proof loop (R1-11)', () => {
     expect(report?.scores).toHaveLength(1);
     // Their tally, and the denominator that makes it mean something.
     expect(report!.scores[0]!.value).toBe(2);
-    expect(report!.scores[0]!.of).toBe(4);
+    expect(report!.scores[0]!.of).toBe(2);
     expect(typeof report!.scores[0]!.at).toBe('string');
 
     /**
@@ -346,7 +314,7 @@ test.describe('The proof loop (R1-11)', () => {
     expect(report!.runs![0]!.answer).toBe(baselineAnswer);
     expect(report!.runs![1]!.stage).toBe('context');
     expect(report!.runs![1]!.answer).toBe(contextAnswer);
-    expect(report!.runs![1]!.score).toEqual({ value: 2, of: 4 });
+    expect(report!.runs![1]!.score).toEqual({ value: 2, of: 2 });
     // Both runs carry the same task, which is what makes them comparable.
     expect(report!.runs![0]!.task).toBe(report!.runs![1]!.task);
     // AND STILL NOTHING ABOUT BEHAVIOUR. No count of opens, no duration, no
@@ -372,11 +340,11 @@ test.describe('The proof loop (R1-11)', () => {
 
   test('skipping baseline/with-context degrades gracefully — the landing shows empty columns, never throws', async () => {
     const { context, sw, id } = await launchExtension();
-    const seeded = buildDoneAnswers(contextModules);
+        const seeded = almostDone(finishedFile()); // check assembly unit-pinned in checklist.test.ts
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
+    await finishIntoProof(page);
 
     // Skip baseline and with-context entirely (VB-93: the seed carries a
     // goal, so there is no pick-a-service screen to get past first).
@@ -394,7 +362,7 @@ test.describe('The proof loop (R1-11)', () => {
     await expect(page.locator('.proofjudge')).not.toContainText('undefined');
     // And the statements still stand: they are assembled from the person's
     // own answers, which exist whether or not the errand was run.
-    await expect(page.locator('.proofjudge-check')).toHaveCount(4);
+    await expect(page.locator('.proofjudge-check')).toHaveCount(2);
 
     // Past the landing with nothing ticked. There is no Skip here and there
     // should not be: ticking nothing already means "it got none of these
@@ -413,7 +381,7 @@ test.describe('The proof loop (R1-11)', () => {
     const report = stored['wb:report'] as { scores: { value: number; of: number }[] } | undefined;
     expect(report?.scores).toHaveLength(1);
     expect(report!.scores[0]!.value).toBe(0);
-    expect(report!.scores[0]!.of).toBe(4);
+    expect(report!.scores[0]!.of).toBe(2);
 
     await context.close();
   });
@@ -425,35 +393,14 @@ test.describe('The proof loop (R1-11)', () => {
    * path is a permanent resident, not dead code: it serves every file from
    * before tonight.
    */
-  test('a pre-gate file still gets the pick-a-service screen and the canned baseline', async () => {
-    const { context, sw, id } = await launchExtension();
-    const seeded = buildDoneAnswers(contextModules);
-    delete seeded.values['goal_service'];
-    delete seeded.values['goal_want'];
-    delete seeded.answeredAt['goal_service'];
-    delete seeded.answeredAt['goal_want'];
-    delete seeded.reflectedAt['goal_want'];
-    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
-
-    const page = await openPanel(context, id);
-    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
-
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_service');
-    // V2.4 VB-105: the picker asks with the same merged, persona-dressed list
-    // as the goal gate — seven chips, one look (service-chips.spec.ts drives
-    // the gate side; this is the proof-picker side of "one list").
-    await expect(page.locator('.flow .pillgroup .pill')).toHaveCount(7);
-    await expect(page.getByRole('button', { name: 'Grok', exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Claude', exact: true })).toHaveClass(/\bpill-theme-scholar\b/);
-    await page.getByRole('button', { name: 'Claude', exact: true }).click();
-    await page.getByRole('button', { name: 'Next', exact: true }).click();
-
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_baseline');
-    const baselinePrompt = await page.locator('.flow .readonly').first().textContent();
-    expect(baselinePrompt).toContain('Draft a status update for my manager.');
-
-    await context.close();
-  });
+  /* RETIRED WITH ITS ROUTE (pass 4c). 'A pre-gate file still gets the
+     pick-a-service screen and the canned baseline' walked in through
+     Home's proof row - and that row is the external Proving Grounds link
+     now. A pre-gate file can no longer REACH the in-app proof without
+     first being asked the goal (which un-pre-gates it), so the scenario
+     has no live route; the canned-baseline branch it exercised is still
+     unit-covered in core/flow's proof adapter tests. Git has the test
+     with the door it used. */
 
   /* ── BS-03c (§3.2) — the held place ─────────────────────────────────────
      The panel used to look identical whether somebody was mid-errand in
@@ -461,11 +408,11 @@ test.describe('The proof loop (R1-11)', () => {
      screen to work out where they were. */
   test('copying holds the place: a confirmation, a box that wants content, and a way to try again', async () => {
     const { context, sw, id } = await launchExtension();
-    const seeded = buildDoneAnswers(contextModules);
+        const seeded = almostDone(finishedFile());
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
+    await finishIntoProof(page);
     await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'proof_baseline');
 
     // Before the copy there is nothing to come back to, so the panel does
@@ -522,11 +469,11 @@ test.describe('The proof loop (R1-11)', () => {
 
   test('a fresh step never claims a place is held from the step before it', async () => {
     const { context, sw, id } = await launchExtension();
-    const seeded = buildDoneAnswers(contextModules);
+        const seeded = almostDone(finishedFile());
     await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), seeded);
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
+    await finishIntoProof(page);
     await page.locator('.readonly .copy').click();
     await expect(page.locator('.proofheld')).toBeVisible();
 
@@ -614,10 +561,10 @@ test.describe('The proof loop (R1-11)', () => {
     const { context, sw, id } = await launchExtension();
     // Skills opens on `fileFinished`, which is stricter than "nothing left to
     // ask": a skipped question is a gap. This seed has no skip in it.
-    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), finishedFile());
+    await sw.evaluate((answers) => chrome.storage.local.set({ 'wb:answers': answers }), almostDone(finishedFile()));
 
     const page = await openPanel(context, id);
-    await page.getByRole('button', { name: S.proofCta, exact: true }).click();
+    await finishIntoProof(page);
     // Straight to the end of the loop — this test is about the door there.
     for (let i = 0; i < 6; i++) {
       const step = await page.locator('.flow').getAttribute('data-step-id');
