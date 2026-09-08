@@ -2036,15 +2036,22 @@ export const S = {
   /* V2.6 VB-125: `brandByline` ("by Model Citizen") is deleted — the chrome
      bar's `chromeCompany` says it now, once, for every Home state. */
   welcomeHeadline: 'Teach AI who you are, once.',
-  welcomeSub: 'Answer some questions. Get a file. Hand it to whatever AI you already use.',
+  /* welcomeSub retired (Adam, 2026-09-08): "Get rid of the 'Start with a
+     few questions', 'Answer some questions..' and 'About fifteen...'
+     lines" - the dark next-move card carries the whole invitation now. */
   /** Structural estimate, not measured — flagged as such in the copy draft.
    * Also the promise that nothing is lost by stopping, which is true: every
    * answer is written to `wb:answers` as it is given, and the flow re-derives
    * where to resume (core/flow/runner.ts's findPosition). */
-  welcomeTime: 'About fifteen minutes. You can stop anywhere and pick up where you left off.',
+  /* welcomeTime retired with welcomeSub (2026-09-08). */
 
   // ---------------------------------------------------------------- empty states
-  emptyNoFileAction: 'Start with a few questions',
+  /* emptyNoFileAction retired with them - the card's label IS the move. */
+  /* And the AFFORDANCE returned a day later (Adam, 2026-09-08: "Give me an
+     action button on the Your Next Move feature prompt/question so it is
+     obvious that you click to answer now") - not a verb-as-label, a pill
+     inside the one big button that says what pressing does. */
+  homeNextAnswer: 'Answer now',
   emptyNewDevice: 'New here? If you already made a file, bring it with you.',
   emptyNoSkills: 'No skills yet.',
 

@@ -131,13 +131,18 @@
   text-align: left;
   font: inherit;
   color: inherit;
-  background: var(--canvas);
+  /* LIGHTLY TINTED = CLICKABLE (Adam, 2026-09-08: "The actual clickable
+     cards should be just lightly tinted to indicate they are clickable").
+     The interactive tint at a translucency that lets the universe read
+     through; --primary is the token that MEANS "asking you to act". */
+  background: color-mix(in srgb, var(--primary-tint) 45%, transparent);
   border: 1px solid var(--divider);
   border-radius: var(--r-lg);
   cursor: pointer;
   transition:
     transform var(--fast) var(--ease),
     box-shadow var(--fast) var(--ease),
+    background-color var(--fast) var(--ease),
     border-color var(--fast) var(--ease);
 }
 /* ── R-08 (Adam, 2026-08-28) — THE TWO CORNERSTONES SIT UP ────────────────
@@ -173,6 +178,7 @@
   transform: translateY(-1px);
   box-shadow: var(--e-2);
   border-color: var(--border-i);
+  background: color-mix(in srgb, var(--primary-tint) 80%, transparent);
 }
 .home-card:focus-visible {
   outline: 2px solid var(--primary);
@@ -342,7 +348,11 @@
    reads as a thing that is not ready rather than a thing that is broken. */
 .home-card.is-locked {
   border-color: var(--divider);
-  background: var(--sunken);
+  /* BARE (Adam, 2026-09-08 second pass: "the non-clickable elements…
+     stand against the app background"): no ground at all - the missing
+     tint is now itself the not-clickable signal, alongside the padlock,
+     the words and the Locked pill. */
+  background: transparent;
   cursor: not-allowed;
 }
 .home-card.is-locked:hover {
@@ -618,7 +628,13 @@
   flex-direction: column;
   border: 1px solid var(--divider);
   border-radius: var(--r-lg);
-  background: var(--surface);
+  /* TRANSPARENT at Adam's word (2026-09-08: "the animated background
+     [should] be visible across the page… those need to be transparent
+     backgrounds so we have a consistent look"). This slab was the big
+     obscurer; the universe reads through the list now, and the rows'
+     own hover washes still say "pressable". Contrast is measured against
+     the body's painted ground, which still stands under the canvas. */
+  background: transparent;
   overflow: hidden;
 }
 
@@ -651,6 +667,13 @@
 /* A waiting row holds no control at all, so it has no cursor either. */
 .home-row.is-waiting .home-row-hit {
   cursor: default;
+}
+/* Clickable rows carry the same light interactive tint the cards wear;
+   an is-waiting row has none - bare against the field IS the dormancy
+   (Adam's clickable/non-clickable rule, 2026-09-08). */
+button.home-row-hit,
+a.home-row-hit {
+  background: color-mix(in srgb, var(--primary-tint) 35%, transparent);
 }
 button.home-row-hit:hover,
 a.home-row-hit:hover {
@@ -835,7 +858,7 @@ a.home-row-hit:hover .home-row-go {
   padding: 0 14px;
   border: 1px solid var(--border-i);
   border-radius: var(--r-pill);
-  background: var(--canvas);
+  background: color-mix(in srgb, var(--primary-tint) 45%, transparent);
   font: inherit;
   font-size: var(--type-support);
   font-weight: 600;
@@ -877,28 +900,39 @@ a.home-row-hit:hover .home-row-go {
   margin: -12px 0;
 }
 
-/* THE CARD IS THE BUTTON (Adam, 2026-09-04): section + prompt ARE the
-   label — what you are about to answer is what you press. Full section
-   width, left-set, the task-row grammar. */
+/* THE CARD IS THE BUTTON (Adam, 2026-09-04), AND IT WEARS THE DARK
+   (2026-09-08: "a darker tone that plays with the color palette… stand
+   out at the top of the screen, anytime a user comes in"). The splash's
+   own family arrives at the top of Home: a deep primary-on-ink navy
+   ground, the aqua eyebrow the show's accents wear, the question in
+   inverse ink — the one dark thing on the light canvas, which is what
+   makes it the first thing seen. Every pair clears 4.5:1 and the welcome
+   axe scan runs over this exact region. */
 .home-next-card {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 6px;
+  /* Two columns since the pill moved to the card's right edge (Adam,
+     2026-09-08: "justified to the right of the tab, instead of being
+     below the prompt/question"): the eyebrow spans, the prompt (and the
+     stale age line) keep the left column, the pill rides the right,
+     centred on the text beside it. */
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  column-gap: 12px;
+  row-gap: 6px;
   width: 100%;
   min-height: var(--target-min);
   padding: 14px 16px;
-  border: 1px solid var(--border);
+  border: 1px solid color-mix(in srgb, var(--primary) 52%, var(--ink));
   border-radius: 14px;
-  background: var(--canvas);
+  background: color-mix(in srgb, var(--primary) 22%, var(--ink));
   text-align: left;
   font: inherit;
   cursor: pointer;
   transition: border-color 140ms ease, background-color 140ms ease;
 }
 .home-next-card:hover {
-  border-color: var(--border-i);
-  background: color-mix(in srgb, var(--primary-tint) 40%, var(--canvas));
+  border-color: color-mix(in srgb, var(--primary) 72%, var(--ink));
+  background: color-mix(in srgb, var(--primary) 30%, var(--ink));
 }
 .home-next-card:focus-visible {
   outline: 2px solid var(--primary);
@@ -907,20 +941,40 @@ a.home-row-hit:hover .home-row-go {
 .home-next-card > span {
   display: block;
 }
-/* Day zero's verb caption — the fresh person's action, inside the button. */
-.home-next-go {
-  margin-top: 2px;
-  font-size: 14px;
-  font-weight: 680;
-  color: var(--primary);
+/* The action pill: the show's aqua as a FILLED control-shaped object, so
+   the card's clickability is legible at a glance. Ink on the aqua ~9:1. */
+.home-next-answer {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  grid-column: 2;
+  grid-row: 2 / span 2;
+  align-self: center;
+  padding: 7px 12px;
+  border-radius: var(--r-pill);
+  background: var(--globe-node-2-solid);
+  color: var(--ink);
+  font-size: 12.5px;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.home-next-card:hover .home-next-answer {
+  background: color-mix(in srgb, var(--globe-node-2-solid) 85%, var(--ink-inv));
 }
 .home-next-section {
+  grid-column: 1 / -1;
   margin: 0;
   font-size: 11px;
   font-weight: 650;
   letter-spacing: 0.07em;
   text-transform: uppercase;
-  color: var(--ink-3);
+  /* The show's aqua, on the card's navy — ~11:1. Stale work swaps to the
+     fuchsia the splash uses for the promise's urgency family (~6.9:1);
+     the age line carries the words, so nothing rides the hue alone. */
+  color: var(--globe-node-2-solid);
+}
+.home-next-card[data-kind='stale'] .home-next-section {
+  color: var(--splash-link);
 }
 .home-next-q {
   margin: 0;
@@ -930,12 +984,12 @@ a.home-row-hit:hover .home-row-go {
   font-size: 15px;
   font-weight: 650;
   line-height: 1.35;
-  color: var(--ink);
+  color: var(--ink-inv);
 }
 .home-next-age-line {
   margin: 0;
   font-size: 12.5px;
-  color: var(--ink-2);
+  color: color-mix(in srgb, var(--ink-inv) 80%, transparent);
 }
 .home-next-more {
   min-height: var(--target-min);
@@ -968,7 +1022,7 @@ a.home-row-hit:hover .home-row-go {
   padding: 6px 8px;
   border: 0;
   border-top: 1px solid var(--divider);
-  background: none;
+  background: color-mix(in srgb, var(--primary-tint) 35%, transparent);
   font: inherit;
   text-align: left;
   cursor: pointer;

@@ -32,9 +32,9 @@ async function walkToFirstCard(context: BrowserContext, id: string) {
   await page.waitForSelector('.home');
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
-  /* The card is one big button since 2026-09-04 - the verb caption sits at
-     the END of its accessible name, so the anchor goes. */
-  await page.getByRole('button', { name: /Start with a few questions/ }).click();
+  /* The next-move card is the one door in (2026-09-08 - the day-zero verb
+     caption retired with the welcome lines). */
+  await page.locator('.home-next-card').click();
   await page.waitForSelector('.flow');
 
   for (let i = 0; i < 30; i++) {

@@ -116,10 +116,11 @@ test.describe('welcome screen — accessibility', () => {
     await expect(page.getByRole('button', { name: 'Feedback', exact: true })).toBeFocused();
 
     await page.keyboard.press('Tab');
-    /* The card is one big button since 2026-09-04 - its accessible name is
-       the section, the prompt AND the verb caption, so the verb is matched
-       as a substring rather than as the whole name. */
-    const cta = page.getByRole('button', { name: /Start with a few questions/ });
+    /* The card is one big button, and since 2026-09-08 its label is ONLY
+       the section and the prompt (the day-zero verb caption retired with
+       the welcome sub/time lines) - so the stop is held by the card
+       itself, copy-proof against the interview review round. */
+    const cta = page.locator('.home-next-card');
     // The first stop in the page itself: the one thing there is to do.
     await expect(cta).toBeFocused();
     // Read the *focused* element's own computed style — pressing Tab is what

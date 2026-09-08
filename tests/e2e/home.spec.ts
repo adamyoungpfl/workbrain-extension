@@ -275,7 +275,8 @@ test.describe('Home surface (R1-12)', () => {
     const { context, id } = await launchExtension();
     const page = await openPanel(context, id);
 
-    await expect(page.getByRole('button', { name: /Start with a few questions/ })).toBeVisible();
+    /* The verb caption retired (2026-09-08) - the fresh card IS the move. */
+    await expect(page.locator('.home-next-card')).toBeVisible();
     await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
     // V2.9 VB-145: the import door moved to the top of the UI — an upload
     // control on the chrome bar, opening a sheet that says the one thing
@@ -359,16 +360,19 @@ test.describe('Home surface (R1-12)', () => {
     await expect(meter).toHaveAttribute('aria-valuenow', '0');
     await expect(meter).toHaveAttribute('aria-valuetext', `0% ${S.meterLabel}, ${S.stepCurrent(S.steps[0])}`);
 
-    // --- the approved copy that SURVIVES the banner's retirement: the
-    // promise line, the time line and the CTA. The headline retired with
-    // the banner (V3.0 pass 7). ---
+    // --- the welcome's whole remaining voice is the CARD (Adam,
+    // 2026-09-08: "Get rid of the 'Start with a few questions', 'Answer
+    // some questions..' and 'About fifteen...' lines") - the promise and
+    // time lines retired with the verb caption, and the headline retired
+    // earlier with the banner (V3.0 pass 7). What must stand is their
+    // ABSENCE, and the card straight into the meter. ---
     await expect(page.getByRole('heading', { name: 'Teach AI who you are, once.' })).toHaveCount(0);
     await expect(
       page.getByText('Answer some questions. Get a file. Hand it to whatever AI you already use.'),
-    ).toBeVisible();
+    ).toHaveCount(0);
     await expect(
       page.getByText('About fifteen minutes. You can stop anywhere and pick up where you left off.'),
-    ).toBeVisible();
+    ).toHaveCount(0);
     // The two existing lines the redesign keeps.
     await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
     await expect(

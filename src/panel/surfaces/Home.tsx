@@ -807,17 +807,18 @@ export function Home({ onStart, onOpenNext, onOpenBaseline, onOpenTarget, onOpen
             {featured.kind === 'stale' && (
               <span className="home-next-age-line">{S.homeNextStale(featured.ageDays ?? 0)}</span>
             )}
-            {nextMove.kind === 'start' && (
-              <span className="home-next-go">{S.emptyNoFileAction}</span>
-            )}
+            {/* The visible affordance (Adam, 2026-09-08): a pill drawn as
+                the action, INSIDE the one big button - pressing anywhere is
+                pressing this. It joins the accessible name, which is
+                right: the name now ends in what pressing does. */}
+            <span className="home-next-answer">
+              {S.homeNextAnswer}
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+                <path d="M2.5 7 H11 M7.5 3.2 L11.4 7 L7.5 10.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
           </button>
         ) : null}
-        {featured && nextMove.kind === 'start' && (
-          <>
-            <p className="home-welcome-sub">{S.welcomeSub}</p>
-            <p className="home-welcome-time">{S.welcomeTime}</p>
-          </>
-        )}
         {featured ? (
           <div className="home-next-restwrap">
             {queueOpen && (

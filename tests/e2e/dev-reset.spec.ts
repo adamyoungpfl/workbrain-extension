@@ -147,7 +147,9 @@ test.describe('VB-09 · dev-only reset', () => {
     /* V3.0 pass 7: the fresh state is the next-move card wearing the
        welcome's promise line - the banner it used to assert is retired. */
     await expect(page.locator('.home-next-card')).toBeVisible({ timeout: 10_000 });
-    await expect(page.locator('.home-next .home-welcome-sub')).toBeVisible();
+    /* The welcome sub line retired (2026-09-08) - the fresh proof is the
+       next-move card standing ready again. */
+    await expect(page.locator('.home-next-card')).toBeVisible();
     await expect(page.locator('.flow')).toHaveCount(0);
 
     // --- and both storage areas are genuinely empty, not just local ---
