@@ -7,8 +7,10 @@ work that gets thrown away and, worse, ships an opinion nobody agreed to.
    A scheduled nudge needs a notification surface the product does not have, and notifications
    are the fastest route to an uninstall. Default assumption for Release 2: **on open only**.
 
-2. **Second machine.** Is "you look new here — do you have a file?" helpful or unsettling?
-   Default assumption: show it once, quietly, on the home screen empty state.
+2. ~~**Second machine.** Is "you look new here — do you have a file?" helpful or unsettling?~~
+   **RESOLVED 2026-09-08 by removal (Adam: "Get rid of the 'New here?' tag line"):** the hint is
+   gone; the chrome bar's upload door is the one route for a file from elsewhere, present in
+   every state without asking the question.
 
 3. **How much of a pack may a person edit** before it stops being the team's method?
    Affects whether pack skills are copied into `Skills.md` or referenced. Default assumption:

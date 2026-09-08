@@ -37,7 +37,9 @@ export const S = {
   appName: 'Workbrain',
   savedNote: 'Saved on this device',
   privacyNote: 'Nothing leaves your browser',
-  homePrivacyNote: 'Everything here lives in your browser. No account, nothing sent anywhere.',
+  /* One pinned sentence now (pass 4e): the lead runs into the stored
+     link, which finishes it. */
+  homePrivacyNote: 'Everything stays in your browser, nothing sent —',
 
   // ---------------------------------------------------------------- the four steps
   // Internally gates 1–4. The word "gate" never appears in the interface.
@@ -2096,7 +2098,10 @@ export const S = {
      obvious that you click to answer now") - not a verb-as-label, a pill
      inside the one big button that says what pressing does. */
   homeNextAnswer: 'Answer now',
-  emptyNewDevice: 'New here? If you already made a file, bring it with you.',
+  /* emptyNewDevice retired (Adam, 2026-09-08: "Get rid of the 'New
+     here?' tag line") - and with it, OPEN.md #2's default answer: the
+     second-machine question resolved by removal. The upload door on the
+     chrome bar remains the route for a file from elsewhere. */
   emptyNoSkills: 'No skills yet.',
 
   // ---------------------------------------------------------------- errors

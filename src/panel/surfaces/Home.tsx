@@ -1073,13 +1073,17 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
         <HomeRow id="plus" icon={PLUS_ICON} label={S.plusTitle} sub={S.rowPlusSub} ready href={PLUS_URL} />
       </ul>
 
-      {nextMove.kind === 'start' && <p className="home-hint">{S.emptyNewDevice}</p>}
 
+      {/* ONE SENTENCE, PINNED (Adam, 2026-09-08): the promise and its
+          receipt reading as a single line at the page's foot - the lead
+          runs into the link that finishes it. */}
       <footer className="home-foot">
-        <p className="home-privacy">{S.homePrivacyNote}</p>
-        <button type="button" className="home-foot-link" onClick={() => setStoredOpen(true)}>
-          {S.storedLink}
-        </button>
+        <p className="home-privacy">
+          {S.homePrivacyNote}{' '}
+          <button type="button" className="home-foot-link" onClick={() => setStoredOpen(true)}>
+            {S.storedLink}
+          </button>
+        </p>
       </footer>
 
       {/* V2.9 VB-145 — the upload door's sheet. The download half of the

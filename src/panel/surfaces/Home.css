@@ -551,15 +551,27 @@
 */
 
 /* ── V2.6 VB-125c — the trust foot ────────────────────────────────────────── */
+/* PINNED (Adam, 2026-09-08: "a single sentence that fits nicely pinned
+   to the bottom of the homepage") - the promise rides the panel's foot
+   the way the splash's disclaimer rides its own, on a light veil so the
+   line stays quiet and legible over the field. */
 .home-foot {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 8px 14px 10px;
+  text-align: center;
+  background: color-mix(in srgb, var(--ink-inv) 90%, transparent);
   border-top: 1px solid var(--divider);
-  padding-top: 11px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+}
+/* The page's content clears the pinned line. */
+.home {
+  padding-bottom: 52px;
 }
 
 .home-privacy {
+  white-space: nowrap;
   font-size: 11.5px;
   color: var(--ink-3);
   line-height: 1.5;

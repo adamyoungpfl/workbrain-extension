@@ -277,7 +277,9 @@ test.describe('Home surface (R1-12)', () => {
 
     /* The verb caption retired (2026-09-08) - the fresh card IS the move. */
     await expect(page.locator('.home-next-card')).toBeVisible();
-    await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
+    /* The 'New here?' line retired (2026-09-08) - the upload door on the
+       chrome bar is the route for a file from elsewhere. */
+    await expect(page.getByText('New here?')).toHaveCount(0);
     // V2.9 VB-145: the import door moved to the top of the UI — an upload
     // control on the chrome bar, opening a sheet that says the one thing
     // that matters (the file you bring in replaces what is here) and offers
@@ -378,9 +380,11 @@ test.describe('Home surface (R1-12)', () => {
       page.getByText('About fifteen minutes. You can stop anywhere and pick up where you left off.'),
     ).toHaveCount(0);
     // The two existing lines the redesign keeps.
-    await expect(page.getByText('New here? If you already made a file, bring it with you.')).toBeVisible();
+    /* The 'New here?' line retired (2026-09-08) - the upload door on the
+       chrome bar is the route for a file from elsewhere. */
+    await expect(page.getByText('New here?')).toHaveCount(0);
     await expect(
-      page.getByText('Everything here lives in your browser. No account, nothing sent anywhere.'),
+      page.getByText(/Everything stays in your browser/),
     ).toBeVisible();
     // And the line it replaced is gone.
     await expect(page.getByText('You have not started yet.')).toHaveCount(0);
