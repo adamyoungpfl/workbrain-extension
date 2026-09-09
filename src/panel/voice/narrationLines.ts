@@ -19,8 +19,8 @@ export function offerStepNarration(step: string): string {
   if (step === 'open')
     return 'Select a provider from the list and go to that service by clicking the \u201cGo to\u201d button. Paste your prompt into the service and send that prompt off!';
   if (step === 'return')
-    return 'Last step. Copy that response, the whole thing, from your service, and paste it in the highlighted input box.';
-  return 'Excellent! Now, your prompt is already copied to your clipboard, but you can click the \u201cCopy again\u201d button to be sure.';
+    return 'Last step. Copy your prompt with the button, paste it into your service, and send it. Then copy the whole response and paste it in the highlighted input box.';
+  return 'Select a provider from the list and go to that service by clicking the \u201cGo to\u201d button.';
 }
 
 export function baselineOfferLandedLine(): string {

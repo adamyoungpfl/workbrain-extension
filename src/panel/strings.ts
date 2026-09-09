@@ -2025,8 +2025,6 @@ export const S = {
      D1's memory guard, moved into the step where it acts. */
   /* RECAPTIONED (Adam, 2026-09-03, the polish pass): three verbs a person
      would say, and the details go service-specific once a chip is picked. */
-  baselineStep1: 'Copy your prompt',
-  baselineStep2: 'Paste and prompt',
   baselineStep3: 'Copy and paste',
   baselineStepPick: 'Pick your AI',
   /** Step 1's reassurance: the press that left the last screen already

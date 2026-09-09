@@ -399,7 +399,8 @@ async function toBaselineOffer(page: Page): Promise<void> {
 /** V3.0 pass 3h: the paste box and the doors live in step 3's stage - the
  * cluster's third box opens it. */
 async function toStep3(page: Page): Promise<void> {
-  await page.locator('.stepstack-row').nth(2).click();
+  /* 4z: two steps - the paste step is the SECOND row now. */
+  await page.locator('.stepstack-row').nth(1).click();
   await page.waitForSelector('#baseline-paste');
 }
 
@@ -419,10 +420,8 @@ test('the finish bar: half at load, a share per check-off, Finish at the last st
     await expect(bar).toContainText(S.baselineBarBusy);
     await expect(bar).toBeDisabled();
 
-    // Each check-off buys a share.
+    // 4z: two steps - the one remaining check-off buys its share.
     await page.locator('.stepstack-row').nth(1).click();
-    expect(await done()).toBeCloseTo(0.65);
-    await page.locator('.stepstack-row').nth(2).click();
     expect(await done()).toBeCloseTo(0.8);
 
     // The last step open: the status becomes the verb - but the gate is
@@ -548,7 +547,7 @@ test('the offer screen is laid out like the question before it', async () => {
        a card rather than the whole panel - the surviving claims are that
        it exists at a real working height, the screen still does not
        scroll, and the doors sit DIRECTLY under it in order. */
-    await page.locator('.stepstack-row').nth(2).click();
+    await page.locator('.stepstack-row').nth(1).click();
     await page.waitForSelector('#baseline-paste');
     const { boxH, overflow } = await page.evaluate(() => ({
       boxH: Math.round(document.querySelector('textarea.field')!.getBoundingClientRect().height),
@@ -563,7 +562,9 @@ test('the offer screen is laid out like the question before it', async () => {
     // repeats it so the letters recolour at the fill's edge) - so the order
     // claim reads per door rather than as an exact list.
     expect(doors).toHaveLength(2);
-    expect(doors[0]).toContain(S.baselineBarBusy);
+    /* 4z: two steps - visiting the final one above is what arms the verb,
+       so the bar rightly reads Finish here. */
+    expect(doors[0]).toContain(S.baselineBarFinish);
     expect(doors[1]).toBe(S.baselineLater);
   } finally {
     await context.close();

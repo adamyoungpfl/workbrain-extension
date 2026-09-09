@@ -255,7 +255,7 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
         steps={[
           {
             id: 'open',
-            caption: S.baselineStep2,
+            caption: S.baselineStepPick,
             art: ART_OPEN,
             detail: (
               /* SIDE BY SIDE (Adam, 2026-09-03): the chips stack on the
@@ -318,15 +318,15 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
             ),
           },
           {
-            id: 'copy',
-            caption: S.baselineStep1,
-            art: ART_PASTE,
+            id: 'return',
+            caption: S.baselineStep3,
+            art: ART_RETURN,
             detail: (
-              /* Side by side like its siblings (V3.0 pass 3m): the
-                 reassurance on the left, a real button on the right - the
-                 press that left the previous screen already copied it, and
-                 the button is the belt for a clipboard that moved on. */
-              <div className="baselineoffer-copyrow">
+              <>
+                {/* Pass 4z (Adam): the copy button rides the final step's
+                    TOP - copy the prompt, paste it into the service, then
+                    bring the response back to the highlighted box below. */}
+                <div className="baselineoffer-copyrow">
                 <p className="baselineoffer-note">{S.baselineCopiedAlready}</p>
                 <Button
                   type="button"
@@ -345,14 +345,6 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
                   {copied ? S.baselineRecopied : S.baselineCopyAgain}
                 </Button>
               </div>
-            ),
-          },
-          {
-            id: 'return',
-            caption: S.baselineStep3,
-            art: ART_RETURN,
-            detail: (
-              <>
                 <p className="baselineoffer-note">
                   {svc && svcLabel ? S.baselineCopyHow(svcLabel) : S.baselinePickFirst}
                 </p>
@@ -401,7 +393,7 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
         <button
           type="button"
           className="baselineoffer-finishbar"
-          style={{ ['--done' as string]: ready ? 1 : 0.5 + 0.15 * (visited.size - 1) }}
+          style={{ ['--done' as string]: ready ? 1 : 0.5 + 0.3 * (visited.size - 1) }}
           disabled={!ready}
           onClick={() => {
             const answer = pasted.trim();
@@ -410,11 +402,11 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
           }}
         >
           <span className="baselineoffer-finishbar-label">
-            {visited.size === 3 ? S.baselineBarFinish : S.baselineBarBusy}
+            {visited.size === 2 ? S.baselineBarFinish : S.baselineBarBusy}
           </span>
           <span className="baselineoffer-finishbar-fill" aria-hidden="true">
             <span className="baselineoffer-finishbar-label">
-              {visited.size === 3 ? S.baselineBarFinish : S.baselineBarBusy}
+              {visited.size === 2 ? S.baselineBarFinish : S.baselineBarBusy}
             </span>
           </span>
         </button>
@@ -470,15 +462,7 @@ const MOCK_COPY = (
 /* The cluster's pictograms - the same stroke drawings the buttons carried
    when they were self-contained cards, lifted to constants so the cluster
    markup stays readable. */
-const ART_PASTE = (
-  <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
-    <rect x="6" y="5" width="26" height="34" rx="3" />
-    <path d="M12 13h14 M12 20h14 M12 27h9" />
-    <path d="M37 22h16 m-5 -5 5 5 -5 5" />
-    <rect x="46" y="36" width="24" height="12" rx="6" />
-    <circle cx="64" cy="42" r="1.6" />
-  </svg>
-);
+/* ART_PASTE retired in 4z with the step it drew. */
 const ART_OPEN = (
   <svg className="baselineoffer-art" viewBox="0 0 76 56" aria-hidden="true" focusable="false">
     <rect x="8" y="10" width="46" height="36" rx="4" />

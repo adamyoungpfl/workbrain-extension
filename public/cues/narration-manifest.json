@@ -48,9 +48,9 @@
     "19niwtr": "The rules AI doesn't get to talk itself out of. What would make you send a draft back, and what it should never do without asking you first. These stay on by default. You can turn any of them off, but most people don't.",
     "3ocqf": "Last one. Paste something you wrote. One paragraph teaches AI more about your voice than every answer you've given so far. Most people who stop, stop here — with the useful part already answered and the proof still ahead. Five more minutes and you'll see it work. Then you're done — and you get to see the whole thing actually work.",
     "1pu7uqp": "Let’s set your prompting baseline! You are going to just write a prompt. But I want you to start that prompt with a verb. Something like “plan” or “edit” or maybe “summarize”? What is something you want your AI to “do” for you?",
-    "bv4gph": "Excellent! Now, your prompt is already copied to your clipboard, but you can click the “Copy again” button to be sure.",
+    "95i9oi": "Select a provider from the list and go to that service by clicking the “Go to” button.",
     "wk79xk": "Select a provider from the list and go to that service by clicking the “Go to” button. Paste your prompt into the service and send that prompt off!",
-    "1t9c0rv": "Last step. Copy that response, the whole thing, from your service, and paste it in the highlighted input box.",
+    "dfwsli": "Last step. Copy your prompt with the button, paste it into your service, and send it. Then copy the whole response and paste it in the highlighted input box.",
     "1mtj9zb": "Saved as your starting point. That is where you start from. Your AI wrote that with nothing about you loaded. The interview writes the file that changes it."
   }
 }
