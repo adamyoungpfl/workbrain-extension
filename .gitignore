@@ -10,3 +10,4 @@ test-results/
 store/bench/private/
 film/
 dist-e2e/
+.vercel

@@ -64,7 +64,9 @@ const browser = await chromium.launchPersistentContext('', {
     '--disable-renderer-backgrounding',
     '--disable-background-timer-throttling',
   ],
-  ...(STILL ? { reducedMotion: 'reduce' } : {}),
+  /* Explicit both ways: without this the browser inherits the OS's
+     reduce-motion and every 'live' strip silently films the still. */
+  ...(STILL ? { reducedMotion: 'reduce' } : { reducedMotion: 'no-preference' }),
 });
 const sw = browser.serviceWorkers()[0] ?? (await browser.waitForEvent('serviceworker'));
 const id = new URL(sw.url()).host;

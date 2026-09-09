@@ -1119,12 +1119,19 @@ test.describe('V3.0 — the sequential reveal (2026-09-03)', () => {
     await page.locator('.splash-basekey').waitFor({ timeout: REVEAL_TIMEOUT });
     await page.waitForTimeout((REVEAL_SETTLED + 1.0) * 1000);
 
-    for (const part of ['lockup', 'tagline', 'baseline', 'launch']) {
+    /* 5a: the tagline is a PASSAGE - the end state is the lockup and the
+       doors, and the passage leaves the stage (and assistive tech) with
+       the acts. */
+    for (const part of ['lockup', 'baseline', 'launch']) {
       await expect(page.locator(`.splashreveal-part[data-part='${part}']`)).toHaveAttribute(
         'aria-hidden',
         'false',
       );
     }
+    await expect(page.locator(".splashreveal-part[data-part='tagline']")).toHaveAttribute(
+      'aria-hidden',
+      'true',
+    );
     // The acts are off stage - gone from assistive tech with their opacity.
     await expect(page.locator(".splashreveal-part[data-part='time']")).toHaveAttribute(
       'aria-hidden',

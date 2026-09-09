@@ -65,43 +65,53 @@ interface Key extends Placed {
  * the cinema is longer, and still optional.
  */
 const SCRIPT: Record<RevealPart, Key[]> = {
-  // The logo — the shipped icon's own face — fades in first, and stands.
+  /* PASS 5A (Adam, 2026-09-09): "When the white fades to black, I want
+     the logo lockup and tagline to stay full visible through the
+     transition. However, I want the logo lockup to slowly move to its
+     final position and for the tagline to slowly move to the center
+     position to then fade out and be replaced by the 15 minute beat,
+     then the Nothing moves beat, then the final action buttons to
+     enter… I want the whole thing to take about 5 seconds total."
+
+     So the white BREAKS onto both already standing (opacity 1 at zero -
+     continuity with the stage they rode in on), the lockup GLIDES up to
+     its rest (the rest itself a little lower now - the css gives the
+     part its extra margin, since the tagline's row is only a passage),
+     and the tagline glides to the acts' centre, holds a breath, and
+     hands the stage to the beats. The acts' holds compressed to fit the
+     five-second budget. */
   lockup: [
-    { at: 0.0, opacity: 0, x: 0, y: 0 },
-    { at: 0.7, opacity: 1, x: 0, y: 0 },
+    { at: 0.0, opacity: 1, x: 0, y: 104 },
+    { at: 1.5, opacity: 1, x: 0, y: 0 },
   ],
-  // Arrives under it while the lockup is still solidifying, so the two read
-  // as one object gaining a second line rather than as two arrivals.
   tagline: [
-    { at: 0.4, opacity: 0, x: 0, y: 0 },
-    { at: 1.1, opacity: 1, x: 0, y: 0 },
+    { at: 0.0, opacity: 1, x: 0, y: 104 },
+    { at: 1.5, opacity: 1, x: 0, y: 56 },
+    { at: 2.0, opacity: 1, x: 0, y: 56 },
+    { at: 2.3, opacity: 0, x: 0, y: 56 },
   ],
-  /* ACT A — the minutes, a SINGLE BEAT (Adam, 2026-09-04: "fade in and
-     then solid for 2 seconds or so, enough time to read it once, and then
-     fade out", "using the final version"). No counter, no rolodex — the
-     settled line, read once, gone. */
+  /* The minutes - a single beat, budgeted to the five seconds. */
   time: [
-    { at: 1.4, opacity: 0, x: 0, y: 14 },
-    { at: 2.0, opacity: 1, x: 0, y: 0 },
-    { at: 4.0, opacity: 1, x: 0, y: 0 },
-    { at: 4.6, opacity: 0, x: 0, y: 0 },
+    { at: 2.35, opacity: 0, x: 0, y: 12 },
+    { at: 2.7, opacity: 1, x: 0, y: 0 },
+    { at: 3.3, opacity: 1, x: 0, y: 0 },
+    { at: 3.65, opacity: 0, x: 0, y: 0 },
   ],
-  /* ACT B — the promise, the same single beat: the answer already
-     underlined, read once, gone. */
+  /* The promise - the same single beat. */
   privacy: [
-    { at: 4.8, opacity: 0, x: 0, y: 14 },
-    { at: 5.4, opacity: 1, x: 0, y: 0 },
-    { at: 7.4, opacity: 1, x: 0, y: 0 },
-    { at: 8.0, opacity: 0, x: 0, y: 0 },
+    { at: 3.7, opacity: 0, x: 0, y: 12 },
+    { at: 4.05, opacity: 1, x: 0, y: 0 },
+    { at: 4.65, opacity: 1, x: 0, y: 0 },
+    { at: 4.95, opacity: 0, x: 0, y: 0 },
   ],
-  /* ACT C — the doors, with the OR between them, a beat apart. They stick. */
+  /* The doors, a beat apart. They stick. */
   baseline: [
-    { at: 8.2, opacity: 0, x: 0, y: 12 },
-    { at: 8.8, opacity: 1, x: 0, y: 0 },
+    { at: 5.0, opacity: 0, x: 0, y: 12 },
+    { at: 5.4, opacity: 1, x: 0, y: 0 },
   ],
   launch: [
-    { at: 8.4, opacity: 0, x: 0, y: 12 },
-    { at: 9.0, opacity: 1, x: 0, y: 0 },
+    { at: 5.15, opacity: 0, x: 0, y: 12 },
+    { at: 5.55, opacity: 1, x: 0, y: 0 },
   ],
 };
 
@@ -110,10 +120,10 @@ export function partStartsAt(part: RevealPart): number {
   return SCRIPT[part][0]!.at;
 }
 
-/** When the LAST arrival has landed — the launch door, closing act C. The
- *  end state is the lockup, the tagline and the doors; the acts have
- *  played and left. Nothing moves after this. */
-export const REVEAL_SETTLED = 9.0;
+/** When the LAST arrival has landed — the launch door. The end state is
+ *  the lockup and the doors; the tagline was a PASSAGE (5a) and the acts
+ *  have played and left. Nothing moves after this. */
+export const REVEAL_SETTLED = 5.55;
 
 /**
  * Where a part is, `t` seconds into the reveal.

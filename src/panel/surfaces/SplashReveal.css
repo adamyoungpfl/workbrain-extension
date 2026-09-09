@@ -5,13 +5,16 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  /* ONE CLUSTER (Adam, 2026-09-09, pass 5b): everything from the logo's
+     top to the buttons' bottom reads and MOVES as a single group, sitting
+     slightly above the vertical centre. The one knob below is how the
+     whole cluster is nudged - never the elements one by one. */
+  --cluster-lift: 5vh;
+  justify-content: center;
+  padding: 0 26px calc(var(--cluster-lift) * 2);
   gap: 12px;
   width: 100%;
-  padding: 0 26px;
   text-align: center;
-  /* The lockup pins to the TOP now (Adam, 2026-09-08) — the splash
-     stretches this column to the full height and the stage below claims
-     the slack, so no top margin is doing the framing any more. */
   margin-top: 0;
   min-height: 0;
   flex: 1;
@@ -34,7 +37,11 @@
      between the logo lockup and the revolving section below"). The lockup
      steps down toward the acts; the stage's bottom bias grows by the same
      6vh so the revolving area itself does not move. */
-  margin-top: 6vh;
+  /* Pass 5a: a little lower still - the tagline's row is only a passage
+     now, so the lockup's rest absorbs part of the space it held. */
+  /* Pass 5b: the cluster centres as a unit - the lockup's own step-down
+     retired with the top-pinned layout it framed. */
+  margin-top: 0;
 }
 
 /* THE CONNECTORS ARE GONE (Adam, 2026-09-03, the simplification): the
@@ -188,16 +195,16 @@
      padding hands back the space below the optical middle, and `safe`
      clamps the tall fresh cluster against the tagline instead of letting
      it climb into it. Probed: the lone door's middle at ~390/760. */
-  align-content: safe center;
+  /* Pass 5b: the stage stopped claiming the column's slack - it is one
+     member of the cluster now, sized by its tallest occupant, standing
+     tight under the lockup ("too much padding between the bottom of the
+     lockup and the top of the display or buttons"). */
   justify-items: center;
   width: 100%;
-  flex: 1 1 auto;
+  flex: none;
   min-height: 0;
-  margin-top: 0;
-  /* 38vh, was 32: grown by the lockup's new 6vh step-down (second pass),
-     so the acts' centre holds at the page's optical middle while the gap
-     between the tagline and the revolving area tightens. */
-  padding-bottom: 38vh;
+  margin-top: 4px;
+  padding-bottom: 0;
 }
 .splashreveal-stage > * {
   grid-area: 1 / 1;
@@ -220,13 +227,13 @@
     align-items: center;
     gap: 12px;
     margin-top: 12px;
-    /* The optical-middle bias is motion money: the composed still needs
-       every row of the pitch on screen, not pushed under the fold. */
     padding-bottom: 0;
   }
-  /* The lockup's step-down is motion money too — same fold, same reason. */
-  .splashreveal-part[data-part='lockup'] {
-    margin-top: 0;
+  /* The cluster lift is motion money: the composed still flows from the
+     top so every row of the pitch stays on screen. */
+  .splashreveal {
+    justify-content: flex-start;
+    padding-bottom: 0;
   }
 }
 
@@ -251,7 +258,15 @@
    and full white, it holds its own as a second element and the pair reads
    better with ~14px between them than fused at ~-7. */
 .splashreveal-part[data-part='tagline'] {
-  margin-top: 2px;
+  /* Pass 5b: the tagline is a PASSAGE (5a) - its slot holds NO height, so
+     the resting cluster is lockup-then-stage with no ghost row between
+     ("too much padding between the bottom of the lockup and the top of
+     the display or buttons"). The spine's transforms carry it through:
+     riding with the lockup at the break, pausing over the stage's centre,
+     gone. */
+  height: 0;
+  margin: 0;
+  overflow: visible;
 }
 
 @media (prefers-reduced-motion: reduce) {
