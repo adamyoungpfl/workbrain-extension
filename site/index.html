@@ -1,0 +1,834 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Workbrain — a context file for your AI</title>
+<meta name="description" content="Workbrain builds and maintains a personal context file for use with AI assistants. No account, no server, nothing transmitted.">
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<!-- Shared glyphs. Every one is copied from the extension rather than redrawn:
+     the Peaks mark is design/icon-peaks.svg, and layers / run / stack /
+     download are LAYERS_ICON, RUN_ICON, STACK_ICON and DOWNLOAD_ICON from
+     src/panel/surfaces/Home.tsx. -->
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="g-flow" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#2ED6F0"></stop><stop offset="1" stop-color="#B36BFF"></stop>
+    </linearGradient>
+  </defs>
+  <symbol id="peaks" viewBox="0 0 64 64">
+    <path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"></path>
+    <path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"></path>
+    <path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"></path>
+  </symbol>
+  <symbol id="i-layers" viewBox="0 0 24 24">
+    <path d="M12 2.5 22 8.5 12 14.5 2 8.5Z" fill="url(#g-flow)"></path>
+    <path d="M4.4 12.6 12 17.2l7.6-4.6 2.4 1.4-10 6-10-6Z" fill="url(#g-flow)"></path>
+  </symbol>
+  <symbol id="i-run" viewBox="0 0 24 24"><path d="M8 4.5v15l13-7.5Z" fill="url(#g-flow)"></path></symbol>
+  <symbol id="i-stack" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7">
+    <rect x="3.5" y="7.5" width="13" height="13" rx="2.5"></rect>
+    <path d="M7.5 4.5h10a2.5 2.5 0 0 1 2.5 2.5v10"></path>
+  </symbol>
+  <symbol id="i-download" viewBox="0 0 24 24">
+    <path d="M10.5 3h3v8h3.5L12 16.5 7 11h3.5Z" fill="currentColor"></path>
+    <path d="M4 18.5h16V21H4Z" fill="currentColor"></path>
+  </symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"></path></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></symbol>
+</svg>
+
+<canvas id="field" aria-hidden="true"></canvas>
+<div id="veil" aria-hidden="true"></div>
+
+<header class="hdr">
+  <div class="wrap hdr-row">
+    <button type="button" class="brand" data-goto="home">
+      <svg width="22" height="22" aria-hidden="true"><use href="#peaks"></use></svg>
+      <span class="brand-name">Workbrain</span>
+      <span class="brand-by">by Model Citizen</span>
+    </button>
+    <nav class="nav">
+      <button type="button" class="nav-btn" data-goto="how-it-works">How it works</button>
+      <button type="button" class="nav-btn" data-goto="white-paper">White paper</button>
+      <button type="button" class="nav-btn" data-goto="library">Library</button>
+      <button type="button" class="nav-btn" data-goto="proving-grounds">Proving Grounds</button>
+      <button type="button" class="nav-btn" data-goto="workbrain-plus">Workbrain+</button>
+      <button type="button" class="btn nav-chrome" data-goto="download">
+        Add to Chrome
+        <span class="mark-chip"><svg width="13" height="13" aria-hidden="true"><use href="#peaks"></use></svg></span>
+      </button>
+    </nav>
+  </div>
+</header>
+
+<main>
+
+<!-- ═══ HOME ═══════════════════════════════════════════════════════════ -->
+<div data-page="home">
+  <section class="wrap page--hero" data-screen-label="01 Home · claim">
+    <h1 class="h-hero">How you do anything is <span class="tail">how your AI does everything.</span></h1>
+    <p class="lead lead--big">A Chrome side panel that builds and maintains a personal context file for use with AI assistants. Answer some questions. Get a file. Hand it to whatever AI you already use.</p>
+    <div class="tags">
+      <span class="tag"><i>#</i>FreeForever</span>
+      <span class="tag"><i>#</i>NoAccount</span>
+      <span class="tag"><i>#</i>NoServer</span>
+      <span class="tag"><i>#</i>NothingTransmitted</span>
+      <span class="tag"><i>#</i>AnyAssistant</span>
+      <span class="tag"><i>#</i>PlainMarkdown</span>
+    </div>
+    <div class="row" style="margin-top:34px">
+      <button type="button" class="btn btn--chrome btn--lg" data-goto="download">
+        <span class="mark-chip"><svg width="15" height="15" aria-hidden="true"><use href="#peaks"></use></svg></span>
+        Add to Chrome — free
+      </button>
+      <button type="button" class="btn btn--ghost btn--lg" data-goto="white-paper">Read the white paper</button>
+    </div>
+  </section>
+
+  <section class="wrap band" data-screen-label="01 Home · evidence">
+    <p class="eyebrow">The evidence</p>
+    <h2 class="h-sect" style="max-width:24ch">Same question, twice.</h2>
+    <p class="lead">One run against the baseline the app captured before your file existed, one with the file in front of it. The difference is not that the answer is longer — it is that the answer stops guessing.</p>
+    <div class="grid grid--2 top" style="margin-top:36px">
+      <article class="card">
+        <div class="answer-head">
+          <span class="mono">baseline</span>
+          <span class="pill pill--amber push"><span class="dot"></span>0 specifics named</span>
+        </div>
+        <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:var(--ink-2)">“Here is a generic status update with no specifics about your team or projects. Consider highlighting recent wins, upcoming milestones, and any blockers you'd like leadership to know about…”</p>
+        <div class="row" style="gap:8px;margin-top:18px">
+          <span class="pill pill--amber">3 guesses</span>
+          <span class="pill pill--grey">840 tokens</span>
+        </div>
+      </article>
+      <article class="card card--hi">
+        <div class="answer-head">
+          <span class="mono" style="color:var(--home-context);font-weight:600">with Context.md</span>
+          <span class="pill pill--green push"><span class="dot"></span>7 specifics named</span>
+        </div>
+        <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:var(--ink)">“Reporting-platform work is ahead of the quarter's plan: the leadership dashboard shipped Tuesday and IT response time is inside the 4-hour target for the third week. Two risks worth naming for Northwind and Calder…”</p>
+        <div class="row" style="gap:8px;margin-top:18px">
+          <span class="pill pill--green">Role · Cadence · Bar used</span>
+          <span class="pill pill--grey">1.1k tokens</span>
+        </div>
+      </article>
+    </div>
+    <div class="row" style="gap:24px;margin-top:26px">
+      <button type="button" class="btn--link" style="font-size:15px;font-weight:650" data-goto="proving-grounds">Run the proof on your own file →</button>
+      <p class="fine" style="max-width:52ch">Both runs show you the exact prompt before anything sends. The with-file run also reports what it used, what was missing and what it had to guess.</p>
+    </div>
+  </section>
+
+  <section class="wrap band" data-screen-label="01 Home · doors">
+    <p class="eyebrow">Three doors</p>
+    <h2 class="h-sect">Build it, prove it, understand it.</h2>
+    <div class="grid grid--3" style="margin-top:38px">
+      <button type="button" class="door door--ctx" data-goto="library">
+        <span class="chip chip--ctx"><svg width="22" height="22" aria-hidden="true"><use href="#i-layers"></use></svg></span>
+        <span class="door-name">Library</span>
+        <span class="door-desc">Skills you can drop into your file. Data, never code — markdown you read before you keep it.</span>
+        <span class="door-go">Browse the catalog →</span>
+      </button>
+      <button type="button" class="door door--skills" data-goto="proving-grounds">
+        <span class="chip chip--skills"><svg width="22" height="22" aria-hidden="true"><use href="#i-run"></use></svg></span>
+        <span class="door-name">Proving Grounds</span>
+        <span class="door-desc">Prove the context file against your own baseline, and prove a skill against the objective you wrote for it.</span>
+        <span class="door-go">Run a proof →</span>
+      </button>
+      <button type="button" class="door door--violet" data-goto="white-paper">
+        <span class="chip chip--violet"><svg width="22" height="22" aria-hidden="true"><use href="#i-stack"></use></svg></span>
+        <span class="door-name">White paper</span>
+        <span class="door-desc">Why the file is shaped this way: the schema, the freshness model, and the guardrails the design is held to.</span>
+        <span class="door-go">Abstract &amp; PDF →</span>
+      </button>
+    </div>
+    <div class="card card--pad card--flat row" style="justify-content:space-between;gap:20px;margin-top:44px">
+      <div>
+        <h3 class="h3">Two files, yours, on your machine.</h3>
+        <p class="body" style="max-width:56ch">The install is the sign-up. Everything above works before you ever pay for anything.</p>
+      </div>
+      <div class="row" style="gap:10px">
+        <span class="mono" style="font-size:13px;color:var(--home-context);background:var(--home-context-tint);border-radius:var(--r-pill);padding:7px 14px">Context.md</span>
+        <span class="mono" style="font-size:13px;color:var(--home-skills);background:var(--home-skills-tint);border-radius:var(--r-pill);padding:7px 14px">Skills.md</span>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- ═══ HOW IT WORKS ═══════════════════════════════════════════════════ -->
+<section class="wrap page" data-page="how-it-works" data-screen-label="02 How it works" hidden>
+  <p class="eyebrow">Docs</p>
+  <h1 class="h-page" style="max-width:22ch">How it works.</h1>
+  <p class="lead" style="font-size:18px">Four moves, and none of them need an account. The panel asks, you answer, it writes a file, and you hand that file to the assistant you already pay for.</p>
+
+  <div class="grid grid--4" style="margin-top:44px">
+    <div class="card">
+      <span class="mono" style="color:var(--primary);font-weight:600">01</span>
+      <h3 class="h4" style="margin-top:10px;font-size:19px;letter-spacing:-.02em">Answer questions</h3>
+      <p class="body">Four modules — Name, Repeat, Act, Share. One question a screen, and you can stop anywhere.</p>
+    </div>
+    <div class="card">
+      <span class="mono" style="color:var(--primary);font-weight:600">02</span>
+      <h3 class="h4" style="margin-top:10px;font-size:19px;letter-spacing:-.02em">Get a file</h3>
+      <p class="body">Plain markdown. Generate, parse, restore — lossless both ways, so the file is the interface.</p>
+    </div>
+    <div class="card">
+      <span class="mono" style="color:var(--primary);font-weight:600">03</span>
+      <h3 class="h4" style="margin-top:10px;font-size:19px;letter-spacing:-.02em">Hand it to any AI</h3>
+      <p class="body">Paste it, attach it, or keep it in a project. It is not tied to one assistant and never will be.</p>
+    </div>
+    <div class="card">
+      <span class="mono" style="color:var(--primary);font-weight:600">04</span>
+      <h3 class="h4" style="margin-top:10px;font-size:19px;letter-spacing:-.02em">Prove it, then prune</h3>
+      <p class="body">Run it against your captured baseline, read what it used and missed, and cut what earns nothing.</p>
+    </div>
+  </div>
+
+  <div class="grid grid--2" style="margin-top:20px">
+    <div class="card card--pad">
+      <h3 class="h3">What is in the file</h3>
+      <dl class="deflist">
+        <div class="defrow"><dt>Identity</dt><dd>Who you are and what you are responsible for</dd></div>
+        <div class="defrow"><dt>Cadence</dt><dd>The work that repeats, and how often</dd></div>
+        <div class="defrow"><dt>People</dt><dd>Roles, teams and projects worth naming</dd></div>
+        <div class="defrow"><dt>Bar</dt><dd>What good looks like when you see it</dd></div>
+        <div class="defrow"><dt style="color:var(--home-skills)">Skills</dt><dd>Named jobs, each with a stated objective</dd></div>
+      </dl>
+    </div>
+    <div class="card card--pad">
+      <h3 class="h3">Why it goes stale</h3>
+      <p class="body" style="font-size:14.5px;line-height:1.6">Different answers rot at different speeds. A job title lasts years; this quarter's goal lasts a quarter. Every answer carries the date you gave it and a half-life, so the panel can tell you which parts are still true instead of asking you to re-read the whole file.</p>
+      <div class="stack" style="gap:8px;margin-top:18px">
+        <div class="row" style="gap:10px"><span class="dot" style="width:8px;height:8px;background:var(--green)"></span><span style="font-size:13.5px"><strong style="font-weight:650">Current</strong> — answered recently enough to trust</span></div>
+        <div class="row" style="gap:10px"><span class="dot" style="width:8px;height:8px;background:var(--amber)"></span><span style="font-size:13.5px"><strong style="font-weight:650">Drifting</strong> — past its half-life, worth a look</span></div>
+        <div class="row" style="gap:10px"><span class="dot" style="width:8px;height:8px;background:var(--ink-3)"></span><span style="font-size:13.5px"><strong style="font-weight:650">Unanswered</strong> — never filled in, and that is fine</span></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:34px">
+    <button type="button" class="btn btn--primary" data-goto="proving-grounds">Try the Proving Grounds</button>
+    <button type="button" class="btn btn--ghost" data-goto="white-paper">Read the white paper</button>
+  </div>
+</section>
+
+<!-- ═══ WHITE PAPER ════════════════════════════════════════════════════ -->
+<section class="wrap page" data-page="white-paper" data-screen-label="03 White paper" hidden>
+  <div class="grid grid--paper">
+    <div>
+      <p class="eyebrow eyebrow--violet">White paper · v1.0</p>
+      <h1 class="h-page" style="max-width:26ch;font-size:clamp(32px,4.4vw,54px);line-height:1.05">The design of a portable context file.</h1>
+      <p class="lead" style="line-height:1.65">On the shape of the file, the schema behind it, the freshness model that keeps it honest, and the guardrails the whole design is held to.</p>
+
+      <h2 class="label-sm">Abstract</h2>
+      <div class="abstract">
+        <p>Assistants are increasingly good at the work and still bad at the person. The gap is not capability, it is context: the answer arrives fluent and generic because nothing in the prompt says who is asking, what they are responsible for, or what a good answer looks like to them.</p>
+        <p>This paper describes a file — plain markdown, generated from a structured interview, held entirely on the person's own machine — designed to close that gap without an account, a server, or a dependency on any one assistant. It sets out the section schema and why the boundaries fall where they do, the round-trip guarantee that makes generate-and-parse lossless, and a freshness model in which every answer carries a timestamp and a half-life so the file can report which of its own claims are still likely true.</p>
+        <p>It then examines evaluation: how a file can be tested against a baseline captured before it existed, how a skill can be scored against the objective its author stated, why a model's self-report about its own use of context is a claim rather than a trace, and what that means for tuning. It closes with the guardrails — never transmit the person's content, never notify, never hide a prompt — and the one written amendment under which a hosted testing environment is permitted to exist.</p>
+      </div>
+
+      <h2 class="label-sm">Contents</h2>
+      <ol class="contents">
+        <li>The context gap, measured rather than asserted</li>
+        <li>Section schema, and why these boundaries</li>
+        <li>The round trip: generate, parse, restore</li>
+        <li>Freshness: timestamps, half-lives and drift</li>
+        <li>Skills as data, and the stated objective</li>
+        <li>Two proofs: baseline comparison and objective scoring</li>
+        <li>Guardrails, and the one amendment</li>
+        <li>Appendix: the interchange schema</li>
+      </ol>
+    </div>
+
+    <aside class="card card--sticky">
+      <div class="cover">
+        <canvas id="cover" aria-hidden="true"></canvas>
+        <div class="cover-plate">
+          <div class="grow">
+            <p class="cover-kicker">White paper</p>
+            <p class="cover-title">The design of a portable context file</p>
+          </div>
+          <span class="cover-ver">v1.0</span>
+        </div>
+      </div>
+      <dl class="specs">
+        <div class="spec"><dt>Pages</dt><dd>24</dd></div>
+        <div class="spec"><dt>Version</dt><dd>1.0</dd></div>
+        <div class="spec"><dt>Format</dt><dd>PDF · 1.4 MB</dd></div>
+      </dl>
+      <!-- TODO: point at the real asset, e.g. /workbrain-white-paper-v1.pdf -->
+      <a class="btn btn--violet btn--full" href="#white-paper" style="margin-top:18px" download>
+        <svg width="17" height="17" aria-hidden="true"><use href="#i-download"></use></svg>
+        Download the PDF
+      </a>
+      <p class="fine" style="margin-top:12px">No email required. The paper is the argument — if it does not hold up, nothing else here does.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- ═══ LIBRARY ════════════════════════════════════════════════════════ -->
+<section class="wrap page" data-page="library" data-screen-label="04 Library" hidden>
+  <p class="eyebrow eyebrow--ctx">Library</p>
+  <h1 class="h-page">Skills you can drop into your file.</h1>
+  <p class="lead">Every skill is markdown, and every skill states its own objective — which is what the Proving Grounds later scores it against. Data, never code.</p>
+
+  <div class="row" style="gap:10px;margin-top:30px">
+    <label class="search">
+      <svg width="16" height="16" style="color:var(--ink-3)" aria-hidden="true"><use href="#i-search"></use></svg>
+      <input type="text" placeholder="Search 46 skills" aria-label="Search skills">
+    </label>
+    <button type="button" class="filter" aria-pressed="true">All</button>
+    <button type="button" class="filter" aria-pressed="false">Writing</button>
+    <button type="button" class="filter" aria-pressed="false">Analysis</button>
+    <button type="button" class="filter" aria-pressed="false">Meetings</button>
+    <button type="button" class="filter" aria-pressed="false">Engineering</button>
+    <button type="button" class="filter filter--violet" aria-pressed="false">Certified</button>
+  </div>
+
+  <div class="grid grid--cards" style="margin-top:22px">
+    <article class="card" style="display:flex;flex-direction:column;gap:10px;padding:20px">
+      <div class="row" style="gap:10px;align-items:flex-start">
+        <h3 class="h4" style="font-size:17.5px">Weekly update</h3>
+        <span class="pill pill--violet push">Certified</span>
+      </div>
+      <p class="body" style="margin:0;font-size:14px">Turns a week of work into six lines your lead actually reads.</p>
+      <div class="row" style="gap:8px;margin-top:auto;padding-top:6px">
+        <button type="button" class="btn btn--primary btn--sm">Add to my file</button>
+        <button type="button" class="btn btn--ghost btn--sm">Preview</button>
+        <span class="mono push" style="font-size:11.5px;color:var(--ink-3)">1.2 KB</span>
+      </div>
+    </article>
+    <article class="card" style="display:flex;flex-direction:column;gap:10px;padding:20px">
+      <h3 class="h4" style="font-size:17.5px">Ticket triage</h3>
+      <p class="body" style="margin:0;font-size:14px">Sorts by blast radius, not by who shouted loudest.</p>
+      <div class="row" style="gap:8px;margin-top:auto;padding-top:6px">
+        <button type="button" class="btn btn--primary btn--sm">Add to my file</button>
+        <button type="button" class="btn btn--ghost btn--sm">Preview</button>
+        <span class="mono push" style="font-size:11.5px;color:var(--ink-3)">0.9 KB</span>
+      </div>
+    </article>
+    <article class="card" style="display:flex;flex-direction:column;gap:10px;padding:20px">
+      <h3 class="h4" style="font-size:17.5px">Meeting recap</h3>
+      <p class="body" style="margin:0;font-size:14px">Decisions, owners, dates. Nothing else survives the cut.</p>
+      <div class="row" style="gap:8px;margin-top:auto;padding-top:6px">
+        <button type="button" class="btn btn--primary btn--sm">Add to my file</button>
+        <button type="button" class="btn btn--ghost btn--sm">Preview</button>
+        <span class="mono push" style="font-size:11.5px;color:var(--ink-3)">0.7 KB</span>
+      </div>
+    </article>
+    <article class="card" style="display:flex;flex-direction:column;gap:10px;padding:20px">
+      <div class="row" style="gap:10px;align-items:flex-start">
+        <h3 class="h4" style="font-size:17.5px">Exec brief</h3>
+        <span class="pill pill--violet push">Certified</span>
+      </div>
+      <p class="body" style="margin:0;font-size:14px">One page, one ask, one number worth arguing about.</p>
+      <div class="row" style="gap:8px;margin-top:auto;padding-top:6px">
+        <button type="button" class="btn btn--primary btn--sm">Add to my file</button>
+        <button type="button" class="btn btn--ghost btn--sm">Preview</button>
+        <span class="mono push" style="font-size:11.5px;color:var(--ink-3)">1.1 KB</span>
+      </div>
+    </article>
+    <article class="card" style="display:flex;flex-direction:column;gap:10px;padding:20px">
+      <h3 class="h4" style="font-size:17.5px">Hiring screen</h3>
+      <p class="body" style="margin:0;font-size:14px">The questions that separate the top two candidates.</p>
+      <div class="row" style="gap:8px;margin-top:auto;padding-top:6px">
+        <button type="button" class="btn btn--primary btn--sm">Add to my file</button>
+        <button type="button" class="btn btn--ghost btn--sm">Preview</button>
+        <span class="mono push" style="font-size:11.5px;color:var(--ink-3)">1.4 KB</span>
+      </div>
+    </article>
+    <article class="card" style="display:flex;flex-direction:column;gap:10px;padding:20px">
+      <h3 class="h4" style="font-size:17.5px">Incident writeup</h3>
+      <p class="body" style="margin:0;font-size:14px">What broke, what it cost, and what changes on Monday.</p>
+      <div class="row" style="gap:8px;margin-top:auto;padding-top:6px">
+        <button type="button" class="btn btn--primary btn--sm">Add to my file</button>
+        <button type="button" class="btn btn--ghost btn--sm">Preview</button>
+        <span class="mono push" style="font-size:11.5px;color:var(--ink-3)">1.3 KB</span>
+      </div>
+    </article>
+  </div>
+
+  <div class="card card--pad row" style="justify-content:space-between;gap:20px;margin-top:32px;background:rgba(106,63,209,.06);border-color:rgba(106,63,209,.5);box-shadow:none">
+    <div>
+      <p class="eyebrow eyebrow--violet">Services</p>
+      <h3 class="h3" style="margin-top:8px;font-size:21px">Want one built for you?</h3>
+      <p class="body" style="max-width:58ch">TIM builds custom skills, configures actions, and sets up hive-minds for teams.</p>
+    </div>
+    <button type="button" class="btn btn--violet" data-goto="services">Book time</button>
+  </div>
+</section>
+
+<!-- ═══ PROVING GROUNDS ════════════════════════════════════════════════ -->
+<section class="wrap page" data-page="proving-grounds" data-screen-label="05 Proving Grounds" hidden>
+  <p class="eyebrow eyebrow--skills">Proving Grounds</p>
+  <h1 class="h-page" style="max-width:22ch">Two things worth proving.</h1>
+  <p class="lead">A context file is proved against the baseline the app captured before you had one. A skill is proved against the objective you wrote for it. Most people come back for both.</p>
+
+  <div class="modes">
+    <button type="button" class="mode" data-mode="context" aria-pressed="true"><b>Context</b><span>file vs your baseline</span></button>
+    <button type="button" class="mode" data-mode="skills" aria-pressed="false"><b>Skills</b><span>skill vs its objective</span></button>
+    <button type="button" class="mode" data-mode="both" aria-pressed="false"><b>Both</b><span>a full pass</span></button>
+  </div>
+
+  <!-- ── Context proving ── -->
+  <div id="mode-context">
+    <div class="grid grid--2 top" style="margin-top:24px">
+      <div class="card">
+        <div class="row" style="gap:10px"><span class="chip chip--step">1</span><h3 class="h4">Your captured baseline</h3></div>
+        <p class="fine" style="margin-top:12px;font-size:13.5px;line-height:1.55">The app ran this on your first day, before the file existed, so there would be something honest to measure against.</p>
+        <div style="margin-top:14px;padding:16px;border-radius:12px;background:var(--ground);border:1px solid var(--divider)">
+          <div class="row" style="gap:10px">
+            <span class="mono" style="font-size:11.5px;color:var(--ink-3)">baseline · 12 Aug</span>
+            <span class="pill pill--green push" style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Captured</span>
+          </div>
+          <p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:var(--ink-2)">“Write my quarterly update.” → “Here is a generic status update with no specifics about your team or projects…”</p>
+        </div>
+        <p class="fine" style="margin-top:12px">Ask captured with it, word for word, so both runs answer the same question.</p>
+      </div>
+
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="row" style="gap:10px"><span class="chip chip--step">2</span><h3 class="h4">Your file now</h3></div>
+        <div style="margin-top:14px;padding:14px 16px;border-radius:12px;background:var(--home-context-tint);border:1px solid rgba(9,117,158,.4)">
+          <div class="row" style="gap:10px">
+            <span class="mono" style="font-size:13px;color:var(--home-context);font-weight:600">Context.md</span>
+            <span style="font-size:12.5px;color:var(--ink-2)">4.1 KB · 6 of 6 sections</span>
+            <span class="pill pill--green push" style="background:none"><span class="dot"></span>Current</span>
+          </div>
+        </div>
+        <div class="stack" style="margin-top:14px;gap:8px">
+          <span class="tick" style="font-size:13.5px;color:var(--ink-2)"><svg width="16" height="16" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Loaded from your download, or dropped in here</span>
+          <span class="tick" style="font-size:13.5px;color:var(--ink-2)"><svg width="16" height="16" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Same model, same temperature, same ask as the baseline</span>
+        </div>
+        <div class="row" style="margin-top:auto;padding-top:20px;gap:12px">
+          <button type="button" class="btn btn--primary" data-run>Compare against my baseline</button>
+          <button type="button" class="btn--link">Show the exact prompt</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="result-context" hidden>
+      <div class="card reveal" style="margin-top:16px">
+        <div class="row" style="gap:10px"><span class="chip chip--step">3</span><h3 class="h4">Then and now</h3><button type="button" class="btn--link push" style="font-size:13px;color:var(--ink-3)" data-reset>Start over</button></div>
+        <div class="grid grid--2" style="margin-top:16px">
+          <div class="answer">
+            <div class="answer-head"><span class="mono" style="color:var(--ink-3)">baseline · 12 Aug</span><span class="push fine">840 tok</span></div>
+            <p>“Here is a generic status update with no specifics about your team or projects…”</p>
+            <p style="margin-top:14px;font-size:12px;font-weight:600;color:var(--amber)">0 of 9 specifics · 3 guesses</p>
+          </div>
+          <div class="answer answer--hi">
+            <div class="answer-head"><span class="mono" style="color:var(--home-context);font-weight:600">with Context.md · today</span><span class="push fine">1.1k tok</span></div>
+            <p>“Reporting-platform work is ahead of plan: the leadership dashboard shipped Tuesday and IT response time is inside the 4-hour target…”</p>
+            <p style="margin-top:14px;font-size:12px;font-weight:600;color:var(--green)">7 of 9 specifics · 0 guesses</p>
+          </div>
+        </div>
+        <div class="row" style="gap:8px;margin-top:14px">
+          <button type="button" class="btn btn--ghost btn--xs">Diff view</button>
+          <button type="button" class="btn btn--ghost btn--xs">Re-run the baseline today</button>
+          <button type="button" class="btn btn--ghost btn--xs">Was the file half right?</button>
+        </div>
+      </div>
+
+      <div class="grid grid--split reveal" style="margin-top:16px">
+        <div class="card">
+          <div class="row" style="gap:10px"><span class="chip chip--step">4</span><h3 class="h4">What to change in the file</h3></div>
+          <div class="stack" style="margin-top:18px">
+            <div class="edit edit--missing">
+              <span class="edit-tag">MISSING</span>
+              <span class="edit-text">Add a line naming your two biggest clients</span>
+              <button type="button" class="btn btn--ghost btn--xs">Copy</button>
+            </div>
+            <div class="edit edit--unsure">
+              <span class="edit-tag">UNSURE</span>
+              <span class="edit-text">“Good looks like” reads two ways — split it into a bar and an example</span>
+              <button type="button" class="btn btn--ghost btn--xs">Copy</button>
+            </div>
+            <div class="edit edit--used">
+              <span class="edit-tag">USED</span>
+              <span class="edit-text">Identity · Cadence · Bar — these three earned their place</span>
+            </div>
+          </div>
+          <p class="fine" style="margin-top:16px">This is the model's own report on what it drew on. A claim, not a trace — useful in aggregate, never as a fact about a single answer.</p>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column">
+          <p class="eyebrow eyebrow--quiet">Movement since baseline</p>
+          <div class="figure"><b style="color:var(--green)">+7</b><span>specifics</span></div>
+          <div class="meter"><i style="width:78%"></i></div>
+          <p class="body" style="font-size:13.5px">Edit the file, run it again, and watch the number move against the same baseline. That is the only claim this page makes.</p>
+          <button type="button" class="btn btn--primary btn--full" style="margin-top:auto;height:44px" data-goto="download">Apply in the app</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Skills proving ── -->
+  <div id="mode-skills" hidden>
+    <div class="grid grid--2 top" style="margin-top:24px">
+      <div class="card">
+        <div class="row" style="gap:10px"><span class="chip chip--step chip--step-skills">1</span><h3 class="h4">Pick a skill from your file</h3></div>
+        <div class="stack" style="margin-top:14px;gap:8px">
+          <button type="button" class="pick" data-pick="0" aria-pressed="true">
+            <span class="pick-top"><span class="radio"></span><span class="pick-name">Weekly update</span><span class="mono push" style="font-size:11.5px;color:var(--ink-3)">1.2 KB</span></span>
+            <span class="pick-tag">Objective recorded 4 Sept · 3 criteria</span>
+          </button>
+          <button type="button" class="pick" data-pick="1" aria-pressed="false">
+            <span class="pick-top"><span class="radio"></span><span class="pick-name">Ticket triage</span><span class="mono push" style="font-size:11.5px;color:var(--ink-3)">0.9 KB</span></span>
+            <span class="pick-tag">Objective recorded 4 Sept · 3 criteria</span>
+          </button>
+          <button type="button" class="pick" data-pick="2" aria-pressed="false">
+            <span class="pick-top"><span class="radio"></span><span class="pick-name">Meeting recap</span><span class="mono push" style="font-size:11.5px;color:var(--ink-3)">0.7 KB</span></span>
+            <span class="pick-tag">Objective recorded 6 Sept · 3 criteria</span>
+          </button>
+        </div>
+        <p class="fine" style="margin-top:14px">Read from <span class="mono" style="color:var(--home-skills)">Skills.md</span> · 3 of 9 skills shown</p>
+      </div>
+
+      <div class="card" style="display:flex;flex-direction:column">
+        <div class="row" style="gap:10px"><span class="chip chip--step chip--step-skills">2</span><h3 class="h4">The objective you stated</h3></div>
+        <p class="fine" style="margin-top:12px;font-size:13.5px;line-height:1.55">Captured while you built the skill. This is the bar the run is scored against — not a generic idea of a good answer.</p>
+        <blockquote class="quote">
+          <p id="objective"></p>
+          <footer id="objective-meta"></footer>
+        </blockquote>
+        <div class="row" style="margin-top:auto;padding-top:20px;gap:12px">
+          <button type="button" class="btn" style="background:var(--home-skills);color:var(--ink-inv);box-shadow:var(--e-2)" data-run>Run against the objective</button>
+          <button type="button" class="btn--link">Edit the objective</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="result-skills" hidden>
+      <div class="grid reveal" style="grid-template-columns:minmax(0,1.15fr) minmax(300px,1fr);margin-top:16px">
+        <div class="card">
+          <div class="row" style="gap:10px"><span class="chip chip--step chip--step-skills">3</span><h3 class="h4">What the skill produced</h3><button type="button" class="btn--link push" style="font-size:13px;color:var(--ink-3)" data-reset>Start over</button></div>
+          <div class="answer answer--skills" style="margin-top:16px">
+            <div class="answer-head"><span class="mono" id="skill-name" style="color:var(--home-skills);font-weight:600"></span><span class="push fine">1.4k tok · 3.1s</span></div>
+            <p id="skill-output" style="color:var(--ink)"></p>
+          </div>
+          <div class="row" style="gap:8px;margin-top:14px">
+            <button type="button" class="btn btn--ghost btn--xs">Compare with run 3</button>
+            <button type="button" class="btn btn--ghost btn--xs">Run without the skill</button>
+            <button type="button" class="btn btn--ghost btn--xs">Show the prompt</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="row" style="gap:10px"><span class="chip chip--step chip--step-skills">4</span><h3 class="h4">Scored against your objective</h3></div>
+          <div class="figure"><b id="met-count"></b><span id="crit-count"></span></div>
+          <div class="stack" id="criteria" style="gap:9px;margin-top:16px"></div>
+          <p class="eyebrow eyebrow--quiet" style="margin:18px 0 8px">Edit the skill</p>
+          <div class="edit edit--missing">
+            <span class="edit-tag">FIX</span>
+            <span class="edit-text" id="skill-fix" style="font-size:14px"></span>
+            <button type="button" class="btn btn--ghost btn--xs">Copy</button>
+          </div>
+          <p class="fine" style="margin-top:14px">Objective scoring is the model judging its own output against your words. Directional, and it moves when the skill genuinely improves.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Both ── -->
+  <div id="mode-both" hidden>
+    <div class="card card--pad" style="margin-top:24px">
+      <h3 class="h3" style="font-size:19px">A full pass: the file, then every skill on it</h3>
+      <p class="body" style="font-size:14.5px;line-height:1.6">One queue. The context file goes first, against your captured baseline, because a skill that runs on a thin file fails for the file's reasons rather than its own. Then each skill is scored against the objective you wrote for it.</p>
+      <div class="stack" style="margin-top:20px">
+        <div class="queue queue--ctx">
+          <span class="mono" style="font-size:12.5px;color:var(--home-context);font-weight:600">Context.md</span>
+          <span class="grow">vs baseline captured 12 Aug</span>
+          <span style="font-size:12.5px;font-weight:650;color:var(--green)">+7 specifics</span>
+        </div>
+        <div class="queue queue--skill">
+          <span class="mono" style="font-size:12.5px;color:var(--home-skills);font-weight:600">Weekly update</span>
+          <span class="grow">vs its stated objective</span>
+          <span style="font-size:12.5px;font-weight:650;color:var(--green)">2 of 3 met</span>
+        </div>
+        <div class="queue queue--skill">
+          <span class="mono" style="font-size:12.5px;color:var(--home-skills);font-weight:600">Ticket triage</span>
+          <span class="grow">vs its stated objective</span>
+          <span style="font-size:12.5px;font-weight:650;color:var(--amber)">1 of 3 met</span>
+        </div>
+        <div class="queue queue--none">
+          <span class="mono" style="font-size:12.5px;font-weight:600">Exec brief</span>
+          <span class="grow">no objective recorded — add one to score it</span>
+          <button type="button" class="btn btn--ghost btn--xs">Add</button>
+        </div>
+      </div>
+      <div class="row" style="margin-top:22px;gap:12px">
+        <button type="button" class="btn btn--dark" data-run>Run the full pass</button>
+        <span class="fine">4 runs · about 40 seconds</span>
+      </div>
+    </div>
+
+    <div id="result-both" hidden>
+      <div class="grid grid--4 reveal" style="margin-top:16px">
+        <div class="card">
+          <p class="eyebrow eyebrow--quiet">File</p>
+          <div class="figure"><b style="color:var(--green)">+7</b><span>specifics</span></div>
+          <p class="body" style="font-size:13.5px">Against the 12 Aug baseline. Two sections still contribute nothing.</p>
+        </div>
+        <div class="card">
+          <p class="eyebrow eyebrow--quiet">Skills</p>
+          <div class="figure"><b style="color:var(--amber)">3</b><span>of 6 criteria met</span></div>
+          <p class="body" style="font-size:13.5px">Ticket triage is the weak one — its objective asks for something the file cannot supply yet.</p>
+        </div>
+        <div class="card" style="display:flex;flex-direction:column">
+          <p class="eyebrow eyebrow--quiet">Do this first</p>
+          <p style="margin:10px 0 0;font-size:14.5px;line-height:1.6">Name your two biggest clients in the file. It closes the file's largest gap and the triage skill's failing criterion at once.</p>
+          <button type="button" class="btn btn--primary btn--full" style="margin-top:auto;height:44px" data-goto="download">Apply in the app</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--danger" style="margin-top:16px">
+    <p class="eyebrow eyebrow--danger" style="font-size:13px">What leaves your browser</p>
+    <p style="margin:10px 0 0;font-size:14.5px;line-height:1.6">The prompt — your file or skill plus the task — and nothing else. No identifiers, no session, no answer store. It goes to a named model and is discarded on response. The copy-and-paste path stays, and stays first: this is a door, not a default.</p>
+    <button type="button" class="btn--link" style="margin-top:12px;color:var(--danger);font-weight:650" data-goto="privacy">Read the full amendment</button>
+  </div>
+</section>
+
+<!-- ═══ WORKBRAIN+ ═════════════════════════════════════════════════════ -->
+<section class="wrap page" data-page="workbrain-plus" data-screen-label="06 Workbrain+" hidden>
+  <p class="eyebrow eyebrow--violet">Workbrain+</p>
+  <h1 class="h-page">The free thing stays free.</h1>
+  <p class="lead">Building your file, proving it, and handing it to any assistant costs nothing, forever, with no account. Membership is for managing a Workbrain over years rather than an afternoon.</p>
+
+  <!-- Each action button lives in a column with its own pillar, so a button
+       can never wrap away from the tier it belongs to. -->
+  <div class="grid grid--3 top" style="margin-top:38px">
+    <div class="col">
+      <button type="button" class="btn btn--chrome btn--lg btn--full" data-goto="download">
+        <span class="mark-chip" style="width:24px;height:24px;border-radius:7px"><svg width="14" height="14" aria-hidden="true"><use href="#peaks"></use></svg></span>
+        Add to Chrome — free
+      </button>
+      <div class="card card--pad">
+        <h3 class="h3" style="font-size:21px">Free</h3>
+        <div class="price"><b>$0</b><span>forever</span></div>
+        <p class="body" style="font-size:14px">The install is the sign-up. No email, no identity.</p>
+        <div class="stack" style="margin-top:20px">
+          <span class="tick"><svg width="17" height="17" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>The full interview and both files</span>
+          <span class="tick"><svg width="17" height="17" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Freshness tracking and drift verdicts</span>
+          <span class="tick"><svg width="17" height="17" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Your captured baseline, and the copy-paste proof loop</span>
+          <span class="tick"><svg width="17" height="17" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>The whole public library</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="col">
+      <button type="button" class="btn btn--violet btn--lg btn--full">Become a member</button>
+      <div class="card card--pad card--violet-hi">
+        <div class="row" style="gap:10px">
+          <h3 class="h3" style="font-size:21px">Workbrain+</h3>
+          <span class="pill pill--badge pill--badge-violet">Membership</span>
+        </div>
+        <div class="price"><b>$9</b><span>/ month</span></div>
+        <p class="body" style="font-size:14px">Identity lives here on the site. The extension takes a pasted member key — no accounts in the app itself.</p>
+        <div class="stack" style="margin-top:20px">
+          <span class="tick"><svg width="17" height="17" style="color:var(--violet)" aria-hidden="true"><use href="#i-check"></use></svg><span><strong>Private skills library</strong> — add your own and other people's skills to your profile instantly</span></span>
+          <span class="tick"><svg width="17" height="17" style="color:var(--violet)" aria-hidden="true"><use href="#i-check"></use></svg><span><strong>Unlimited hosted proving</strong> — full passes across the file and every skill, with run history</span></span>
+          <span class="tick"><svg width="17" height="17" style="color:var(--violet)" aria-hidden="true"><use href="#i-check"></use></svg><span><strong>Evergreen monitoring</strong> — drift nudges arrive here by email, never as extension notifications</span></span>
+          <span class="tick"><svg width="17" height="17" style="color:var(--violet)" aria-hidden="true"><use href="#i-check"></use></svg><span><strong>Sync across devices</strong> — by your own hand or inside the browser's own quota</span></span>
+        </div>
+        <p class="fine" style="margin-top:20px">Every paid feature is an enhancement over a manual path that keeps working on a plane.</p>
+      </div>
+    </div>
+
+    <div class="col">
+      <button type="button" class="btn btn--aqua btn--lg btn--full" data-goto="services">Work with T.I.M.</button>
+      <div class="card card--pad card--aqua">
+        <div class="row" style="gap:10px">
+          <h3 class="h3" style="font-size:21px">Workbrain+ <span style="color:var(--home-context)">w/ T.I.M.</span></h3>
+          <span class="pill pill--badge pill--badge-aqua">Pro</span>
+        </div>
+        <div class="price"><span>starting at</span><b>$500</b><span>/ month</span></div>
+        <p class="body" style="font-size:14px">The membership with a person attached — and a service designed to make itself obsolete. T.I.M. builds alongside you until the Workbrain runs without him, then you stop paying and keep everything it built.</p>
+        <div class="stack" style="margin-top:20px">
+          <span class="tick"><svg width="17" height="17" style="color:var(--home-context)" aria-hidden="true"><use href="#i-check"></use></svg>Everything in Workbrain+</span>
+          <span class="tick"><svg width="17" height="17" style="color:var(--home-context)" aria-hidden="true"><use href="#i-check"></use></svg><span><strong>A build session each month</strong> — a skill written with you, objective and all</span></span>
+          <span class="tick"><svg width="17" height="17" style="color:var(--home-context)" aria-hidden="true"><use href="#i-check"></use></svg><span><strong>Actions configuration</strong> — wired to your tools and proved against real asks</span></span>
+          <span class="tick"><svg width="17" height="17" style="color:var(--home-context)" aria-hidden="true"><use href="#i-check"></use></svg><span><strong>Hive-mind setups</strong> for teams, and member rates on everything else</span></span>
+        </div>
+        <p class="fine" style="margin-top:20px">Cancel the month you no longer need it. Every skill, objective and action stays yours.</p>
+      </div>
+    </div>
+  </div>
+
+  <p class="fine" style="margin-top:26px;font-size:13.5px;line-height:1.6">Money never enters the extension. Purchases, scheduling and service requests all live here on the site; the panel deep-links out and takes a pasted key.</p>
+</section>
+
+<!-- ═══ TIM SERVICES ═══════════════════════════════════════════════════ -->
+<section class="wrap page" data-page="services" data-screen-label="07 TIM services" hidden>
+  <p class="eyebrow eyebrow--ctx">TIM services</p>
+  <h1 class="h-page">Have it built with you.</h1>
+  <p class="lead">Book a block of time and leave with something working — a skill set for your actual job, actions wired to your tools, or a shared brain for your team.</p>
+
+  <div class="grid grid--svc" style="margin-top:38px">
+    <div class="col">
+      <article class="card card--pad">
+        <div class="row" style="gap:12px">
+          <span class="chip chip--ctx"><svg width="22" height="22" aria-hidden="true"><use href="#i-layers"></use></svg></span>
+          <div><h3 class="h3">Custom skills building</h3><p class="fine" style="margin-top:4px;font-size:13.5px">90 minutes · from $240</p></div>
+        </div>
+        <p class="body" style="font-size:14.5px;line-height:1.6;margin-top:14px">We take the three jobs you actually repeat and write them as skills, each with a stated objective the Proving Grounds can score. You keep the markdown.</p>
+      </article>
+      <article class="card card--pad">
+        <div class="row" style="gap:12px">
+          <span class="chip chip--skills"><svg width="22" height="22" aria-hidden="true"><use href="#i-run"></use></svg></span>
+          <div><h3 class="h3">Actions configuration</h3><p class="fine" style="margin-top:4px;font-size:13.5px">Half day · from $680</p></div>
+        </div>
+        <p class="body" style="font-size:14.5px;line-height:1.6;margin-top:14px">Your file describes the work; actions make the assistant do it. We configure the run, prove it against real asks, and hand over the runbook.</p>
+      </article>
+      <article class="card card--pad">
+        <div class="row" style="gap:12px">
+          <span class="chip chip--violet"><svg width="22" height="22" aria-hidden="true"><use href="#i-stack"></use></svg></span>
+          <div><h3 class="h3">Hive-mind setup</h3><p class="fine" style="margin-top:4px;font-size:13.5px">Two weeks · quoted</p></div>
+        </div>
+        <p class="body" style="font-size:14.5px;line-height:1.6;margin-top:14px">One shared context for a team, with the parts each person owns kept separate from the parts everybody inherits. Includes rollout and a review at 30 days.</p>
+      </article>
+    </div>
+
+    <aside class="card card--pad card--sticky">
+      <h3 class="h3" style="font-size:19px">Book a session</h3>
+      <p class="fine" style="margin-top:8px;font-size:13.5px">Times shown in your local timezone.</p>
+      <p class="eyebrow eyebrow--quiet" style="margin:18px 0 10px">Thursday, 17 Sept</p>
+      <div class="slots">
+        <button type="button" class="slot" aria-pressed="false">09:00</button>
+        <button type="button" class="slot" aria-pressed="true">10:30</button>
+        <button type="button" class="slot" aria-pressed="false">13:00</button>
+        <button type="button" class="slot" disabled>14:30</button>
+        <button type="button" class="slot" aria-pressed="false">16:00</button>
+        <button type="button" class="slot" disabled>17:30</button>
+      </div>
+      <div class="stack" style="margin-top:18px">
+        <input class="field" type="text" placeholder="Your name" aria-label="Your name">
+        <input class="field" type="email" placeholder="Email for the invite" aria-label="Email for the invite">
+      </div>
+      <button type="button" class="btn btn--aqua btn--full" style="margin-top:14px">Request 10:30</button>
+      <p class="fine" style="margin-top:12px">Payment and scheduling happen here. Nothing about your file is required to book.</p>
+    </aside>
+  </div>
+</section>
+
+<!-- ═══ DOWNLOAD ═══════════════════════════════════════════════════════ -->
+<section class="wrap band" data-page="download" data-screen-label="08 Download" hidden>
+  <p class="eyebrow">Download</p>
+  <h1 class="h-page" style="max-width:none;font-size:clamp(36px,5vw,64px);line-height:1.02">Two minutes to a file.</h1>
+  <p class="lead" style="font-size:18px">Install the side panel, answer the first module, and download <span class="mono" style="font-size:16px;color:var(--home-context)">Context.md</span>. There is nothing to sign up for.</p>
+  <div class="row" style="margin-top:32px">
+    <!-- TODO: swap for the Chrome Web Store listing URL -->
+    <a class="btn btn--chrome btn--hero" href="#download">
+      <span class="mark-chip"><svg width="16" height="16" aria-hidden="true"><use href="#peaks"></use></svg></span>
+      Add to Chrome — free
+    </a>
+    <span class="fine" style="font-size:13.5px">Chrome 114+ · also Edge and Brave</span>
+  </div>
+
+  <div class="grid grid--4" style="margin-top:48px">
+    <div class="card">
+      <span class="mono" style="color:var(--primary);font-weight:600">01</span>
+      <h3 class="h4" style="margin-top:10px;font-size:18px">Install and open the panel</h3>
+      <p class="body">It lives in Chrome's side panel, beside whatever you are already working in.</p>
+    </div>
+    <div class="card">
+      <span class="mono" style="color:var(--primary);font-weight:600">02</span>
+      <h3 class="h4" style="margin-top:10px;font-size:18px">Answer the first module</h3>
+      <p class="body">Four questions about who you are. The app captures your baseline on the way in.</p>
+    </div>
+    <div class="card">
+      <span class="mono" style="color:var(--primary);font-weight:600">03</span>
+      <h3 class="h4" style="margin-top:10px;font-size:18px">Download and hand it over</h3>
+      <p class="body">Paste it into your assistant, or keep it in a project so every chat starts there.</p>
+    </div>
+  </div>
+
+  <div class="card card--pad row" style="justify-content:space-between;gap:20px;margin-top:20px">
+    <p style="margin:0;font-size:15px;line-height:1.6">The Chrome listing discloses no data collection, because there is none to disclose. Your file stays in your browser's own storage.</p>
+    <button type="button" class="btn--link" style="font-size:14.5px;font-weight:650" data-goto="privacy">Privacy &amp; guardrails</button>
+  </div>
+</section>
+
+<!-- ═══ PRIVACY ════════════════════════════════════════════════════════ -->
+<section class="wrap page" data-page="privacy" data-screen-label="09 Privacy" hidden>
+  <p class="eyebrow eyebrow--danger">Privacy &amp; guardrails</p>
+  <h1 class="h-page" style="max-width:22ch">The promise, and its one amendment.</h1>
+
+  <blockquote class="quote quote--law">
+    <p>Never transmit the person's content anywhere. Not to us, not to their AI without them seeing the exact text first, not to a pack publisher.</p>
+    <footer>The guardrail the product is built on, unabridged.</footer>
+  </blockquote>
+
+  <div class="grid grid--2" style="margin-top:20px">
+    <div class="card card--pad">
+      <h3 class="h3" style="font-size:19px">What stays</h3>
+      <div class="stack" style="margin-top:14px">
+        <span class="tick"><svg width="17" height="17" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Every answer you give, in your browser's own storage</span>
+        <span class="tick"><svg width="17" height="17" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Both files, generated locally, downloaded by you</span>
+        <span class="tick"><svg width="17" height="17" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Your captured baseline, and every proof run's history</span>
+      </div>
+    </div>
+    <div class="card card--pad">
+      <h3 class="h3" style="font-size:19px">What can leave, and only if you press it</h3>
+      <div class="stack" style="margin-top:14px">
+        <span class="tick"><span style="flex:none;width:17px;height:17px;margin-top:2px;border-radius:50%;background:var(--amber-tint);border:1.5px solid var(--amber-line)"></span>A proof run: your file or skill plus the task, to a named model, discarded on response</span>
+        <span class="tick"><span style="flex:none;width:17px;height:17px;margin-top:2px;border-radius:50%;background:var(--amber-tint);border:1.5px solid var(--amber-line)"></span>Feedback you choose to write and send</span>
+        <span class="tick"><span style="flex:none;width:17px;height:17px;margin-top:2px;border-radius:50%;background:var(--amber-tint);border:1.5px solid var(--amber-line)"></span>Nothing else. Ever, and not quietly.</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="card card--pad" style="margin-top:20px">
+    <h2 class="h3" style="font-size:22px">The amendment: hosted proving</h2>
+    <p class="lead" style="font-size:15.5px;line-height:1.65;margin-top:12px">A hosted test environment can transmit the file, which the guardrail above forbids. Rather than make that a quiet exception somebody finds in a network tab, it is written down here.</p>
+    <dl class="deflist" style="margin-top:18px">
+      <div class="defrow defrow--wide"><dt>What is sent</dt><dd>The prompt — your file or a single skill, plus a task. No identifiers, no session, no answer store.</dd></div>
+      <div class="defrow defrow--wide"><dt>Where it goes</dt><dd>Through us to a named model, and discarded on response.</dd></div>
+      <div class="defrow defrow--wide"><dt>Is it a default</dt><dd>No. Copy-and-paste stays, and stays first. This is a door.</dd></div>
+      <div class="defrow defrow--wide"><dt>Hidden prompts</dt><dd>None. If extra instructions exist, you read them before they send.</dd></div>
+    </dl>
+    <p class="fine" style="margin-top:18px;font-size:14px;line-height:1.6">One thing we will not claim: that a model can report your environment, location or device. It sees the prompt. Anything else it says about your machine is invention, and tuning a file on invention is worse than not tuning it.</p>
+  </div>
+</section>
+
+</main>
+
+<footer class="site-foot">
+  <div class="wrap foot-row">
+    <div style="min-width:240px">
+      <div class="row" style="gap:10px">
+        <svg width="20" height="20" aria-hidden="true"><use href="#peaks"></use></svg>
+        <span style="font-size:14px;font-weight:680;letter-spacing:-.02em">Workbrain</span>
+        <span style="font-size:13px;color:var(--ink-3)">by Model Citizen</span>
+      </div>
+      <p class="foot-promise">Your file stays in your browser. Nothing is transmitted unless you send it yourself.</p>
+    </div>
+    <nav class="foot-cols">
+      <div class="foot-col">
+        <span class="eyebrow eyebrow--quiet">Product</span>
+        <button type="button" data-goto="library">Library</button>
+        <button type="button" data-goto="proving-grounds">Proving Grounds</button>
+        <button type="button" data-goto="download">Download</button>
+      </div>
+      <div class="foot-col">
+        <span class="eyebrow eyebrow--quiet">Read</span>
+        <button type="button" data-goto="white-paper">White paper</button>
+        <button type="button" data-goto="how-it-works">Docs · how it works</button>
+        <button type="button" data-goto="privacy">Privacy &amp; guardrails</button>
+      </div>
+      <div class="foot-col">
+        <span class="eyebrow eyebrow--quiet">More</span>
+        <button type="button" data-goto="workbrain-plus">Workbrain+</button>
+        <button type="button" data-goto="services">TIM services</button>
+        <a href="https://model-citizen.org">model-citizen.org</a>
+      </div>
+    </nav>
+  </div>
+</footer>
+
+<script src="site.js" defer></script>
+</body>
+</html>

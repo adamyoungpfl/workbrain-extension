@@ -162,6 +162,17 @@ chased — waiting for one gets whatever the screenshot happens to land on.
 6. **Ask rather than assume** on anything in `docs/OPEN.md`. Those are unresolved product decisions,
    not gaps for you to fill.
 
+## The companion site (`site/`)
+
+`site/` is myworkbrain.org: three static files, no build, no dependencies —
+the README there is the contract, especially the HASH SLUGS table (the panel
+deep-links by hash; add slugs, never rename). Deploys via Vercel's Git
+integration: push to master and the connected project redeploys (vercel.json
+at the repo root serves `site/` as the output; .vercelignore keeps the
+upload to the site alone). The app and site now live in one repo so they
+move in concert — when the app gains a door to the site, the slug lands in
+the README table in the same commit.
+
 ## The interview content
 
 `src/core/flow/flow.ts` is a stub. The real 12 modules live in the sibling repo at
