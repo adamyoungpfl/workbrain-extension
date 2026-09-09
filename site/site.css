@@ -1510,14 +1510,16 @@ main,
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  /* 5h: no disc - the icon stands bare, and the GLOW comes off its own
+     edges in the hue its stem carries down to the line (drop-shadow
+     follows the drawing's alpha, not a box). */
   width: 62px;
   height: 62px;
-  border-radius: 50%;
-  background:
-    linear-gradient(var(--bg), var(--bg)) padding-box,
-    linear-gradient(120deg, var(--node-a, #2ed6f0), var(--node-b, #b36bff)) border-box;
-  border: 2px solid transparent;
-  box-shadow: 0 4px 16px color-mix(in srgb, var(--node-a, #2ed6f0) 32%, transparent);
+}
+.flowline-node svg {
+  filter:
+    drop-shadow(0 0 5px color-mix(in srgb, var(--node-a, #2ed6f0) 75%, transparent))
+    drop-shadow(0 0 14px color-mix(in srgb, var(--node-b, #b36bff) 45%, transparent));
 }
 /* Each node is coloured at ITS point along the line - the same journey the
    track paints, sampled where the icon emerges. */
