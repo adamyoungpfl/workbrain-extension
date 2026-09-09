@@ -138,7 +138,7 @@ Requested in this order, never earlier, never bundled.
 | Tier | Grants | Requested when |
 |---|---|---|
 | 0 | `storage`, `sidePanel` | Install |
-| 1 | Write to the composer on four named AI origins | They click "put it in <AI> for me" |
+| 1 | Write to the composer on four named AI origins *(built pass 5c: optional `scripting` + the ONE origin, asked on the Go press; we paste, THEY send; a selector miss degrades silently to copy-paste)* | They click "put it in <AI> for me" |
 | 2 | Read what **the person types** — never the reply | Only if they turn on ongoing measurement |
 | 3 | Read the AI's reply | Explicit, per site, never default. Ships last, if at all. |
 

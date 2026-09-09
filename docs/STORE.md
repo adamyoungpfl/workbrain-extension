@@ -15,7 +15,7 @@ Every permission must trace to this sentence. If one does not, remove the permis
 |---|---|
 | `storage` | Saves the person's answers and generated file on their own device. Nothing is transmitted. |
 | `sidePanel` | The product is a side panel; it must remain visible while the person works in another tab. |
-| *(later)* host permissions for four AI origins | Optional. Requested only when the person chooses to have Workbrain type a prompt into their AI's message box. Declining leaves the extension fully functional. |
+| host permissions for four AI origins, plus optional `scripting` *(built 2026-09-09, pass 5c)* | Optional. Requested only when the person chooses to have Workbrain type a prompt into their AI's message box — the Go press asks for that one origin and `scripting` together. Declining leaves the extension fully functional: the tab still opens and the prompt is on the clipboard. |
 
 ## Data disclosure
 

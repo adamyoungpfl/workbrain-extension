@@ -321,7 +321,10 @@ test.describe('VB-49 — the dictation hint', () => {
       host_permissions?: string[];
     };
     expect([...manifest.permissions].sort()).toEqual(['sidePanel', 'storage']);
-    expect(manifest.optional_permissions ?? []).toEqual([]);
+    /* 5c: Tier 1 built - `scripting` is OPTIONAL, asked by the Go press
+       alongside its one origin, never at install. The install ask stays
+       exactly two lines. */
+    expect(manifest.optional_permissions ?? []).toEqual(['scripting']);
     expect(manifest.host_permissions ?? []).toEqual([]);
   });
 });

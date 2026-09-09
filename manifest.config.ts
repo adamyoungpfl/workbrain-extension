@@ -34,6 +34,11 @@ export default defineManifest({
 
   permissions: ['storage', 'sidePanel'],
 
+  /* Pass 5c - Tier 1's API half. OPTIONAL like the origins below: nothing
+     at install, requested by the same in-context click (GUARDRAILS' tier
+     table is the entry for this line). */
+  optional_permissions: ['scripting'],
+
   // Release 4 only, and optional even then.
   optional_host_permissions: [
     'https://chatgpt.com/*',

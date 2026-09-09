@@ -47,12 +47,14 @@ for (const f of css) {
   if (hits) fail('Colour literal outside tokens.css', `${f}: ${[...new Set(hits)].join(' ')}`);
 }
 
-// 3 ─ core/ purity: no chrome.*, no DOM, outside the one storage module
+// 3 ─ core/ purity: no chrome.*, no DOM, outside the two sanctioned seams
+//     (storage since R1; assist since pass 5c - Tier 1's permissions ask
+//     and its message to the background, named in CLAUDE.md's one rule)
 for (const f of ts) {
   if (!f.startsWith('src/core/') || f.includes('.test.')) continue;
   const src = code(read(f));
-  if (/\bchrome\./.test(src) && !f.startsWith('src/core/storage/'))
-    fail('core/ purity', `${f} touches chrome.* — move it behind core/storage`);
+  if (/\bchrome\./.test(src) && !f.startsWith('src/core/storage/') && f !== 'src/core/assist/handoff.ts')
+    fail('core/ purity', `${f} touches chrome.* — move it behind core/storage or core/assist`);
   if (/\b(document|window)\./.test(src))
     fail('core/ purity', `${f} touches the DOM — core must run without a browser`);
 }

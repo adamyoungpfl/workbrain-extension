@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Button, Field, FlowProgress, NarratorMark, StepStack } from '../components';
 import { useNarration } from '../voice/useNarration';
 import { baselineOfferLandedLine, offerStepNarration } from '../voice/narrationLines';
+import { requestHandoff } from '../../core/assist/handoff';
 import { useNarratorPref } from '../voice/prefs';
 import { ASSIST_SERVICE_URLS } from '../../core/flow/assistServices';
 import { S } from '../strings';
@@ -308,6 +309,14 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
                            on the text change). */
                         setVisited((was) => new Set(was).add('return'));
                         setStep('return');
+                        /* 5c: and the same press is Tier 1's ask - "put
+                           it in <AI> for me". The anchor already opened
+                           the tab; on a grant the background drops the
+                           prompt into that tab's composer. A denial, a
+                           promptless environment, or a service outside
+                           the four origins changes nothing: the tab is
+                           open and the prompt is on the clipboard. */
+                        void requestHandoff(svc, task);
                       }}
                     >
                       {S.baselineGoTo(svcLabel)}

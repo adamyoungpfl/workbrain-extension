@@ -45,7 +45,7 @@ writing any code that touches permissions, storage, network, or the person's dat
 
 ```
 src/core/**  →  pure TypeScript. No `chrome.*`. No DOM. No fetch except through an injected client.
-src/panel/** →  React. May call core. May call chrome.* through src/core/storage only.
+src/panel/** →  React. May call core. May call chrome.* through src/core/storage and src/core/assist only (the second seam is Tier 1's, pass 5c: `permissions` + `sendMessage`, nothing else).
 src/background/**, src/content/**  →  thin. Message routing and DOM poking. No business logic.
 ```
 
