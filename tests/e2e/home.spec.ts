@@ -261,6 +261,9 @@ test.describe('Home surface (R1-12)', () => {
        reopening the panel. The splash is once-per-session, so the reload
        lands straight on Home. */
     if (!(await page.locator('.home').count())) {
+      /* 4v: a reload re-reads the held place - drop it so this walk lands
+         the way its claims assume (resume is resume.spec's subject). */
+      await page.evaluate(() => chrome.storage.session.remove('wb:resume'));
       await page.reload();
       await page.waitForSelector('.home', { timeout: 10_000 });
     }

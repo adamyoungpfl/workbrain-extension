@@ -197,7 +197,11 @@ test.describe('Download and import (R1-10)', () => {
     await expect(page.locator('.home')).toBeVisible();
     // Pass 4d: the Download Center lives inside Context Development.
     // --- export -----------------------------------------------------
-    await page.getByRole('button', { name: /Context Development/ }).click();
+    /* The row sits at the scroller's boundary in this walk's geometry -
+       centre it in the scroll region first, then press. */
+    const devRow = page.getByRole('button', { name: /Context Development/ });
+    await devRow.evaluate((el) => el.scrollIntoView({ block: 'center' }));
+    await devRow.click();
     await page.waitForSelector('.ctxhub');
     /* 4f: the Center stands open - straight to the grid's Download. */
     const downloadPromise = page.waitForEvent('download');

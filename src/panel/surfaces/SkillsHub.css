@@ -14,7 +14,8 @@
 .skillshub {
   display: flex;
   flex-direction: column;
-  height: 100dvh;
+  /* calc: the body's historic 8px margin (see Home.css's note). */
+  height: calc(100dvh - 16px);
   overflow: hidden;
 }
 /* 4w: the hub's one scroll region; the privacy line stands below it. */
@@ -26,6 +27,10 @@
   flex-direction: column;
   gap: 14px;
   padding: 10px 14px 16px;
+}
+/* Children keep natural height (see Home.css's 4x note). */
+.hub-scroll > * {
+  flex-shrink: 0;
 }
 .skillshub-head {
   display: flex;

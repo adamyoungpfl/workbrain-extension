@@ -510,17 +510,21 @@ function LockedCard(props: { file: FileSlotId; desc: string; onCompleteContext()
           </span>
         </span>
       </span>
-      <span className="home-card-pill">{S.badgeLocked}</span>
+      {/* Pass 4x (Adam): ONE button - the two faces stack in one box and
+          crossfade in place; only the colour and the label change. */}
+      <span className="home-card-lockface">
+        <span className="home-card-pill">{S.badgeLocked}</span>
+        <span className="home-card-go">
+          {S.lockedGo}
+          {GO_ARROW}
+        </span>
+      </span>
       {/* Pass 4l: the same bar-underline Context's Start now stands on -
           empty here, because nothing of Skills is built while locked. */}
       <span className="home-card-bar" aria-hidden="true">
         <i style={{ width: '0%' }} />
       </span>
       <span className="home-card-desc">{props.desc}</span>
-      <span className="home-card-go">
-        {S.lockedGo}
-        {GO_ARROW}
-      </span>
     </button>
   );
 }
@@ -907,12 +911,12 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
             <span className="home-next-section">{S.heroBaselineKicker}</span>
             <span className="home-next-q">{S.heroBaselineQ}</span>
             <span className="home-next-answer">
-              {S.homeNextAnswer}
-              {/* 4u: the arrow is a CHARACTER of the label - cap-height
-                  sized, stroked at the type's own weight, sitting on the
-                  text's optical line. */}
-              <svg className="home-next-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
-                <path d="M2.2 7 H11.4 M7.4 3.2 L11.6 7 L7.4 10.8" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+              {/* 4x: explicit geometry - a worded span and a block-level
+                  arrow, centred as one cluster in a fixed-height pill, so
+                  nothing rides high of anything. */}
+              <span className="home-next-answer-word">{S.homeNextAnswer}</span>
+              <svg className="home-next-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+                <path d="M2.4 7 H11.2 M7.3 3.4 L11.4 7 L7.3 10.6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
           </button>
@@ -935,12 +939,12 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
                 pressing this. It joins the accessible name, which is
                 right: the name now ends in what pressing does. */}
             <span className="home-next-answer">
-              {S.homeNextAnswer}
-              {/* 4u: the arrow is a CHARACTER of the label - cap-height
-                  sized, stroked at the type's own weight, sitting on the
-                  text's optical line. */}
-              <svg className="home-next-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
-                <path d="M2.2 7 H11.4 M7.4 3.2 L11.6 7 L7.4 10.8" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
+              {/* 4x: explicit geometry - a worded span and a block-level
+                  arrow, centred as one cluster in a fixed-height pill, so
+                  nothing rides high of anything. */}
+              <span className="home-next-answer-word">{S.homeNextAnswer}</span>
+              <svg className="home-next-arrow" width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+                <path d="M2.4 7 H11.2 M7.3 3.4 L11.4 7 L7.3 10.6" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
           </button>

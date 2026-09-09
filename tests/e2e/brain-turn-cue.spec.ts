@@ -333,6 +333,9 @@ test.describe('VB-71 — the cue that says the brain can be turned', () => {
     // is the closest a test gets to that: everything in memory goes, the panel
     // comes back on Home, and the only thing that crossed the gap is
     // `wb:prefs`.
+    /* 4v: a reload re-reads the held place - drop it so this walk lands
+       the way its claims assume (resume is resume.spec's subject). */
+    await page.evaluate(() => chrome.storage.session.remove('wb:resume'));
     await page.reload();
     await page.waitForSelector('.home');
     // V2.1 VB-73: the splash is a doorway now and stays until dismissed — Escape
