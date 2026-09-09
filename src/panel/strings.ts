@@ -2064,8 +2064,13 @@ export const S = {
   baselineNextTitle: 'That is where you start from.',
   baselineNextBody:
     'Your AI wrote that with nothing about you loaded. The interview writes the file that changes it.',
-  baselineImprove: 'Improve this answer',
-  baselineHome: 'Go home',
+  /* Pass 5d (Adam): the landed screen's primary is the BUILDER's door,
+     and the way home is the soft exit. */
+  baselineImprove: 'Build Your Workbrain',
+  baselineHome: "That's enough for now, take me home!",
+  /* The transition the narrator speaks entering the builder from the
+     test drive - prefixed onto the first question's own line. */
+  baselineHandoffLead: "Great! Let's get started! First,",
   /* Spine step 3 — the comparison surface. The product's whole argument in one
      view: the same task, answered at each stage.
 

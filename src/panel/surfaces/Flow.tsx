@@ -129,6 +129,7 @@ import { TourSlide, usesTourSlide, type TourSlideId } from '../components/TourSl
 import { makeScoreEntry, appendScore } from '../../core/report/scoring';
 import { appendRun } from '../../core/report/runs';
 import { narrationFor, narrationForFollowUp } from '../../core/voice/narration';
+import type { Narration } from '../../core/voice/narration';
 import { NARRATION_COPY } from '../voice/copy';
 import { useNarration } from '../voice/useNarration';
 import { useNarratorPref } from '../voice/prefs';
@@ -659,6 +660,10 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
    * state: it lives for this session and is never written down. */
   /** D1 — offered once per arrival, not once per render of the gate. */
   const [baselineTaken, setBaselineTaken] = useState(false);
+  /* 5d — THE BRIDGE. One shot: armed by the test drive's "Build Your
+     Workbrain" press ('armed'), spent on the first question it lands on
+     (that pos-id), gone the moment the position moves again (null). */
+  const [handoffLead, setHandoffLead] = useState<string | null>(null);
   const [runCard, setRunCard] = useState<Run | null>(null);
   /** …and which runs have already been applauded, so going Back and forward
    * through a boundary does not replay it. The same ephemeral shape
@@ -809,6 +814,23 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
     if (ladderStepId === 'wb_canvas' || ladderStepId === 'wb_go') setRequestedDrawerMode('list');
   }, [ladderStepId]);
 
+  /* 5d: spend the bridge on the first position it meets; clear it when the
+     position moves on. Above the guard on `ladderStepId`'s own pattern -
+     the loading render must run the same hook list (React error 310; this
+     file had already learned it once, and taught it to this pass twice:
+     first below the stepView branches, then below this very line). */
+  const leadPosId = answers
+    ? positionKey(viewing ?? findPosition(modules, answers, declinedBlocks, seenIntros))
+    : null;
+  useEffect(() => {
+    if (!leadPosId) return;
+    setHandoffLead((lead) => {
+      if (lead === 'armed') return leadPosId;
+      if (lead && lead !== leadPosId) return null;
+      return lead;
+    });
+  }, [leadPosId]);
+
   if (!answers) return null;
   // Fresh non-null binding — nested functions below can't rely on the
   // narrowing above (see StepView's persist/handleNext for the same pattern).
@@ -816,6 +838,7 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
 
   const total = questionCount(modules);
   const position = viewing ?? findPosition(modules, ans, declinedBlocks, seenIntros);
+
 
   async function persist(next: Answers): Promise<boolean> {
     setAnswersState(next);
@@ -1236,6 +1259,9 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
         }}
         onContinue={() => {
           setBaselineTaken(true);
+          /* 5d: arm the transition - the FIRST question after the test
+             drive is spoken with the guide's bridge in front of it. */
+          setHandoffLead('armed');
           onBaselineDone?.();
         }}
         /* Panel two's pick is a real answer: it lands in `goal_service`, the
@@ -1308,6 +1334,7 @@ export function Flow({ modules, renderDone, onDone, onHome, onFixSteps, initialP
     <StepView
       key={positionKey(position)}
       cue={positionKey(position)}
+      narrationLead={handoffLead === positionKey(position) ? S.baselineHandoffLead : null}
       modules={modules}
       contextAnswers={contextAnswers}
       pos={position}
@@ -1475,7 +1502,9 @@ interface StepViewProps {
   baselineDoor?: boolean | undefined;
   /** `name` is V1.4 VB-20's: set only when the block names its new records —
    * see `Flow`'s `handleAddAnotherDecision`. */
-  onAddAnotherDecision: (blockId: string, wantsMore: boolean, name?: string) => void;
+  onAddAnotherDecision: (blockId: string, wantsMore: boolean, name?: string) => void;  /** Pass 5d: the test-drive bridge, prefixed onto this position's
+   * question narration when armed for it. */
+  narrationLead?: string | null;
 }
 
 /**
@@ -1504,6 +1533,7 @@ function StepView({
   onFixSteps,
   onJumpTo,
   baselineDoor,
+  narrationLead = null,
   jumpList = [],
 }: StepViewProps) {
   const [draftValues, setDraftValues] = useState<string[]>(() => initialSelection(pos, answers));
@@ -1745,6 +1775,12 @@ function StepView({
    */
   const { on: narratorOn } = useNarratorPref();
   const onReflectSubScreen = pos.kind === 'reflect' && reflectMode !== 'view';
+  /* Pass 5d — the bridge's prefix arrives as a prop; the arming and the
+     spending live with the state in the outer Flow. */
+  const withHandoffLead = (n: Narration | null): Narration | null =>
+    n && n.role === 'question' && narrationLead
+      ? { ...n, text: `${narrationLead} ${n.text}` }
+      : n;
   useNarration(
     /* The baseline prompt screen speaks THE GUIDE'S SCRIPT rather than its
        own worksheet line (Adam, 2026-09-03, verbatim in
@@ -1754,7 +1790,7 @@ function StepView({
       ? null
       : pos.kind === 'step' && promptOnly(pos.step)
         ? { role: 'question', text: baselineAskNarration() }
-        : narrationFor(pos, answers, NARRATION_COPY),
+        : withHandoffLead(narrationFor(pos, answers, NARRATION_COPY)),
     narratorOn,
   );
 
