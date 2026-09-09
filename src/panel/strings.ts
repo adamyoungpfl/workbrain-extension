@@ -984,7 +984,6 @@ export const S = {
      one somebody sees until they have two skills. The active line stays a
      short verb: by then the row is a door, not an explanation. [DRAFT] */
   capRowSub: 'Try and refine your skills.',
-  capRowWaiting: 'Try and refine your skills. Unlocks automatically with your 2nd skill.',
   capIntoSkills: 'Now watch one of them run',
 
   copyPrompt: 'Copy',
@@ -1265,6 +1264,10 @@ export const S = {
      download grid, and Proving Grounds as the page's working bulk. */
   ctxDone: 'Completed',
   ctxCompleteNow: 'Complete it now',
+  /* Pass 4q: the Download Center is a Workbrain area of its own - every
+     file that can travel, and the one folder that holds them all. */
+  rowDownloadsSub: 'Every file you can carry out - and the one folder that holds them all.',
+  dlSub: 'Your baseline and both files, ready to travel - together or one at a time.',
   /* Pass 4p: the Center is Baseline + Context. */
   ctxGridBaseline: 'Baseline',
   ctxGridBaselineMeta: 'Your one prompt',
@@ -1312,10 +1315,8 @@ export const S = {
   certLead: 'Skills built and tested by Model Citizen - browse the library, bring one back, and activate it here.',
   certBrowse: 'Browse the Certified library',
   certRedeem: 'Redeem a code',
-  pgSkillName: 'Prove a skill',
   hubBack: 'Back',
   hubSub: 'Create a new skill, review the ones you have, or redeem one built and tested for you.',
-  hubReviewKicker: 'Review',
   hubRedeemKicker: 'Redeem',
   hubRedeemName: 'Workbrain Certified Skills',
   /* PROVING GROUNDS (same brief): the proof door points at the public

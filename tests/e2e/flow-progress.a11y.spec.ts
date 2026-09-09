@@ -30,10 +30,15 @@ test('axe finds no violations on a question showing the progress bar (VB-02)', a
   // is its keyboard exit, and nothing else about this walk-in changed.
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
-  await page.getByRole('button', { name: /^Context\.md/ }).click();
-  // V1.7 VB-37: the file row opens the FILE, and the file view is where the
-  // interview is entered from — see src/panel/surfaces/FileView.tsx.
-  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+  /* 4r: a fresh card funnels to the baseline, so the PLAIN interview's
+     door is Context Development's own Start now (Finish it now once the
+     file has anything in it). */
+  await page.getByRole('button', { name: /Context Development/ }).click();
+  await page.waitForSelector('.ctxhub');
+  await page
+    .locator("[data-file='context']")
+    .getByRole('button', { name: /^(Start now|Finish it now)$/ })
+    .click();
   await page.waitForSelector('.flow');
   await expect(page.locator('.flowprogress[role="progressbar"]')).toBeVisible();
 

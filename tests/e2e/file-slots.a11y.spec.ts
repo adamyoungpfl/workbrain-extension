@@ -199,12 +199,9 @@ test('a locked slot’s name and its unlock line both clear 4.5:1 (VB-36)', asyn
      non-control's text, GUARDRAILS does not. */
   await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
   await page.waitForSelector('.skillshub');
-  await expect(page.locator('.skillshub-door.is-waiting')).not.toHaveCount(0);
-  for (const part of ['.skillshub-name', '.skillshub-line']) {
-    const dormant = await inkAndGround(page, `.skillshub-door.is-waiting ${part}`);
-    const ratio = contrastRatio(dormant.ink, dormant.ground);
-    expect(ratio, `the waiting door's ${part} reads at ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
-  }
+  /* Pass 4q: the waiting door retired - nothing stands before the gate,
+     so there are no dormant words left to measure. */
+  await expect(page.locator('.skillshub-door.is-waiting')).toHaveCount(0);
 
   await context.close();
 });

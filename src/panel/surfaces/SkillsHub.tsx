@@ -211,16 +211,10 @@ export function SkillsHub({ onBack, onCreate, onEdit, onProveSkill }: SkillsHubP
               {S.pgProve}
             </Button>
           </>
-        ) : (
-          /* The earned gate, in the waiting grammar it has always worn:
-             two runnable recipes open the Grounds, and a waiting door is
-             not a control at all. */
-          <div className="skillshub-door is-waiting">
-            <span className="skillshub-kicker">{S.hubReviewKicker}</span>
-            <span className="skillshub-name">{S.pgSkillName}</span>
-            <span className="skillshub-line">{S.capRowWaiting}</span>
-          </div>
-        )}
+        ) : null}
+        {/* Pass 4q (Adam): the waiting line is GONE - before two runnable
+            skills the Grounds show their lead and nothing else. The earned
+            gate (capabilityReady) still decides when the picker stands. */}
       </section>
 
       {/* ── The Certified bulk, standing where it stood — with "Redeem a

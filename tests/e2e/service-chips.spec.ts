@@ -46,8 +46,15 @@ async function openOnTheGate(opts: { reducedMotion?: 'reduce' } = {}) {
   await page.waitForSelector('.home');
   await page.keyboard.press('Escape');
   await page.waitForSelector('.splash', { state: 'detached' });
-  await page.getByRole('button', { name: /^Context\.md/ }).click();
-  await page.getByRole('button', { name: 'Edit the file', exact: true }).click();
+  /* 4r: a fresh card funnels to the baseline, so the PLAIN interview's
+     door is Context Development's own Start now (Finish it now once the
+     file has anything in it). */
+  await page.getByRole('button', { name: /Context Development/ }).click();
+  await page.waitForSelector('.ctxhub');
+  await page
+    .locator("[data-file='context']")
+    .getByRole('button', { name: /^(Start now|Finish it now)$/ })
+    .click();
   await page.waitForSelector('.flow');
   // The dime tour (V2.5 VB-114): three slides, each advanced by the tour's
   // OWN button — the nav row sits the tour out.

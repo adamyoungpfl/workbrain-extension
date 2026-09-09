@@ -268,7 +268,10 @@ test.describe('VB-36 — Home is the set of files (V2.6 VB-125b, the card gramma
  */
 test.describe('VB-102 — the browse canvas', () => {
   test('an active slot opens the browse canvas, and Back returns to the shelf', async () => {
-    const { context, id } = await launch();
+    const { context, sw, id } = await launch();
+    /* 4r: ACTIVE means started - a fresh card funnels to the baseline now,
+       so the canvas claim seeds a file with something in it. */
+    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), nothingLeftToAsk());
     const page = await openHome(context, id);
 
     await fileRow(page, 'Context\\.md').click();
@@ -290,20 +293,22 @@ test.describe('VB-102 — the browse canvas', () => {
     await context.close();
   });
 
-  test('on a file nobody has started, Edit lands on the flow\'s own first question', async () => {
+  test('on a file nobody has started, the card funnels to the baseline first (4r)', async () => {
     const { context, id } = await launch();
     const page = await openHome(context, id);
+    /* Adam, 4r: "Start Now, Open and Complete Context should all link to
+       the item in Your Next Move… if Pre-Launch Baseline has not been
+       completed, that is the first move." A fresh file's card IS the
+       funnel - it lands on the errand's own goal question. */
     await fileRow(page, 'Context\\.md').click();
-    await expect(page.locator('.browse')).toBeVisible();
-
-    const go = page.getByRole('button', { name: 'Edit the file', exact: true });
-    await go.focus();
-    await page.keyboard.press('Enter');
     await expect(page.locator('.flow')).toBeVisible();
-    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', fileStartTarget(contextOutline)!);
-
+    await expect(page.locator('.flow')).toHaveAttribute('data-step-id', 'goal_want');
     await context.close();
   });
+
+  /* 'Edit lands on the flow's first question' from a FRESH canvas retired
+     with the road to it - 4r funnels a fresh card to the baseline, and the
+     canvas opens for started files (proved above) or via the hubs' Edit. */
 
   test('a row press SELECTS — the Brain mirrors it, and nothing navigates (VB-103)', async () => {
     const { context, sw, id } = await launch();

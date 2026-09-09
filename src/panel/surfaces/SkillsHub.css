@@ -7,6 +7,10 @@
 .skillshub.ctxhub {
   --hub-hue: var(--home-context);
 }
+/* Pass 4q: the Download Center page rides the primary family. */
+.skillshub.dlhub {
+  --hub-hue: var(--primary);
+}
 .skillshub {
   display: flex;
   flex-direction: column;

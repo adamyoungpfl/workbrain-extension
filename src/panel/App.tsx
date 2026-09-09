@@ -9,6 +9,7 @@ import { Home } from './surfaces/Home';
 import { Multiples } from './surfaces/Multiples';
 import { SkillsHub } from './surfaces/SkillsHub';
 import { ContextHub } from './surfaces/ContextHub';
+import { DownloadsHub } from './surfaces/DownloadsHub';
 import { Splash } from './surfaces/Splash';
 import { Universe } from './scenery/Universe';
 import { APP_UNIVERSE } from '../core/splash/universe';
@@ -70,7 +71,7 @@ const proofModules = buildProofModules({
  * on Home and re-derives the shelf, the file and the interview's position from
  * `wb:answers`.
  */
-type Surface = 'home' | 'file' | 'flow' | 'multiples' | 'actions' | 'skillshub' | 'contexthub';
+type Surface = 'home' | 'file' | 'flow' | 'multiples' | 'actions' | 'skillshub' | 'contexthub' | 'dlhub';
 /** BS-04 (§4) adds `capability` — proof two. It runs on the SKILLS store,
  * which is what makes the offer cheap: the recipes it hands over are that
  * store's own records. */
@@ -361,6 +362,7 @@ export default function App() {
             openContextAt(positionForQuestionId(contextModules, questionId) ?? undefined);
           }}
           onOpenContextHub={() => setSurface('contexthub')}
+          onOpenDownloads={() => setSurface('dlhub')}
           /* 4n: the hero's default - the pre-launch errand, the same route
              Context Development's baseline side takes. */
           onBaseline={() => {
@@ -453,6 +455,24 @@ export default function App() {
           onResume={() => openContextAt()}
           onProve={openProof}
           onOpenTarget={(target) => openContext(target)}
+        />
+      );
+    }
+    if (surface === 'dlhub') {
+      /* Pass 4q: the Download Center - every file, one folder, one page. */
+      return (
+        <DownloadsHub
+          onBack={goHome}
+          onBaseline={() => {
+            setWantBaseline(true);
+            openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
+          }}
+          onEdit={(id) => {
+            setFileId(id);
+            setSurface('file');
+          }}
+          onResume={() => openContextAt()}
+          onCreate={() => openSkillsAt()}
         />
       );
     }

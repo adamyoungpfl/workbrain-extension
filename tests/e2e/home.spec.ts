@@ -705,24 +705,24 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
      * themselves instead of disabled squares."
      */
     const rows = page.locator('.home-row');
-    /* Pass 4d: FIVE became THREE OPERATIONAL AREAS - Context Development
-       (baseline, Download Center, Proving Grounds, the comparison), Skill
-       Development (Create/Review/Redeem), and Workbrain+. */
-    await expect(rows).toHaveCount(3);
+    /* Pass 4q: FOUR areas - the two Development pages, the Download
+       Center (every file, one folder), and Workbrain+. */
+    await expect(rows).toHaveCount(4);
     await expect(rows.nth(0)).toContainText(S.rowContextHub);
     await expect(rows.nth(1)).toContainText(S.rowSkillsHub);
-    await expect(rows.nth(2)).toContainText(S.plusTitle);
-    for (const i of [0, 1]) {
+    await expect(rows.nth(2)).toContainText(S.ctxDownloadName);
+    await expect(rows.nth(3)).toContainText(S.plusTitle);
+    for (const i of [0, 1, 2]) {
       await expect(rows.nth(i)).not.toHaveClass(/is-waiting/);
       await expect(rows.nth(i).locator('button')).toHaveCount(1);
     }
 
-    /* The waiting grammar lives on Skill Development's own Grounds (4i). */
+    /* Pass 4q: the waiting line RETIRED from the skills Grounds - before
+       two runnable skills the section shows its lead and nothing else. */
     await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
     await page.waitForSelector('.skillshub');
-    const waiting = page.locator('.skillshub-door.is-waiting');
-    await expect(waiting).toContainText(S.capRowWaiting);
-    await expect(waiting.locator('button, a')).toHaveCount(0);
+    await expect(page.locator('.skillshub-door.is-waiting')).toHaveCount(0);
+    await expect(page.locator('.skillspick')).toHaveCount(0);
 
     /* The no-control-while-waiting claim rode with the waiting door into
        the hub and is asserted there above; the redeem-on-day-one claim is

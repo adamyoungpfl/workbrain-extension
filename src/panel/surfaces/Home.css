@@ -795,6 +795,9 @@
 .home-row[data-tone='plus'] {
   --row-edge: color-mix(in srgb, var(--violet) 55%, var(--divider));
 }
+.home-row[data-tone='downloads'] {
+  --row-edge: color-mix(in srgb, var(--primary) 55%, var(--divider));
+}
 
 /* The three areas' text-and-hover families ride the ROW TONES engine
    below (one system, retooled for pass 4d) - the map now speaks
@@ -849,6 +852,9 @@ a.home-row-hit:hover {
 .home-row[data-tone='plus'] > .home-row-hit {
   background: color-mix(in srgb, var(--violet) 8%, transparent);
 }
+.home-row[data-tone='downloads'] > .home-row-hit {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
 .home-row[data-tone='context'] > .home-row-hit:hover {
   background: color-mix(in srgb, var(--home-context) 14%, transparent);
 }
@@ -857,6 +863,9 @@ a.home-row-hit:hover {
 }
 .home-row[data-tone='plus'] > .home-row-hit:hover {
   background: color-mix(in srgb, var(--violet) 14%, transparent);
+}
+.home-row[data-tone='downloads'] > .home-row-hit:hover {
+  background: color-mix(in srgb, var(--primary) 14%, transparent);
 }
 .home-row-hit:focus-visible {
   outline: 2px solid var(--primary);
@@ -941,6 +950,11 @@ a.home-row-hit:hover .home-row-go {
 .home-row[data-tone='plus'] {
   --row-tint: color-mix(in srgb, var(--violet) 9%, transparent);
   --row-ink: color-mix(in srgb, var(--violet) 82%, var(--ink));
+}
+/* Pass 4q: the Download Center area rides the primary family. */
+.home-row[data-tone='downloads'] {
+  --row-tint: color-mix(in srgb, var(--primary) 9%, transparent);
+  --row-ink: color-mix(in srgb, var(--primary) 82%, var(--ink));
 }
 
 /* The chip carries the tone at rest — enough to distinguish, not enough to

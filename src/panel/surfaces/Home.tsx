@@ -59,6 +59,8 @@ export interface HomeProps {
   /** Pass 4n: the pre-launch errand — until a baseline run exists, the
    * hero features it and this is where its button goes. */
   onBaseline?: (() => void) | undefined;
+  /** Pass 4q: the Download Center area — every file, one folder. */
+  onOpenDownloads: () => void;
   /**
    * Deep-links straight at the question a recommendation is about. App.tsx
    * turns the target into a real `Position` (core/recommend/targets.ts),
@@ -251,22 +253,7 @@ const STACK_ICON = (
  * (currentColor, aria-hidden; the card's own words carry everything). A
  * document for Context, layered sheets for Skills, a bolt for the generated
  * Actions; the locked chips wear the one padlock (fileLabels' LockGlyph). */
-const DOC_ICON = (
-  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
-    <defs>
-      <linearGradient id="wbflow-doc" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
-        <stop stopColor="var(--globe-node-2-solid)" />
-        <stop offset="1" stopColor="var(--splash-link-end)" />
-      </linearGradient>
-    </defs>
-    <path
-      d="M6 2h8l5 5v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm7 1.5V8h4.5L13 3.5Z"
-      fill="url(#wbflow-doc)"
-      fillRule="evenodd"
-    />
-  </svg>
-)
-
+/* DOC_ICON retired in 4q - the person (BUST_ICON) is the Context mark now. */
 const LAYERS_ICON = (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
     <defs>
@@ -278,8 +265,7 @@ const LAYERS_ICON = (
     <path d="M12 2.5 22 8.5 12 14.5 2 8.5Z" fill="url(#wbflow-layers)" />
     <path d="M4.4 12.6 12 17.2l7.6-4.6 2.4 1.4-10 6-10-6Z" fill="url(#wbflow-layers)" />
   </svg>
-)
-
+);
 
 const GO_ARROW = (
   <svg width="12" height="12" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden="true">
@@ -291,6 +277,20 @@ const GO_ARROW = (
  * chips: currentColor strokes, aria-hidden, the tile's own word carries it.
  * (VB-125c also retired PERSON_ICON with the "Talk to a person" row — the
  * services card and the TiM tile are the human doors now.) */
+/** Pass 4q: Context Development's new mark - a PERSON, the concept the
+ * file describes, in the same flow-silhouette language. */
+const BUST_ICON = (
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="wbflow-bust" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+        <stop stopColor="var(--globe-node-2-solid)" />
+        <stop offset="1" stopColor="var(--splash-link-end)" />
+      </linearGradient>
+    </defs>
+    <path d="M12 3.5a4.4 4.4 0 1 1 0 8.8 4.4 4.4 0 0 1 0-8.8Z" fill="url(#wbflow-bust)" />
+    <path d="M12 14c4.4 0 7.6 2.5 8.3 6.3.1.6-.3 1.2-1 1.2H4.7c-.7 0-1.1-.6-1-1.2C4.4 16.5 7.6 14 12 14Z" fill="url(#wbflow-bust)" />
+  </svg>
+);
 const DOWNLOAD_ICON = (
   <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
     <defs>
@@ -591,7 +591,7 @@ function LockedCard(props: { file: FileSlotId; desc: string; onCompleteContext()
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOpenFile, onOpenSkillsHub, onOpenMultiples, onBaseline }: HomeProps) {
+export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOpenFile, onOpenSkillsHub, onOpenMultiples, onBaseline, onOpenDownloads }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   /** V2.2 — the second file's answers, for the shelf: whether Skills.md is
    * finished (which unlocks the DERIVED Actions.md), and what its row says.
@@ -738,6 +738,17 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
   const featured = featuredMove(queue);
   /* Pass 4n: until this is true, the hero features the baseline errand. */
   const baselineTaken = hasBaseline(report);
+  /* Pass 4r (Adam): "the link for Start Now, Open and Complete Context
+     should all link to the item in Your Next Move. As such, if Pre-Launch
+     Baseline has not been completed, that is the first move. The goal is
+     to have that before we start the interviews." One door, the hero's
+     own: the baseline until it is taken, then the featured question. */
+  const nextMoveDoor =
+    !baselineTaken && onBaseline
+      ? onBaseline
+      : featured && onOpenNext
+        ? () => onOpenNext(featured.questionId)
+        : onStart;
   // V2.9 VB-146: the interface shows the beta's slots — Actions is hidden
   // (core/files/slots.ts's BETA_HIDDEN_SLOTS carries the story).
   /**
@@ -1074,7 +1085,7 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
       <div className="home-duo">
         <HomeCard
           file="context"
-          icon={DOC_ICON}
+          icon={BUST_ICON}
           status={
             // R1-12's badge semantics, unchanged by the clothes: due and
             // Current are FRESHNESS claims (computeNextMove), and only a
@@ -1105,7 +1116,7 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
           action={
             contextComplete
               ? undefined
-              : { label: hasStarted ? S.ctxFinishNow : S.ctxStartNow, onClick: onStart }
+              : { label: hasStarted ? S.ctxFinishNow : S.ctxStartNow, onClick: nextMoveDoor }
           }
           barPercent={utilization.segments.context}
           desc={contextComplete ? S.cardContextDesc : S.cardContextUnlockDesc}
@@ -1113,7 +1124,9 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
           // one real answer in it. Not "finished", because a file somebody is
           // half way through is exactly the one worth pulling the eye to.
           active={hasStarted}
-          onOpen={() => onOpenFile('context')}
+          /* 4r: a FRESH card's Open is the funnel's door too - the file
+             view earns its opening with the first answer. */
+          onOpen={hasStarted ? () => onOpenFile('context') : nextMoveDoor}
         />
         {slots.find((slot) => slot.id === 'skills')?.state === 'open' ? (
           <HomeCard
@@ -1133,7 +1146,7 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
             onOpen={onOpenSkillsHub}
           />
         ) : (
-          <LockedCard file="skills" desc={S.cardSkillsDesc} onCompleteContext={onStart} />
+          <LockedCard file="skills" desc={S.cardSkillsDesc} onCompleteContext={nextMoveDoor} />
         )}
       </div>
       {/* V2.9 VB-146: Actions' row is HIDDEN for the beta — no real builder
@@ -1186,7 +1199,7 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
             Development now; the skills doors inside Skill Development. */}
         <HomeRow
           id="context"
-          icon={DOWNLOAD_ICON}
+          icon={BUST_ICON}
           label={S.rowContextHub}
           sub={S.rowContextHubSub}
           ready
@@ -1204,6 +1217,16 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
             four goods belong on the page this links to; on Home they cost
             ~230px and made the panel read as a storefront on the screen a
             person opens to do work (§6). */}
+        {/* Pass 4q: the Download Center is an area of its own - it inherits
+            the download mark Context Development wore. */}
+        <HomeRow
+          id="downloads"
+          icon={DOWNLOAD_ICON}
+          label={S.ctxDownloadName}
+          sub={S.rowDownloadsSub}
+          ready
+          onPress={onOpenDownloads}
+        />
         <HomeRow id="plus" icon={PLUS_ICON} label={S.plusTitle} sub={S.rowPlusSub} ready href={PLUS_URL} />
       </ul>
 

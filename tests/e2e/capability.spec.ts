@@ -102,13 +102,12 @@ test.describe('BS-04 — proof two, the capability proof', () => {
   test('the door waits for two runnable recipes, and says so in words', async () => {
     const { context, sw, id } = await launch();
 
-    // Nothing at all - the Grounds stand waiting, bare and uncontrolled.
+    // Nothing at all - the Grounds show their lead and nothing else
+    // (pass 4q retired the waiting line; the gate speaks through absence).
     let page = await openHome(context, id);
     await grounds(page);
-    let door = page.locator('.skillshub-door.is-waiting');
-    await expect(door).toContainText(S.capRowWaiting);
-    // A waiting door is not a disabled control — it is not a control at all.
-    expect(await door.evaluate((el) => el.tagName)).toBe('DIV');
+    await expect(page.locator('.skillshub-door.is-waiting')).toHaveCount(0);
+    await expect(page.locator('.skillspick')).toHaveCount(0);
     await expect(page.getByRole('button', { name: S.pgProve, exact: true })).toHaveCount(0);
     await page.close();
 
@@ -117,7 +116,8 @@ test.describe('BS-04 — proof two, the capability proof', () => {
     await seed(sw, ONE_SKILL);
     page = await openHome(context, id);
     await grounds(page);
-    await expect(page.locator('.skillshub-door.is-waiting')).toContainText(S.capRowWaiting);
+    await expect(page.locator('.skillspick')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: S.pgProve, exact: true })).toHaveCount(0);
     await page.close();
 
     // Two, and the Grounds are real — the picker offers both skills and
@@ -126,7 +126,6 @@ test.describe('BS-04 — proof two, the capability proof', () => {
     await seed(sw, TWO_SKILLS);
     page = await openHome(context, id);
     await grounds(page);
-    await expect(page.locator('.skillshub-door.is-waiting')).toHaveCount(0);
     await expect(page.locator('.skillspick-opt')).toHaveCount(2);
     await expect(page.getByRole('button', { name: S.pgProve, exact: true })).toBeVisible();
 
@@ -284,7 +283,8 @@ test.describe('BS-04 — proof two, the capability proof', () => {
     await seed(sw, ONE_SKILL);
     const page = await openHome(context, id);
     await grounds(page);
-    await expect(page.locator('.skillshub-door.is-waiting')).toContainText(S.capRowWaiting);
+    /* 4q: the gate speaks through absence - no picker, no Prove It. */
+    await expect(page.locator('.skillspick')).toHaveCount(0);
     await expect(page.getByRole('button', { name: S.pgProve, exact: true })).toHaveCount(0);
     await expect(page.locator('.capoffer')).toHaveCount(0);
     await context.close();
