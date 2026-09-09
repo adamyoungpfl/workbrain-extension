@@ -36,7 +36,6 @@ import { contextModules, contextOutline, skillsModules, skillsOutline } from '..
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
 /* The download handlers moved to Context Development with the Center (4d). */
-import { UploadSheet } from './UploadSheet';
 import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
 import { hasBaseline } from '../../core/report/runs';
@@ -305,12 +304,7 @@ const DOWNLOAD_ICON = (
 )
 
 /** VB-145 — the upload door's glyph: the same tray, arrow rising out. */
-const UPLOAD_ICON = (
-  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M9 12V3.5M5.8 6.7 9 3.5l3.2 3.2" />
-    <path d="M3.5 12v2.5h11V12" />
-  </svg>
-);
+/* UPLOAD_ICON retired in 4t - the chrome wears the File Hub's tray. */
 
 /** The pending row's glyph - a rocket standing on its pad, in the same
  * 17px currentColor stroke as every neighbour. */
@@ -603,7 +597,6 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
   const [report, setReport] = useState<ReportState | undefined>(undefined);
   /** V2.6 VB-125c — whether the Move-file sheet is up. In-memory, like every
    * other "where am I" fact: a reopen lands on Home with it closed. */
-  const [uploadOpen, setUploadOpen] = useState(false);
   /** BS-02 — the beta's return channel, in the chrome that already exists. */
   const [feedbackOpen, setFeedbackOpen] = useState(false);
   const [homeToast, setHomeToast] = useState<string | null>(null);
@@ -667,11 +660,8 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
 
   if (!answers) return null;
 
-  async function persist(next: Answers): Promise<boolean> {
-    setAnswersState(next);
-    const result = await setLocal('wb:answers', next);
-    return result.ok;
-  }
+  /* `persist` left with the UploadSheet (4t) - the File Hub writes its
+     own imports now. */
 
   /**
    * The one write this feature makes. Optimistic: the row goes immediately
@@ -820,13 +810,15 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
         {/* V2.9 VB-145 — the upload door, at the top of the UI where Adam
             asked for it. It only OPENS a sheet; the sheet carries the
             replace-warning and the careful path (UploadSheet.tsx). */}
+        {/* Pass 4t: the upload door became the FILE HUB - files in and
+            out through one page; the upload sheet lives there now. */}
         <button
           type="button"
           className="home-chrome-upload"
-          aria-label={S.uploadOpen}
-          onClick={() => setUploadOpen(true)}
+          aria-label={S.fileHub}
+          onClick={onOpenDownloads}
         >
-          {UPLOAD_ICON}
+          {DOWNLOAD_ICON}
         </button>
         {/* BS-02 — reachable in one press from here, and from the interview's
             own chrome. Not a new band: the review's proposed Home puts it on
@@ -1221,16 +1213,7 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
             four goods belong on the page this links to; on Home they cost
             ~230px and made the panel read as a storefront on the screen a
             person opens to do work (§6). */}
-        {/* Pass 4q: the Download Center is an area of its own - it inherits
-            the download mark Context Development wore. */}
-        <HomeRow
-          id="downloads"
-          icon={DOWNLOAD_ICON}
-          label={S.ctxDownloadName}
-          sub={S.rowDownloadsSub}
-          ready
-          onPress={onOpenDownloads}
-        />
+        {/* The 4q downloads row folded into the chrome's File Hub (4t). */}
         <HomeRow id="plus" icon={PLUS_ICON} label={S.plusTitle} sub={S.rowPlusSub} ready href={PLUS_URL} />
       </ul>
 
@@ -1258,13 +1241,7 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
         context={{ surface: 'home' }}
       />
 
-      <UploadSheet
-        open={uploadOpen}
-        onClose={() => setUploadOpen(false)}
-        answers={answers}
-        onImport={persist}
-        onImported={(count) => setHomeToast(S.toastImported(count))}
-      />
+      {/* UploadSheet moved into the File Hub with its door (4t). */}
       {homeToast && <Toast message={homeToast} onDismiss={() => setHomeToast(null)} />}
 
       {/* V2.8 VB-133 — the Skill Redeemer: the code from a bought or

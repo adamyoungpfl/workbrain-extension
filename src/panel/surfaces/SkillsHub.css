@@ -15,8 +15,8 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
-  /* Bottom room for the pinned privacy line (pass 4o). */
-  padding: 10px 14px 60px;
+  /* The privacy line is sticky-in-flow since 4t - no reserved bottom. */
+  padding: 10px 14px 16px;
   min-height: 100dvh;
 }
 .skillshub-head {

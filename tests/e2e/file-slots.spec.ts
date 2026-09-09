@@ -189,7 +189,13 @@ test.describe('VB-36 — Home is the set of files (V2.6 VB-125b, the card gramma
     await expect(skillsCard).toHaveClass(/is-locked/);
     await expect(skillsCard.locator('.home-card-pill')).toHaveText('Locked');
     await expect(skillsCard).not.toHaveAttribute('title', /./);
+    /* 4t: the LOCKED chip is the action's resting face; hovering reveals
+       the destination. */
+    await expect(skillsCard.locator('.home-card-go')).toBeHidden();
+    await skillsCard.hover();
+    await expect(skillsCard.locator('.home-card-go')).toBeVisible();
     await expect(skillsCard.locator('.home-card-go')).toContainText(S.lockedGo);
+    await expect(skillsCard.locator('.home-card-pill')).toBeHidden();
 
     await context.close();
   });
@@ -240,7 +246,8 @@ test.describe('VB-36 — Home is the set of files (V2.6 VB-125b, the card gramma
     const locked = page.locator('.home-card[data-file="skills"]');
     await expect(locked.locator('.home-card-pill')).toHaveText('Locked');
     /* 4k: the reason sentence's job moved onto the go-verb - the way out,
-       named on the control itself. */
+       named on the control itself (4t: revealed on hover). */
+    await locked.hover();
     await expect(locked.locator('.home-card-go')).toContainText(S.lockedGo);
     await expect(locked.locator('.home-card-chip svg')).toHaveCount(1);
 

@@ -7,6 +7,7 @@ import { contextModules, contextOutline } from '../../src/core/flow/flow';
 import { fileAsked, fileFinished } from '../../src/core/files/slots';
 import type { AnswerValue, Module, RepeatableBlock, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { S } from '../../src/panel/strings';
 
 // R1-10 accept criteria (docs/RELEASE-1.md): "export -> clear storage ->
 // import -> identical answers. This is the backup story; treat a failure
@@ -226,6 +227,10 @@ test.describe('Download and import (R1-10)', () => {
     // 'filechooser' event rather than driving `setInputFiles` on the input
     // directly, or the still-open native dialog leaves the page never
     // receiving a 'change' event at all. ---
+    /* 4t: through the File Hub - the chrome door opens the page, the
+       page holds the sheet. */
+    await page.getByRole('button', { name: S.fileHub, exact: true }).click();
+    await page.waitForSelector('.dlhub');
     await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
     await page.waitForSelector('.sheet-card');
     await expect(page.getByText('The file you bring in replaces what is here now.')).toBeVisible();
@@ -273,6 +278,10 @@ test.describe('Download and import (R1-10)', () => {
     // V2.9 VB-145: the import door is the chrome's upload control, and its
     // sheet is where a refusal is spoken — everything below is exactly as
     // it was.
+    /* 4t: through the File Hub - the chrome door opens the page, the
+       page holds the sheet. */
+    await page.getByRole('button', { name: S.fileHub, exact: true }).click();
+    await page.waitForSelector('.dlhub');
     await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
     await page.waitForSelector('.sheet-card');
 
@@ -300,6 +309,10 @@ test.describe('Download and import (R1-10)', () => {
     // V2.9 VB-145: the import door is the chrome's upload control, and its
     // sheet is where a refusal is spoken — everything below is exactly as
     // it was.
+    /* 4t: through the File Hub - the chrome door opens the page, the
+       page holds the sheet. */
+    await page.getByRole('button', { name: S.fileHub, exact: true }).click();
+    await page.waitForSelector('.dlhub');
     await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
     await page.waitForSelector('.sheet-card');
 
@@ -327,6 +340,10 @@ test.describe('Download and import (R1-10)', () => {
 
     const page = await openPanel(context, id);
     await expect(page.locator('.home')).toBeVisible();
+    /* 4t: through the File Hub - the chrome door opens the page, the
+       page holds the sheet. */
+    await page.getByRole('button', { name: S.fileHub, exact: true }).click();
+    await page.waitForSelector('.dlhub');
     await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
     await page.waitForSelector('.sheet-card');
     // The warning is a plain sentence in the sheet, not a title attribute and

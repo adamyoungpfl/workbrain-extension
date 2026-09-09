@@ -1,8 +1,9 @@
 import { useEffect, useState } from 'react';
 import { BackGlyph, Button, StoredSheet, Toast } from '../components';
-import { getLocal } from '../../core/storage/client';
+import { getLocal, setLocal } from '../../core/storage/client';
 import { hasBaseline } from '../../core/report/runs';
 import { downloadContextFile, downloadSkillsFile, downloadWorkbrainFolder } from './FileActions';
+import { UploadSheet } from './UploadSheet';
 import { generateContextFile } from '../../core/files/generate';
 import { generateSkillsFile } from '../../core/files/skillsFile';
 import { contextModules, contextOutline, skillsModules, skillsOutline } from '../../core/flow/flow';
@@ -44,6 +45,7 @@ export function DownloadsHub({ onBack, onBaseline, onEdit, onResume, onCreate }:
   const [report, setReport] = useState<ReportState | undefined>(undefined);
   const [toast, setToast] = useState<string | null>(null);
   const [storedOpen, setStoredOpen] = useState(false);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -86,7 +88,7 @@ export function DownloadsHub({ onBack, onBaseline, onEdit, onResume, onCreate }:
             {S.hubBack}
           </span>
         </Button>
-        <h2 className="skillshub-title">{S.ctxDownloadName}</h2>
+        <h2 className="skillshub-title">{S.fileHub}</h2>
         <p className="skillshub-sub">{S.dlSub}</p>
       </header>
 
@@ -196,6 +198,13 @@ export function DownloadsHub({ onBack, onBaseline, onEdit, onResume, onCreate }:
               {S.downloadFolder}
             </button>
           )}
+          {/* Pass 4t: files come IN here too - the upload door, with its
+              replace-warning sheet and the parser's calm rejection
+              (readContextFile: .md only, a real parse, the degradation
+              voice for anything that is not a Workbrain file). */}
+          <button type="button" className="home-download-folder" onClick={() => setUploadOpen(true)}>
+            {S.uploadOpen}
+          </button>
         </div>
       </section>
 
@@ -208,6 +217,17 @@ export function DownloadsHub({ onBack, onBaseline, onEdit, onResume, onCreate }:
         </p>
       </footer>
       <StoredSheet open={storedOpen} onClose={() => setStoredOpen(false)} />
+      <UploadSheet
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        answers={answers}
+        onImport={async (next) => {
+          const result = await setLocal('wb:answers', next);
+          if (result.ok) setAnswers(next);
+          return result.ok;
+        }}
+        onImported={(count) => setToast(S.toastImported(count))}
+      />
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );

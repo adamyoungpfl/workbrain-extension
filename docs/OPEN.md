@@ -26,3 +26,23 @@ work that gets thrown away and, worse, ships an opinion nobody agreed to.
    See `docs/V2.2-SKILLS-ACTIONS-DECISIONS.md` #1.
 
 6. **Where the civic / after-school programme attaches.** Not in scope for Releases 1–4.
+
+7. **Reformatting incompatible uploads (Adam, 2026-09-09, the File Hub pass).** Today an
+   upload is validated and calmly rejected: `.md` extension checked, then a real parse
+   (`core/files/parse.ts`) — a file that is not Workbrain-shaped gets the degradation voice,
+   never an error code. What does NOT exist: (a) reformatting an arbitrary file into
+   Workbrain shape — the honest version of that is a copy-paste prompt asking the person's
+   OWN AI to do the reshaping (we never transmit, GUARDRAILS), which is a design decision;
+   (b) a Skills.md parser — skills come in via the pack (.workbrain-pack.json) path only.
+   Default until decided: reject with the calm line.
+
+8. **The collapse-to-a-thin-bar idea (Adam, 2026-09-09).** Chrome does not let an extension
+   set the side panel's width — the person drags it; there is no API. A thin always-on bar
+   AS the panel is therefore not buildable, and injecting a bar into every website needs the
+   `<all_urls>` host access GUARDRAILS bans. What IS buildable: (a) the toolbar icon's badge
+   as an always-visible sliver of status; (b) one-press close from the chrome mark
+   (`window.close()`), reopened from the toolbar icon; (c) "come back where you left off" via
+   `chrome.storage.session` — ephemeral, browser-session-only, the store the splash flag
+   already uses — which needs a ruling against ARCHITECTURE's "which surface you are on is
+   never stored" (session-scoped may be arguable; durable is not); (d) a responsive slim-rail
+   layout that engages when the person drags the panel narrow. Awaiting Adam's pick.

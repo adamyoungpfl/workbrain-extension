@@ -127,15 +127,19 @@
 
 .home-card {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-template-columns: 1fr auto;
   grid-template-areas:
-    'top desc act'
-    'status desc act'
-    'bar bar bar';
+    'top act'
+    'status act'
+    'desc act'
+    'bar bar';
   align-items: center;
   column-gap: 10px;
   row-gap: 4px;
   padding: 9px 12px;
+  /* Pass 4t: the pair stands EQUAL - one height, the description taking
+     the full reading measure under and beside the label. */
+  min-height: 96px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -585,21 +589,20 @@
    the way the splash's disclaimer rides its own, on a light veil so the
    line stays quiet and legible over the field. */
 .home-foot {
-  position: fixed;
-  left: 0;
-  right: 0;
+  /* Pass 4t (Adam): STICKY, in flow - the line keeps its place in the
+     page (nothing scrolls behind it) and pins to the viewport bottom
+     while the page is longer than the frame. Still transparent (4p). */
+  position: sticky;
   bottom: 0;
+  margin: auto -14px 0;
   padding: 8px 14px 10px;
   text-align: center;
-  /* Pass 4p (Adam): transparent - the line sits ON the field rather than
-     blocking it. The 4e veil retired at his word; the pages' bottom
-     padding keeps resting content clear of the line. */
   background: transparent;
   border-top: 0;
 }
 /* The page's content clears the pinned line. */
 .home {
-  padding-bottom: 52px;
+  padding-bottom: 14px;
 }
 
 .home-privacy {
@@ -1350,11 +1353,12 @@ a.home-row-hit:hover .home-row-go {
 .home-card-top {
   grid-area: top;
 }
-.home-card-status,
-.home-card.is-locked .home-card-pill {
+.home-card-status {
   grid-area: status;
   justify-self: start;
 }
+/* (4t locked-face rules live at the end of this file - they must outrank
+   the go-pill dress below in the cascade.) */
 .home-card-desc {
   grid-area: desc;
   font-size: 11px;
@@ -1391,4 +1395,25 @@ a.home-row-hit:hover .home-row-go {
 }
 .home-card[data-file='skills']:not(.is-split) .home-card-go {
   border-color: color-mix(in srgb, var(--home-skills) 45%, var(--divider));
+}
+
+/* ── Pass 4t (Adam): the LOCKED chip is the action slot's DEFAULT face -
+   the standing chip under the header retired - and hover (or keyboard
+   focus) reveals "Complete Context", the place the tile links to. Last in
+   the file: these outrank the go-pill dress above at equal specificity. ── */
+.home-card.is-locked .home-card-pill {
+  grid-area: act;
+  justify-self: end;
+  align-self: center;
+}
+.home-card.is-locked .home-card-go {
+  display: none;
+}
+.home-card.is-locked:hover .home-card-pill,
+.home-card.is-locked:focus-visible .home-card-pill {
+  display: none;
+}
+.home-card.is-locked:hover .home-card-go,
+.home-card.is-locked:focus-visible .home-card-go {
+  display: inline-flex;
 }

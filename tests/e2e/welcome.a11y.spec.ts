@@ -110,7 +110,7 @@ test.describe('welcome screen — accessibility', () => {
     // the welcome lockup goes and the recommendation becomes the hero — and
     // the ordinal is worth re-checking there.
     await page.keyboard.press('Tab');
-    await expect(page.getByRole('button', { name: 'Bring in a file', exact: true })).toBeFocused();
+    await expect(page.getByRole('button', { name: S.fileHub, exact: true })).toBeFocused();
 
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: 'Feedback', exact: true })).toBeFocused();

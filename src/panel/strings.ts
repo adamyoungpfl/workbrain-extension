@@ -1266,7 +1266,9 @@ export const S = {
   ctxCompleteNow: 'Complete it now',
   /* Pass 4q: the Download Center is a Workbrain area of its own - every
      file that can travel, and the one folder that holds them all. */
-  rowDownloadsSub: 'Every file you can carry out - and the one folder that holds them all.',
+  /* Pass 4t: the area row folded into the chrome - the FILE HUB is the
+     one door for files in and out. */
+  fileHub: 'File Hub',
   dlSub: 'Your baseline and both files, ready to travel - together or one at a time.',
   /* Pass 4p: the Center is Baseline + Context. */
   ctxGridBaseline: 'Baseline',

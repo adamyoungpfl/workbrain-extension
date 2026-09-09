@@ -296,11 +296,17 @@ test.describe('Home surface (R1-12)', () => {
     // control on the chrome bar, opening a sheet that says the one thing
     // that matters (the file you bring in replaces what is here) and offers
     // the careful path beside the quick one.
+    /* 4t: the chrome door is the FILE HUB; the upload sheet lives there. */
+    await page.getByRole('button', { name: S.fileHub, exact: true }).click();
+    await page.waitForSelector('.dlhub');
     await page.getByRole('button', { name: 'Bring in a file', exact: true }).click();
     await expect(page.getByText('The file you bring in replaces what is here now.')).toBeVisible();
     await expect(page.getByRole('button', { name: 'Download mine first, then pick', exact: true })).toBeVisible();
     await expect(page.getByRole('button', { name: 'Just pick a file', exact: true })).toBeVisible();
     await page.getByRole('button', { name: 'Close', exact: true }).click();
+    /* Back to Home - the File Hub held the sheet (4t). */
+    await page.getByRole('button', { name: S.hubBack, exact: true }).click();
+    await page.waitForSelector('.home-rows');
 
     /* Pass 4f: Proving Grounds is the hub's own working section now - it
        facilitates the proof in-app (superseding 4c's external link, and
@@ -705,14 +711,13 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
      * themselves instead of disabled squares."
      */
     const rows = page.locator('.home-row');
-    /* Pass 4q: FOUR areas - the two Development pages, the Download
-       Center (every file, one folder), and Workbrain+. */
-    await expect(rows).toHaveCount(4);
+    /* Pass 4t: back to THREE areas - the downloads row folded into the
+       chrome's File Hub door. */
+    await expect(rows).toHaveCount(3);
     await expect(rows.nth(0)).toContainText(S.rowContextHub);
     await expect(rows.nth(1)).toContainText(S.rowSkillsHub);
-    await expect(rows.nth(2)).toContainText(S.ctxDownloadName);
-    await expect(rows.nth(3)).toContainText(S.plusTitle);
-    for (const i of [0, 1, 2]) {
+    await expect(rows.nth(2)).toContainText(S.plusTitle);
+    for (const i of [0, 1]) {
       await expect(rows.nth(i)).not.toHaveClass(/is-waiting/);
       await expect(rows.nth(i).locator('button')).toHaveCount(1);
     }
