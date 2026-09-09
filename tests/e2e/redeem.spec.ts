@@ -51,16 +51,14 @@ async function launchHome(): Promise<{ context: BrowserContext; page: Page; sw: 
 }
 
 async function openSheet(page: Page): Promise<void> {
-  /* Pass 4g: redeeming lives under the Certified bulk - Create launches
-     the skill-building interview now. */
+  /* Pass 4i: "Redeem a code" is an INPUT in the Certified section now -
+     no sheet, the form stands open on the page. */
   await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
-  await page.waitForSelector('.skillshub');
-  await page.getByRole('button', { name: S.certRedeem, exact: true }).click();
   await page.waitForSelector('.redeem');
 }
 
 test.describe('VB-133 — the Skill Redeemer', () => {
-  test('a live code lands the skill, toasts, and closes the sheet', async () => {
+  test('a live code lands the skill, toasts, and clears the input', async () => {
     const { context, page, sw } = await launchHome();
     await context.route('https://www.model-citizen.org/packs/**', (route) =>
       route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(PACK) }),
@@ -71,7 +69,9 @@ test.describe('VB-133 — the Skill Redeemer', () => {
     await page.getByRole('button', { name: 'Add it to my file', exact: true }).click();
 
     await expect(page.locator('.toast')).toContainText('Added 1 skill.');
-    await expect(page.locator('.redeem')).toHaveCount(0);
+    /* The inline form stands after success - the cleared input is the
+       "done" state where the sheet used to close. */
+    await expect(page.locator('#redeem-code')).toHaveValue('');
     const stored = (await sw.evaluate(async () => (await chrome.storage.local.get('wb:answers:skills'))['wb:answers:skills'])) as Answers;
     expect(stored.repeatables['skills']).toHaveLength(1);
     expect(stored.repeatables['skills']![0]!.skill_name).toBe('Board pack prep');
@@ -89,7 +89,6 @@ test.describe('VB-133 — the Skill Redeemer', () => {
     await page.getByRole('button', { name: 'Add it to my file', exact: true }).click();
 
     await expect(page.getByRole('alert')).toContainText("didn't answer");
-    await expect(page.locator('.redeem')).toBeVisible();
     // The typed code survives — trying again is free.
     await expect(page.locator('#redeem-code')).toHaveValue('WB-0000-DEAD');
     const stored = await sw.evaluate(async () => (await chrome.storage.local.get('wb:answers:skills'))['wb:answers:skills']);
@@ -107,7 +106,6 @@ test.describe('VB-133 — the Skill Redeemer', () => {
     await page.getByRole('button', { name: 'Add it to my file', exact: true }).click();
 
     await expect(page.getByRole('alert')).toContainText("when you're online");
-    await expect(page.locator('.redeem')).toBeVisible();
 
     await context.close();
   });
@@ -138,7 +136,7 @@ test.describe('VB-133 — the Skill Redeemer', () => {
 
     await openSheet(page);
     const results = await new AxeBuilder({ page })
-      .include('.sheet-card')
+      .include('.skillshub-cert')
       .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
       .analyze();
     expect(results.violations).toEqual([]);

@@ -58,9 +58,17 @@
 }
 
 .meter-track i {
-  height: 6px;
-  border-radius: 3px;
-  background: var(--sunken);
+  /* Pass 4l (Adam): a little thicker, and the track's DEFAULT is the very
+     faint version of the colour transition - the same journey the fill
+     paints, washed nearly to the canvas, so progress reads as the journey
+     turning bold and bright over its own ghost. */
+  height: 9px;
+  border-radius: 4.5px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--seg-from, var(--seg, var(--primary))) 16%, var(--canvas)),
+    color-mix(in srgb, var(--seg, var(--primary)) 16%, var(--canvas))
+  );
   overflow: hidden;
   position: relative;
 }
@@ -71,10 +79,15 @@
 .meter-track i::after {
   content: '';
   position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--p, 0%);
+  inset: 0;
   border-radius: 3px;
-  background: var(--seg, var(--primary));
+  /* Pass 4j (Adam): "the status bar does transition from color to color as
+     it progresses" - each segment's paint runs from the family it leaves
+     to the family it enters, and the fill is a REVEAL over that journey
+     (clip-path, not width) so a half-full segment shows the blend's own
+     halfway point rather than a compressed whole. */
+  background: linear-gradient(90deg, var(--seg-from, var(--seg, var(--primary))), var(--seg, var(--primary)));
+  clip-path: inset(0 calc(100% - var(--p, 0%)) 0 0);
   animation: meterfill var(--slow) var(--ease);
 }
 
@@ -87,18 +100,21 @@
   --seg: var(--primary);
 }
 .meter-track i:nth-child(2) {
+  --seg-from: var(--primary);
   --seg: var(--home-context);
 }
 .meter-track i:nth-child(3) {
+  --seg-from: var(--home-context);
   --seg: var(--home-skills);
 }
 .meter-track i:nth-child(4) {
+  --seg-from: var(--home-skills);
   --seg: var(--violet);
 }
 
 @keyframes meterfill {
   from {
-    width: 0;
+    clip-path: inset(0 100% 0 0);
   }
 }
 
@@ -108,7 +124,13 @@
    is the track only; the fill above it stays the one primary. Not colour
    alone — the tick below bolds and speaks too. */
 .meter-track i.is-current {
-  background: color-mix(in srgb, var(--seg, var(--primary)) 14%, var(--canvas));
+  /* The standing step's ghost runs a shade deeper than the rest - still
+     faint, still not colour alone (the tick below bolds and speaks). */
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--seg-from, var(--seg, var(--primary))) 30%, var(--canvas)),
+    color-mix(in srgb, var(--seg, var(--primary)) 30%, var(--canvas))
+  );
 }
 
 .meter-ticks {
@@ -124,13 +146,16 @@
 
 .meter-ticks span {
   text-align: center;
+  /* Pass 4j (Adam): "labels for each section (context = green, skill =
+     red, prove = purple)" - every tick wears its family, always; reached
+     and current still speak through WEIGHT below, never colour alone. */
+  color: var(--seg, var(--ink-3));
 }
 
 /* A step with anything in it darkens and thickens — weight as well as
    colour, and the drawing is decoration over the progressbar's own words
    regardless. */
 .meter-ticks span.on {
-  color: var(--ink-2);
   font-weight: 650;
 }
 
@@ -150,7 +175,6 @@
 }
 .meter-ticks span.is-current,
 .meter-ticks span.on {
-  color: var(--seg, var(--primary));
   font-weight: 650;
 }
 

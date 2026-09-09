@@ -330,27 +330,21 @@ test.describe('Home surface (R1-12)', () => {
     // chrome bar says "this is Workbrain" once, for every Home state.
     await expect(welcome.locator('svg.brand-mark')).toHaveCount(0);
 
-    // --- the mark: really drawn, really the node graph, and now on the
-    // CHROME BAR rather than in this card. BS-06 moved it; the claims about
-    // the drawing itself are unchanged and follow it, because "the node
-    // graph really renders and its tokens really resolve" is worth pinning
-    // wherever the mark lives. ---
-    const mark = page.locator('.home-chrome svg.brand-mark');
+    // --- the mark: really drawn, really the W PEAKS (pass 4k: "the
+    // workbrain logo"), on the chrome bar. The claims about the drawing
+    // follow the mark, as they did when BS-06 moved it: it really renders
+    // and its tokens really resolve, wherever it lives. ---
+    const mark = page.locator('.home-chrome svg.peaksmark-face');
     await expect(mark).toBeVisible();
-    await expect(mark.locator('circle')).toHaveCount(12);
-    await expect(mark.locator('line')).toHaveCount(30);
+    await expect(mark.locator('path.peaksmark-peak')).toHaveCount(3);
     const markBox = await mark.boundingBox();
     expect(markBox?.width).toBeGreaterThan(12);
     // Decorative — the wordmark beside it is what gets read out.
     await expect(mark).toHaveAttribute('aria-hidden', 'true');
-    // Its colours resolve to the real brand tokens, not to nothing. A
-    // mistyped custom property name would render the stops black in silence.
-    const edgeStroke = await mark.locator('line').first().evaluate((el) => getComputedStyle(el).stroke);
-    expect(edgeStroke).toBe('rgb(91, 127, 216)'); // --brand-edge
-    const stopColor = await mark
-      .locator('.brand-mark-node-1-from')
-      .evaluate((el) => getComputedStyle(el).stopColor);
-    expect(stopColor).toBe('rgb(47, 95, 230)'); // --brand-node-1-from
+    // Its colours resolve to the real splash tokens, not to nothing. A
+    // mistyped custom property name would render the peaks black in silence.
+    const peakFill = await mark.locator('path.peaksmark-peak').first().evaluate((el) => getComputedStyle(el).fill);
+    expect(peakFill).toBe('rgb(46, 214, 240)'); // --globe-node-2-solid
 
     // --- the name and the company: the chrome bar's, once, as real text ---
     // V2.6 VB-125: the welcome's own wordmark and byline left the card; the
@@ -421,11 +415,11 @@ test.describe('Home surface (R1-12)', () => {
     // BS-06 moved Home's only mark to the chrome bar (Adam's D3), so the
     // still-version claim follows it: the whole mark, at full opacity,
     // immediately, with nothing animating.
-    const mark = page.locator('.home-chrome svg.brand-mark');
+    const mark = page.locator('.home-chrome svg.peaksmark-face');
     await expect(mark).toBeVisible();
     // The still version carries everything the motion did: the whole mark,
-    // at full opacity, immediately.
-    await expect(mark.locator('circle')).toHaveCount(12);
+    // at full opacity, immediately (the peaks are static by construction).
+    await expect(mark.locator('path.peaksmark-peak')).toHaveCount(3);
     await expect(mark).toHaveCSS('animation-name', 'none');
     await expect(mark).toHaveCSS('opacity', '1');
     // V3.0 pass 7: the featured card stands where the banner did.
@@ -461,9 +455,10 @@ test.describe('Home surface (R1-12)', () => {
     // said it, and the chrome bar wins because it survives every state.
     await expect(page.locator('.home-lockup')).toHaveCount(0);
     await expect(page.locator('.home-welcome .brand-mark')).toHaveCount(0);
-    // Exactly one mark on the screen, and it is the chrome's.
-    await expect(page.locator('.home svg.brand-mark')).toHaveCount(1);
-    await expect(page.locator('.home-chrome svg.brand-mark')).toHaveCount(1);
+    // Exactly one mark on the screen, and it is the chrome's — the W Peaks
+    // since pass 4k ("the workbrain logo").
+    await expect(page.locator('.home svg.peaksmark-face')).toHaveCount(1);
+    await expect(page.locator('.home-chrome svg.peaksmark-face')).toHaveCount(1);
     // The facts the lockup's meta line printed are still on the screen — the
     // meter and the file cards derive them from the same answers.
     await expect(page.locator('.meter')).toBeVisible();
@@ -710,10 +705,10 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
       await expect(rows.nth(i).locator('button')).toHaveCount(1);
     }
 
-    /* The waiting grammar lives on the Grounds' skill lane now (4g). */
-    await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
-    await page.waitForSelector('.ctxhub');
-    const waiting = page.locator('.ctxhub-pg-skill.is-waiting');
+    /* The waiting grammar lives on Skill Development's own Grounds (4i). */
+    await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+    await page.waitForSelector('.skillshub');
+    const waiting = page.locator('.skillshub-door.is-waiting');
     await expect(waiting).toContainText(S.capRowWaiting);
     await expect(waiting.locator('button, a')).toHaveCount(0);
 

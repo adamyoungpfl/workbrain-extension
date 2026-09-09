@@ -84,49 +84,51 @@ const seed = (sw: Worker, skills: Answers) =>
   sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers:skills': a }), skills);
 
 async function intoTheRun(page: Page) {
-  /* Pass 4g: the prover lives on the Proving Grounds' skill lane. */
-  await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
-  await page.waitForSelector('.ctxhub');
-  await page.getByRole('button', { name: new RegExp(S.pgSkillName) }).click();
+  /* Pass 4i: Skill Development has its own Proving Grounds - Prove It
+     launches the loop on the picker's chosen skill. */
+  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+  await page.waitForSelector('.skillshub');
+  await page.getByRole('button', { name: S.pgProve, exact: true }).click();
   await page.waitForSelector('.capoffer');
 }
 
-/** The Grounds' skill lane, where the earned gate lives since pass 4g. */
-async function reviewDoor(page: Page) {
-  await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
-  await page.waitForSelector('.ctxhub');
-  return page.locator('.ctxhub-pg-skill');
+/** Skill Development's Grounds section, where the earned gate lives. */
+async function grounds(page: Page) {
+  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+  await page.waitForSelector('.skillshub');
 }
 
 test.describe('BS-04 — proof two, the capability proof', () => {
   test('the door waits for two runnable recipes, and says so in words', async () => {
     const { context, sw, id } = await launch();
 
-    // Nothing at all - the hub's Review door stands bare and uncontrolled.
+    // Nothing at all - the Grounds stand waiting, bare and uncontrolled.
     let page = await openHome(context, id);
-    let door = await reviewDoor(page);
-    await expect(door).toHaveClass(/is-waiting/);
+    await grounds(page);
+    let door = page.locator('.skillshub-door.is-waiting');
     await expect(door).toContainText(S.capRowWaiting);
     // A waiting door is not a disabled control — it is not a control at all.
     expect(await door.evaluate((el) => el.tagName)).toBe('DIV');
+    await expect(page.getByRole('button', { name: S.pgProve, exact: true })).toHaveCount(0);
     await page.close();
 
     // One recipe is still not two. The gate counts RUNNABLE skills, so a
     // second one with no steps would not open it either.
     await seed(sw, ONE_SKILL);
     page = await openHome(context, id);
-    door = await reviewDoor(page);
-    await expect(door).toHaveClass(/is-waiting/);
+    await grounds(page);
+    await expect(page.locator('.skillshub-door.is-waiting')).toContainText(S.capRowWaiting);
     await page.close();
 
-    // Two, and the door is real — with the Skills interview nowhere near
-    // finished (§4: "without finishing all of Skills").
+    // Two, and the Grounds are real — the picker offers both skills and
+    // Prove It stands, with the Skills interview nowhere near finished
+    // (§4: "without finishing all of Skills").
     await seed(sw, TWO_SKILLS);
     page = await openHome(context, id);
-    door = await reviewDoor(page);
-    await expect(door).not.toHaveClass(/is-waiting/);
-    await expect(door).toContainText(S.pgSkillLine);
-    expect(await door.evaluate((el) => el.tagName)).toBe('BUTTON')
+    await grounds(page);
+    await expect(page.locator('.skillshub-door.is-waiting')).toHaveCount(0);
+    await expect(page.locator('.skillspick-opt')).toHaveCount(2);
+    await expect(page.getByRole('button', { name: S.pgProve, exact: true })).toBeVisible();
 
     await context.close();
   });
@@ -281,8 +283,9 @@ test.describe('BS-04 — proof two, the capability proof', () => {
     // What must never happen is a blank offer with a copy button on it.
     await seed(sw, ONE_SKILL);
     const page = await openHome(context, id);
-    const door = await reviewDoor(page);
-    await expect(door).toHaveClass(/is-waiting/);
+    await grounds(page);
+    await expect(page.locator('.skillshub-door.is-waiting')).toContainText(S.capRowWaiting);
+    await expect(page.getByRole('button', { name: S.pgProve, exact: true })).toHaveCount(0);
     await expect(page.locator('.capoffer')).toHaveCount(0);
     await context.close();
   });

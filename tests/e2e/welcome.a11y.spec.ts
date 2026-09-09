@@ -144,7 +144,8 @@ test.describe('welcome screen — accessibility', () => {
     // BS-06 (§6) left Home exactly one mark, the chrome bar's, so this is
     // now a claim about that one: nothing in it is exposed — no role, no
     // label, no title element.
-    const mark = page.locator('.home svg.brand-mark');
+    /* Pass 4k: the chrome's one mark is the W Peaks now. */
+    const mark = page.locator('.home svg.peaksmark-face');
     await expect(mark).toHaveCount(1);
     await expect(mark).toHaveAttribute('aria-hidden', 'true');
     await expect(mark.locator('title')).toHaveCount(0);
@@ -152,7 +153,7 @@ test.describe('welcome screen — accessibility', () => {
     // moved the name into the chrome bar, where it is said once for every
     // Home state, beside a mark that is likewise only a picture.
     await expect(page.locator('.home-chrome-name')).toContainText('Workbrain');
-    await expect(page.locator('.home-chrome svg.brand-mark')).toHaveCount(1);
+    await expect(page.locator('.home-chrome svg.peaksmark-face')).toHaveCount(1);
     // And the section it heads is named by its own label, not the picture.
     await expect(page.locator('.home-next')).toHaveAttribute('aria-labelledby', 'home-next-label');
     await expect(page.locator('#home-next-label')).toHaveText(S.homeNextLabel);

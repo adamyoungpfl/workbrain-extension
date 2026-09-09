@@ -8,6 +8,7 @@ import { fileStartTarget } from '../../src/core/files/fileView';
 import { fileAsked, fileFinished } from '../../src/core/files/slots';
 import type { AnswerValue, Step } from '../../src/schema/flow.types';
 import type { Answers } from '../../src/schema/storage.types';
+import { S } from '../../src/panel/strings';
 
 /**
  * V1.7 VB-36 (Home as file slots) and VB-37 (the file view), which are one
@@ -172,42 +173,38 @@ test.describe('VB-36 — Home is the set of files (V2.6 VB-125b, the card gramma
     await expect(skillsCard).toHaveCount(1);
     await expect(page.locator('[data-file="actions"]')).toHaveCount(0);
     await expect(page.locator('.home')).not.toContainText('Actions.md');
-    await expect(contextCard.locator('.home-card-file')).toHaveText('Context.md');
-    await expect(skillsCard.locator('.home-card-file')).toHaveText('Skills.md');
+    /* 4k: one line of identity - the friendly word with a faint .md. */
+    await expect(contextCard.locator('.home-card-name')).toHaveText('Context.md');
+    await expect(skillsCard.locator('.home-card-name')).toHaveText('Skills.md');
 
-    // The open one is a real control and says where the file stands.
-    await expect(contextCard).toBeEnabled();
-    await expect(contextCard.locator('.home-card-status')).toHaveText('Not built yet');
+    // The open one carries the button that moves it (4j's split card): a
+    // fresh file's pill says "Start now", and the cover keeps the card as
+    // the open door.
+    await expect(contextCard.locator('.home-card-act')).toHaveText(S.ctxStartNow);
+    await expect(contextCard.locator('.home-card-cover')).toBeEnabled();
 
-    // The one that is not built is locked, and says what holds it — in the
-    // card, as text, not in a title attribute a pointer has to hover.
-    await expect(skillsCard).toBeDisabled();
+    // The not-built one is locked - and since 4k it is a DOOR, not a dead
+    // control: the pill says the state, the go-verb says the way out.
+    await expect(skillsCard).toBeEnabled();
     await expect(skillsCard).toHaveClass(/is-locked/);
     await expect(skillsCard.locator('.home-card-pill')).toHaveText('Locked');
     await expect(skillsCard).not.toHaveAttribute('title', /./);
-    await expect(skillsCard.locator('.home-card-reason')).toHaveText('Finish Context.md first');
+    await expect(skillsCard.locator('.home-card-go')).toContainText(S.lockedGo);
 
     await context.close();
   });
 
-  test('a locked card cannot be pressed, cannot be tabbed to, and opens nothing', async () => {
+  test('the locked card is a door to Context - pressing it resumes the interview (4k)', async () => {
     const { context, id } = await launch();
     const page = await openHome(context, id);
     const skills = page.locator('.home-card[data-file="skills"]');
-
-    // Clicked with the pointer, forced past Playwright's own actionability
-    // check so this is a real "what happens if somebody hits it" rather than a
-    // test that times out politely.
-    await skills.click({ force: true });
-    await expect(page.locator('.home')).toBeVisible();
-    await expect(page.locator('.browse')).toHaveCount(0);
-    await expect(page.locator('.flow')).toHaveCount(0);
-
-    // And it is not in the tab order — a disabled button never is.
-    await expect(skills).toHaveJSProperty('disabled', true);
-
+    await skills.click();
+    await page.waitForSelector('.flow');
     await context.close();
   });
+
+  /* 'a locked card cannot be pressed' retired in 4k - the contract
+     inverted: the locked card is the door to Context now, proved above. */
 
   test('finishing Context.md stops the next card telling somebody to finish Context.md', async () => {
     const { context, sw, id } = await launch();
@@ -242,7 +239,9 @@ test.describe('VB-36 — Home is the set of files (V2.6 VB-125b, the card gramma
     // in the pill, a sentence in the card, and a padlock.
     const locked = page.locator('.home-card[data-file="skills"]');
     await expect(locked.locator('.home-card-pill')).toHaveText('Locked');
-    await expect(locked.locator('.home-card-reason')).toHaveText(/Finish/);
+    /* 4k: the reason sentence's job moved onto the go-verb - the way out,
+       named on the control itself. */
+    await expect(locked.locator('.home-card-go')).toContainText(S.lockedGo);
     await expect(locked.locator('.home-card-chip svg')).toHaveCount(1);
 
     // BS-06, Adam's D4 — THE DASHED EDGE IS GONE. It was a fourth signal and
@@ -439,8 +438,10 @@ test.describe('O3 — the door opens on "nothing left to ask"', () => {
     await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
 
     const page = await openHome(context, id);
-    await expect(page.locator('.home-card[data-file="skills"]')).toBeDisabled();
-    await expect(page.locator('.home-duo')).toContainText('Finish Context.md first');
+    /* 4k: shut = still LOCKED - the card is a door to Context now, so the
+       claim is the class and the go-verb, not disabledness. */
+    await expect(page.locator('.home-card[data-file="skills"]')).toHaveClass(/is-locked/);
+    await expect(page.locator('.home-card[data-file="skills"] .home-card-go')).toContainText(S.lockedGo);
 
     await context.close();
   });

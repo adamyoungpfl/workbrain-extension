@@ -1164,7 +1164,7 @@ export const S = {
    */
   cardOpen: 'Open',
   cardContextDesc: 'Who you are, how you work, what good looks like.',
-  cardSkillsDesc: 'The tasks you repeat, written down once and reused.',
+  cardSkillsDesc: 'Create the instructions that tell AI how to do work the right way.',
   homeFilesLabel: 'Your files',
   /** V1.7 VB-38's row. Not "Your files" — these are parts of Context.md, not
    * a file of their own, and saying so is what keeps the shelf above it
@@ -1284,24 +1284,30 @@ export const S = {
   /* Pass 4g: Skill Development matures the same way - Create launches the
      skill-building experience, Training is the road to the Grounds, and
      Certified Skills is the page's bulk. */
-  hubCreateLine2: 'Start a new skill - name it, shape it, and give your AI the steps.',
-  hubTrainLine: 'Pick a skill and prove it works, on the Proving Grounds.',
   /* Pass 4h: every not-done thing carries its own action - the chips that
      said "Not yet" become the buttons that change it. */
   ctxStartNow: 'Start now',
   ctxFinishNow: 'Finish it now',
+  /* Pass 4i: Skill Development follows Context Development's design - its
+     own Download Center and Proving Grounds, where a chosen skill's
+     objective stands against the skill itself. */
+  pgSkillsLead: 'Pick a skill and prove it does the job - the objective on one side, your skill on the other.',
+  pgObjectiveName: 'The objective',
+  pgObjectiveNone: 'No output shape written yet - edit the skill to add one.',
+  pgSkillSideName: 'Your skill',
+  pgSkillCount: (n: number) => (n === 1 ? 'One step, in your words.' : `${n} steps, in your words.`),
+  /* Pass 4j: the unfinished Context card says what finishing buys. */
+  cardContextUnlockDesc: 'Complete this file to unlock the Skills builder.',
+  /* Pass 4k: the locked Skills card is a DOOR now - its go-verb says the
+     one thing that opens it. */
+  lockedGo: 'Complete Context',
   certLead: 'Skills built and tested by Model Citizen - browse the library, bring one back, and activate it here.',
   certBrowse: 'Browse the Certified library',
   certRedeem: 'Redeem a code',
   pgSkillName: 'Prove a skill',
-  pgSkillLine: 'Run a skill against what you wanted it to produce.',
   hubBack: 'Back',
-  hubTitle: 'Your skills',
   hubSub: 'Create a new skill, review the ones you have, or redeem one built and tested for you.',
-  hubCreateKicker: 'Create',
-  hubCreateName: 'Skill Activator',
   hubReviewKicker: 'Review',
-  hubReviewName: 'Skill Training',
   hubRedeemKicker: 'Redeem',
   hubRedeemName: 'Workbrain Certified Skills',
   /* PROVING GROUNDS (same brief): the proof door points at the public
@@ -1310,7 +1316,6 @@ export const S = {
      update; the door names the destination now. */
   proveTitle: 'Proving Grounds',
   rowProveGroundsSub: 'Prove your evolving context file beats your baseline. Head to head, in the service you choose.',
-  redeemTitle: 'Redeem a skill code',
   redeemLabel: 'Your code',
   redeemHint: 'It came with your custom skill. The same file is in your email.',
   redeemGo: 'Add it to my file',
@@ -1347,8 +1352,9 @@ export const S = {
   rowLibrarySub: 'Skills that make us all stronger, built and tested by Model Citizen.',
   /** Workbrain+ keeps its door and loses its pitch: the price and the four
    * goods belong on the page this links to (§6). */
-  rowPlusSub:
-    'Your personal technology implementation manager. Maximizing your workbrain with your purpose and intent',
+  /* Pass 4k (Adam): the row says who the plus tier is FOR - advanced,
+     highly custom builds, and team or group Workbrains. */
+  rowPlusSub: 'Advanced, highly custom builds - and Workbrains for your team or group.',
   /**
    * [DRAFT] V2.9 VB-145 — the upload door at the top of the UI, and its
    * seatbelt: bringing a file in REPLACES what is here, so the sheet says

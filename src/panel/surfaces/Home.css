@@ -169,8 +169,11 @@
    the identity accents the chips already wear, mixed toward the divider so
    the line stays an edge, not a stroke. */
 .home-card[data-file='context'] {
-  /* The same aqua-green as Context Development (Adam, 2026-09-08). */
+  /* The same aqua-green as Context Development (Adam, 2026-09-08), and
+     since pass 4j the ground itself: a very faint green, still mostly
+     transparent so the universe reads through. */
   border-color: color-mix(in srgb, var(--home-context) 60%, var(--divider));
+  background: color-mix(in srgb, var(--home-context) 8%, transparent);
 }
 .home-card[data-file='skills'] {
   /* The skills family is the RED now (tokens.json, 2026-09-08) - unlocked,
@@ -233,12 +236,11 @@
   color: var(--ink-inv);
 }
 
-/* The identity stack: filename FIRST in the DOM (the accessible name the
-   walk-in specs match), friendly word first on screen — column-reverse is
-   the one order-flip in the product, and this comment is its record. */
+/* One line of identity since pass 4k - the order-flip retired with the
+   mono repeat it existed for. */
 .home-card-id {
   display: flex;
-  flex-direction: column-reverse;
+  flex-direction: column;
   min-width: 0;
 }
 .home-card-name {
@@ -341,11 +343,13 @@
   font-size: 11.5px;
   font-weight: 650;
 }
+/* Deepened 18% toward ink (like the row labels): the pure family hues
+   measured 4.43:1 over the 4k card tints - the a11y walk's catch. */
 .home-card[data-file='context'] .home-card-go {
-  color: var(--home-context);
+  color: color-mix(in srgb, var(--home-context) 82%, var(--ink));
 }
 .home-card[data-file='skills'] .home-card-go {
-  color: var(--home-skills);
+  color: color-mix(in srgb, var(--home-skills) 82%, var(--ink));
 }
 .home-card-go svg {
   transition: transform var(--fast) var(--ease);
@@ -364,30 +368,40 @@
    are the non-colour signals now; the edge goes back to solid so the card
    reads as a thing that is not ready rather than a thing that is broken. */
 .home-card.is-locked {
-  /* SUPERSEDED the bare-locked rule for THIS tile the same day (Adam:
-     "the background a bit of a gray/blue tint while locked… it pop as a
-     desirable tile to get opened") - the locked cornerstone is the one
-     dormant thing meant to be WANTED, so it wears a cool grey-blue wash
-     and a bolder edge instead of standing bare. Waiting rows elsewhere
-     keep the bare grammar. */
-  border: 1.5px solid color-mix(in srgb, var(--primary) 38%, var(--ink-3));
-  background: color-mix(
-    in srgb,
-    color-mix(in srgb, var(--primary) 26%, var(--sunken)) 72%,
-    transparent
-  );
-  cursor: not-allowed;
+  /* Pass 4k SUPERSEDED the grey-blue wash: the locked tile pairs with the
+     Skill Development area - the same faint, mostly-transparent red the
+     Context tile wears in green - and it is a DOOR now (its go-verb is
+     "Complete Context"), so it hovers like one. */
+  border: 1.5px solid color-mix(in srgb, var(--home-skills) 70%, var(--divider));
+  background: color-mix(in srgb, var(--home-skills) 8%, transparent);
+  cursor: pointer;
 }
-/* Over the wash, the light support greys dropped under the floor (the
-   a11y walk measured 3.55:1) - the desirable tile earns the darker ink. */
-.home-card.is-locked .home-card-file,
-.home-card.is-locked .home-card-reason {
+.home-card.is-locked .home-card-desc {
   color: var(--ink-2);
 }
 .home-card.is-locked:hover {
-  transform: none;
-  box-shadow: none;
-  border-color: var(--border);
+  border-color: var(--home-skills);
+  background: color-mix(in srgb, var(--home-skills) 13%, transparent);
+}
+/* The LOCKED pill stands where Context's "Start now" stands - the action
+   slot, the action's size (pass 4k: "same location and size to mimic the
+   Start Now button"). */
+.home-card.is-locked .home-card-pill {
+  min-height: var(--target-min);
+  padding: 4px 12px;
+}
+/* Pass 4l (Adam): the two tiles' buttons present the SAME - one shape,
+   one width, centred words - and the locked card carries the same bar
+   under its button that Start now stands on. */
+.home-card-act,
+.home-card.is-locked .home-card-pill {
+  min-width: 108px;
+  justify-content: center;
+  text-align: center;
+}
+.home-card-act {
+  display: inline-flex;
+  align-items: center;
 }
 .home-card-reason {
   font-size: 11.5px;
@@ -813,6 +827,27 @@ button.home-row-hit:hover,
 a.home-row-hit:hover {
   background: var(--canvas);
 }
+/* Pass 4k (Adam): the three areas rest on the Context tile's faint-tint
+   grammar, each in its own family - green, red, violet - still mostly
+   transparent over the field; hover deepens the same hue. */
+.home-row[data-tone='context'] > .home-row-hit {
+  background: color-mix(in srgb, var(--home-context) 8%, transparent);
+}
+.home-row[data-tone='skills'] > .home-row-hit {
+  background: color-mix(in srgb, var(--home-skills) 8%, transparent);
+}
+.home-row[data-tone='plus'] > .home-row-hit {
+  background: color-mix(in srgb, var(--violet) 8%, transparent);
+}
+.home-row[data-tone='context'] > .home-row-hit:hover {
+  background: color-mix(in srgb, var(--home-context) 14%, transparent);
+}
+.home-row[data-tone='skills'] > .home-row-hit:hover {
+  background: color-mix(in srgb, var(--home-skills) 14%, transparent);
+}
+.home-row[data-tone='plus'] > .home-row-hit:hover {
+  background: color-mix(in srgb, var(--violet) 14%, transparent);
+}
 .home-row-hit:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: -2px;
@@ -854,7 +889,9 @@ a.home-row-hit:hover {
 .home-row-sub {
   font-size: var(--type-fine);
   line-height: 1.4;
-  color: var(--ink-3);
+  /* ink-2, not ink-3: the 4k family tints under these rows pulled ink-3
+     to 4.38:1 - the a11y walk's own catch. */
+  color: var(--ink-2);
 }
 
 .home-row-go {
@@ -885,15 +922,15 @@ a.home-row-hit:hover .home-row-go {
    tinting", one grammar for all three). */
 .home-row[data-tone='context'] {
   --row-tint: color-mix(in srgb, var(--home-context) 9%, transparent);
-  --row-ink: var(--home-context);
+  --row-ink: color-mix(in srgb, var(--home-context) 82%, var(--ink));
 }
 .home-row[data-tone='skills'] {
   --row-tint: color-mix(in srgb, var(--home-skills) 9%, transparent);
-  --row-ink: var(--home-skills);
+  --row-ink: color-mix(in srgb, var(--home-skills) 82%, var(--ink));
 }
 .home-row[data-tone='plus'] {
   --row-tint: color-mix(in srgb, var(--violet) 9%, transparent);
-  --row-ink: var(--violet);
+  --row-ink: color-mix(in srgb, var(--violet) 82%, var(--ink));
 }
 
 /* The chip carries the tone at rest — enough to distinguish, not enough to
@@ -1047,6 +1084,10 @@ a.home-row-hit:hover .home-row-go {
   display: grid;
   grid-template-columns: 1fr auto;
   align-items: center;
+  /* Pass 4k (Adam): the eyebrow-and-question group and the pill centre on
+     the SAME horizontal line at the container's vertical middle - the
+     rows pack to the centre and the pill spans them all. */
+  align-content: center;
   column-gap: 12px;
   row-gap: 6px;
   width: 100%;
@@ -1080,7 +1121,7 @@ a.home-row-hit:hover .home-row-go {
   align-items: center;
   gap: 6px;
   grid-column: 2;
-  grid-row: 2 / span 2;
+  grid-row: 1 / span 3;
   align-self: center;
   padding: 7px 12px;
   border-radius: var(--r-pill);
@@ -1094,7 +1135,7 @@ a.home-row-hit:hover .home-row-go {
   background: color-mix(in srgb, var(--globe-node-2-solid) 85%, var(--ink-inv));
 }
 .home-next-section {
-  grid-column: 1 / -1;
+  grid-column: 1;
   margin: 0;
   font-size: 11px;
   font-weight: 650;
@@ -1173,4 +1214,56 @@ a.home-row-hit:hover .home-row-go {
   flex: none;
   font-size: 11.5px;
   color: var(--ink-3);
+}
+
+/* ── Pass 4j: the split card - an unfinished file's status pill is the
+   button that moves it. The cover keeps the whole card as the open door;
+   the action stands above it (nested controls are invalid, so the card
+   stops being one big button exactly when it holds two). ── */
+.home-card.is-split {
+  position: relative;
+  cursor: pointer;
+}
+.home-card-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: inherit;
+}
+.home-card-cover:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.home-card-act {
+  position: relative;
+  z-index: 2;
+  align-self: flex-start;
+  min-height: var(--target-min);
+  padding: 4px 12px;
+  border: 1px solid color-mix(in srgb, var(--home-context) 45%, var(--divider));
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--ink-inv) 60%, transparent);
+  font: inherit;
+  font-size: 12px;
+  font-weight: 650;
+  color: var(--home-context);
+  cursor: pointer;
+}
+.home-card-act:hover {
+  background: color-mix(in srgb, var(--home-context) 10%, transparent);
+}
+.home-card-act:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* Pass 4k (Adam): one line of identity - the friendly word with a faint
+   .md at its end; the mono repeat below it retired. */
+.home-card-ext {
+  font-weight: 500;
+  /* Faint, but on the right side of 4.5:1 over the family-tinted cards. */
+  color: var(--ink-2);
 }

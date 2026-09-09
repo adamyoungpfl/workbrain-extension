@@ -134,3 +134,5 @@ export { PeaksSvg } from './PeaksMark';
 // (check-off rows, one active detail space). See StepStack.tsx.
 export { StepStack } from './StepStack';
 export type { StepStackStep } from './StepStack';
+
+export { BackGlyph } from './BackGlyph';

@@ -1,16 +1,7 @@
 /* Context Development v2 — the aqua-green family on standing items, an
    open grid, and Proving Grounds as the page's working bulk. */
-.ctxhub .skillshub-kicker {
-  color: var(--home-context);
-}
-/* …except the Grounds' skill lane, which is a SKILLS element visiting -
-   its kicker keeps the red family its door wears (pass 4h). */
-.ctxhub .ctxhub-pg-skill .skillshub-kicker {
-  color: var(--home-skills);
-}
-.ctxhub .ctxhub-pg-skill.is-waiting .skillshub-kicker {
-  color: var(--ink-3);
-}
+/* The family resolves through --hub-hue (set at each page's root) since
+   pass 4i - the kicker and every dress rule below follow the page. */
 
 .ctxhub-item-head {
   display: flex;
@@ -63,22 +54,27 @@
 }
 .ctxhub-file-actions {
   display: inline-flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 4px;
 }
 .ctxhub-file-act {
-  min-height: 32px;
+  /* GUARDRAILS' 44px floor - raised with Home's pills when the welcome
+     walk caught the 32px geometry (no spec measures this grid, but the
+     rule is the rule). */
+  min-height: var(--target-min);
   padding: 4px 10px;
-  border: 1px solid color-mix(in srgb, var(--home-context) 45%, var(--divider));
+  border: 1px solid color-mix(in srgb, var(--hub-hue) 45%, var(--divider));
   border-radius: var(--r-pill);
   background: none;
   font: inherit;
   font-size: 12px;
   font-weight: 650;
-  color: var(--home-context);
+  color: var(--hub-hue);
   cursor: pointer;
 }
 .ctxhub-file-act:hover {
-  background: color-mix(in srgb, var(--home-context) 10%, transparent);
+  background: color-mix(in srgb, var(--hub-hue) 10%, transparent);
 }
 .ctxhub-file-act:focus-visible {
   outline: 2px solid var(--primary);
@@ -104,15 +100,15 @@
   flex-direction: column;
   gap: 10px;
   padding: 15px;
-  border: 1.5px solid color-mix(in srgb, var(--home-context) 70%, var(--divider));
+  border: 1.5px solid color-mix(in srgb, var(--hub-hue) 70%, var(--divider));
   border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--home-context) 5%, transparent);
+  background: color-mix(in srgb, var(--hub-hue) 5%, transparent);
 }
 .ctxhub-pg-title {
   font-size: 16px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--home-context);
+  color: var(--hub-hue);
 }
 .ctxhub-pg-sides {
   display: grid;
@@ -129,7 +125,7 @@
   background: color-mix(in srgb, var(--ink-inv) 55%, transparent);
 }
 .ctxhub-pg-side[data-ready='on'] {
-  border-color: color-mix(in srgb, var(--home-context) 55%, var(--divider));
+  border-color: color-mix(in srgb, var(--hub-hue) 55%, var(--divider));
 }
 .ctxhub-pg-name {
   font-size: 13px;
@@ -147,9 +143,11 @@
   overflow-wrap: anywhere;
 }
 .ctxhub-pg-needs {
+  /* Pass 4i (Adam): centered below the Prove It button. */
   margin: 0;
   font-size: 12px;
   color: var(--ink-2);
+  text-align: center;
 }
 .ctxhub-pg-analysis {
   display: flex;
@@ -192,9 +190,9 @@
   width: 100%;
   min-height: var(--target-min);
   padding: 8px 12px;
-  border: 1px solid color-mix(in srgb, var(--home-context) 45%, var(--divider));
+  border: 1px solid color-mix(in srgb, var(--hub-hue) 45%, var(--divider));
   border-radius: var(--r-md);
-  background: color-mix(in srgb, var(--home-context) 6%, transparent);
+  background: color-mix(in srgb, var(--hub-hue) 6%, transparent);
   font: inherit;
   font-size: 12.5px;
   text-align: left;
@@ -202,7 +200,7 @@
   cursor: pointer;
 }
 .ctxhub-pg-refine-row:hover {
-  background: color-mix(in srgb, var(--home-context) 12%, transparent);
+  background: color-mix(in srgb, var(--hub-hue) 12%, transparent);
 }
 .ctxhub-pg-refine-row:focus-visible {
   outline: 2px solid var(--primary);
@@ -211,5 +209,14 @@
 .ctxhub-pg-refine-go {
   flex: none;
   font-weight: 700;
-  color: var(--home-context);
+  color: var(--hub-hue);
+}
+
+/* Pass 4i (Adam): "make the Prove It button this page the green tone,
+   instead of the blue" - the button takes the page's family, both pages. */
+.ctxhub-pg .btn.btn-primary {
+  background: var(--hub-hue);
+}
+.ctxhub-pg .btn.btn-primary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--hub-hue) 85%, var(--ink));
 }

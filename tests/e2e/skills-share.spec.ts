@@ -117,8 +117,11 @@ async function launchOnSkills(): Promise<{ context: BrowserContext; page: Page; 
 }
 
 async function openSkillsCanvas(page: Page): Promise<void> {
-  const row = page.getByRole('button', { name: /^Skills\.md/ });
-  await row.click();
+  /* 4k: the Skills card opens Skill Development; the file canvas is the
+     hub grid's own Edit door. */
+  await page.getByRole('button', { name: /^Skills\.md/ }).click();
+  await page.waitForSelector('.skillshub');
+  await page.getByRole('button', { name: 'Edit', exact: true }).click();
   await page.waitForSelector('.browse');
 }
 

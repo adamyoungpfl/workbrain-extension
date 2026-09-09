@@ -104,7 +104,10 @@ async function launchOnSkills(context: Answers): Promise<{ context: BrowserConte
 
 /** Into the Skills interview, and on to a text question wearing an assist. */
 async function openAssistInSkills(page: Page): Promise<void> {
+  /* 4k: the Skills card opens Skill Development; Edit is the canvas door. */
   await page.getByRole('button', { name: /^Skills\.md/ }).click();
+  await page.waitForSelector('.skillshub');
+  await page.getByRole('button', { name: S.ctxGridEdit, exact: true }).click();
   console.log('AFTER ROW ' + (await page.locator('.browse, .fileview, .home').first().getAttribute('class')));
   console.log('BUTTONS ' + JSON.stringify((await page.getByRole('button').allTextContents()).slice(0, 25)));
   await page.getByRole('button', { name: 'Edit the file', exact: true }).click();

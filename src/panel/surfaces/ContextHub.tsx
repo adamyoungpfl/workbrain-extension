@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Sheet, Toast } from '../components';
+import { BackGlyph, Button, Sheet, Toast } from '../components';
 import { Comparison } from './Comparison';
 import { getLocal } from '../../core/storage/client';
 import { hasBaseline, latestTask } from '../../core/report/runs';
@@ -11,7 +11,6 @@ import { recommendationCopy } from '../components';
 import { NO_DISMISSALS } from '../../core/recommend/dismissals';
 import { contextModules, contextOutline } from '../../core/flow/flow';
 import { fileAsked } from '../../core/files/slots';
-import { capabilityReady } from '../../core/proof/capability';
 import { fileName } from '../components/fileLabels';
 import type { RecommendationTarget } from '../../core/recommend/types';
 import type { Answers, ProofRun, ReportState } from '../../schema/storage.types';
@@ -45,9 +44,6 @@ const EMPTY: Answers = { values: {}, repeatables: {}, answeredAt: {}, reflectedA
 
 export interface ContextHubProps {
   onBack: () => void;
-  /** Pass 4g: the Grounds prove SKILLS too - the run-and-tick capability
-   *  loop, reached from here (Skill Training's road ends at this lane). */
-  onProveSkill: () => void;
   /** The pre-launch errand — the goal question, then the run-it screen. */
   onBaseline: (() => void) | undefined;
   /** Opens a file for editing — the same doors Home's cards hold. */
@@ -64,7 +60,7 @@ export interface ContextHubProps {
 
 const KB = (bytes: number) => (bytes / 1024).toFixed(1);
 
-export function ContextHub({ onBack, onProveSkill, onBaseline, onEdit, onResume, onSkillsHub, onProve, onOpenTarget }: ContextHubProps) {
+export function ContextHub({ onBack, onBaseline, onEdit, onResume, onSkillsHub, onProve, onOpenTarget }: ContextHubProps) {
   const [answers, setAnswers] = useState<Answers>(EMPTY);
   const [skills, setSkills] = useState<Answers>(EMPTY);
   const [report, setReport] = useState<ReportState | undefined>(undefined);
@@ -91,7 +87,6 @@ export function ContextHub({ onBack, onProveSkill, onBaseline, onEdit, onResume,
   const contextReady = fileAsked(contextOutline, contextModules, answers, new Date());
   const contextStarted = Object.keys(answers.answeredAt).length > 0;
   const skillsStarted = Object.keys(skills.answeredAt).length > 0;
-  const skillProveReady = capabilityReady(skills);
 
   const runs: ProofRun[] = report?.runs ?? [];
   const baselineRun = runs.find((run) => run.stage === 'baseline');
@@ -115,7 +110,10 @@ export function ContextHub({ onBack, onProveSkill, onBaseline, onEdit, onResume,
     <div className="skillshub ctxhub">
       <header className="skillshub-head">
         <Button type="button" variant="quiet" onClick={onBack}>
-          {S.hubBack}
+          <span className="hub-back">
+            <BackGlyph />
+            {S.hubBack}
+          </span>
         </Button>
         <h2 className="skillshub-title">{S.ctxTitle}</h2>
         <p className="skillshub-sub">{S.ctxSub}</p>
@@ -154,11 +152,12 @@ export function ContextHub({ onBack, onProveSkill, onBaseline, onEdit, onResume,
                   {S.ctxGridDownload}
                 </button>
               )}
-              {contextReady ? (
+              {contextStarted && (
                 <button type="button" className="ctxhub-file-act" onClick={() => onEdit('context')}>
                   {S.ctxGridEdit}
                 </button>
-              ) : (
+              )}
+              {!contextReady && (
                 <button type="button" className="ctxhub-file-act" onClick={onResume}>
                   {contextStarted ? S.ctxFinishNow : S.ctxStartNow}
                 </button>
@@ -255,23 +254,8 @@ export function ContextHub({ onBack, onProveSkill, onBaseline, onEdit, onResume,
         </Button>
         {!(baselineTaken && contextReady) && <p className="ctxhub-pg-needs">{S.pgNeedsBoth}</p>}
 
-        {/* THE SKILL LANE (pass 4g): Skill Training's road ends here - pick
-            a skill and prove it works, desired output against produced.
-            The run-and-tick loop is the prover; the earned gate (two
-            runnable skills) keeps the same waiting grammar it always had. */}
-        {skillProveReady ? (
-          <button type="button" className="skillshub-door ctxhub-pg-skill" onClick={onProveSkill}>
-            <span className="skillshub-kicker">{S.hubReviewKicker}</span>
-            <span className="skillshub-name">{S.pgSkillName}</span>
-            <span className="skillshub-line">{S.pgSkillLine}</span>
-          </button>
-        ) : (
-          <div className="skillshub-door is-waiting ctxhub-pg-skill">
-            <span className="skillshub-kicker">{S.hubReviewKicker}</span>
-            <span className="skillshub-name">{S.pgSkillName}</span>
-            <span className="skillshub-line">{S.capRowWaiting}</span>
-          </div>
-        )}
+        {/* The 4g skill lane moved HOME to Skill Development's own Proving
+            Grounds in pass 4i - this page proves the context file only. */}
 
         {/* The analysis, once a with-file run stands beside the baseline:
             their own verdict, what the AI admitted it lacked, and the

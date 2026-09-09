@@ -447,7 +447,6 @@ export default function App() {
           onResume={() => openContextAt()}
           onSkillsHub={() => setSurface('skillshub')}
           onProve={openProof}
-          onProveSkill={openCapability}
           onOpenTarget={(target) => openContext(target)}
         />
       );
@@ -460,7 +459,14 @@ export default function App() {
         <SkillsHub
           onBack={goHome}
           onCreate={() => openSkillsAt()}
-          onGrounds={() => setSurface('contexthub')}
+          /* 4i: the page follows Context Development - Edit is the file's
+             own door, and the Grounds here launch the capability loop on
+             the record the picker chose (the hub writes cap_skill first). */
+          onEdit={() => {
+            setFileId('skills');
+            setSurface('file');
+          }}
+          onProveSkill={openCapability}
         />
       );
     }

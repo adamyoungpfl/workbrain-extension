@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import {
   Banner,
-  BrandMark,
+  PeaksSvg,
   Button,
   FeedbackDoor,
   FeedbackSheet,
@@ -27,12 +27,11 @@ import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { recMinutes } from '../../core/recommend/estimate';
 import { multipleRecordCount } from '../../core/flow/multiples';
 import { fileAsked, fileFinished, shownFileSlots } from '../../core/files/slots';
-import type { FileSlot, FileSlotId } from '../../core/files/slots';
-import { fileLock } from '../../core/files/toggle';
+import type { FileSlotId } from '../../core/files/slots';
 // V1.8 VB-47. The file's name, the lock's sentence and the padlock itself,
 // shared with the drawer's toggle so the shelf and the switcher cannot say
 // different things about the same file — see components/fileLabels.tsx.
-import { LockGlyph, fileName, lockLine } from '../components/fileLabels';
+import { LockGlyph, fileName } from '../components/fileLabels';
 import { contextModules, contextOutline, skillsModules, skillsOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
@@ -231,13 +230,9 @@ function HomeRow({
   );
 }
 
-function lockedReason(slot: FileSlot): string {
-  const lock = fileLock(slot);
-  // Only ever called for a locked slot, which always has one. "Coming later"
-  // is the truthful fallback for a slot that somehow does not, rather than an
-  // empty subtitle where the lock should be.
-  return lock ? lockLine(lock) : S.lockedComingLater;
-}
+/* `lockedReason` retired in pass 4k: the locked card's go-verb ("Complete
+   Context") says the way out, so the reason sentence's job is done by the
+   control itself. */
 
 /** V1.7 VB-38's row — two cards, one behind the other: more than one of a
  * thing. Same convention as PERSON_ICON below (stroke, `currentColor`,
@@ -313,10 +308,26 @@ const RUN_ICON = (
 
 /* V2.8 VB-133: TIM_ICON left with its tile; the Redeemer's key stands
  * there now — a code that opens a skill. */
-/** BS-06 — Workbrain+'s row glyph: a spark, in the house stroke style. */
+/** Pass 4k (Adam): "a plus symbol where the logo is only visible in the
+ * plus space like it is looking at the logo through the plus cutout" - the
+ * W Peaks drawn full-bleed, clipped by a plus-shaped window. The peaks'
+ * own splash palette shows through; the chip's violet family stays the
+ * frame around it. */
 const PLUS_ICON = (
-  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M9 2.5 10.6 7 15 8.6 10.6 10.2 9 14.6 7.4 10.2 3 8.6 7.4 7Z" strokeLinejoin="round" />
+  <svg width="17" height="17" viewBox="0 0 64 64" fill="none" aria-hidden="true" focusable="false">
+    <clipPath id="wbplus-cut">
+      <path d="M20 2 H44 V20 H62 V44 H44 V62 H20 V44 H2 V20 H20 Z" />
+    </clipPath>
+    <g clipPath="url(#wbplus-cut)">
+      {/* The icon's own dark field fills the cutout, so the plus reads as
+          a solid mark with the peaks showing through it. */}
+      <rect x="0" y="0" width="64" height="64" fill="var(--ink)" />
+      <g transform="translate(0 -3) scale(1 1.2)">
+        <path d="M 3 56 L 16 13 L 29 56 Z" fill="var(--globe-node-2-solid)" stroke="var(--globe-node-2-solid)" strokeWidth="5" strokeLinejoin="round" />
+        <path d="M 21 56 L 33 24 L 45 56 Z" fill="var(--splash-peak-blue)" stroke="var(--splash-peak-blue)" strokeWidth="5" strokeLinejoin="round" />
+        <path d="M 37 56 L 50 8 L 61 56 Z" fill="var(--splash-link-end)" stroke="var(--splash-link-end)" strokeWidth="5" strokeLinejoin="round" />
+      </g>
+    </g>
   </svg>
 );
 
@@ -360,8 +371,42 @@ function HomeCard(props: {
   /** R-08 — the file that is genuinely somebody's already. Raised AND lit;
    * every other card is raised and quiet. */
   active?: boolean;
+  /** Pass 4j (Adam): an unfinished file's status pill IS the button that
+   * moves it - "Start now" / "Finish it now". When present it replaces the
+   * status, and the card splits: a cover button keeps the whole card as
+   * the open door, with the action standing above it. */
+  action?: { label: string; onClick(): void } | undefined;
 }) {
   const name = fileName(props.file);
+  if (props.action) {
+    return (
+      <div className="home-card is-split" data-file={props.file} data-active={props.active ? 'on' : 'off'}>
+        <button type="button" className="home-card-cover" aria-label={name} onClick={props.onOpen} />
+        <span className="home-card-top">
+          <span className="home-card-chip" aria-hidden="true">
+            {props.icon}
+          </span>
+          <span className="home-card-id">
+            <span className="home-card-name">
+              {name.replace(/\.md$/, '')}
+              <span className="home-card-ext">.md</span>
+            </span>
+          </span>
+        </span>
+        <button type="button" className="home-card-act" onClick={props.action.onClick}>
+          {props.action.label}
+        </button>
+        <span className="home-card-bar" aria-hidden="true">
+          <i style={{ width: `${props.barPercent}%` }} />
+        </span>
+        <span className="home-card-desc">{props.desc}</span>
+        <span className="home-card-go">
+          {S.cardOpen}
+          {GO_ARROW}
+        </span>
+      </div>
+    );
+  }
   return (
     <button
       type="button"
@@ -375,8 +420,10 @@ function HomeCard(props: {
           {props.icon}
         </span>
         <span className="home-card-id">
-          <span className="home-card-file">{name}</span>
-          <span className="home-card-name">{name.replace(/\.md$/, '')}</span>
+          <span className="home-card-name">
+            {name.replace(/\.md$/, '')}
+            <span className="home-card-ext">.md</span>
+          </span>
         </span>
       </span>
       <span
@@ -403,21 +450,42 @@ function HomeCard(props: {
  * status would be, and the Locked pill — a disabled real button (the
  * VB-36 pattern the FileRow shelf pinned: not pressable, not tabbable,
  * and it says what unlocks it IN the card, never in a tooltip). */
-function LockedCard(props: { file: FileSlotId; reason: string }) {
+function LockedCard(props: { file: FileSlotId; desc: string; onCompleteContext(): void }) {
   const name = fileName(props.file);
+  /* Pass 4k (Adam): the locked card stopped being a dead control. It wears
+     the red family it will join, the LOCKED pill stands where Context's
+     "Start now" stands (same slot, same size), and the whole card is a
+     door whose go-verb is the one thing that opens it: "Complete Context".
+     The pill is the state; the card is the way out of it. */
   return (
-    <button type="button" className="home-card is-locked" data-file={props.file} disabled>
+    <button
+      type="button"
+      className="home-card is-locked"
+      data-file={props.file}
+      onClick={props.onCompleteContext}
+    >
       <span className="home-card-top">
         <span className="home-card-chip" aria-hidden="true">
           <LockGlyph size={15} stroke={1.5} />
         </span>
         <span className="home-card-id">
-          <span className="home-card-file">{name}</span>
-          <span className="home-card-name">{name.replace(/\.md$/, '')}</span>
+          <span className="home-card-name">
+            {name.replace(/\.md$/, '')}
+            <span className="home-card-ext">.md</span>
+          </span>
         </span>
       </span>
-      <span className="home-card-reason">{props.reason}</span>
       <span className="home-card-pill">{S.badgeLocked}</span>
+      {/* Pass 4l: the same bar-underline Context's Start now stands on -
+          empty here, because nothing of Skills is built while locked. */}
+      <span className="home-card-bar" aria-hidden="true">
+        <i style={{ width: '0%' }} />
+      </span>
+      <span className="home-card-desc">{props.desc}</span>
+      <span className="home-card-go">
+        {S.lockedGo}
+        {GO_ARROW}
+      </span>
     </button>
   );
 }
@@ -689,7 +757,9 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
           flat identity row. The card grammar itself is the differentiation
           now, not a second world behind it. */}
       <header className="home-chrome">
-        <BrandMark size={20} spin="none" entrance={false} />
+        {/* Pass 4k (Adam): "Change the logo at the top of the homepage to
+            the workbrain logo" - the W Peaks, the product's own mark. */}
+        <PeaksSvg size={20} />
         <p className="home-chrome-name">
           {S.appName} <span>· {S.chromeCompany}</span>
         </p>
@@ -972,8 +1042,16 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
                   ? { tone: 'quiet', label: S.sectionsOf(contextHealth.done, contextOutline.length) }
                   : { tone: 'quiet', label: S.notBuiltYet }
           }
+          /* Pass 4j (Adam): while the file is unfinished the pill is the
+             BUTTON that moves it, and the line under it says what finishing
+             buys. `onStart` is the interview's own plain resume. */
+          action={
+            contextComplete
+              ? undefined
+              : { label: hasStarted ? S.ctxFinishNow : S.ctxStartNow, onClick: onStart }
+          }
           barPercent={utilization.segments.context}
-          desc={S.cardContextDesc}
+          desc={contextComplete ? S.cardContextDesc : S.cardContextUnlockDesc}
           // R-08 — "once the context file is active". Active is `hasStarted`:
           // one real answer in it. Not "finished", because a file somebody is
           // half way through is exactly the one worth pulling the eye to.
@@ -993,13 +1071,12 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
             }
             barPercent={utilization.segments.skill}
             desc={S.cardSkillsDesc}
-            onOpen={() => onOpenFile('skills')}
+            /* Pass 4k (Adam): open goes to the Skills homepage - Skill
+               Development, the page that mirrors Context Development. */
+            onOpen={onOpenSkillsHub}
           />
         ) : (
-          <LockedCard
-            file="skills"
-            reason={lockedReason(slots.find((slot) => slot.id === 'skills') as FileSlot)}
-          />
+          <LockedCard file="skills" desc={S.cardSkillsDesc} onCompleteContext={onStart} />
         )}
       </div>
       {/* V2.9 VB-146: Actions' row is HIDDEN for the beta — no real builder

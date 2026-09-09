@@ -180,7 +180,7 @@ test('a locked slot’s name and its unlock line both clear 4.5:1 (VB-36)', asyn
   // The locked card carries three pieces of text — the friendly name, the
   // mono filename, and the reason — and axe skips all of them because the
   // card is a disabled control. GUARDRAILS does not.
-  for (const part of ['.home-card-name', '.home-card-file', '.home-card-reason']) {
+  for (const part of ['.home-card-name', '.home-card-desc', '.home-card-go']) {
     const { ink, ground } = await inkAndGround(page, `.home-card.is-locked ${part}`);
     const ratio = contrastRatio(ink, ground);
     expect(ratio, `locked card ${part} is ${ratio.toFixed(2)}:1`).toBeGreaterThanOrEqual(4.5);
@@ -197,8 +197,8 @@ test('a locked slot’s name and its unlock line both clear 4.5:1 (VB-36)', asyn
      fresh list has no waiting rows left) - the claim is unchanged, and it
      is measured where the dormant words actually stand now: axe skips a
      non-control's text, GUARDRAILS does not. */
-  await page.getByRole('button', { name: new RegExp(S.rowContextHub) }).click();
-  await page.waitForSelector('.ctxhub');
+  await page.getByRole('button', { name: new RegExp(S.rowSkillsHub) }).click();
+  await page.waitForSelector('.skillshub');
   await expect(page.locator('.skillshub-door.is-waiting')).not.toHaveCount(0);
   for (const part of ['.skillshub-name', '.skillshub-line']) {
     const dormant = await inkAndGround(page, `.skillshub-door.is-waiting ${part}`);
@@ -249,15 +249,16 @@ test('the keyboard path never lands on a locked slot, and reaches every door on 
   const { context, sw, id } = await launch();
   const page = await openHome(context, sw, id);
 
-  // Tab the whole of Home. A disabled control is not a tab stop, so the two
-  // locked slots must never take focus — and the open card must.
+  // Tab the whole of Home. Since 4k the locked card is a DOOR (its go-verb
+  // is "Complete Context"), so the keyboard path reaches it like any other
+  // control - the old never-lands claim inverted with the contract.
   const seen: string[] = [];
   for (let i = 0; i < 25; i++) {
     await page.keyboard.press('Tab');
     seen.push(await page.evaluate(() => (document.activeElement as HTMLElement)?.className ?? ''));
   }
   expect(seen.some((c) => c.includes('home-card') && !c.includes('is-locked'))).toBe(true);
-  expect(seen.filter((c) => c.includes('is-locked'))).toEqual([]);
+  expect(seen.some((c) => c.includes('is-locked'))).toBe(true);
 
   // On the file view, every door and both buttons are reachable, and the rows
   // that are not doors are not tab stops.

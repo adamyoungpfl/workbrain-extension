@@ -1,6 +1,12 @@
-/* The skills hub — three doors in the tint law's own grammar: clickable
-   wears the light interactive tint over the field, waiting stands bare,
-   and every door carries the skills family on its edge. */
+/* The hub grammar both development pages share. Pass 4i: each page sets
+   its family once (--hub-hue) and every edge, wash, kicker and title on it
+   resolves there - Skill Development red, Context Development green. */
+.skillshub {
+  --hub-hue: var(--home-skills);
+}
+.skillshub.ctxhub {
+  --hub-hue: var(--home-context);
+}
 .skillshub {
   display: flex;
   flex-direction: column;
@@ -19,21 +25,15 @@
   font-size: 20px;
   font-weight: 700;
   letter-spacing: -0.015em;
-  color: var(--ink);
+  /* Pass 4i (Adam): "make the title the same Green so the page is on
+     theme" - and the sibling page follows in its own family. */
+  color: var(--hub-hue);
 }
 .skillshub-sub {
   margin: 0;
   font-size: 13.5px;
   line-height: 1.45;
   color: var(--ink-2);
-}
-.skillshub-doors {
-  list-style: none;
-  margin: 4px 0 0;
-  padding: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
 }
 /* Pass 4h: the doors wear the Proving Grounds' own dress in this page's
    family - the 1.5px 70% edge and the 5% wash that Adam called out as the
@@ -46,9 +46,9 @@
   width: 100%;
   min-height: var(--target-min);
   padding: 13px 15px;
-  border: 1.5px solid color-mix(in srgb, var(--home-skills) 70%, var(--divider));
+  border: 1.5px solid color-mix(in srgb, var(--hub-hue) 70%, var(--divider));
   border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--home-skills) 5%, transparent);
+  background: color-mix(in srgb, var(--hub-hue) 5%, transparent);
   font: inherit;
   color: inherit;
   text-align: left;
@@ -57,8 +57,8 @@
   transition: border-color var(--fast) var(--ease), background-color var(--fast) var(--ease);
 }
 .skillshub-door:hover {
-  border-color: var(--home-skills);
-  background: color-mix(in srgb, var(--home-skills) 10%, transparent);
+  border-color: var(--hub-hue);
+  background: color-mix(in srgb, var(--hub-hue) 10%, transparent);
 }
 .skillshub-door:focus-visible {
   outline: 2px solid var(--primary);
@@ -74,7 +74,7 @@
   font-weight: 750;
   letter-spacing: 0.08em;
   text-transform: uppercase;
-  color: var(--home-skills);
+  color: var(--hub-hue);
 }
 .skillshub-door.is-waiting .skillshub-kicker {
   color: var(--ink-3);
@@ -97,41 +97,110 @@
   flex-direction: column;
   gap: 8px;
   padding: 16px;
-  border: 1.5px solid color-mix(in srgb, var(--home-skills) 70%, var(--divider));
+  border: 1.5px solid color-mix(in srgb, var(--hub-hue) 70%, var(--divider));
   border-radius: var(--r-lg);
-  background: color-mix(in srgb, var(--home-skills) 5%, transparent);
+  background: color-mix(in srgb, var(--hub-hue) 5%, transparent);
 }
 .skillshub-cert-name {
   margin: 0;
   font-size: 17px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--home-skills);
-}
-.skillshub-cert-actions {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-top: 4px;
+  color: var(--hub-hue);
 }
 .skillshub-cert-browse {
   text-decoration: none;
+  align-self: flex-start;
+  margin-top: 4px;
 }
-.skillshub-cert-redeem {
+
+/* ── The back button wears its navigation mark (pass 4i). ── */
+.hub-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.hub-back svg {
+  flex: none;
+}
+
+/* ── The Grounds' skill picker: slim options, the chosen one inked in the
+   family (never colour alone - aria-pressed carries the claim). ── */
+.skillspick {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.skillspick-opt {
   min-height: var(--target-min);
-  padding: 0 12px;
-  border: 0;
+  padding: 8px 14px;
+  border: 1px solid color-mix(in srgb, var(--hub-hue) 45%, var(--divider));
+  border-radius: var(--r-pill);
   background: none;
   font: inherit;
   font-size: 13px;
   font-weight: 650;
-  color: var(--home-skills);
+  color: var(--ink-2);
   cursor: pointer;
 }
-.skillshub-cert-redeem:hover {
-  text-decoration: underline;
+.skillspick-opt:hover {
+  background: color-mix(in srgb, var(--hub-hue) 8%, transparent);
 }
-.skillshub-cert-redeem:focus-visible {
+.skillspick-opt[aria-pressed='true'] {
+  border: 1.5px solid var(--hub-hue);
+  color: var(--hub-hue);
+  background: color-mix(in srgb, var(--hub-hue) 10%, transparent);
+}
+.skillspick-opt:focus-visible {
   outline: 2px solid var(--primary);
   outline-offset: 2px;
+}
+
+/* ── The inline redeem (pass 4i): the sheet's grammar, without the sheet
+   (RedeemSheet.css's field rules, ported when the input moved here). ── */
+.redeem {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 6px;
+}
+.redeem-label {
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--ink-3);
+}
+.redeem-input {
+  min-height: var(--target-min);
+  padding: 0 12px;
+  font-family: var(--font-mono);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--ink);
+  background: var(--canvas);
+  border: 1px solid var(--border-i);
+  border-radius: var(--r-md);
+}
+.redeem-input:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.redeem-hint {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.redeem-error {
+  margin: 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--danger);
+}
+.redeem .btn {
+  align-self: flex-start;
 }
