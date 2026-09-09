@@ -903,8 +903,10 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
             <span className="home-next-q">{S.heroBaselineQ}</span>
             <span className="home-next-answer">
               {S.homeNextAnswer}
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
-                <path d="M2.5 7 H11 M7.5 3.2 L11.4 7 L7.5 10.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+              {/* 4s: the arrow is part of the label - larger, rounder,
+                  centred on the text's own line. */}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+                <path d="M3 8 H12.2 M8.5 3.8 L12.7 8 L8.5 12.2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
           </button>
@@ -928,8 +930,10 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
                 right: the name now ends in what pressing does. */}
             <span className="home-next-answer">
               {S.homeNextAnswer}
-              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
-                <path d="M2.5 7 H11 M7.5 3.2 L11.4 7 L7.5 10.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+              {/* 4s: the arrow is part of the label - larger, rounder,
+                  centred on the text's own line. */}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
+                <path d="M3 8 H12.2 M8.5 3.8 L12.7 8 L8.5 12.2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
           </button>

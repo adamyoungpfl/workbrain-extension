@@ -116,18 +116,26 @@
    precedent: the soft hairline at rest, --border-i and a lift on hover, the
    full --primary ring on focus. The identity accents (--home-context /
    --home-skills / --violet) dress chips and bars only — state is words. */
+/* Pass 4s (Adam): the two tiles stack HORIZONTALLY - icon and label
+   left, description in the middle, the action on the right end - so the
+   whole section fits the frame without scrolling. */
 .home-duo {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr;
+  gap: 8px;
 }
 
 .home-card {
-  display: flex;
-  flex-direction: column;
-  align-items: stretch;
-  gap: 8px;
-  padding: 12px;
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas:
+    'top desc act'
+    'status desc act'
+    'bar bar bar';
+  align-items: center;
+  column-gap: 10px;
+  row-gap: 4px;
+  padding: 9px 12px;
   text-align: left;
   font: inherit;
   color: inherit;
@@ -856,16 +864,24 @@ a.home-row-hit:hover {
   background: color-mix(in srgb, var(--primary) 8%, transparent);
 }
 .home-row[data-tone='context'] > .home-row-hit:hover {
-  background: color-mix(in srgb, var(--home-context) 14%, transparent);
+  /* 4s: hover LIGHTENS, the files tiles' own effect - the ground rises
+     toward the canvas and the text reads easier, a family whisper kept. */
+  background: color-mix(in srgb, var(--home-context) 5%, color-mix(in srgb, var(--ink-inv) 72%, transparent));
 }
 .home-row[data-tone='skills'] > .home-row-hit:hover {
-  background: color-mix(in srgb, var(--home-skills) 14%, transparent);
+  /* 4s: hover LIGHTENS, the files tiles' own effect - the ground rises
+     toward the canvas and the text reads easier, a family whisper kept. */
+  background: color-mix(in srgb, var(--home-skills) 5%, color-mix(in srgb, var(--ink-inv) 72%, transparent));
 }
 .home-row[data-tone='plus'] > .home-row-hit:hover {
-  background: color-mix(in srgb, var(--violet) 14%, transparent);
+  /* 4s: hover LIGHTENS, the files tiles' own effect - the ground rises
+     toward the canvas and the text reads easier, a family whisper kept. */
+  background: color-mix(in srgb, var(--violet) 5%, color-mix(in srgb, var(--ink-inv) 72%, transparent));
 }
 .home-row[data-tone='downloads'] > .home-row-hit:hover {
-  background: color-mix(in srgb, var(--primary) 14%, transparent);
+  /* 4s: hover LIGHTENS, the files tiles' own effect - the ground rises
+     toward the canvas and the text reads easier, a family whisper kept. */
+  background: color-mix(in srgb, var(--primary) 5%, color-mix(in srgb, var(--ink-inv) 72%, transparent));
 }
 .home-row-hit:focus-visible {
   outline: 2px solid var(--primary);
@@ -1328,4 +1344,51 @@ a.home-row-hit:hover .home-row-go {
   font-weight: 500;
   /* Faint, but on the right side of 4.5:1 over the family-tinted cards. */
   color: var(--ink-2);
+}
+
+/* ── Pass 4s: the horizontal tile's areas. ── */
+.home-card-top {
+  grid-area: top;
+}
+.home-card-status,
+.home-card.is-locked .home-card-pill {
+  grid-area: status;
+  justify-self: start;
+}
+.home-card-desc {
+  grid-area: desc;
+  font-size: 11px;
+  line-height: 1.35;
+}
+.home-card-act,
+.home-card-go {
+  grid-area: act;
+  justify-self: end;
+  align-self: center;
+}
+.home-card-bar {
+  grid-area: bar;
+}
+/* One right-end action per tile: the split card's action pill IS it, so
+   its go-verb stands down; a complete card's go IS it, dressed as the
+   pill it acts like. */
+.home-card.is-split .home-card-go {
+  display: none;
+}
+.home-card:not(.is-split) .home-card-go {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 108px;
+  min-height: var(--target-min);
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, var(--home-context) 45%, var(--divider));
+  border-radius: var(--r-pill);
+  background: color-mix(in srgb, var(--ink-inv) 60%, transparent);
+  font-size: 12px;
+  font-weight: 650;
+}
+.home-card[data-file='skills']:not(.is-split) .home-card-go {
+  border-color: color-mix(in srgb, var(--home-skills) 45%, var(--divider));
 }
