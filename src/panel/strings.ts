@@ -1301,6 +1301,10 @@ export const S = {
   /* Pass 4k: the locked Skills card is a DOOR now - its go-verb says the
      one thing that opens it. */
   lockedGo: 'Complete Context',
+  /* Pass 4n: until the baseline run exists, the next move IS the baseline
+     - the hero says so and its button goes there. */
+  heroBaselineKicker: 'Pre-Launch Baseline',
+  heroBaselineQ: 'Set your baseline - one prompt, in your own words.',
   certLead: 'Skills built and tested by Model Citizen - browse the library, bring one back, and activate it here.',
   certBrowse: 'Browse the Certified library',
   certRedeem: 'Redeem a code',

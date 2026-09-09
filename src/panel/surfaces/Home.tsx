@@ -39,7 +39,7 @@ import type { Recommendation, RecommendationTarget } from '../../core/recommend/
 import { UploadSheet } from './UploadSheet';
 import type { Answers, Dismissals, ReportState } from '../../schema/storage.types';
 import { S } from '../strings';
-/* hasBaseline/latestTask read in Context Development now (4d). */
+import { hasBaseline } from '../../core/report/runs';
 import { featuredMove, maintenanceQueue } from '../../core/freshness/queue';
 import './Home.css';
 
@@ -56,6 +56,9 @@ export interface HomeProps {
    * Grounds and the comparison, one area. (The old onOpenBaseline prop
    * rides App -> ContextHub directly now.) */
   onOpenContextHub: () => void;
+  /** Pass 4n: the pre-launch errand — until a baseline run exists, the
+   * hero features it and this is where its button goes. */
+  onBaseline?: (() => void) | undefined;
   /**
    * Deep-links straight at the question a recommendation is about. App.tsx
    * turns the target into a real `Position` (core/recommend/targets.ts),
@@ -550,7 +553,7 @@ function LockedCard(props: { file: FileSlotId; desc: string; onCompleteContext()
  * down this screen is untouched and still the only route to a human, which is
  * the no-change default rather than a decision taken in code.
  */
-export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOpenFile, onOpenSkillsHub, onOpenMultiples }: HomeProps) {
+export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOpenFile, onOpenSkillsHub, onOpenMultiples, onBaseline }: HomeProps) {
   const [answers, setAnswersState] = useState<Answers | null>(null);
   /** V2.2 — the second file's answers, for the shelf: whether Skills.md is
    * finished (which unlocks the DERIVED Actions.md), and what its row says.
@@ -695,6 +698,8 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
      screen; nothing stored. */
   const queue = maintenanceQueue(contextModules, contextOutline, answers, new Date());
   const featured = featuredMove(queue);
+  /* Pass 4n: until this is true, the hero features the baseline errand. */
+  const baselineTaken = hasBaseline(report);
   // V2.9 VB-146: the interface shows the beta's slots — Actions is hidden
   // (core/files/slots.ts's BETA_HIDDEN_SLOTS carries the story).
   /**
@@ -819,7 +824,7 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
               welcome a11y suite — a header door Tab stops on BEFORE the one
               CTA a new person needs. Day zero has one move; the door to the
               rest earns its place with the first answer. */}
-          {featured && hasStarted && queue.length > 1 && (
+          {baselineTaken && featured && hasStarted && queue.length > 1 && (
             <button
               type="button"
               className="home-next-more"
@@ -840,7 +845,21 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
             zero keeps its verb as the button's own caption: a fresh person
             still needs an action to read, and the a11y suite holds the tab
             stop by that name. */}
-        {featured ? (
+        {/* Pass 4n (Adam): "by default, the Your Next Move should be the
+            Baseline question" - until a baseline run exists, the hero IS
+            the pre-launch errand and pressing it goes there. */}
+        {!baselineTaken && onBaseline ? (
+          <button type="button" className="home-next-card" data-kind="baseline" onClick={onBaseline}>
+            <span className="home-next-section">{S.heroBaselineKicker}</span>
+            <span className="home-next-q">{S.heroBaselineQ}</span>
+            <span className="home-next-answer">
+              {S.homeNextAnswer}
+              <svg width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+                <path d="M2.5 7 H11 M7.5 3.2 L11.4 7 L7.5 10.8" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" />
+              </svg>
+            </span>
+          </button>
+        ) : featured ? (
           <button
             type="button"
             className="home-next-card"

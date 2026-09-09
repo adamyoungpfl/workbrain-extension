@@ -26,6 +26,18 @@ async function launchExtension() {
 
 /** Walk the interview until the first run card appears. */
 async function walkToFirstCard(context: BrowserContext, id: string) {
+  /* 4n: the hero defaults to the BASELINE errand until a run exists. This
+     spec is about the ordinary interview's run boundary, so the errand is
+     already done here and the queue's own door leads. */
+  const sw = context.serviceWorkers()[0] ?? (await context.waitForEvent('serviceworker'));
+  await sw.evaluate(() =>
+    chrome.storage.local.set({
+      'wb:report': {
+        scores: [],
+        runs: [{ at: new Date().toISOString(), task: 'Summarize this thread', stage: 'baseline', answer: 'A baseline answer.' }],
+      },
+    }),
+  );
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 760 });
   await page.goto(`chrome-extension://${id}/panel.html`);

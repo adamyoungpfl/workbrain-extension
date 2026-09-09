@@ -143,7 +143,19 @@ test.describe('Home surface (R1-12)', () => {
     const { answers, roleLabel } = buildAnswersWithOneDueRole(contextModules);
     // Sanity check on the fixture itself, before any of R1-12's own code runs.
     expect(answers.repeatables[ROLES_BLOCK_ID]?.[0]?.[ROLE_DURABILITY_KEY]).toBe('current');
-    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), answers);
+    /* 4n: the hero defaults to the BASELINE until a run exists - this test
+       is about the queue's due claim, so the errand is already done here. */
+    await sw.evaluate(
+      (a) =>
+        chrome.storage.local.set({
+          'wb:answers': a,
+          'wb:report': {
+            scores: [],
+            runs: [{ at: new Date().toISOString(), task: 'Summarize this thread', stage: 'baseline', answer: 'A baseline answer.' }],
+          },
+        }),
+      answers,
+    );
 
     const page = await openPanel(context, id);
 
@@ -732,7 +744,18 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     const OLDER = new Date(Date.now() - 950 * 86_400_000).toISOString();
     if (seeded.answeredAt['goal_want']) seeded.answeredAt['goal_want'] = OLDER;
     if (seeded.answeredAt['never_words']) seeded.answeredAt['never_words'] = OLD;
-    await sw.evaluate((a) => chrome.storage.local.set({ 'wb:answers': a }), seeded);
+    /* 4n: a baseline run stands, so the QUEUE leads the hero again. */
+    await sw.evaluate(
+      (a) =>
+        chrome.storage.local.set({
+          'wb:answers': a,
+          'wb:report': {
+            scores: [],
+            runs: [{ at: new Date().toISOString(), task: 'Summarize this thread', stage: 'baseline', answer: 'A baseline answer.' }],
+          },
+        }),
+      seeded,
+    );
 
     const page = await openPanel(context, id);
     // The queue leads Home: a stale featured card with the refresh verb.

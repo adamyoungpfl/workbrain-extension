@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { BackGlyph, Button, Sheet, Toast } from '../components';
+import { BackGlyph, Button, Sheet, StoredSheet, Toast } from '../components';
 import { Comparison } from './Comparison';
 import { getLocal } from '../../core/storage/client';
 import { hasBaseline, latestTask } from '../../core/report/runs';
@@ -66,6 +66,7 @@ export function ContextHub({ onBack, onBaseline, onEdit, onResume, onSkillsHub, 
   const [report, setReport] = useState<ReportState | undefined>(undefined);
   const [compareOpen, setCompareOpen] = useState(false);
   const [toast, setToast] = useState<string | null>(null);
+  const [storedOpen, setStoredOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -311,6 +312,17 @@ export function ContextHub({ onBack, onBaseline, onEdit, onResume, onSkillsHub, 
       <Sheet open={compareOpen} onClose={() => setCompareOpen(false)} title={S.compareTitle} full>
         <Comparison report={report} />
       </Sheet>
+      {/* Pass 4o: the same pinned promise Home carries - one sentence and
+          the door to the honest list (StoredSheet self-loads on open). */}
+      <footer className="home-foot hub-foot">
+        <p className="home-privacy">
+          {S.homePrivacyNote}{' '}
+          <button type="button" className="home-foot-link" onClick={() => setStoredOpen(true)}>
+            {S.storedLink}
+          </button>
+        </p>
+      </footer>
+      <StoredSheet open={storedOpen} onClose={() => setStoredOpen(false)} />
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );

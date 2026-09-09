@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Button, Toast, BackGlyph } from '../components';
+import { Button, Toast, BackGlyph, StoredSheet } from '../components';
 import { getLocal, setLocal } from '../../core/storage/client';
 import { redeemSkillCode } from '../../core/packs/redeem';
 import { capabilitySkills, capabilityReady, cardFor } from '../../core/proof/capability';
@@ -58,6 +58,7 @@ export function SkillsHub({ onBack, onCreate, onEdit, onProveSkill }: SkillsHubP
   const [code, setCode] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [storedOpen, setStoredOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -268,6 +269,17 @@ export function SkillsHub({ onBack, onCreate, onEdit, onProveSkill }: SkillsHubP
         </div>
       </section>
 
+      {/* Pass 4o: the same pinned promise Home carries - one sentence and
+          the door to the honest list (StoredSheet self-loads on open). */}
+      <footer className="home-foot hub-foot">
+        <p className="home-privacy">
+          {S.homePrivacyNote}{' '}
+          <button type="button" className="home-foot-link" onClick={() => setStoredOpen(true)}>
+            {S.storedLink}
+          </button>
+        </p>
+      </footer>
+      <StoredSheet open={storedOpen} onClose={() => setStoredOpen(false)} />
       {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
     </div>
   );

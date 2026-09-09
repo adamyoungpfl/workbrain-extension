@@ -136,3 +136,4 @@ export { StepStack } from './StepStack';
 export type { StepStackStep } from './StepStack';
 
 export { BackGlyph } from './BackGlyph';
+export { StoredSheet } from './StoredSheet';

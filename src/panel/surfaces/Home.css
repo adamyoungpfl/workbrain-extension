@@ -398,6 +398,13 @@
   min-width: 108px;
   justify-content: center;
   text-align: center;
+  /* Pass 4m (Adam): the SAME height, exactly - one fixed box for both, so
+     the buttons and the bars under them line up side by side. */
+  box-sizing: border-box;
+  height: var(--target-min);
+  padding-top: 0;
+  padding-bottom: 0;
+  align-items: center;
 }
 .home-card-act {
   display: inline-flex;
@@ -1114,8 +1121,12 @@ a.home-row-hit:hover .home-row-go {
 .home-next-card > span {
   display: block;
 }
-/* The action pill: the show's aqua as a FILLED control-shaped object, so
-   the card's clickability is legible at a glance. Ink on the aqua ~9:1. */
+/* THE call to action (pass 4n: "creative and flowy… the button the eye
+   gravitates to"): the logo's own aqua-to-violet flow as the fill, ink on
+   it everywhere ≥6.6:1, a soft breathing glow that trades aqua for violet
+   and back, and a hover that pans the flow and nudges the arrow. Under
+   reduced motion the glow stands still at its resting shadow - the
+   gradient and the words carry the invitation without the breath. */
 .home-next-answer {
   display: inline-flex;
   align-items: center;
@@ -1123,16 +1134,50 @@ a.home-row-hit:hover .home-row-go {
   grid-column: 2;
   grid-row: 1 / span 3;
   align-self: center;
-  padding: 7px 12px;
+  padding: 10px 16px;
   border-radius: var(--r-pill);
-  background: var(--globe-node-2-solid);
+  background: linear-gradient(105deg, var(--globe-node-2-solid), var(--splash-link-end));
+  background-size: 170% 100%;
+  background-position: 0% 0;
   color: var(--ink);
-  font-size: 12.5px;
-  font-weight: 700;
+  font-size: 13px;
+  font-weight: 750;
   letter-spacing: 0.01em;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--ink-inv) 45%, transparent),
+    0 2px 12px color-mix(in srgb, var(--globe-node-2-solid) 45%, transparent);
+  transition: background-position var(--fast) var(--ease), box-shadow var(--fast) var(--ease);
+  animation: heroflow 3.2s ease-in-out infinite;
 }
 .home-next-card:hover .home-next-answer {
-  background: color-mix(in srgb, var(--globe-node-2-solid) 85%, var(--ink-inv));
+  background-position: 100% 0;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--ink-inv) 45%, transparent),
+    0 3px 16px color-mix(in srgb, var(--splash-link-end) 55%, transparent);
+}
+.home-next-answer svg {
+  transition: transform var(--fast) var(--ease);
+}
+.home-next-card:hover .home-next-answer svg {
+  transform: translateX(2px);
+}
+@keyframes heroflow {
+  0%,
+  100% {
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--ink-inv) 45%, transparent),
+      0 2px 12px color-mix(in srgb, var(--globe-node-2-solid) 45%, transparent);
+  }
+  50% {
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, var(--ink-inv) 45%, transparent),
+      0 3px 16px color-mix(in srgb, var(--splash-link-end) 50%, transparent);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-next-answer {
+    animation: none;
+  }
 }
 .home-next-section {
   grid-column: 1;

@@ -361,6 +361,12 @@ export default function App() {
             openContextAt(positionForQuestionId(contextModules, questionId) ?? undefined);
           }}
           onOpenContextHub={() => setSurface('contexthub')}
+          /* 4n: the hero's default - the pre-launch errand, the same route
+             Context Development's baseline side takes. */
+          onBaseline={() => {
+            setWantBaseline(true);
+            openContextAt(positionForQuestionId(contextModules, 'goal_want') ?? undefined);
+          }}
           onOpenTarget={(target) => openContext(target)}
           onOpenFile={(id) => {
             // V2.2: Actions is the derived file — its own read-only surface,
