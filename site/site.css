@@ -1487,7 +1487,9 @@ main,
 .flowline::before {
   content: '';
   position: absolute;
-  top: 23px;
+  /* 5g: the line runs BELOW the icons - they stand above it, each on a
+     short stem, emerging rather than threaded. */
+  top: 76px;
   left: calc(12.5% - 17px);
   right: calc(12.5% - 17px);
   height: 3px;
@@ -1508,8 +1510,8 @@ main,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 48px;
-  height: 48px;
+  width: 62px;
+  height: 62px;
   border-radius: 50%;
   background:
     linear-gradient(var(--bg), var(--bg)) padding-box,
@@ -1523,8 +1525,21 @@ main,
 .flowline-step:nth-child(2) { --node-a: #38a5f4; --node-b: #3e7bfa; }
 .flowline-step:nth-child(3) { --node-a: #5e77fa; --node-b: #8a70fc; }
 .flowline-step:nth-child(4) { --node-a: #9a6efc; --node-b: #b36bff; }
+/* The stem: each icon reaches down to the line in its own hue. */
+.flowline-node::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 2.5px;
+  height: 15px;
+  border-radius: 2px;
+  background: linear-gradient(180deg, var(--node-a, #2ed6f0), var(--node-b, #b36bff));
+  opacity: 0.7;
+}
 .flowline-title {
-  margin-top: 14px;
+  margin-top: 30px;
   font-size: 19px;
   letter-spacing: -0.02em;
 }
@@ -1538,13 +1553,17 @@ main,
     gap: 22px;
   }
   .flowline::before {
-    top: 23px;
-    bottom: 23px;
-    left: 23px;
+    top: 31px;
+    bottom: 31px;
+    left: 30px;
     right: auto;
     width: 3px;
     height: auto;
     background: linear-gradient(180deg, #2ed6f0, #3e7bfa, #b36bff);
+  }
+  /* Vertical: the stems stand down with the line beside the icons. */
+  .flowline-node::after {
+    display: none;
   }
   .flowline-step {
     flex-direction: row;
