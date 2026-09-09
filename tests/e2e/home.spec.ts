@@ -797,10 +797,13 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     await page.getByRole('button', { name: S.downloadFolder, exact: true }).click();
     expect((await zipPromise).suggestedFilename()).toBe('Workbrain.zip');
 
-    /* 4h: a finished interview unlocks Skills, and the row's one action is
-       the door to Skill Development (its Back goes Home, so this walks last). */
-    await panel.locator("[data-file='skills']").getByRole('button', { name: S.rowSkillsHub }).click();
-    await page.waitForSelector('.skillshub');
+    /* 4p: the Skills.md row left for Skill Development's own page; the
+       Center is Baseline + Context now. No baseline run in this seed, so
+       the baseline row carries the button that changes that. */
+    await expect(panel.locator("[data-file='skills']")).toHaveCount(0);
+    await expect(
+      panel.locator("[data-file='baseline']").getByRole('button', { name: S.ctxCompleteNow }),
+    ).toBeVisible();
 
     await context.close();
   });
@@ -812,12 +815,13 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     await page.waitForSelector('.ctxhub');
     /* 4f: the Center stands OPEN - a grid, no disclosure click. */
     const panel = page.locator('.ctxhub-grid');
-    /* 4h: nothing is done, so each row carries what changes that - Context
-       a "Start now" button, Skills the locked chip and no control. The
-       folder button still does not exist: a zip of nothing is no download. */
+    /* 4p: nothing is done, so each row carries what changes that - the
+       baseline a "Complete it now", Context a "Start now"; the Skills row
+       left for its own page. The folder button still does not exist: a zip
+       of nothing is no download. */
+    await expect(panel.locator("[data-file='baseline']").getByRole('button', { name: S.ctxCompleteNow })).toBeVisible();
     await expect(panel.locator("[data-file='context']").getByRole('button', { name: S.ctxStartNow })).toBeVisible();
-    await expect(panel.locator('.ctxhub-file-lock')).toContainText(S.badgeLocked);
-    await expect(panel.locator("[data-file='skills'] button")).toHaveCount(0);
+    await expect(panel.locator("[data-file='skills']")).toHaveCount(0);
     await expect(panel.getByRole('button', { name: S.downloadFolder, exact: true })).toHaveCount(0);
     await context.close();
   });

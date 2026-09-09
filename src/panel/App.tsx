@@ -451,7 +451,6 @@ export default function App() {
           /* 4h: Start now / Finish it now — the interview resumed at its own
              next question, the same plain resume Home's doors take. */
           onResume={() => openContextAt()}
-          onSkillsHub={() => setSurface('skillshub')}
           onProve={openProof}
           onOpenTarget={(target) => openContext(target)}
         />

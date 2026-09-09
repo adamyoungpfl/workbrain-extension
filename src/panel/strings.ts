@@ -1265,6 +1265,10 @@ export const S = {
      download grid, and Proving Grounds as the page's working bulk. */
   ctxDone: 'Completed',
   ctxCompleteNow: 'Complete it now',
+  /* Pass 4p: the Center is Baseline + Context. */
+  ctxGridBaseline: 'Baseline',
+  ctxGridBaselineMeta: 'Your one prompt',
+  ctxGridCopy: 'Copy',
   ctxGridFormat: 'Markdown · .md',
   ctxGridEdit: 'Edit',
   ctxGridDownload: 'Download',

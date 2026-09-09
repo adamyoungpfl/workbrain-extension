@@ -583,8 +583,11 @@
   bottom: 0;
   padding: 8px 14px 10px;
   text-align: center;
-  background: color-mix(in srgb, var(--ink-inv) 90%, transparent);
-  border-top: 1px solid var(--divider);
+  /* Pass 4p (Adam): transparent - the line sits ON the field rather than
+     blocking it. The 4e veil retired at his word; the pages' bottom
+     padding keeps resting content clear of the line. */
+  background: transparent;
+  border-top: 0;
 }
 /* The page's content clears the pinned line. */
 .home {

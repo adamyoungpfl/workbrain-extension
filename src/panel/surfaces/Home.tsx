@@ -31,7 +31,7 @@ import type { FileSlotId } from '../../core/files/slots';
 // V1.8 VB-47. The file's name, the lock's sentence and the padlock itself,
 // shared with the drawer's toggle so the shelf and the switcher cannot say
 // different things about the same file — see components/fileLabels.tsx.
-import { LockGlyph, fileName } from '../components/fileLabels';
+import { fileName } from '../components/fileLabels';
 import { contextModules, contextOutline, skillsModules, skillsOutline } from '../../core/flow/flow';
 import { NO_DISMISSALS, dismiss, readDismissals } from '../../core/recommend/dismissals';
 import type { Recommendation, RecommendationTarget } from '../../core/recommend/types';
@@ -252,19 +252,33 @@ const STACK_ICON = (
  * document for Context, layered sheets for Skills, a bolt for the generated
  * Actions; the locked chips wear the one padlock (fileLabels' LockGlyph). */
 const DOC_ICON = (
-  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M4 2.5h8v11H4z" />
-    <path d="M6 6h4M6 9h3" />
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="wbflow-doc" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+        <stop stopColor="var(--globe-node-2-solid)" />
+        <stop offset="1" stopColor="var(--splash-link-end)" />
+      </linearGradient>
+    </defs>
+    <path
+      d="M6 2h8l5 5v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V3a1 1 0 0 1 1-1Zm7 1.5V8h4.5L13 3.5Z"
+      fill="url(#wbflow-doc)"
+      fillRule="evenodd"
+    />
   </svg>
-);
+)
 
 const LAYERS_ICON = (
-  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M2.5 4.5 8 2l5.5 2.5L8 7 2.5 4.5Z" />
-    <path d="M2.5 8 8 10.5 13.5 8" />
-    <path d="M2.5 11.5 8 14l5.5-2.5" />
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="wbflow-layers" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+        <stop stopColor="var(--globe-node-2-solid)" />
+        <stop offset="1" stopColor="var(--splash-link-end)" />
+      </linearGradient>
+    </defs>
+    <path d="M12 2.5 22 8.5 12 14.5 2 8.5Z" fill="url(#wbflow-layers)" />
+    <path d="M4.4 12.6 12 17.2l7.6-4.6 2.4 1.4-10 6-10-6Z" fill="url(#wbflow-layers)" />
   </svg>
-);
+)
 
 
 const GO_ARROW = (
@@ -278,11 +292,17 @@ const GO_ARROW = (
  * (VB-125c also retired PERSON_ICON with the "Talk to a person" row — the
  * services card and the TiM tile are the human doors now.) */
 const DOWNLOAD_ICON = (
-  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <path d="M9 3.5V12M5.8 8.8 9 12l3.2-3.2" />
-    <path d="M3.5 12v2.5h11V12" />
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="wbflow-dl" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+        <stop stopColor="var(--globe-node-2-solid)" />
+        <stop offset="1" stopColor="var(--splash-link-end)" />
+      </linearGradient>
+    </defs>
+    <path d="M10.5 3h3v8h3.5L12 16.5 7 11h3.5Z" fill="url(#wbflow-dl)" />
+    <path d="M4 18.5h16V21H4Z" fill="url(#wbflow-dl)" />
   </svg>
-);
+)
 
 /** VB-145 — the upload door's glyph: the same tray, arrow rising out. */
 const UPLOAD_ICON = (
@@ -301,11 +321,16 @@ const UPLOAD_ICON = (
 /** BS-04 (§4) — proof two's row glyph: a play mark, because the row runs
  * something. Same 17px stroke house style as its neighbours. */
 const RUN_ICON = (
-  <svg width="17" height="17" viewBox="0 0 18 18" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
-    <circle cx="9" cy="9" r="6.4" />
-    <path d="M7.4 6.4 11.8 9l-4.4 2.6Z" strokeLinejoin="round" />
+  <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="wbflow-run" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+        <stop stopColor="var(--globe-node-2-solid)" />
+        <stop offset="1" stopColor="var(--splash-link-end)" />
+      </linearGradient>
+    </defs>
+    <path d="M8 4.5v15l13-7.5Z" fill="url(#wbflow-run)" />
   </svg>
-);
+)
 
 /* LIBRARY_ICON retired with its row (pass 4c - the hub gathered the doors). */
 
@@ -469,7 +494,20 @@ function LockedCard(props: { file: FileSlotId; desc: string; onCompleteContext()
     >
       <span className="home-card-top">
         <span className="home-card-chip" aria-hidden="true">
-          <LockGlyph size={15} stroke={1.5} />
+          {/* 4p: the lock joins the flow-silhouette language on its dark tile. */}
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" focusable="false">
+            <defs>
+              <linearGradient id="wbflow-lock" x1="0" y1="0" x2="24" y2="24" gradientUnits="userSpaceOnUse">
+                <stop stopColor="var(--globe-node-2-solid)" />
+                <stop offset="1" stopColor="var(--splash-link-end)" />
+              </linearGradient>
+            </defs>
+            <path
+              d="M7 10V7a5 5 0 0 1 10 0v3h.5a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-11a2 2 0 0 1-2-2v-8a2 2 0 0 1 2-2H7Zm2 0h6V7a3 3 0 0 0-6 0v3Z"
+              fill="url(#wbflow-lock)"
+              fillRule="evenodd"
+            />
+          </svg>
         </span>
         <span className="home-card-id">
           <span className="home-card-name">

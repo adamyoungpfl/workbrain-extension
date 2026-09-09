@@ -5,7 +5,6 @@ import { getLocal } from '../../core/storage/client';
 import { hasBaseline, latestTask } from '../../core/report/runs';
 import { downloadContextFile, downloadWorkbrainFolder } from './FileActions';
 import { generateContextFile } from '../../core/files/generate';
-import { generateSkillsFile } from '../../core/files/skillsFile';
 import { recommend, topRecommendations } from '../../core/recommend/engine';
 import { recommendationCopy } from '../components';
 import { NO_DISMISSALS } from '../../core/recommend/dismissals';
@@ -50,8 +49,6 @@ export interface ContextHubProps {
   onEdit: (id: 'context' | 'skills') => void;
   /** Pass 4h: "Start now" / "Finish it now" — the interview, resumed. */
   onResume: () => void;
-  /** Pass 4h: the unlocked Skills row's one action — Skill Development. */
-  onSkillsHub: () => void;
   /** Runs the in-app proof loop — the head-to-head this page exists for. */
   onProve: () => void;
   /** A refine row's jump straight to its question. */
@@ -60,7 +57,7 @@ export interface ContextHubProps {
 
 const KB = (bytes: number) => (bytes / 1024).toFixed(1);
 
-export function ContextHub({ onBack, onBaseline, onEdit, onResume, onSkillsHub, onProve, onOpenTarget }: ContextHubProps) {
+export function ContextHub({ onBack, onBaseline, onEdit, onResume, onProve, onOpenTarget }: ContextHubProps) {
   const [answers, setAnswers] = useState<Answers>(EMPTY);
   const [skills, setSkills] = useState<Answers>(EMPTY);
   const [report, setReport] = useState<ReportState | undefined>(undefined);
@@ -103,9 +100,6 @@ export function ContextHub({ onBack, onBaseline, onEdit, onResume, onSkillsHub, 
   const contextBytes = contextStarted
     ? new TextEncoder().encode(generateContextFile(answers, new Date().toISOString())).length
     : 0;
-  const skillsBytes = skillsStarted
-    ? new TextEncoder().encode(generateSkillsFile(skills, new Date().toISOString())).length
-    : 0;
 
   return (
     <div className="skillshub ctxhub">
@@ -134,6 +128,41 @@ export function ContextHub({ onBack, onBaseline, onEdit, onResume, onSkillsHub, 
           <span className="ctxhub-pg-title">{S.ctxDownloadName}</span>
         </div>
         <div className="ctxhub-grid">
+          {/* Pass 4p (Adam): the Center is BASELINE + CONTEXT now - the
+              Skills.md row left for Skill Development's own page. */}
+          <div className="ctxhub-file" data-file="baseline">
+            <span className="ctxhub-file-name">{S.ctxGridBaseline}</span>
+            <span className="ctxhub-file-meta">{S.ctxGridBaselineMeta}</span>
+            <span className="ctxhub-file-actions">
+              {baselineTaken && baselineRun ? (
+                <>
+                  <button
+                    type="button"
+                    className="ctxhub-file-act"
+                    onClick={() => {
+                      navigator.clipboard?.writeText(baselineRun.task).then(
+                        () => setToast(S.copied),
+                        () => {},
+                      );
+                    }}
+                  >
+                    {S.ctxGridCopy}
+                  </button>
+                  {onBaseline && (
+                    <button type="button" className="ctxhub-file-act" onClick={onBaseline}>
+                      {S.ctxGridEdit}
+                    </button>
+                  )}
+                </>
+              ) : (
+                onBaseline && (
+                  <button type="button" className="ctxhub-file-act" onClick={onBaseline}>
+                    {S.ctxCompleteNow}
+                  </button>
+                )
+              )}
+            </span>
+          </div>
           <div className="ctxhub-file" data-file="context">
             <span className="ctxhub-file-name">{fileName('context')}</span>
             <span className="ctxhub-file-meta">
@@ -153,34 +182,18 @@ export function ContextHub({ onBack, onBaseline, onEdit, onResume, onSkillsHub, 
                   {S.ctxGridDownload}
                 </button>
               )}
-              {contextStarted && (
+              {contextReady ? (
+                /* Complete: the row links to the Context home page - the
+                   file's own view (Adam's words, 4p). */
                 <button type="button" className="ctxhub-file-act" onClick={() => onEdit('context')}>
                   {S.ctxGridEdit}
                 </button>
-              )}
-              {!contextReady && (
+              ) : (
                 <button type="button" className="ctxhub-file-act" onClick={onResume}>
                   {contextStarted ? S.ctxFinishNow : S.ctxStartNow}
                 </button>
               )}
             </span>
-          </div>
-          <div className="ctxhub-file" data-file="skills">
-            <span className="ctxhub-file-name">{fileName('skills')}</span>
-            <span className="ctxhub-file-meta">
-              {S.ctxGridFormat}
-              {skillsStarted ? ` · ${S.ctxSize(KB(skillsBytes))}` : ''}
-            </span>
-            {/* The same door condition Home's shelf reads — the interview
-                being over is what unlocks Skills, fileAsked not fileFinished
-                (the long story lives in Home.tsx's O3 note). */}
-            {contextReady ? (
-              <button type="button" className="ctxhub-file-act" onClick={onSkillsHub}>
-                {S.rowSkillsHub}
-              </button>
-            ) : (
-              <span className="ctxhub-file-lock">{S.badgeLocked}</span>
-            )}
           </div>
           {(contextStarted || skillsStarted) && (
             <button
