@@ -695,9 +695,9 @@ test.describe('what it must never do', () => {
     await page.waitForSelector('.splash', { state: 'detached', timeout: 20_000 });
     await expect.poll(() => probeOf(page).then((p) => p.spoken.length), { timeout: 10_000 }).toBeGreaterThan(0);
     const probe = await probeOf(page);
-    /* V3.0 pass 3n: the landing speaks THE GUIDE'S step-one line now -
-       Adam's own script - rather than the worksheet title. */
-    expect(probe.spoken[probe.spoken.length - 1]?.text).toContain('your prompt is already copied');
+    /* V3.0 pass 3n: the landing speaks THE GUIDE'S step-one line - and
+       since 4y step one is the SERVICE pick, so that is the line it reads. */
+    expect(probe.spoken[probe.spoken.length - 1]?.text).toContain('Select a provider');
 
     await context.close();
   });

@@ -27,8 +27,8 @@
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  gap: 20px;
-  padding: 0 14px 16px;
+  gap: 14px;
+  padding: 0 14px 12px;
 }
 /* THE 4x GEOMETRY BUG: a flex column SHRINKS its children to fit, so the
    sections compressed, their content painted out past the scroller onto
@@ -142,6 +142,9 @@
 .home-duo {
   display: grid;
   grid-template-columns: 1fr;
+  /* 4y (Adam): the two tiles stand the SAME height - rows equalise to
+     the taller one. */
+  grid-auto-rows: 1fr;
   gap: 8px;
 }
 
@@ -795,7 +798,11 @@
    prominent") - one fixed height for all three areas, the chip stepped
    up to carry the family. */
 .home-rows .home-row-hit {
-  height: 96px;
+  /* 4y (Adam): a touch shorter, padding eased, so the whole page fits
+     the frame without a default scroll. */
+  height: 84px;
+  padding-top: 6px;
+  padding-bottom: 6px;
   align-items: center;
 }
 .home-rows .home-row-chip {

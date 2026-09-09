@@ -133,8 +133,11 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
      happens in ONE STAGE beneath them - press a box, its stage opens, and
      everything else waits. Step 3's stage CONTAINS the paste box and the
      doors, so the thing to do is always the only thing lit. */
-  const [step, setStep] = useState('copy');
-  const [visited, setVisited] = useState<ReadonlySet<string>>(new Set(['copy']));
+  /* Pass 4y (Adam): the SERVICE comes first and loads OPEN - pick the
+     provider, and the Go button both opens the window and hands the stack
+     to step 3, which the narrator begins to read. */
+  const [step, setStep] = useState('open');
+  const [visited, setVisited] = useState<Set<string>>(() => new Set(['open']));
   /* The chip SELECTS (and persists via onService); the Open button is what
      leaves the panel. Seeded from the stored pick when the gate knows it. */
   const [svc, setSvc] = useState<string | undefined>(service);
@@ -251,36 +254,6 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
         }}
         steps={[
           {
-            id: 'copy',
-            caption: S.baselineStep1,
-            art: ART_PASTE,
-            detail: (
-              /* Side by side like its siblings (V3.0 pass 3m): the
-                 reassurance on the left, a real button on the right - the
-                 press that left the previous screen already copied it, and
-                 the button is the belt for a clipboard that moved on. */
-              <div className="baselineoffer-copyrow">
-                <p className="baselineoffer-note">{S.baselineCopiedAlready}</p>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => {
-                    navigator.clipboard?.writeText(task).then(
-                      () => {
-                        setCopied(true);
-                        window.setTimeout(() => setCopied(false), 1600);
-                      },
-                      () => {},
-                    );
-                  }}
-                >
-                  {copied ? S.baselineRecopied : S.baselineCopyAgain}
-                </Button>
-              </div>
-            ),
-          },
-          {
             id: 'open',
             caption: S.baselineStep2,
             art: ART_OPEN,
@@ -328,11 +301,49 @@ export function BaselineOffer({ task, current, total, onRecord, onContinue, onSk
                       href={ASSIST_SERVICE_URLS[svc]}
                       target="_blank"
                       rel="noopener noreferrer"
+                      onClick={() => {
+                        /* 4y: the same press that opens the window hands
+                           the stack to step 3 - whose coaching the
+                           narrator reads (the step-narration hook re-arms
+                           on the text change). */
+                        setVisited((was) => new Set(was).add('return'));
+                        setStep('return');
+                      }}
                     >
                       {S.baselineGoTo(svcLabel)}
                     </a>
                   )}
                 </div>
+              </div>
+            ),
+          },
+          {
+            id: 'copy',
+            caption: S.baselineStep1,
+            art: ART_PASTE,
+            detail: (
+              /* Side by side like its siblings (V3.0 pass 3m): the
+                 reassurance on the left, a real button on the right - the
+                 press that left the previous screen already copied it, and
+                 the button is the belt for a clipboard that moved on. */
+              <div className="baselineoffer-copyrow">
+                <p className="baselineoffer-note">{S.baselineCopiedAlready}</p>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  onClick={() => {
+                    navigator.clipboard?.writeText(task).then(
+                      () => {
+                        setCopied(true);
+                        window.setTimeout(() => setCopied(false), 1600);
+                      },
+                      () => {},
+                    );
+                  }}
+                >
+                  {copied ? S.baselineRecopied : S.baselineCopyAgain}
+                </Button>
               </div>
             ),
           },
