@@ -1717,3 +1717,31 @@ main,
   border-left-color: color-mix(in srgb, var(--acc, var(--primary)) 55%, transparent);
   background: color-mix(in srgb, var(--acc, var(--primary)) 6%, transparent);
 }
+
+/* ── 5i: the offset rows go COLOURFUL, alternating inversions (Adam):
+   light rows - colour text on light ground, expanding into BOLD colour
+   with dark text; bold rows - the colour IS the ground, expanding into
+   light with the bolder colour text. ── */
+.card--file .defrow--btn:nth-child(odd) {
+  background: color-mix(in srgb, var(--acc, var(--primary)) 5%, var(--canvas));
+}
+.card--file .defrow--btn:nth-child(even) {
+  background: color-mix(in srgb, var(--acc, var(--primary)) 17%, var(--canvas));
+}
+.card--file .defrow--btn:nth-child(even) .defterm {
+  color: color-mix(in srgb, var(--acc, var(--primary)) 82%, var(--ink));
+}
+.card--file .defrow--btn:nth-child(even) .defdesc {
+  color: var(--ink);
+}
+.defrow--btn:nth-child(odd) .defmore {
+  background: color-mix(in srgb, var(--acc, var(--primary)) 24%, var(--canvas));
+  border-left-color: var(--acc, var(--primary));
+  color: var(--ink);
+}
+.defrow--btn:nth-child(even) .defmore {
+  background: color-mix(in srgb, var(--acc, var(--primary)) 5%, var(--canvas));
+  border-left-color: var(--acc, var(--primary));
+  color: color-mix(in srgb, var(--acc, var(--primary)) 78%, var(--ink));
+  font-weight: 550;
+}
