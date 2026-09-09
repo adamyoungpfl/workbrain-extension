@@ -1487,7 +1487,7 @@ main,
 .flowline::before {
   content: '';
   position: absolute;
-  top: 17px;
+  top: 23px;
   left: calc(12.5% - 17px);
   right: calc(12.5% - 17px);
   height: 3px;
@@ -1508,18 +1508,21 @@ main,
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 48px;
+  height: 48px;
   border-radius: 50%;
   background:
     linear-gradient(var(--bg), var(--bg)) padding-box,
-    linear-gradient(120deg, #2ed6f0, #b36bff) border-box;
+    linear-gradient(120deg, var(--node-a, #2ed6f0), var(--node-b, #b36bff)) border-box;
   border: 2px solid transparent;
-  font-size: 12.5px;
-  font-weight: 650;
-  color: var(--primary);
-  box-shadow: 0 2px 10px rgba(46, 214, 240, 0.25);
+  box-shadow: 0 4px 16px color-mix(in srgb, var(--node-a, #2ed6f0) 32%, transparent);
 }
+/* Each node is coloured at ITS point along the line - the same journey the
+   track paints, sampled where the icon emerges. */
+.flowline-step:nth-child(1) { --node-a: #2ed6f0; --node-b: #35acf3; }
+.flowline-step:nth-child(2) { --node-a: #38a5f4; --node-b: #3e7bfa; }
+.flowline-step:nth-child(3) { --node-a: #5e77fa; --node-b: #8a70fc; }
+.flowline-step:nth-child(4) { --node-a: #9a6efc; --node-b: #b36bff; }
 .flowline-title {
   margin-top: 14px;
   font-size: 19px;
@@ -1535,9 +1538,9 @@ main,
     gap: 22px;
   }
   .flowline::before {
-    top: 17px;
-    bottom: 17px;
-    left: 17px;
+    top: 23px;
+    bottom: 23px;
+    left: 23px;
     right: auto;
     width: 3px;
     height: auto;
@@ -1666,4 +1669,30 @@ main,
 }
 .alert-row[data-tone='quiet'] .dot {
   background: var(--ink-3);
+}
+
+/* ── 5f: the file card runs a shade darker, and every section speaks in
+   its own hue - the term, the row's hover, the expanded view's edge. ── */
+.card--file {
+  background: color-mix(in srgb, #0b1a33 7%, var(--card));
+  border-color: color-mix(in srgb, #0b1a33 18%, var(--line));
+}
+.card--file .deflist {
+  border-color: color-mix(in srgb, #0b1a33 16%, var(--divider));
+}
+.card--file .defrow {
+  background: color-mix(in srgb, #0b1a33 4%, var(--canvas));
+}
+.card--file .defrow:nth-child(odd) {
+  background: color-mix(in srgb, #0b1a33 9%, var(--canvas));
+}
+.defrow--btn .defterm {
+  color: var(--acc, var(--home-context));
+}
+.defrow--btn:hover {
+  background: color-mix(in srgb, var(--acc, var(--primary)) 8%, transparent);
+}
+.defmore {
+  border-left-color: color-mix(in srgb, var(--acc, var(--primary)) 55%, transparent);
+  background: color-mix(in srgb, var(--acc, var(--primary)) 6%, transparent);
 }
