@@ -198,6 +198,13 @@ async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker;
 }
 
 async function openPanel(context: BrowserContext, id: string): Promise<Page> {
+  /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
   const page = await context.newPage();
   await installSpeechProbe(page);
   await page.setViewportSize({ width: 400, height: 700 });
@@ -661,6 +668,13 @@ test.describe('what it must never do', () => {
        state between those three dies here. */
     test.setTimeout(60_000);
     const { context, id } = await launchExtension();
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const page = await context.newPage();
     await installSpeechProbe(page);
     await page.setViewportSize({ width: 400, height: 700 });
@@ -690,6 +704,13 @@ test.describe('what it must never do', () => {
 
   test('by default a static question rides its CLIP, and the engine stays quiet (V3.0 pass 3f)', async () => {
     const { context, id } = await launchExtension();
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const page = await context.newPage();
     /* The probe watches the engine - but NO tts-only stamp here: this is
        the shipped default, where the bundled narration clip carries the
@@ -718,6 +739,13 @@ test.describe('what it must never do', () => {
 
     // A machine whose engine reports nothing: still narrates, with the
     // browser's own default voice. Degrade, never break.
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const bare = await context.newPage();
     await installSpeechProbe(bare, []);
     await bare.setViewportSize({ width: 400, height: 700 });
@@ -739,6 +767,13 @@ test.describe('what it must never do', () => {
 
     // A browser with no speech API at all: no toggle, no error, no note about
     // it. The interview is exactly the interview.
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const silent = await context.newPage();
     await silent.addInitScript(() => {
       // Deleted rather than set to `undefined`: the panel checks for the API

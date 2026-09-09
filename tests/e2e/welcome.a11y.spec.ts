@@ -109,6 +109,11 @@ test.describe('welcome screen — accessibility', () => {
     // experience is that something did not work. §6 rebuilds this screen —
     // the welcome lockup goes and the recommendation becomes the hero — and
     // the ordinal is worth re-checking there.
+    /* 4v: the mark is the collapse door now - the chrome holds THREE
+       controls and the CTA is the fourth stop. */
+    await page.keyboard.press('Tab');
+    await expect(page.getByRole('button', { name: S.collapsePanel, exact: true })).toBeFocused();
+
     await page.keyboard.press('Tab');
     await expect(page.getByRole('button', { name: S.fileHub, exact: true })).toBeFocused();
 

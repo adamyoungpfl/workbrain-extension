@@ -81,6 +81,7 @@ export function DownloadsHub({ onBack, onBaseline, onEdit, onResume, onCreate }:
 
   return (
     <div className="skillshub dlhub">
+      <div className="hub-scroll">
       <header className="skillshub-head">
         <Button type="button" variant="quiet" onClick={onBack}>
           <span className="hub-back">
@@ -208,6 +209,7 @@ export function DownloadsHub({ onBack, onBaseline, onEdit, onResume, onCreate }:
         </div>
       </section>
 
+      </div>
       <footer className="home-foot hub-foot">
         <p className="home-privacy">
           {S.homePrivacyNote}{' '}

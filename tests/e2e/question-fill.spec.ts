@@ -107,6 +107,13 @@ async function openAt(context: BrowserContext, sw: Worker, id: string, stepId: s
     await chrome.storage.local.set({ 'wb:answers': value });
   }, answersUpTo(contextModules, stepId));
 
+  /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
   const page = await context.newPage();
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
@@ -574,6 +581,13 @@ test.describe('VB-17 — one composed cluster, and the slack in one place', () =
     await sw.evaluate(async (value) => {
       await chrome.storage.local.set({ 'wb:answers': value });
     }, answersUpTo(contextModules, 'preferred_name'));
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const page = await context.newPage();
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize(PANEL);
@@ -626,6 +640,13 @@ test.describe('VB-17 — one composed cluster, and the slack in one place', () =
     await sw.evaluate(async (value) => {
       await chrome.storage.local.set({ 'wb:answers': value });
     }, seeded);
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const page = await context.newPage();
     await page.setViewportSize(PANEL);
     await page.goto(`chrome-extension://${id}/panel.html`);

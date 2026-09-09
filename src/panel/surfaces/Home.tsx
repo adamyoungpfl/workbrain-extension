@@ -794,6 +794,10 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
 
   return (
     <div className="home">
+      {/* 4w (Adam): the page scrolls INSIDE this region and the privacy
+          line stands outside it - fixed by structure, transparent, and
+          nothing can roll over it. */}
+      <div className="home-scroll">
       {/* V2.6 VB-125's chrome bar, V2.8 VB-132b's de-frame: the shell card
           and Home's own cool ground are gone (Adam: "remove the frame
           within a frame") — the sections sit directly on the app's one
@@ -801,9 +805,18 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
           flat identity row. The card grammar itself is the differentiation
           now, not a second world behind it. */}
       <header className="home-chrome">
-        {/* Pass 4k (Adam): "Change the logo at the top of the homepage to
-            the workbrain logo" - the W Peaks, the product's own mark. */}
-        <PeaksSvg size={20} />
+        {/* Pass 4k: the W Peaks; pass 4v (OPEN #8 ruled): the mark is the
+            COLLAPSE door - one press closes the panel, and reopening from
+            the toolbar icon lands back where they left off (App's held
+            place in chrome.storage.session). */}
+        <button
+          type="button"
+          className="home-chrome-mark"
+          aria-label={S.collapsePanel}
+          onClick={() => window.close()}
+        >
+          <PeaksSvg size={20} />
+        </button>
         <p className="home-chrome-name">
           {S.appName} <span>· {S.chromeCompany}</span>
         </p>
@@ -895,10 +908,11 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
             <span className="home-next-q">{S.heroBaselineQ}</span>
             <span className="home-next-answer">
               {S.homeNextAnswer}
-              {/* 4s: the arrow is part of the label - larger, rounder,
-                  centred on the text's own line. */}
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-                <path d="M3 8 H12.2 M8.5 3.8 L12.7 8 L8.5 12.2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              {/* 4u: the arrow is a CHARACTER of the label - cap-height
+                  sized, stroked at the type's own weight, sitting on the
+                  text's optical line. */}
+              <svg className="home-next-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+                <path d="M2.2 7 H11.4 M7.4 3.2 L11.6 7 L7.4 10.8" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
           </button>
@@ -922,10 +936,11 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
                 right: the name now ends in what pressing does. */}
             <span className="home-next-answer">
               {S.homeNextAnswer}
-              {/* 4s: the arrow is part of the label - larger, rounder,
-                  centred on the text's own line. */}
-              <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false">
-                <path d="M3 8 H12.2 M8.5 3.8 L12.7 8 L8.5 12.2" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" />
+              {/* 4u: the arrow is a CHARACTER of the label - cap-height
+                  sized, stroked at the type's own weight, sitting on the
+                  text's optical line. */}
+              <svg className="home-next-arrow" width="13" height="13" viewBox="0 0 14 14" fill="none" aria-hidden="true" focusable="false">
+                <path d="M2.2 7 H11.4 M7.4 3.2 L11.6 7 L7.4 10.8" stroke="currentColor" strokeWidth="2.1" strokeLinecap="round" strokeLinejoin="round" />
               </svg>
             </span>
           </button>
@@ -1221,6 +1236,7 @@ export function Home({ onStart, onOpenNext, onOpenContextHub, onOpenTarget, onOp
       {/* ONE SENTENCE, PINNED (Adam, 2026-09-08): the promise and its
           receipt reading as a single line at the page's foot - the lead
           runs into the link that finishes it. */}
+      </div>
       <footer className="home-foot">
         <p className="home-privacy">
           {S.homePrivacyNote}{' '}

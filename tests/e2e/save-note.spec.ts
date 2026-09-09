@@ -106,6 +106,13 @@ async function openPanel(context: BrowserContext, sw: Worker, id: string, stepId
   await sw.evaluate(async (value) => {
     await chrome.storage.local.set({ 'wb:answers': value });
   }, answersUpTo(contextModules, stepId));
+  /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
   const page = await context.newPage();
   await page.setViewportSize(PANEL);
   await page.goto(`chrome-extension://${id}/panel.html`);
@@ -540,6 +547,13 @@ test.describe('VB-44 — the save note sits at the foot of its area', () => {
     await sw.evaluate(async (value) => {
       await chrome.storage.local.set({ 'wb:answers': value });
     }, seeded);
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const page = await context.newPage();
     await page.setViewportSize(PANEL);
     await page.goto(`chrome-extension://${id}/panel.html`);

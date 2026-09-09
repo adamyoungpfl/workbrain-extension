@@ -14,10 +14,18 @@
 .skillshub {
   display: flex;
   flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+/* 4w: the hub's one scroll region; the privacy line stands below it. */
+.hub-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   gap: 14px;
-  /* The privacy line is sticky-in-flow since 4t - no reserved bottom. */
   padding: 10px 14px 16px;
-  min-height: 100dvh;
 }
 .skillshub-head {
   display: flex;

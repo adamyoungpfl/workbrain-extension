@@ -14,6 +14,16 @@
 .home {
   display: flex;
   flex-direction: column;
+  height: 100dvh;
+  overflow: hidden;
+}
+/* 4w: the one scroll region - the foot below it can never be rolled over. */
+.home-scroll {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
   padding: 0 14px 16px;
 }
@@ -589,12 +599,9 @@
    the way the splash's disclaimer rides its own, on a light veil so the
    line stays quiet and legible over the field. */
 .home-foot {
-  /* Pass 4t (Adam): STICKY, in flow - the line keeps its place in the
-     page (nothing scrolls behind it) and pins to the viewport bottom
-     while the page is longer than the frame. Still transparent (4p). */
-  position: sticky;
-  bottom: 0;
-  margin: auto -14px 0;
+  /* Pass 4w (Adam): FIXED BY STRUCTURE - the foot stands outside the
+     scroll region, so the scroll cannot roll over it. Transparent (4p). */
+  flex: none;
   padding: 8px 14px 10px;
   text-align: center;
   background: transparent;
@@ -677,25 +684,25 @@
     transform: translateY(6px);
   }
 }
-.home > * {
+.home-scroll > * {
   animation: home-rise var(--slow) var(--ease) backwards;
 }
-.home > :nth-child(2) {
+.home-scroll > :nth-child(2) {
   animation-delay: 40ms;
 }
-.home > :nth-child(3) {
+.home-scroll > :nth-child(3) {
   animation-delay: 80ms;
 }
-.home > :nth-child(4) {
+.home-scroll > :nth-child(4) {
   animation-delay: 120ms;
 }
-.home > :nth-child(5) {
+.home-scroll > :nth-child(5) {
   animation-delay: 160ms;
 }
-.home > :nth-child(6) {
+.home-scroll > :nth-child(6) {
   animation-delay: 200ms;
 }
-.home > :nth-child(7) {
+.home-scroll > :nth-child(7) {
   animation-delay: 240ms;
 }
 .home > :nth-child(8) {
@@ -712,7 +719,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .home > * {
+  .home-scroll > * {
     animation: none;
   }
 }
@@ -1166,7 +1173,10 @@ a.home-row-hit:hover .home-row-go {
 .home-next-answer {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  gap: 5px;
+  /* 4u: the label never breaks - "Answer now" and its arrow are ONE line,
+     one object (the wrap was what made the arrow feel bolted on). */
+  white-space: nowrap;
   grid-column: 2;
   grid-row: 1 / span 3;
   align-self: center;
@@ -1192,6 +1202,9 @@ a.home-row-hit:hover .home-row-go {
     0 3px 16px color-mix(in srgb, var(--splash-link-end) 55%, transparent);
 }
 .home-next-answer svg {
+  /* One fluid label (4u): the arrow rides the text's optical baseline. */
+  margin-top: 1px;
+  flex: none;
   transition: transform var(--fast) var(--ease);
 }
 .home-next-card:hover .home-next-answer svg {
@@ -1416,4 +1429,42 @@ a.home-row-hit:hover .home-row-go {
 .home-card.is-locked:hover .home-card-go,
 .home-card.is-locked:focus-visible .home-card-go {
   display: inline-flex;
+}
+
+/* ── Pass 4v: the mark is the collapse door - a real 44px control wearing
+   the decorative peaks. ── */
+.home-chrome-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: var(--target-min);
+  min-height: var(--target-min);
+  margin: -12px 0 -12px -12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  border-radius: var(--r-md);
+}
+.home-chrome-mark:hover {
+  background: var(--surface);
+}
+.home-chrome-mark:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
+/* ── Pass 4w (Adam): Locked and Complete Context share ONE box - location
+   and size identical, only colour and label swap on hover - and the box
+   matches the Context tile's button above, wide enough that "Complete
+   Context" fits on one line at full size. ── */
+.home-card-act,
+.home-card:not(.is-split) .home-card-go,
+.home-card.is-locked .home-card-pill {
+  box-sizing: border-box;
+  min-width: 148px;
+  height: var(--target-min);
+  padding: 0 12px;
+  white-space: nowrap;
+  justify-content: center;
 }

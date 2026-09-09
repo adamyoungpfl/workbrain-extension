@@ -63,6 +63,13 @@ async function launchPanel(
     });
   });
   const id = new URL(sw.url()).host;
+  /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
   const page = await context.newPage();
   if (opts.reducedMotion) await page.emulateMedia({ reducedMotion: opts.reducedMotion });
   await page.setViewportSize({ width: 400, height: 700 });

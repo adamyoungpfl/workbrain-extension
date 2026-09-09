@@ -116,6 +116,7 @@ export function SkillsHub({ onBack, onCreate, onEdit, onProveSkill }: SkillsHubP
 
   return (
     <div className="skillshub">
+      <div className="hub-scroll">
       <header className="skillshub-head">
         <Button type="button" variant="quiet" onClick={onBack}>
           <span className="hub-back">
@@ -265,6 +266,7 @@ export function SkillsHub({ onBack, onCreate, onEdit, onProveSkill }: SkillsHubP
 
       {/* Pass 4o: the same pinned promise Home carries - one sentence and
           the door to the honest list (StoredSheet self-loads on open). */}
+      </div>
       <footer className="home-foot hub-foot">
         <p className="home-privacy">
           {S.homePrivacyNote}{' '}

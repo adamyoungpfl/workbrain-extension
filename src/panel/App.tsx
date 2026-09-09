@@ -141,6 +141,41 @@ export default function App() {
   const [skillsOpen, setSkillsOpen] = useState(false);
 
   /**
+   * Pass 4v — COLLAPSE AND COME BACK (Adam's ruling on docs/OPEN.md #8).
+   * The chrome mark closes the panel; reopening lands back on the surface
+   * they left. `chrome.storage.session` on purpose: it dies with the
+   * browser, like the splash flag, so the durable "which surface you are
+   * on is never stored" rule (docs/ARCHITECTURE.md) still holds - this is
+   * a held place for one sitting, not a remembered habit. `wantBaseline`
+   * and open sheets deliberately do NOT resume (D1's offer-at-a-moment
+   * reasoning); the interview's own position re-derives from wb:answers
+   * as it always has.
+   */
+  useEffect(() => {
+    void getSession('wb:resume').then((held) => {
+      if (!held) return;
+      const surfaces: Surface[] = ['home', 'file', 'flow', 'multiples', 'actions', 'skillshub', 'contexthub', 'dlhub'];
+      if (!surfaces.includes(held.surface as Surface)) return;
+      if (held.surface === 'file' && (held.fileId === 'context' || held.fileId === 'skills')) {
+        setFileId(held.fileId);
+      }
+      if (held.surface === 'flow') {
+        const kinds: FlowKind[] = ['context', 'proof', 'skills', 'capability'];
+        if (held.flowKind && kinds.includes(held.flowKind as FlowKind)) {
+          setFlowKind(held.flowKind as FlowKind);
+        } else {
+          return;
+        }
+      }
+      setSurface(held.surface as Surface);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- mount only
+  }, []);
+  useEffect(() => {
+    void setSession('wb:resume', { surface, fileId, flowKind });
+  }, [surface, fileId, flowKind]);
+
+  /**
    * V1.7 VB-34 — once per browser session.
    *
    * The flag is written the moment the splash is *shown*, not when it is

@@ -1269,6 +1269,9 @@ export const S = {
   /* Pass 4t: the area row folded into the chrome - the FILE HUB is the
      one door for files in and out. */
   fileHub: 'File Hub',
+  /* Pass 4v (OPEN #8 ruled): the mark collapses the panel; reopening from
+     the toolbar icon lands back where they left off. */
+  collapsePanel: 'Collapse the panel',
   dlSub: 'Your baseline and both files, ready to travel - together or one at a time.',
   /* Pass 4p: the Center is Baseline + Context. */
   ctxGridBaseline: 'Baseline',

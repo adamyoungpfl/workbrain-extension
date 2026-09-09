@@ -34,7 +34,7 @@ export const SYNC_KEYS: readonly (keyof SyncState)[] = ['wb:prefs'] as const;
  * splash needs an area that outlives a panel close and nothing else.
  * Deliberately absent from `reset.ts`: there is nothing here to lose.
  */
-export const SESSION_KEYS: readonly (keyof SessionState)[] = ['wb:splash'] as const;
+export const SESSION_KEYS: readonly (keyof SessionState)[] = ['wb:splash', 'wb:resume'] as const;
 
 export type LocalKey = (typeof LOCAL_KEYS)[number];
 export type SyncKey = (typeof SYNC_KEYS)[number];

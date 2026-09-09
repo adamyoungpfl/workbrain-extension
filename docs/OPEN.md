@@ -27,7 +27,12 @@ work that gets thrown away and, worse, ships an opinion nobody agreed to.
 
 6. **Where the civic / after-school programme attaches.** Not in scope for Releases 1–4.
 
-7. **Reformatting incompatible uploads (Adam, 2026-09-09, the File Hub pass).** Today an
+7. ~~**Reformatting incompatible uploads (Adam, 2026-09-09, the File Hub pass).**~~
+   **RESOLVED 2026-09-09 (Adam: "let's scope format and the parser as possible add ons"):**
+   both scoped, not built — `docs/FILE-HUB-ADDONS.md` holds the two scopes (the reformat
+   hand-off through the person's own AI, and the Skills.md parser). Original text kept below
+   for the constraints it records.
+   **Original:** Today an
    upload is validated and calmly rejected: `.md` extension checked, then a real parse
    (`core/files/parse.ts`) — a file that is not Workbrain-shaped gets the degradation voice,
    never an error code. What does NOT exist: (a) reformatting an arbitrary file into
@@ -36,7 +41,13 @@ work that gets thrown away and, worse, ships an opinion nobody agreed to.
    (b) a Skills.md parser — skills come in via the pack (.workbrain-pack.json) path only.
    Default until decided: reject with the calm line.
 
-8. **The collapse-to-a-thin-bar idea (Adam, 2026-09-09).** Chrome does not let an extension
+8. ~~**The collapse-to-a-thin-bar idea (Adam, 2026-09-09).**~~
+   **RESOLVED 2026-09-09 (Adam: "let's do the press close and return resume option"):** built
+   in pass 4v — the chrome mark collapses the panel (`window.close()`), and reopening from the
+   toolbar icon lands back on the surface they left via a session-scoped held place
+   (`wb:resume`, chrome.storage.session — dies with the browser, so the durable never-store
+   rule stands). Original option list kept below for the constraints it records.
+   **Original:** Chrome does not let an extension
    set the side panel's width — the person drags it; there is no API. A thin always-on bar
    AS the panel is therefore not buildable, and injecting a bar into every website needs the
    `<all_urls>` host access GUARDRAILS bans. What IS buildable: (a) the toolbar icon's badge

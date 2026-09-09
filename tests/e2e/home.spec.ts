@@ -30,6 +30,13 @@ async function launchExtension(): Promise<{ context: BrowserContext; sw: Worker;
 }
 
 async function openPanel(context: BrowserContext, id: string): Promise<Page> {
+  /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 700 });
   await page.goto(`chrome-extension://${id}/panel.html`);
@@ -420,6 +427,13 @@ test.describe('Home surface (R1-12)', () => {
 
   test('the chrome mark is fully drawn under prefers-reduced-motion, with nothing animating', async () => {
     const { context, id } = await launchExtension();
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const page = await context.newPage();
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await page.setViewportSize({ width: 400, height: 700 });
@@ -622,7 +636,8 @@ test.describe('V2.9 — Your next move, and the graduation it waits for', () => 
     // Order, read off the DOM rather than off pixel positions — the meter and
     // the file shelf both used to come first, and this is the swap.
     const order = await page.$eval('.home', (home) =>
-      [...home.children].map((child) => child.className.split(' ')[0]),
+      /* 4w: the page's children live in the scroll region now. */
+      [...(home.querySelector('.home-scroll') ?? home).children].map((child) => child.className.split(' ')[0]),
     );
     expect(order[0]).toBe('home-chrome');
     /* V3.0 pass 7: the hero lives inside the YOUR NEXT MOVE section now -

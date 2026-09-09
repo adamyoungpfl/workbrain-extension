@@ -48,6 +48,13 @@ async function launch(): Promise<{ context: BrowserContext; sw: Worker; id: stri
 }
 
 async function openHome(context: BrowserContext, id: string): Promise<Page> {
+  /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
   const page = await context.newPage();
   await page.setViewportSize({ width: 400, height: 760 });
   await page.goto(`chrome-extension://${id}/panel.html`);
@@ -384,6 +391,13 @@ test.describe('VB-102 — the browse canvas', () => {
     expect(Object.keys(keysWhileOpen).sort()).toEqual(['wb:answers']);
 
     await page.close();
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const reopened = await context.newPage();
     await reopened.setViewportSize({ width: 400, height: 760 });
     await reopened.goto(url);

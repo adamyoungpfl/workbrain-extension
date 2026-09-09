@@ -98,6 +98,13 @@ async function launchPanel(
       await chrome.storage.sync.set({ 'wb:prefs': { narrator: on } });
     }, options.narrator);
   }
+  /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
   const page = await context.newPage();
   await installFrameProbe(page);
   if (options.init) await page.addInitScript(options.init);
@@ -549,6 +556,13 @@ test.describe('VB-34 — once per session', () => {
     await page.waitForTimeout(600);
     await expect(page.locator('.splash')).toHaveCount(0);
 
+    /* 4v: drop the held place (wb:resume) so this walk-in lands the way the
+     suite's claims have always assumed - a fresh derive. Resume itself is
+     proved end-to-end in resume.spec.ts. */
+  {
+    const heldSw = context.serviceWorkers()[0];
+    if (heldSw) await heldSw.evaluate(() => chrome.storage.session.remove('wb:resume'));
+  }
     const second = await context.newPage();
     await second.setViewportSize({ width: 400, height: 700 });
     await second.goto(url);

@@ -103,6 +103,7 @@ export function ContextHub({ onBack, onBaseline, onEdit, onResume, onProve, onOp
 
   return (
     <div className="skillshub ctxhub">
+      <div className="hub-scroll">
       <header className="skillshub-head">
         <Button type="button" variant="quiet" onClick={onBack}>
           <span className="hub-back">
@@ -327,6 +328,7 @@ export function ContextHub({ onBack, onBaseline, onEdit, onResume, onProve, onOp
       </Sheet>
       {/* Pass 4o: the same pinned promise Home carries - one sentence and
           the door to the honest list (StoredSheet self-loads on open). */}
+      </div>
       <footer className="home-foot hub-foot">
         <p className="home-privacy">
           {S.homePrivacyNote}{' '}

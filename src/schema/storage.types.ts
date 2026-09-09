@@ -285,6 +285,13 @@ export interface SyncState { 'wb:prefs': Prefs; }
 export interface SessionState {
   /** True once the splash has been shown in this browser session. */
   'wb:splash': boolean;
+  /** Pass 4v (Adam's OPEN #8 ruling): where the panel stood when it was
+   * collapsed, so reopening lands back there. SESSION-scoped on purpose -
+   * it dies with the browser like the splash flag, so ARCHITECTURE's
+   * "which surface you are on is never stored" survives for anything
+   * durable. The strings mirror panel/App.tsx's Surface and FlowKind
+   * unions; App validates on read and falls back to Home. */
+  'wb:resume': { surface: string; fileId?: string; flowKind?: string };
 }
 
 export interface Migration { to: number; up(state: unknown): unknown; }
