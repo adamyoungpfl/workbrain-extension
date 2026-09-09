@@ -554,3 +554,12 @@
     })();
   }
 })();
+
+/* ── The file table's accordion (How it works, 2026-09-09) ── */
+document.addEventListener('click', (e) => {
+  const row = e.target.closest('[data-acc]');
+  if (!row) return;
+  const open = row.getAttribute('aria-expanded') === 'true';
+  row.parentElement.querySelectorAll('[data-acc]').forEach((r) => r.setAttribute('aria-expanded', 'false'));
+  row.setAttribute('aria-expanded', String(!open));
+});

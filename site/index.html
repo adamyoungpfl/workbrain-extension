@@ -165,47 +165,71 @@
   <h1 class="h-page" style="max-width:22ch">How it works.</h1>
   <p class="lead" style="font-size:18px">Four moves, and none of them need an account. The panel asks, you answer, it writes a file, and you hand that file to the assistant you already pay for.</p>
 
-  <div class="grid grid--4" style="margin-top:44px">
-    <div class="card">
-      <span class="mono" style="color:var(--primary);font-weight:600">01</span>
-      <h3 class="h4" style="margin-top:10px;font-size:19px;letter-spacing:-.02em">Answer questions</h3>
+  <ol class="flowline" style="margin-top:44px">
+    <li class="flowline-step">
+      <span class="flowline-node mono">01</span>
+      <h3 class="h4 flowline-title">Answer questions</h3>
       <p class="body">Four modules — Name, Repeat, Act, Share. One question a screen, and you can stop anywhere.</p>
-    </div>
-    <div class="card">
-      <span class="mono" style="color:var(--primary);font-weight:600">02</span>
-      <h3 class="h4" style="margin-top:10px;font-size:19px;letter-spacing:-.02em">Get a file</h3>
+    </li>
+    <li class="flowline-step">
+      <span class="flowline-node mono">02</span>
+      <h3 class="h4 flowline-title">Get a file</h3>
       <p class="body">Plain markdown. Generate, parse, restore — lossless both ways, so the file is the interface.</p>
-    </div>
-    <div class="card">
-      <span class="mono" style="color:var(--primary);font-weight:600">03</span>
-      <h3 class="h4" style="margin-top:10px;font-size:19px;letter-spacing:-.02em">Hand it to any AI</h3>
+    </li>
+    <li class="flowline-step">
+      <span class="flowline-node mono">03</span>
+      <h3 class="h4 flowline-title">Hand it to any AI</h3>
       <p class="body">Paste it, attach it, or keep it in a project. It is not tied to one assistant and never will be.</p>
-    </div>
-    <div class="card">
-      <span class="mono" style="color:var(--primary);font-weight:600">04</span>
-      <h3 class="h4" style="margin-top:10px;font-size:19px;letter-spacing:-.02em">Prove it, then prune</h3>
+    </li>
+    <li class="flowline-step">
+      <span class="flowline-node mono">04</span>
+      <h3 class="h4 flowline-title">Prove it, then prune</h3>
       <p class="body">Run it against your captured baseline, read what it used and missed, and cut what earns nothing.</p>
-    </div>
-  </div>
+    </li>
+  </ol>
 
   <div class="grid grid--2" style="margin-top:20px">
     <div class="card card--pad">
       <h3 class="h3">What is in the file</h3>
-      <dl class="deflist">
-        <div class="defrow"><dt>Identity</dt><dd>Who you are and what you are responsible for</dd></div>
-        <div class="defrow"><dt>Cadence</dt><dd>The work that repeats, and how often</dd></div>
-        <div class="defrow"><dt>People</dt><dd>Roles, teams and projects worth naming</dd></div>
-        <div class="defrow"><dt>Bar</dt><dd>What good looks like when you see it</dd></div>
-        <div class="defrow"><dt style="color:var(--home-skills)">Skills</dt><dd>Named jobs, each with a stated objective</dd></div>
-      </dl>
+      <p class="body" style="font-size:13px;color:var(--ink-3);margin-top:2px">Open a section to see the kind of line it holds.</p>
+      <div class="deflist deflist--open">
+        <button type="button" class="defrow defrow--btn" aria-expanded="false" data-acc>
+          <span class="defterm">Identity</span><span class="defdesc">Who you are and what you are responsible for</span>
+          <span class="defchev" aria-hidden="true">›</span>
+          <p class="defmore mono">Head of RevOps at a 40-person SaaS company; owns forecasting and the CRM.</p>
+        </button>
+        <button type="button" class="defrow defrow--btn" aria-expanded="false" data-acc>
+          <span class="defterm">Cadence</span><span class="defdesc">The work that repeats, and how often</span>
+          <span class="defchev" aria-hidden="true">›</span>
+          <p class="defmore mono">Mondays: pipeline review. First of the month: the board metrics pack.</p>
+        </button>
+        <button type="button" class="defrow defrow--btn" aria-expanded="false" data-acc>
+          <span class="defterm">People</span><span class="defdesc">Roles, teams and projects worth naming</span>
+          <span class="defchev" aria-hidden="true">›</span>
+          <p class="defmore mono">Priya — my manager. Prefers one-page updates, numbers first.</p>
+        </button>
+        <button type="button" class="defrow defrow--btn" aria-expanded="false" data-acc>
+          <span class="defterm">Bar</span><span class="defdesc">What good looks like when you see it</span>
+          <span class="defchev" aria-hidden="true">›</span>
+          <p class="defmore mono">A good weekly update fits one screen and leads with the delta.</p>
+        </button>
+        <button type="button" class="defrow defrow--btn" aria-expanded="false" data-acc>
+          <span class="defterm" style="color:var(--home-skills)">Skills</span><span class="defdesc">Named jobs, each with a stated objective</span>
+          <span class="defchev" aria-hidden="true">›</span>
+          <p class="defmore mono">"Weekly ops report" — objective: one markdown list, grouped by severity.</p>
+        </button>
+      </div>
     </div>
-    <div class="card card--pad">
-      <h3 class="h3">Why it goes stale</h3>
+    <div class="card card--pad card--alert">
+      <div class="alert-head">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 3 22 20H2Z" fill="var(--amber)" opacity=".18"/><path d="M12 3 22 20H2Z" stroke="var(--amber)" stroke-width="1.8" stroke-linejoin="round"/><path d="M12 9.5v5" stroke="var(--amber)" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="17" r="1.1" fill="var(--amber)"/></svg>
+        <h3 class="h3" style="margin:0">Why it goes stale</h3>
+      </div>
       <p class="body" style="font-size:14.5px;line-height:1.6">Different answers rot at different speeds. A job title lasts years; this quarter's goal lasts a quarter. Every answer carries the date you gave it and a half-life, so the panel can tell you which parts are still true instead of asking you to re-read the whole file.</p>
-      <div class="stack" style="gap:8px;margin-top:18px">
-        <div class="row" style="gap:10px"><span class="dot" style="width:8px;height:8px;background:var(--green)"></span><span style="font-size:13.5px"><strong style="font-weight:650">Current</strong> — answered recently enough to trust</span></div>
-        <div class="row" style="gap:10px"><span class="dot" style="width:8px;height:8px;background:var(--amber)"></span><span style="font-size:13.5px"><strong style="font-weight:650">Drifting</strong> — past its half-life, worth a look</span></div>
-        <div class="row" style="gap:10px"><span class="dot" style="width:8px;height:8px;background:var(--ink-3)"></span><span style="font-size:13.5px"><strong style="font-weight:650">Unanswered</strong> — never filled in, and that is fine</span></div>
+      <div class="alert-rows">
+        <div class="alert-row" data-tone="good"><span class="dot"></span><span><strong>Current</strong> — answered recently enough to trust</span></div>
+        <div class="alert-row" data-tone="warn"><span class="dot"></span><span><strong>Drifting</strong> — past its half-life, worth a look</span></div>
+        <div class="alert-row" data-tone="quiet"><span class="dot"></span><span><strong>Unanswered</strong> — never filled in, and that is fine</span></div>
       </div>
     </div>
   </div>
