@@ -7,12 +7,16 @@ the goal of the user… early thought leadership and also early material for
 the civic accelerator and an anchor to tie good to that other programs
 would have to refute."
 
-This spike does four things: defines Good and Great so they can be
-measured, not admired; names the core elements of the elite Context.md and
-how Skills and Actions attach to it; specifies the skill builder — one
-spine, many shapes; and states the anchor claims a competing program would
-have to refute. It ends with what this demands from the interview builders
-(the next work) and the small set of calls that are Adam's.
+Adam's clarification, 2026-09-10: "I don't want to reaffirm my design so
+much as make sure that it is not missing critical pieces that would make
+it underperform for some people." That is the spike's actual job, and §4
+is its heart: a red team against the design, population by population,
+asking who the current file structure quietly fails. §§1–3 exist to make
+those misses visible — you cannot see what a bar excludes until the bar
+is stated — and §1's own wording gets amended where the red team caught
+it. Coherence with the white paper (which §2 shows) is necessary and NOT
+sufficient; a design can agree with its own paper and still underperform
+for a nurse with an Etsy shop.
 
 Everything here stands on two things that already exist: the shipped
 generators (`core/files/` — the eleven Context modules, the Skills recipes,
@@ -43,13 +47,16 @@ beginner can reach.
 
 The white paper's §11 diagnostic, turned from a diagnostic into a bar.
 Open a fresh conversation, paste the file, ask for the person's most
-common deliverable, and type nothing else. The file is Good when:
+common ask — a deliverable if they make one, the situation they most
+often bring if they don't (red team #3) — and type nothing else. The
+file is Good when:
 
 1. The answer knows **who is asking and who the audience is**.
 2. It uses **the person's own names for things** — their systems, their
    teams, their vocabulary.
 3. It arrives in **the format they would otherwise have corrected it
-   into**.
+   into** — or, for a situational ask, weighs the factors they would
+   have had to list by hand.
 4. The setup cost was **zero words beyond the request itself**.
 
 Good is binary and observable in a single run — which is exactly what
@@ -122,7 +129,7 @@ the contract.
 | 3 | **My world** — the systems I work in, the tools I touch, where the data lives | Good 2 | My World |
 | 4 | **Names** — my vocabulary: what words mean here, which terms are load-bearing | Good 2, Great 5 | Vocabulary & Knowledge |
 | 5 | **Settled decisions** — what has been decided and is not up for re-litigation; constraints I operate under | Great 1, Great 5 | How I Think, Responsibilities & Boundaries |
-| 6 | **Direction** — what I'm driving at now; what next looks like | Good 1, Great 3 | Initiatives |
+| 6 | **Trajectory** — what I'm driving at now, AND who I'm becoming; the target the file should lean toward, not just the present it describes (red team #2) | Good 1, Great 3 | Initiatives |
 | 7 | **Exemplars** — one real specimen of my most common deliverable, marked "like this" | Good 3, Great 5 | Reference Examples |
 
 Two structural properties complete the element list, and both are already
@@ -215,7 +222,142 @@ file.
 
 ---
 
-## 4 · The anchor — claims a competing program must refute
+## 4 · The red team — who this design underperforms, and what's missing
+
+Each entry: the population, where the current design breaks for them,
+the missing piece, and when it must be decided. "Pre-builder" means the
+interview/answer-type work cannot start cleanly until it's settled.
+
+### 1 · The many-hatted — the biggest structural gap
+
+**Who:** anyone whose life is not one job. The nurse with the Etsy shop.
+The teacher who freelances. The caregiver who job-hunts. In a civic
+cohort this is closer to the median than the exception.
+**Where it breaks:** the file has one identity, one world, one voice —
+so either the answers blur into mush, or one life dominates. And §4 of
+the paper makes it worse than dilution: the *other* life's context is a
+measured distractor that actively degrades answers about this one.
+**Missing piece:** facets — answers tagged by domain, and a scoped
+export ("just my shop file") so the person hands each assistant only
+the life in play. Alternatively multi-profile storage (several files
+per install). Either way it touches `wb:answers`' shape, which is why
+this is the one true **pre-builder blocker**: question design depends
+on whether an answer knows which life it belongs to.
+**Interim honesty:** today's design serves the one-job person well and
+the many-hatted person with a compromise nobody chose.
+
+### 2 · The person in transition — the civic core
+
+**Who:** job seekers, students, returners, career changers — the exact
+populations the Accelerator convenes.
+**Where it breaks:** the interview captures who you ARE; the assistant
+then faithfully produces the past. A file that says "retail associate"
+in every section writes retail-shaped cover letters at someone aiming
+at bookkeeping. For this population the present-tense file is not
+weak — it is actively backward-anchoring.
+**Missing piece:** target-state capture as first-class — current role
+AND target, the gap named, what to lean on. (§2's element table now
+says Trajectory for this reason.) The Good test for them runs against
+the target, not the past. **Pre-builder** — it is question design.
+
+### 3 · The advice-seeker — work that isn't documents
+
+**Who:** tradespeople, caregivers, clinicians off-hours, and everyone
+using AI for life rather than deliverables — meal plans, benefits
+navigation, a hard email to a landlord. "Business, life, and
+technology" is the civic promise; the module set is work-shaped.
+**Where it breaks:** the five-minute test said "deliverable"; the
+exemplar element says "paste a specimen"; the skill spine demands
+Steps → Output. A situational ask has none of those.
+**Missing piece:** (a) the Good test rewritten (done above); (b) the
+spine's Steps field accepts a second method style — **principles**
+("the questions I ask, the factors I weigh, the lines I won't cross")
+— so judgment work becomes a skill without faking a procedure; (c)
+module copy that admits non-work answers without contortion
+("Responsibilities" cannot stall a retiree). **Pre-builder.**
+
+### 4 · The thin writer
+
+**Who:** low-confidence writers, ESL speakers, anyone for whom typed
+prose is the tax — again, civic-median, not edge.
+**Where it breaks:** in this design, file quality currently EQUALS
+writing fluency, and the guardrails (rightly) forbid in-app AI polish
+— so the thin writer has no remedy inside the product.
+**Missing piece:** the polish HAND-OFF — the same copy-paste pattern
+as everything else: "rough answer → your own AI tightens it → paste it
+back," offered on long-text questions. Plus chips-first capture so a
+short answer still lands structured, and exemplar weighting (show
+beats tell precisely when telling is hard). **Pre-builder** — it is an
+answer-type feature.
+
+### 5 · The mis-self-reporter
+
+**Who:** everyone, worst on adjective questions. People describe the
+communicator they wish they were; the file then encodes the wrong
+persona confidently, and the assistant performs it.
+**Missing piece:** a specimen-first bias in question design — "paste
+two things you actually wrote" outranks "describe your tone," and the
+generated file cites the specimens rather than the adjectives.
+**Pre-builder principle**, zero schema cost.
+
+### 6 · The regulated worker
+
+**Who:** healthcare, finance, government, legal — people whose
+employer forbids pasting work specifics into an assistant.
+**Where it breaks:** their honest file is nearly empty, or a policy
+violation. The design never tells them there is a third option.
+**Missing piece:** the abstraction pattern, taught in-product:
+placeholder conventions ("Client A," generic system names), a
+boundaries question that captures the redaction stance, and copy that
+says plainly this is a legitimate way to hold the file. Mostly copy;
+one question. Also a civic session-two teaching moment. **Pre-builder,
+cheap.**
+
+### 7 · The variety worker
+
+**Who:** gig workers, ops firefighters — high task variety, nothing
+repeats at the step level, so "what repeats?" (the Skills opener)
+returns silence and the second interview stalls at its front door.
+**Missing piece:** triggers phrased on situations ("when a new offer
+lands") rather than calendar repetition, plus the principles method
+style from #3b — their repeatable thing is judgment, not procedure.
+**Pre-builder copy/prompt work.**
+
+### 8 · The set-and-forget user — two grounding-rule lines, shippable now
+
+**Who:** generates once, never reopens the panel. The drift check runs
+on open (OPEN #1), so it never fires for them; meanwhile the paper's
+§3.5 problem arrives — the assistant's own memory ingests the pasted
+file and re-serves stale paraphrases of it for months.
+**Missing piece:** the FILE defends itself. Two lines in the System
+Grounding Rule: **(a)** "answers here carry dates — if one looks past
+its shelf life, say so before relying on it"; **(b)** "this file
+supersedes anything you remember about me from earlier
+conversations." Line (b) is the file asserting its own precedence —
+the exact thing Appendix A.5 shows no vendor documents, answered from
+the user's side. Zero schema cost, first in the build queue after the
+spike is ratified (it is app code: gate, clips-check, the works).
+
+### 9 · The non-English speaker — named so it's a decision, not an oversight
+
+Interview copy, generated headings (which are parse anchors), and
+narration are all English. Internationalizing is real work touching
+the roundtrip contract. **Deferred deliberately** — and the civic host
+materials should say "English cohorts for now" out loud rather than
+let a host discover it.
+
+### What the red team says about §§1–3
+
+The rubric survived with two amendments (the ask-not-deliverable test,
+the trajectory element). The skill spine survived with one (a second
+method style). The element list survived with reframes, not removals.
+The structure that did NOT survive intact is the single-context file —
+#1 is a genuine missing piece with a schema decision behind it, and it
+gates the builders.
+
+---
+
+## 5 · The anchor — claims a competing program must refute
 
 The thought-leadership posture: publish the definition of good, with its
 measurements, and make disagreement expensive. Six claims, each
@@ -257,7 +399,7 @@ in the civic notes are already the rubric's instruments.
 
 ---
 
-## 5 · What this demands from the interview builders (the next work)
+## 6 · What this demands from the interview builders (the next work)
 
 The spike exists to make the question/prompt/answer-type work decidable.
 The requirements it sets:
@@ -279,15 +421,37 @@ The requirements it sets:
    recommend engine's weights get re-derived from this rubric so the
    nudge and the definition can never disagree.
 5. **Boundaries are asked, not inferred.** One question whose answer is
-   an exclusion list the file prints — Great 4 in the person's words.
+   an exclusion list the file prints — Great 4 in the person's words,
+   including the regulated worker's redaction stance (red team #6).
+6. **The facet call comes first** (red team #1) — whether answers carry
+   a domain tag (with scoped exports) or the install supports multiple
+   profiles. Question design cannot start until an answer knows which
+   life it belongs to.
+7. **Two method styles in the skill spine** — steps for procedures,
+   principles for judgment (red team #3, #7) — one chip, same spine.
+8. **The polish hand-off on long-text answers** (red team #4) — rough →
+   the person's own AI → pasted back; the guardrails' own pattern.
+9. **Specimen-first style capture** (red team #5) — paste-what-you-wrote
+   outranks describe-yourself wherever both could serve.
+10. **The two grounding-rule lines ship first** (red team #8) —
+    staleness self-report and file-over-memory precedence; smallest
+    change, largest reach, fully inside the existing contract.
 
-## 6 · Adam's calls (small, none blocking the doc)
+## 7 · Adam's calls
 
-1. **Naming:** Good / Great / "elite file" as used here — ratify or
+1. **The facet decision (blocks the builders):** domain-tagged answers
+   with scoped exports, or multi-profile storage, or explicitly ship V1
+   as the one-life file with the compromise named. This is the red
+   team's one structural finding; everything else is question and copy
+   work inside the existing shape.
+2. **Naming:** Good / Great / "elite file" as used here — ratify or
    rename.
-2. **Objective retrofit:** existing skills without an Objective — prompt
+3. **Objective retrofit:** existing skills without an Objective — prompt
    to add on next edit (recommended), or leave until touched.
-3. **The public version:** this doc is internal grammar. The
+4. **The grounding-rule pair** (red team #8): approve the two lines and
+   they are the first build after this spike.
+5. **The public version:** this doc is internal grammar. The
    thought-leadership piece (site essay, civic handout) is a rewrite
-   with the same spine — say when, and which surface it lands on
-   (roadmap row exists once decided).
+   with the same spine — say when, and which surface it lands on.
+6. **English-only, said aloud** (red team #9): confirm the civic host
+   materials state it until i18n is scheduled.
