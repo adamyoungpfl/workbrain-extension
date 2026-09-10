@@ -1936,3 +1936,289 @@ main,
     width: 150px;
   }
 }
+
+/* ══ pass 5p — the civic page builds excitement; the cost lands as relief ══ */
+[data-page='civic'] .tag {
+  background: rgba(23, 122, 76, 0.05);
+  border-color: rgba(23, 122, 76, 0.28);
+  color: var(--civics-deep);
+}
+[data-page='civic'] .tag i {
+  color: var(--civics);
+}
+[data-page='civic'] .btn--civics.btn--lg {
+  box-shadow: 0 10px 26px rgba(23, 122, 76, 0.32);
+}
+.cv-host-line {
+  background: linear-gradient(transparent 62%, var(--civics-tint) 62%);
+  padding-right: 4px;
+}
+/* 4.2 — a term sheet you can actually read */
+.cv-table--sheet th,
+.cv-table--sheet td {
+  padding-left: 14px;
+  border-bottom-color: rgba(23, 122, 76, 0.16);
+}
+.cv-table--sheet tr:nth-child(odd) th,
+.cv-table--sheet tr:nth-child(odd) td {
+  background: rgba(23, 122, 76, 0.035);
+}
+.cv-table--sheet tr.cv-never th,
+.cv-table--sheet tr.cv-never td {
+  background: var(--civics-tint);
+  border-bottom: none;
+}
+.cv-pull {
+  background: linear-gradient(90deg, var(--civics-tint), var(--canvas) 60%);
+}
+/* 4.3 — the handshake */
+.cv-provides {
+  position: relative;
+}
+.cv-plus {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--civics);
+  color: var(--ink-inv);
+  font-size: 22px;
+  font-weight: 700;
+  box-shadow: var(--e-2);
+  z-index: 1;
+}
+.cv-we {
+  background: rgba(23, 122, 76, 0.05);
+  border-color: rgba(23, 122, 76, 0.35);
+}
+/* 4.4 — five gates, lit in sequence */
+.cv-gates {
+  list-style: none;
+  margin: 42px 0 0;
+  padding: 0;
+  position: relative;
+}
+.cv-gates::before {
+  content: '';
+  position: absolute;
+  left: 24px;
+  top: 16px;
+  bottom: 16px;
+  width: 2px;
+  background: linear-gradient(
+    180deg,
+    var(--civics),
+    var(--home-context),
+    var(--home-skills),
+    var(--violet),
+    var(--amber-line)
+  );
+  opacity: 0.4;
+}
+.cv-gate {
+  position: relative;
+  padding: 0 0 36px 78px;
+}
+.cv-gate:last-child {
+  padding-bottom: 0;
+}
+.cv-gate-n {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-size: 19px;
+  font-weight: 700;
+  background: var(--canvas);
+}
+.cv-gate[data-g='1'] .cv-gate-n { color: var(--civics-deep); box-shadow: inset 0 0 0 2px var(--civics), 0 0 16px rgba(23, 122, 76, 0.35); }
+.cv-gate[data-g='2'] .cv-gate-n { color: var(--home-context-deep); box-shadow: inset 0 0 0 2px var(--home-context), 0 0 16px rgba(9, 117, 158, 0.35); }
+.cv-gate[data-g='3'] .cv-gate-n { color: var(--home-skills-deep); box-shadow: inset 0 0 0 2px var(--home-skills), 0 0 16px rgba(44, 92, 229, 0.35); }
+.cv-gate[data-g='4'] .cv-gate-n { color: var(--violet-hover); box-shadow: inset 0 0 0 2px var(--violet), 0 0 16px rgba(106, 63, 209, 0.35); }
+.cv-gate[data-g='5'] .cv-gate-n { color: var(--amber); box-shadow: inset 0 0 0 2px var(--amber-line), 0 0 16px rgba(232, 163, 61, 0.45); }
+.cv-gate-session {
+  margin: 4px 0 0;
+  font-size: 12.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 700;
+  color: var(--ink-3);
+}
+.cv-gate-keep {
+  margin: 7px 0 0;
+  font-size: 15.5px;
+  line-height: 1.6;
+  color: var(--ink);
+  max-width: 62ch;
+}
+/* 4.5 — three rooms, three colours */
+.cv-ctx[data-c='school'] { background: var(--violet-tint); border-color: rgba(106, 63, 209, 0.35); }
+.cv-ctx[data-c='school'] h3 { color: var(--violet); }
+.cv-ctx[data-c='summer'] { background: var(--amber-tint); border-color: rgba(232, 163, 61, 0.55); }
+.cv-ctx[data-c='summer'] h3 { color: var(--amber); }
+.cv-ctx[data-c='adults'] { background: var(--home-context-tint); border-color: rgba(9, 117, 158, 0.35); }
+.cv-ctx[data-c='adults'] h3 { color: var(--home-context-deep); }
+/* 4.6 — the shelf, and the premium tier */
+.cv-files {
+  gap: 12px;
+}
+.cv-file-pill {
+  font-size: 15px;
+  font-weight: 600;
+  padding: 12px 22px;
+  border-radius: var(--r-pill);
+  box-shadow: var(--e-1);
+}
+.cv-cert {
+  border-left: 3px solid var(--civics);
+}
+.cv-cert-dark {
+  background: var(--splash-field);
+  border-color: var(--splash-field);
+}
+.cv-cert-dark h3 {
+  color: var(--globe-label);
+}
+.cv-cert-dark .body {
+  color: var(--globe-detail-key);
+}
+/* 4.7 — said plainly; 4.8 — the vault */
+.cv-plain {
+  margin-top: 30px;
+  padding: 34px 38px;
+  border-radius: var(--r-lg);
+  background: var(--ground);
+  border: 1px solid var(--divider);
+}
+.cv-plain .lead {
+  max-width: 70ch;
+  margin-top: 0;
+}
+.cv-plain .lead + .lead {
+  margin-top: 16px;
+}
+.cv-dark {
+  margin-top: 30px;
+  padding: 40px 42px;
+  border-radius: var(--r-lg);
+  background: var(--splash-field);
+}
+.cv-dark .lead {
+  max-width: 70ch;
+  margin-top: 0;
+  color: var(--globe-label);
+}
+.cv-dark .lead + .lead {
+  margin-top: 16px;
+  color: var(--globe-detail-key);
+}
+/* 4.10 — the receipt beside the relief */
+.cv-cost-panel {
+  margin-top: 34px;
+  padding: 38px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(180deg, var(--civics-tint), var(--canvas) 72%);
+  border: 1px solid rgba(23, 122, 76, 0.25);
+}
+.cv-cost-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 40px;
+  align-items: center;
+}
+.cv-receipt {
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  border-radius: var(--r-md);
+  padding: 24px 28px;
+  box-shadow: var(--e-1);
+}
+.cv-receipt-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 12px 0;
+  border-bottom: 1px dashed var(--divider);
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--ink-2);
+}
+.cv-receipt-row span:last-child {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  white-space: nowrap;
+  color: var(--ink);
+}
+.cv-receipt-row--total {
+  border-bottom: none;
+  border-top: 2px solid var(--civics);
+  margin-top: 4px;
+  padding-top: 16px;
+  font-weight: 700;
+  color: var(--ink);
+}
+.cv-receipt-row--total span:last-child {
+  color: var(--civics-deep);
+  font-size: 18px;
+}
+.cv-figure {
+  margin: 0;
+}
+.cv-figure + .cv-figure {
+  margin-top: 28px;
+}
+.cv-figure b {
+  display: block;
+  font-size: clamp(44px, 5vw, 64px);
+  font-weight: 760;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--civics-deep);
+  font-variant-numeric: tabular-nums;
+}
+.cv-figure--zero b {
+  color: var(--ink);
+}
+.cv-figure span {
+  display: block;
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--ink-2);
+}
+@media (max-width: 720px) {
+  .cv-cost-grid {
+    grid-template-columns: 1fr;
+  }
+}
+/* 4.11 — the evidence trio reads as one set */
+.door--quiet {
+  background: var(--canvas);
+  border-color: var(--border);
+  cursor: default;
+}
+.door--quiet:hover {
+  background: var(--canvas);
+  border-color: var(--border);
+  transform: none;
+  box-shadow: none;
+}
+/* 4.12 — the open door */
+.cv-finale {
+  margin-top: 30px;
+  padding: 36px;
+  border-radius: var(--r-lg);
+  background: linear-gradient(135deg, var(--civics-deep), var(--civics));
+  box-shadow: var(--e-2);
+}

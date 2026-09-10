@@ -831,7 +831,7 @@
   <p class="eyebrow eyebrow--civics">A Model Citizen program</p>
   <h1 class="h-page">Workbrain Civic Accelerator</h1>
   <p class="lead lead--big" style="max-width:64ch">Four evenings. Free to attend. Everyone leaves with a set of files that make any AI assistant work better for them — and that still work on a service that doesn't exist yet.</p>
-  <p class="lead" style="margin-top:10px;font-weight:600;color:var(--ink)">Hosted in your building, for an audience you convene.</p>
+  <p class="lead" style="margin-top:10px;font-weight:600;color:var(--ink)"><span class="cv-host-line">Hosted in your building, for an audience you convene.</span></p>
   <div class="tags">
     <span class="tag"><i>#</i>FreeToAttend</span>
     <span class="tag"><i>#</i>NoAccount</span>
@@ -851,7 +851,7 @@
   <div class="cv-band">
     <p class="eyebrow eyebrow--quiet">The agreement, plainly</p>
     <h2 class="h-sect">What you're agreeing to host.</h2>
-    <div class="cv-scroll"><table class="cv-table">
+    <div class="cv-scroll"><table class="cv-table cv-table--sheet">
       <tr><th scope="row">Who is in the room</th><td>Adults, or students with guardian consent. Cohort of 16–20.</td></tr>
       <tr><th scope="row">How long</th><td>Four sessions of 90 minutes, weekly. Optional monthly evening after that.</td></tr>
       <tr><th scope="row">What participants do</th><td>Answer questions about their own work, write plain text files, use an AI assistant they already have.</td></tr>
@@ -864,10 +864,10 @@
       <tr><th scope="row">Insurance</th><td>General liability carried by Model Citizen. Certificate on request.</td></tr>
       <tr><th scope="row">Background checks</th><td>Completed and current for all facilitators. Documentation on request.</td></tr>
       <tr><th scope="row">What we ask of participants</th><td>Attendance and a short voluntary survey.</td></tr>
-      <tr><th scope="row">What we never do</th><td>Sell to participants during sessions, collect payment in the room, or require an email address for anyone to receive their own files.</td></tr>
+      <tr class="cv-never"><th scope="row">What we never do</th><td>Sell to participants during sessions, collect payment in the room, or require an email address for anyone to receive their own files.</td></tr>
     </table></div>
-    <div class="card card--pad" style="margin-top:26px;border-left:3px solid var(--civics)">
-      <p style="margin:0;font-size:15.5px;line-height:1.6"><strong>We do not sell to participants.</strong> Not during sessions, not after. The program is free to attend and there is nothing to buy at the end of it.</p>
+    <div class="card card--pad cv-pull" style="margin-top:26px;border-left:3px solid var(--civics)">
+      <p style="margin:0;font-size:17px;line-height:1.65"><strong>We do not sell to participants.</strong> Not during sessions, not after. The program is free to attend and there is nothing to buy at the end of it.</p>
     </div>
   </div>
 
@@ -875,7 +875,8 @@
   <div class="cv-band">
     <p class="eyebrow eyebrow--quiet">Two columns, no fine print</p>
     <h2 class="h-sect">What each side provides.</h2>
-    <div class="grid grid--2" style="margin-top:34px">
+    <div class="grid grid--2 cv-provides" style="margin-top:34px">
+      <span class="cv-plus" aria-hidden="true">+</span>
       <div class="card card--pad">
         <h3 class="h3">You provide</h3>
         <ul class="cv-list">
@@ -886,7 +887,7 @@
           <li>The audience you convene</li>
         </ul>
       </div>
-      <div class="card card--pad">
+      <div class="card card--pad cv-we">
         <h3 class="h3">We provide</h3>
         <ul class="cv-list">
           <li>The facilitator, background-checked and insured</li>
@@ -904,14 +905,33 @@
     <p class="eyebrow eyebrow--quiet">The program at a glance</p>
     <h2 class="h-sect">Five gates. Six contact hours. Four weeks.</h2>
     <p class="lead">Four teaching sessions plus an ongoing board night, for cohorts of 16–20. Each session produces one artifact the participant keeps.</p>
-    <div class="cv-scroll"><table class="cv-table">
-      <thead><tr><th>Gate</th><th>Session</th><th>What they leave with</th></tr></thead>
-      <tr><td>1</td><td>Session 1 · 90 minutes</td><td><span class="mono" style="font-size:13px">Baseline.md</span> — one real task, run cold, and the answer it got, saved</td></tr>
-      <tr><td>2</td><td>Session 2 · 90 minutes</td><td><span class="mono" style="font-size:13px">Context.md</span> — who they are, what they do, what they want next</td></tr>
-      <tr><td>3</td><td>Session 3 · 90 minutes</td><td><span class="mono" style="font-size:13px">Skills.md</span> — one repeated task, written as a method</td></tr>
-      <tr><td>4</td><td>Session 4 · 90 minutes</td><td><span class="mono" style="font-size:13px">Actions.md</span>, the side-by-side proof, and the Certificate of Completion</td></tr>
-      <tr><td>5</td><td>Board night · monthly, optional</td><td>Work Brain Certified — earned by returning and showing what they built since</td></tr>
-    </table></div>
+    <ol class="cv-gates">
+      <li class="cv-gate" data-g="1">
+        <span class="cv-gate-n">1</span>
+        <p class="cv-gate-session">Session 1 · 90 minutes</p>
+        <p class="cv-gate-keep"><span class="mono" style="font-size:13px">Baseline.md</span> — one real task, run cold, and the answer it got, saved</p>
+      </li>
+      <li class="cv-gate" data-g="2">
+        <span class="cv-gate-n">2</span>
+        <p class="cv-gate-session">Session 2 · 90 minutes</p>
+        <p class="cv-gate-keep"><span class="mono" style="font-size:13px">Context.md</span> — who they are, what they do, what they want next</p>
+      </li>
+      <li class="cv-gate" data-g="3">
+        <span class="cv-gate-n">3</span>
+        <p class="cv-gate-session">Session 3 · 90 minutes</p>
+        <p class="cv-gate-keep"><span class="mono" style="font-size:13px">Skills.md</span> — one repeated task, written as a method</p>
+      </li>
+      <li class="cv-gate" data-g="4">
+        <span class="cv-gate-n">4</span>
+        <p class="cv-gate-session">Session 4 · 90 minutes</p>
+        <p class="cv-gate-keep"><span class="mono" style="font-size:13px">Actions.md</span>, the side-by-side proof, and the Certificate of Completion</p>
+      </li>
+      <li class="cv-gate" data-g="5">
+        <span class="cv-gate-n">5</span>
+        <p class="cv-gate-session">Board night · monthly, optional</p>
+        <p class="cv-gate-keep">Work Brain Certified — earned by returning and showing what they built since</p>
+      </li>
+    </ol>
   </div>
 
   <!-- 4.5 -->
@@ -919,15 +939,15 @@
     <p class="eyebrow eyebrow--quiet">Three ways it runs</p>
     <h2 class="h-sect">After school, over a summer, or on library evenings.</h2>
     <div class="grid grid--3" style="margin-top:38px">
-      <div class="card">
+      <div class="card cv-ctx" data-c="school">
         <h3 class="h4" style="font-size:18px">After-school</h3>
         <p class="body">Students build files about school projects, first jobs, and applications. Guardian consent comes first, the directory stays off by default, and every file leaves with the student.</p>
       </div>
-      <div class="card">
+      <div class="card cv-ctx" data-c="summer">
         <h3 class="h4" style="font-size:18px">Summer</h3>
         <p class="body">The same gates on a faster rhythm, inside a youth employment or summer program — baseline to proof lands within one season.</p>
       </div>
-      <div class="card">
+      <div class="card cv-ctx" data-c="adults">
         <h3 class="h4" style="font-size:18px">Community adults</h3>
         <p class="body">Evenings at the library or community center. Job seekers, small-business owners, career changers — the program meets each person at their own work.</p>
       </div>
@@ -938,18 +958,18 @@
   <div class="cv-band">
     <p class="eyebrow eyebrow--quiet">What participants leave with</p>
     <h2 class="h-sect">Four files they own, and a credential.</h2>
-    <div class="row" style="gap:10px;margin-top:30px;flex-wrap:wrap">
-      <span class="mono" style="font-size:13px;color:var(--civics-deep);background:var(--civics-tint);border-radius:var(--r-pill);padding:7px 14px">Baseline.md</span>
-      <span class="mono" style="font-size:13px;color:var(--home-context);background:var(--home-context-tint);border-radius:var(--r-pill);padding:7px 14px">Context.md</span>
-      <span class="mono" style="font-size:13px;color:var(--home-skills);background:var(--home-skills-tint);border-radius:var(--r-pill);padding:7px 14px">Skills.md</span>
-      <span class="mono" style="font-size:13px;color:var(--violet);background:var(--violet-tint);border-radius:var(--r-pill);padding:7px 14px">Actions.md</span>
+    <div class="row cv-files" style="margin-top:30px;flex-wrap:wrap">
+      <span class="mono cv-file-pill" style="color:var(--civics-deep);background:var(--civics-tint)">Baseline.md</span>
+      <span class="mono cv-file-pill" style="color:var(--home-context);background:var(--home-context-tint)">Context.md</span>
+      <span class="mono cv-file-pill" style="color:var(--home-skills);background:var(--home-skills-tint)">Skills.md</span>
+      <span class="mono cv-file-pill" style="color:var(--violet);background:var(--violet-tint)">Actions.md</span>
     </div>
     <div class="grid grid--2" style="margin-top:20px">
-      <div class="card card--pad">
+      <div class="card card--pad cv-cert">
         <h3 class="h3">Certificate of Completion</h3>
         <p class="body" style="font-size:14.5px;line-height:1.6;margin-top:10px">Issued at Session 4, for finishing the four sessions and producing the files. Attendance plus evidence.</p>
       </div>
-      <div class="card card--pad">
+      <div class="card card--pad cv-cert-dark">
         <h3 class="h3">Work Brain Certified</h3>
         <p class="body" style="font-size:14.5px;line-height:1.6;margin-top:10px">Earned later, at a board night, by showing what you built since. Demonstrated use — that is what keeps the first tier from being a participation ribbon.</p>
       </div>
@@ -960,29 +980,33 @@
   <div class="cv-band">
     <p class="eyebrow eyebrow--quiet">Outcomes</p>
     <h2 class="h-sect">What we measure, and what we refuse to claim.</h2>
-    <p class="lead" style="max-width:70ch">We measure what we can actually attribute. Participants complete a task before any teaching and a comparable task at the end, and we record how much context they had to type, how many exchanges it took, and whether they used the result. We also track how many complete each stage and how many return.</p>
+    <div class="cv-plain">
+    <p class="lead">We measure what we can actually attribute. Participants complete a task before any teaching and a comparable task at the end, and we record how much context they had to type, how many exchanges it took, and whether they used the result. We also track how many complete each stage and how many return.</p>
     <p class="lead" style="max-width:70ch;margin-top:14px">We do not claim employment outcomes. Participants report what happens next and we pass that on as reported, not as program effect. Assistant outputs also vary between runs for reasons unrelated to any program, so we report a group of measures rather than one headline number.</p>
+    </div>
   </div>
 
   <!-- 4.8 -->
   <div class="cv-band">
     <p class="eyebrow eyebrow--quiet">Privacy and data handling</p>
     <h2 class="h-sect">Nothing to hand over, by design.</h2>
-    <p class="lead" style="max-width:70ch">The tool runs entirely in the browser. There is no account, no server, and nothing is transmitted. Files are plain markdown, written to the participant's own device. Participants who never come back keep everything they made.</p>
+    <div class="cv-dark">
+    <p class="lead">The tool runs entirely in the browser. There is no account, no server, and nothing is transmitted. Files are plain markdown, written to the participant's own device. Participants who never come back keep everything they made.</p>
     <p class="lead" style="max-width:70ch;margin-top:14px">Sessions do teach participants to inspect what their AI assistant has already stored about them — several services retain inferred personal details by default. That is done privately, on each person's own screen. No one is asked to read anything aloud.</p>
+    </div>
   </div>
 
   <!-- 4.9 -->
   <div class="cv-band">
     <p class="eyebrow eyebrow--quiet">Compliance</p>
     <h2 class="h-sect">The paperwork, on request.</h2>
-    <div class="cv-scroll"><table class="cv-table">
-      <tr><th scope="row">Insurance</th><td>General liability carried by Model Citizen. Certificate on request.</td></tr>
-      <tr><th scope="row">Background checks</th><td>Completed and current for all facilitators. Documentation on request.</td></tr>
-      <tr><th scope="row">Under-18 participants</th><td>Guardian consent covers enrollment, follow-up contact, and reporting choices. The public directory defaults to off.</td></tr>
-      <tr><th scope="row">Facilitator credentials</th><td>A named, background-checked facilitator per cohort, introduced before the first session.</td></tr>
-      <tr><th scope="row">Participant records</th><td>We keep your name, contact details and completion record for as long as the credential is valid, so we can verify it if someone asks. You can ask us to delete it at any time.</td></tr>
-      <tr><th scope="row">Participant files</th><td>Never stored by us. We never have them — the tool transmits nothing.</td></tr>
+    <div class="cv-scroll"><table class="cv-table cv-table--check">
+      <tr><th scope="row"><svg width="15" height="15" aria-hidden="true" style="color:var(--civics);margin-right:10px;vertical-align:-2px"><use href="#i-check"></use></svg>Insurance</th><td>General liability carried by Model Citizen. Certificate on request.</td></tr>
+      <tr><th scope="row"><svg width="15" height="15" aria-hidden="true" style="color:var(--civics);margin-right:10px;vertical-align:-2px"><use href="#i-check"></use></svg>Background checks</th><td>Completed and current for all facilitators. Documentation on request.</td></tr>
+      <tr><th scope="row"><svg width="15" height="15" aria-hidden="true" style="color:var(--civics);margin-right:10px;vertical-align:-2px"><use href="#i-check"></use></svg>Under-18 participants</th><td>Guardian consent covers enrollment, follow-up contact, and reporting choices. The public directory defaults to off.</td></tr>
+      <tr><th scope="row"><svg width="15" height="15" aria-hidden="true" style="color:var(--civics);margin-right:10px;vertical-align:-2px"><use href="#i-check"></use></svg>Facilitator credentials</th><td>A named, background-checked facilitator per cohort, introduced before the first session.</td></tr>
+      <tr><th scope="row"><svg width="15" height="15" aria-hidden="true" style="color:var(--civics);margin-right:10px;vertical-align:-2px"><use href="#i-check"></use></svg>Participant records</th><td>We keep your name, contact details and completion record for as long as the credential is valid, so we can verify it if someone asks. You can ask us to delete it at any time.</td></tr>
+      <tr><th scope="row"><svg width="15" height="15" aria-hidden="true" style="color:var(--civics);margin-right:10px;vertical-align:-2px"><use href="#i-check"></use></svg>Participant files</th><td>Never stored by us. We never have them — the tool transmits nothing.</td></tr>
     </table></div>
   </div>
 
@@ -991,15 +1015,23 @@
     <p class="eyebrow eyebrow--quiet">What it costs</p>
     <h2 class="h-sect">Free to attend is not free to run.</h2>
     <p class="lead">A free program with no numbers reads as unserious, so here are the numbers.</p>
-    <div class="cv-scroll"><table class="cv-table">
-      <tr><th scope="row">Facilitation — four sessions and a board night</th><td>$2,600</td></tr>
-      <tr><th scope="row">Printed materials and certificates</th><td>$400</td></tr>
-      <tr><th scope="row">Loaner devices, amortized per cohort</th><td>$900</td></tr>
-      <tr><th scope="row">Insurance and administration</th><td>$500</td></tr>
-      <tr><th scope="row">Follow-up reporting at 90 and 180 days</th><td>$400</td></tr>
-      <tr><th scope="row">One funded cohort of 16–20</th><td><strong>$4,800</strong></td></tr>
-    </table></div>
-    <p class="body" style="margin-top:20px;font-size:15px;line-height:1.65;max-width:70ch">Model Citizen donates curriculum development and program administration. A funded cohort — paid by the hosting organization or its sponsors — covers everything above. Attendance is free, always.</p>
+    <div class="cv-cost-panel">
+      <div class="cv-cost-grid">
+        <div class="cv-receipt">
+          <div class="cv-receipt-row"><span>Facilitation — four sessions and a board night</span><span>$2,600</span></div>
+          <div class="cv-receipt-row"><span>Printed materials and certificates</span><span>$400</span></div>
+          <div class="cv-receipt-row"><span>Loaner devices, amortized per cohort</span><span>$900</span></div>
+          <div class="cv-receipt-row"><span>Insurance and administration</span><span>$500</span></div>
+          <div class="cv-receipt-row"><span>Follow-up reporting at 90 and 180 days</span><span>$400</span></div>
+          <div class="cv-receipt-row cv-receipt-row--total"><span>One funded cohort of 16–20</span><span>$4,800</span></div>
+        </div>
+        <div>
+          <p class="cv-figure"><b>$4,800</b><span>One funded cohort of 16–20</span></p>
+          <p class="cv-figure cv-figure--zero"><b>$0</b><span>Attendance is free, always.</span></p>
+        </div>
+      </div>
+      <p class="body" style="margin-top:26px;font-size:15px;line-height:1.65;max-width:70ch">Model Citizen donates curriculum development and program administration. A funded cohort — paid by the hosting organization or its sponsors — covers everything above. Attendance is free, always.</p>
+    </div>
   </div>
 
   <!-- 4.11 -->
@@ -1013,13 +1045,15 @@
         <span class="door-desc">Durable Context — the published survey and argument the program stands on. Ungated PDF.</span>
         <span class="door-go">Read it →</span>
       </button>
-      <div class="card card--pad">
-        <h3 class="h3">Curriculum summary</h3>
-        <p class="body" style="font-size:14.5px;line-height:1.6;margin-top:10px">Session by session, artifact by artifact. It ships in the host packet — request a cohort and it comes with our reply.</p>
+      <div class="door door--quiet">
+        <span class="chip chip--civics"><svg width="22" height="22" aria-hidden="true"><use href="#i-layers"></use></svg></span>
+        <h3 class="door-name" style="font-size:19px;margin:8px 0 0">Curriculum summary</h3>
+        <span class="door-desc">Session by session, artifact by artifact. It ships in the host packet — request a cohort and it comes with our reply.</span>
       </div>
-      <div class="card card--pad">
-        <h3 class="h3">Facilitator background</h3>
-        <p class="body" style="font-size:14.5px;line-height:1.6;margin-top:10px">Background-checked, insured, and named before the cohort starts. Documentation on request.</p>
+      <div class="door door--quiet">
+        <span class="chip chip--civics"><svg width="22" height="22" aria-hidden="true"><use href="#i-check"></use></svg></span>
+        <h3 class="door-name" style="font-size:19px;margin:8px 0 0">Facilitator background</h3>
+        <span class="door-desc">Background-checked, insured, and named before the cohort starts. Documentation on request.</span>
       </div>
     </div>
   </div>
@@ -1028,20 +1062,20 @@
   <div class="cv-band" id="cv-start">
     <p class="eyebrow eyebrow--civics">Start a cohort</p>
     <h2 class="h-sect">Request a cohort.</h2>
-    <div class="card card--pad" style="margin-top:30px">
-      <div class="grid grid--2" style="gap:28px">
+    <div class="cv-finale">
+      <div class="grid grid--2" style="gap:28px;align-items:center">
         <div>
-          <h3 class="h3">Tell us who you would convene</h3>
-          <p class="body" style="font-size:15px;line-height:1.65;margin-top:12px">After-school, a summer program, or community adults — the cohort is shaped around the room you can fill.</p>
-          <p class="fine" style="margin-top:14px">We reply within two business days with the program packet: the session-by-session summary, the host agreement, and available dates. Nothing about your community is required to ask.</p>
+          <h3 class="h3" style="color:#ffffff">Tell us who you would convene</h3>
+          <p class="body" style="font-size:15px;line-height:1.65;margin-top:12px;color:rgba(255,255,255,0.93)">After-school, a summer program, or community adults — the cohort is shaped around the room you can fill.</p>
+          <p class="fine" style="margin-top:14px;color:var(--civics-tint)">We reply within two business days with the program packet: the session-by-session summary, the host agreement, and available dates. Nothing about your community is required to ask.</p>
         </div>
-        <div class="stack">
+        <div class="card card--pad"><div class="stack">
           <input class="field" type="text" placeholder="Organization" aria-label="Organization">
           <input class="field" type="text" placeholder="Your name" aria-label="Your name">
           <input class="field" type="email" placeholder="Email" aria-label="Email">
           <textarea class="field" rows="3" style="min-height:92px;resize:vertical;font-family:var(--font-sans)" placeholder="Who would this cohort serve?" aria-label="Who would this cohort serve?"></textarea>
           <button type="button" class="btn btn--civics btn--full">Request a cohort</button>
-        </div>
+        </div></div>
       </div>
     </div>
   </div>
