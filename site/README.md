@@ -80,6 +80,9 @@ Not built yet, and worth deciding before the app wires up its buttons:
 Real, taken from the repo — do not casually reword:
 
 - The tagline, from `docs/NORTH-STAR.md`.
+- The white paper: `site/durable-context.pdf` — "Durable Context" (Adam
+  Young, September 2026). The page's abstract and contents are verbatim
+  from the PDF; true the page to the paper, never the reverse.
 - The guardrail quote on the privacy page, verbatim and unabridged.
 - The hosted-proving amendment, from `docs/PROVING-GROUNDS.md` — including the
   refusal to claim a model can report environment or location.
@@ -95,8 +98,6 @@ Placeholder — replace before launch:
 - **Prices.** `$9/month`, `starting at $500/month`, and the service prices
   (`from $240`, `from $680`) on the services page. The hourly-vs-monthly story
   needs reconciling.
-- **White paper.** Title, abstract, contents list, page count, and the PDF link
-  (`TODO` in `index.html`).
 - **Chrome Web Store URL.** Two `TODO`s: the hero/download CTA and the header
   pill both point at `#download`.
 - **Library catalog.** Six sample skills, hardcoded in `index.html`.

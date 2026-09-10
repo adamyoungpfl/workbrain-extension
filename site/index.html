@@ -110,7 +110,7 @@
       <button type="button" class="door door--violet" data-goto="white-paper">
         <span class="chip chip--violet"><svg width="22" height="22" aria-hidden="true"><use href="#i-stack"></use></svg></span>
         <span class="door-name">White paper</span>
-        <span class="door-desc">Why the file is shaped this way: the schema, the freshness model, and the guardrails the design is held to.</span>
+        <span class="door-desc">Durable Context: what five vendors actually document, what the research shows, and why the durable part has to live in files you own.</span>
         <span class="door-go">Abstract &amp; PDF →</span>
       </button>
     </div>
@@ -237,31 +237,39 @@
   </div>
 </section>
 
-<!-- ═══ WHITE PAPER ════════════════════════════════════════════════════ -->
+<!-- ═══ WHITE PAPER ════════════════════════════════════════════════════
+     Real since pass 5o: site/durable-context.pdf (Adam Young, Sept 2026).
+     Abstract and contents below are VERBATIM from the PDF — true the page
+     to the paper, never the reverse. -->
 <section class="wrap page" data-page="white-paper" data-screen-label="03 White paper" hidden>
   <div class="grid grid--paper">
     <div>
-      <p class="eyebrow eyebrow--violet">White paper · v1.0</p>
-      <h1 class="h-page" style="max-width:26ch;font-size:clamp(32px,4.4vw,54px);line-height:1.05">The design of a portable context file.</h1>
-      <p class="lead" style="line-height:1.65">On the shape of the file, the schema behind it, the freshness model that keeps it honest, and the guardrails the whole design is held to.</p>
+      <p class="eyebrow eyebrow--violet">White paper · September 2026</p>
+      <h1 class="h-page" style="max-width:26ch;font-size:clamp(32px,4.4vw,54px);line-height:1.05">Durable Context</h1>
+      <p class="lead" style="line-height:1.65">How LLM assistants consume what you tell them, and what reliable skill execution actually requires.</p>
+      <p class="fine" style="margin-top:12px">Adam Young — Model Citizen. Vendor documentation surveyed and cited as of 9 September 2026.</p>
 
       <h2 class="label-sm">Abstract</h2>
       <div class="abstract">
-        <p>Assistants are increasingly good at the work and still bad at the person. The gap is not capability, it is context: the answer arrives fluent and generic because nothing in the prompt says who is asking, what they are responsible for, or what a good answer looks like to them.</p>
-        <p>This paper describes a file — plain markdown, generated from a structured interview, held entirely on the person's own machine — designed to close that gap without an account, a server, or a dependency on any one assistant. It sets out the section schema and why the boundaries fall where they do, the round-trip guarantee that makes generate-and-parse lossless, and a freshness model in which every answer carries a timestamp and a half-life so the file can report which of its own claims are still likely true.</p>
-        <p>It then examines evaluation: how a file can be tested against a baseline captured before it existed, how a skill can be scored against the objective its author stated, why a model's self-report about its own use of context is a claim rather than a trace, and what that means for tuning. It closes with the guardrails — never transmit the person's content, never notify, never hide a prompt — and the one written amendment under which a hosted testing environment is permitted to exist.</p>
+        <p>Every mainstream LLM assistant now offers some way to make context durable: memory that fills itself, projects that hold instructions, knowledge files, connectors, custom agents. Users reasonably assume these surfaces behave like configuration — set once, applied consistently. This paper examines the published documentation for five widely deployed services (Anthropic Claude, OpenAI ChatGPT, Google Gemini, Microsoft 365 Copilot, and Perplexity) and finds that assumption unsupported.</p>
+        <p>Two findings carry the argument. First, only one of the five documents what happens to a user's context when a conversation exceeds the model's window; the other four document it nowhere, leaving users unable to know whether their earlier instructions were summarized, truncated, or dropped. Second, across all five vendors combined, exactly three statements of instruction precedence exist. On four of five services, a user cannot determine from documentation which of their own durable surfaces wins when two of them disagree.</p>
+        <p>The conclusion is not that these systems are unusable. It is that reliability cannot be obtained from inside the chat window, because the chat window is not where the durable part lives. Context has to be treated as infrastructure — written down once, versioned, owned, and portable across the tools that consume it.</p>
       </div>
 
       <h2 class="label-sm">Contents</h2>
       <ol class="contents">
-        <li>The context gap, measured rather than asserted</li>
-        <li>Section schema, and why these boundaries</li>
-        <li>The round trip: generate, parse, restore</li>
-        <li>Freshness: timestamps, half-lives and drift</li>
-        <li>Skills as data, and the stated objective</li>
-        <li>Two proofs: baseline comparison and objective scoring</li>
-        <li>Guardrails, and the one amendment</li>
-        <li>Appendix: the interchange schema</li>
+        <li>Everyone is rebuilding the same foundation every morning</li>
+        <li>Four surfaces people mistake for one</li>
+        <li>What the vendors actually document</li>
+        <li>The window got bigger. Your odds did not.</li>
+        <li>The same question does not get the same answer</li>
+        <li>What determinism you can actually buy</li>
+        <li>Context as infrastructure, not input</li>
+        <li>A reference model</li>
+        <li>How you would know it worked</li>
+        <li>What this evidence does not support</li>
+        <li>A five-minute test</li>
+        <li>References · Disclosure · Appendix A — vendor comparison, gaps shown as gaps</li>
       </ol>
     </div>
 
@@ -271,18 +279,17 @@
         <div class="cover-plate">
           <div class="grow">
             <p class="cover-kicker">White paper</p>
-            <p class="cover-title">The design of a portable context file</p>
+            <p class="cover-title">Durable Context</p>
           </div>
-          <span class="cover-ver">v1.0</span>
+          <span class="cover-ver">2026-09</span>
         </div>
       </div>
       <dl class="specs">
-        <div class="spec"><dt>Pages</dt><dd>24</dd></div>
-        <div class="spec"><dt>Version</dt><dd>1.0</dd></div>
-        <div class="spec"><dt>Format</dt><dd>PDF · 1.4 MB</dd></div>
+        <div class="spec"><dt>Pages</dt><dd>20</dd></div>
+        <div class="spec"><dt>Published</dt><dd>Sept 2026</dd></div>
+        <div class="spec"><dt>Format</dt><dd>PDF · 122 KB</dd></div>
       </dl>
-      <!-- TODO: point at the real asset, e.g. /workbrain-white-paper-v1.pdf -->
-      <a class="btn btn--violet btn--full" href="#white-paper" style="margin-top:18px" download>
+      <a class="btn btn--violet btn--full" href="durable-context.pdf" style="margin-top:18px" download>
         <svg width="17" height="17" aria-hidden="true"><use href="#i-download"></use></svg>
         Download the PDF
       </a>
@@ -1003,7 +1010,7 @@
       <button type="button" class="door door--violet" data-goto="white-paper">
         <span class="chip chip--violet"><svg width="22" height="22" aria-hidden="true"><use href="#i-stack"></use></svg></span>
         <span class="door-name" style="font-size:19px">White paper</span>
-        <span class="door-desc">The design, the schema, and the guardrails the program is held to.</span>
+        <span class="door-desc">Durable Context — the published survey and argument the program stands on. Ungated PDF.</span>
         <span class="door-go">Read it →</span>
       </button>
       <div class="card card--pad">
