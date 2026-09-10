@@ -89,39 +89,8 @@
     </div>
   </section>
 
-  <section class="wrap band" data-screen-label="01 Home · evidence">
-    <p class="eyebrow">The evidence</p>
-    <h2 class="h-sect" style="max-width:24ch">Same question, twice.</h2>
-    <p class="lead">One run against the baseline the app captured before your file existed, one with the file in front of it. The difference is not that the answer is longer — it is that the answer stops guessing.</p>
-    <div class="grid grid--2 top" style="margin-top:36px">
-      <article class="card">
-        <div class="answer-head">
-          <span class="mono">baseline</span>
-          <span class="pill pill--amber push"><span class="dot"></span>0 specifics named</span>
-        </div>
-        <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:var(--ink-2)">“Here is a generic status update with no specifics about your team or projects. Consider highlighting recent wins, upcoming milestones, and any blockers you'd like leadership to know about…”</p>
-        <div class="row" style="gap:8px;margin-top:18px">
-          <span class="pill pill--amber">3 guesses</span>
-          <span class="pill pill--grey">840 tokens</span>
-        </div>
-      </article>
-      <article class="card card--hi">
-        <div class="answer-head">
-          <span class="mono" style="color:var(--home-context);font-weight:600">with Context.md</span>
-          <span class="pill pill--green push"><span class="dot"></span>7 specifics named</span>
-        </div>
-        <p style="margin:16px 0 0;font-size:15px;line-height:1.6;color:var(--ink)">“Reporting-platform work is ahead of the quarter's plan: the leadership dashboard shipped Tuesday and IT response time is inside the 4-hour target for the third week. Two risks worth naming for Northwind and Calder…”</p>
-        <div class="row" style="gap:8px;margin-top:18px">
-          <span class="pill pill--green">Role · Cadence · Bar used</span>
-          <span class="pill pill--grey">1.1k tokens</span>
-        </div>
-      </article>
-    </div>
-    <div class="row" style="gap:24px;margin-top:26px">
-      <button type="button" class="btn--link" style="font-size:15px;font-weight:650" data-goto="proving-grounds">Run the proof on your own file →</button>
-      <p class="fine" style="max-width:52ch">Both runs show you the exact prompt before anything sends. The with-file run also reports what it used, what was missing and what it had to guess.</p>
-    </div>
-  </section>
+  <!-- "The evidence" band retired (Adam, 2026-09-09): redundant beside
+       the Proving Grounds CTA and the Build/Prove/Understand doors. -->
 
   <section class="wrap band" data-screen-label="01 Home · doors">
     <p class="eyebrow">Three doors</p>
@@ -430,89 +399,90 @@
   <!-- ── Context proving ── -->
   <div id="mode-context">
     <div class="grid grid--2 top" style="margin-top:24px">
-      <div class="card">
+      <div class="card" id="pg-baseline-card">
         <div class="row" style="gap:10px"><span class="chip chip--step">1</span><h3 class="h4">Your captured baseline</h3></div>
-        <p class="fine" style="margin-top:12px;font-size:13.5px;line-height:1.55">The app ran this on your first day, before the file existed, so there would be something honest to measure against.</p>
-        <div style="margin-top:14px;padding:16px;border-radius:12px;background:var(--ground);border:1px solid var(--divider)">
-          <div class="row" style="gap:10px">
-            <span class="mono" style="font-size:11.5px;color:var(--ink-3)">baseline · 12 Aug</span>
-            <span class="pill pill--green push" style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Captured</span>
+        <div data-pg="intake">
+          <p class="fine" style="margin-top:12px;font-size:13.5px;line-height:1.55">The app captured this on your first day — the ask and the answer, before the file existed. Bring it here as one paste.</p>
+          <textarea id="pg-paste" class="pg-paste" rows="5" placeholder="Paste your Workbrain bundle — or just your Context.md" aria-label="Paste your Workbrain bundle or Context.md"></textarea>
+          <div class="row" style="margin-top:10px;gap:12px">
+            <button type="button" class="btn btn--primary" id="pg-load">Load it</button>
+            <span class="fine" style="font-size:12.5px">In the app: <b style="font-weight:650">Context Development → Take it to the Proving Grounds</b></span>
           </div>
-          <p style="margin:12px 0 0;font-size:14px;line-height:1.6;color:var(--ink-2)">“Write my quarterly update.” → “Here is a generic status update with no specifics about your team or projects…”</p>
+          <p class="fine" id="pg-parse-note" style="margin-top:8px;font-size:12.5px;color:var(--amber);display:none">That didn't read as a bundle or a Context.md — copy it fresh from the app and paste again.</p>
         </div>
-        <p class="fine" style="margin-top:12px">Ask captured with it, word for word, so both runs answer the same question.</p>
+        <div data-pg="baseline" style="display:none">
+          <div style="margin-top:14px;padding:16px;border-radius:12px;background:var(--ground);border:1px solid var(--divider)">
+            <div class="row" style="gap:10px">
+              <span class="mono" style="font-size:11.5px;color:var(--ink-3)">baseline · yours</span>
+              <span class="pill pill--green push" style="font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase">Captured</span>
+            </div>
+            <p class="mono" id="pg-task" style="margin:12px 0 0;font-size:13px;line-height:1.55;color:var(--ink)"></p>
+            <p id="pg-answer" style="margin:10px 0 0;font-size:13.5px;line-height:1.6;color:var(--ink-2);max-height:130px;overflow:auto"></p>
+          </div>
+          <p class="fine" style="margin-top:12px">Ask captured with it, word for word, so both runs answer the same question. <button type="button" class="btn--link" id="pg-clear" style="font-size:12.5px">Clear this tab's copy</button></p>
+        </div>
+        <div data-pg="fileonly" style="display:none">
+          <p class="fine" style="margin-top:12px;font-size:13.5px;line-height:1.6">A file arrived without its baseline. The comparison needs the pair the app captured — in the app, run <b style="font-weight:650">Pre-Launch Baseline</b> first, then bring the bundle. You can still build the with-file prompt on the right.</p>
+        </div>
       </div>
 
-      <div class="card" style="display:flex;flex-direction:column">
+      <div class="card" style="display:flex;flex-direction:column" id="pg-file-card">
         <div class="row" style="gap:10px"><span class="chip chip--step">2</span><h3 class="h4">Your file now</h3></div>
-        <div style="margin-top:14px;padding:14px 16px;border-radius:12px;background:var(--home-context-tint);border:1px solid rgba(9,117,158,.4)">
-          <div class="row" style="gap:10px">
-            <span class="mono" style="font-size:13px;color:var(--home-context);font-weight:600">Context.md</span>
-            <span style="font-size:12.5px;color:var(--ink-2)">4.1 KB · 6 of 6 sections</span>
-            <span class="pill pill--green push" style="background:none"><span class="dot"></span>Current</span>
+        <div data-pg="nofile">
+          <p class="fine" style="margin-top:12px;font-size:13.5px;line-height:1.55">Arrives with your bundle — everything on this page stays in this tab and leaves when it closes.</p>
+        </div>
+        <div data-pg="file" style="display:none">
+          <div style="margin-top:14px;padding:14px 16px;border-radius:12px;background:var(--home-context-tint);border:1px solid rgba(9,117,158,.4)">
+            <div class="row" style="gap:10px">
+              <span class="mono" style="font-size:13px;color:var(--home-context);font-weight:600">Context.md</span>
+              <span style="font-size:12.5px;color:var(--ink-2)" id="pg-filemeta"></span>
+              <span class="pill pill--green push" style="background:none"><span class="dot"></span>Loaded</span>
+            </div>
           </div>
-        </div>
-        <div class="stack" style="margin-top:14px;gap:8px">
-          <span class="tick" style="font-size:13.5px;color:var(--ink-2)"><svg width="16" height="16" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Loaded from your download, or dropped in here</span>
-          <span class="tick" style="font-size:13.5px;color:var(--ink-2)"><svg width="16" height="16" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Same model, same temperature, same ask as the baseline</span>
-        </div>
-        <div class="row" style="margin-top:auto;padding-top:20px;gap:12px">
-          <button type="button" class="btn btn--primary" data-run>Compare against my baseline</button>
-          <button type="button" class="btn--link">Show the exact prompt</button>
+          <div class="stack" style="margin-top:14px;gap:8px">
+            <span class="tick" style="font-size:13.5px;color:var(--ink-2)"><svg width="16" height="16" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Held in this tab only — gone when it closes</span>
+            <span class="tick" style="font-size:13.5px;color:var(--ink-2)"><svg width="16" height="16" style="color:var(--green)" aria-hidden="true"><use href="#i-check"></use></svg>Same ask as the baseline, word for word</span>
+          </div>
+          <div class="row" style="margin-top:auto;padding-top:20px;gap:12px">
+            <button type="button" class="btn btn--primary" id="pg-compare">Run the with-file side</button>
+          </div>
         </div>
       </div>
     </div>
 
-    <div id="result-context" hidden>
-      <div class="card reveal" style="margin-top:16px">
-        <div class="row" style="gap:10px"><span class="chip chip--step">3</span><h3 class="h4">Then and now</h3><button type="button" class="btn--link push" style="font-size:13px;color:var(--ink-3)" data-reset>Start over</button></div>
-        <div class="grid grid--2" style="margin-top:16px">
-          <div class="answer">
-            <div class="answer-head"><span class="mono" style="color:var(--ink-3)">baseline · 12 Aug</span><span class="push fine">840 tok</span></div>
-            <p>“Here is a generic status update with no specifics about your team or projects…”</p>
-            <p style="margin-top:14px;font-size:12px;font-weight:600;color:var(--amber)">0 of 9 specifics · 3 guesses</p>
-          </div>
-          <div class="answer answer--hi">
-            <div class="answer-head"><span class="mono" style="color:var(--home-context);font-weight:600">with Context.md · today</span><span class="push fine">1.1k tok</span></div>
-            <p>“Reporting-platform work is ahead of plan: the leadership dashboard shipped Tuesday and IT response time is inside the 4-hour target…”</p>
-            <p style="margin-top:14px;font-size:12px;font-weight:600;color:var(--green)">7 of 9 specifics · 0 guesses</p>
-          </div>
+    <div id="pg-run" style="display:none;margin-top:26px">
+      <div class="card card--pad">
+        <div class="row" style="gap:10px"><span class="chip chip--step">3</span><h3 class="h4">Run it in your AI</h3></div>
+        <p class="fine" style="margin-top:10px;font-size:13.5px">One prompt: your whole file, then the same ask. Paste it into the assistant you used for the baseline, send, and bring the whole answer back.</p>
+        <pre class="pg-prompt mono" id="pg-prompt"></pre>
+        <div class="row" style="margin-top:12px;gap:10px;flex-wrap:wrap">
+          <button type="button" class="btn btn--primary" id="pg-copyprompt">Copy the with-file prompt</button>
+          <a class="btn btn--ghost" href="https://chatgpt.com/" target="_blank" rel="noopener">ChatGPT</a>
+          <a class="btn btn--ghost" href="https://claude.ai/" target="_blank" rel="noopener">Claude</a>
+          <a class="btn btn--ghost" href="https://gemini.google.com/" target="_blank" rel="noopener">Gemini</a>
+          <a class="btn btn--ghost" href="https://copilot.microsoft.com/" target="_blank" rel="noopener">Copilot</a>
         </div>
-        <div class="row" style="gap:8px;margin-top:14px">
-          <button type="button" class="btn btn--ghost btn--xs">Diff view</button>
-          <button type="button" class="btn btn--ghost btn--xs">Re-run the baseline today</button>
-          <button type="button" class="btn btn--ghost btn--xs">Was the file half right?</button>
+        <textarea id="pg-response" class="pg-paste" rows="5" style="margin-top:16px" placeholder="Paste the whole with-file answer here" aria-label="Paste the with-file answer"></textarea>
+        <div class="row" style="margin-top:12px">
+          <button type="button" class="btn btn--primary" id="pg-sidebyside">Lay them side by side</button>
         </div>
       </div>
+    </div>
 
-      <div class="grid grid--split reveal" style="margin-top:16px">
-        <div class="card">
-          <div class="row" style="gap:10px"><span class="chip chip--step">4</span><h3 class="h4">What to change in the file</h3></div>
-          <div class="stack" style="margin-top:18px">
-            <div class="edit edit--missing">
-              <span class="edit-tag">MISSING</span>
-              <span class="edit-text">Add a line naming your two biggest clients</span>
-              <button type="button" class="btn btn--ghost btn--xs">Copy</button>
-            </div>
-            <div class="edit edit--unsure">
-              <span class="edit-tag">UNSURE</span>
-              <span class="edit-text">“Good looks like” reads two ways — split it into a bar and an example</span>
-              <button type="button" class="btn btn--ghost btn--xs">Copy</button>
-            </div>
-            <div class="edit edit--used">
-              <span class="edit-tag">USED</span>
-              <span class="edit-text">Identity · Cadence · Bar — these three earned their place</span>
-            </div>
-          </div>
-          <p class="fine" style="margin-top:16px">This is the model's own report on what it drew on. A claim, not a trace — useful in aggregate, never as a fact about a single answer.</p>
+    <div id="pg-result" style="display:none;margin-top:26px">
+      <div class="grid grid--2">
+        <div class="card card--pad">
+          <p class="eyebrow" style="font-size:11px">Before — no file</p>
+          <p id="pg-col-base" class="pg-col"></p>
         </div>
-        <div class="card" style="display:flex;flex-direction:column">
-          <p class="eyebrow eyebrow--quiet">Movement since baseline</p>
-          <div class="figure"><b style="color:var(--green)">+7</b><span>specifics</span></div>
-          <div class="meter"><i style="width:78%"></i></div>
-          <p class="body" style="font-size:13.5px">Edit the file, run it again, and watch the number move against the same baseline. That is the only claim this page makes.</p>
-          <button type="button" class="btn btn--primary btn--full" style="margin-top:auto;height:44px" data-goto="download">Apply in the app</button>
+        <div class="card card--pad" style="border-color:rgba(9,117,158,.45)">
+          <p class="eyebrow" style="font-size:11px;color:var(--home-context)">After — with your file</p>
+          <p id="pg-col-with" class="pg-col"></p>
         </div>
+      </div>
+      <div class="card card--pad" style="margin-top:16px">
+        <p id="pg-count" style="font-size:14px;font-weight:600"></p>
+        <p class="fine" style="margin-top:6px;font-size:12.5px">A count of overlap with your file's own words — not a judgment. Which answer is better is yours to call; that verdict is the proof.</p>
       </div>
     </div>
   </div>
@@ -640,7 +610,7 @@
 
   <div class="card card--danger" style="margin-top:16px">
     <p class="eyebrow eyebrow--danger" style="font-size:13px">What leaves your browser</p>
-    <p style="margin:10px 0 0;font-size:14.5px;line-height:1.6">The prompt — your file or skill plus the task — and nothing else. No identifiers, no session, no answer store. It goes to a named model and is discarded on response. The copy-and-paste path stays, and stays first: this is a door, not a default.</p>
+    <p style="margin:10px 0 0;font-size:14.5px;line-height:1.6">On this page: nothing. Your bundle lives in this tab and dies with it; you carry the prompt to your own AI yourself and bring the answer back the same way. A hosted run — the prompt to a named model, discarded on response — is a possible later door, and it will be a door, never a default.</p>
     <button type="button" class="btn--link" style="margin-top:12px;color:var(--danger);font-weight:650" data-goto="privacy">Read the full amendment</button>
   </div>
 </section>
