@@ -97,11 +97,13 @@ actually break these systems (§4, §5). A file is Great when:
    rung line for free — it is on the rubric because the rubric is public,
    and this is the line most competing programs fail.
 
-**Naming note for Adam:** the brief uses both "great" and "elite." This
-spike uses *Good / Great* as the public pair (they alliterate, they
-ladder, grade 7 reads them instantly) and *elite file* as the name for a
-file that has held Great over time — the thing the board night certifies.
-Ratify or rename; the rubric doesn't care.
+**Naming, RATIFIED 2026-09-10 (Adam):** the ladder is **Started / Good /
+Great** — the public pair is *Good / Great*, and **elite file** is the
+epithet for a file that has HELD Great over time: the thought-leadership
+headline and what a board night certifies, never a rung a beginner
+stares up at. ("Elite" and "Proven" as rung names were considered and
+set aside — the first reads as a word about other people to a civic
+room; the second names only the delta line of Great.)
 
 ### Why the rubric drives the user's goal
 
@@ -446,8 +448,9 @@ The requirements it sets:
    2026-09-10: multi-profile, named "Brains"** — the full ruling and
    build contract live in `docs/FACET-DECISION.md`. The builders are
    unblocked.
-2. **Naming:** Good / Great / "elite file" as used here — ratify or
-   rename.
+2. ~~**Naming**~~ **RESOLVED 2026-09-10: ratified as written** —
+   Started / Good / Great, "elite file" as the held-over-time epithet
+   (see §1's naming note for the full ruling).
 3. **Objective retrofit:** existing skills without an Objective — prompt
    to add on next edit (recommended), or leave until touched.
 4. **The grounding-rule pair** (red team #8): approve the two lines and
