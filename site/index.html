@@ -38,6 +38,7 @@
     <path d="M4 18.5h16V21H4Z" fill="currentColor"></path>
   </symbol>
   <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M20 6 9 17l-5-5"></path></symbol>
+  <symbol id="i-no" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M6 6l12 12M18 6L6 18"></path></symbol>
   <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="6.5"></circle><path d="M16 16l4 4"></path></symbol>
 </svg>
 
@@ -828,9 +829,11 @@
      Built to docs/CIVIC-IMPLEMENTATION-NOTES.md §4 — sections in the notes'
      own order; the two load-bearing blocks (4.2, 4.7) are verbatim. -->
 <section class="wrap page" data-page="civic" data-screen-label="10 Civic Accelerator" hidden>
+  <div class="cv-hero-grid">
+  <div>
   <p class="eyebrow eyebrow--civics">A Model Citizen program</p>
   <h1 class="h-page">Workbrain Civic Accelerator</h1>
-  <p class="lead lead--big" style="max-width:64ch">Four evenings. Free to attend. Everyone leaves with a set of files that make any AI assistant work better for them — and that still work on a service that doesn't exist yet.</p>
+  <p class="lead lead--big">Four evenings. Free to attend. Everyone leaves with a set of files that make any AI assistant work better for them — and that still work on a service that doesn't exist yet.</p>
   <p class="lead" style="margin-top:10px;font-weight:600;color:var(--ink)"><span class="cv-host-line">Hosted in your building, for an audience you convene.</span></p>
   <div class="tags">
     <span class="tag"><i>#</i>FreeToAttend</span>
@@ -846,12 +849,45 @@
          exists (notes §4.1); until then the packet rides the reply to a
          cohort request — promised in §4.12 below. -->
   </div>
+  </div>
+  <div class="cv-brand" aria-hidden="true">
+    <svg viewBox="0 0 260 260">
+      <defs>
+        <linearGradient id="g-cvb" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stop-color="#0f5c38"></stop>
+          <stop offset="1" stop-color="#1e9660"></stop>
+        </linearGradient>
+      </defs>
+      <rect x="2" y="2" width="256" height="256" rx="40" fill="url(#g-cvb)"></rect>
+      <circle cx="130.0" cy="50.0" r="3" fill="#ffffff" opacity="0.62"/>
+      <circle cx="155.3" cy="55.0" r="3" fill="#ffffff" opacity="0.32"/>
+      <circle cx="176.7" cy="69.3" r="3" fill="#ffffff" opacity="0.62"/>
+      <circle cx="191.0" cy="90.7" r="3" fill="#ffffff" opacity="0.32"/>
+      <circle cx="196.0" cy="116.0" r="3" fill="#ffffff" opacity="0.62"/>
+      <circle cx="191.0" cy="141.3" r="3" fill="#ffffff" opacity="0.32"/>
+      <circle cx="176.7" cy="162.7" r="3" fill="#ffffff" opacity="0.62"/>
+      <circle cx="155.3" cy="177.0" r="3" fill="#ffffff" opacity="0.32"/>
+      <circle cx="130.0" cy="182.0" r="3" fill="#ffffff" opacity="0.62"/>
+      <circle cx="104.7" cy="177.0" r="3" fill="#ffffff" opacity="0.32"/>
+      <circle cx="83.3" cy="162.7" r="3" fill="#ffffff" opacity="0.62"/>
+      <circle cx="69.0" cy="141.3" r="3" fill="#ffffff" opacity="0.32"/>
+      <circle cx="64.0" cy="116.0" r="3" fill="#ffffff" opacity="0.62"/>
+      <circle cx="69.0" cy="90.7" r="3" fill="#ffffff" opacity="0.32"/>
+      <circle cx="83.3" cy="69.3" r="3" fill="#ffffff" opacity="0.62"/>
+      <circle cx="104.7" cy="55.0" r="3" fill="#ffffff" opacity="0.32"/>
+      <path d="M74 148 L106 98 L127 128 L148 102 L188 148 Z" fill="#eafff3"></path>
+      <path d="M74 148 L106 98 L127 128 L114 148 Z" fill="#b7ecd0"></path>
+      <text x="130" y="196" text-anchor="middle" font-size="17" font-weight="800" letter-spacing="6" fill="#ffffff" font-family="-apple-system, 'Segoe UI', sans-serif">CIVIC</text>
+      <text x="130" y="216" text-anchor="middle" font-size="10.5" font-weight="700" letter-spacing="3.4" fill="#b7ecd0" font-family="-apple-system, 'Segoe UI', sans-serif">ACCELERATOR</text>
+    </svg>
+  </div>
+  </div>
 
   <!-- 4.2 · load-bearing -->
   <div class="cv-band">
     <p class="eyebrow eyebrow--quiet">The agreement, plainly</p>
     <h2 class="h-sect">What you're agreeing to host.</h2>
-    <div class="cv-scroll"><table class="cv-table cv-table--sheet">
+    <div class="cv-sheet-frame"><div class="cv-scroll"><table class="cv-table cv-table--sheet">
       <tr><th scope="row">Who is in the room</th><td>Adults, or students with guardian consent. Cohort of 16–20.</td></tr>
       <tr><th scope="row">How long</th><td>Four sessions of 90 minutes, weekly. Optional monthly evening after that.</td></tr>
       <tr><th scope="row">What participants do</th><td>Answer questions about their own work, write plain text files, use an AI assistant they already have.</td></tr>
@@ -865,10 +901,8 @@
       <tr><th scope="row">Background checks</th><td>Completed and current for all facilitators. Documentation on request.</td></tr>
       <tr><th scope="row">What we ask of participants</th><td>Attendance and a short voluntary survey.</td></tr>
       <tr class="cv-never"><th scope="row">What we never do</th><td>Sell to participants during sessions, collect payment in the room, or require an email address for anyone to receive their own files.</td></tr>
-    </table></div>
-    <div class="card card--pad cv-pull" style="margin-top:26px;border-left:3px solid var(--civics)">
-      <p style="margin:0;font-size:17px;line-height:1.65"><strong>We do not sell to participants.</strong> Not during sessions, not after. The program is free to attend and there is nothing to buy at the end of it.</p>
-    </div>
+    </table></div></div>
+    <p class="cv-never-line"><strong>We do not sell to participants.</strong> Not during sessions, not after. The program is free to attend and there is nothing to buy at the end of it.</p>
   </div>
 
   <!-- 4.3 -->
@@ -926,10 +960,12 @@
         <p class="cv-gate-session">Session 4 · 90 minutes</p>
         <p class="cv-gate-keep"><span class="mono" style="font-size:13px">Actions.md</span>, the side-by-side proof, and the Certificate of Completion</p>
       </li>
-      <li class="cv-gate" data-g="5">
+      <li class="cv-gate cv-gate--bonus" data-g="5">
         <span class="cv-gate-n">5</span>
-        <p class="cv-gate-session">Board night · monthly, optional</p>
-        <p class="cv-gate-keep">Work Brain Certified — earned by returning and showing what they built since</p>
+        <div>
+          <p class="cv-gate-session">Board night · monthly, optional</p>
+          <p class="cv-gate-keep">Work Brain Certified — earned by returning and showing what they built since</p>
+        </div>
       </li>
     </ol>
   </div>
@@ -980,9 +1016,15 @@
   <div class="cv-band">
     <p class="eyebrow eyebrow--quiet">Outcomes</p>
     <h2 class="h-sect">What we measure, and what we refuse to claim.</h2>
-    <div class="cv-plain">
-    <p class="lead">We measure what we can actually attribute. Participants complete a task before any teaching and a comparable task at the end, and we record how much context they had to type, how many exchanges it took, and whether they used the result. We also track how many complete each stage and how many return.</p>
-    <p class="lead" style="max-width:70ch;margin-top:14px">We do not claim employment outcomes. Participants report what happens next and we pass that on as reported, not as program effect. Assistant outputs also vary between runs for reasons unrelated to any program, so we report a group of measures rather than one headline number.</p>
+    <div class="cv-vs">
+    <div class="cv-vs-side cv-vs-side--point">
+      <span class="cv-vs-mark"><svg width="20" height="20" aria-hidden="true"><use href="#i-check"></use></svg></span>
+      <p class="lead">We measure what we can actually attribute. Participants complete a task before any teaching and a comparable task at the end, and we record how much context they had to type, how many exchanges it took, and whether they used the result. We also track how many complete each stage and how many return.</p>
+    </div>
+    <div class="cv-vs-side cv-vs-side--counter">
+      <span class="cv-vs-mark"><svg width="20" height="20" aria-hidden="true"><use href="#i-no"></use></svg></span>
+      <p class="lead">We do not claim employment outcomes. Participants report what happens next and we pass that on as reported, not as program effect. Assistant outputs also vary between runs for reasons unrelated to any program, so we report a group of measures rather than one headline number.</p>
+    </div>
     </div>
   </div>
 
@@ -991,8 +1033,27 @@
     <p class="eyebrow eyebrow--quiet">Privacy and data handling</p>
     <h2 class="h-sect">Nothing to hand over, by design.</h2>
     <div class="cv-dark">
+    <div>
     <p class="lead">The tool runs entirely in the browser. There is no account, no server, and nothing is transmitted. Files are plain markdown, written to the participant's own device. Participants who never come back keep everything they made.</p>
-    <p class="lead" style="max-width:70ch;margin-top:14px">Sessions do teach participants to inspect what their AI assistant has already stored about them — several services retain inferred personal details by default. That is done privately, on each person's own screen. No one is asked to read anything aloud.</p>
+    <p class="lead" style="margin-top:14px">Sessions do teach participants to inspect what their AI assistant has already stored about them — several services retain inferred personal details by default. That is done privately, on each person's own screen. No one is asked to read anything aloud.</p>
+    </div>
+    <svg class="cv-vault-art" viewBox="0 0 340 240" aria-hidden="true">
+      <rect x="14" y="24" width="204" height="156" rx="12" fill="rgba(232,237,249,0.04)" stroke="rgba(232,237,249,0.45)" stroke-width="1.5"></rect>
+      <line x1="14" y1="52" x2="218" y2="52" stroke="rgba(232,237,249,0.3)"></line>
+      <circle cx="32" cy="38" r="3" fill="rgba(232,237,249,0.4)"></circle>
+      <circle cx="44" cy="38" r="3" fill="rgba(232,237,249,0.4)"></circle>
+      <circle cx="56" cy="38" r="3" fill="rgba(232,237,249,0.4)"></circle>
+      <rect x="34" y="70" width="118" height="26" rx="13" fill="rgba(9,117,158,0.3)"></rect>
+      <text x="48" y="87" font-size="11.5" fill="#9fd8ec" font-family="ui-monospace, Menlo, monospace">Context.md</text>
+      <rect x="34" y="104" width="106" height="26" rx="13" fill="rgba(44,92,229,0.3)"></rect>
+      <text x="48" y="121" font-size="11.5" fill="#aabdf5" font-family="ui-monospace, Menlo, monospace">Skills.md</text>
+      <rect x="34" y="138" width="112" height="26" rx="13" fill="rgba(106,63,209,0.3)"></rect>
+      <text x="48" y="155" font-size="11.5" fill="#c5aef2" font-family="ui-monospace, Menlo, monospace">Actions.md</text>
+      <path d="M224 102h34" stroke="rgba(232,237,249,0.5)" stroke-width="1.6" stroke-dasharray="5 5"></path>
+      <path d="M256 96l8 6-8 6" fill="none" stroke="rgba(232,237,249,0.5)" stroke-width="1.6"></path>
+      <path d="M292 74l24 9v24c0 17-11 28-24 34-13-6-24-17-24-34V83z" fill="rgba(23,122,76,0.3)" stroke="#4fc48b" stroke-width="1.6"></path>
+      <path d="M282 106l7 7 14-14" fill="none" stroke="#7fe0ae" stroke-width="2.4"></path>
+    </svg>
     </div>
   </div>
 
@@ -1030,7 +1091,7 @@
           <p class="cv-figure cv-figure--zero"><b>$0</b><span>Attendance is free, always.</span></p>
         </div>
       </div>
-      <p class="body" style="margin-top:26px;font-size:15px;line-height:1.65;max-width:70ch">Model Citizen donates curriculum development and program administration. A funded cohort — paid by the hosting organization or its sponsors — covers everything above. Attendance is free, always.</p>
+      <p class="body" style="margin-top:26px;font-size:15px;line-height:1.65">Model Citizen donates curriculum development and program administration. A funded cohort — paid by the hosting organization or its sponsors — covers everything above. Attendance is free, always.</p>
     </div>
   </div>
 
