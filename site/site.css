@@ -32,6 +32,9 @@
   --home-skills: #2c5ce5;
   --home-skills-deep: #2549c0;
   --home-skills-tint: #e9eefd;
+  --civics: #177a4c;
+  --civics-deep: #0f5c38;
+  --civics-tint: #e7f5ec;
   --splash-field: #070a12;
   --globe-label: #e8edf9;
   --globe-detail-key: #a6b6dc;
@@ -1784,4 +1787,71 @@ main,
   white-space: pre-wrap;
   max-height: 340px;
   overflow: auto;
+}
+
+/* ══ Civics Accelerator (pass 5m) ═══════════════════════════════════════
+   The community-outreach page. Green is the program's colour — already on
+   the site as How-It-Works' "Bar" accent; #177a4c holds 5.3:1 on white. */
+.eyebrow--civics {
+  color: var(--civics);
+}
+.chip--civics {
+  background: var(--civics-tint);
+  color: var(--civics-deep);
+}
+.btn--civics {
+  background: var(--civics);
+  color: var(--ink-inv);
+}
+.btn--civics:hover {
+  background: var(--civics-deep);
+}
+.door--civics {
+  border-color: rgba(23, 122, 76, 0.6);
+  background: rgba(23, 122, 76, 0.06);
+}
+.door--civics:hover {
+  background: rgba(23, 122, 76, 0.12);
+  border-color: var(--civics);
+}
+.door--civics .door-go {
+  color: var(--civics-deep);
+}
+.cv-band {
+  margin-top: 96px;
+}
+.cv-num {
+  font-family: var(--font-mono);
+  font-weight: 600;
+  color: var(--civics);
+}
+.cv-check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.cv-check svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--civics);
+}
+.cv-check p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.6;
+}
+.cv-orgs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 30px;
+}
+.cv-org {
+  padding: 10px 17px;
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-2);
 }

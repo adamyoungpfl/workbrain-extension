@@ -25,7 +25,14 @@ work that gets thrown away and, worse, ships an opinion nobody agreed to.
    per-skill answer the generated file prints as a finding — the shortlist of things to find out.
    See `docs/V2.2-SKILLS-ACTIONS-DECISIONS.md` #1.
 
-6. **Where the civic / after-school programme attaches.** Not in scope for Releases 1–4.
+6. ~~**Where the civic / after-school programme attaches.**~~ **PARTLY RESOLVED
+   2026-09-09 (Adam's Civics Accelerator brief, pass 5m):** it attaches to the
+   SITE — `#civics-accelerator` is the program's public face (AI-literacy
+   training run through community organizations; credibility drawn from the
+   white paper, the app, and the professional services; Adam intends it as the
+   most time-consuming and revenue-producing part of the project). Still open:
+   where it attaches in the APP, if anywhere, and the interest form's backend
+   (static placeholder today). Original: "Not in scope for Releases 1–4."
 
 7. ~~**Reformatting incompatible uploads (Adam, 2026-09-09, the File Hub pass).**~~
    **RESOLVED 2026-09-09 (Adam: "let's scope format and the parser as possible add ons"):**

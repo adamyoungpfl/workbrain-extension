@@ -15,6 +15,7 @@
     'proving-grounds',
     'workbrain-plus',
     'services',
+    'civics-accelerator',
     'download',
     'privacy',
   ];
@@ -63,6 +64,16 @@
     if (!el) return;
     e.preventDefault();
     navigate(el.getAttribute('data-goto'));
+  });
+
+  /* In-page hops for the Civics page's own CTAs — plain scroll, never a
+     hash (the router would read it as a route). */
+  document.addEventListener('click', function (e) {
+    var el = e.target.closest('[data-scroll]');
+    if (!el) return;
+    var target = document.getElementById(el.getAttribute('data-scroll'));
+    if (!target) return;
+    target.scrollIntoView(reduced ? { block: 'start' } : { behavior: 'smooth', block: 'start' });
   });
 
   window.addEventListener('hashchange', function () {

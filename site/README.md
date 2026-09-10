@@ -5,7 +5,7 @@ dependencies — open `index.html` in a browser and it runs.
 
 ```
 site/
-  index.html   all nine pages, one document; pages are swapped by the router
+  index.html   all ten pages, one document; pages are swapped by the router
   site.css     tokens + components, mirroring the extension's design/tokens.json
   site.js      hash router, scroll field, white-paper cover, Proving Grounds
 ```
@@ -31,6 +31,7 @@ buttons: add, never rename.**
 | `#services` | T.I.M. services | "Talk to a person" |
 | `#download` | Download | store listing fallback |
 | `#privacy` | Privacy & guardrails | trust foot |
+| `#civics-accelerator` | Civics Accelerator | (no app caller yet — site-first) |
 
 ## The proof bundle — a second contract
 
@@ -96,6 +97,8 @@ Placeholder — replace before launch:
   objectives, outputs and criteria. The shapes are what the UI expects; wire
   them to the real run endpoint when the hosted environment lands.
 - **Booking.** Static slots; needs the Cal.com embed.
+- **Civics interest form.** Static; needs a real destination (email or form
+  backend) before it can accept inquiries.
 
 ## The background
 
