@@ -161,7 +161,9 @@ curriculum: session 2 opens with it). The PAID shape is the
 re-run extraction on demand, diff it against your file, surface what
 the vendors now believe that you never authored — recurring value,
 recurring price, and it strengthens rather than strains the free
-promise. Adam's call; the recommendation is recorded here.
+promise. **RATIFIED 2026-09-10 (Adam: "Agreed on push back on Pro and
+one time seed"):** the one-time seed is free; the ongoing memory
+audit is the Workbrain+ feature.
 
 ## 5 · Where each piece lands
 
@@ -178,8 +180,8 @@ promise. Adam's call; the recommendation is recorded here.
 ## 6 · Adam's calls out of this pass
 
 1. **Ratify the MCP→memory correction** (the deck already reflects it).
-2. **Free seed / paid audit split** — ratify or overrule §4's
-   recommendation.
+2. ~~**Free seed / paid audit split**~~ **RATIFIED 2026-09-10** —
+   one-time seed free, ongoing memory audit under Workbrain+ (§4).
 3. **The deck's title frame** — currently "Your voice is the product"
    with "AI Foundations" as the eyebrow; rename at will, the deck is
    one file.
