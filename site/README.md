@@ -5,7 +5,7 @@ dependencies — open `index.html` in a browser and it runs.
 
 ```
 site/
-  index.html   all eleven pages, one document; pages are swapped by the router
+  index.html   all twelve pages, one document; pages are swapped by the router
   site.css     tokens + components, mirroring the extension's design/tokens.json
   site.js      hash router, scroll field, white-paper cover, Proving Grounds
 ```
@@ -33,6 +33,7 @@ buttons: add, never rename.**
 | `#privacy` | Privacy & guardrails | trust foot |
 | `#civic` — also served at `/civic` | Civic Accelerator | (no app caller yet — site-first) |
 | `#roadmap` — also `/roadmap` | Roadmap | — |
+| `#good` — also `/good` | Good, defined (the public standard) | (candidate: ladder-rung nudges) |
 
 ## The proof bundle — a second contract
 

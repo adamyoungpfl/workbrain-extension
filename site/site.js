@@ -17,6 +17,7 @@
     'services',
     'civic',
     'roadmap',
+    'good',
     'download',
     'privacy',
   ];
@@ -54,7 +55,9 @@
         ? 'Workbrain — a context file for your AI'
         : route === 'civic'
           ? 'Workbrain Civic Accelerator'
-          : 'Workbrain — ' + route.replace(/-/g, ' ');
+          : route === 'good'
+            ? 'Workbrain — Good, defined'
+            : 'Workbrain — ' + route.replace(/-/g, ' ');
     sizeCover();
     drawCover(performance.now() / 1000);
   }

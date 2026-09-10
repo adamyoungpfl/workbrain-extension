@@ -5,6 +5,7 @@
   "cleanUrls": true,
   "rewrites": [
     { "source": "/civic", "destination": "/index.html" },
-    { "source": "/roadmap", "destination": "/index.html" }
+    { "source": "/roadmap", "destination": "/index.html" },
+    { "source": "/good", "destination": "/index.html" }
   ]
 }

@@ -2316,3 +2316,103 @@ main,
     width: min(220px, 100%);
   }
 }
+
+/* ══ pass 5x — Good, defined (the public standard) ══════════════════════ */
+.gd-band {
+  margin-top: 96px;
+}
+.gd-rung {
+  position: relative;
+  padding-top: 56px;
+}
+.gd-rung-n {
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--primary);
+  background: var(--primary-tint);
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+.gd-checks {
+  margin-top: 28px;
+  display: grid;
+  gap: 12px;
+}
+.gd-check {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+.gd-check svg {
+  flex: none;
+  margin-top: 3px;
+  color: var(--green);
+}
+.gd-check p {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.6;
+}
+.gd-line {
+  font-size: 14.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+}
+.gd-line strong {
+  display: block;
+  color: var(--ink);
+  margin-bottom: 6px;
+  font-size: 15.5px;
+}
+.gd-elements {
+  margin-top: 28px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+.gd-el {
+  padding: 11px 18px;
+  border-radius: var(--r-pill);
+  background: var(--canvas);
+  border: 1px solid var(--border);
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--ink-2);
+}
+.gd-claims {
+  margin: 30px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: gd;
+  display: grid;
+  gap: 0;
+}
+.gd-claims li {
+  counter-increment: gd;
+  position: relative;
+  padding: 18px 0 18px 64px;
+  border-bottom: 1px solid var(--divider);
+  font-size: 16.5px;
+  font-weight: 620;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+}
+.gd-claims li::before {
+  content: counter(gd, decimal-leading-zero);
+  position: absolute;
+  left: 0;
+  top: 18px;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--primary);
+}

@@ -472,8 +472,14 @@ The requirements it sets:
 4. ~~**The grounding-rule pair**~~ **RESOLVED & BUILT 2026-09-10
    (pass 5w)** — see red team #8 for the shipped wording and the
    generated-date correction.
-5. **The public version:** this doc is internal grammar. The
-   thought-leadership piece (site essay, civic handout) is a rewrite
-   with the same spine — say when, and which surface it lands on.
+5. ~~**The public version**~~ **RESOLVED & BUILT 2026-09-10 (pass
+   5x):** the site essay lives at **myworkbrain.org/good** — "Good,
+   defined." — a citable real path like /civic, carrying the same
+   spine in public voice (the ladder, the five-minute test as the
+   bar, Great's lines, the seven elements, the six claims, the
+   edit-asymmetry kicker, doors to evidence/test/tool/room). True
+   the page to this spike, and this spike to the code. The civic
+   HANDOUT version rides the host packet (the civic notes' "Next"
+   batch), not this pass.
 6. **English-only, said aloud** (red team #9): confirm the civic host
    materials state it until i18n is scheduled.
