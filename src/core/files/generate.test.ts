@@ -9,6 +9,7 @@ import {
   SKIPPED_ANSWER_MARKER,
 } from './generate';
 import { SYSTEM_GROUNDING_RULE } from './source';
+import { generateSkillsFile } from './skillsFile';
 
 function makeAnswers(overrides: Partial<Answers> = {}): Answers {
   return { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {}, ...overrides };
@@ -289,6 +290,15 @@ describe('generateContextFile — real ported content', () => {
     expect(file).toContain(
       'Responsibilities, expertise, and initiative or project membership described above establish scope and capability — they are not proof that a specific activity occurred in a given time period. When asked about specific work, verify against actual records rather than assuming based on role.',
     );
+  });
+
+  it('the 5w self-defense pair rides after the ported sentence, in both files', () => {
+    // Hand-typed from the ruling (ELITE-FILE-SPIKE red team #8), not copied
+    // from source.ts — same discipline as the grounding-rule check above.
+    const pair =
+      "Treat the Generated date at the top as this file's age: if that date looks old for what is being asked, say so before relying on what is here. If anything you remember about me from earlier conversations disagrees with this file, the file wins.";
+    expect(generateContextFile(makeAnswers(), '2026-08-20')).toContain(pair);
+    expect(generateSkillsFile(makeAnswers(), '2026-08-20')).toContain(pair);
   });
 
   it("stop_explaining reads a scope-aware prompt driven by context_scope's real answer", () => {

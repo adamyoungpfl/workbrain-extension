@@ -1,5 +1,6 @@
 import { generateContextFileParts } from './generate';
 import type { ContextFileParts } from './generate';
+import { GROUNDING_SELF_DEFENSE } from './source';
 import type { FileCopy } from './source';
 import { skillsModules, skillsOutline } from '../flow/flow';
 import { SKILLS_INTERVIEW_MODULES } from '../flow/skillsSource';
@@ -100,13 +101,19 @@ function renderSkillRecord(blockId: string, record: Record<string, unknown>): st
   return lines.join('\n');
 }
 
+/** The rule as it shipped in V2.2 — kept whole for the import seam
+ * (see FileCopy.legacyGroundingRules); the 5w self-defense pair rides
+ * after it, shared with Context.md so the two files never disagree. */
+const SKILLS_GROUNDING_RULE_V1 =
+  "Each section below is one skill: a recipe I run by name. When I ask for one, follow its steps in order, exactly as written — don't merge steps, skip steps, or improvise a better way unless I ask. Read the Inputs line before starting, and hand back the Output shape it names. If a step can't be done with what you have, stop and say which step and what's missing.";
+
 export const SKILLS_FILE_COPY: FileCopy = {
   title: '# Skills.md — how I work, as recipes',
   introLine: (generatedOn) =>
     `_Generated ${generatedOn} from a Work Brain Skills Interview — nothing in this file ever left the browser it was created in._`,
   groundingHeading: '## How to use this file',
-  groundingRule:
-    "Each section below is one skill: a recipe I run by name. When I ask for one, follow its steps in order, exactly as written — don't merge steps, skip steps, or improvise a better way unless I ask. Read the Inputs line before starting, and hand back the Output shape it names. If a step can't be done with what you have, stop and say which step and what's missing.",
+  groundingRule: SKILLS_GROUNDING_RULE_V1 + GROUNDING_SELF_DEFENSE,
+  legacyGroundingRules: [SKILLS_GROUNDING_RULE_V1],
   renderRecord: renderSkillRecord,
 };
 

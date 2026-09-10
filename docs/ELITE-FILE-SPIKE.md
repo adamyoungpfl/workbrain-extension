@@ -334,14 +334,21 @@ style from #3b — their repeatable thing is judgment, not procedure.
 on open (OPEN #1), so it never fires for them; meanwhile the paper's
 §3.5 problem arrives — the assistant's own memory ingests the pasted
 file and re-serves stale paraphrases of it for months.
-**Missing piece:** the FILE defends itself. Two lines in the System
-Grounding Rule: **(a)** "answers here carry dates — if one looks past
-its shelf life, say so before relying on it"; **(b)** "this file
-supersedes anything you remember about me from earlier
-conversations." Line (b) is the file asserting its own precedence —
-the exact thing Appendix A.5 shows no vendor documents, answered from
-the user's side. Zero schema cost, first in the build queue after the
-spike is ratified (it is app code: gate, clips-check, the works).
+**Missing piece:** the FILE defends itself — two sentences in the
+grounding rule: a staleness self-report and a memory-precedence claim
+(the thing Appendix A.5 shows no vendor documents, answered from the
+user's side).
+**BUILT 2026-09-10 (pass 5w), with one honesty correction:** the file
+carries ONE date — the Generated line — not per-answer dates (those
+live in the app's stamp maps and never print), so the staleness
+sentence is keyed to the file's age, not to claims' shelf lives. As
+shipped, in both files' rules: "Treat the Generated date at the top
+as this file's age: if that date looks old for what is being asked,
+say so before relying on what is here. If anything you remember about
+me from earlier conversations disagrees with this file, the file
+wins." Parse gained `legacyGroundingRules` so every file downloaded
+before the revision still imports — the exact-match check would have
+orphaned them all.
 
 ### 9 · The non-English speaker — named so it's a decision, not an oversight
 
@@ -462,8 +469,9 @@ The requirements it sets:
    is the pack author's to write. An objective-less skill stays valid
    in the file — the generator simply omits the line, degradation
    silent as always.
-4. **The grounding-rule pair** (red team #8): approve the two lines and
-   they are the first build after this spike.
+4. ~~**The grounding-rule pair**~~ **RESOLVED & BUILT 2026-09-10
+   (pass 5w)** — see red team #8 for the shipped wording and the
+   generated-date correction.
 5. **The public version:** this doc is internal grammar. The
    thought-leadership piece (site essay, civic handout) is a rewrite
    with the same spine — say when, and which surface it lands on.

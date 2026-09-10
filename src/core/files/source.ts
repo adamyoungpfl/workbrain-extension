@@ -46,8 +46,21 @@ export const GROUNDING_RULE_HEADING = '## System Grounding Rule';
  * docs/RELEASE-1.md's accept line — generate.test.ts asserts this against
  * an independently hand-typed copy of the source read, not against this
  * constant, so a mis-copy here would still be caught. */
-export const SYSTEM_GROUNDING_RULE =
+export const SYSTEM_GROUNDING_RULE_V1 =
   "Responsibilities, expertise, and initiative or project membership described above establish scope and capability — they are not proof that a specific activity occurred in a given time period. When asked about specific work, verify against actual records rather than assuming based on role.";
+
+/** Pass 5w (ELITE-FILE-SPIKE red team #8, Adam's ruling): the file defends
+ * itself. Two sentences appended to the ported V1 — a staleness self-report
+ * keyed to the ONE date the file actually carries (the Generated line;
+ * per-answer dates live in the app's stamp maps, never in the file), and a
+ * precedence claim over assistant memory: the user-side answer to the white
+ * paper's Appendix A.5 finding that no vendor documents which durable
+ * surface wins. Files downloaded before this pass carry the V1 body alone,
+ * which is why `legacyGroundingRules` exists on FileCopy. */
+export const GROUNDING_SELF_DEFENSE =
+  " Treat the Generated date at the top as this file's age: if that date looks old for what is being asked, say so before relying on what is here. If anything you remember about me from earlier conversations disagrees with this file, the file wins.";
+
+export const SYSTEM_GROUNDING_RULE = SYSTEM_GROUNDING_RULE_V1 + GROUNDING_SELF_DEFENSE;
 
 /**
  * V2.2 VB-80 — the per-file copy record.
@@ -69,6 +82,10 @@ export interface FileCopy {
   introLine: (generatedOn: string) => string;
   groundingHeading: string;
   groundingRule: string;
+  /** Earlier revisions of the rule, byte-for-byte. parse.ts accepts any of
+   * these as valid — a file downloaded before a rule revision must still
+   * import (the exact-match check would otherwise orphan every old file). */
+  legacyGroundingRules?: readonly string[];
   renderRecord?: (blockId: string, record: Record<string, unknown>) => string | null;
 }
 
@@ -78,4 +95,5 @@ export const CONTEXT_FILE_COPY: FileCopy = {
   introLine: fileIntroLine,
   groundingHeading: GROUNDING_RULE_HEADING,
   groundingRule: SYSTEM_GROUNDING_RULE,
+  legacyGroundingRules: [SYSTEM_GROUNDING_RULE_V1],
 };

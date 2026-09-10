@@ -263,7 +263,15 @@ export function parseContextFile(
   // hardcoded Context string — a Skills.md is checked against Skills' rule.
   const groundingLabel = copy.groundingHeading.replace(/^#+\s*/, '');
   const grounding = headings.find((h) => h.label === groundingLabel);
-  if (!grounding || grounding.body !== copy.groundingRule.trim()) {
+  // Pass 5w: the rule gained sentences, and every file downloaded before
+  // that carries the old body — exact-match alone would orphan them all.
+  // A body matching ANY revision in legacyGroundingRules is the same
+  // promise, kept by an earlier printing.
+  const groundingOk =
+    grounding !== undefined &&
+    (grounding.body === copy.groundingRule.trim() ||
+      (copy.legacyGroundingRules ?? []).some((rule) => grounding.body === rule.trim()));
+  if (!groundingOk) {
     return { ok: false, reason: 'grounding-rule-missing' };
   }
 

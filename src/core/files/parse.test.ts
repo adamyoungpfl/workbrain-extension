@@ -3,7 +3,7 @@ import type { Answers } from '../../schema/storage.types';
 import type { FileOutlineNode, Module, RepeatableBlock, Step } from '../../schema/flow.types';
 import { generateContextFile } from './generate';
 import { parseContextFile } from './parse';
-import { SYSTEM_GROUNDING_RULE } from './source';
+import { SYSTEM_GROUNDING_RULE, SYSTEM_GROUNDING_RULE_V1 } from './source';
 
 function makeAnswers(overrides: Partial<Answers> = {}): Answers {
   return { values: {}, repeatables: {}, answeredAt: {}, reflectedAt: {}, ...overrides };
@@ -130,6 +130,12 @@ describe('parseContextFile — the one documented hard-fail (docs/GUARDRAILS.md)
     const file = gen(makeAnswers()).replace(SYSTEM_GROUNDING_RULE, 'Something else entirely.');
     const result = parseContextFile(file, modules, outline);
     expect(result).toEqual({ ok: false, reason: 'grounding-rule-missing' });
+  });
+
+  it('a file downloaded before pass 5w — V1 rule body, no self-defense pair — still parses', () => {
+    const file = gen(makeAnswers()).replace(SYSTEM_GROUNDING_RULE, SYSTEM_GROUNDING_RULE_V1);
+    const result = parseContextFile(file);
+    expect(result.ok).toBe(true);
   });
 
   it('fails on garbage input with no headings at all', () => {
