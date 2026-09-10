@@ -65,6 +65,17 @@ screen, how many lines of a pasted answer named something the AI could not know.
 | **Nothing it computes is stored.** `core/proof/grounded.ts` runs on render and the result dies with the screen. | A count of how grounded somebody's AI sounded, accumulated across runs, is a usage log. The authorship test settles it: they did not type it and we did not observe it. |
 | **It is shown as a COUNT with its caveat attached** — "a count of what it admitted, not a check of whether it was right." | A regex over English cannot know whether a claim is true. Read as a score, a low number would have somebody rewriting a good file. |
 
+**And the hosted Proving Grounds (Adam's ruling, 2026-09-09 — "A then C.
+sessionStorage-until-tab-close, yes on grounds"; the white paper reserved
+this seat).** The site's Proving Grounds page runs the head-to-head on a
+full screen, fed by the app.
+
+| Rule | Why |
+|---|---|
+| **The proof bundle (ask + baseline answer + Context.md) moves by CLIPBOARD, on the person's own press, and lands in a static page that transmits nothing.** No fetch, no beacon, no form post — the page is files on a CDN and our server never sees a byte of content. | "Never transmit the person's content anywhere" survives because nothing is transmitted: the person carries their own content, in their own clipboard, into their own browser tab. |
+| **The site keeps it in sessionStorage at most, gone when the tab closes.** Nothing durable, nothing shared, no analytics on the site — same as the product. | A refresh must not eat a mid-run errand; a closed tab must leave nothing behind. |
+| **Stage C is pre-approved:** myworkbrain.org may join the optional host origins so the same press can fill the page's intake itself (the Tier-1 mechanism against a selector we control). The ask rides the press, per-origin, never at install; denial degrades to the clipboard path that is already done by then. | The store listing must name it when it ships (docs/STORE.md). |
+
 **Still forbidden, unchanged:** anything that measures without being asked,
 anything that reports on its own schedule, and any count of what the person did
 — including local-only. The test in the next section is what separates them: a

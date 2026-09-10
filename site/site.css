@@ -1745,3 +1745,42 @@ main,
   color: color-mix(in srgb, var(--acc, var(--primary)) 78%, var(--ink));
   font-weight: 550;
 }
+
+/* ── 5j: the live Grounds' working surfaces. ── */
+.pg-paste {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--canvas);
+  font: 13px/1.55 var(--font-mono, ui-monospace, monospace);
+  color: var(--ink);
+  resize: vertical;
+}
+.pg-paste:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 1px;
+}
+.pg-prompt {
+  margin: 14px 0 0;
+  padding: 14px 16px;
+  max-height: 220px;
+  overflow: auto;
+  border: 1px solid var(--divider);
+  border-radius: 10px;
+  background: var(--ground);
+  font-size: 12px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.pg-col {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  color: var(--ink-2);
+  white-space: pre-wrap;
+  max-height: 340px;
+  overflow: auto;
+}

@@ -58,8 +58,11 @@ work that gets thrown away and, worse, ships an opinion nobody agreed to.
    never stored" (session-scoped may be arguable; durable is not); (d) a responsive slim-rail
    layout that engages when the person drags the panel narrow. Awaiting Adam's pick.
 
-9. **The Proving Grounds hand-off (Adam, 2026-09-09: "think through the experience… as easy
-   as possible… this is what sells the value").** The thinking is done and laid out in
+9. ~~**The Proving Grounds hand-off.**~~ **RESOLVED 2026-09-09 (Adam: "A then C.
+   sessionStorage-until-tab-close, yes on grounds"):** V1 built in pass 5j (the bundle press
+   + the site's live Context mode), the amendment written into GUARDRAILS, V2 (injection
+   onto our origin) pre-approved for a later slice. Original below.
+   **Original:** The thinking is done and laid out in
    `docs/PROVING-GROUNDS-EXPERIENCE.md`. Four rulings before the build: (a) the written
    hosted-grounds amendment (content may move from the panel into our static page in the
    person's own browser; our server sees nothing — the white paper already reserves the

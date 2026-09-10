@@ -1292,6 +1292,9 @@ export const S = {
   pgVerdict: (value: number, of: number) => `You judged the with-file answer right on ${value} of ${of}.`,
   pgMissingLead: 'What your AI said the file did not cover:',
   pgRefineLead: 'Refine your file - the questions most worth another pass:',
+  /* Pass 5j (OPEN #9 ruled): the one-press road to the site's Grounds. */
+  pgTakeToSite: 'Take it to the Proving Grounds',
+  pgBundleCopied: 'Copied. Paste it on the Grounds page.',
   pgSeeDiff: 'See the two answers side by side',
   /* Pass 4g: Skill Development matures the same way - Create launches the
      skill-building experience, Training is the road to the Grounds, and

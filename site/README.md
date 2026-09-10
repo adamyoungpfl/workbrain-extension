@@ -32,6 +32,27 @@ buttons: add, never rename.**
 | `#download` | Download | store listing fallback |
 | `#privacy` | Privacy & guardrails | trust foot |
 
+## The proof bundle — a second contract
+
+The app's "Take it to the Proving Grounds" press copies ONE text blob and
+the Grounds' intake parses it (`site.js` mirrors
+`src/core/proof/bundle.ts`, where the roundtrip is unit-tested):
+
+```
+===WORKBRAIN PROOF BUNDLE v1===
+===PROMPT===
+<the captured ask, word for word>
+===BASELINE ANSWER===
+<what their AI answered before the file existed>
+===CONTEXT FILE===
+<Context.md, byte for byte>
+===END===
+```
+
+Add fields by adding fences; never rename one. A raw Context.md pasted
+alone is accepted as the file-only degradation. Everything the page holds
+lives in sessionStorage and dies with the tab (Adam's OPEN #9 ruling).
+
 Routing is bidirectional: nav updates the hash, and back/forward works.
 `ROUTES` in `site.js` is the whole list. Unknown slugs fall back to Home.
 

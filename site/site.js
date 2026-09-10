@@ -563,3 +563,99 @@ document.addEventListener('click', (e) => {
   row.parentElement.querySelectorAll('[data-acc]').forEach((r) => r.setAttribute('aria-expanded', 'false'));
   row.setAttribute('aria-expanded', String(!open));
 });
+
+/* ── The live Proving Grounds, Context mode (pass 5j; Adam's OPEN #9
+   ruling). Everything stays in sessionStorage, gone when the tab closes;
+   nothing here fetches, posts, or measures. The bundle format is the
+   contract with src/core/proof/bundle.ts. ── */
+(() => {
+  const HEAD = '===WORKBRAIN PROOF BUNDLE v1===';
+  const F = { p: '===PROMPT===', b: '===BASELINE ANSWER===', f: '===CONTEXT FILE===', e: '===END===' };
+  const $ = (id) => document.getElementById(id);
+  const KEY = 'wbpg:v1';
+
+  const parseBundle = (text) => {
+    const t = String(text ?? '').trim();
+    if (!t.startsWith(HEAD)) return null;
+    const ip = t.indexOf(F.p), ib = t.indexOf(F.b), if_ = t.indexOf(F.f), ie = t.lastIndexOf(F.e);
+    if (ip < 0 || ib < ip || if_ < ib || ie < if_) return null;
+    const cut = (from, fence, to) => t.slice(from + fence.length, to).replace(/^\n/, '').replace(/\n$/, '');
+    return { task: cut(ip, F.p, ib), answer: cut(ib, F.b, if_), file: cut(if_, F.f, ie) };
+  };
+  const looksLikeFile = (text) => /^#{1,2} /m.test(String(text ?? ''));
+
+  const state = () => {
+    try { return JSON.parse(sessionStorage.getItem(KEY) ?? 'null'); } catch { return null; }
+  };
+  const hold = (s) => {
+    try { sessionStorage.setItem(KEY, JSON.stringify(s)); } catch { /* a private window still works, unheld */ }
+  };
+  const show = (el, on) => { if (el) el.style.display = on ? '' : 'none'; };
+
+  const render = () => {
+    const s = state();
+    const baseCard = $('pg-baseline-card');
+    if (!baseCard) return;
+    show(baseCard.querySelector("[data-pg='intake']"), !s);
+    show(baseCard.querySelector("[data-pg='baseline']"), !!(s && s.task));
+    show(baseCard.querySelector("[data-pg='fileonly']"), !!(s && !s.task));
+    show(document.querySelector("#pg-file-card [data-pg='nofile']"), !s);
+    show(document.querySelector("#pg-file-card [data-pg='file']"), !!s);
+    if (s) {
+      if (s.task) {
+        $('pg-task').textContent = '\u201c' + s.task + '\u201d';
+        $('pg-answer').textContent = s.answer;
+      }
+      const kb = (new TextEncoder().encode(s.file).length / 1024).toFixed(1);
+      const sections = (s.file.match(/^## /gm) ?? []).length;
+      $('pg-filemeta').textContent = kb + ' KB \u00b7 ' + sections + ' section' + (sections === 1 ? '' : 's');
+      $('pg-compare').disabled = !s.task;
+    }
+    if (!s) { show($('pg-run'), false); show($('pg-result'), false); }
+  };
+
+  document.addEventListener('click', (e) => {
+    const t = e.target;
+    if (!(t instanceof HTMLElement)) return;
+    if (t.id === 'pg-load') {
+      const raw = $('pg-paste').value;
+      const b = parseBundle(raw);
+      const note = $('pg-parse-note');
+      if (b) { hold(b); note.style.display = 'none'; render(); }
+      else if (looksLikeFile(raw)) { hold({ task: '', answer: '', file: raw.trim() }); note.style.display = 'none'; render(); }
+      else { note.style.display = ''; }
+    }
+    if (t.id === 'pg-clear') { sessionStorage.removeItem(KEY); $('pg-paste').value = ''; render(); }
+    if (t.id === 'pg-compare') {
+      const s = state();
+      if (!s) return;
+      $('pg-prompt').textContent = s.file + '\n\n---\n\n' + (s.task || 'Your ask, word for word.');
+      show($('pg-run'), true);
+      $('pg-run').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+    if (t.id === 'pg-copyprompt') {
+      navigator.clipboard?.writeText($('pg-prompt').textContent).then(() => {
+        t.textContent = 'Copied';
+        setTimeout(() => { t.textContent = 'Copy the with-file prompt'; }, 1600);
+      }, () => {});
+    }
+    if (t.id === 'pg-sidebyside') {
+      const s = state();
+      const withAnswer = $('pg-response').value.trim();
+      if (!s || !withAnswer) return;
+      $('pg-col-base').textContent = s.answer || '(no baseline in this tab)';
+      $('pg-col-with').textContent = withAnswer;
+      const fileWords = new Set((s.file.toLowerCase().match(/[a-z][a-z0-9'-]{4,}/g) ?? []));
+      const lines = withAnswer.split('\n').filter((l) => l.trim());
+      const grounded = lines.filter((l) => {
+        const ws = l.toLowerCase().match(/[a-z][a-z0-9'-]{4,}/g) ?? [];
+        return ws.some((w) => fileWords.has(w));
+      }).length;
+      $('pg-count').textContent = grounded + ' of ' + lines.length + ' lines use words that appear in your file.';
+      show($('pg-result'), true);
+      $('pg-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  });
+
+  render();
+})();

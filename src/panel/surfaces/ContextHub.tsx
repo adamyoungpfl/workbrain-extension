@@ -6,6 +6,7 @@ import { hasBaseline, latestTask } from '../../core/report/runs';
 import { downloadContextFile, downloadWorkbrainFolder } from './FileActions';
 import { generateContextFile } from '../../core/files/generate';
 import { recommend, topRecommendations } from '../../core/recommend/engine';
+import { buildProofBundle } from '../../core/proof/bundle';
 import { recommendationCopy } from '../components';
 import { NO_DISMISSALS } from '../../core/recommend/dismissals';
 import { contextModules, contextOutline } from '../../core/flow/flow';
@@ -271,6 +272,34 @@ export function ContextHub({ onBack, onBaseline, onEdit, onResume, onProve, onOp
 
         {/* The 4g skill lane moved HOME to Skill Development's own Proving
             Grounds in pass 4i - this page proves the context file only. */}
+        {/* Pass 5j (Adam's OPEN #9 ruling): the road to the SITE's Grounds
+            - one press copies the proof bundle (ask, baseline answer,
+            file) to their clipboard and opens the page; one paste there
+            and the head-to-head runs full-screen. The bundle moves by
+            clipboard on their own press and the page transmits nothing -
+            the hosted-grounds amendment (GUARDRAILS) is its charter. */}
+        {baselineRun && contextStarted && (
+          <button
+            type="button"
+            className="ctxhub-file-act"
+            onClick={() => {
+              const bundle = buildProofBundle({
+                task: baselineRun.task,
+                answer: baselineRun.answer,
+                file: generateContextFile(answers, new Date().toISOString()),
+              });
+              navigator.clipboard?.writeText(bundle).then(
+                () => {
+                  setToast(S.pgBundleCopied);
+                  window.open('https://myworkbrain.org/#proving-grounds', '_blank', 'noopener');
+                },
+                () => {},
+              );
+            }}
+          >
+            {S.pgTakeToSite}
+          </button>
+        )}
 
         {/* The analysis, once a with-file run stands beside the baseline:
             their own verdict, what the AI admitted it lacked, and the
