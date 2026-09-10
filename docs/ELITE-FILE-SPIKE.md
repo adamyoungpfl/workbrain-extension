@@ -451,8 +451,17 @@ The requirements it sets:
 2. ~~**Naming**~~ **RESOLVED 2026-09-10: ratified as written** —
    Started / Good / Great, "elite file" as the held-over-time epithet
    (see §1's naming note for the full ruling).
-3. **Objective retrofit:** existing skills without an Objective — prompt
-   to add on next edit (recommended), or leave until touched.
+3. ~~**Objective retrofit**~~ **RESOLVED 2026-09-10: the full loop** —
+   three quiet paths, zero interrupts. Editing an existing skill opens
+   objective-first; the ladder surface names missing objectives as the
+   next thing Great needs; and the Grounds door for an objective-less
+   skill asks for one before proving (it cannot score without one — a
+   fact, not a policy). Nobody is stopped, everybody is invited, and
+   the nudge and the definition cannot disagree. Pack skills are
+   exempt: referenced read-only (OPEN #3's default), their objective
+   is the pack author's to write. An objective-less skill stays valid
+   in the file — the generator simply omits the line, degradation
+   silent as always.
 4. **The grounding-rule pair** (red team #8): approve the two lines and
    they are the first build after this spike.
 5. **The public version:** this doc is internal grammar. The
