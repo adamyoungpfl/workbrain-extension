@@ -57,3 +57,13 @@ work that gets thrown away and, worse, ships an opinion nobody agreed to.
    already uses — which needs a ruling against ARCHITECTURE's "which surface you are on is
    never stored" (session-scoped may be arguable; durable is not); (d) a responsive slim-rail
    layout that engages when the person drags the panel narrow. Awaiting Adam's pick.
+
+9. **The Proving Grounds hand-off (Adam, 2026-09-09: "think through the experience… as easy
+   as possible… this is what sells the value").** The thinking is done and laid out in
+   `docs/PROVING-GROUNDS-EXPERIENCE.md`. Four rulings before the build: (a) the written
+   hosted-grounds amendment (content may move from the panel into our static page in the
+   person's own browser; our server sees nothing — the white paper already reserves the
+   seat); (b) confirm the staging: V1 = one-press bundle-to-clipboard + one paste on the
+   site, V2 = Tier-1-style injection onto myworkbrain.org (zero pastes); (c) site retention:
+   recommend sessionStorage-until-tab-close, never more; (d) the in-app Grounds stay whole
+   beside the site's (recommended) or slim to a door.
