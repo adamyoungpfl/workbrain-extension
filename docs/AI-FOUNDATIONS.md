@@ -64,7 +64,121 @@ calibrations, marked:
    "you will sound perfectly you with zero effort." The pitch that
    overpromises voice gets falsified by the customer's first draft.*
 
-## 2 · The red team — counterpoints to hold, by audience
+## 2 · The lens — how it reads you (Adam's extension, assessed and held)
+
+Adam, 2026-09-10: make the case, *if it is defensible*, that the same
+challenge that makes the writing vanilla also makes the lens it reads
+through less able to draft and interpret for you.
+
+**Verdict: defensible — and in one way stronger than the output claim
+— with two calibrations that keep it honest.**
+
+**The case.** Interpretation is prediction too. Reading and writing are
+the same operation — conditional probability — run in opposite
+directions, so the same bet on the average that flattens the output
+also flattens the reading: given your words, the model lands on the
+most likely meaning, which is the average reader's meaning, not
+necessarily yours. The receipts are better on this side than on the
+homogenization side, and three of the four are already in our white
+paper's reference list:
+
+- Rewording alone — same task, same meaning — swings measured accuracy
+  by up to 76 points (Sclar et al., ICLR 2024; paper ref [33]). The
+  lens is that sensitive to surface form.
+- Paraphrase reorders which model is even best (Mizrahi et al., TACL
+  2024; ref [34]). There is no stable reading, only readings.
+- The model structurally under-reads the middle of what you hand it
+  (Liu et al., TACL 2024; ref [21]). Reading is not neutral ingestion.
+- Models measurably misread — and covertly penalize — non-standard
+  dialects (Hofmann et al., *Nature* 2024). For the civic audience
+  this is the sharpest line in the whole argument: the lens does not
+  read everyone equally well, and it reads some communities worst.
+
+**Calibration one — the failure is silent, not gross.** These systems
+read well in absolute terms; the pitch cannot claim otherwise without
+losing every technical listener. The defensible claim is sharper: the
+lens silently misreads the NON-AVERAGE parts — your shorthand, your
+priorities, your names, your atypical-but-load-bearing details — which
+are exactly the parts that are most you. And a misreading never
+announces itself: you get a confident answer to a question you didn't
+ask.
+
+**Calibration two — the fix-story is stronger here, and we should say
+so.** Context helps interpretation MORE reliably than it helps voice.
+Grounding your names, audiences, and settled decisions is precisely
+what context is for — the five-minute test's "uses your names" line is
+a reading test before it is a writing test. So the extension improves
+the product case: **the file is a reading aid first.** Before the
+machine writes for you, it reads you — and the file decides as what.
+
+**The compounding twist (the memory-lens loop).** Vendor memory is
+itself the model's *reading* of you, stored. A misreading written to
+memory becomes part of the lens for every later reading — a lens
+ground wrong, then used to grind the next one. This is the argument's
+cleanest sentence: **a memory you didn't author is a lens you can't
+focus.**
+
+## 3 · "Their memories of me" — the honest ledger
+
+Adam's order: exhaustive on the benefits AND the risks of relying only
+on vendor memory. Both columns argued in full — the benefits column is
+what makes the risks column believable.
+
+### What their memory genuinely does well
+
+1. **Zero effort.** It fills itself; the person does nothing. For the
+   majority who will never author anything, this is not a small good.
+2. **Always on, everywhere you are** — continuity across chats without
+   a ritual.
+3. **The mundane, reliably:** tone preferences, recurring facts, the
+   thing you told it last Tuesday.
+4. **Temporal updating.** It notices changes you would forget to
+   record (OpenAI's "dreaming" updates a trip from planned to taken).
+   Authored files go stale; inferred memory refreshes itself.
+5. **Breadth you wouldn't author.** It sees patterns across everything
+   you do there — including useful ones you'd never think to write.
+6. **Free, and frictionless by design.** The comparison must concede
+   this or lose the room.
+
+### What relying on ONLY it costs
+
+1. **Inferred, never confirmed.** No draft you approved, no reflect
+   step, no "is this right?" Ever.
+2. **It rewrites itself.** A memory verified in March reads differently
+   in September with no action from you (paper §3.5). Not an
+   append-only log — a mutable representation.
+3. **The lens loop (§2).** Memory is the model's reading of you; its
+   misreadings condition every future reading. Errors don't sit —
+   they compound.
+4. **Selection by their salience.** It keeps what serves its
+   objectives, not what's load-bearing to yours — the Mirror's
+   "what's missing" finding, every time.
+5. **Ungoverned.** On by default; at Microsoft: exempt from retention
+   policy, not audit-logged, not restrictable in content — their own
+   documentation. No published precedence: when memory and your
+   instruction disagree, no vendor will tell you which wins (A.5).
+6. **Not portable, and not always yours.** One vendor of five
+   documents export; at Perplexity Enterprise the memories belong to
+   the organization and leave with your badge. Switching assistants
+   is amnesia — which is the moat, and the moat is made of you.
+7. **No clock.** No dates surfaced, no half-lives, no drift warnings —
+   the stale you shadows the current you indefinitely.
+8. **Context bleed.** Account-scoped memory surfaces where it
+   shouldn't — the job search mentioned in the shared-screen work
+   chat; the inferred sensitive attribute you never stated.
+9. **The feedback flattening.** A profile inferred from AI-assisted
+   interactions increasingly describes your AI-assisted self — the
+   average feeding back as "you."
+10. **Shaped by a vested interest.** The character drawn of you serves
+    the company drawing it — retention, engagement, upsell. (Adam's
+    original line, held: it survives the MCP correction untouched.)
+
+**The ledger's one-line close (deck slide 07):** use it — and never
+rely on *only* it. Their memory is good at the mundane; the risks live
+exactly where the stakes are: identity, judgment, voice, and the
+atypical parts that make you worth reading correctly.
+
+## 4 · The red team — counterpoints to hold, by audience
 
 ### Program leaders (civic funders, directors)
 
@@ -75,12 +189,13 @@ calibrations, marked:
 | "Voice is a luxury. My job seekers need resumes NOW." | For job seekers sameness is fatal *specifically*: every applicant now submits AI-polished materials, and screeners pattern-match the house style. Differentiation is not a luxury on top of the outcome — it IS the outcome. |
 | "Isn't this prompt engineering with extra steps?" | Prompt courses teach phrasing that doesn't transfer (paper §10); this teaches an owned artifact that does. The five-minute test is the difference, live, in the room. |
 | "You teach people not to sound like Claude… using Claude." | Yes — the same way writing class uses a word processor. The tool drafts; the file and the person decide. That is the improve-not-replace line, and it must arrive EARLY in every telling, or the position reads self-contradictory. |
+| "AI already understands me fine — its answers are great." | Rewording alone swings measured accuracy 76 points, and the misreads are silent — a confident answer to a question you didn't ask. The parts it misreads are the non-average parts: exactly the ones that are most you. (§2's receipts.) |
 
 ### Business and personal users (the ones who need the jar)
 
 The jar is never doom — it is **their own data**. Two devices, in order:
 
-1. **The Mirror** (§3): "Open your AI's memory page. Read what it
+1. **The Mirror** (§5): "Open your AI's memory page. Read what it
    believes about you. Who wrote that person?" The wrongness and the
    gaps do the persuading; we just point.
 2. **The sameness question:** "Your competitor's proposal was written
@@ -104,7 +219,7 @@ The file costs an hour once; the discount is forever.
   concede it cheerfully. The file exists for the writing that carries
   your name.
 
-## 3 · The Mirror — the exercise, formalized
+## 5 · The Mirror — the exercise, formalized
 
 Already half-present in the civic privacy section ("sessions do teach
 participants to inspect what their AI assistant has already stored");
@@ -131,7 +246,7 @@ to /good.
 channels are not fully inspectable (paper §3.5). Say so in the
 exercise: "and this is only the part they show you."
 
-## 4 · The extractor — scoped, with the pushback attached
+## 6 · The extractor — scoped, with the pushback attached
 
 **The idea:** turn the Mirror's dossier into the starting point for a
 Workbrain file.
@@ -165,7 +280,7 @@ promise. **RATIFIED 2026-09-10 (Adam: "Agreed on push back on Pro and
 one time seed"):** the one-time seed is free; the ongoing memory
 audit is the Workbrain+ feature.
 
-## 5 · Where each piece lands
+## 7 · Where each piece lands
 
 | Piece | Surface | When |
 |---|---|---|
@@ -177,7 +292,7 @@ audit is the Workbrain+ feature.
 | The memory audit (paid) | Workbrain+ | with Plus, not before |
 | The objection table | This doc; civic host packet FAQ; Adam's pocket | now |
 
-## 6 · Adam's calls out of this pass
+## 8 · Adam's calls
 
 1. **Ratify the MCP→memory correction** (the deck already reflects it).
 2. ~~**Free seed / paid audit split**~~ **RATIFIED 2026-09-10** —
