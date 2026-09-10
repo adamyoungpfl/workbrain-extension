@@ -2,5 +2,9 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "buildCommand": "",
   "outputDirectory": "site",
-  "cleanUrls": true
+  "cleanUrls": true,
+  "rewrites": [
+    { "source": "/civic", "destination": "/index.html" },
+    { "source": "/roadmap", "destination": "/index.html" }
+  ]
 }

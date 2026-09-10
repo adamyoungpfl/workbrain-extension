@@ -15,7 +15,8 @@
     'proving-grounds',
     'workbrain-plus',
     'services',
-    'civics-accelerator',
+    'civic',
+    'roadmap',
     'download',
     'privacy',
   ];
@@ -25,7 +26,14 @@
 
   function currentRoute() {
     var slug = (window.location.hash || '').replace(/^#\/?/, '').split('?')[0];
-    return ROUTES.indexOf(slug) > -1 ? slug : 'home';
+    if (slug === 'civics-accelerator') slug = 'civic'; /* retired anchor — the
+      client-side 301 (fragments never reach a server) */
+    if (ROUTES.indexOf(slug) > -1) return slug;
+    /* Grant applications cite myworkbrain.org/civic as a real URL; vercel.json
+       rewrites those paths here, and the hash (set by any later click) wins. */
+    var path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+    if (ROUTES.indexOf(path) > -1) return path;
+    return 'home';
   }
 
   function show(route) {
@@ -44,7 +52,9 @@
     document.title =
       route === 'home'
         ? 'Workbrain — a context file for your AI'
-        : 'Workbrain — ' + route.replace(/-/g, ' ');
+        : route === 'civic'
+          ? 'Workbrain Civic Accelerator'
+          : 'Workbrain — ' + route.replace(/-/g, ' ');
     sizeCover();
     drawCover(performance.now() / 1000);
   }

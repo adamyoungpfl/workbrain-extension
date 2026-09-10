@@ -5,7 +5,7 @@ dependencies — open `index.html` in a browser and it runs.
 
 ```
 site/
-  index.html   all ten pages, one document; pages are swapped by the router
+  index.html   all eleven pages, one document; pages are swapped by the router
   site.css     tokens + components, mirroring the extension's design/tokens.json
   site.js      hash router, scroll field, white-paper cover, Proving Grounds
 ```
@@ -31,7 +31,8 @@ buttons: add, never rename.**
 | `#services` | T.I.M. services | "Talk to a person" |
 | `#download` | Download | store listing fallback |
 | `#privacy` | Privacy & guardrails | trust foot |
-| `#civics-accelerator` | Civics Accelerator | (no app caller yet — site-first) |
+| `#civic` — also served at `/civic` | Civic Accelerator | (no app caller yet — site-first) |
+| `#roadmap` — also `/roadmap` | Roadmap | — |
 
 ## The proof bundle — a second contract
 
@@ -53,6 +54,12 @@ the Grounds' intake parses it (`site.js` mirrors
 Add fields by adding fences; never rename one. A raw Context.md pasted
 alone is accepted as the file-only degradation. Everything the page holds
 lives in sessionStorage and dies with the tab (Adam's OPEN #9 ruling).
+
+`#civics-accelerator` is a retired legacy anchor: the router maps it to
+`civic` client-side (a fragment never reaches a server, so this is the 301).
+`/civic` and `/roadmap` are real paths — grant applications cite them —
+rewritten to `index.html` by `vercel.json`; the router reads the pathname
+when no hash is set.
 
 Routing is bidirectional: nav updates the hash, and back/forward works.
 `ROUTES` in `site.js` is the whole list. Unknown slugs fall back to Home.
@@ -97,8 +104,15 @@ Placeholder — replace before launch:
   objectives, outputs and criteria. The shapes are what the UI expects; wire
   them to the real run endpoint when the hosted environment lands.
 - **Booking.** Static slots; needs the Cal.com embed.
-- **Civics interest form.** Static; needs a real destination (email or form
-  backend) before it can accept inquiries.
+- **Civic cohort request form.** Static; needs a real destination (email or
+  form backend) before it can accept inquiries.
+- **Civic program packet + curriculum summary.** Promised in the reply to a
+  cohort request; the PDF does not exist yet (see
+  `docs/CIVIC-IMPLEMENTATION-NOTES.md` §4.1 and §4.11 — the hero's second
+  button returns when it does).
+- **Civic cost figures.** The $4,800 cohort table holds placeholder numbers
+  in the real shape; §4.10's instruction is real figures, so replace them,
+  never remove the section.
 
 ## The background
 
