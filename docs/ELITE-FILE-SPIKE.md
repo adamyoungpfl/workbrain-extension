@@ -245,6 +245,9 @@ this is the one true **pre-builder blocker**: question design depends
 on whether an answer knows which life it belongs to.
 **Interim honesty:** today's design serves the one-job person well and
 the many-hatted person with a compromise nobody chose.
+**RESOLVED 2026-09-10 (docs/FACET-DECISION.md): multi-profile, named
+"Brains"** — one full Answers set per life via the answersKey seam, the
+first brain on the legacy keys unmigrated. The blocker is cleared.
 
 ### 2 · The person in transition — the civic core
 
@@ -439,11 +442,10 @@ The requirements it sets:
 
 ## 7 · Adam's calls
 
-1. **The facet decision (blocks the builders):** domain-tagged answers
-   with scoped exports, or multi-profile storage, or explicitly ship V1
-   as the one-life file with the compromise named. This is the red
-   team's one structural finding; everything else is question and copy
-   work inside the existing shape.
+1. ~~**The facet decision (blocks the builders)**~~ **RESOLVED
+   2026-09-10: multi-profile, named "Brains"** — the full ruling and
+   build contract live in `docs/FACET-DECISION.md`. The builders are
+   unblocked.
 2. **Naming:** Good / Great / "elite file" as used here — ratify or
    rename.
 3. **Objective retrofit:** existing skills without an Objective — prompt
