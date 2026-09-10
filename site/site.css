@@ -518,7 +518,8 @@ main,
 }
 .page--hero {
   padding-top: 52px;
-  padding-bottom: 116px;
+  /* 5l: the doors follow on a natural scroll, not after a chasm. */
+  padding-bottom: 44px;
 }
 .band {
   padding-top: 96px;
