@@ -6,7 +6,7 @@
 <title>AI Foundations — Your voice is the product</title>
 <style>
   /* Workbrain deck — self-contained; tokens mirror site/site.css.
-     Present with ← → (or space / click edges). Pass 5y. */
+     Present with ← → (or space / click edges). Pass 6b — owner-facing cut; script in ai-foundations-script.md. */
   :root {
     --field: #070a12; --ink: #e8edf9; --ink-2: #a6b6dc; --ink-3: #6b7a9c;
     --primary: #6f92ff; --green: #4fc48b; --green-deep: #7fe0ae;
@@ -46,155 +46,174 @@
   .brand b { color: var(--ink-2); }
   .hint { position: fixed; right: 26px; top: 20px; font-size: 12px; color: var(--ink-3); }
   @media (max-width: 760px) { .cols, .cols3 { grid-template-columns: 1fr; } .slide { padding: 6vh 7vw; overflow-y: auto; justify-content: flex-start; } }
+  .gotcha { font-size: 17px; line-height: 1.5; font-weight: 650; color: #ffffff; margin: 0; }
+  .gotcha em { color: var(--ink-2); font-style: normal; font-weight: 500; display: block; margin-top: 10px; font-size: 14px; }
 </style>
 </head>
 <body>
 
 <section class="slide on">
   <p class="eyebrow">AI Foundations · Workbrain by Model Citizen</p>
-  <h1>Your voice is<br>the <span class="em">product.</span></h1>
-  <p class="lead">Why authored context is worth teaching, worth funding, and worth owning — in eleven slides and one uncomfortable mirror.</p>
-  <p class="fine">myworkbrain.org/good · the standard this deck stands on</p>
+  <h1>Your people's voice<br>is the <span class="em">product.</span></h1>
+  <p class="lead">A ten-minute case for giving your team or community authored AI context — price up front, no follow-up funnel. Take it or leave it; either way, keep slide seven.</p>
+  <p class="fine">$4,800 funds one cohort of 16–20 of your people · attendees never pay · myworkbrain.org/civic</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow blue">01 · The trick behind the magic</p>
-  <h1>The cat sat on the <span class="blank mono">&nbsp;___&nbsp;</span></h1>
-  <p class="lead">An AI assistant is <strong>autocomplete at scale</strong>: it predicts the most likely next word, learned from everyone's writing at once. That's a toy description — and the toy captures the one thing that matters.</p>
-  <p class="fine">Yes, it's a simplification. It's the honest kind: the kind an expert in the room nods at.</p>
+  <h1>Hope this email finds you <span class="blank mono">&nbsp;___&nbsp;</span></h1>
+  <p class="lead">You filled that in before I finished the sentence. <strong>So does the machine — for every word it writes.</strong> The AI your people just adopted is autocomplete at scale: it continues with what most people say.</p>
+  <p class="fine">A simplification an expert accepts: predicting the most likely next word is the literal training objective.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow blue">02 · The objective, plainly</p>
-  <h1>The machine always bets on <span class="em">average.</span></h1>
-  <p class="lead">Not a bug. Not a defect. It is the <strong>definition of the objective</strong>: the most likely word is, by construction, the most common one. Everything else in this deck follows from that sentence.</p>
+  <h1>It always bets on <span class="em">average.</span></h1>
+  <p class="lead">Not a flaw — the definition. The most likely word is the most common one, so every draft it hands your people <strong>starts life as the most common version of the thought.</strong></p>
 </section>
 
 <section class="slide">
   <p class="eyebrow blue">03 · The other direction</p>
-  <h1>It <span class="em">reads</span> the same way it writes.</h1>
-  <p class="lead">Interpretation is prediction too. Given your words, it lands on the <strong>most likely meaning — the average reader's meaning</strong>, not necessarily yours. What it misreads is the non-average part: your shorthand, your priorities, your names. The parts that are most you. And the misread is silent — you get a confident answer to a question you didn't ask.</p>
-  <p class="fine">Rewording alone swings measured accuracy by up to 76 points (Sclar et al., ICLR 2024). Models measurably misread — and covertly penalize — non-standard dialects (Hofmann et al., Nature 2024). The lens does not read everyone equally well.</p>
+  <h1>And it <span class="em">reads</span> them the same way.</h1>
+  <p class="lead">Interpretation is prediction too: handed your analyst's request, it lands on the most likely meaning — the <strong>average asker's</strong> meaning. What it misreads is exactly what you pay people for: their judgment, their shorthand, what they know that the average person doesn't. And the misread is silent — a confident answer to a question nobody asked.</p>
+  <p class="fine">Rewording alone swings measured accuracy up to 76 points (Sclar et al., ICLR 2024). Models misread — and covertly penalize — non-standard dialects (Hofmann et al., Nature 2024). It does not read all of your people equally well.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow amber">04 · You've seen this movie</p>
   <h1>Cookies: a file about you,<br>written by someone else.</h1>
-  <p class="lead">For twenty years the web kept a profile of you <strong>that you never wrote, rarely saw, and couldn't edit</strong> — built for someone else's goals. We regulated it, blocked it, and mostly learned to hate it.</p>
+  <p class="lead">Twenty years of profiles <strong>nobody authored, built for someone else's goals.</strong> Your customers hated it. Your people hated it. We ended up regulating it.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow amber">05 · The sequel</p>
-  <h1>AI memory is the <span class="em">super cookie.</span></h1>
+  <h1>Every one of your people<br>already has the <span class="em">sequel.</span></h1>
   <ul class="receipts">
-    <li><strong>On by default</strong> on all five major services surveyed.</li>
+    <li><strong>On by default</strong> on all five major AI services surveyed.</li>
     <li><strong>Inferred, not authored</strong> — and it rewrites itself over time (OpenAI calls the process "dreaming").</li>
     <li>At Microsoft: <strong>exempt from retention policy, not audit-logged, not restrictable</strong> — their own documentation.</li>
-    <li>At Perplexity Enterprise: your memories <strong>belong to the organization</strong>, not you.</li>
+    <li>At Perplexity Enterprise: memories <strong>belong to the organization</strong> — and walk out when the person does? No: access does.</li>
   </ul>
-  <p class="fine">Every receipt cited in "Durable Context" (Young, 2026) — myworkbrain.org/#white-paper. A reflection of you, shaped by a company with a vested interest in how your character is drawn.</p>
+  <p class="fine">Receipts cited in "Durable Context" (Young, 2026) — myworkbrain.org. Company work is being drafted through profiles nobody at your organization authored, audited, or can read in full.</p>
 </section>
 
 <section class="slide">
-  <p class="eyebrow">06 · The mirror — do this now</p>
-  <h1>Open your AI's memory page.<br>Read what it believes about you.</h1>
+  <p class="eyebrow">06 · Try this in the next five minutes</p>
+  <h1>Ask your assistant<br>three questions.</h1>
   <div class="cols3">
-    <div class="panel"><p class="k" style="color:var(--green-deep)">WHERE</p><p style="margin-top:8px">Claude: Settings → memory · ChatGPT: memory summary · Gemini: Saved Info · Copilot: personalization · Perplexity: Settings</p></div>
-    <div class="panel"><p class="k" style="color:var(--amber)">ASK YOURSELF</p><p style="margin-top:8px">What's wrong? What's missing that is critical to how you actually work? <strong style="color:var(--ink)">Who wrote this version of you?</strong></p></div>
-    <div class="panel"><p class="k" style="color:var(--primary)">PRIVATELY</p><p style="margin-top:8px">Your screen, your eyes. Share counts if you like ("three wrong, two missing") — never contents. And remember: this is only the part they show you.</p></div>
+    <div class="panel"><p class="gotcha">"What do you remember about me?"<em>Then count what's flat wrong.</em></p></div>
+    <div class="panel"><p class="gotcha">"Describe how I communicate."<em>See if you recognize the person it describes.</em></p></div>
+    <div class="panel"><p class="gotcha">"What matters most in my work?"<em>Watch it answer with everyone's answer.</em></p></div>
   </div>
+  <p class="fine">Run them on your own account tonight — your people's assistants hold the same kind of file on each of them. Where each service keeps its memory page: the appendix, last slide.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow amber">07 · Relying on only their memory</p>
   <h1>The honest ledger.</h1>
   <div class="cols">
-    <div class="panel"><h3 style="color:var(--green-deep)">What it does well</h3><p>Zero effort — it fills itself. Continuity across chats. The mundane, reliably: tone, recurring facts. It even updates things you'd forget to record. Concede all of this; it's true.</p></div>
-    <div class="panel"><h3 style="color:var(--danger)">What it cannot do</h3><p>Confirm anything with you. Tell you when it rewrote itself. Carry to another assistant. Read your atypical as anything but noise. Serve your goals over its maker's.</p></div>
+    <div class="panel"><h3 style="color:var(--green-deep)">What it does well for your people</h3><p>Zero effort — it fills itself. Continuity across chats. The mundane, reliably: tone, recurring facts, updates nobody would think to record. Concede all of it; it's true.</p></div>
+    <div class="panel"><h3 style="color:var(--danger)">What it cannot do</h3><p>Confirm anything with them. Tell anyone when it rewrote itself. Move to another assistant. Read their atypical as anything but noise. Serve your organization's goals over its maker's.</p></div>
   </div>
-  <p class="lead" style="margin-top:36px">Use it — and never rely on <strong>only</strong> it. Their memory is the model's <em>reading</em> of you, stored: every misread conditions the next one. <strong>A memory you didn't author is a lens you can't focus.</strong></p>
+  <p class="lead" style="margin-top:36px">Let them use it — and never rely on <strong>only</strong> it. Their memory is the model's <em>reading</em> of your people, stored: every misread conditions the next. <strong>A memory nobody authored is a lens nobody can focus.</strong></p>
 </section>
 
 <section class="slide">
-  <p class="eyebrow red">08 · The quiet risk</p>
-  <h1>Everyone's <span class="em">average.</span></h1>
-  <p class="lead">The evidence so far: AI assistance lifts individual output while <strong>shrinking collective diversity</strong> — we each get better, and we all get more alike. Models trained on model output drift toward the center. The most likely becomes, more and more, the only.</p>
-  <p class="fine">Doshi &amp; Hauser, Science Advances 2024 · Padmakumar &amp; He, ICLR 2024 · Shumailov et al., Nature 2024. This is a measured trajectory, not a prophecy — and it is early. We say so.</p>
+  <p class="eyebrow red">08 · The measured risk</p>
+  <h1>Individually faster.<br>Collectively <span class="em">identical.</span></h1>
+  <p class="lead">The research result on AI assistance: each person's output improves, and <strong>the group's diversity shrinks.</strong> Ten proposals start reading like one proposal, written ten times.</p>
+  <p class="fine">Doshi &amp; Hauser, Science Advances 2024 · Padmakumar &amp; He, ICLR 2024 · Shumailov et al., Nature 2024. A measured trajectory, early — we say so out loud.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow red">09 · What it costs</p>
-  <h1>The day they feel<br>the template.</h1>
-  <p class="lead">Right now, AI makes you faster — and maybe early. The gain inverts the first time a reader recognizes the cadence: the familiar rhythm, the same five favorite words. <strong>The ease you gained is repaid from your credibility</strong> — and credibility discounts everything that comes after.</p>
+  <h1>The day a client<br>feels the template.</h1>
+  <p class="lead">The gains are real right now. They invert the first time a customer recognizes the cadence — and <strong>the discount lands on your brand, not on the tool.</strong> Ease is repaid from credibility, with interest.</p>
 </section>
 
 <section class="slide">
-  <p class="eyebrow red">10 · One question for any business room</p>
+  <p class="eyebrow red">10 · One question</p>
   <h1>Your competitor's proposal was written by the <span class="em">same model</span> as yours.</h1>
-  <p class="lead"><strong>What exactly is your edge?</strong></p>
+  <p class="lead"><strong>What exactly is the difference?</strong> Your next client is already asking.</p>
 </section>
 
 <section class="slide">
-  <p class="eyebrow violet">11 · The choice that isn't</p>
+  <p class="eyebrow violet">11 · The two default policies</p>
   <div class="cols">
-    <div class="panel"><h3>Reject AI</h3><p>Keep your voice, lose the leverage. Watch the people who didn't reject it move faster than you, forever.</p></div>
-    <div class="panel"><h3>Surrender to it</h3><p>Keep the leverage, lose the voice. Sound a little more like everyone else every month, and call it productivity.</p></div>
+    <div class="panel"><h3>Ban it</h3><p>They use it anyway — personal accounts, in the dark, unmanaged. You lose the leverage AND the oversight.</p></div>
+    <div class="panel"><h3>Let it run</h3><p>Unmanaged adoption converges everyone on the house style. You keep the leverage and quietly spend the voice.</p></div>
   </div>
-  <p class="lead" style="margin-top:36px">Both doors are losses. There is a third one.</p>
+  <p class="lead" style="margin-top:36px">Both defaults are losses. There is a managed third way.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow">12 · The third way</p>
-  <h1>Author your own context.<br><span class="em">Improve</span> what you do.<br>Don't replace it.</h1>
-  <p class="lead">A plain-text file <strong>you wrote</strong>, on <strong>your device</strong>, handed to whatever assistant you already use. Your names, your judgment, your voice — as the ground the machine stands on, instead of the average.</p>
+  <h1>Authored context.<br><span class="em">Improve</span> what they do.<br>Don't replace it.</h1>
+  <p class="lead">Each person writes their own file — their names, their judgment, their voice — and hands it to whatever assistant they already use. <strong>Plain text they own. Nothing routed through us.</strong> The machine finally reads and writes from who they are, instead of the average.</p>
 </section>
 
 <section class="slide">
-  <p class="eyebrow">13 · And it's measurable</p>
+  <p class="eyebrow">13 · What you can verify</p>
+  <h1>Numbers, not testimonials.</h1>
   <div class="cols3">
-    <div class="panel"><h3>The file</h3><p>Owned, portable, dated — and it defends itself: it tells the assistant its own age, and that it outranks anything the vendor "remembers."</p></div>
-    <div class="panel"><h3>The test</h3><p>Five minutes, four checks, no judgment call anywhere in it. Paste the file, ask for your usual work, type nothing else.</p></div>
-    <div class="panel"><h3>The proof</h3><p>The same ask, before and after, side by side — scored, kept, yours to show a skeptic.</p></div>
+    <div class="panel"><h3>The file</h3><p>Owned, dated, portable — and it defends itself: it tells the assistant its own age and that it outranks the vendor's "memories."</p></div>
+    <div class="panel"><h3>The test</h3><p>Five minutes, four checks, no judgment call in it. Any skeptic on your staff can run it.</p></div>
+    <div class="panel"><h3>The proof</h3><p>Each person's before-and-after on their own work — kept, reportable, with response rates attached.</p></div>
   </div>
-  <p class="fine">The full standard — Started · Good · Great, and the six claims we invite you to attack — is public: <span class="mono">myworkbrain.org/good</span></p>
+  <p class="fine">The full standard — and the six claims we invite you to attack — is public: <span class="mono">myworkbrain.org/good</span></p>
 </section>
 
 <section class="slide">
-  <p class="eyebrow">14 · Where this runs</p>
-  <h1>Four evenings.<br>Free to attend.<br><span class="em">Your building.</span></h1>
-  <p class="lead">The <strong>Workbrain Civic Accelerator</strong>: cohorts of 16–20, hosted by organizations a community already trusts. Everyone leaves with files they own and a proof they ran with their own eyes. Hosts and sponsors fund it; attendees never pay.</p>
-  <p class="fine">The program, the agreement, and the numbers: <span class="mono">myworkbrain.org/civic</span> · The tool itself: free forever, no account, nothing transmitted.</p>
+  <p class="eyebrow">14 · The offer, priced</p>
+  <h1>$4,800. Four evenings.<br>16–20 of your people.</h1>
+  <p class="lead">That funds everything — facilitation, materials, loaner devices, certificates, and follow-up reporting at 90 and 180 days. <strong>Attendees never pay. The tool is free forever after</strong> — no license, no seat fee, nothing that expires when the program ends.</p>
+  <p class="fine">Taster sessions and team formats exist; the packet has details. We do not sell to participants — not during, not after. General liability carried; facilitators background-checked; documentation on request.</p>
 </section>
 
 <section class="slide">
-  <p class="eyebrow">15 · The ask</p>
-  <h1>Host a cohort.<br>Run the mirror.<br>Take the test.</h1>
-  <p class="lead">Program leaders: bring the Accelerator to your community — <span class="mono" style="color:var(--green-deep)">myworkbrain.org/civic</span>. Everyone else: open your AI's memory page tonight, then take the five-minute test at <span class="mono" style="color:var(--green-deep)">myworkbrain.org/good</span>.</p>
-  <p class="fine">Workbrain · by Model Citizen · model-citizen.org</p>
+  <p class="eyebrow">15 · One decision</p>
+  <h1>Take it, or keep<br>the questions.</h1>
+  <p class="lead">If this is for your people: request a cohort at <span class="mono" style="color:var(--green-deep)">myworkbrain.org/civic</span> — the packet, the agreement, and dates come back within two business days. If it isn't: keep slide seven's three questions, run them at your next staff meeting, and we're glad you came. <strong>There is no follow-up sequence.</strong></p>
+  <p class="fine">Workbrain · by Model Citizen · the standard at myworkbrain.org/good</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow violet">Appendix A · Push back on us</p>
   <div class="qa">
-    <div><p class="q">"Homogenization is speculative."</p><p class="a">The frontier of it, yes — we cite the studies and say "early." What is not speculative: memory-on-by-default, unauthored profiles, and the before/after delta each participant measures on their own work. The argument never rests its weight on the scary slide.</p></div>
-    <div><p class="q">"This sounds anti-AI. We fund adoption."</p><p class="a">The program is four evenings of hands-on building with each person's own assistant. The foundations hour exists so the adoption is informed. We teach use — the warning is the seatbelt, not the car.</p></div>
-    <div><p class="q">"Voice is a luxury; my job seekers need resumes now."</p><p class="a">Every applicant now submits AI-polished materials, and screeners pattern-match the house style. For job seekers, sameness is not a luxury problem — it is the rejection reason. Differentiation is the outcome.</p></div>
+    <div><p class="q">"The homogenization risk is speculative."</p><p class="a">The frontier of it, yes — we cite the studies and say "early." Not speculative: memory-on-by-default, unauthored profiles, and the before/after delta your own people measure on their own work. The case never rests its weight on the scary slide.</p></div>
+    <div><p class="q">"This sounds anti-AI. We're trying to drive adoption."</p><p class="a">The program is four evenings of hands-on building with each person's own assistant. The foundations hour exists so the adoption is informed. We teach use — the warning is the seatbelt, not the car.</p></div>
+    <div><p class="q">"My people need output now, not voice."</p><p class="a">Everyone's output is now AI-polished, and readers pattern-match the house style — in hiring, in sales, in grants. When output is table stakes, the differentiator IS whose voice survives. That's an output argument, not a taste argument.</p></div>
   </div>
 </section>
 
 <section class="slide">
   <p class="eyebrow violet">Appendix B · And the honest concessions</p>
   <div class="qa">
-    <div><p class="q">"Isn't this prompt engineering with extra steps?"</p><p class="a">Prompt phrasing doesn't transfer between assistants — the research is clear. An owned file does. That difference is demonstrable in the room, in five minutes.</p></div>
+    <div><p class="q">"Isn't this prompt training with extra steps?"</p><p class="a">Prompt phrasing doesn't transfer between assistants — the research is clear. An owned file does. Your people demonstrate the difference themselves, in the room, in five minutes.</p></div>
     <div><p class="q">"You teach people not to sound like Claude… using Claude."</p><p class="a">The same way writing class uses a word processor. The tool drafts; the file and the person decide. Improve, not replace — said early, every time.</p></div>
-    <div><p class="q">What we concede without a fight</p><p class="a">Average is fine for boilerplate — the file exists for the writing that carries your name. And a context file steers voice; it doesn't guarantee it. The promise is authorship plus evidence, never magic.</p></div>
+    <div><p class="q">What we concede without a fight</p><p class="a">Average is fine for boilerplate — the file exists for the work that carries a name. And a context file steers voice; it doesn't guarantee it. The promise is authorship plus evidence, never magic.</p></div>
   </div>
 </section>
+
+<section class="slide">
+  <p class="eyebrow violet">Appendix C · Where the memory pages live</p>
+  <h1 style="font-size:clamp(30px,4vw,52px)">Slide seven's field guide.</h1>
+  <div class="cols3" style="margin-top:34px">
+    <div class="panel"><h3>Claude</h3><p>Settings → memory — viewable by topic; import/export documented.</p></div>
+    <div class="panel"><h3>ChatGPT</h3><p>Settings → Personalization → Memory — the summary page; "dreaming" updates it in the background.</p></div>
+    <div class="panel"><h3>Gemini</h3><p>Saved Info — note: its memory and its Gems are mutually exclusive surfaces.</p></div>
+  </div>
+  <div class="cols" style="margin-top:2.5vw">
+    <div class="panel"><h3>Microsoft 365 Copilot</h3><p>Settings → personalization — stored in the user's Exchange mailbox; on by default.</p></div>
+    <div class="panel"><h3>Perplexity</h3><p>Settings → memory — Enterprise memories belong to the organization, not the person.</p></div>
+  </div>
+  <p class="fine">Paths current as of September 2026 — vendors move them; search "&lt;service&gt; memory settings" if one has drifted. And remember: the page shows only the part they show you.</p>
+</section>
+
 
 <span class="brand"><b>Workbrain</b> · AI Foundations</span>
 <span class="counter" id="ct"></span>
 <span class="hint">← → to move</span>
-
 <script>
   var slides = document.querySelectorAll('.slide'), i = 0;
   var ct = document.getElementById('ct');
