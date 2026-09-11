@@ -45,13 +45,11 @@ It is already getting hard to tell where the tool ended and the person began —
 
 **The average has an accent.**
 
-"Most likely" is measured over text that was never collected evenly from everyone — so the middle belongs to whoever wrote the most of it. Watch what that does to a sentence somebody meant:
+"Most likely" is measured over text nobody collected evenly — so the middle belongs to whoever wrote the most of it. Watch what that does to a sentence somebody meant:
 
 Nothing was flagged. Nobody was asked. The words that were chosen most carefully are the ones it edits hardest — and the people who chose them are usually the ones a room is already least likely to hear.
 
-An authored file is how someone at the edge gets the same leverage as someone at the middle: their words, in front of the tool, first.
-
-_Measured, not asserted: covert prejudice from dialect alone, surviving the training meant to remove the overt kind (Hofmann et al., Nature 2024); model defaults aligning far more closely with some demographic groups than others (Santurkar et al., ICML 2023). A file does not fix a model — it puts the person's own words in front of it._
+_This is measured, not asserted. In controlled tests, models judged people more harshly for writing in a dialect — and the training meant to remove that bias mostly hid it (Nature, 2024). Their default answers also match some groups' views far more closely than others' (ICML, 2023). To be clear about the limit: a file does not fix a model. It decides what the model starts from._
 
 ---
 
@@ -59,11 +57,11 @@ _Measured, not asserted: covert prejudice from dialect alone, surviving the trai
 
 **And it reads them the same way.**
 
-Interpretation is prediction too. Handed a request from the coordinator who runs your Tuesday programs, it hears the most likely meaning — the average asker's meaning.
+Interpretation is prediction too. Handed a request from the coordinator who runs your Tuesday programs, it hears the average asker's meaning — not hers:
 
-What it misreads is exactly what you value in her: her judgment, her shorthand, the fifteen years of things she knows that most people don't. And it never says so. It answers a question nobody asked, confidently.
+It does not ask. It answers the question it assumed — confidently, and in the same breath. The shorthand it drops is the part only your people would have known to keep.
 
-_Rewording alone swings measured accuracy up to 76 points (Sclar et al., ICLR 2024). Same engine, pointed the other way: the accent on the previous slide is also an accent it reads with._
+_Rewording the same question — same task, same meaning — has moved measured accuracy by as much as 76 points (Sclar et al., ICLR 2024). Same engine as the last slide, pointed the other way: the accent it writes with is the accent it reads with._
 
 ---
 

@@ -91,25 +91,27 @@ models make covertly prejudiced judgments from dialect alone, and that
 the training meant to remove the overt kind left the covert kind
 intact.
 
-And to be careful about my own claim: a file does not fix a model. What
-it does is put the person's own words in front of it — which is how the
-person whose knowledge is least like everyone else's gets the same
-leverage as the person nearest the middle."
+And to be careful about my own claim: a file does not fix a model — it
+decides what the model starts from. That's the sentence I'd keep if you
+forget the rest of this: a Workbrain file makes their words the starting
+point, so the person whose knowledge is least like everyone else's gets
+the same leverage as the person nearest the middle."
 
 **04 · And it reads them the same way — 2:35**
 "Here's the half nobody mentions. It doesn't just write like the
-average — it reads like the average. Your ops lead — the one who has
-been there fifteen years — types a request, and it hears the most
-likely meaning: the average asker's meaning. What it misreads is
-exactly what you pay her for: her judgment, her shorthand, the fifteen
-years of things she knows that nobody else does. And it never flags it.
-She gets a
-confident answer to a question she didn't ask. One study moved measured
-accuracy seventy-six points just by rewording the same question. Nature
-published that these models systematically misread non-standard
-dialects. It does not read everyone on your team equally well — and
-the gap falls hardest on the people whose expertise is least like
-everyone else's."
+average — it reads like the average. Same columns, other direction.
+*(read left, then right)* 'Write up what the crew flagged on the
+Johnson job' is heard as a thank-you letter to a customer named
+Johnson. 'Draft the note about the ghost shift' comes back as a memo on
+overnight staffing costs. 'Keep it tight for the shop floor' gets
+bulleted and formal, missing the one caveat that matters.
+
+It doesn't ask. It answers the question it assumed, confidently, in the
+same breath. And the shorthand it drops is the part only your crew
+would have known to keep. One study moved measured accuracy
+seventy-six points just by rewording the same question. Same engine as
+the last slide, pointed the other way: the accent it writes with is the
+accent it reads with."
 
 **05 · A profile written by someone else — 3:30**
 "Everyone in that room has seen this movie. Twenty years of web

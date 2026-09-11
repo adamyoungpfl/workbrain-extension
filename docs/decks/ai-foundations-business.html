@@ -73,15 +73,20 @@
   .panel.tile:hover .tile-hint, .panel.tile:focus-within .tile-hint { display: none; }
   @media (prefers-reduced-motion: reduce) { .tile-reveal { transition: none; } }
   /* Slide 04 — the flattening, shown. */
-  .flat { margin-top: 20px; display: grid; gap: 0; }
-  .flat-row { display: grid; grid-template-columns: 1fr 46px 1fr; align-items: center; gap: 10px; padding: 11px 0; border-bottom: 1px solid rgba(232,237,249,0.1); }
+  .flat { margin-top: 16px; display: grid; gap: 0; }
+  .flat-row { display: grid; grid-template-columns: 1fr 46px 1fr; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid rgba(232,237,249,0.1); }
   .flat-row:last-child { border-bottom: none; }
   .flat-said { font-size: 16.5px; line-height: 1.4; color: #ffffff; font-weight: 620; }
   .flat-arrow { text-align: center; color: var(--ink-3); font-size: 17px; }
   .flat-got { font-size: 16px; line-height: 1.4; color: var(--ink-3); font-style: italic; }
-  .flat-head { display: grid; grid-template-columns: 1fr 46px 1fr; gap: 10px; margin-top: 20px; font-size: 11px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
+  .flat-head { display: grid; grid-template-columns: 1fr 46px 1fr; gap: 10px; margin-top: 16px; font-size: 11px; font-weight: 800; letter-spacing: .15em; text-transform: uppercase; }
   .flat-head span:first-child { color: var(--green-deep); }
   .flat-head span:last-child { color: var(--ink-3); }
+  /* The statement line — the one thing to remember from slide 04. */
+  .statement { margin-top: 16px; padding: 15px 20px; border-radius: 14px; border: 1px solid rgba(79,196,139,0.4); background: linear-gradient(90deg, rgba(79,196,139,0.14), rgba(79,196,139,0.03)); display: flex; align-items: center; gap: 16px; }
+  .statement .wb-mark { width: 34px; height: 34px; flex: none; }
+  .statement p { margin: 0; font-size: clamp(17px, 1.55vw, 21px); line-height: 1.4; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; }
+  .statement b { color: var(--green-deep); font-weight: 800; }
   /* Slide 06 — the four memory tiles, each with its own tone. */
   .mtile { display: flex; flex-direction: column; gap: 12px; }
   .mtile svg { width: 34px; height: 34px; flex: none; }
@@ -171,25 +176,34 @@
 
 <section class="slide">
   <p class="eyebrow blue">03 · Whose average is it?</p>
-  <h1 style="font-size:clamp(32px,4.2vw,56px);max-width:none">The average has an <span class="em">accent.</span></h1>
-  <p class="lead" style="max-width:none">"Most likely" is measured over text that was never collected evenly from everyone — so the middle belongs to whoever wrote the most of it. Watch what that does to a sentence somebody meant:</p>
+  <h1 style="font-size:clamp(30px,3.9vw,52px);max-width:none">The average has an <span class="em">accent.</span></h1>
+  <p class="lead" style="max-width:none">"Most likely" is measured over text nobody collected evenly — so the middle belongs to whoever wrote the most of it. Watch what that does to a sentence somebody meant:</p>
   <div class="flat-head"><span>What they said</span><span></span><span>What comes back</span></div>
   <div class="flat">
       <div class="flat-row"><span class="flat-said">"We torque it to spec, then check it again cold."</span><span class="flat-arrow">→</span><span class="flat-got">We follow standard quality procedures.</span></div>
       <div class="flat-row"><span class="flat-said">"I've run this line eleven years — I hear it before the gauge does."</span><span class="flat-arrow">→</span><span class="flat-got">Experienced operations professional.</span></div>
       <div class="flat-row"><span class="flat-said">"The crew calls it the ghost shift, and they plan around it."</span><span class="flat-arrow">→</span><span class="flat-got">The overnight production period.</span></div>
   </div>
-  <p class="lead" style="margin-top:18px;max-width:none;font-size:19px">Nothing was flagged. Nobody was asked. <strong>The words that carried the expertise are the ones it edits hardest</strong> — and what comes back could have been written about anyone, at any company.</p>
-  <p class="lead" style="margin-top:12px;max-width:none;font-size:19px;color:var(--green-deep)">An authored file is how the person whose knowledge is least like everyone else's gets the same leverage as the person nearest the middle.</p>
-  <p class="fine" style="max-width:none;margin-top:18px">Measured, not asserted: covert prejudice from dialect alone, surviving the training meant to remove the overt kind (Hofmann et al., Nature 2024); model defaults aligning far more closely with some demographic groups than others (Santurkar et al., ICML 2023). A file does not fix a model — it puts the person's own words in front of it.</p>
+  <p class="lead" style="margin-top:14px;max-width:none;font-size:18px">Nothing was flagged. Nobody was asked. <strong>The words that carried the expertise are the ones it edits hardest</strong> — and what comes back could have been written about anyone, at any company.</p>
+  <div class="statement">
+    <svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg>
+    <p>A <b>Workbrain file</b> makes their words the starting point — so the person whose knowledge is least like everyone else's gets the same leverage as the person nearest the middle.</p>
+  </div>
+  <p class="fine" style="max-width:none;margin-top:14px">This is measured, not asserted. In controlled tests, models judged people more harshly for writing in a dialect — and the training meant to remove that bias mostly hid it (<em>Nature</em>, 2024). Their default answers also match some groups' views far more closely than others' (<em>ICML</em>, 2023). To be clear about the limit: a file does not fix a model. It decides what the model starts from.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow blue">04 · The half nobody mentions</p>
-  <h1>And it <span class="em">reads</span> them the same way.</h1>
-  <p class="lead">Interpretation is prediction too. Handed a request from the ops lead who has been with you fifteen years, it hears the most likely meaning — the <strong>average asker's</strong> meaning.</p>
-  <p class="lead" style="margin-top:20px;color:var(--amber)">What it misreads is exactly what you pay her for: her judgment, her shorthand, the fifteen years of things she knows that nobody else does. <span style="color:#ffd9a0;font-weight:680">And it never says so.</span> It answers a question nobody asked, confidently.</p>
-  <p class="fine">Rewording alone swings measured accuracy up to 76 points (Sclar et al., ICLR 2024). Same engine, pointed the other way: the accent on the previous slide is also an accent it reads with.</p>
+  <h1 style="font-size:clamp(32px,4.2vw,56px);max-width:none">And it <span class="em">reads</span> them the same way.</h1>
+  <p class="lead" style="max-width:none">Interpretation is prediction too. Handed a request from the ops lead who has been with you fifteen years, it hears the <strong>average asker's</strong> meaning — not hers:</p>
+  <div class="flat-head"><span>What they asked</span><span></span><span>What it heard</span></div>
+  <div class="flat">
+      <div class="flat-row"><span class="flat-said">"Write up what the crew flagged on the Johnson job."</span><span class="flat-arrow">→</span><span class="flat-got">A thank-you letter to a customer named Johnson.</span></div>
+      <div class="flat-row"><span class="flat-said">"Draft the note about the ghost shift."</span><span class="flat-arrow">→</span><span class="flat-got">A memo on overnight staffing costs.</span></div>
+      <div class="flat-row"><span class="flat-said">"Keep it tight for the shop floor."</span><span class="flat-arrow">→</span><span class="flat-got">Bulleted, formal, and missing the one caveat that matters.</span></div>
+  </div>
+  <p class="lead" style="margin-top:18px;max-width:none;font-size:19px">It does not ask. It answers the question it assumed — <strong>confidently, and in the same breath.</strong> The shorthand it drops is the part only your crew would have known to keep.</p>
+  <p class="fine" style="max-width:none;margin-top:16px">Rewording the same question — same task, same meaning — has moved measured accuracy by as much as 76 points (Sclar et al., ICLR 2024). Same engine as the last slide, pointed the other way: the accent it writes with is the accent it reads with.</p>
 </section>
 
 <section class="slide">
