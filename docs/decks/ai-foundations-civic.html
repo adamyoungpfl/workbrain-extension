@@ -31,7 +31,7 @@
   .lead strong { color: var(--ink); font-weight: 680; }
   .fine { margin: 32px 0 0; font-size: 13.5px; line-height: 1.6; color: var(--ink-3); max-width: 72ch; }
   .mono { font-family: var(--mono); }
-  .blank { color: var(--green-deep); border-bottom: 3px solid var(--green); padding: 0 14px; }
+  .blank { display: inline-block; width: 2.6em; border-bottom: 5px solid var(--green); vertical-align: 0.12em; }
   .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 4vw; margin-top: 38px; }
   .cols3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2.4vw; margin-top: 38px; }
   .cols4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.6vw; margin-top: 38px; }
@@ -64,6 +64,21 @@
   .invite { margin: 30px 0 0; font-size: clamp(18px, 1.7vw, 23px); line-height: 1.5; font-weight: 650; color: var(--green-deep); max-width: none; }
   .invite-dots { letter-spacing: 0.12em; }
   .invite-arrow { display: inline-block; margin-left: 6px; transform: translateY(1px); }
+  /* Citations — clearly a source line, never more to read. */
+  .cite { margin: 16px 0 0; padding-top: 10px; border-top: 1px solid rgba(232,237,249,0.09); font-size: 12.5px; line-height: 1.5; color: var(--ink-3); max-width: none; }
+  .cite b { color: var(--ink-2); font-weight: 650; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; margin-right: 8px; }
+  /* Slide 01 — autocomplete, shown as a prediction list. */
+  .ac { border: 1px solid rgba(232,237,249,0.18); border-radius: 14px; background: rgba(232,237,249,0.04); padding: 16px 18px; }
+  .ac-input { display: flex; align-items: baseline; gap: 2px; font-size: 15.5px; color: var(--ink); font-weight: 600; padding-bottom: 12px; border-bottom: 1px solid rgba(232,237,249,0.12); }
+  .ac-ghost { color: var(--ink-3); font-weight: 500; }
+  .ac-caret { display: inline-block; width: 2px; height: 17px; background: var(--green-deep); margin-left: 2px; transform: translateY(2px); }
+  .ac-row { display: grid; grid-template-columns: 1fr 86px; align-items: center; gap: 12px; padding: 9px 0; font-size: 14px; color: var(--ink-2); }
+  .ac-row.ac-top { color: #ffffff; font-weight: 650; }
+  .ac-bar { height: 7px; border-radius: 4px; background: rgba(232,237,249,0.12); position: relative; overflow: hidden; }
+  .ac-bar i { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: var(--ink-3); }
+  .ac-row.ac-top .ac-bar i { background: linear-gradient(90deg, var(--green), var(--green-deep)); }
+  /* Slide 02 — a signal flattened toward the mean. */
+  .wave { width: 100%; height: auto; margin-top: 26px; }
   /* Slide 07 — the investigation tiles; the checks reveal on hover,
      on keyboard focus, and always in print. */
   .tile { position: relative; overflow: hidden; cursor: default; transition: border-color 200ms, background 200ms; }
@@ -95,7 +110,7 @@
   .statement b { color: var(--green-deep); font-weight: 800; }
   /* Slide 05 — cookies, the edible kind. */
   .cookie-grid { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 3vw; align-items: center; }
-  .cookie-art { width: 100%; max-width: 330px; height: auto; display: block; margin-left: auto; filter: drop-shadow(0 16px 34px rgba(0,0,0,0.55)); }
+  .cookie-art { width: 100%; max-width: 300px; height: auto; display: block; margin-left: auto; }
   @media (max-width: 760px) { .cookie-grid { grid-template-columns: 1fr; } .cookie-art { display: none; } }
   /* Slide 06 — the four memory tiles, each with its own tone. */
   .mtile { display: flex; flex-direction: column; gap: 12px; }
@@ -166,22 +181,40 @@
       What It Costs
     </button>
   </div>
-  <p class="invite">If your organization has people who want to truly leverage AI as a productivity tool and you have 10 minutes, keep going<span class="invite-dots">...</span> <span class="invite-arrow">→</span></p>
 </section>
 
 <section class="slide">
   <p class="eyebrow blue">01 · What they're actually holding</p>
-  <h1>Hope this email finds you <span class="blank mono">&nbsp;___&nbsp;</span></h1>
-  <p class="lead">You filled that in before I finished the sentence. <strong>So does the tool everyone in your building is already using</strong> — for every word it writes.</p>
-  <p class="lead" style="margin-top:18px">The AI tools we all used today are a lot like autocomplete, at enormous scale, answering our prompts with the most common response.</p>
-  <p class="fine">A simplification an expert accepts: predicting the most likely next word is the literal training objective.</p>
+  <h1 style="max-width:none;font-size:clamp(30px,3.9vw,52px)">Hope this email finds you <span class="blank"></span></h1>
+  <div class="cols" style="margin-top:30px;align-items:center">
+    <p class="lead" style="margin-top:0;max-width:none">You filled that in before I finished the sentence. <strong>So does the tool everyone in your building is already using</strong> — for every word it writes.</p>
+    <div class="ac">
+      <div class="ac-input">Hope this email finds you<span class="ac-ghost">&nbsp;well</span><span class="ac-caret"></span></div>
+      <div class="ac-row ac-top"><span>well</span><span class="ac-bar"><i style="width:86%"></i></span></div>
+      <div class="ac-row"><span>in good health</span><span class="ac-bar"><i style="width:31%"></i></span></div>
+      <div class="ac-row"><span>rested after the strike</span><span class="ac-bar"><i style="width:6%"></i></span></div>
+    </div>
+  </div>
+  <p class="lead" style="margin-top:24px;max-width:none">The AI tools we all used today are a lot like autocomplete, at enormous scale, answering our prompts with the most common response.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow blue">02 · The objective, plainly</p>
-  <h1>The most common version<br>of the thought is becoming <span class="em">the noise.</span></h1>
-  <p class="lead">The most likely word is the most common one — that isn't a flaw, it's the definition. So every draft that comes back starts life as the most common version of the thought. <strong>Multiply that by everyone, every day.</strong></p>
-  <p class="lead" style="margin-top:18px">It is already getting hard to tell where the tool ended and the person began — in an inbox, in an application, in a proposal. <strong>That line is worth being able to draw.</strong></p>
+  <h1 style="max-width:none;font-size:clamp(30px,3.9vw,52px)">The most common version of the thought is becoming <span class="em">the noise.</span></h1>
+  <p class="lead" style="max-width:none">The most likely word is the most common one — that isn't a flaw, it's the definition. So every draft that comes back starts life as the most common version of the thought. <strong>Multiply that by everyone, every day.</strong></p>
+  <svg class="wave" viewBox="0 0 1120 130" fill="none" aria-hidden="true">
+    <line x1="0" y1="65" x2="1120" y2="65" stroke="rgba(232,237,249,0.16)" stroke-width="1" stroke-dasharray="5 6"/>
+    <path d="M0 65 C 18 18, 34 112, 52 44 S 86 108, 104 30 S 140 116, 158 52 S 194 14, 212 96 S 248 24, 266 74 S 302 108, 320 38 S 356 96, 374 46 S 410 88, 428 52 S 464 84, 482 54 S 518 78, 536 58 S 572 74, 590 60 S 626 71, 644 61 S 680 69, 698 62 S 734 67, 752 63 S 788 66, 806 64 S 860 65, 900 65 L 1120 65"
+      stroke="url(#flat)" stroke-width="2.6" stroke-linecap="round"/>
+    <defs>
+      <linearGradient id="flat" x1="0" y1="0" x2="1" y2="0">
+        <stop offset="0" stop-color="#7FE0AE"/><stop offset="0.42" stop-color="#A6B6DC"/><stop offset="1" stop-color="#6b7a9c"/>
+      </linearGradient>
+    </defs>
+    <text x="4" y="122" font-size="11" letter-spacing="1.6" fill="#7FE0AE" font-family="-apple-system, 'Segoe UI', sans-serif" font-weight="700">WHAT SOMEONE MEANT</text>
+    <text x="1116" y="122" text-anchor="end" font-size="11" letter-spacing="1.6" fill="#6b7a9c" font-family="-apple-system, 'Segoe UI', sans-serif" font-weight="700">WHAT COMES OUT</text>
+  </svg>
+  <p class="lead" style="margin-top:20px;max-width:none">It is already getting hard to tell where the tool ended and the person began — in an inbox, in an application, in a proposal. <strong>That line is worth being able to draw.</strong></p>
 </section>
 
 <section class="slide">
@@ -199,7 +232,7 @@
     <svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg>
     <p>A <b>Workbrain file</b> makes their words the starting point — so the person furthest from the average gets the same leverage as everyone nearer to it.</p>
   </div>
-  <p class="fine" style="max-width:none;margin-top:14px">This is measured, not asserted. In controlled tests, models judged people more harshly for writing in a dialect — and the training meant to remove that bias mostly hid it (<em>Nature</em>, 2024). Their default answers also match some groups' views far more closely than others' (<em>ICML</em>, 2023). To be clear about the limit: a file does not fix a model. It decides what the model starts from.</p>
+  <p class="cite"><b>Sources</b>Hofmann et al., Nature 2024 — models judged people more harshly for writing in a dialect, and debiasing training mostly hid it. Santurkar et al., ICML 2023 — model defaults match some groups' views far more closely than others'.</p>
 </section>
 
 <section class="slide">
@@ -212,8 +245,8 @@
       <div class="flat-row"><span class="flat-said">"Send a note to our regulars."</span><span class="flat-arrow">→</span><span class="flat-got">A marketing email to returning customers.</span></div>
       <div class="flat-row"><span class="flat-said">"Keep it plain for the families."</span><span class="flat-arrow">→</span><span class="flat-got">Simplified — with the two details they needed cut.</span></div>
   </div>
-  <p class="lead" style="margin-top:18px;max-width:none;font-size:19px">It does not ask. It answers the question it assumed — <strong>confidently, and in the same breath.</strong> The shorthand it drops is the part only your people would have known to keep.</p>
-  <p class="fine" style="max-width:none;margin-top:16px">Rewording the same question — same task, same meaning — has moved measured accuracy by as much as 76 points (Sclar et al., ICLR 2024). Same engine as the last slide, pointed the other way: the accent it writes with is the accent it reads with.</p>
+  <p class="lead" style="margin-top:18px;max-width:none;font-size:19px">It does not ask. It answers the question it assumed — <strong>confidently, and in the same breath.</strong> The shorthand it drops is the part a person would have known to keep.</p>
+  <p class="cite"><b>Source</b>Sclar et al., ICLR 2024 — rewording the same question moved measured accuracy by up to 76 points.</p>
 </section>
 
 <section class="slide">
@@ -223,37 +256,45 @@
       <h1>A profile about you,<br>written by <span class="em">someone else.</span></h1>
       <p class="lead" style="max-width:none">Twenty years of web cookies: a dossier nobody authored, kept for someone else's purposes, invisible to the person it described. <strong>We ended up regulating it.</strong> Everybody remembers how that felt.</p>
     </div>
-    <svg class="cookie-art" viewBox="0 0 260 220" aria-hidden="true">
+    <svg class="cookie-art" viewBox="0 0 248 250" aria-hidden="true">
       <defs>
-        <radialGradient id="dough" cx="38%" cy="32%" r="72%">
-          <stop offset="0" stop-color="#E0A863"/><stop offset="1" stop-color="#B0763A"/>
-        </radialGradient>
-        <radialGradient id="dough2" cx="40%" cy="34%" r="70%">
-          <stop offset="0" stop-color="#D09A57"/><stop offset="1" stop-color="#9A6631"/>
-        </radialGradient>
+        <g id="px-cookie">
+          <rect x="10" y="2" width="16" height="6" fill="#E0A863"/>
+          <rect x="4" y="8" width="28" height="6" fill="#E0A863"/>
+          <rect x="2" y="14" width="32" height="10" fill="#E0A863"/>
+          <rect x="2" y="24" width="32" height="6" fill="#D09A57"/>
+          <rect x="4" y="30" width="28" height="4" fill="#B0763A"/>
+          <rect x="24" y="2" width="10" height="8" fill="#070a12"/>
+          <rect x="8" y="12" width="6" height="6" fill="#3B2210"/>
+          <rect x="20" y="18" width="6" height="6" fill="#3B2210"/>
+          <rect x="12" y="24" width="5" height="5" fill="#3B2210"/>
+        </g>
       </defs>
-      <!-- the one behind -->
-      <circle cx="186" cy="150" r="52" fill="url(#dough2)" stroke="#7C5227" stroke-width="2"/>
-      <ellipse cx="170" cy="132" rx="9" ry="8" fill="#3B2210"/>
-      <rect x="196" y="140" width="14" height="13" rx="2.5" fill="#3B2210"/>
-      <ellipse cx="180" cy="172" rx="8" ry="7" fill="#3B2210"/>
-      <!-- the big one, with a bite out of it -->
-      <circle cx="104" cy="96" r="80" fill="url(#dough)" stroke="#7C5227" stroke-width="2.5"/>
-      <circle cx="168" cy="42" r="30" fill="#070a12"/>
-      <circle cx="150" cy="22" r="11" fill="#070a12"/>
-      <circle cx="186" cy="70" r="9" fill="#070a12"/>
-      <ellipse cx="74" cy="62" rx="12" ry="10.5" fill="#3B2210"/>
-      <rect x="112" y="70" width="17" height="16" rx="3" fill="#3B2210"/>
-      <ellipse cx="62" cy="120" rx="11" ry="10" fill="#3B2210"/>
-      <ellipse cx="118" cy="134" rx="13" ry="11" fill="#3B2210"/>
-      <rect x="82" y="100" width="13" height="12" rx="2.5" fill="#3B2210"/>
-      <ellipse cx="140" cy="102" rx="8" ry="7" fill="#3B2210"/>
-      <ellipse cx="96" cy="152" rx="7.5" ry="6.5" fill="#3B2210"/>
-      <!-- crumbs, trailing off like something that got tracked -->
-      <circle cx="26" cy="176" r="4.5" fill="#B0763A"/>
-      <rect x="44" y="186" width="7" height="7" rx="1.6" fill="#9A6631"/>
-      <circle cx="14" cy="196" r="3" fill="#8A5A2B"/>
-      <rect x="64" y="198" width="5" height="5" rx="1.2" fill="#7C5227"/>
+      <use href="#px-cookie" x="14" y="0" opacity="0.14" transform="scale(0.62)" transform-origin="32 18"/>
+      <use href="#px-cookie" x="14" y="46" opacity="0.25" transform="scale(0.75)" transform-origin="32 64"/>
+      <use href="#px-cookie" x="14" y="96" opacity="0.51" transform="scale(0.87)" transform-origin="32 114"/>
+      <use href="#px-cookie" x="14" y="158" opacity="0.9" transform="scale(1.0)" transform-origin="32 176"/>
+      <line x1="32" y1="-26" x2="32" y2="188" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
+      <use href="#px-cookie" x="62" y="22" opacity="0.14" transform="scale(0.62)" transform-origin="80 40"/>
+      <use href="#px-cookie" x="62" y="74" opacity="0.25" transform="scale(0.75)" transform-origin="80 92"/>
+      <use href="#px-cookie" x="62" y="140" opacity="0.51" transform="scale(0.87)" transform-origin="80 158"/>
+      <use href="#px-cookie" x="62" y="196" opacity="0.9" transform="scale(1.0)" transform-origin="80 214"/>
+      <line x1="80" y1="-4" x2="80" y2="226" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
+      <use href="#px-cookie" x="110" y="0" opacity="0.14" transform="scale(0.62)" transform-origin="128 18"/>
+      <use href="#px-cookie" x="110" y="58" opacity="0.25" transform="scale(0.75)" transform-origin="128 76"/>
+      <use href="#px-cookie" x="110" y="118" opacity="0.51" transform="scale(0.87)" transform-origin="128 136"/>
+      <use href="#px-cookie" x="110" y="170" opacity="0.9" transform="scale(1.0)" transform-origin="128 188"/>
+      <line x1="128" y1="-26" x2="128" y2="200" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
+      <use href="#px-cookie" x="158" y="34" opacity="0.14" transform="scale(0.62)" transform-origin="176 52"/>
+      <use href="#px-cookie" x="158" y="90" opacity="0.25" transform="scale(0.75)" transform-origin="176 108"/>
+      <use href="#px-cookie" x="158" y="150" opacity="0.51" transform="scale(0.87)" transform-origin="176 168"/>
+      <use href="#px-cookie" x="158" y="206" opacity="0.9" transform="scale(1.0)" transform-origin="176 224"/>
+      <line x1="176" y1="8" x2="176" y2="236" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
+      <use href="#px-cookie" x="206" y="12" opacity="0.14" transform="scale(0.62)" transform-origin="224 30"/>
+      <use href="#px-cookie" x="206" y="66" opacity="0.25" transform="scale(0.75)" transform-origin="224 84"/>
+      <use href="#px-cookie" x="206" y="126" opacity="0.51" transform="scale(0.87)" transform-origin="224 144"/>
+      <use href="#px-cookie" x="206" y="184" opacity="0.9" transform="scale(1.0)" transform-origin="224 202"/>
+      <line x1="224" y1="-14" x2="224" y2="214" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
     </svg>
   </div>
 </section>
@@ -283,7 +324,8 @@
       <p class="mbody">At Perplexity Enterprise those memories <b>belong to the organization</b> — access ends when the person leaves.</p>
     </div>
   </div>
-  <p class="fine" style="max-width:none">Receipts cited in "Durable Context" (Young, 2026) — myworkbrain.org. Nobody wrote the profile the tool reads them through — not the person it describes, not you. Most have never laid eyes on it.</p>
+  <p class="lead" style="margin-top:22px;max-width:none;font-size:18px">Nobody wrote the profile the tool reads them through — not the person it describes, not you. <strong>Most have never laid eyes on it.</strong></p>
+  <p class="cite"><b>Source</b>Vendor documentation, surveyed in "Durable Context" (Young, 2026) — myworkbrain.org.</p>
 </section>
 
 <section class="slide">
@@ -347,7 +389,7 @@
   <p class="eyebrow red">09 · The measured group effect</p>
   <h1>Individually faster.<br>Collectively <span class="em">identical.</span></h1>
   <p class="lead">The research finding on AI assistance: each person's output improves, and <strong>the group's diversity shrinks.</strong> Ten people produce ten versions of the same thing — and none of them chose that.</p>
-  <p class="fine">Doshi &amp; Hauser, Science Advances 2024 · Padmakumar &amp; He, ICLR 2024 · Shumailov et al., Nature 2024. A measured trajectory, still early — we say so out loud.</p>
+  <p class="cite"><b>Sources</b>Doshi &amp; Hauser, Science Advances 2024 · Padmakumar &amp; He, ICLR 2024 · Shumailov et al., Nature 2024. A measured trajectory, still early — we say so out loud.</p>
 </section>
 
 <section class="slide">

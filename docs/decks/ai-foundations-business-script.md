@@ -109,8 +109,8 @@ overnight staffing costs. 'Keep it tight for the shop floor' gets
 bulleted and formal, missing the one caveat that matters.
 
 It doesn't ask. It answers the question it assumed, confidently, in the
-same breath. And the shorthand it drops is the part only your crew
-would have known to keep. One study moved measured accuracy
+same breath. And the shorthand it drops is the part a person would
+have known to keep. One study moved measured accuracy
 seventy-six points just by rewording the same question. Same engine as
 the last slide, pointed the other way: the accent it writes with is the
 accent it reads with."

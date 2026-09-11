@@ -17,13 +17,11 @@ Workbrain enables participants of any skill level to write the instructions that
 
 ## Slide 2 — 01 · What they're actually holding
 
-**Hope this email finds you ___**
+**Hope this email finds you**
 
 You filled that in before I finished the sentence. So does the tool everyone in your building is already using — for every word it writes.
 
 The AI tools we all used today are a lot like autocomplete, at enormous scale, answering our prompts with the most common response.
-
-_A simplification an expert accepts: predicting the most likely next word is the literal training objective._
 
 ---
 
@@ -45,8 +43,6 @@ It is already getting hard to tell where the tool ended and the person began —
 
 Nothing was flagged. Nobody was asked. The words that were chosen most carefully are the ones it edits hardest — and the people who chose them are usually the ones a room is already least likely to hear.
 
-_This is measured, not asserted. In controlled tests, models judged people more harshly for writing in a dialect — and the training meant to remove that bias mostly hid it (Nature, 2024). Their default answers also match some groups' views far more closely than others' (ICML, 2023). To be clear about the limit: a file does not fix a model. It decides what the model starts from._
-
 ---
 
 ## Slide 5 — 04 · The half nobody mentions
@@ -55,9 +51,7 @@ _This is measured, not asserted. In controlled tests, models judged people more 
 
 Interpretation is prediction too. Handed a request from the coordinator who runs your Tuesday programs, it hears the average asker's meaning — not hers:
 
-It does not ask. It answers the question it assumed — confidently, and in the same breath. The shorthand it drops is the part only your people would have known to keep.
-
-_Rewording the same question — same task, same meaning — has moved measured accuracy by as much as 76 points (Sclar et al., ICLR 2024). Same engine as the last slide, pointed the other way: the accent it writes with is the accent it reads with._
+It does not ask. It answers the question it assumed — confidently, and in the same breath. The shorthand it drops is the part a person would have known to keep.
 
 ---
 
@@ -73,12 +67,12 @@ Twenty years of web cookies: a dossier nobody authored, kept for someone else's 
 
 **Every one of them already has one.**
 
+Nobody wrote the profile the tool reads them through — not the person it describes, not you. Most have never laid eyes on it.
+
 - **Common** — On by default on all five major services surveyed. Nobody opted in.
 - **Assumed** — Inferred, not written — and it rewrites itself over time. OpenAI calls that process "dreaming."
 - **Locked** — At Microsoft: exempt from retention policy, not audit-logged, not restrictable — their own documentation.
 - **Rented** — At Perplexity Enterprise those memories belong to the organization — access ends when the person leaves.
-
-_Receipts cited in "Durable Context" (Young, 2026) — myworkbrain.org. Nobody wrote the profile the tool reads them through — not the person it describes, not you. Most have never laid eyes on it._
 
 ---
 
@@ -114,8 +108,6 @@ _One hour of writing, once, barely moves tomorrow's effort. It moves what the to
 **Individually faster. Collectively identical.**
 
 The research finding on AI assistance: each person's output improves, and the group's diversity shrinks. Ten people produce ten versions of the same thing — and none of them chose that.
-
-_Doshi & Hauser, Science Advances 2024 · Padmakumar & He, ICLR 2024 · Shumailov et al., Nature 2024. A measured trajectory, still early — we say so out loud._
 
 ---
 
