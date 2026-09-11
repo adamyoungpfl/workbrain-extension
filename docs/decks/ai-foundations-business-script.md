@@ -37,12 +37,12 @@ Do not cut 03; it is the beat people repeat to someone else afterward.
 ---
 
 **TITLE — 0:00**
-"Everyone handed out the tool. Nobody taught anybody to own it. That's
-the whole ten minutes.
+"Everyone got the tool. Not everyone got the setup instructions.
+That's the whole ten minutes.
 
 Here's what it is, plainly. It's a four-week training program — ninety
 minutes a week. We facilitate, you host. Workbrain enables participants
-of any skill level to create a simple file that makes any AI tool work
+of any skill level to write the instructions that make any AI tool work
 like it already knows them — their words, their standards, their way of
 doing the work — and they prove it against their own before-and-after.
 They keep the file, and the written methods stay with the team. 

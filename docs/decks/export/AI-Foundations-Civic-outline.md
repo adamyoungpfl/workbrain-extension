@@ -9,9 +9,9 @@ Presenter script: ai-foundations-civic-script.md.
 
 ## Slide 1 — AI Foundations · Workbrain by Model Citizen
 
-**Everyone gave them the tool. Nobody taught them to own it.**
+**Everyone got the tool. Not everyone got the setup instructions.**
 
-Workbrain enables participants of any skill level to create a simple file that makes any AI tool work like it already knows them — their words, their standards, their way of doing the work — and they prove it against their own before-and-after. They keep the file and the knowledge of how to leverage it towards their goals and objectives.
+Workbrain enables participants of any skill level to write the instructions that make any AI tool work like it already knows them — their words, their standards, their way of doing the work — and they prove it against their own before-and-after. They keep the file and the knowledge of how to leverage it towards their goals and objectives.
 
 ---
 
