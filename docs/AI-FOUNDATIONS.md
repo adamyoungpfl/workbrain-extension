@@ -334,12 +334,41 @@ person.
 | Piece | Surface | When |
 |---|---|---|
 | The corrected chain | Civic session 1's foundations hour; the deck | now (deck built) |
-| The deck | `docs/decks/ai-foundations.html` — program leaders, funders, partner pitches | now |
+| The decks (two cuts) | `docs/decks/ai-foundations-civic.html` (community organizations) and `-business.html` (employers), each with its own presenter script and PDF/outline in `export/` | now |
 | The Mirror | Civic sessions 1–2 worksheet; social content; later a /foundations or /mirror page if it earns one | exercise now; site page not yet |
 | The sameness question | Sales copy, deck slide, TIM conversations | now |
 | The extractor (free seed) | App: File Hub door, after the builders land (parser is FILE-HUB-ADDONS' scoped work) | post-builders |
 | The memory audit (paid) | Workbrain+ | with Plus, not before |
 | The objection table | This doc; civic host packet FAQ; Adam's pocket | now |
+
+## 7b · Two cuts, and what differs between them
+
+Adam, 2026-09-11: "Maybe I also need to split this out and do a separate
+version for the civic (so this one can be focused on organizations) and
+spin a 2nd version that speaks to business owners… so the messaging
+doesn't get crossed and becomes unappealing to both." Built.
+
+Shared (change these in both, or they drift): the whole argument spine —
+prediction, the average, the reading lens, cookies, memory, the three
+questions, the ceiling bars, the group effect, the two defaults, the
+third option, the standard, the price structure.
+
+Diverging, deliberately:
+
+| Beat | Community cut | Employer cut |
+|---|---|---|
+| Who the person is | the coordinator who runs your Tuesday programs | the ops lead who has been with you fifteen years |
+| The cost of sameness | a job seeker's application in a pile — sameness is the rejection | a proposal in a stack — sameness is how you lose a deal you used to win |
+| The rival | the organization across town's grant application | the shop across town's pitch |
+| What they keep, 4th card | **a credential** — certificate, then Work Brain Certified, verifiable on a profile | **institutional memory** — the method written down so it doesn't leave when the person does |
+| Portability | "it works at their next job" is a selling point | never said; the files are the person's, the *methods stay with the team* |
+| The standard's audience | your board or funder can apply it themselves | your most skeptical engineer can audit it |
+| The ask | request a cohort at /civic | ask for a series at /services |
+| Objection A3 | "the folks I serve need results now" | "my team needs output now" → answered as a revenue argument |
+
+The employer cut's script adds one posture line the community cut does
+not need: make the business case, but make it *second* — a leader who
+feels talked at about ROI stops hearing the part about their people.
 
 ## 8 · Adam's calls
 

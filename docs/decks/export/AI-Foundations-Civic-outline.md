@@ -1,9 +1,9 @@
-# AI Foundations — deck outline (plain text)
+# AI Foundations — Civic cut, deck outline
 
-Extracted from docs/decks/ai-foundations.html — the deck is the source of
-truth; this file is for pasting into other tools (Gamma, Google Slides,
-PowerPoint outline import, Keynote, or an LLM). Pass 6c, empowerment cut.
-20 slides. Presenter script: ai-foundations-script.md.
+Extracted from docs/decks/ai-foundations-civic.html — the deck is the
+source of truth; this file is for pasting into other tools (Gamma, Google
+Slides, PowerPoint outline import, Keynote, or an LLM). 20 slides.
+Presenter script: ai-foundations-civic-script.md.
 
 ---
 
@@ -13,7 +13,7 @@ PowerPoint outline import, Keynote, or an LLM). Pass 6c, empowerment cut.
 
 Ten minutes on a skill you can put in the hands of the people who count on you — one that stays theirs, works in any tool, and outlives whichever app is popular this year.
 
-_$4,800 funds one cohort of 16–20 — your staff, your members, or a mix · they never pay a cent · the price is on this slide because there is no follow-up sequence_
+_$4,800 funds a first series — four sessions, up to 10 seats, mornings or evenings · they never pay a cent · the price is on this slide because there is no follow-up sequence_
 
 ---
 
@@ -41,7 +41,9 @@ It is already getting hard to tell where the tool ended and the person began —
 
 **And it reads them the same way.**
 
-Interpretation is prediction too. Handed a request from the coordinator who runs your Tuesday programs, it hears the most likely meaning — the average asker's meaning. What it misreads is exactly what you value in her: her judgment, her shorthand, the fifteen years of things she knows that most people don't. And it never says so. It answers a question nobody asked, confidently.
+Interpretation is prediction too. Handed a request from the coordinator who runs your Tuesday programs, it hears the most likely meaning — the average asker's meaning.
+
+What it misreads is exactly what you value in her: her judgment, her shorthand, the fifteen years of things she knows that most people don't. And it never says so. It answers a question nobody asked, confidently.
 
 _Rewording alone swings measured accuracy up to 76 points (Sclar et al., ICLR 2024). Models misread — and covertly penalize — non-standard dialects (Hofmann et al., Nature 2024). It does not read everyone equally well — and the people it reads worst are often the ones you are working hardest to help._
 
@@ -59,10 +61,10 @@ Twenty years of web cookies: a dossier nobody authored, kept for someone else's 
 
 **Every one of them already has one.**
 
-- AI memory is on by default on all five major services surveyed.
-- Inferred, not written by them — and it rewrites itself over time (OpenAI calls the process "dreaming").
-- At Microsoft: exempt from retention policy, not audit-logged, not restrictable — their own documentation.
-- At Perplexity Enterprise: those memories belong to the organization, and access ends when the person leaves.
+- **Common** — On by default on all five major services surveyed. Nobody opted in.
+- **Assumed** — Inferred, not written — and it rewrites itself over time. OpenAI calls that process "dreaming."
+- **Locked** — At Microsoft: exempt from retention policy, not audit-logged, not restrictable — their own documentation.
+- **Rented** — At Perplexity Enterprise those memories belong to the organization — access ends when the person leaves.
 
 _Receipts cited in "Durable Context" (Young, 2026) — myworkbrain.org. Nobody wrote the profile the tool reads them through — not the person it describes, not you. Most have never laid eyes on it._
 
@@ -72,9 +74,9 @@ _Receipts cited in "Durable Context" (Young, 2026) — myworkbrain.org. Nobody w
 
 **Three questions. No cost, no sign-up.**
 
-- Accuracy
-- Voice
-- Priorities
+- **Accuracy** — "What do you remember about me?" _(Look for a job title, a project, or a tool you have already moved on from. Confirm it by opening the memory page itself — if it is still listed there, it is still shaping every answer. Field guide: last slide.)_
+- **Voice** — "Describe how I communicate." _(Look for an adjective you would never use about yourself. Confirm it by holding the description next to something you actually wrote last week. Field guide: last slide.)_
+- **Priorities** — "What matters most in my work?" _(Look for what is missing — the thing you would have said first. Confirm it by asking it to rank three of your real responsibilities, then check the order against yours. Field guide: last slide.)_
 
 _Send them to your staff, post them for your members, or try them yourself tonight. Whatever happens on your screen is happening on theirs too, every day, quietly._
 
@@ -85,6 +87,11 @@ _Send them to your staff, post them for your members, or try them yourself tonig
 **The effort doesn't change. The ceiling does.**
 
 Nobody accepts that memory on principle — it just costs nothing and comes back well-composed. And we all paste straight from the tool more often than we'd admit. Keep it.
+
+- Memory alonenone
+- After four sessionsabout the same
+- Memory alonedrafts, in the house style
+- After four sessionsdrafts in their voice · repeatable methods · actions worth automating
 
 _One hour of writing, once, barely moves tomorrow's effort. It moves what the tool is allowed to do — and written methods are the prerequisite for automating anything responsibly._
 
@@ -120,7 +127,7 @@ Your competitor's proposal was written by the same model as yours. So was the gr
 
 **You have two choices to make right now.**
 
-Both are plausible. Both leave everyone to work it out alone. And the organizations that look miles ahead of you chose neither — they taught their people a third thing, and the folks you serve are four evenings from the same unlock. They will credit it to you.
+Both are plausible. Both leave everyone to work it out alone. And the organizations that look miles ahead of you chose neither — they taught their people a third thing, and the folks you serve are four sessions from the same unlock. They will credit it to you.
 
 - **Avoidance** — Hold the line until it settles down. Perfectly reasonable — and they are using it anyway, on personal accounts, at home, with nobody to ask. You get none of the oversight and none of the learning.
 - **Acceptance** — Let everyone get on with it. Also reasonable — and unsupported adoption walks the whole room toward the same house style, spending the very thing that made each person worth hiring.
@@ -131,9 +138,9 @@ Both are plausible. Both leave everyone to work it out alone. And the organizati
 
 **Teach them to author their own context.**
 
-Each person writes a short, plain-text file about their own work — their names for things, their judgment, the standards they hold — and hands it to whatever tool they already use. Nothing routes through us. No account. Nothing transmitted. The tool finally reads and writes from who they actually are.
+Each person writes a short, plain-text file about their own work — their names for things, their judgment, the standards they hold — and hands it to whatever tool they already use. Nothing routes through us. No account. Nothing transmitted.
 
-And notice what this is: configuration. Everyone already knows how to set up a tool — a phone, a thermostat, a template they saved once. Nobody knows how to re-raise a colleague.
+They leave with a simple file. A plain text file. A configured, plain text file. We have all gone through the setup process on a new device or a new tool. Workbrain is the setup for effective AI usage.
 
 ---
 
@@ -164,9 +171,23 @@ _All of it is public, including the six claims this program rests on — written
 
 ## Slide 16 — 15 · The offer, itemized
 
-**One number, and it is the whole number.**
+**One number — and more sessions barely move it.**
 
-_We do not sell to participants, during or after. Liability insurance carried, facilitators background-checked, documentation on request. Taster and train-your-own-facilitator formats are in the packet._
+- Curriculum, facilitator preparation, setup$1,000
+- Loaner device pool, shared across every session$900
+- Insurance and administration$500
+- Follow-up reporting at 90 and 180 days$500
+- Facilitation, morning, afternoon or evening$1,600
+- Printed materials and certificates$300
+- Your first series, all in$4,800
+- Every additional series — any day, any time slot+$1,900
+
+- No cost to the people in the room — not a fee, not a book, not a device.
+- No software license, seat fee or subscription — before, during, or after.
+- No second invoice to launch: the base covers setup, devices and reporting for every series you run.
+- Nothing lapses when we leave. What they build keeps working, free, permanently.
+
+_From you: a room with wifi, a repeating slot that suits your people, and the folks who should be in it. We do not sell to participants. Insurance carried, facilitators background-checked, documentation on request._
 
 ---
 
@@ -183,7 +204,7 @@ _Workbrain · by Model Citizen · the standard at myworkbrain.org/good_
 ## Slide 18 — Appendix A · Push back on us
 
 - **"The homogenization research is early."** It is, and we say so on the slide. What isn't early: memory on by default, profiles nobody authored, and the before-and-after each person measures on their own work. The case never rests its weight on the scary slide.
-- **"This sounds anti-AI. We're trying to drive adoption."** Four evenings of hands-on building with the tool each person already uses. The foundations hour exists so the adoption is informed. We teach use — the caution is the seatbelt, not an argument against the car.
+- **"This sounds anti-AI. We're trying to drive adoption."** Four 90-minute sessions of hands-on building with the tool each person already uses. The foundations hour exists so the adoption is informed. We teach use — the caution is the seatbelt, not an argument against the car.
 - **"The folks I serve need results now, not voice lessons."** Everyone's output is polished now, and readers pattern-match the house style — in hiring, in sales, in grant review. When polish is table stakes, what survives is whose judgment shows. That is an output argument, not a taste argument.
 
 ---

@@ -1,4 +1,9 @@
-# AI Foundations — the ten-minute script
+# AI Foundations — the ten-minute script (COMMUNITY cut)
+
+For libraries, workforce boards, nonprofits, faith communities and
+associations. The employer version is `ai-foundations-business-script.md`,
+which runs against `ai-foundations-business.html` — keep the two in sync
+when a beat changes structurally.
 
 For a fifteen-minute meeting: two minutes of hello, ten of this, three
 for their questions. The price is on the title slide on purpose — you
@@ -12,7 +17,7 @@ they know — never the product, never you.
 
 **Say "tool," never "assistant."** People know how to configure a tool
 — they do it every week. "Assistant" makes it a person, and nobody
-believes they can change a person's character in four evenings.
+believes they can change a person's character in four sessions.
 
 **And avoid "your people"** — it lands possessive
 and corporate. Reach instead for *the folks you serve*, *the people
@@ -32,7 +37,7 @@ without.
 **TITLE — 0:00**
 "Everyone handed out the tool. Nobody taught anybody to own it. That's
 the whole ten minutes. And the price is already on the screen —
-forty-eight hundred for one cohort, sixteen to twenty seats, staff or
+forty-eight hundred for your first series, up to ten seats, staff or
 members or a mix, and they never pay a cent. I'm not going to build to
 it dramatically. I'll tell you what it gives the folks who count on
 you, and you'll say yes or no, and either answer is genuinely fine."
@@ -102,7 +107,7 @@ comes back well-composed. And let's be honest with each other: we all
 paste straight from the tool more often than we'd admit. Keep it.
 
 Here's the part worth seeing. Look at daily effort — memory alone,
-none; after four evenings, about the same. That's the honest answer:
+none; after four sessions, about the same. That's the honest answer:
 an hour of writing, once, and tomorrow looks like today. Now look at
 what the tool can be trusted with. Memory alone gets you drafts in the
 house style. With a file behind it: drafts in their voice, methods
@@ -138,7 +143,7 @@ whole room drifts toward the same house style.
 Both are plausible. Both leave everyone to work it out alone. And the
 organizations that look like they're miles ahead of you? They picked
 neither. They taught their people a third thing — and the folks you
-serve are four evenings from that same unlock. They'll credit it to
+serve are four sessions from that same unlock. They'll credit it to
 you."
 
 **12 · Teach them to author their own context — 8:05**
@@ -155,7 +160,8 @@ they saved once. Nobody knows how to re-raise a colleague. This is the
 first one, not the second."
 
 **13 · What they walk out with — 8:35**
-"Four evenings, and here's what each person keeps. Their files, in
+"Four sessions — mornings, afternoons or evenings, whatever suits your
+people — and here's what each person keeps. Their files, in
 plain text, on their own device. A method — one job they do every week,
 written down well enough that a tool or a new coworker could follow it.
 Their own before-and-after proof. And a credential: a certificate at
@@ -177,16 +183,24 @@ don't claim employment outcomes. People tell us what happened and we
 pass it on as reported."
 
 **15 · The offer, itemized — 9:35**
-"So here it is, itemized, because I'd rather you see the whole thing
-than wonder what's underneath it. Facilitation, twenty-six hundred.
-Curriculum and certificates, four hundred. Loaner devices for anyone
-who needs one, nine hundred. Insurance and admin, five. Follow-up
-reporting, four. Forty-eight hundred, one cohort.
+"Here it is itemized, because I'd rather you see the whole thing than
+wonder what's underneath it. It splits in two. The program base — setup,
+the loaner device pool, insurance and admin, and the follow-up reporting
+— is twenty-nine hundred, and you pay that once no matter how much you
+run. Then each series is nineteen hundred: four sessions, up to ten
+seats, facilitation and materials. So your first series is forty-eight
+hundred, all in.
 
-And the right-hand column matters more: there's no cost to the people
+Here's the part I'd underline. A second series is another nineteen
+hundred — not another forty-eight. The fixed costs don't repeat. One
+series works out to four-eighty a seat; three series, two eighty-seven.
+So if you want a morning group and an evening group, that's affordable
+now, and that's deliberate.
+
+And the right-hand column matters more than the left: no cost to anyone
 in the room, no license or seat fee, no second invoice to launch, and
-nothing that lapses when we leave. From you, a room with wifi and the
-folks who should be in it. That's the whole number."
+nothing that lapses when we leave. From you, a room with wifi and a
+repeating slot that suits your people."
 
 **16 · The close — 9:55**
 "One decision. If you want this for the people you serve, the form is at
