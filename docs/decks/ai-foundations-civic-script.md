@@ -104,9 +104,10 @@ note to our regulars' comes back as a marketing email to returning
 customers. 'Keep it plain for the families' gets simplified, with the
 two details they needed cut.
 
-It doesn't ask. It answers the question it assumed, confidently, in the
-same breath. And the shorthand it drops is the part a person would
-have known to keep. One study moved measured accuracy
+It doesn't ask a clarifying question. It answers the question it
+assumed — confidently, and in the same breath. And the shorthand and
+relatable context it drops is the part a person would have known to
+keep. One study moved measured accuracy
 seventy-six points just by rewording the same question. Same engine as
 the last slide, pointed the other way: the accent it writes with is the
 accent it reads with."
@@ -116,14 +117,15 @@ accent it reads with."
 cookies: a dossier nobody authored, kept for someone else's purposes,
 invisible to the person it described. We ended up regulating it."
 
-**06 · Every one of them already has one — 3:55**
+**06 · Curated dreams and restricted memories — 3:55**
 "Here's the sequel, already installed. AI memory — on by default on
 every major service. Inferred, not written by them, and it rewrites
 itself; OpenAI literally calls the process 'dreaming.' At Microsoft
 it's exempt from retention policy and not audit-logged — that's their
-documentation, not my opinion. Nobody wrote the profile the tool reads
-them through — not the person it describes, not you. Most have
-never laid eyes on it."
+documentation, not my opinion. And here's the question I'd sit with:
+nobody told the tool what was important and what wasn't. So who is
+deciding what's important, what's appropriate, what's up to your
+standard — and what isn't?"
 
 **07 · Three questions — 4:40**
 "Here's something you can give them tonight, free, whether or not you
@@ -142,10 +144,11 @@ on theirs, every day, quietly. There's a field guide at the end for
 where each service keeps that page — take a photo of it."
 
 **08 · The effort doesn't change, the ceiling does — 5:35**
-"Let me be fair to the machine, because this matters. Nobody accepts
-that memory on principle — they accept it because it costs nothing and
-comes back well-composed. And let's be honest with each other: we all
-paste straight from the tool more often than we'd admit. Keep it.
+"Let me be fair to the machine, because this matters. Nobody, really,
+accepts those memories at face value. We do it because it's easy, it's
+fast, and it comes back with something that sounds pretty good to us.
+And we all paste straight from the tool more often than we'd like to
+admit.
 
 Here's the part worth seeing. Look at daily effort — memory alone,
 none; after four sessions, about the same. That's the honest answer:
@@ -242,10 +245,16 @@ series works out to four-eighty a seat; three series, two eighty-seven.
 So if you want a morning group and an evening group, that's affordable
 now, and that's deliberate.
 
-And the right-hand column matters more than the left: no cost to anyone
-in the room, no license or seat fee, no second invoice to launch, and
-nothing that lapses when we leave. From you, a room with wifi and a
-repeating slot that suits your people."
+And the right-hand column matters more than the left. No cost to anyone
+in the room, no license or seat fee, no second invoice to launch,
+nothing that lapses when we leave.
+
+And then the part I'd point at, because this only works as a
+partnership: from you, four things. The room — power, wifi, the same
+slot each week. The machines — your lab if you have one, or just the
+go-ahead for us to bring loaners. The people — ten seats. And the
+green light: the budget line or the sponsor, and whoever has to say
+yes internally. That's your half, and we can't do it without it."
 
 **17 · The close — 9:52**
 "One decision. If you want this for the people you serve, the form is at

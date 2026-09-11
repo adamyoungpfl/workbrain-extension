@@ -47,8 +47,6 @@ Nothing was flagged. Nobody was asked. The words that carried the expertise are 
 
 Interpretation is prediction too. Handed a request from the ops lead who has been with you fifteen years, it hears the average asker's meaning — not hers:
 
-It does not ask. It answers the question it assumed — confidently, and in the same breath. The shorthand it drops is the part a person would have known to keep.
-
 ---
 
 ## Slide 6 — 05 · They've seen this movie
@@ -61,7 +59,7 @@ Twenty years of web cookies: a dossier nobody authored, kept for someone else's 
 
 ## Slide 7 — 06 · The sequel, already installed
 
-**Every one of them already has one.**
+**Curated Dreams and Restricted Memories anyone?**
 
 - **Common** — On by default on all five major services surveyed. Nobody opted in.
 - **Assumed** — Inferred, not written — and it rewrites itself over time. OpenAI calls that process "dreaming."
@@ -84,7 +82,7 @@ Twenty years of web cookies: a dossier nobody authored, kept for someone else's 
 
 **The effort doesn't change. The ceiling does.**
 
-Nobody accepts that memory on principle — it just costs nothing and comes back well-composed. And we all paste straight from the tool more often than we'd admit. Keep it.
+Nobody, really, accepts those memories at face value though. We do it because it is easy, it is fast and comes back with something that sounds pretty good to us. And we all paste straight from the tool more often than we'd like to admit.
 
 - Memory alonenone
 - After four sessionsabout the same
@@ -178,10 +176,9 @@ _All of it is public, including the six claims this program rests on — written
 
 - No cost to anyone in the room, and no charge for a person who has to miss a session.
 - No software license, seat fee or subscription — before, during, or after.
-- No second invoice to launch: the base covers setup, devices and reporting for every series you run.
-- Nothing lapses when we leave. What they build keeps working, free, permanently.
+- No second invoice to launch, and nothing lapses when we leave — what they build keeps working, free, permanently.
 
-_From you: a room with wifi, a repeating slot that suits the shift pattern, and the people who should be in it. We do not sell to your staff. Insurance carried, facilitators background-checked, documentation on request._
+_We never sell to your staff. Insurance and background checks documented on request._
 
 ---
 
