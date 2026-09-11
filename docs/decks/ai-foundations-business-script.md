@@ -38,11 +38,20 @@ Do not cut 03; it is the beat people repeat to someone else afterward.
 
 **TITLE — 0:00**
 "Everyone handed out the tool. Nobody taught anybody to own it. That's
-the whole ten minutes. And the price is already on the screen —
-forty-eight hundred for your first series, up to ten of your team, and
-nobody in the room pays anything. I'm not going to build to
-it dramatically. I'll tell you what it gives your team, and
-you'll say yes or no, and either answer is genuinely fine."
+the whole ten minutes.
+
+Here's what it is, plainly. In four sessions your team builds a
+plain-text file that makes any AI tool work like it already knows them —
+your names for things, your standards, the way the work is actually done
+here — and each person proves it against their own before-and-after. The
+files are theirs; the written methods stay with the team. And you become
+the employer that taught them to use this well, instead of the one that
+rolled out a license and hoped.
+
+The price is on the screen too — there's a tag right there and I'll show
+you the whole invoice near the end. I'm not going to build to it
+dramatically. Ten minutes, no follow-up sequence, and either answer is
+genuinely fine."
 
 **01 · Hope this email finds you ___ — 0:35**
 "Finish that sentence for me. …You did it before I asked. That reflex

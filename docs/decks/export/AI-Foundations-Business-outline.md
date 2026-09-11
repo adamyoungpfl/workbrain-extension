@@ -11,9 +11,11 @@ Presenter script: ai-foundations-business-script.md.
 
 **Everyone gave them the tool. Nobody taught them to own it.**
 
-Ten minutes on a skill you can give your team — one that works in any tool, survives whichever app is popular this year, and leaves the method behind when the person moves on.
+In four sessions, your team builds a plain-text file that makes any AI tool work like it already knows them — your names for things, your standards, the way the work is actually done here — and each person proves it against their own before-and-after. The files are theirs; the written methods stay with the team.
 
-_$4,800 funds a first series — four sessions, up to 10 of your team, mornings or evenings · the price is on this slide because there is no follow-up sequence_
+You become the employer that taught them to use this well — not the one that rolled out a license and hoped.
+
+_Ten minutes, and there is no follow-up sequence — you will say yes or no today and either answer is fine._
 
 ---
 

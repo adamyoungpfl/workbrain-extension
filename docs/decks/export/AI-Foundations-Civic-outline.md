@@ -11,9 +11,11 @@ Presenter script: ai-foundations-civic-script.md.
 
 **Everyone gave them the tool. Nobody taught them to own it.**
 
-Ten minutes on a skill you can put in the hands of the people who count on you — one that stays theirs, works in any tool, and outlives whichever app is popular this year.
+In four sessions, the people you serve build a plain-text file that makes any AI tool work like it already knows them — their words, their standards, their way of doing the work — and they prove it against their own before-and-after. They keep every bit of it, free, permanently.
 
-_$4,800 funds a first series — four sessions, up to 10 seats, mornings or evenings · they never pay a cent · the price is on this slide because there is no follow-up sequence_
+You become the organization that taught them to use this well — not the one that handed out a login and hoped.
+
+_Ten minutes, and there is no follow-up sequence — you will say yes or no today and either answer is fine._
 
 ---
 

@@ -53,6 +53,12 @@
   .brand b { color: var(--ink-2); }
   .hint { position: fixed; right: 26px; top: 20px; font-size: 12px; color: var(--ink-3); }
   @media (max-width: 760px) { .cols, .cols3, .cols4 { grid-template-columns: 1fr; } .slide { padding: 6vh 7vw; overflow-y: auto; justify-content: flex-start; } }
+  /* Title — what it delivers, and the price one click away. */
+  .deliver { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; align-items: center; }
+  .chip-d { padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(232,237,249,0.22); background: rgba(232,237,249,0.04); font-size: 13.5px; font-weight: 650; color: var(--ink-2); }
+  .price-pill { display: inline-flex; align-items: center; gap: 9px; padding: 9px 17px; border-radius: 999px; border: 1px solid rgba(79,196,139,0.5); background: rgba(79,196,139,0.1); color: var(--green-deep); font-size: 13.5px; font-weight: 700; font-family: var(--sans); cursor: pointer; transition: background 180ms, border-color 180ms; }
+  .price-pill:hover, .price-pill:focus-visible { background: rgba(79,196,139,0.2); border-color: var(--green-deep); outline: none; }
+  .price-pill svg { width: 15px; height: 15px; }
   /* Slide 07 — the investigation tiles; the checks reveal on hover,
      on keyboard focus, and always in print. */
   .tile { position: relative; overflow: hidden; cursor: default; transition: border-color 200ms, background 200ms; }
@@ -134,8 +140,19 @@
 <section class="slide on">
   <p class="eyebrow">AI Foundations · Workbrain by Model Citizen</p>
   <h1>Everyone gave them the tool.<br><span class="quiet">Nobody taught them to</span> <span class="em">own it.</span></h1>
-  <p class="lead">Ten minutes on a skill you can put in the hands of the people who count on you — one that stays theirs, works in any tool, and outlives whichever app is popular this year.</p>
-  <p class="fine">$4,800 funds a first series — four sessions, up to 10 seats, mornings or evenings · they never pay a cent · the price is on this slide because there is no follow-up sequence</p>
+  <p class="lead" style="max-width:none">In four sessions, the people you serve build a plain-text file that makes any AI tool work like it already knows them — <strong>their words, their standards, their way of doing the work</strong> — and they prove it against their own before-and-after. They keep every bit of it, free, permanently.</p>
+  <p class="lead" style="margin-top:16px;max-width:none;color:var(--green-deep)">You become the organization that taught them to use this well — not the one that handed out a login and hoped.</p>
+  <div class="deliver">
+    <span class="chip-d">4 sessions · 90 minutes</span>
+    <span class="chip-d">Up to 10 seats</span>
+    <span class="chip-d">Mornings or evenings</span>
+    <span class="chip-d">They own everything they make</span>
+    <button type="button" class="price-pill" data-slide="17">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M20.6 13.4 12 22l-9-9V3h10z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg>
+      Priced in full, nothing hidden — see the number
+    </button>
+  </div>
+  <p class="fine" style="margin-top:24px;max-width:none">Ten minutes, and there is no follow-up sequence — you will say yes or no today and either answer is fine.</p>
 </section>
 
 <section class="slide">
@@ -421,6 +438,8 @@
   });
   document.addEventListener('click', function (e) {
     if (e.target.closest('a')) return;
+    var jump = e.target.closest('[data-slide]');
+    if (jump) { e.stopPropagation(); show(parseInt(jump.getAttribute('data-slide'), 10) - 1); return; }
     show(e.clientX > window.innerWidth / 2 ? i + 1 : i - 1);
   });
   show(0);
