@@ -7,7 +7,7 @@
 <style>
   /* Workbrain deck — self-contained; tokens mirror site/site.css.
      Present with ← → (or space / click edges). Cmd+P exports every slide
-     to one landscape page each. Pass 6d — empowerment cut, warm register; the presenter
+     to one landscape page each. Pass 6e — the noise, the tiles, the ceiling, the receipt; the presenter
      script is docs/decks/ai-foundations-script.md. */
   :root {
     --field: #070a12; --ink: #e8edf9; --ink-2: #a6b6dc; --ink-3: #6b7a9c;
@@ -51,6 +51,38 @@
   .brand b { color: var(--ink-2); }
   .hint { position: fixed; right: 26px; top: 20px; font-size: 12px; color: var(--ink-3); }
   @media (max-width: 760px) { .cols, .cols3, .cols4 { grid-template-columns: 1fr; } .slide { padding: 6vh 7vw; overflow-y: auto; justify-content: flex-start; } }
+  /* Slide 07 — the investigation tiles; the checks reveal on hover,
+     on keyboard focus, and always in print. */
+  .tile { position: relative; overflow: hidden; cursor: default; transition: border-color 200ms, background 200ms; }
+  .tile:hover, .tile:focus-within { border-color: rgba(79,196,139,0.55); background: rgba(79,196,139,0.07); }
+  .tile-cat, .panel .tile-cat { font-size: 11.5px; font-weight: 800; letter-spacing: .16em; text-transform: uppercase; color: var(--green-deep); margin: 0 0 12px; }
+  .panel .tile-q { font-size: 19px; line-height: 1.35; font-weight: 680; color: #ffffff; margin: 0; }
+  .tile-reveal { max-height: 0; opacity: 0; transition: max-height 260ms ease, opacity 200ms ease, margin-top 260ms ease; margin-top: 0; }
+  .tile:hover .tile-reveal, .tile:focus-within .tile-reveal { max-height: 260px; opacity: 1; margin-top: 16px; }
+  .panel .tile-reveal p { margin: 0 0 8px; font-size: 13.5px; line-height: 1.5; color: var(--ink-2); }
+  .panel .tile-reveal p:last-child { margin-bottom: 0; color: var(--ink-3); }
+  .tile-reveal b { color: var(--green-deep); font-weight: 700; }
+  .panel .tile-hint { margin-top: 14px; font-size: 12px; color: var(--ink-3); letter-spacing: .04em; }
+  .panel.tile:hover .tile-hint, .panel.tile:focus-within .tile-hint { display: none; }
+  @media (prefers-reduced-motion: reduce) { .tile-reveal { transition: none; } }
+  /* Slide 08 — effort stays flat, the ceiling moves. */
+  .bars { margin-top: 34px; display: grid; gap: 26px; }
+  .bar-group h4 { margin: 0 0 14px; font-size: 12.5px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; color: var(--ink-3); }
+  .bar { display: grid; grid-template-columns: 190px 1fr; gap: 18px; align-items: center; margin-bottom: 10px; }
+  .bar span { font-size: 14px; color: var(--ink-2); }
+  .bar .track { height: 26px; border-radius: 13px; background: rgba(232,237,249,0.07); position: relative; overflow: hidden; }
+  .bar .fill { position: absolute; inset: 0 auto 0 0; border-radius: 13px; display: flex; align-items: center; padding-left: 14px; font-size: 13px; font-weight: 650; color: #06120c; white-space: nowrap; }
+  .fill.grey { background: var(--ink-3); color: #0b0f18; }
+  .fill.green { background: linear-gradient(90deg, var(--green), var(--green-deep)); }
+  /* Slide 16 — the receipt. */
+  .receipt { border: 1px solid rgba(232,237,249,0.18); border-radius: 16px; padding: 26px 30px; background: rgba(232,237,249,0.04); }
+  .r-row { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px dashed rgba(232,237,249,0.16); font-size: 14.5px; color: var(--ink-2); }
+  .r-row b { font-family: var(--mono); font-weight: 600; color: var(--ink); white-space: nowrap; }
+  .r-total { display: flex; justify-content: space-between; gap: 16px; padding: 16px 0 0; margin-top: 6px; border-top: 2px solid var(--green); font-size: 17px; font-weight: 750; color: var(--ink); }
+  .r-total b { font-family: var(--mono); color: var(--green-deep); font-size: 22px; }
+  .r-none { margin: 0; display: grid; gap: 11px; padding: 0; list-style: none; }
+  .r-none li { font-size: 14.5px; line-height: 1.5; color: var(--ink-2); padding-left: 26px; position: relative; }
+  .r-none li::before { content: "—"; position: absolute; left: 0; color: var(--green-deep); font-weight: 700; }
   /* Print / PDF: every slide on its own landscape page. */
   @page { size: 1280px 720px; margin: 0; }
   @media print {
@@ -60,6 +92,8 @@
     .hint { display: none; }
     .brand, .counter { position: absolute; }
     h1 { font-size: 58px; } .lead { font-size: 20px; } .fine { font-size: 13px; }
+    .tile-reveal { max-height: none !important; opacity: 1 !important; margin-top: 16px !important; }
+    .tile-hint { display: none; }
   }
 </style>
 </head>
@@ -81,8 +115,9 @@
 
 <section class="slide">
   <p class="eyebrow blue">02 · The objective, plainly</p>
-  <h1>It always bets on <span class="em">average.</span></h1>
-  <p class="lead">Not a flaw — the definition. The most likely word is the most common one, so every draft that comes back to the folks you serve <strong>starts life as the most common version of the thought.</strong> They can beat that. Nobody has ever shown them how.</p>
+  <h1>The most common version<br>of the thought is becoming <span class="em">the noise.</span></h1>
+  <p class="lead">The most likely word is the most common one — that isn't a flaw, it's the definition. So every draft that comes back starts life as the most common version of the thought. <strong>Multiply that by everyone, every day.</strong></p>
+  <p class="lead" style="margin-top:18px">It is already getting hard to tell where the assistant ended and the person began — in an inbox, in an application, in a proposal. <strong>That line is worth being able to draw.</strong></p>
 </section>
 
 <section class="slide">
@@ -114,21 +149,57 @@
   <p class="eyebrow">06 · Something you can give them tonight</p>
   <h1>Three questions.<br>No cost, no sign-up.</h1>
   <div class="cols3">
-    <div class="panel"><p class="gotcha">"What do you remember about me?"<em>Count what is flat wrong.</em></p></div>
-    <div class="panel"><p class="gotcha">"Describe how I communicate."<em>See whether you recognize the person it describes.</em></p></div>
-    <div class="panel"><p class="gotcha">"What matters most in my work?"<em>Watch it answer with everyone's answer.</em></p></div>
+    <div class="panel tile" tabindex="0">
+      <p class="tile-cat">Accuracy</p>
+      <p class="tile-q">"What do you remember about me?"</p>
+      <div class="tile-reveal">
+        <p><b>Look for</b> a job title, a project, or a tool you have already moved on from.</p>
+        <p><b>Confirm it</b> by opening the memory page itself — if it is still listed there, it is still shaping every answer.</p>
+        <p>Field guide: last slide.</p>
+      </div>
+      <p class="tile-hint">What should be true vs. what is →</p>
+    </div>
+    <div class="panel tile" tabindex="0">
+      <p class="tile-cat">Voice</p>
+      <p class="tile-q">"Describe how I communicate."</p>
+      <div class="tile-reveal">
+        <p><b>Look for</b> an adjective you would never use about yourself.</p>
+        <p><b>Confirm it</b> by holding the description next to something you actually wrote last week.</p>
+        <p>Field guide: last slide.</p>
+      </div>
+      <p class="tile-hint">What should be true vs. what is →</p>
+    </div>
+    <div class="panel tile" tabindex="0">
+      <p class="tile-cat">Priorities</p>
+      <p class="tile-q">"What matters most in my work?"</p>
+      <div class="tile-reveal">
+        <p><b>Look for</b> what is missing — the thing you would have said first.</p>
+        <p><b>Confirm it</b> by asking it to rank three of your real responsibilities, then check the order against yours.</p>
+        <p>Field guide: last slide.</p>
+      </div>
+      <p class="tile-hint">What should be true vs. what is →</p>
+    </div>
   </div>
-  <p class="fine">Send them to your staff, post them for your members, or just try them yourself tonight. Whatever happens on your screen is happening on theirs too — every day, quietly. Where each service keeps its memory page: the field guide at the end.</p>
+  <p class="fine">Send them to your staff, post them for your members, or try them yourself tonight. Whatever happens on your screen is happening on theirs too, every day, quietly.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow amber">07 · Being fair to the machine</p>
-  <h1>The honest ledger.</h1>
-  <div class="cols">
-    <div class="panel"><h3 style="color:var(--green-deep)">What that memory does well</h3><p>Zero effort — it fills itself. Continuity across chats. The mundane, reliably: tone, recurring facts, updates nobody would think to record. Concede every bit of it; it's true.</p></div>
-    <div class="panel"><h3 style="color:var(--danger)">What it cannot do</h3><p>Confirm anything with the person. Tell them when it rewrote itself. Move with the person to another assistant — or another employer. Read what is distinctive about them as anything but noise.</p></div>
+  <h1>The effort doesn't change.<br>The <span class="em">ceiling</span> does.</h1>
+  <p class="lead" style="margin-top:20px">Nobody accepts that memory on principle — it just costs nothing and comes back well-composed. And <strong>we all paste straight from the assistant more often than we'd admit.</strong> Keep it.</p>
+  <div class="bars" style="margin-top:26px;gap:20px">
+    <div class="bar-group">
+      <h4>Daily effort</h4>
+      <div class="bar"><span>Memory alone</span><div class="track"><div class="fill grey" style="width:16%">none</div></div></div>
+      <div class="bar"><span>After four evenings</span><div class="track"><div class="fill grey" style="width:19%">about the same</div></div></div>
+    </div>
+    <div class="bar-group">
+      <h4>What the tool can be trusted with</h4>
+      <div class="bar"><span>Memory alone</span><div class="track"><div class="fill grey" style="width:26%">drafts, in the house style</div></div></div>
+      <div class="bar"><span>After four evenings</span><div class="track"><div class="fill green" style="width:92%">drafts in their voice · repeatable methods · actions worth automating</div></div></div>
+    </div>
   </div>
-  <p class="lead" style="margin-top:34px">Let them use it — and don't let it be the <strong>only</strong> thing that speaks for them. It is the model's <em>reading</em> of someone, stored: each misread shapes the next one. <strong>A memory nobody authored is a lens nobody can focus.</strong></p>
+  <p class="fine" style="margin-top:24px">One hour of writing, once, barely moves tomorrow's effort. It moves what the tool is allowed to do — and written methods are the prerequisite for automating anything responsibly.</p>
 </section>
 
 <section class="slide">
@@ -151,12 +222,13 @@
 </section>
 
 <section class="slide">
-  <p class="eyebrow violet">11 · The two default policies</p>
-  <div class="cols">
-    <div class="panel"><h3>Ban it</h3><p>They use it anyway — personal accounts, at home, with nobody to ask. You lose the oversight and the leverage, and nobody learns a thing.</p></div>
-    <div class="panel"><h3>Let it run</h3><p>Unsupported adoption walks everyone toward the same house style. You keep the leverage and quietly spend what made each person distinct.</p></div>
+  <p class="eyebrow violet">11 · Conventional wisdom</p>
+  <h1 style="font-size:clamp(32px,4.2vw,56px)">You have two choices to make right now.</h1>
+  <div class="cols" style="margin-top:30px">
+    <div class="panel"><h3 style="color:var(--amber)">Avoidance</h3><p>Hold the line until it settles down. Perfectly reasonable — and they are using it anyway, on personal accounts, at home, with nobody to ask. You get none of the oversight and none of the learning.</p></div>
+    <div class="panel"><h3 style="color:var(--amber)">Acceptance</h3><p>Let everyone get on with it. Also reasonable — and unsupported adoption walks the whole room toward the same house style, spending the very thing that made each person worth hiring.</p></div>
   </div>
-  <p class="lead" style="margin-top:34px">Both defaults leave everyone to work it out alone. There is a third option, and it is a <strong>teaching</strong> one.</p>
+  <p class="lead" style="margin-top:30px">Both are plausible. Both leave everyone to work it out alone. <strong>And the organizations that look miles ahead of you chose neither</strong> — they taught their people a third thing, and the folks you serve are four evenings from the same unlock. They will credit it to you.</p>
 </section>
 
 <section class="slide">
@@ -178,21 +250,40 @@
 </section>
 
 <section class="slide">
-  <p class="eyebrow">14 · How you'll know it worked</p>
+  <p class="eyebrow">14 · What you can stand behind</p>
   <h1>Numbers, not testimonials.</h1>
   <div class="cols3">
-    <div class="panel"><h3>A public standard</h3><p>Four checks, five minutes, no judgment call in it. Any skeptic on your staff can run it — and argue with it.</p></div>
-    <div class="panel"><h3>Per-person evidence</h3><p>Context typed, exchanges needed, whether the result got used — measured before any teaching, and again at the end.</p></div>
-    <div class="panel"><h3>Honest reporting</h3><p>At 90 and 180 days, always with the response rate attached. We do not claim employment outcomes.</p></div>
+    <div class="panel"><h3>You can say what "good" means</h3><p>It is four plain checks anyone can run in five minutes, published on a public page. Nobody has to take our word for what a good result looks like — including you.</p></div>
+    <div class="panel"><h3>You can say how we know</h3><p>Every participant does the same kind of task before any teaching and again at the end, and keeps both. The evidence is theirs, on their own work — not a survey about how the class felt.</p></div>
+    <div class="panel"><h3>You can say what we won't claim</h3><p>At 90 and 180 days we report back, always with the response rate attached. We do not claim employment outcomes — people tell us what happened, and we pass it on as reported.</p></div>
   </div>
-  <p class="fine">The standard, and the six claims we invite anyone to attack: <span class="mono">myworkbrain.org/good</span></p>
+  <p class="fine">All of it is public, including the six claims this program rests on — written down so anyone who thinks we are wrong can say exactly where: <span class="mono">myworkbrain.org/good</span></p>
 </section>
 
 <section class="slide">
-  <p class="eyebrow">15 · The offer, priced</p>
-  <h1>$4,800. Four evenings.<br>16–20 seats in your room.</h1>
-  <p class="lead">Facilitation, curriculum, printed materials, loaner devices for anyone without one, certificates, and follow-up reporting. You provide a room with wifi and the folks who should be in it. <strong>They never pay, and the tool stays free forever</strong> — no license, no seat fee, nothing that lapses when we leave.</p>
-  <p class="fine">We do not sell to participants — not during the sessions, not after. General liability carried; facilitators background-checked; documentation on request. Taster sessions and train-your-own-facilitator formats exist; the packet has both.</p>
+  <p class="eyebrow">15 · The offer, itemized</p>
+  <h1 style="font-size:clamp(30px,3.8vw,50px)">One number, and it is the whole number.</h1>
+  <div class="cols" style="gap:3vw;margin-top:28px">
+    <div class="receipt">
+      <div class="r-row"><span>Facilitation — four evenings and a board night</span><b>$2,600</b></div>
+      <div class="r-row"><span>Curriculum, printed materials, certificates</span><b>$400</b></div>
+      <div class="r-row"><span>Loaner devices for anyone without one</span><b>$900</b></div>
+      <div class="r-row"><span>Insurance and administration</span><b>$500</b></div>
+      <div class="r-row"><span>Follow-up reporting at 90 and 180 days</span><b>$400</b></div>
+      <div class="r-total"><span>One cohort · 16–20 seats</span><b>$4,800</b></div>
+    </div>
+    <div>
+      <h3 class="tile-cat" style="margin-bottom:16px">What is not on this invoice</h3>
+      <ul class="r-none">
+        <li>No cost to the people in the room — not a registration fee, not a book, not a device.</li>
+        <li>No software license, no seat fee, no subscription — before, during, or after.</li>
+        <li>No second invoice to launch: materials, certificates, devices and reporting are in the number above.</li>
+        <li>Nothing that lapses when we leave. What they build keeps working for free, permanently.</li>
+        <li>From you: a room with wifi, the same evening each week, and the folks who should be in it.</li>
+      </ul>
+      <p class="fine" style="margin-top:20px">We do not sell to participants, during or after. Liability insurance carried, facilitators background-checked, documentation on request. Taster and train-your-own-facilitator formats are in the packet.</p>
+    </div>
+  </div>
 </section>
 
 <section class="slide">

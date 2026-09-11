@@ -29,9 +29,11 @@ _A simplification an expert accepts: predicting the most likely next word is the
 
 ## Slide 3 — 02 · The objective, plainly
 
-**It always bets on average.**
+**The most common version of the thought is becoming the noise.**
 
-Not a flaw — the definition. The most likely word is the most common one, so every draft that comes back to the folks you serve starts life as the most common version of the thought. They can beat that. Nobody has ever shown them how.
+The most likely word is the most common one — that isn't a flaw, it's the definition. So every draft that comes back starts life as the most common version of the thought. Multiply that by everyone, every day.
+
+It is already getting hard to tell where the assistant ended and the person began — in an inbox, in an application, in a proposal. That line is worth being able to draw.
 
 ---
 
@@ -70,22 +72,21 @@ _Receipts cited in "Durable Context" (Young, 2026) — myworkbrain.org. Nobody w
 
 **Three questions. No cost, no sign-up.**
 
-- "What do you remember about me?"Count what is flat wrong.
-- "Describe how I communicate."See whether you recognize the person it describes.
-- "What matters most in my work?"Watch it answer with everyone's answer.
+- Accuracy
+- Voice
+- Priorities
 
-_Send them to your staff, post them for your members, or just try them yourself tonight. Whatever happens on your screen is happening on theirs too — every day, quietly. Where each service keeps its memory page: the field guide at the end._
+_Send them to your staff, post them for your members, or try them yourself tonight. Whatever happens on your screen is happening on theirs too, every day, quietly._
 
 ---
 
 ## Slide 8 — 07 · Being fair to the machine
 
-**The honest ledger.**
+**The effort doesn't change. The ceiling does.**
 
-Let them use it — and don't let it be the only thing that speaks for them. It is the model's reading of someone, stored: each misread shapes the next one. A memory nobody authored is a lens nobody can focus.
+Nobody accepts that memory on principle — it just costs nothing and comes back well-composed. And we all paste straight from the assistant more often than we'd admit. Keep it.
 
-- **What that memory does well** — Zero effort — it fills itself. Continuity across chats. The mundane, reliably: tone, recurring facts, updates nobody would think to record. Concede every bit of it; it's true.
-- **What it cannot do** — Confirm anything with the person. Tell them when it rewrote itself. Move with the person to another assistant — or another employer. Read what is distinctive about them as anything but noise.
+_One hour of writing, once, barely moves tomorrow's effort. It moves what the tool is allowed to do — and written methods are the prerequisite for automating anything responsibly._
 
 ---
 
@@ -115,12 +116,14 @@ Your competitor's proposal was written by the same model as yours. So was the gr
 
 ---
 
-## Slide 12 — 11 · The two default policies
+## Slide 12 — 11 · Conventional wisdom
 
-Both defaults leave everyone to work it out alone. There is a third option, and it is a teaching one.
+**You have two choices to make right now.**
 
-- **Ban it** — They use it anyway — personal accounts, at home, with nobody to ask. You lose the oversight and the leverage, and nobody learns a thing.
-- **Let it run** — Unsupported adoption walks everyone toward the same house style. You keep the leverage and quietly spend what made each person distinct.
+Both are plausible. Both leave everyone to work it out alone. And the organizations that look miles ahead of you chose neither — they taught their people a third thing, and the folks you serve are four evenings from the same unlock. They will credit it to you.
+
+- **Avoidance** — Hold the line until it settles down. Perfectly reasonable — and they are using it anyway, on personal accounts, at home, with nobody to ask. You get none of the oversight and none of the learning.
+- **Acceptance** — Let everyone get on with it. Also reasonable — and unsupported adoption walks the whole room toward the same house style, spending the very thing that made each person worth hiring.
 
 ---
 
@@ -145,25 +148,23 @@ It works in a tool that doesn't exist yet, at their next job, in a model nobody 
 
 ---
 
-## Slide 15 — 14 · How you'll know it worked
+## Slide 15 — 14 · What you can stand behind
 
 **Numbers, not testimonials.**
 
-- **A public standard** — Four checks, five minutes, no judgment call in it. Any skeptic on your staff can run it — and argue with it.
-- **Per-person evidence** — Context typed, exchanges needed, whether the result got used — measured before any teaching, and again at the end.
-- **Honest reporting** — At 90 and 180 days, always with the response rate attached. We do not claim employment outcomes.
+- **You can say what "good" means** — It is four plain checks anyone can run in five minutes, published on a public page. Nobody has to take our word for what a good result looks like — including you.
+- **You can say how we know** — Every participant does the same kind of task before any teaching and again at the end, and keeps both. The evidence is theirs, on their own work — not a survey about how the class felt.
+- **You can say what we won't claim** — At 90 and 180 days we report back, always with the response rate attached. We do not claim employment outcomes — people tell us what happened, and we pass it on as reported.
 
-_The standard, and the six claims we invite anyone to attack: myworkbrain.org/good_
+_All of it is public, including the six claims this program rests on — written down so anyone who thinks we are wrong can say exactly where: myworkbrain.org/good_
 
 ---
 
-## Slide 16 — 15 · The offer, priced
+## Slide 16 — 15 · The offer, itemized
 
-**$4,800. Four evenings. 16–20 seats in your room.**
+**One number, and it is the whole number.**
 
-Facilitation, curriculum, printed materials, loaner devices for anyone without one, certificates, and follow-up reporting. You provide a room with wifi and the folks who should be in it. They never pay, and the tool stays free forever — no license, no seat fee, nothing that lapses when we leave.
-
-_We do not sell to participants — not during the sessions, not after. General liability carried; facilitators background-checked; documentation on request. Taster sessions and train-your-own-facilitator formats exist; the packet has both._
+_We do not sell to participants, during or after. Liability insurance carried, facilitators background-checked, documentation on request. Taster and train-your-own-facilitator formats are in the packet._
 
 ---
 

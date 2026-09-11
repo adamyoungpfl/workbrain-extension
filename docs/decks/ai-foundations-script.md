@@ -39,11 +39,13 @@ you just felt is the entire technology. The assistant everyone in your
 building is already using does that for every word it writes: it
 continues with what most people would say."
 
-**02 · It always bets on average — 1:20**
+**02 · The most common version is becoming the noise — 1:20**
 "That's not a flaw, it's the definition — the most likely word is the
-most common word. So every draft that comes back to the folks you serve
-starts life as the most common version of the thought. They can beat
-that. Nobody has ever shown them how."
+most common word. So every draft that comes back starts life as the
+most common version of the thought. Now multiply that by everyone,
+every day. It is already getting hard to tell where the assistant
+ended and the person began — in an inbox, in an application, in a
+proposal. That line is worth being able to draw."
 
 **03 · And it reads them the same way — 1:55**
 "Here's the half nobody mentions. It doesn't just write like the
@@ -74,22 +76,34 @@ reads them through — not the person it describes, not you. Most have
 never laid eyes on it."
 
 **06 · Three questions — 4:25**
-"So here's something you can give them tonight, free, whether or not
-you ever talk to me again. Three questions to run on their own
-assistant. What do you remember about me — count what's flat wrong.
-Describe how I communicate — see if you recognize the person. What
-matters most in my work — and watch it answer with everyone's answer.
-Do it yourself tonight. Whatever it does on your screen is happening on
-theirs too, every day, quietly. There's a field guide at the end
-for where each service keeps that page — take a photo of it."
+"Here's something you can give them tonight, free, whether or not you
+ever talk to me again. Three questions, and each one checks a
+different thing against what should be true.
 
-**07 · The honest ledger — 5:15**
-"To be fair to the machine: that memory is genuinely good at the
-mundane. Zero effort, remembers recurring facts, updates itself. All
-true, concede it. What it cannot do: confirm anything with the person,
-tell them when it rewrote itself, move with them to another assistant
-or another employer, or read what's distinctive about them as anything
-but noise. A memory nobody authored is a lens nobody can focus."
+Accuracy: what do you remember about me — look for a job title or a
+project they've already moved on from. Voice: describe how I
+communicate — look for an adjective they'd never use about
+themselves, and hold it next to something they actually wrote last
+week. Priorities: what matters most in my work — and notice what's
+missing, the thing they'd have said first.
+
+Do it yourself tonight. Whatever happens on your screen is happening
+on theirs, every day, quietly. There's a field guide at the end for
+where each service keeps that page — take a photo of it."
+
+**07 · The effort doesn't change, the ceiling does — 5:25**
+"Let me be fair to the machine, because this matters. Nobody accepts
+that memory on principle — they accept it because it costs nothing and
+comes back well-composed. And let's be honest with each other: we all
+paste straight from the assistant more often than we'd admit. Keep it.
+
+Here's the part worth seeing. Look at daily effort — memory alone,
+none; after four evenings, about the same. That's the honest answer:
+an hour of writing, once, and tomorrow looks like today. Now look at
+what the tool can be trusted with. Memory alone gets you drafts in the
+house style. With a file behind it: drafts in their voice, methods
+that repeat, and actions worth automating — because a written method
+is the prerequisite for automating anything responsibly."
 
 **08 · Individually faster, collectively identical — 6:05**
 "And the measured group effect: AI assistance makes each person better
@@ -110,11 +124,18 @@ was written by the same model as yours. So was the grant application
 from the organization across town. Has anyone given the folks doing
 that work a way to put themselves back into it?"
 
-**11 · The two defaults — 7:40** *(cut this beat if behind)*
-"Most organizations land on one of two defaults. Ban it — and people
-use it anyway, on their own phones, unsupported. Or let it run — and
-everyone converges on the same house style. Both defaults leave
-everyone to work it out alone."
+**11 · Conventional wisdom — 7:40** *(cut this beat if behind)*
+"Conventional wisdom says you have two choices to make right now.
+Avoidance: hold the line until this settles down — perfectly
+reasonable, and they're using it anyway, at home, with nobody to ask.
+Or acceptance: let everyone get on with it — also reasonable, and the
+whole room drifts toward the same house style.
+
+Both are plausible. Both leave everyone to work it out alone. And the
+organizations that look like they're miles ahead of you? They picked
+neither. They taught their people a third thing — and the folks you
+serve are four evenings from that same unlock. They'll credit it to
+you."
 
 **12 · Teach them to author their own context — 8:05**
 "The third option is a teaching one, and it's almost boring. Each
@@ -134,21 +155,29 @@ what they built — verifiable, goes on a profile. All of it works at
 their next job, in a model nobody has released yet. Nothing expires
 when we leave."
 
-**14 · Numbers, not testimonials — 9:10**
-"You don't have to take any of this on faith. There's a public standard
-— four checks, five minutes, no judgment call in it; any skeptic on
-your staff can run it and argue with it. Every participant measures
-their own before-and-after. You get reporting at ninety and one-eighty
-days with the response rate attached, and we don't claim employment
-outcomes."
+**14 · What you can stand behind — 9:10**
+"If you fund this, here's what you'll be able to say about it. You can
+say what good means — it's four plain checks anyone can run in five
+minutes, published on a public page, so nobody has to take our word
+for it, including you. You can say how we know — every person does the
+same kind of task before any teaching and again at the end, and keeps
+both; the evidence is theirs, on their own work, not a survey about
+how the class felt. And you can say what we won't claim — we report at
+ninety and one-eighty days with the response rate attached, and we
+don't claim employment outcomes. People tell us what happened and we
+pass it on as reported."
 
-**15 · The offer — 9:35**
-"So: the number from the first slide. Forty-eight hundred funds one
-cohort — four evenings in your building, sixteen to twenty seats,
-facilitation, materials, loaner devices for anyone who needs one,
-certificates, follow-up reporting. You bring a room with wifi and the
-folks who should be in it. They never pay, and the tool stays free
-forever afterward. We don't sell to participants, during or after."
+**15 · The offer, itemized — 9:35**
+"So here it is, itemized, because I'd rather you see the whole thing
+than wonder what's underneath it. Facilitation, twenty-six hundred.
+Curriculum and certificates, four hundred. Loaner devices for anyone
+who needs one, nine hundred. Insurance and admin, five. Follow-up
+reporting, four. Forty-eight hundred, one cohort.
+
+And the right-hand column matters more: there's no cost to the people
+in the room, no license or seat fee, no second invoice to launch, and
+nothing that lapses when we leave. From you, a room with wifi and the
+folks who should be in it. That's the whole number."
 
 **16 · The close — 9:55**
 "One decision. If you want this for the people you serve, the form is at
