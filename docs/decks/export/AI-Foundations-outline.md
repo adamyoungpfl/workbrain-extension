@@ -11,7 +11,7 @@ PowerPoint outline import, Keynote, or an LLM). Pass 6c, empowerment cut.
 
 **Everyone gave them the tool. Nobody taught them to own it.**
 
-Ten minutes on a skill you can put in the hands of the people who count on you — one that stays theirs, works in any assistant, and outlives whichever app is popular this year.
+Ten minutes on a skill you can put in the hands of the people who count on you — one that stays theirs, works in any tool, and outlives whichever app is popular this year.
 
 _$4,800 funds one cohort of 16–20 — your staff, your members, or a mix · they never pay a cent · the price is on this slide because there is no follow-up sequence_
 
@@ -21,7 +21,7 @@ _$4,800 funds one cohort of 16–20 — your staff, your members, or a mix · th
 
 **Hope this email finds you ___**
 
-You filled that in before I finished the sentence. So does the assistant everyone in your building is already using — for every word it writes. It is autocomplete at enormous scale: it continues with what most people would say.
+You filled that in before I finished the sentence. So does the tool everyone in your building is already using — for every word it writes. It is autocomplete at enormous scale: it continues with what most people would say.
 
 _A simplification an expert accepts: predicting the most likely next word is the literal training objective._
 
@@ -33,7 +33,7 @@ _A simplification an expert accepts: predicting the most likely next word is the
 
 The most likely word is the most common one — that isn't a flaw, it's the definition. So every draft that comes back starts life as the most common version of the thought. Multiply that by everyone, every day.
 
-It is already getting hard to tell where the assistant ended and the person began — in an inbox, in an application, in a proposal. That line is worth being able to draw.
+It is already getting hard to tell where the tool ended and the person began — in an inbox, in an application, in a proposal. That line is worth being able to draw.
 
 ---
 
@@ -64,7 +64,7 @@ Twenty years of web cookies: a dossier nobody authored, kept for someone else's 
 - At Microsoft: exempt from retention policy, not audit-logged, not restrictable — their own documentation.
 - At Perplexity Enterprise: those memories belong to the organization, and access ends when the person leaves.
 
-_Receipts cited in "Durable Context" (Young, 2026) — myworkbrain.org. Nobody wrote the profile their assistant reads them through — not the person it describes, not you. Most have never laid eyes on it._
+_Receipts cited in "Durable Context" (Young, 2026) — myworkbrain.org. Nobody wrote the profile the tool reads them through — not the person it describes, not you. Most have never laid eyes on it._
 
 ---
 
@@ -84,7 +84,7 @@ _Send them to your staff, post them for your members, or try them yourself tonig
 
 **The effort doesn't change. The ceiling does.**
 
-Nobody accepts that memory on principle — it just costs nothing and comes back well-composed. And we all paste straight from the assistant more often than we'd admit. Keep it.
+Nobody accepts that memory on principle — it just costs nothing and comes back well-composed. And we all paste straight from the tool more often than we'd admit. Keep it.
 
 _One hour of writing, once, barely moves tomorrow's effort. It moves what the tool is allowed to do — and written methods are the prerequisite for automating anything responsibly._
 
@@ -131,7 +131,9 @@ Both are plausible. Both leave everyone to work it out alone. And the organizati
 
 **Teach them to author their own context.**
 
-Each person writes a short, plain-text file about their own work — their names for things, their judgment, the standards they hold — and hands it to whatever assistant they already use. Nothing routes through us. No account. Nothing transmitted. The tool finally reads and writes from who they actually are.
+Each person writes a short, plain-text file about their own work — their names for things, their judgment, the standards they hold — and hands it to whatever tool they already use. Nothing routes through us. No account. Nothing transmitted. The tool finally reads and writes from who they actually are.
+
+And notice what this is: configuration. Everyone already knows how to set up a tool — a phone, a thermostat, a template they saved once. Nobody knows how to re-raise a colleague.
 
 ---
 
@@ -181,14 +183,14 @@ _Workbrain · by Model Citizen · the standard at myworkbrain.org/good_
 ## Slide 18 — Appendix A · Push back on us
 
 - **"The homogenization research is early."** It is, and we say so on the slide. What isn't early: memory on by default, profiles nobody authored, and the before-and-after each person measures on their own work. The case never rests its weight on the scary slide.
-- **"This sounds anti-AI. We're trying to drive adoption."** Four evenings of hands-on building with each person's own assistant. The foundations hour exists so the adoption is informed. We teach use — the caution is the seatbelt, not an argument against the car.
+- **"This sounds anti-AI. We're trying to drive adoption."** Four evenings of hands-on building with the tool each person already uses. The foundations hour exists so the adoption is informed. We teach use — the caution is the seatbelt, not an argument against the car.
 - **"The folks I serve need results now, not voice lessons."** Everyone's output is polished now, and readers pattern-match the house style — in hiring, in sales, in grant review. When polish is table stakes, what survives is whose judgment shows. That is an output argument, not a taste argument.
 
 ---
 
 ## Slide 19 — Appendix B · The honest concessions
 
-- **"Isn't this prompt training with extra steps?"** Prompt phrasing doesn't transfer between assistants — the research is clear. An owned file does. The room demonstrates the difference to itself, in five minutes, on their own work.
+- **"Isn't this prompt training with extra steps?"** Prompt phrasing doesn't transfer between tools — the research is clear. An owned file does. The room demonstrates the difference to itself, in five minutes, on their own work.
 - **"You teach people not to sound like the machine… using the machine."** The same way a writing class uses a word processor. The tool drafts; the person and their file decide. Improve what they do — don't replace it.
 - **What we concede without a fight** Average is fine for boilerplate; the file exists for the work that carries someone's name. And a context file steers voice — it does not guarantee it. The promise is authorship plus evidence, never magic.
 

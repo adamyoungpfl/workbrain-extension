@@ -286,6 +286,19 @@ Adam, 2026-09-11: find a friendlier, more familiar way to say it —
 tone of concern for their employees and members, appealing to a
 listener who wants to help people like the ones they serve.
 
+**Say "tool," never "assistant" (Adam, 2026-09-11).** "People
+understand how to configure a tool, they don't know how to change an
+assistant, mentally. It's like changing a person. Configuring a tool is
+something we all do, all the time." The word choice is the whole
+persuasion: *assistant* frames the fix as re-raising a colleague, which
+nobody believes they can do in four evenings; *tool* frames it as
+configuration, which everyone in the room has done this week. Where the
+deck now says it out loud (slide 13): "notice what this is:
+configuration. Everyone already knows how to set up a tool — a phone, a
+thermostat, a template they saved once. Nobody knows how to re-raise a
+colleague." Keep "AI assistance" only where it quotes the research
+(Doshi & Hauser studied exactly that phrase); everywhere else, tool.
+
 **Never "your people."** It reads possessive and corporate, and in a
 civic room it can sound like a category rather than a person.
 

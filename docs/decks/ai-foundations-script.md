@@ -10,7 +10,11 @@ showing someone who already looks out for the people around them a
 capability they can pass along. The hero of every sentence is a person
 they know — never the product, never you.
 
-**The words matter here.** Avoid "your people" — it lands possessive
+**Say "tool," never "assistant."** People know how to configure a tool
+— they do it every week. "Assistant" makes it a person, and nobody
+believes they can change a person's character in four evenings.
+
+**And avoid "your people"** — it lands possessive
 and corporate. Reach instead for *the folks you serve*, *the people
 who count on you*, *everyone in your building*, *your staff*, *your
 members* — and best of all, a specific human: *the coordinator who
@@ -35,7 +39,7 @@ you, and you'll say yes or no, and either answer is genuinely fine."
 
 **01 · Hope this email finds you ___ — 0:40**
 "Finish that sentence for me. …You did it before I asked. That reflex
-you just felt is the entire technology. The assistant everyone in your
+you just felt is the entire technology. The tool everyone in your
 building is already using does that for every word it writes: it
 continues with what most people would say."
 
@@ -43,8 +47,8 @@ continues with what most people would say."
 "That's not a flaw, it's the definition — the most likely word is the
 most common word. So every draft that comes back starts life as the
 most common version of the thought. Now multiply that by everyone,
-every day. It is already getting hard to tell where the assistant
-ended and the person began — in an inbox, in an application, in a
+every day. It is already getting hard to tell where the tool ended
+and the person began — in an inbox, in an application, in a
 proposal. That line is worth being able to draw."
 
 **03 · And it reads them the same way — 1:55**
@@ -71,8 +75,8 @@ invisible to the person it described. We ended up regulating it."
 every major service. Inferred, not written by them, and it rewrites
 itself; OpenAI literally calls the process 'dreaming.' At Microsoft
 it's exempt from retention policy and not audit-logged — that's their
-documentation, not my opinion. Nobody wrote the profile their assistant
-reads them through — not the person it describes, not you. Most have
+documentation, not my opinion. Nobody wrote the profile the tool reads
+them through — not the person it describes, not you. Most have
 never laid eyes on it."
 
 **06 · Three questions — 4:25**
@@ -95,7 +99,7 @@ where each service keeps that page — take a photo of it."
 "Let me be fair to the machine, because this matters. Nobody accepts
 that memory on principle — they accept it because it costs nothing and
 comes back well-composed. And let's be honest with each other: we all
-paste straight from the assistant more often than we'd admit. Keep it.
+paste straight from the tool more often than we'd admit. Keep it.
 
 Here's the part worth seeing. Look at daily effort — memory alone,
 none; after four evenings, about the same. That's the honest answer:
@@ -141,9 +145,14 @@ you."
 "The third option is a teaching one, and it's almost boring. Each
 person writes a short plain-text file about their own work — their
 names for things, their judgment, the standards they hold — and hands
-it to whatever assistant they already use. Nothing routes through us.
-No account, nothing transmitted. The tool finally reads and writes from
-who they actually are."
+it to whatever tool they already use. Nothing routes through us. No
+account, nothing transmitted. The tool finally reads and writes from
+who they actually are.
+
+And notice what that is: configuration. Everybody in this building
+already knows how to set up a tool — a phone, a thermostat, a template
+they saved once. Nobody knows how to re-raise a colleague. This is the
+first one, not the second."
 
 **13 · What they walk out with — 8:35**
 "Four evenings, and here's what each person keeps. Their files, in
