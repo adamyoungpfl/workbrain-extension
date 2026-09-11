@@ -55,6 +55,7 @@
   /* Title — what it delivers, and the price one click away. */
   .deliver { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 30px; align-items: center; }
   .chip-d { padding: 9px 16px; border-radius: 999px; border: 1px solid rgba(232,237,249,0.22); background: rgba(232,237,249,0.04); font-size: 13.5px; font-weight: 650; color: var(--ink-2); }
+  .chip-d--violet { border-color: rgba(169,141,240,0.55); background: rgba(169,141,240,0.13); color: var(--violet); }
   .price-pill { display: inline-flex; align-items: center; gap: 9px; padding: 9px 17px; border-radius: 999px; border: 1px solid rgba(79,196,139,0.5); background: rgba(79,196,139,0.1); color: var(--green-deep); font-size: 13.5px; font-weight: 700; font-family: var(--sans); cursor: pointer; transition: background 180ms, border-color 180ms; }
   .price-pill:hover, .price-pill:focus-visible { background: rgba(79,196,139,0.2); border-color: var(--green-deep); outline: none; }
   .price-pill svg { width: 15px; height: 15px; }
@@ -155,9 +156,10 @@
     <span class="chip-d">90 Minutes Per Week</span>
     <span class="chip-d">We Facilitate</span>
     <span class="chip-d">You Host</span>
+    <span class="chip-d chip-d--violet">Free For Participants</span>
     <button type="button" class="price-pill" data-slide="17">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M20.6 13.4 12 22l-9-9V3h10z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg>
-      Priced in full, nothing hidden — see the number
+      What It Costs
     </button>
   </div>
   <p class="fine" style="margin-top:24px;max-width:none">Ten minutes, and there is no follow-up sequence — you will say yes or no today and either answer is fine.</p>

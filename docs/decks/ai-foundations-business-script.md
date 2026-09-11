@@ -49,7 +49,8 @@ They keep the file, and the written methods stay with the team. And you
 become the employer that taught them to use this well, instead of the
 one that rolled out a license and hoped.
 
-The price is on the screen too — there's a tag right there and I'll show
+It's free for the people in the room, and the price to you is on the
+screen too — there's a 'what it costs' tag right there, and I'll show
 you the whole invoice near the end. I'm not going to build to it
 dramatically. Ten minutes, no follow-up sequence, and either answer is
 genuinely fine."
