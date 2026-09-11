@@ -21,8 +21,6 @@ Workbrain enables participants of any skill level to write the instructions that
 
 You filled that in before I finished the sentence. So does the tool everyone in your building is already using — for every word it writes.
 
-The AI tools we all used today are a lot like autocomplete, at enormous scale, answering our prompts with the most common response.
-
 ---
 
 ## Slide 3 — 02 · The objective, plainly
@@ -30,8 +28,6 @@ The AI tools we all used today are a lot like autocomplete, at enormous scale, a
 **The most common version of the thought is becoming the noise.**
 
 The most likely word is the most common one — that isn't a flaw, it's the definition. So every draft that comes back starts life as the most common version of the thought. Multiply that by everyone, every day.
-
-It is already getting hard to tell where the tool ended and the person began — in an inbox, in an application, in a proposal. That line is worth being able to draw.
 
 ---
 
@@ -67,8 +63,6 @@ Twenty years of web cookies: a dossier nobody authored, kept for someone else's 
 
 **Every one of them already has one.**
 
-Nobody wrote the profile the tool reads them through — not the person it describes, not you. Most have never laid eyes on it.
-
 - **Common** — On by default on all five major services surveyed. Nobody opted in.
 - **Assumed** — Inferred, not written — and it rewrites itself over time. OpenAI calls that process "dreaming."
 - **Locked** — At Microsoft: exempt from retention policy, not audit-logged, not restrictable — their own documentation.
@@ -84,8 +78,6 @@ Nobody wrote the profile the tool reads them through — not the person it descr
 - **Voice** — "Describe how I communicate." _(Look for an adjective you would never use about yourself. Confirm it by holding the description next to something you actually wrote last week. Field guide: last slide.)_
 - **Priorities** — "What matters most in my work?" _(Look for what is missing — the thing you would have said first. Confirm it by asking it to rank three of your real responsibilities, then check the order against yours. Field guide: last slide.)_
 
-_Send them to your staff, post them for your members, or try them yourself tonight. Whatever happens on your screen is happening on theirs too, every day, quietly._
-
 ---
 
 ## Slide 9 — 08 · Being fair to the machine
@@ -99,15 +91,13 @@ Nobody accepts that memory on principle — it just costs nothing and comes back
 - Memory alonedrafts, in the house style
 - After four sessionsdrafts in their voice · repeatable methods · actions worth automating
 
-_One hour of writing, once, barely moves tomorrow's effort. It moves what the tool is allowed to do — and written methods are the prerequisite for automating anything responsibly._
-
 ---
 
 ## Slide 10 — 09 · The measured group effect
 
 **Individually faster. Collectively identical.**
 
-The research finding on AI assistance: each person's output improves, and the group's diversity shrinks. Ten people produce ten versions of the same thing — and none of them chose that.
+Each person's output improves, and the group's diversity shrinks. Ten people produce ten versions of the same thing — and none of them chose that.
 
 ---
 
@@ -115,7 +105,7 @@ The research finding on AI assistance: each person's output improves, and the gr
 
 **The day their work stops sounding like them.**
 
-For someone on your staff: the contribution that used to be recognizably hers stops getting noticed. For anyone you serve who is job-hunting, in a pile where every application is polished by the same tool, sameness is the rejection. And the discount lands on your organization's name, never on the software.
+For someone on your staff: the contribution that used to be recognizably hers stops getting noticed. For anyone you serve who is job-hunting, in a pile where every application is polished by the same tool, sameness is the rejection.
 
 ---
 
@@ -123,18 +113,18 @@ For someone on your staff: the contribution that used to be recognizably hers st
 
 **The difference has to come from the people.**
 
-Your competitor's proposal was written by the same model as yours. So was the grant application from the organization across town. Has anyone given the folks doing that work a way to put themselves back into it?
+Every application in that stack was written by the same model. Every cover letter, every personal statement, every follow-up note. Has anyone shown the person who wrote this one how to put themselves back into it?
 
 ---
 
-## Slide 13 — 12 · Conventional wisdom
+## Slide 13 — 12 · What choices do they have right now?
 
-**You have two choices to make right now.**
+**Sit in their seat for a second.**
 
-Both are plausible. Both leave everyone to work it out alone. And the organizations that look miles ahead of you chose neither — they taught their people a third thing, and the folks you serve are four sessions from the same unlock. They will credit it to you.
+Someone in your program — out of work, underemployed, or just starting out — opens the same tool everyone else has. Here is the whole menu available to them today:
 
-- **Avoidance** — Hold the line until it settles down. Perfectly reasonable — and they are using it anyway, on personal accounts, at home, with nobody to ask. You get none of the oversight and none of the learning.
-- **Acceptance** — Let everyone get on with it. Also reasonable — and unsupported adoption walks the whole room toward the same house style, spending the very thing that made each person worth hiring.
+- **Avoid it** — Stay away from it. Reasonable — they have heard it cheats, or hallucinates, or takes jobs. Meanwhile every application they are competing against was polished with it. They fall behind quietly, and nobody tells them that is what is happening.
+- **Wing it** — Use it for everything, exactly as it comes. Also reasonable — it is free and it is fast. Their cover letter now sounds like the other four hundred, and the thing that made them worth hiring never makes it onto the page.
 
 ---
 
@@ -152,7 +142,7 @@ They leave with a simple file. A plain text file. A configured, plain text file.
 
 **A skill that belongs to them.**
 
-It works in a tool that doesn't exist yet, at their next job, in a model nobody has released. Nothing here expires when the program ends.
+It works in a tool that doesn't exist yet, at their next job, in a model nobody has released. They keep all of it, free, whether or not they ever come back to you.
 
 - **Their files** — Plain markdown they own — who they are, how they work, what they repeat. On their device, not ours.
 - **A method** — One job they do every week, written down well enough that a tool — or a new coworker — can follow it.
@@ -199,7 +189,7 @@ _From you: a room with wifi, a repeating slot that suits your people, and the fo
 
 **Take it, or keep the three questions.**
 
-If this is something you want for the people you serve: request a cohort at myworkbrain.org/civic and the packet, the agreement and available dates come back within two business days. If it isn't: keep the three questions, run them with your staff or your members, and we are square. There is no follow-up sequence.
+If this is something you want for the people you serve: request a cohort at myworkbrain.org/civic and the packet, the agreement and available dates come back within two business days. If it isn't: keep the three questions, run them with your members or your staff, and we are square. There is no follow-up sequence.
 
 _Workbrain · by Model Citizen · the standard at myworkbrain.org/good_
 

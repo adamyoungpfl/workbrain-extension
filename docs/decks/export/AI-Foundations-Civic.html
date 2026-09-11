@@ -64,6 +64,13 @@
   .invite { margin: 30px 0 0; font-size: clamp(18px, 1.7vw, 23px); line-height: 1.5; font-weight: 650; color: var(--green-deep); max-width: none; }
   .invite-dots { letter-spacing: 0.12em; }
   .invite-arrow { display: inline-block; margin-left: 6px; transform: translateY(1px); }
+  /* Callout — the bottom line that should land, not trail off. */
+  .callout { margin-top: 22px; padding: 15px 20px; border-radius: 14px; border: 1px solid rgba(79,196,139,0.34); background: linear-gradient(90deg, rgba(79,196,139,0.12), rgba(79,196,139,0.02)); font-size: clamp(16px, 1.5vw, 20px); line-height: 1.45; font-weight: 650; color: #ffffff; max-width: none; }
+  .callout strong { color: var(--green-deep); font-weight: 800; }
+  .chart, .sketch, .docs { width: 100%; height: auto; display: block; }
+  .chart { margin-top: 14px; }
+  .sketch { max-width: 660px; margin: 10px auto 0; }
+  .docs { margin-top: 18px; max-width: 840px; margin-left: auto; margin-right: auto; }
   /* Citations — clearly a source line, never more to read. */
   .cite { margin: 16px 0 0; padding-top: 10px; border-top: 1px solid rgba(232,237,249,0.09); font-size: 12.5px; line-height: 1.5; color: var(--ink-3); max-width: none; }
   .cite b { color: var(--ink-2); font-weight: 650; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; margin-right: 8px; }
@@ -195,7 +202,7 @@
       <div class="ac-row"><span>rested after the strike</span><span class="ac-bar"><i style="width:6%"></i></span></div>
     </div>
   </div>
-  <p class="lead" style="margin-top:24px;max-width:none">The AI tools we all used today are a lot like autocomplete, at enormous scale, answering our prompts with the most common response.</p>
+  <p class="callout">The AI tools we all used today are a lot like autocomplete, at enormous scale, <strong>answering our prompts with the most common response.</strong></p>
 </section>
 
 <section class="slide">
@@ -214,7 +221,7 @@
     <text x="4" y="122" font-size="11" letter-spacing="1.6" fill="#7FE0AE" font-family="-apple-system, 'Segoe UI', sans-serif" font-weight="700">WHAT SOMEONE MEANT</text>
     <text x="1116" y="122" text-anchor="end" font-size="11" letter-spacing="1.6" fill="#6b7a9c" font-family="-apple-system, 'Segoe UI', sans-serif" font-weight="700">WHAT COMES OUT</text>
   </svg>
-  <p class="lead" style="margin-top:20px;max-width:none">It is already getting hard to tell where the tool ended and the person began — in an inbox, in an application, in a proposal. <strong>That line is worth being able to draw.</strong></p>
+  <p class="callout">It is already getting hard to tell where the tool ended and the person began — in an inbox, in an application, in a proposal. <strong>That line is worth being able to draw.</strong></p>
 </section>
 
 <section class="slide">
@@ -324,7 +331,7 @@
       <p class="mbody">At Perplexity Enterprise those memories <b>belong to the organization</b> — access ends when the person leaves.</p>
     </div>
   </div>
-  <p class="lead" style="margin-top:22px;max-width:none;font-size:18px">Nobody wrote the profile the tool reads them through — not the person it describes, not you. <strong>Most have never laid eyes on it.</strong></p>
+  <p class="callout">Nobody wrote the profile the tool reads them through — not the person it describes, not you. <strong>Most have never laid eyes on it.</strong></p>
   <p class="cite"><b>Source</b>Vendor documentation, surveyed in "Durable Context" (Young, 2026) — myworkbrain.org.</p>
 </section>
 
@@ -363,7 +370,7 @@
       <p class="tile-hint">What should be true vs. what is →</p>
     </div>
   </div>
-  <p class="fine">Send them to your staff, post them for your members, or try them yourself tonight. Whatever happens on your screen is happening on theirs too, every day, quietly.</p>
+  <p class="callout">Send them to your members, post them where your staff will see them, or try them yourself tonight. <strong>Whatever happens on your screen is happening on theirs too</strong> — every day, quietly.</p>
 </section>
 
 <section class="slide">
@@ -382,36 +389,71 @@
       <div class="bar"><span>After four sessions</span><div class="track"><div class="fill green" style="width:92%">drafts in their voice · repeatable methods · actions worth automating</div></div></div>
     </div>
   </div>
-  <p class="fine" style="margin-top:24px">One hour of writing, once, barely moves tomorrow's effort. It moves what the tool is allowed to do — and written methods are the prerequisite for automating anything responsibly.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow red">09 · The measured group effect</p>
-  <h1>Individually faster.<br>Collectively <span class="em">identical.</span></h1>
-  <p class="lead">The research finding on AI assistance: each person's output improves, and <strong>the group's diversity shrinks.</strong> Ten people produce ten versions of the same thing — and none of them chose that.</p>
+  <h1 style="max-width:none;font-size:clamp(28px,3.6vw,48px)">Individually faster. Collectively <span class="em">identical.</span></h1>
+  <p class="lead" style="max-width:none;margin-top:14px">Each person's output improves, and <strong>the group's diversity shrinks.</strong> Ten people produce ten versions of the same thing — and none of them chose that.</p>
+  <svg class="chart" viewBox="0 0 1120 290" aria-hidden="true">
+    <line x1="92" y1="18" x2="92" y2="244" stroke="rgba(232,237,249,0.28)" stroke-width="1.5"/>
+    <line x1="92" y1="244" x2="1090" y2="244" stroke="rgba(232,237,249,0.28)" stroke-width="1.5"/>
+    <text x="66" y="136" text-anchor="middle" font-size="12" letter-spacing="1.8" font-weight="800" fill="#a6b6dc" font-family="-apple-system, 'Segoe UI', sans-serif" transform="rotate(-90 66 136)">DISTINCTIVENESS</text>
+    <text x="1090" y="272" text-anchor="end" font-size="12" letter-spacing="1.8" font-weight="800" fill="#a6b6dc" font-family="-apple-system, 'Segoe UI', sans-serif">SPEED →</text>
+    <path d="M132 104 C 330 124, 560 168, 780 202 S 980 232, 1050 238" stroke="#6b7a9c" stroke-width="3" fill="none" stroke-linecap="round"/>
+    <circle cx="1050" cy="238" r="6" fill="#6b7a9c"/>
+    <text x="470" y="206" text-anchor="start" font-size="13.5" font-weight="650" fill="#6b7a9c" font-family="-apple-system, 'Segoe UI', sans-serif">unsupported — fastest, and everyone ends up here</text>
+    <path d="M132 108 C 330 92, 520 72, 700 58 S 850 46, 900 42" stroke="url(#hero)" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <circle cx="900" cy="42" r="7.5" fill="#7FE0AE"/>
+    <text x="890" y="26" text-anchor="end" font-size="14" font-weight="750" fill="#7FE0AE" font-family="-apple-system, 'Segoe UI', sans-serif">with their own setup — a little slower, still theirs</text>
+    <defs><linearGradient id="hero" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#4fc48b"/><stop offset="1" stop-color="#7FE0AE"/></linearGradient></defs>
+  </svg>
   <p class="cite"><b>Sources</b>Doshi &amp; Hauser, Science Advances 2024 · Padmakumar &amp; He, ICLR 2024 · Shumailov et al., Nature 2024. A measured trajectory, still early — we say so out loud.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow red">10 · What it costs them</p>
-  <h1>The day their work stops sounding like <span class="em">them.</span></h1>
-  <p class="lead">For someone on your staff: the contribution that used to be recognizably hers stops getting noticed. For anyone you serve who is job-hunting, in a pile where every application is polished by the same tool, <strong>sameness is the rejection.</strong> And the discount lands on your organization's name, never on the software.</p>
+  <h1 style="max-width:none;font-size:clamp(26px,3.3vw,44px)">The day their work stops sounding like <span class="em">them.</span></h1>
+  <p class="lead" style="max-width:none;margin-top:12px;font-size:18px">For someone on your staff: the contribution that used to be recognizably hers stops getting noticed. For anyone you serve who is job-hunting, in a pile where every application is polished by the same tool, <strong>sameness is the rejection.</strong></p>
+  <svg class="sketch" viewBox="0 0 640 214" aria-hidden="true">
+    <g stroke="#a6b6dc" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round" opacity="0.95">
+      <g><circle cx="96" cy="50" r="25"/><path d="M79 44c8-7 26-7 34 0M84 58c8 5 20 5 28 0"/>
+        <path d="M96 75v60M96 92l-38 22M96 92l50-14M96 135l-19 54M96 135l21 54"/>
+        <path d="M146 78l30-6M168 66l12 8-12 8"/></g>
+      <g><circle cx="320" cy="50" r="25"/><path d="M303 44c8-7 26-7 34 0M308 58c8 5 20 5 28 0"/>
+        <path d="M320 75v60M320 92l-46 18M320 92l46 18M320 135l-19 54M320 135l21 54"/>
+        <path d="M274 110l-32 10M254 108l-14 10 14 10"/><path d="M366 110l32 10M386 108l14 10-14 10"/></g>
+      <g><circle cx="544" cy="50" r="25"/><path d="M527 44c8-7 26-7 34 0M532 58c8 5 20 5 28 0"/>
+        <path d="M544 75v60M544 92l38 22M544 92l-50-14M544 135l-19 54M544 135l21 54"/>
+        <path d="M494 78l-30-6M472 66l-12 8 12 8"/></g>
+    </g>
+    <text x="320" y="208" text-anchor="middle" font-size="11.5" letter-spacing="2.4" font-weight="700" fill="#6b7a9c" font-family="-apple-system, 'Segoe UI', sans-serif">EVERY DRAFT, POINTING AT EVERY OTHER DRAFT</text>
+  </svg>
 </section>
 
 <section class="slide">
   <p class="eyebrow red">11 · One question to keep</p>
-  <h1>The difference has to come from the <span class="em">people.</span></h1>
-  <p class="lead">Your competitor's proposal was written by the same model as yours. So was the grant application from the organization across town. <strong>Has anyone given the folks doing that work a way to put themselves back into it?</strong></p>
+  <h1 style="max-width:none;font-size:clamp(26px,3.3vw,44px)">The difference has to come from the <span class="em">people.</span></h1>
+  <svg class="docs" viewBox="0 0 940 228" aria-hidden="true">
+    <defs><g id="dl" stroke="rgba(232,237,249,0.33)" stroke-width="4.5" stroke-linecap="round">
+      <path d="M26 76h124M26 96h136M26 116h108M26 136h136M26 156h92M26 176h128"/></g></defs>
+    <g><rect x="8" y="12" width="178" height="206" rx="10" fill="rgba(232,237,249,0.045)" stroke="rgba(232,237,249,0.2)" stroke-width="1.4"/><circle cx="40" cy="42" r="12" fill="#6f92ff"/><use href="#dl"/></g>
+    <g transform="translate(238 0)"><rect x="8" y="12" width="178" height="206" rx="10" fill="rgba(232,237,249,0.045)" stroke="rgba(232,237,249,0.2)" stroke-width="1.4"/><rect x="28" y="30" width="24" height="24" rx="4" fill="#e8a33d"/><use href="#dl"/></g>
+    <g transform="translate(476 0)"><rect x="8" y="12" width="178" height="206" rx="10" fill="rgba(232,237,249,0.045)" stroke="rgba(232,237,249,0.2)" stroke-width="1.4"/><path d="M40 28l14 26H26z" fill="#a98df0"/><use href="#dl"/></g>
+    <g transform="translate(714 0)"><rect x="8" y="12" width="178" height="206" rx="10" fill="rgba(232,237,249,0.045)" stroke="rgba(232,237,249,0.2)" stroke-width="1.4"/><circle cx="40" cy="42" r="12" fill="#ff7a70"/><use href="#dl"/></g>
+  </svg>
+  <p class="lead" style="max-width:none;margin-top:16px;font-size:18px">Every application in that stack was written by the same model. Every cover letter, every personal statement, every follow-up note. <strong>Has anyone shown the person who wrote this one how to put themselves back into it?</strong></p>
 </section>
 
 <section class="slide">
-  <p class="eyebrow violet">12 · Conventional wisdom</p>
-  <h1 style="font-size:clamp(32px,4.2vw,56px)">You have two choices to make right now.</h1>
-  <div class="cols" style="margin-top:30px">
-    <div class="panel"><h3 style="color:var(--amber)">Avoidance</h3><p>Hold the line until it settles down. Perfectly reasonable — and they are using it anyway, on personal accounts, at home, with nobody to ask. You get none of the oversight and none of the learning.</p></div>
-    <div class="panel"><h3 style="color:var(--amber)">Acceptance</h3><p>Let everyone get on with it. Also reasonable — and unsupported adoption walks the whole room toward the same house style, spending the very thing that made each person worth hiring.</p></div>
+  <p class="eyebrow violet">12 · What choices do they have right now?</p>
+  <h1 style="max-width:none;font-size:clamp(28px,3.6vw,48px)">Sit in their seat for a second.</h1>
+  <p class="lead" style="max-width:none;margin-top:14px;font-size:18px">Someone in your program — out of work, underemployed, or just starting out — opens the same tool everyone else has. Here is the whole menu available to them today:</p>
+  <div class="cols" style="margin-top:22px">
+    <div class="panel"><h3 style="color:var(--amber)">Avoid it</h3><p>Stay away from it. Reasonable — they have heard it cheats, or hallucinates, or takes jobs. Meanwhile every application they are competing against was polished with it. They fall behind quietly, and nobody tells them that is what is happening.</p></div>
+    <div class="panel"><h3 style="color:var(--amber)">Wing it</h3><p>Use it for everything, exactly as it comes. Also reasonable — it is free and it is fast. Their cover letter now sounds like the other four hundred, and the thing that made them worth hiring never makes it onto the page.</p></div>
   </div>
-  <p class="lead" style="margin-top:30px;max-width:none">Both are plausible. Both leave everyone to work it out alone. <strong>And the organizations that look miles ahead of you chose neither</strong> — they taught their people a third thing, and the folks you serve are four sessions from the same unlock. They will credit it to you.</p>
+  <p class="callout">Those are the two choices they actually have. Neither is a plan, and nobody has offered them a third. <strong>Four sessions is the third.</strong></p>
 </section>
 
 <section class="slide">
@@ -430,7 +472,7 @@
     <div class="panel keep"><h3>Proof</h3><p>Their own before-and-after, run with their own eyes, on their own work.</p></div>
     <div class="panel keep"><h3>A credential</h3><p>A certificate at session four, and <strong style="color:var(--ink)">Work Brain Certified</strong> later for demonstrated use — verifiable, and it goes on a profile.</p></div>
   </div>
-  <p class="lead" style="margin-top:30px;max-width:none">It works in a tool that doesn't exist yet, at their next job, in a model nobody has released. <strong>Nothing here expires when the program ends.</strong></p>
+  <p class="lead" style="margin-top:30px;max-width:none">It works in a tool that doesn't exist yet, at their next job, in a model nobody has released. <strong>They keep all of it, free, whether or not they ever come back to you.</strong></p>
 </section>
 
 <section class="slide">
@@ -482,7 +524,7 @@
 <section class="slide">
   <p class="eyebrow">17 · One decision</p>
   <h1>Take it, or keep<br>the three questions.</h1>
-  <p class="lead">If this is something you want for the people you serve: request a cohort at <span class="mono" style="color:var(--green-deep)">myworkbrain.org/civic</span> and the packet, the agreement and available dates come back within two business days. If it isn't: <strong>keep the three questions, run them with your staff or your members, and we are square.</strong> There is no follow-up sequence.</p>
+  <p class="lead">If this is something you want for the people you serve: request a cohort at <span class="mono" style="color:var(--green-deep)">myworkbrain.org/civic</span> and the packet, the agreement and available dates come back within two business days. If it isn't: <strong>keep the three questions, run them with your members or your staff, and we are square.</strong> There is no follow-up sequence.</p>
   <p class="fine">Workbrain · by Model Citizen · the standard at myworkbrain.org/good</p>
 </section>
 

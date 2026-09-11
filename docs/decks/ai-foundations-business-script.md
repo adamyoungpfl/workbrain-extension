@@ -156,9 +156,8 @@ Here's the part worth seeing. Look at daily effort — memory alone,
 none; after four sessions, about the same. That's the honest answer:
 an hour of writing, once, and tomorrow looks like today. Now look at
 what the tool can be trusted with. Memory alone gets you drafts in the
-house style. With a file behind it: drafts in their voice, methods
-that repeat, and actions worth automating — because a written method
-is the prerequisite for automating anything responsibly."
+house style. With a file behind it: drafts in their voice, methods that
+repeat, and actions worth automating."
 
 **09 · Individually faster, collectively identical — 6:15**
 "And the measured group effect: AI assistance makes each person better
@@ -179,18 +178,21 @@ was written by the same model as yours. So was the grant application
 from the shop across town. Has anyone given your team a way to put
 themselves back into the work?"
 
-**12 · Conventional wisdom — 7:35** *(cut this beat if behind)*
-"Conventional wisdom says you have two choices to make right now.
-Avoidance: hold the line until this settles down — perfectly
-reasonable, and they're using it anyway, at home, with nobody to ask.
-Or acceptance: let everyone get on with it — also reasonable, and the
-whole room drifts toward the same house style.
+**12 · What choices do they have right now — 7:35** *(cut this beat if behind)*
+"Sit in their seat for a second. Someone on your team opens the same
+tool everyone else has. Here's the whole menu they've got.
 
-Both are plausible. Both leave everyone to work it out alone. And the
-organizations that look like they're miles ahead of you? They picked
-neither. They taught their people a third thing — and the folks you
-team is four sessions from that same unlock. They'll credit it to
-you."
+They can avoid it — they've heard it's unreliable, or IT hasn't blessed
+it. Meanwhile the people they compete with are twice as fast, and nobody
+tells them that's what's happening.
+
+Or they can wing it: use it for everything, exactly as it comes out.
+It's right there and it's fast. And their work now sounds like
+everyone's work, and the expertise you hired them for never makes it
+onto the page.
+
+That's the menu. Neither one is a plan, and nobody has offered them a
+third. Four sessions is the third."
 
 **13 · Teach them to author their own context — 8:00**
 "The third option is a teaching one, and it's almost boring. Each

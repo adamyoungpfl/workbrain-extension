@@ -151,9 +151,8 @@ Here's the part worth seeing. Look at daily effort — memory alone,
 none; after four sessions, about the same. That's the honest answer:
 an hour of writing, once, and tomorrow looks like today. Now look at
 what the tool can be trusted with. Memory alone gets you drafts in the
-house style. With a file behind it: drafts in their voice, methods
-that repeat, and actions worth automating — because a written method
-is the prerequisite for automating anything responsibly."
+house style. With a file behind it: drafts in their voice, methods that
+repeat, and actions worth automating."
 
 **09 · Individually faster, collectively identical — 6:15**
 "And the measured group effect: AI assistance makes each person better
@@ -174,18 +173,23 @@ was written by the same model as yours. So was the grant application
 from the organization across town. Has anyone given the folks doing
 that work a way to put themselves back into it?"
 
-**12 · Conventional wisdom — 7:35** *(cut this beat if behind)*
-"Conventional wisdom says you have two choices to make right now.
-Avoidance: hold the line until this settles down — perfectly
-reasonable, and they're using it anyway, at home, with nobody to ask.
-Or acceptance: let everyone get on with it — also reasonable, and the
-whole room drifts toward the same house style.
+**12 · What choices do they have right now — 7:35** *(cut this beat if behind)*
+"Sit in their seat for a second. Someone in your program — out of work,
+underemployed, or just starting out — opens the same tool everyone else
+has. Here's the whole menu they've got.
 
-Both are plausible. Both leave everyone to work it out alone. And the
-organizations that look like they're miles ahead of you? They picked
-neither. They taught their people a third thing — and the folks you
-serve are four sessions from that same unlock. They'll credit it to
-you."
+They can avoid it. Reasonable: they've heard it cheats, or hallucinates,
+or takes jobs. Meanwhile every application they're competing against was
+polished with it, and they fall behind quietly — nobody tells them that's
+what's happening.
+
+Or they can wing it: use it for everything, exactly as it comes out.
+Also reasonable — it's free and it's fast. And their cover letter now
+sounds like the other four hundred, and the thing that made them worth
+hiring never makes it onto the page.
+
+That's the menu. Neither one is a plan, and nobody has offered them a
+third. Four sessions is the third."
 
 **13 · Teach them to author their own context — 8:00**
 "The third option is a teaching one, and it's almost boring. Each

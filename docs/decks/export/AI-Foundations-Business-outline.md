@@ -21,8 +21,6 @@ Workbrain enables participants of any skill level to write the instructions that
 
 You filled that in before I finished the sentence. So does the tool everyone in your building is already using — for every word it writes.
 
-The AI tools we all used today are a lot like autocomplete, at enormous scale, answering our prompts with the most common response.
-
 ---
 
 ## Slide 3 — 02 · The objective, plainly
@@ -30,8 +28,6 @@ The AI tools we all used today are a lot like autocomplete, at enormous scale, a
 **The most common version of the thought is becoming the noise.**
 
 The most likely word is the most common one — that isn't a flaw, it's the definition. So every draft that comes back starts life as the most common version of the thought. Multiply that by everyone, every day.
-
-It is already getting hard to tell where the tool ended and the person began — in an inbox, in an application, in a proposal. That line is worth being able to draw.
 
 ---
 
@@ -67,8 +63,6 @@ Twenty years of web cookies: a dossier nobody authored, kept for someone else's 
 
 **Every one of them already has one.**
 
-Company work is drafted through profiles nobody here authored, audited, or can read in full — and no vendor will say which one wins when it disagrees with your own instructions.
-
 - **Common** — On by default on all five major services surveyed. Nobody opted in.
 - **Assumed** — Inferred, not written — and it rewrites itself over time. OpenAI calls that process "dreaming."
 - **Locked** — At Microsoft: exempt from retention policy, not audit-logged, not restrictable — their own documentation.
@@ -84,8 +78,6 @@ Company work is drafted through profiles nobody here authored, audited, or can r
 - **Voice** — "Describe how I communicate." _(Look for an adjective you would never use about yourself. Confirm it by holding the description next to something you actually wrote last week. Field guide: last slide.)_
 - **Priorities** — "What matters most in my work?" _(Look for what is missing — the thing you would have said first. Confirm it by asking it to rank three of your real responsibilities, then check the order against yours. Field guide: last slide.)_
 
-_Send them to your team, or try them yourself tonight. Whatever happens on your screen is happening on theirs too, every day, quietly — on the accounts drafting your client work._
-
 ---
 
 ## Slide 9 — 08 · Being fair to the machine
@@ -99,15 +91,13 @@ Nobody accepts that memory on principle — it just costs nothing and comes back
 - Memory alonedrafts, in the house style
 - After four sessionsdrafts in their voice · repeatable methods · actions worth automating
 
-_One hour of writing, once, barely moves tomorrow's effort. It moves what the tool is allowed to do — and written methods are the prerequisite for automating anything responsibly._
-
 ---
 
 ## Slide 10 — 09 · The measured group effect
 
 **Individually faster. Collectively identical.**
 
-The research finding on AI assistance: each person's output improves, and the group's diversity shrinks. Ten people on one team produce ten versions of the same thing — and none of them chose that.
+Each person's output improves, and the group's diversity shrinks. Ten people on one team produce ten versions of the same thing — and none of them chose that.
 
 ---
 
@@ -115,7 +105,7 @@ The research finding on AI assistance: each person's output improves, and the gr
 
 **The day their work stops sounding like them.**
 
-For the person: the contribution that used to be recognizably hers stops getting noticed. For you: in a stack where every proposal is polished by the same tool, sameness is how you lose a deal you used to win. The discount lands on your brand, never on the software.
+For the person: the contribution that used to be recognizably hers stops getting noticed. For you: in a stack where every proposal is polished by the same tool, sameness is how you lose a deal you used to win.
 
 ---
 
@@ -127,14 +117,14 @@ Your competitor's proposal was written by the same model as yours. So was the pi
 
 ---
 
-## Slide 13 — 12 · Conventional wisdom
+## Slide 13 — 12 · What choices do they have right now?
 
-**You have two choices to make right now.**
+**Sit in their seat for a second.**
 
-Both are plausible. Both leave everyone to work it out alone. And the organizations that look miles ahead of you chose neither — they taught their people a third thing, and your team is four sessions from the same unlock. They will credit it to you.
+Someone on your team opens the same tool everyone else has. Here is the whole menu available to them today:
 
-- **Avoidance** — Hold the line until it settles down, or until Legal signs off. Perfectly reasonable — and they are using it anyway, on personal accounts, on their phones, with nobody to ask. You get none of the oversight and none of the learning.
-- **Acceptance** — Let everyone get on with it. Also reasonable — and unsupported adoption walks the whole room toward the same house style, spending the very thing you hired each of them for.
+- **Avoid it** — Stay away from it. Reasonable — they have heard it is unreliable, or that IT has not blessed it. Meanwhile the people they compete with are twice as fast, and nobody tells them that is what is happening.
+- **Wing it** — Use it for everything, exactly as it comes. Also reasonable — it is right there and it is fast. Their work now sounds like everyone's work, and the expertise you hired them for never makes it onto the page.
 
 ---
 
