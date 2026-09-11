@@ -11,7 +11,7 @@ Presenter script: ai-foundations-civic-script.md.
 
 **Everyone gave them the tool. Nobody taught them to own it.**
 
-In four sessions, the people you serve build a plain-text file that makes any AI tool work like it already knows them — their words, their standards, their way of doing the work — and they prove it against their own before-and-after. They keep every bit of it, free, permanently.
+Workbrain enables participants of any skill level to create a simple file that makes any AI tool work like it already knows them — their words, their standards, their way of doing the work — and they prove it against their own before-and-after. They keep the file and the knowledge of how to leverage it towards their goals and objectives.
 
 You become the organization that taught them to use this well — not the one that handed out a login and hoped.
 

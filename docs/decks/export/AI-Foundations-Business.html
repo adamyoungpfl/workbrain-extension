@@ -87,6 +87,10 @@
   .statement .wb-mark { width: 34px; height: 34px; flex: none; }
   .statement p { margin: 0; font-size: clamp(17px, 1.55vw, 21px); line-height: 1.4; font-weight: 700; color: #ffffff; letter-spacing: -0.01em; }
   .statement b { color: var(--green-deep); font-weight: 800; }
+  /* Slide 05 — cookies, the edible kind. */
+  .cookie-grid { display: grid; grid-template-columns: 1.25fr 0.75fr; gap: 3vw; align-items: center; }
+  .cookie-art { width: 100%; max-width: 330px; height: auto; display: block; margin-left: auto; filter: drop-shadow(0 16px 34px rgba(0,0,0,0.55)); }
+  @media (max-width: 760px) { .cookie-grid { grid-template-columns: 1fr; } .cookie-art { display: none; } }
   /* Slide 06 — the four memory tiles, each with its own tone. */
   .mtile { display: flex; flex-direction: column; gap: 12px; }
   .mtile svg { width: 34px; height: 34px; flex: none; }
@@ -144,13 +148,13 @@
 <section class="slide on">
   <p class="eyebrow">AI Foundations · Workbrain by Model Citizen</p>
   <h1>Everyone gave them the tool.<br><span class="quiet">Nobody taught them to</span> <span class="em">own it.</span></h1>
-  <p class="lead" style="max-width:none">In four sessions, your team builds a plain-text file that makes any AI tool work like it already knows them — <strong>your names for things, your standards, the way the work is actually done here</strong> — and each person proves it against their own before-and-after. The files are theirs; the written methods stay with the team.</p>
+  <p class="lead" style="max-width:none">Workbrain enables participants of any skill level to create a simple file that makes any AI tool work like it already knows them — <strong>their words, their standards, their way of doing the work</strong> — and they prove it against their own before-and-after. They keep the file and the knowledge of how to leverage it towards their goals and objectives.</p>
   <p class="lead" style="margin-top:16px;max-width:none;color:var(--green-deep)">You become the employer that taught them to use this well — not the one that rolled out a license and hoped.</p>
   <div class="deliver">
-    <span class="chip-d">4 sessions · 90 minutes</span>
-    <span class="chip-d">Up to 10 seats</span>
-    <span class="chip-d">Any shift, any time slot</span>
-    <span class="chip-d">On site, at your place</span>
+    <span class="chip-d">4-Week Training Program</span>
+    <span class="chip-d">90 Minutes Per Week</span>
+    <span class="chip-d">We Facilitate</span>
+    <span class="chip-d">You Host</span>
     <button type="button" class="price-pill" data-slide="17">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" aria-hidden="true"><path d="M20.6 13.4 12 22l-9-9V3h10z"/><circle cx="7.5" cy="7.5" r="1.4"/></svg>
       Priced in full, nothing hidden — see the number
@@ -208,8 +212,44 @@
 
 <section class="slide">
   <p class="eyebrow amber">05 · They've seen this movie</p>
-  <h1>A profile about you,<br>written by <span class="em">someone else.</span></h1>
-  <p class="lead">Twenty years of web cookies: a dossier nobody authored, kept for someone else's purposes, invisible to the person it described. <strong>We ended up regulating it.</strong> Your customers remember how that felt. So does your team.</p>
+  <div class="cookie-grid">
+    <div>
+      <h1>A profile about you,<br>written by <span class="em">someone else.</span></h1>
+      <p class="lead" style="max-width:none">Twenty years of web cookies: a dossier nobody authored, kept for someone else's purposes, invisible to the person it described. <strong>We ended up regulating it.</strong> Your customers remember how that felt. So does your team.</p>
+    </div>
+    <svg class="cookie-art" viewBox="0 0 260 220" aria-hidden="true">
+      <defs>
+        <radialGradient id="dough" cx="38%" cy="32%" r="72%">
+          <stop offset="0" stop-color="#E0A863"/><stop offset="1" stop-color="#B0763A"/>
+        </radialGradient>
+        <radialGradient id="dough2" cx="40%" cy="34%" r="70%">
+          <stop offset="0" stop-color="#D09A57"/><stop offset="1" stop-color="#9A6631"/>
+        </radialGradient>
+      </defs>
+      <!-- the one behind -->
+      <circle cx="186" cy="150" r="52" fill="url(#dough2)" stroke="#7C5227" stroke-width="2"/>
+      <ellipse cx="170" cy="132" rx="9" ry="8" fill="#3B2210"/>
+      <rect x="196" y="140" width="14" height="13" rx="2.5" fill="#3B2210"/>
+      <ellipse cx="180" cy="172" rx="8" ry="7" fill="#3B2210"/>
+      <!-- the big one, with a bite out of it -->
+      <circle cx="104" cy="96" r="80" fill="url(#dough)" stroke="#7C5227" stroke-width="2.5"/>
+      <circle cx="168" cy="42" r="30" fill="#070a12"/>
+      <circle cx="150" cy="22" r="11" fill="#070a12"/>
+      <circle cx="186" cy="70" r="9" fill="#070a12"/>
+      <ellipse cx="74" cy="62" rx="12" ry="10.5" fill="#3B2210"/>
+      <rect x="112" y="70" width="17" height="16" rx="3" fill="#3B2210"/>
+      <ellipse cx="62" cy="120" rx="11" ry="10" fill="#3B2210"/>
+      <ellipse cx="118" cy="134" rx="13" ry="11" fill="#3B2210"/>
+      <rect x="82" y="100" width="13" height="12" rx="2.5" fill="#3B2210"/>
+      <ellipse cx="140" cy="102" rx="8" ry="7" fill="#3B2210"/>
+      <ellipse cx="96" cy="152" rx="7.5" ry="6.5" fill="#3B2210"/>
+      <!-- crumbs, trailing off like something that got tracked -->
+      <circle cx="26" cy="176" r="4.5" fill="#B0763A"/>
+      <rect x="44" y="186" width="7" height="7" rx="1.6" fill="#9A6631"/>
+      <circle cx="14" cy="196" r="3" fill="#8A5A2B"/>
+      <rect x="64" y="198" width="5" height="5" rx="1.2" fill="#7C5227"/>
+    </svg>
+  </div>
 </section>
 
 <section class="slide">

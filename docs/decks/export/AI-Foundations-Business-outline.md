@@ -11,7 +11,7 @@ Presenter script: ai-foundations-business-script.md.
 
 **Everyone gave them the tool. Nobody taught them to own it.**
 
-In four sessions, your team builds a plain-text file that makes any AI tool work like it already knows them — your names for things, your standards, the way the work is actually done here — and each person proves it against their own before-and-after. The files are theirs; the written methods stay with the team.
+Workbrain enables participants of any skill level to create a simple file that makes any AI tool work like it already knows them — their words, their standards, their way of doing the work — and they prove it against their own before-and-after. They keep the file and the knowledge of how to leverage it towards their goals and objectives.
 
 You become the employer that taught them to use this well — not the one that rolled out a license and hoped.
 

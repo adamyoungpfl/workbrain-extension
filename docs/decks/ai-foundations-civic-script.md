@@ -38,12 +38,14 @@ Do not cut 03; it is the beat people repeat to someone else afterward.
 "Everyone handed out the tool. Nobody taught anybody to own it. That's
 the whole ten minutes.
 
-Here's what it is, plainly. In four sessions, the people you serve build
-a plain-text file that makes any AI tool work like it already knows them
-— their words, their standards, their way of doing the work — and they
-prove it against their own before-and-after. They keep every bit of it,
-free, permanently. And you become the organization that taught them to
-use this well, instead of the one that handed out a login and hoped.
+Here's what it is, plainly. It's a four-week training program — ninety
+minutes a week. We facilitate, you host. Workbrain enables participants
+of any skill level to create a simple file that makes any AI tool work
+like it already knows them — their words, their standards, their way of
+doing the work — and they prove it against their own before-and-after.
+They keep the file, and they keep knowing how to use it. And you become
+the organization that taught them to use this well, instead of the one
+that handed out a login and hoped.
 
 The price is on the screen too — there's a tag right there and I'll show
 you the whole invoice near the end. I'm not going to build to it
