@@ -2,7 +2,7 @@
 
 Extracted from docs/decks/ai-foundations-civic.html — the deck is the
 source of truth; this file is for pasting into other tools (Gamma, Google
-Slides, PowerPoint outline import, Keynote, or an LLM). 20 slides.
+Slides, PowerPoint outline import, Keynote, or an LLM). 21 slides.
 Presenter script: ai-foundations-civic-script.md.
 
 ---
@@ -37,7 +37,21 @@ It is already getting hard to tell where the tool ended and the person began —
 
 ---
 
-## Slide 4 — 03 · The half nobody mentions
+## Slide 4 — 03 · Whose average is it?
+
+**The average has an accent.**
+
+"Most likely" is measured over text that was never collected evenly from everyone. So the middle it pulls toward is not neutral ground — it belongs to whoever wrote the most of it.
+
+And for the people whose language is deliberate — a community's own terms for itself, a tradition's vocabulary, the plain speech a field fought to earn — the tool does not argue. It hands back a version that sounds like everybody else and calls it polish.
+
+That is erasure by autocomplete. Nobody chose it, and it never announces itself.
+
+_Measured, not asserted: models make covertly prejudiced judgments from dialect alone — in controlled tests, assigning speakers of African American English to less prestigious jobs and harsher sentences — and the training meant to remove overt bias left the covert kind intact (Hofmann et al., Nature 2024). Model defaults also align far more closely with some demographic groups than others (Santurkar et al., ICML 2023). A context file does not fix a model. It puts the person's own words in front of it, and gives them something to check the answer against._
+
+---
+
+## Slide 5 — 04 · The half nobody mentions
 
 **And it reads them the same way.**
 
@@ -45,11 +59,11 @@ Interpretation is prediction too. Handed a request from the coordinator who runs
 
 What it misreads is exactly what you value in her: her judgment, her shorthand, the fifteen years of things she knows that most people don't. And it never says so. It answers a question nobody asked, confidently.
 
-_Rewording alone swings measured accuracy up to 76 points (Sclar et al., ICLR 2024). Models misread — and covertly penalize — non-standard dialects (Hofmann et al., Nature 2024). It does not read everyone equally well — and the people it reads worst are often the ones you are working hardest to help._
+_Rewording alone swings measured accuracy up to 76 points (Sclar et al., ICLR 2024). Same engine, pointed the other way: the accent on the previous slide is also an accent it reads with._
 
 ---
 
-## Slide 5 — 04 · They've seen this movie
+## Slide 6 — 05 · They've seen this movie
 
 **A profile about you, written by someone else.**
 
@@ -57,7 +71,7 @@ Twenty years of web cookies: a dossier nobody authored, kept for someone else's 
 
 ---
 
-## Slide 6 — 05 · The sequel, already installed
+## Slide 7 — 06 · The sequel, already installed
 
 **Every one of them already has one.**
 
@@ -70,7 +84,7 @@ _Receipts cited in "Durable Context" (Young, 2026) — myworkbrain.org. Nobody w
 
 ---
 
-## Slide 7 — 06 · Something you can give them tonight
+## Slide 8 — 07 · Something you can give them tonight
 
 **Three questions. No cost, no sign-up.**
 
@@ -82,7 +96,7 @@ _Send them to your staff, post them for your members, or try them yourself tonig
 
 ---
 
-## Slide 8 — 07 · Being fair to the machine
+## Slide 9 — 08 · Being fair to the machine
 
 **The effort doesn't change. The ceiling does.**
 
@@ -97,7 +111,7 @@ _One hour of writing, once, barely moves tomorrow's effort. It moves what the to
 
 ---
 
-## Slide 9 — 08 · The measured group effect
+## Slide 10 — 09 · The measured group effect
 
 **Individually faster. Collectively identical.**
 
@@ -107,7 +121,7 @@ _Doshi & Hauser, Science Advances 2024 · Padmakumar & He, ICLR 2024 · Shumailo
 
 ---
 
-## Slide 10 — 09 · What it costs them
+## Slide 11 — 10 · What it costs them
 
 **The day their work stops sounding like them.**
 
@@ -115,7 +129,7 @@ For someone on your staff: the contribution that used to be recognizably hers st
 
 ---
 
-## Slide 11 — 10 · One question to keep
+## Slide 12 — 11 · One question to keep
 
 **The difference has to come from the people.**
 
@@ -123,7 +137,7 @@ Your competitor's proposal was written by the same model as yours. So was the gr
 
 ---
 
-## Slide 12 — 11 · Conventional wisdom
+## Slide 13 — 12 · Conventional wisdom
 
 **You have two choices to make right now.**
 
@@ -134,7 +148,7 @@ Both are plausible. Both leave everyone to work it out alone. And the organizati
 
 ---
 
-## Slide 13 — 12 · The third option
+## Slide 14 — 13 · The third option
 
 **Teach them to author their own context.**
 
@@ -144,7 +158,7 @@ They leave with a simple file. A plain text file. A configured, plain text file.
 
 ---
 
-## Slide 14 — 13 · What they walk out with
+## Slide 15 — 14 · What they walk out with
 
 **A skill that belongs to them.**
 
@@ -157,7 +171,7 @@ It works in a tool that doesn't exist yet, at their next job, in a model nobody 
 
 ---
 
-## Slide 15 — 14 · What you can stand behind
+## Slide 16 — 15 · What you can stand behind
 
 **Numbers, not testimonials.**
 
@@ -169,7 +183,7 @@ _All of it is public, including the six claims this program rests on — written
 
 ---
 
-## Slide 16 — 15 · The offer, itemized
+## Slide 17 — 16 · The offer, itemized
 
 **One number — and more sessions barely move it.**
 
@@ -191,17 +205,17 @@ _From you: a room with wifi, a repeating slot that suits your people, and the fo
 
 ---
 
-## Slide 17 — 16 · One decision
+## Slide 18 — 17 · One decision
 
 **Take it, or keep the three questions.**
 
-If this is something you want for the people you serve: request a cohort at myworkbrain.org/civic and the packet, the agreement and available dates come back within two business days. If it isn't: keep slide six, run it with your staff or your members, and we are square. There is no follow-up sequence.
+If this is something you want for the people you serve: request a cohort at myworkbrain.org/civic and the packet, the agreement and available dates come back within two business days. If it isn't: keep the three questions, run them with your staff or your members, and we are square. There is no follow-up sequence.
 
 _Workbrain · by Model Citizen · the standard at myworkbrain.org/good_
 
 ---
 
-## Slide 18 — Appendix A · Push back on us
+## Slide 19 — Appendix A · Push back on us
 
 - **"The homogenization research is early."** It is, and we say so on the slide. What isn't early: memory on by default, profiles nobody authored, and the before-and-after each person measures on their own work. The case never rests its weight on the scary slide.
 - **"This sounds anti-AI. We're trying to drive adoption."** Four 90-minute sessions of hands-on building with the tool each person already uses. The foundations hour exists so the adoption is informed. We teach use — the caution is the seatbelt, not an argument against the car.
@@ -209,7 +223,7 @@ _Workbrain · by Model Citizen · the standard at myworkbrain.org/good_
 
 ---
 
-## Slide 19 — Appendix B · The honest concessions
+## Slide 20 — Appendix B · The honest concessions
 
 - **"Isn't this prompt training with extra steps?"** Prompt phrasing doesn't transfer between tools — the research is clear. An owned file does. The room demonstrates the difference to itself, in five minutes, on their own work.
 - **"You teach people not to sound like the machine… using the machine."** The same way a writing class uses a word processor. The tool drafts; the person and their file decide. Improve what they do — don't replace it.
@@ -217,7 +231,7 @@ _Workbrain · by Model Citizen · the standard at myworkbrain.org/good_
 
 ---
 
-## Slide 20 — Appendix C · Field guide for slide six
+## Slide 21 — Appendix C · Field guide for the three questions
 
 **Where the memory lives.**
 

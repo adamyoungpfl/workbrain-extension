@@ -178,6 +178,55 @@ rely on *only* it. Their memory is good at the mundane; the risks live
 exactly where the stakes are: identity, judgment, voice, and the
 atypical parts that make you worth reading correctly.
 
+## 3b · Whose average? — the equity argument, and its limits
+
+Adam, 2026-09-11: go further on "how bias and design impact minorities
+and other groups where the language is specifically and intentionally
+so important, that AI poses a risk to white washing their contributions
+being the decided minority voice in a system that reverts to the mean."
+
+**The claim, stated so it survives a hostile room:** "most likely" is
+computed over text that was never collected evenly from everyone, so
+the mean is not neutral ground — it belongs to whoever wrote the most
+of it. Where a group's language is *chosen* (a community's own terms
+for itself, a tradition's vocabulary, a discipline's hard-won plain
+speech), a tool that silently rewrites toward the center is not
+correcting an error; it is overwriting a decision. And it never says
+so. The deck's phrase: **erasure by autocomplete** — nobody chose it,
+nobody is informed of it.
+
+**The evidence carried on the slide** (both are real, and both are
+about *default* behavior rather than intent):
+- **Hofmann et al., Nature 2024.** Covertly prejudiced judgments made
+  from dialect alone — in controlled tests, speakers of African
+  American English assigned less prestigious jobs and harsher
+  sentences. The finding that matters most here: the training designed
+  to remove overt bias left the covert kind intact, so the fix made it
+  *invisible*, not absent.
+- **Santurkar et al., ICML 2023** ("Whose opinions do language models
+  reflect?"). Model defaults align far more closely with some
+  demographic groups than others — the mean has demographics.
+
+**Three limits that keep this honest** — state them, or the argument
+is the kind of overclaim that collapses in Q&A:
+1. **A context file does not fix a model.** It puts the person's own
+   words in front of it and gives them something to check the answer
+   against. That is a real, modest, checkable benefit; anything more
+   is a lie.
+2. **Not malice, and not every output.** The mechanism is an
+   optimization target, and the effect is a measured tendency, not a
+   guarantee about any single answer.
+3. **Do not speak for a community.** The slide names the risk in the
+   abstract and lets each person in the room test it on their own
+   words. The program's job is to hand people the controls, never to
+   tell them which of their words were "authentic."
+
+**Why it earns a dedicated slide rather than a clause:** it is the
+beat people repeat to a colleague afterward, and it converts the
+program from a productivity training into a mission-aligned one for
+exactly the funders the Civic Accelerator needs. The script marks it
+uncuttable for that reason.
+
 ## 4 · The red team — counterpoints to hold, by audience
 
 ### Program leaders (civic funders, directors)

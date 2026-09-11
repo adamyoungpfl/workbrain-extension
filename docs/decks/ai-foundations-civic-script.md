@@ -28,9 +28,9 @@ seeker in your program*. Specificity is what makes warmth sound real
 instead of performed. Deliver it level; if it starts to sound like a
 funnel, the whole thing collapses.
 
-Times are cumulative targets. If you're past 6:00 at slide 10, cut
-slide 11 (the two defaults) — it's the one beat the close survives
-without.
+Times are cumulative targets. If you are past 7:00 at beat 11, cut beat
+12 (the two defaults) — it is the one beat the close survives without.
+Do not cut 03; it is the beat people repeat to someone else afterward.
 
 ---
 
@@ -42,13 +42,13 @@ members or a mix, and they never pay a cent. I'm not going to build to
 it dramatically. I'll tell you what it gives the folks who count on
 you, and you'll say yes or no, and either answer is genuinely fine."
 
-**01 · Hope this email finds you ___ — 0:40**
+**01 · Hope this email finds you ___ — 0:35**
 "Finish that sentence for me. …You did it before I asked. That reflex
 you just felt is the entire technology. The tool everyone in your
 building is already using does that for every word it writes: it
 continues with what most people would say."
 
-**02 · The most common version is becoming the noise — 1:20**
+**02 · The most common version is becoming the noise — 1:10**
 "That's not a flaw, it's the definition — the most likely word is the
 most common word. So every draft that comes back starts life as the
 most common version of the thought. Now multiply that by everyone,
@@ -56,7 +56,28 @@ every day. It is already getting hard to tell where the tool ended
 and the person began — in an inbox, in an application, in a
 proposal. That line is worth being able to draw."
 
-**03 · And it reads them the same way — 1:55**
+**03 · The average has an accent — 1:45**
+"And here's the part I'd ask you to sit with. 'Most likely' is measured
+over text nobody ever collected evenly from everyone. So the middle it
+pulls toward isn't neutral ground — it belongs to whoever wrote the most
+of it.
+
+Now think about the people you serve whose language is deliberate. A
+community that chose its own words for itself. A tradition with its own
+vocabulary. A field that fought to say things plainly. The tool doesn't
+argue with any of that. It hands back a version that sounds like
+everybody else and calls it polish. That's erasure by autocomplete —
+nobody chose it, and it never announces itself.
+
+And this is measured, not asserted. Nature published work showing these
+models make covertly prejudiced judgments from dialect alone — and that
+the training meant to remove the overt kind left the covert kind intact.
+
+I want to be careful here, because it matters: a context file does not
+fix a model. What it does is put the person's own words in front of it,
+and give them something to check the answer against."
+
+**04 · And it reads them the same way — 2:35**
 "Here's the half nobody mentions. It doesn't just write like the
 average — it reads like the average. The coordinator who runs your
 Tuesday programs types a request, and it hears the most likely meaning:
@@ -70,12 +91,12 @@ dialects. It does not read everyone equally well —
 and the people it reads worst are often the ones you are working
 hardest to help."
 
-**04 · A profile written by someone else — 3:05**
+**05 · A profile written by someone else — 3:30**
 "Everyone in that room has seen this movie. Twenty years of web
 cookies: a dossier nobody authored, kept for someone else's purposes,
 invisible to the person it described. We ended up regulating it."
 
-**05 · Every one of them already has one — 3:35**
+**06 · Every one of them already has one — 3:55**
 "Here's the sequel, already installed. AI memory — on by default on
 every major service. Inferred, not written by them, and it rewrites
 itself; OpenAI literally calls the process 'dreaming.' At Microsoft
@@ -84,7 +105,7 @@ documentation, not my opinion. Nobody wrote the profile the tool reads
 them through — not the person it describes, not you. Most have
 never laid eyes on it."
 
-**06 · Three questions — 4:25**
+**07 · Three questions — 4:40**
 "Here's something you can give them tonight, free, whether or not you
 ever talk to me again. Three questions, and each one checks a
 different thing against what should be true.
@@ -100,7 +121,7 @@ Do it yourself tonight. Whatever happens on your screen is happening
 on theirs, every day, quietly. There's a field guide at the end for
 where each service keeps that page — take a photo of it."
 
-**07 · The effort doesn't change, the ceiling does — 5:25**
+**08 · The effort doesn't change, the ceiling does — 5:35**
 "Let me be fair to the machine, because this matters. Nobody accepts
 that memory on principle — they accept it because it costs nothing and
 comes back well-composed. And let's be honest with each other: we all
@@ -114,26 +135,26 @@ house style. With a file behind it: drafts in their voice, methods
 that repeat, and actions worth automating — because a written method
 is the prerequisite for automating anything responsibly."
 
-**08 · Individually faster, collectively identical — 6:05**
+**09 · Individually faster, collectively identical — 6:15**
 "And the measured group effect: AI assistance makes each person better
 and the group more alike. Science Advances, twenty twenty-four. Ten
 people produce ten versions of the same thing — and none of them chose
 that."
 
-**09 · The day their work stops sounding like them — 6:40**
+**10 · The day their work stops sounding like them — 6:45**
 "What that costs the person: the contribution that used to be
 recognizably hers stops getting noticed. And for anyone you serve who
 is job-hunting: every application in that pile is polished by the same
 tool now, and sameness is the rejection. What it costs you is a
 discount on your organization's name, never on the software."
 
-**10 · The difference has to come from the people — 7:10**
+**11 · The difference has to come from the people — 7:10**
 "Which leaves one question worth keeping. Your competitor's proposal
 was written by the same model as yours. So was the grant application
 from the organization across town. Has anyone given the folks doing
 that work a way to put themselves back into it?"
 
-**11 · Conventional wisdom — 7:40** *(cut this beat if behind)*
+**12 · Conventional wisdom — 7:35** *(cut this beat if behind)*
 "Conventional wisdom says you have two choices to make right now.
 Avoidance: hold the line until this settles down — perfectly
 reasonable, and they're using it anyway, at home, with nobody to ask.
@@ -146,7 +167,7 @@ neither. They taught their people a third thing — and the folks you
 serve are four sessions from that same unlock. They'll credit it to
 you."
 
-**12 · Teach them to author their own context — 8:05**
+**13 · Teach them to author their own context — 8:00**
 "The third option is a teaching one, and it's almost boring. Each
 person writes a short plain-text file about their own work — their
 names for things, their judgment, the standards they hold — and hands
@@ -159,7 +180,7 @@ already knows how to set up a tool — a phone, a thermostat, a template
 they saved once. Nobody knows how to re-raise a colleague. This is the
 first one, not the second."
 
-**13 · What they walk out with — 8:35**
+**14 · What they walk out with — 8:30**
 "Four sessions — mornings, afternoons or evenings, whatever suits your
 people — and here's what each person keeps. Their files, in
 plain text, on their own device. A method — one job they do every week,
@@ -170,7 +191,7 @@ what they built — verifiable, goes on a profile. All of it works at
 their next job, in a model nobody has released yet. Nothing expires
 when we leave."
 
-**14 · What you can stand behind — 9:10**
+**15 · What you can stand behind — 9:05**
 "If you fund this, here's what you'll be able to say about it. You can
 say what good means — it's four plain checks anyone can run in five
 minutes, published on a public page, so nobody has to take our word
@@ -182,7 +203,7 @@ ninety and one-eighty days with the response rate attached, and we
 don't claim employment outcomes. People tell us what happened and we
 pass it on as reported."
 
-**15 · The offer, itemized — 9:35**
+**16 · The offer, itemized — 9:30**
 "Here it is itemized, because I'd rather you see the whole thing than
 wonder what's underneath it. It splits in two. The program base — setup,
 the loaner device pool, insurance and admin, and the follow-up reporting
@@ -202,7 +223,7 @@ in the room, no license or seat fee, no second invoice to launch, and
 nothing that lapses when we leave. From you, a room with wifi and a
 repeating slot that suits your people."
 
-**16 · The close — 9:55**
+**17 · The close — 9:52**
 "One decision. If you want this for the people you serve, the form is at
 myworkbrain-dot-org slash civic, and the packet comes back in two
 business days. If you don't — keep the three questions, run them with
@@ -214,8 +235,8 @@ Thanks for the ten minutes."
 **In the three minutes after:** the likely pushbacks have answers on
 appendix slides A and B — go there rather than improvising. If they ask
 why they should believe the homogenization research, concede that it's
-early and pivot to what's measurable in their own shop (slides 06 and
-14). Never argue slide 08; it's a citation, not a hill.
+early and pivot to what is measurable in their own rooms (the three
+questions, and the evidence beat). Never argue the group-effect beat; it is a citation, not a hill.
 
 **If they ask "what does it cost us after?"** — nothing. Say it plainly
 and stop talking. That silence does more than another sentence would.
