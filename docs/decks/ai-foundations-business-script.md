@@ -45,15 +45,15 @@ minutes a week. We facilitate, you host. Workbrain enables participants
 of any skill level to create a simple file that makes any AI tool work
 like it already knows them — their words, their standards, their way of
 doing the work — and they prove it against their own before-and-after.
-They keep the file, and the written methods stay with the team. And you
-become the employer that taught them to use this well, instead of the
-one that rolled out a license and hoped.
+They keep the file, and the written methods stay with the team. 
 
 It's free for the people in the room, and the price to you is on the
 screen too — there's a 'what it costs' tag right there, and I'll show
 you the whole invoice near the end. I'm not going to build to it
-dramatically. Ten minutes, no follow-up sequence, and either answer is
-genuinely fine."
+dramatically.
+
+So: if you've got people who want to really use this well, and you've
+got ten minutes — let's keep going."
 
 **01 · Hope this email finds you ___ — 0:35**
 "Finish that sentence for me. …You did it before I asked. That reflex

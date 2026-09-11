@@ -13,10 +13,6 @@ Presenter script: ai-foundations-business-script.md.
 
 Workbrain enables participants of any skill level to create a simple file that makes any AI tool work like it already knows them — their words, their standards, their way of doing the work — and they prove it against their own before-and-after. They keep the file and the knowledge of how to leverage it towards their goals and objectives.
 
-You become the employer that taught them to use this well — not the one that rolled out a license and hoped.
-
-_Ten minutes, and there is no follow-up sequence — you will say yes or no today and either answer is fine._
-
 ---
 
 ## Slide 2 — 01 · What they're actually holding
