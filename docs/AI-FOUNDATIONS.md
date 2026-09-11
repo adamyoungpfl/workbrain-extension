@@ -280,6 +280,42 @@ promise. **RATIFIED 2026-09-10 (Adam: "Agreed on push back on Pro and
 one time seed"):** the one-time seed is free; the ongoing memory
 audit is the Workbrain+ feature.
 
+## 6b · How to say "your people" (the warm register)
+
+Adam, 2026-09-11: find a friendlier, more familiar way to say it —
+tone of concern for their employees and members, appealing to a
+listener who wants to help people like the ones they serve.
+
+**Never "your people."** It reads possessive and corporate, and in a
+civic room it can sound like a category rather than a person.
+
+**Rotate these instead**, by what the sentence is doing:
+- *the folks you serve* — the workhorse; warm, dual-use for staff and
+  members alike.
+- *the people who count on you* — for the emotional beats (the title
+  lead, the close). Sparingly; it gets heavy if repeated.
+- *everyone in your building* — for the concrete present tense ("the
+  assistant everyone in your building is already using").
+- *your staff · your members* — when the audience is unambiguous; say
+  both when it isn't ("your staff, your members, or a mix").
+- *seats* for counting, never headcount ("sixteen to twenty seats in
+  your room" beats "16–20 of your people").
+
+**And best of all, name a human.** The warmest device is not a phrase
+— it is specificity: *the coordinator who runs your Tuesday programs*,
+*someone at your front desk*, *a job seeker in your program*. An
+abstraction asks the listener to care; a named person does the caring
+for them. Slide 03 carries the canonical example.
+
+**One mission line worth keeping** (slide 03's footnote): "It does not
+read everyone equally well — and the people it reads worst are often
+the ones you are working hardest to help." That converts the dialect
+research into the listener's own purpose without overclaiming it.
+
+Banned nearby: "users," "human capital," "participants" (until they
+actually are participants), and "resources" in any sense involving a
+person.
+
 ## 7 · Where each piece lands
 
 | Piece | Surface | When |

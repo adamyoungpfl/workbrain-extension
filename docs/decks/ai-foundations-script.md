@@ -6,10 +6,18 @@ never have to "get to it," and they never spend the talk waiting for
 the sell.
 
 **The posture:** you are not selling software to a buyer. You are
-showing someone who already cares about their people a capability they
-can hand those people. The hero of every sentence is the employee or
-the member — never the product, never you. Deliver it level. If it
-starts to sound like a funnel, the whole thing collapses.
+showing someone who already looks out for the people around them a
+capability they can pass along. The hero of every sentence is a person
+they know — never the product, never you.
+
+**The words matter here.** Avoid "your people" — it lands possessive
+and corporate. Reach instead for *the folks you serve*, *the people
+who count on you*, *everyone in your building*, *your staff*, *your
+members* — and best of all, a specific human: *the coordinator who
+runs your Tuesday programs*, *someone at your front desk*, *a job
+seeker in your program*. Specificity is what makes warmth sound real
+instead of performed. Deliver it level; if it starts to sound like a
+funnel, the whole thing collapses.
 
 Times are cumulative targets. If you're past 6:00 at slide 10, cut
 slide 11 (the two defaults) — it's the one beat the close survives
@@ -18,49 +26,52 @@ without.
 ---
 
 **TITLE — 0:00**
-"Everyone gave your people the tool. Nobody taught them to own it.
-That's the whole ten minutes. And the price is already on the screen —
-forty-eight hundred for one cohort, sixteen to twenty of your people,
-and they never pay anything. I'm not going to build to it dramatically.
-I'll tell you what it gives them, and you'll say yes or no, and either
-answer is genuinely fine."
+"Everyone handed out the tool. Nobody taught anybody to own it. That's
+the whole ten minutes. And the price is already on the screen —
+forty-eight hundred for one cohort, sixteen to twenty seats, staff or
+members or a mix, and they never pay a cent. I'm not going to build to
+it dramatically. I'll tell you what it gives the folks who count on
+you, and you'll say yes or no, and either answer is genuinely fine."
 
 **01 · Hope this email finds you ___ — 0:40**
 "Finish that sentence for me. …You did it before I asked. That reflex
-you just felt is the entire technology. The assistant your people were
-handed does that for every word it writes: it continues with what most
-people would say."
+you just felt is the entire technology. The assistant everyone in your
+building is already using does that for every word it writes: it
+continues with what most people would say."
 
 **02 · It always bets on average — 1:20**
 "That's not a flaw, it's the definition — the most likely word is the
-most common word. So every draft your people get back starts life as
-the most common version of the thought. They can beat that. Nobody has
-ever shown them how."
+most common word. So every draft that comes back to the folks you serve
+starts life as the most common version of the thought. They can beat
+that. Nobody has ever shown them how."
 
 **03 · And it reads them the same way — 1:55**
 "Here's the half nobody mentions. It doesn't just write like the
-average — it reads like the average. Your coordinator types a request,
-and it hears the most likely meaning: the average asker's meaning. What
-it misreads is exactly what you value in her — her judgment, her
-shorthand, the things she knows that most people don't. And it never
-flags it. She gets a confident answer to a question she didn't ask. One
-study moved measured accuracy seventy-six points just by rewording the
-same question. Nature published that these models systematically
-misread non-standard dialects. It does not read all of your people
-equally well."
+average — it reads like the average. The coordinator who runs your
+Tuesday programs types a request, and it hears the most likely meaning:
+the average asker's meaning. What it misreads is exactly what you value
+in her — her judgment, her shorthand, the fifteen years of things she
+knows that most people don't. And it never flags it. She gets a
+confident answer to a question she didn't ask. One study moved measured
+accuracy seventy-six points just by rewording the same question. Nature
+published that these models systematically misread non-standard
+dialects. It does not read everyone equally well —
+and the people it reads worst are often the ones you are working
+hardest to help."
 
 **04 · A profile written by someone else — 3:05**
-"Your people have seen this movie. Twenty years of web cookies: a
-dossier nobody authored, kept for someone else's purposes, invisible to
-the person it described. We ended up regulating it."
+"Everyone in that room has seen this movie. Twenty years of web
+cookies: a dossier nobody authored, kept for someone else's purposes,
+invisible to the person it described. We ended up regulating it."
 
 **05 · Every one of them already has one — 3:35**
 "Here's the sequel, already installed. AI memory — on by default on
 every major service. Inferred, not written by them, and it rewrites
 itself; OpenAI literally calls the process 'dreaming.' At Microsoft
 it's exempt from retention policy and not audit-logged — that's their
-documentation, not my opinion. Not one of your people wrote the profile
-their assistant reads them through. Most have never seen it."
+documentation, not my opinion. Nobody wrote the profile their assistant
+reads them through — not the person it describes, not you. Most have
+never laid eyes on it."
 
 **06 · Three questions — 4:25**
 "So here's something you can give them tonight, free, whether or not
@@ -69,7 +80,7 @@ assistant. What do you remember about me — count what's flat wrong.
 Describe how I communicate — see if you recognize the person. What
 matters most in my work — and watch it answer with everyone's answer.
 Do it yourself tonight. Whatever it does on your screen is happening on
-each of theirs, every day, quietly. There's a field guide at the end
+theirs too, every day, quietly. There's a field guide at the end
 for where each service keeps that page — take a photo of it."
 
 **07 · The honest ledger — 5:15**
@@ -88,22 +99,22 @@ that."
 
 **09 · The day their work stops sounding like them — 6:40**
 "What that costs the person: the contribution that used to be
-recognizably theirs stops getting noticed. And if any of your people
-are job-hunting, understand that every application in that pile is
-polished by the same tool — sameness is the rejection. What it costs
-you is a discount on your organization's name, not on the software."
+recognizably hers stops getting noticed. And for anyone you serve who
+is job-hunting: every application in that pile is polished by the same
+tool now, and sameness is the rejection. What it costs you is a
+discount on your organization's name, never on the software."
 
-**10 · The difference has to come from your people — 7:10**
+**10 · The difference has to come from the people — 7:10**
 "Which leaves one question worth keeping. Your competitor's proposal
 was written by the same model as yours. So was the grant application
-from the organization across town. Have your people been given any way
-to put themselves back into the work?"
+from the organization across town. Has anyone given the folks doing
+that work a way to put themselves back into it?"
 
 **11 · The two defaults — 7:40** *(cut this beat if behind)*
 "Most organizations land on one of two defaults. Ban it — and people
 use it anyway, on their own phones, unsupported. Or let it run — and
-everyone converges on the same house style. Both defaults teach your
-people nothing."
+everyone converges on the same house style. Both defaults leave
+everyone to work it out alone."
 
 **12 · Teach them to author their own context — 8:05**
 "The third option is a teaching one, and it's almost boring. Each
@@ -133,18 +144,18 @@ outcomes."
 
 **15 · The offer — 9:35**
 "So: the number from the first slide. Forty-eight hundred funds one
-cohort — four evenings in your building, sixteen to twenty people,
+cohort — four evenings in your building, sixteen to twenty seats,
 facilitation, materials, loaner devices for anyone who needs one,
 certificates, follow-up reporting. You bring a room with wifi and the
-people. They never pay, and the tool stays free forever afterward.
-We don't sell to participants, during or after."
+folks who should be in it. They never pay, and the tool stays free
+forever afterward. We don't sell to participants, during or after."
 
 **16 · The close — 9:55**
-"One decision. If you want it for your people, the request form is at
+"One decision. If you want this for the people you serve, the form is at
 myworkbrain-dot-org slash civic, and the packet comes back in two
 business days. If you don't — keep the three questions, run them with
-your team, and we're square. There's no follow-up sequence. Thanks for
-the ten minutes."
+your staff or your members, and we are square. No follow-up sequence.
+Thanks for the ten minutes."
 
 ---
 
