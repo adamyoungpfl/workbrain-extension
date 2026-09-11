@@ -47,8 +47,9 @@ you'll say yes or no, and either answer is genuinely fine."
 **01 · Hope this email finds you ___ — 0:35**
 "Finish that sentence for me. …You did it before I asked. That reflex
 you just felt is the entire technology. The tool everyone in your
-building is already using does that for every word it writes: it
-continues with what most people would say."
+building is already using does that for every word it writes. The AI
+tools we all used today are a lot like autocomplete, at enormous scale,
+answering our prompts with the most common response."
 
 **02 · The most common version is becoming the noise — 1:10**
 "That's not a flaw, it's the definition — the most likely word is the
@@ -60,25 +61,31 @@ and the person began — in an inbox, in an application, in a
 proposal. That line is worth being able to draw."
 
 **03 · The average has an accent — 1:45**
-"And here's the part I'd ask you to sit with. 'Most likely' is measured
-over text nobody ever collected evenly from everyone. So the middle it
-pulls toward isn't neutral ground — it belongs to whoever wrote the most
-of it.
+"Here's the part I'd ask you to sit with. 'Most likely' is measured over
+text nobody ever collected evenly from everyone. So the middle it pulls
+toward isn't neutral — it belongs to whoever wrote the most of it.
 
-You hired people who don't all sound the same, and that was the point.
-The technician. The apprentice. Someone working in their second
-language. The specialist whose field has its own plain speech. The tool
-flattens each of them toward the median and calls it polish — the
-expertise survives, the signature doesn't. And the customers who sound
-like your team can tell.
+Watch what that does to a sentence somebody meant. *(read the left
+column, then the right — slowly)* 'We torque it to spec, then check it
+again cold' comes back as 'we follow standard quality procedures.'
+'I've run this line eleven years, I hear it before the gauge does'
+becomes 'experienced operations professional.' 'The crew calls it the
+ghost shift and they plan around it' becomes 'the overnight production
+period.'
 
-This is measured, not asserted. Nature published work showing these
-models make covertly prejudiced judgments from dialect alone — and that
-the training meant to remove the overt kind left the covert kind intact.
+Nothing was flagged. Nobody was asked. The words that carried the
+expertise are the ones it edits hardest — and what comes back could
+have been written about anyone, at any company.
 
-And to be careful about my own claim: a file does not fix a model. It
-puts the person's own words in front of it, and gives them something to
-check the answer against."
+This is measured, not asserted: Nature published work showing these
+models make covertly prejudiced judgments from dialect alone, and that
+the training meant to remove the overt kind left the covert kind
+intact.
+
+And to be careful about my own claim: a file does not fix a model. What
+it does is put the person's own words in front of it — which is how the
+person whose knowledge is least like everyone else's gets the same
+leverage as the person nearest the middle."
 
 **04 · And it reads them the same way — 2:35**
 "Here's the half nobody mentions. It doesn't just write like the
@@ -243,7 +250,8 @@ Thanks for the ten minutes."
 appendix slides A and B — go there rather than improvising. If they ask
 why they should believe the homogenization research, concede that it's
 early and pivot to what is measurable in their own rooms (the three
-questions, and the evidence beat). Never argue the group-effect beat; it is a citation, not a hill.
+questions, and the evidence beat). Never argue the group-effect beat; it
+is a citation, not a hill.
 
 **If they ask "what does it cost us after?"** — nothing. Say it plainly
 and stop talking. That silence does more than another sentence would.

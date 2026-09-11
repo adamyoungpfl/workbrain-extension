@@ -45,8 +45,9 @@ you, and you'll say yes or no, and either answer is genuinely fine."
 **01 · Hope this email finds you ___ — 0:35**
 "Finish that sentence for me. …You did it before I asked. That reflex
 you just felt is the entire technology. The tool everyone in your
-building is already using does that for every word it writes: it
-continues with what most people would say."
+building is already using does that for every word it writes. The AI
+tools we all used today are a lot like autocomplete, at enormous scale,
+answering our prompts with the most common response."
 
 **02 · The most common version is becoming the noise — 1:10**
 "That's not a flaw, it's the definition — the most likely word is the
@@ -57,25 +58,30 @@ and the person began — in an inbox, in an application, in a
 proposal. That line is worth being able to draw."
 
 **03 · The average has an accent — 1:45**
-"And here's the part I'd ask you to sit with. 'Most likely' is measured
-over text nobody ever collected evenly from everyone. So the middle it
-pulls toward isn't neutral ground — it belongs to whoever wrote the most
-of it.
+"Here's the part I'd ask you to sit with. 'Most likely' is measured over
+text nobody ever collected evenly from everyone. So the middle it pulls
+toward isn't neutral — it belongs to whoever wrote the most of it.
 
-Now think about the people you serve whose language is deliberate. A
-community that chose its own words for itself. A tradition with its own
-vocabulary. A field that fought to say things plainly. The tool doesn't
-argue with any of that. It hands back a version that sounds like
-everybody else and calls it polish. That's erasure by autocomplete —
-nobody chose it, and it never announces itself.
+Watch what that does to a sentence somebody meant. *(read the left
+column, then the right — slowly)* 'The elders who hold the language'
+comes back as 'key community stakeholders.' 'We run the pantry out of
+the back of the church' becomes 'we operate a food distribution
+program.' 'She's been doing this since before the county had a program'
+becomes 'she is an experienced team member.'
 
-And this is measured, not asserted. Nature published work showing these
-models make covertly prejudiced judgments from dialect alone — and that
-the training meant to remove the overt kind left the covert kind intact.
+Nothing was flagged. Nobody was asked. The words that were chosen most
+carefully are the ones it edits hardest — and the people who chose them
+are usually the ones a room is already least likely to hear.
 
-I want to be careful here, because it matters: a context file does not
-fix a model. What it does is put the person's own words in front of it,
-and give them something to check the answer against."
+This is measured, not asserted: Nature published work showing these
+models make covertly prejudiced judgments from dialect alone, and that
+the training meant to remove the overt kind left the covert kind
+intact.
+
+I want to be careful about my own claim here. A file does not fix a
+model. What it does is put the person's own words in front of it —
+which is how somebody at the edge gets the same leverage as somebody
+at the middle."
 
 **04 · And it reads them the same way — 2:35**
 "Here's the half nobody mentions. It doesn't just write like the
@@ -236,7 +242,8 @@ Thanks for the ten minutes."
 appendix slides A and B — go there rather than improvising. If they ask
 why they should believe the homogenization research, concede that it's
 early and pivot to what is measurable in their own rooms (the three
-questions, and the evidence beat). Never argue the group-effect beat; it is a citation, not a hill.
+questions, and the evidence beat). Never argue the group-effect beat; it
+is a citation, not a hill.
 
 **If they ask "what does it cost us after?"** — nothing. Say it plainly
 and stop talking. That silence does more than another sentence would.

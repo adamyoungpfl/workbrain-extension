@@ -21,7 +21,9 @@ _$4,800 funds a first series — four sessions, up to 10 of your team, mornings 
 
 **Hope this email finds you ___**
 
-You filled that in before I finished the sentence. So does the tool everyone in your building is already using — for every word it writes. It is autocomplete at enormous scale: it continues with what most people would say.
+You filled that in before I finished the sentence. So does the tool everyone in your building is already using — for every word it writes.
+
+The AI tools we all used today are a lot like autocomplete, at enormous scale, answering our prompts with the most common response.
 
 _A simplification an expert accepts: predicting the most likely next word is the literal training objective._
 
@@ -41,13 +43,13 @@ It is already getting hard to tell where the tool ended and the person began —
 
 **The average has an accent.**
 
-"Most likely" is measured over text that was never collected evenly from everyone. So the middle it pulls toward is not neutral ground — it belongs to whoever wrote the most of it.
+"Most likely" is measured over text that was never collected evenly from everyone — so the middle belongs to whoever wrote the most of it. Watch what that does to a sentence somebody meant:
 
-You hired people who do not all sound the same, and that was the point. The technician, the apprentice, the person working in their second language, the specialist whose field has its own plain speech — the tool flattens each of them toward the median and calls it polish. The expertise survives. The signature doesn't.
+Nothing was flagged. Nobody was asked. The words that carried the expertise are the ones it edits hardest — and what comes back could have been written about anyone, at any company.
 
-And the customers who sound like your team can tell.
+An authored file is how the person whose knowledge is least like everyone else's gets the same leverage as the person nearest the middle.
 
-_Measured, not asserted: models make covertly prejudiced judgments from dialect alone — in controlled tests, assigning speakers of African American English to less prestigious jobs and harsher sentences — and the training meant to remove overt bias left the covert kind intact (Hofmann et al., Nature 2024). Model defaults also align far more closely with some demographic groups than others (Santurkar et al., ICML 2023). A context file does not fix a model. It puts the person's own words in front of it, and gives them something to check the answer against._
+_Measured, not asserted: covert prejudice from dialect alone, surviving the training meant to remove the overt kind (Hofmann et al., Nature 2024); model defaults aligning far more closely with some demographic groups than others (Santurkar et al., ICML 2023). A file does not fix a model — it puts the person's own words in front of it._
 
 ---
 
