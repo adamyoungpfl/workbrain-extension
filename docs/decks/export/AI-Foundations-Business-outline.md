@@ -70,7 +70,7 @@ Twenty years of web cookies: a dossier nobody authored, kept for someone else's 
 
 ## Slide 8 — 07 · Something you can give them tonight
 
-**Three questions. No cost, no sign-up.**
+**What does your AI remember about you? 3 easy questions you probably want to know the answer to tonight.**
 
 - **Accuracy** — "What do you remember about me?" _(Look for a job title, a project, or a tool you have already moved on from. Confirm it by opening the memory page itself — if it is still listed there, it is still shaping every answer. Field guide: last slide.)_
 - **Voice** — "Describe how I communicate." _(Look for an adjective you would never use about yourself. Confirm it by holding the description next to something you actually wrote last week. Field guide: last slide.)_
@@ -111,8 +111,6 @@ For the person: the contribution that used to be recognizably hers stops getting
 
 **The difference has to come from the people.**
 
-Your competitor's proposal was written by the same model as yours. So was the pitch from the shop across town. Has anyone given your team a way to put themselves back into the work?
-
 ---
 
 ## Slide 13 — 12 · What choices do they have right now?
@@ -131,8 +129,6 @@ Someone on your team opens the same tool everyone else has. Here is the whole me
 **Teach them to author their own context.**
 
 Each person writes a short, plain-text file about their own work — their names for things, their judgment, the standards they hold — and hands it to whatever tool they already use. Nothing routes through us. No account. Nothing transmitted.
-
-They leave with a simple file. A plain text file. A configured, plain text file. We have all gone through the setup process on a new device or a new tool. Workbrain is the setup for effective AI usage.
 
 ---
 
@@ -156,8 +152,6 @@ It works in a tool that doesn't exist yet, in a model nobody has released. The f
 - **You can say what "good" means** — Four plain checks anyone can run in five minutes, published on a public page. Your most skeptical engineer can audit the claim without asking us anything.
 - **You can say how we know** — Every participant does the same kind of task before any teaching and again at the end, and keeps both. The evidence is on their own work — real tasks from your shop, not a survey about how the training felt.
 - **You can say what we won't claim** — At 90 and 180 days we report back, always with the response rate attached. We do not claim employment outcomes — people tell us what happened, and we pass it on as reported.
-
-_All of it is public, including the six claims this program rests on — written down so anyone who thinks we are wrong can say exactly where: myworkbrain.org/good_
 
 ---
 

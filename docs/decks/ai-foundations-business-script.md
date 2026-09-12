@@ -132,9 +132,9 @@ deciding what's important, what's appropriate, what's up to your
 standard — and what isn't?"
 
 **07 · Three questions — 4:40**
-"Here's something you can give them tonight, free, whether or not you
-ever talk to me again. Three questions, and each one checks a
-different thing against what should be true.
+"What does your AI remember about you? Here are three questions worth
+asking tonight — free, whether or not you ever talk to me again. Each
+one checks a different thing against what should be true.
 
 Accuracy: what do you remember about me — look for a job title or a
 project they've already moved on from. Voice: describe how I
@@ -144,8 +144,11 @@ week. Priorities: what matters most in my work — and notice what's
 missing, the thing they'd have said first.
 
 Do it yourself tonight. Whatever happens on your screen is happening
-on theirs, every day, quietly. There's a field guide at the end for
-where each service keeps that page — take a photo of it."
+on theirs, every day, quietly. And here is the point underneath it:
+the easy path answers FOR them, and what it answers with is the
+average. Identity survives one way only — the context is theirs, and
+it goes in every single time. Field guide for where each service keeps
+that page is at the end; take a photo of it."
 
 **08 · The effort doesn't change, the ceiling does — 5:35**
 "Let me be fair to the machine, because this matters. Nobody, really,

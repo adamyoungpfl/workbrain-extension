@@ -80,6 +80,20 @@
   .bring li { font-size: 13px; line-height: 1.38; color: var(--ink-2); padding-left: 22px; position: relative; }
   .bring li::before { content: ""; position: absolute; left: 2px; top: 7px; width: 7px; height: 7px; border-radius: 2px; background: var(--violet); }
   .bring li b { color: #ffffff; font-weight: 700; }
+  /* Slide 06 — the profile nobody authored. */
+  .dossier { width: 100%; max-width: 320px; height: auto; display: block; margin-left: auto; }
+  /* Slide 12 — the conveyor of identical documents. */
+  .belt { overflow: hidden; margin-top: 22px; padding: 6px 0; -webkit-mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); mask-image: linear-gradient(90deg, transparent, #000 7%, #000 93%, transparent); }
+  .belt-track { display: flex; gap: 26px; width: max-content; animation: belt 26s linear infinite; }
+  @keyframes belt { to { transform: translateX(-50%); } }
+  .belt-doc { position: relative; width: 132px; height: 176px; flex: none; border-radius: 9px; border: 1px solid rgba(232,237,249,0.2); background: rgba(232,237,249,0.045); padding: 34px 14px 0; display: flex; flex-direction: column; gap: 9px; }
+  .belt-mark { position: absolute; top: 12px; left: 13px; width: 14px; height: 14px; border-radius: 50%; background: var(--primary); animation: hue 6.6s steps(1, end) infinite; }
+  @keyframes hue { 0% { background: #6f92ff; } 25% { background: #e8a33d; } 50% { background: #a98df0; } 75% { background: #ff7a70; } }
+  .belt-doc .bl { height: 5px; border-radius: 3px; background: rgba(232,237,249,0.3); }
+  .belt-doc .bl.s { width: 62%; }
+  @media (prefers-reduced-motion: reduce) { .belt-track { animation: none; } .belt-mark { animation: none; } }
+  /* Slide 14 — the program lockup. */
+  .civic-lockup { width: 128px; height: auto; display: block; margin-bottom: 22px; }
   /* Citations — clearly a source line, never more to read. */
   .cite { margin: 16px 0 0; padding-top: 10px; border-top: 1px solid rgba(232,237,249,0.09); font-size: 12.5px; line-height: 1.5; color: var(--ink-3); max-width: none; }
   .cite b { color: var(--ink-2); font-weight: 650; letter-spacing: .06em; text-transform: uppercase; font-size: 11px; margin-right: 8px; }
@@ -211,7 +225,8 @@
       <div class="ac-row"><span>rested after the strike</span><span class="ac-bar"><i style="width:6%"></i></span></div>
     </div>
   </div>
-  <div class="callout" style="margin-top:34px"><svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg><p>The AI tools we all used today are a lot like autocomplete, at enormous scale, <strong>answering our prompts with the most common response.</strong></p></div>
+  <div class="callout" style="margin-top:30px"><svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg><p>The AI tools we all used today are a lot like autocomplete, at enormous scale, <strong>answering our prompts with the most common response.</strong></p></div>
+  <p class="cite"><b>Note</b>Not a metaphor: predicting the most likely next token is the literal training objective.</p>
 </section>
 
 <section class="slide">
@@ -231,6 +246,7 @@
     <text x="1116" y="122" text-anchor="end" font-size="11" letter-spacing="1.6" fill="#6b7a9c" font-family="-apple-system, 'Segoe UI', sans-serif" font-weight="700">WHAT COMES OUT</text>
   </svg>
   <div class="callout"><svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg><p>It is already getting hard to tell where the tool ended and the person began — in an inbox, in an application, in a proposal. <strong>That line is worth being able to draw.</strong></p></div>
+  <p class="cite"><b>Source</b>Shumailov et al., Nature 2024 — models trained on model-generated text drift toward the centre and lose the tails.</p>
 </section>
 
 <section class="slide">
@@ -272,45 +288,21 @@
       <h1>A profile about you,<br>written by <span class="em">someone else.</span></h1>
       <p class="lead" style="max-width:none">Twenty years of web cookies: a dossier nobody authored, kept for someone else's purposes, invisible to the person it described. <strong>We ended up regulating it.</strong> Everybody remembers how that felt.</p>
     </div>
-    <svg class="cookie-art" viewBox="0 0 248 250" aria-hidden="true">
-      <defs>
-        <g id="px-cookie">
-          <rect x="10" y="2" width="16" height="6" fill="#E0A863"/>
-          <rect x="4" y="8" width="28" height="6" fill="#E0A863"/>
-          <rect x="2" y="14" width="32" height="10" fill="#E0A863"/>
-          <rect x="2" y="24" width="32" height="6" fill="#D09A57"/>
-          <rect x="4" y="30" width="28" height="4" fill="#B0763A"/>
-          <rect x="24" y="2" width="10" height="8" fill="#070a12"/>
-          <rect x="8" y="12" width="6" height="6" fill="#3B2210"/>
-          <rect x="20" y="18" width="6" height="6" fill="#3B2210"/>
-          <rect x="12" y="24" width="5" height="5" fill="#3B2210"/>
-        </g>
-      </defs>
-      <use href="#px-cookie" x="14" y="0" opacity="0.14" transform="scale(0.62)" transform-origin="32 18"/>
-      <use href="#px-cookie" x="14" y="46" opacity="0.25" transform="scale(0.75)" transform-origin="32 64"/>
-      <use href="#px-cookie" x="14" y="96" opacity="0.51" transform="scale(0.87)" transform-origin="32 114"/>
-      <use href="#px-cookie" x="14" y="158" opacity="0.9" transform="scale(1.0)" transform-origin="32 176"/>
-      <line x1="32" y1="-26" x2="32" y2="188" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
-      <use href="#px-cookie" x="62" y="22" opacity="0.14" transform="scale(0.62)" transform-origin="80 40"/>
-      <use href="#px-cookie" x="62" y="74" opacity="0.25" transform="scale(0.75)" transform-origin="80 92"/>
-      <use href="#px-cookie" x="62" y="140" opacity="0.51" transform="scale(0.87)" transform-origin="80 158"/>
-      <use href="#px-cookie" x="62" y="196" opacity="0.9" transform="scale(1.0)" transform-origin="80 214"/>
-      <line x1="80" y1="-4" x2="80" y2="226" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
-      <use href="#px-cookie" x="110" y="0" opacity="0.14" transform="scale(0.62)" transform-origin="128 18"/>
-      <use href="#px-cookie" x="110" y="58" opacity="0.25" transform="scale(0.75)" transform-origin="128 76"/>
-      <use href="#px-cookie" x="110" y="118" opacity="0.51" transform="scale(0.87)" transform-origin="128 136"/>
-      <use href="#px-cookie" x="110" y="170" opacity="0.9" transform="scale(1.0)" transform-origin="128 188"/>
-      <line x1="128" y1="-26" x2="128" y2="200" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
-      <use href="#px-cookie" x="158" y="34" opacity="0.14" transform="scale(0.62)" transform-origin="176 52"/>
-      <use href="#px-cookie" x="158" y="90" opacity="0.25" transform="scale(0.75)" transform-origin="176 108"/>
-      <use href="#px-cookie" x="158" y="150" opacity="0.51" transform="scale(0.87)" transform-origin="176 168"/>
-      <use href="#px-cookie" x="158" y="206" opacity="0.9" transform="scale(1.0)" transform-origin="176 224"/>
-      <line x1="176" y1="8" x2="176" y2="236" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
-      <use href="#px-cookie" x="206" y="12" opacity="0.14" transform="scale(0.62)" transform-origin="224 30"/>
-      <use href="#px-cookie" x="206" y="66" opacity="0.25" transform="scale(0.75)" transform-origin="224 84"/>
-      <use href="#px-cookie" x="206" y="126" opacity="0.51" transform="scale(0.87)" transform-origin="224 144"/>
-      <use href="#px-cookie" x="206" y="184" opacity="0.9" transform="scale(1.0)" transform-origin="224 202"/>
-      <line x1="224" y1="-14" x2="224" y2="214" stroke="rgba(224,168,99,0.13)" stroke-width="1"/>
+    <svg class="dossier" viewBox="0 0 300 250" aria-hidden="true">
+      <rect x="18" y="14" width="264" height="214" rx="14" fill="rgba(232,237,249,0.05)" stroke="rgba(232,237,249,0.22)" stroke-width="1.5"/>
+      <rect x="18" y="14" width="264" height="40" rx="14" fill="rgba(232,237,249,0.05)"/>
+      <path d="M18 54h264" stroke="rgba(232,237,249,0.18)" stroke-width="1.2"/>
+      <text x="38" y="40" font-size="10" letter-spacing="1.5" font-weight="800" fill="#6b7a9c" font-family="-apple-system, 'Segoe UI', sans-serif">PROFILE · NOT WRITTEN BY YOU</text>
+      <circle cx="62" cy="98" r="22" fill="rgba(232,237,249,0.08)" stroke="rgba(232,237,249,0.28)" stroke-width="1.3"/>
+      <circle cx="62" cy="91" r="8" fill="rgba(232,237,249,0.35)"/>
+      <path d="M48 113c3-8 25-8 28 0" fill="rgba(232,237,249,0.35)"/>
+      <text x="98" y="86" font-size="9.5" letter-spacing="1.6" font-weight="800" fill="#6b7a9c" font-family="-apple-system, 'Segoe UI', sans-serif">TONE</text>
+      <text x="98" y="102" font-size="13" fill="#a6b6dc" font-family="-apple-system, 'Segoe UI', sans-serif" font-style="italic">professional, concise</text>
+      <text x="98" y="124" font-size="9.5" letter-spacing="1.6" font-weight="800" fill="#6b7a9c" font-family="-apple-system, 'Segoe UI', sans-serif">CARES ABOUT</text>
+      <text x="98" y="140" font-size="13" fill="#a6b6dc" font-family="-apple-system, 'Segoe UI', sans-serif" font-style="italic">efficiency, best practices</text>
+      <text x="38" y="170" font-size="9.5" letter-spacing="1.6" font-weight="800" fill="#6b7a9c" font-family="-apple-system, 'Segoe UI', sans-serif">WORKS IN</text>
+      <text x="38" y="186" font-size="13" fill="#a6b6dc" font-family="-apple-system, 'Segoe UI', sans-serif" font-style="italic">a professional environment</text>
+      <text x="38" y="212" font-size="11.5" font-style="italic" fill="#e8a33d" font-family="-apple-system, 'Segoe UI', sans-serif">signed: somebody else</text>
     </svg>
   </div>
 </section>
@@ -340,13 +332,13 @@
       <p class="mbody">At Perplexity Enterprise those memories <b>belong to the organization</b> — access ends when the person leaves.</p>
     </div>
   </div>
-  <div class="callout"><svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg><p>You didn't tell your AI assistant what was important and what wasn't. <strong>So who is deciding</strong> what is important, appropriate and up to your standard — and what is not?</p></div>
+  <div class="callout"><svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg><p>You didn't tell your AI assistant what was important and what wasn't. So <strong>who</strong> is deciding what is <span style="color:#6f92ff">important</span>, <span style="color:#a98df0">appropriate</span> and up to <span style="color:#e8a33d">your standard</span> — and what is <span style="color:#ff7a70">not</span>?</p></div>
   <p class="cite"><b>Source</b>Vendor documentation, surveyed in "Durable Context" (Young, 2026) — myworkbrain.org.</p>
 </section>
 
 <section class="slide">
   <p class="eyebrow">07 · Something you can give them tonight</p>
-  <h1>Three questions.<br>No cost, no sign-up.</h1>
+  <h1 style="max-width:none;font-size:clamp(26px,3.2vw,42px)">What does your AI remember about you? <span class="em">3 easy questions</span> you probably want to know the answer to tonight.</h1>
   <div class="cols3">
     <div class="panel tile" tabindex="0">
       <p class="tile-cat">Accuracy</p>
@@ -379,7 +371,7 @@
       <p class="tile-hint">What should be true vs. what is →</p>
     </div>
   </div>
-  <div class="callout"><svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg><p>Send them to your members, post them where your staff will see them, or try them yourself tonight. <strong>Whatever happens on your screen is happening on theirs too</strong> — every day, quietly.</p></div>
+  <div class="callout"><svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg><p>The easy path answers <strong>for</strong> them, and what it answers with is the average. Identity survives one way only: <strong>the context is theirs, and it goes in every single time.</strong></p></div>
 </section>
 
 <section class="slide">
@@ -443,15 +435,10 @@
 <section class="slide">
   <p class="eyebrow red">11 · One question to keep</p>
   <h1 style="max-width:none;font-size:clamp(26px,3.3vw,44px)">The difference has to come from the <span class="em">people.</span></h1>
-  <svg class="docs" viewBox="0 0 940 228" aria-hidden="true">
-    <defs><g id="dl" stroke="rgba(232,237,249,0.33)" stroke-width="4.5" stroke-linecap="round">
-      <path d="M26 76h124M26 96h136M26 116h108M26 136h136M26 156h92M26 176h128"/></g></defs>
-    <g><rect x="8" y="12" width="178" height="206" rx="10" fill="rgba(232,237,249,0.045)" stroke="rgba(232,237,249,0.2)" stroke-width="1.4"/><circle cx="40" cy="42" r="12" fill="#6f92ff"/><use href="#dl"/></g>
-    <g transform="translate(238 0)"><rect x="8" y="12" width="178" height="206" rx="10" fill="rgba(232,237,249,0.045)" stroke="rgba(232,237,249,0.2)" stroke-width="1.4"/><rect x="28" y="30" width="24" height="24" rx="4" fill="#e8a33d"/><use href="#dl"/></g>
-    <g transform="translate(476 0)"><rect x="8" y="12" width="178" height="206" rx="10" fill="rgba(232,237,249,0.045)" stroke="rgba(232,237,249,0.2)" stroke-width="1.4"/><path d="M40 28l14 26H26z" fill="#a98df0"/><use href="#dl"/></g>
-    <g transform="translate(714 0)"><rect x="8" y="12" width="178" height="206" rx="10" fill="rgba(232,237,249,0.045)" stroke="rgba(232,237,249,0.2)" stroke-width="1.4"/><circle cx="40" cy="42" r="12" fill="#ff7a70"/><use href="#dl"/></g>
-  </svg>
-  <p class="lead" style="max-width:none;margin-top:16px;font-size:18px">Every application in that stack was written by the same model. Every cover letter, every personal statement, every follow-up note. <strong>Has anyone shown the person who wrote this one how to put themselves back into it?</strong></p>
+  <div class="belt" aria-hidden="true">
+    <div class="belt-track"><div class="belt-doc"><span class="belt-mark" style="animation-delay:-0.0s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-1.1s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-2.2s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-3.3s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-4.4s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-5.5s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-6.6s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-7.7s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-8.8s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-9.9s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-11.0s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div><div class="belt-doc"><span class="belt-mark" style="animation-delay:-12.1s"></span><span class="bl"></span><span class="bl"></span><span class="bl s"></span><span class="bl"></span><span class="bl s"></span></div></div>
+  </div>
+  <div class="callout"><svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg><p>Every application in that stack was written by the same model. Every cover letter, every personal statement, every follow-up note. <strong>Has anyone shown the person who wrote this one how to put themselves back into it?</strong></p></div>
 </section>
 
 <section class="slide">
@@ -467,9 +454,17 @@
 
 <section class="slide">
   <p class="eyebrow">13 · The third option</p>
-  <h1 style="max-width:none">Teach them to <span class="em">author</span> their own context.</h1>
+  <svg class="civic-lockup" viewBox="0 0 260 260" aria-hidden="true">
+    <defs><linearGradient id="g-cvb2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0f5c38"/><stop offset="1" stop-color="#1e9660"/></linearGradient></defs>
+    <rect x="2" y="2" width="256" height="256" rx="40" fill="url(#g-cvb2)"></rect>
+    <path d="M74 148 L106 98 L127 128 L148 102 L188 148 Z" fill="#eafff3"></path>
+    <path d="M74 148 L106 98 L127 128 L114 148 Z" fill="#b7ecd0"></path>
+    <text x="130" y="196" text-anchor="middle" font-size="17" font-weight="800" letter-spacing="6" fill="#ffffff" font-family="-apple-system, 'Segoe UI', sans-serif">CIVIC</text>
+    <text x="130" y="216" text-anchor="middle" font-size="10.5" font-weight="700" letter-spacing="3.4" fill="#b7ecd0" font-family="-apple-system, 'Segoe UI', sans-serif">ACCELERATOR</text>
+  </svg>
+  <h1 style="max-width:none;font-size:clamp(28px,3.6vw,48px)">Teach them to <span class="em">author</span> their own context.</h1>
   <p class="lead" style="max-width:none">Each person writes a short, plain-text file about their own work — their names for things, their judgment, the standards they hold — and hands it to whatever tool they already use. <strong>Nothing routes through us. No account. Nothing transmitted.</strong></p>
-  <p class="lead" style="margin-top:20px;max-width:none">They leave with a simple file. A plain text file. <strong>A configured, plain text file.</strong> We have all gone through the setup process on a new device or a new tool. Workbrain is the setup for effective AI usage.</p>
+  <div class="callout"><svg class="wb-mark" viewBox="0 0 64 64" fill="none" aria-hidden="true"><path d="M 3 56 L 16 13 L 29 56 Z" fill="#2ED6F0" stroke="#2ED6F0" stroke-width="5" stroke-linejoin="round"/><path d="M 21 56 L 33 24 L 45 56 Z" fill="#3E7BFA" stroke="#3E7BFA" stroke-width="5" stroke-linejoin="round"/><path d="M 37 56 L 50 8 L 61 56 Z" fill="#B36BFF" stroke="#B36BFF" stroke-width="5" stroke-linejoin="round"/></svg><p>They leave with a simple file. A plain text file. <strong>A configured, plain text file.</strong> We have all gone through the setup process on a new device — Workbrain is the setup for effective AI usage.</p></div>
 </section>
 
 <section class="slide">
@@ -492,7 +487,7 @@
     <div class="panel"><h3>You can say how we know</h3><p>Every participant does the same kind of task before any teaching and again at the end, and keeps both. The evidence is theirs, on their own work — not a survey about how the class felt.</p></div>
     <div class="panel"><h3>You can say what we won't claim</h3><p>At 90 and 180 days we report back, always with the response rate attached. We do not claim employment outcomes — people tell us what happened, and we pass it on as reported.</p></div>
   </div>
-  <p class="fine">All of it is public, including the six claims this program rests on — written down so anyone who thinks we are wrong can say exactly where: <span class="mono">myworkbrain.org/good</span></p>
+  <p class="cite"><b>Public</b>The standard, and the six claims this program rests on, written down so anyone who thinks we are wrong can say exactly where — <span class="mono" style="color:var(--green-deep)">myworkbrain.org/good</span></p>
 </section>
 
 <section class="slide">
