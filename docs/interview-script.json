@@ -1,0 +1,250 @@
+{
+  "version": 1,
+  "note": "Single source for docs/INTERVIEW-SCRIPT.md and the question-editor artifact. Order is ask order. nav lists where the screen can go; 'path' means it returns to the main line.",
+  "questions": [
+    {"id":"welcome","order":10,"phase":"Open","slot":"—","type":"intro","chars":"—",
+     "q":"We're going to write down what makes your work yours. Twenty minutes, and you keep everything.",
+     "narr":"Opening. No question yet — one screen that says what the next twenty minutes are for and what they end with. Say the ending first: a file they own, that they can hand to any AI tool. Then the only button.",
+     "nav":[["Start","→ scope"],["What is this?","→ about (aside) → returns to welcome"]]},
+
+    {"id":"scope","order":20,"phase":"Open","slot":"A1","type":"chips-one","chars":"—",
+     "q":"Are we building this for your work, your personal life, or both?",
+     "narr":"First real question, and it is deliberately easy — one tap, nothing to type. Frame it as setting the language for everything after: 'I'll ask about the rest differently depending on which you pick.'",
+     "nav":[["Work / Personal / Both","→ pain"]]},
+
+    {"id":"pain","order":30,"phase":"Open","slot":"A2","type":"text","chars":"40–200",
+     "q":"What do you find yourself explaining over and over?",
+     "narr":"Carry the scope choice forward by name: 'Right — work it is.' Then this. It is the whole product's thesis as a question, and whatever they type here is the thing we point back to at the end when we show them the proof. If they stall, the examples are the escape hatch.",
+     "nav":[["Answer","→ specimen_ask"],["Not sure yet","→ specimen_ask (marks A2 unanswered, re-offered at review)"]]},
+
+    {"id":"specimen_ask","order":40,"phase":"Specimen","slot":"H1","type":"paste","chars":"400–4000",
+     "q":"Paste something you wrote that you were proud of.",
+     "narr":"The hinge of the whole interview, and it comes early on purpose. Tell them why plainly: 'One paste here saves you about eight questions later — I can read your voice off it instead of asking you to describe it.' Offer the skip honestly; the flow just gets longer.",
+     "nav":[["Paste it","→ specimen_why"],["I don't have one handy","→ voice_fallback (the 5 scale questions), rejoins at names"],["Skip for now","→ names (voice inferred later or left blank)"]]},
+
+    {"id":"specimen_why","order":50,"phase":"Specimen","slot":"H2","type":"text","chars":"40–250",
+     "q":"What makes this one good — what would you lose if someone \"improved\" it?",
+     "narr":"Immediately after the paste, while they still have it in their head. This is the question that turns a sample into a standard: without it we teach imitation, with it we teach judgment. Keep it short; one sentence is a fine answer.",
+     "nav":[["Answer","→ specimen_bad"],["Skip","→ specimen_bad"]]},
+
+    {"id":"specimen_bad","order":60,"phase":"Specimen","slot":"H4","type":"paste","chars":"0–2000",
+     "q":"Now the opposite — paste something that came back wrong. A draft you had to rewrite.",
+     "narr":"Play it as the mirror of the last one, and say why it earns its place: one bad example teaches a tool more than ten adjectives about tone. Optional, and say so — plenty of people won't have one saved.",
+     "nav":[["Paste it","→ names"],["Nothing to hand","→ names"]]},
+
+    {"id":"voice_fallback","order":70,"phase":"Specimen","slot":"I1–I2","type":"scale","chars":"—",
+     "q":"Two quick ones, then: how direct should it be by default? And how long should a normal answer run?",
+     "narr":"Only reached when no specimen was pasted. Two scales, not seven — the other five were doing work the specimen does better, and asking them anyway is how an interview earns a reputation for being long.",
+     "nav":[["Both answered","→ names"]]},
+
+    {"id":"name","order":80,"phase":"Identity","slot":"B1","type":"text","chars":"2–40",
+     "q":"What should AI call you?",
+     "narr":"Gear change, and name it: 'That's the hard part done. The rest is mostly about you.' Then the easiest question in the interview.",
+     "nav":[["Answer","→ pro_name"]]},
+
+    {"id":"pro_name","order":90,"phase":"Identity","slot":"B2","type":"text","chars":"0–60",
+     "q":"Do you use a different name professionally? Leave this blank if it's the same.",
+     "narr":"Quiet, optional, and the blank is a real answer — say so on the screen so nobody feels they have to invent something.",
+     "nav":[["Answer or blank","→ self_desc"]]},
+
+    {"id":"self_desc","order":100,"phase":"Identity","slot":"B3","type":"long","chars":"80–400",
+     "q":"How would you describe what you do?",
+     "narr":"Ask for the version they'd say out loud, not the version on a résumé — the rephrasings already do this well. If they wrote a specimen, nod to it: 'Plain words are fine — you already showed me how you write.'",
+     "nav":[["Answer","→ roles"],["Tighten this for me","→ polish handoff (their own AI), returns here with the draft"]]},
+
+    {"id":"roles","order":110,"phase":"Identity","slot":"B4","type":"record-list","chars":"3–60 ea.",
+     "q":"What are your roles — the ones distinct enough that AI should know about each one separately?",
+     "narr":"Explain the test rather than the word: a role is separate if you'd want a different answer depending on which hat you had on. Most people name one or two; that is a complete answer.",
+     "nav":[["Add a role","→ role_mandate (per role)"],["Just the one","→ responsibilities"],["Done adding","→ responsibilities"]]},
+
+    {"id":"role_mandate","order":120,"phase":"Identity","slot":"B5","type":"long","chars":"60–300",
+     "q":"In a sentence or two, what are you there to accomplish?",
+     "narr":"Per role, and named: 'For the [role name] one —'. Keep it to purpose, not duties; the duties come next and asking twice annoys people.",
+     "nav":[["Answer","→ role_standing"]]},
+
+    {"id":"role_standing","order":130,"phase":"Identity","slot":"B6","type":"chips-one","chars":"—",
+     "q":"Is this your main one, a secondary one, or something occasional? And is it current?",
+     "narr":"Two taps. Say what it buys them — the file can flag the old role as old later instead of quietly presenting it as current.",
+     "nav":[["Answered","→ roles (next role) or responsibilities"]]},
+
+    {"id":"responsibilities","order":140,"phase":"Identity","slot":"B7","type":"long","chars":"60–500",
+     "q":"What are you personally responsible for?",
+     "narr":"Owned, not involved-in. Draw the line in the question itself, because the next two questions depend on them having drawn it here.",
+     "nav":[["Answer","→ contributes"]]},
+
+    {"id":"contributes","order":150,"phase":"Identity","slot":"B8","type":"long","chars":"40–300",
+     "q":"And what do you contribute to, but not own?",
+     "narr":"Explicitly the other side of the line they just drew — 'And the other half of that —'. Rare in a context file and worth a sentence of praise when they answer it.",
+     "nav":[["Answer","→ not_yours"],["Skip","→ not_yours"]]},
+
+    {"id":"not_yours","order":160,"phase":"Identity","slot":"B9","type":"long","chars":"40–300",
+     "q":"What do people sometimes assume is your responsibility, but actually isn't?",
+     "narr":"Keep verbatim — it is the best question in the current flow. It gets a wry answer out of almost everyone, which is exactly the register we want before the duller ones.",
+     "nav":[["Answer","→ decisions"],["Skip","→ decisions"]]},
+
+    {"id":"decisions","order":170,"phase":"Identity","slot":"B10","type":"long","chars":"60–400",
+     "q":"What kinds of decisions can you make yourself?",
+     "narr":"Frame as autonomy, not authority — 'what can you just decide, without checking?' The chips (alone / with a nod / needs approval) give a fast path for people who don't want to write.",
+     "nav":[["Answer","→ expertise"]]},
+
+    {"id":"expertise","order":180,"phase":"Identity","slot":"B11","type":"long","chars":"40–300",
+     "q":"What do people come to you for?",
+     "narr":"Closing the identity block on a generous note. This is the question people enjoy answering, so it is a good last one before a gear change.",
+     "nav":[["Answer","→ target"]]},
+
+    {"id":"target","order":190,"phase":"Trajectory","slot":"G7","type":"long","chars":"40–300",
+     "q":"What are you working toward that isn't true yet — a role, a certification, a kind of work you want more of?",
+     "narr":"NEW, and the one that changes who this product works for. Say the reason out loud: 'Everything so far describes where you are. This one points the file at where you're going, so it stops writing about your last job.' For a job seeker this is the most important screen in the interview.",
+     "nav":[["Answer","→ gap"],["Nothing right now","→ entities (file stays present-tense; review offers it again)"]]},
+
+    {"id":"gap","order":200,"phase":"Trajectory","slot":"G8","type":"long","chars":"40–300",
+     "q":"What's between you and that — what would you need to show, learn, or prove?",
+     "narr":"Only if they named a target. This is the one that makes the target usable: without it, a tool can restate the ambition; with it, a tool can help close the distance.",
+     "nav":[["Answer","→ entities"],["Not sure","→ entities (kept as a finding, printed as a question in the file)"]]},
+
+    {"id":"entities","order":210,"phase":"World","slot":"C1–C4","type":"record-list","chars":"2–60 ea.",
+     "q":"Who and what do you work with that AI should know by name?",
+     "narr":"Gear change into their world. Frame as names, not org charts: people, teams, tools, clients — anything they'd say in shorthand and expect to be understood. Each one takes a name, a kind, why it matters, and any aliases.",
+     "nav":[["Add one","→ per-entity mini-record, returns here"],["Done","→ systems"],["Skip this part","→ systems"]]},
+
+    {"id":"systems","order":220,"phase":"World","slot":"C5","type":"chips-text","chars":"40–250",
+     "q":"When you need the real answer, where do you look? Which system is the source of truth?",
+     "narr":"NEW. The file knows the names but never where the truth lives, and every automation question later depends on it. Chips for the common ones and a field for the rest; 'a spreadsheet somebody maintains' is a completely valid answer.",
+     "nav":[["Answer","→ terms"],["Skip","→ terms"]]},
+
+    {"id":"terms","order":230,"phase":"Names","slot":"D1","type":"pairs","chars":"60–600",
+     "q":"What words does your work depend on that an outsider would get wrong? Give me the word and what it means here.",
+     "narr":"RESHAPED from prose to term → meaning rows. Say why the pairs matter: 'If I only have the word, a tool guesses the definition — and it guesses the common one.' If a specimen was pasted, pre-fill candidate terms from it and ask them to confirm or bin each.",
+     "nav":[["Add a pair","→ stays here"],["Done","→ never_words"],["Use the ones you found","→ confirm list, returns here"]]},
+
+    {"id":"never_words","order":240,"phase":"Names","slot":"D2","type":"chips-text","chars":"0–200",
+     "q":"Any words or phrases you never want to see in your own writing?",
+     "narr":"Light relief after the pairs, and people enjoy it. Seed the chips with the usual AI tells — delve, leverage, robust, in today's fast-paced — and let them add their own.",
+     "nav":[["Answer","→ audiences"],["None","→ audiences"]]},
+
+    {"id":"audiences","order":250,"phase":"Audiences","slot":"E1","type":"record-list","chars":"3–40 ea.",
+     "q":"Who do you write to regularly?",
+     "narr":"RESHAPED into records so each one can carry its own two answers. Keep the ask small — three or four names is plenty, and say so, or people list everyone they've ever emailed.",
+     "nav":[["Add an audience","→ aud_expects (per audience)"],["Done","→ standards"]]},
+
+    {"id":"aud_expects","order":260,"phase":"Audiences","slot":"E2","type":"long","chars":"40–250",
+     "q":"What does this one expect from you that the others don't?",
+     "narr":"Per audience, named. Ask for the difference, not a description — the difference is the only part a tool can act on.",
+     "nav":[["Answer","→ aud_knows"]]},
+
+    {"id":"aud_knows","order":270,"phase":"Audiences","slot":"E3","type":"long","chars":"40–250",
+     "q":"And what can you assume they already know — what would be condescending to explain?",
+     "narr":"NEW, and the most useful audience field there is. It is the one that stops a tool over-explaining to a board and under-explaining to a new hire. Frame it as saving them the edit they always make.",
+     "nav":[["Answer","→ audiences (next) or standards"]]},
+
+    {"id":"standards","order":280,"phase":"Standards","slot":"F1","type":"long","chars":"60–500",
+     "q":"What would you actually send a draft back over?",
+     "narr":"Keep verbatim. It gets the real standard rather than the aspirational one, because it asks about a thing they have actually done.",
+     "nav":[["Answer","→ peeves"]]},
+
+    {"id":"peeves","order":290,"phase":"Standards","slot":"F3","type":"long","chars":"40–300",
+     "q":"What makes you rewrite something on sight?",
+     "narr":"The smaller sibling of the last one, and fun to answer. If a bad specimen was pasted, point at it: 'Anything in that rewrite you'd call out?'",
+     "nav":[["Answer","→ settled"],["Skip","→ settled"]]},
+
+    {"id":"settled","order":300,"phase":"Standards","slot":"F4","type":"long","chars":"60–400",
+     "q":"What's already been decided that you don't want reopened — a tool, a format, a way of doing things that's final?",
+     "narr":"NEW, and the highest-half-life content in the file. Frame it as the thing they are tired of re-arguing: 'Anything a tool should stop offering you alternatives to.'",
+     "nav":[["Answer","→ guardrails"],["Nothing yet","→ guardrails"]]},
+
+    {"id":"guardrails","order":310,"phase":"Standards","slot":"F2","type":"chips-text","chars":"40–400",
+     "q":"What should AI never do without asking you first?",
+     "narr":"Keep verbatim. Chips for the common ones — send anything, commit to a date, speak for someone else, spend money.",
+     "nav":[["Answer","→ redaction"]]},
+
+    {"id":"redaction","order":320,"phase":"Standards","slot":"F5","type":"chips-text","chars":"0–300",
+     "q":"Is there anything about your work you can't put in writing here — client names, case details, anything under a policy?",
+     "narr":"NEW, and it needs care: it is permission, not interrogation. Say the useful thing plainly — 'You can write \"Client A\" and it still works' — and teach the placeholder habit right here, in the one screen where it is relevant.",
+     "nav":[["Answer","→ boundaries"],["Nothing like that","→ boundaries"]]},
+
+    {"id":"boundaries","order":330,"phase":"Standards","slot":"F6","type":"long","chars":"0–250",
+     "q":"Anything this file should deliberately stay out of?",
+     "narr":"NEW. Curation in their own words, and the last word before we leave the rules section. Short answers are good answers here.",
+     "nav":[["Answer","→ initiatives"],["No","→ initiatives"]]},
+
+    {"id":"initiatives","order":340,"phase":"Initiatives","slot":"G1–G6","type":"record-list","chars":"3–60 ea.",
+     "q":"What are you actually working on right now?",
+     "narr":"Last content block, and say so — people push through when they can see the end. Each initiative takes a name, what and why, where it stands, what success looks like, constraints, and what's out of scope.",
+     "nav":[["Add one","→ per-initiative mini-record, returns here"],["Nothing active","→ review"],["Done","→ review"]]},
+
+    {"id":"review","order":350,"phase":"Close","slot":"—","type":"review","chars":"—",
+     "q":"Here's your file. Anything you want to change before you take it?",
+     "narr":"Show the actual file, not a summary of it — the payoff is seeing their own words formatted. Offer the unanswered ones back as a short list rather than a nag, and make download the loud button.",
+     "nav":[["Download","→ done"],["Fix something","→ that question, returns to review"],["Fill the ones I skipped","→ skipped queue, returns to review"],["Prove it works","→ Proving Grounds"]]},
+
+    {"id":"skill_open","order":400,"phase":"Skills","slot":"—","type":"intro","chars":"—",
+     "q":"Now the part that makes it repeatable: one job you do over and over.",
+     "narr":"Opening the second interview, and it must connect to the first: 'Your file tells a tool who you are. A skill tells it how you do one specific thing.' Point back at their answer to the very first question — the thing they're tired of explaining — as the obvious candidate.",
+     "nav":[["Pick a job","→ skill_name"],["Not now","→ home"]]},
+
+    {"id":"skill_name","order":410,"phase":"Skills","slot":"S1","type":"text","chars":"3–60",
+     "q":"What do you call this job when you ask for it?",
+     "narr":"Their name for it, not a formal title — 'the Monday numbers' is a better skill name than 'weekly performance reporting', because it is what they will actually type.",
+     "nav":[["Answer","→ skill_objective"]]},
+
+    {"id":"skill_objective","order":420,"phase":"Skills","slot":"S2","type":"long","chars":"60–300",
+     "q":"When this goes well, what does the finished thing let you do?",
+     "narr":"NEW, and it goes FIRST on purpose — before the steps. Say why: 'Tell me what good looks like and the steps get easier to write.' This is also the only reason the proof can ever be scored rather than admired, so it is not skippable.",
+     "nav":[["Answer","→ skill_trigger"]]},
+
+    {"id":"skill_trigger","order":430,"phase":"Skills","slot":"S3","type":"chips-text","chars":"20–160",
+     "q":"What sets it off — a day of the week, or something happening?",
+     "narr":"RESHAPED: offer both kinds. Calendar triggers suit office work; situation triggers ('when a new offer lands', 'when someone asks for a quote') are the only ones that fit gig and shift work, and without them those people stall on this screen.",
+     "nav":[["A day","→ skill_method_pick"],["Something happens","→ skill_method_pick"]]},
+
+    {"id":"skill_method_pick","order":440,"phase":"Skills","slot":"S6/S7","type":"chips-one","chars":"—",
+     "q":"Is this more of a recipe, or more of a judgment call?",
+     "narr":"NEW branch, one tap, and it is what makes this interview work for people whose job has no steps. Frame it without hierarchy — neither answer is the better one.",
+     "nav":[["A recipe","→ skill_steps"],["A judgment call","→ skill_principles"]]},
+
+    {"id":"skill_steps","order":450,"phase":"Skills","slot":"S6","type":"long","chars":"120–1500",
+     "q":"Walk me through it the way you'd tell a new coworker.",
+     "narr":"Ask for narration, not a numbered list — people who freeze at 'document your process' will happily explain it to an imaginary new hire. We parse the nouns out afterwards and offer them back as inputs and tools.",
+     "nav":[["Answer","→ skill_inputs (pre-filled from the narration)"],["Turn my notes into steps","→ handoff to their AI, returns here"]]},
+
+    {"id":"skill_principles","order":460,"phase":"Skills","slot":"S7","type":"long","chars":"120–800",
+     "q":"What do you weigh when you decide? And what lines won't you cross?",
+     "narr":"NEW, the other half of the branch. For advisers, caregivers, coordinators and anyone whose value is judgment. Two prompts in one screen because they are the same thought: what I consider, and where I stop.",
+     "nav":[["Answer","→ skill_inputs"]]},
+
+    {"id":"skill_inputs","order":470,"phase":"Skills","slot":"S4","type":"chips-text","chars":"20–300",
+     "q":"What do you need in front of you before you can start?",
+     "narr":"Pre-filled from whatever they just described, as confirmable chips — 'I pulled these out of what you wrote; bin the ones I got wrong.' Confirming beats typing, every time.",
+     "nav":[["Confirm","→ skill_tools"],["Add one","→ stays here"]]},
+
+    {"id":"skill_tools","order":480,"phase":"Skills","slot":"S5","type":"chips-text","chars":"20–300",
+     "q":"Where does that come from, and where does the finished thing go?",
+     "narr":"In and out in one screen. This is the answer the Actions file is derived from later, so it is worth the extra ten seconds — say that, because it makes the question feel like it is buying something.",
+     "nav":[["Answer","→ skill_output"]]},
+
+    {"id":"skill_output","order":490,"phase":"Skills","slot":"S8","type":"chips-text","chars":"20–200",
+     "q":"What shape does the finished thing take?",
+     "narr":"Chips — an email, a doc, a list, a spreadsheet, a message. Fast, and it pins the format so a tool stops guessing.",
+     "nav":[["Answer","→ skill_checks"]]},
+
+    {"id":"skill_checks","order":500,"phase":"Skills","slot":"S9","type":"long","chars":"40–400",
+     "q":"How do you know it's right before you send it? And what usually goes wrong?",
+     "narr":"NEW, and the one that makes a proof honest. Both halves matter: the check is what to verify, the failure is what to watch for. People answer the second half faster, so lead with it if they stall.",
+     "nav":[["Answer","→ skill_example"]]},
+
+    {"id":"skill_example","order":510,"phase":"Skills","slot":"S10","type":"paste","chars":"0–3000",
+     "q":"Got a good finished one handy? Paste it.",
+     "narr":"NEW, optional, and framed as the shortcut it is: one real example pins the format, the length and the tone at once. Never insist — this is the elite rung, not the bar.",
+     "nav":[["Paste","→ skill_autonomy"],["Not handy","→ skill_autonomy"]]},
+
+    {"id":"skill_autonomy","order":520,"phase":"Skills","slot":"S11","type":"chips-one","chars":"—",
+     "q":"Would you want this to run without you?",
+     "narr":"Four options and no judgment attached to any of them: I'd run it myself / draft it for my approval / fully automatic / never. Say plainly that 'never' is a legitimate answer and gets recorded as one.",
+     "nav":[["Answered","→ skill_review"]]},
+
+    {"id":"skill_review","order":530,"phase":"Skills","slot":"—","type":"review","chars":"—",
+     "q":"Here's the skill. Want to run it against its objective?",
+     "narr":"Show the written skill and point at the objective they wrote at the start — that is the scoring line. The proof offer belongs here, while the skill is fresh and they can still see what it was for.",
+     "nav":[["Prove it","→ Proving Grounds (skills mode)"],["Add another skill","→ skill_name"],["Done","→ home"]]}
+  ]
+}
